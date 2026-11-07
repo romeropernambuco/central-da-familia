@@ -17,6 +17,15 @@ Leia este arquivo inteiro antes de mexer em qualquer coisa aqui.
 2. **Dados:** só no Supabase. Nunca dentro do código.
 3. **Mudar um painel:** editar o arquivo daqui em cima do que existe (mesmas telas, ordem e blocos). Nunca fazer um painel novo no lugar.
 
+## Regra contra duplicar (pedido do Romero, 07/11/2026)
+
+1. **Antes de criar qualquer tabela ou painel, listar o que já existe** no Supabase e neste repositório. Se já existe, usar o que existe.
+2. **Cada dado mora num lugar só.** Painel migrado pro Supabase: a página antiga dentro do Claude vira só um aviso "mudou de endereço", sem botão de lançar.
+3. **Migração em 3 passos, sempre nessa ordem:** copiar os dados reais da página antiga pro Supabase, conferir que os números batem, só então trocar a página antiga pelo aviso.
+4. **Cada conversa cuida da sua parte:** o Escritório da Família tem as tabelas `escritorio_funcionarios` e `escritorio_turnos`; os painéis usam `docs`. Ninguém cria tabela paralela pro mesmo assunto.
+
+Tabelas que existem hoje: `pessoas`, `convites`, `docs`, `docs_historico`, `escritorio_funcionarios`, `escritorio_turnos`.
+
 ## Como os dados ficam guardados
 
 Tudo grava numa tabela só, `docs`, com 3 chaves: `painel`, `colecao`, `doc_id`, e o conteúdo em `dados`.
