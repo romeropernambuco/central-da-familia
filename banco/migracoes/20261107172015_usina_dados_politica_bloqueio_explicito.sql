@@ -1,0 +1,1 @@
+create policy usina_dados_sem_acesso_publico on public.usina_dados as restrictive for all to anon, authenticated using (false) with check (false);;

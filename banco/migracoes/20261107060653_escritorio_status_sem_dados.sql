@@ -1,0 +1,2 @@
+alter table public.escritorio_turnos drop constraint escritorio_turnos_status_check;
+alter table public.escritorio_turnos add constraint escritorio_turnos_status_check check (status = any (array['trabalhando','entregue','precisa_de_voce','aguardando','sem_dados']));;
