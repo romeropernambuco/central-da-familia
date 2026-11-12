@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painéis da Família</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Entrada dos painéis da família: o app oficial, o exemplo, o Escritório 3D, o app antigo de finanças e o A Receber.">
+<meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#100E0C" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="./exemplo/icone-192.png">
+<link rel="preload" href="./fontes/figtree.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Figtree";font-style:normal;font-display:swap;font-weight:300 900;src:url(./fontes/figtree.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-display:swap;font-weight:200 800;src:url(./fontes/bricolage.woff2) format("woff2")}
+:root{
+  --ground:#F6F3EE;--surface:#FFFFFF;--raised:#EFEAE2;--border:#E3DCD1;
+  --ink:#16130F;--ink-2:#3D3D3A;--muted:#6B6A66;
+  --accent:#0E7A5A;--accent-press:#0A6047;--accent-soft:#E3F2EC;--accent-ink:#064E3A;--on-accent:#FFFFFF;
+  --font:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-num:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+  --r-md:12px;--r-card:20px;--r-pill:999px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#100E0C;--surface:#1A1714;--raised:#24201C;--border:#2B2723;
+  --ink:#F4F4F2;--ink-2:#D6D5D1;--muted:#A3A29E;
+  --accent:#34D399;--accent-press:#22B07E;--accent-soft:#0F2A21;--accent-ink:#A7F3D0;--on-accent:#04150F;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ground);color:var(--ink)}
+body{font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+h1,h2,p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.ic{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ic.s{width:14px;height:14px}
+
+.pagina{max-width:960px;margin:0 auto;padding:max(28px,env(safe-area-inset-top,0px)) 16px 56px}
+.topo{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.topo svg{border-radius:8px;flex:none}
+.topo span{font-size:14px;color:var(--muted);line-height:20px}
+h1{font-family:var(--font-num);font-size:36px;line-height:40px;font-weight:700;letter-spacing:-.025em}
+.lede{margin-top:8px;max-width:56ch;color:var(--ink-2);font-size:17px;line-height:26px}
+
+.lista{display:grid;gap:12px;margin-top:28px}
+.cartao{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-content:start;background:var(--surface);border-radius:var(--r-card);padding:20px;color:inherit;text-decoration:none;transition:box-shadow .12s}
+.cartao:hover{box-shadow:0 0 0 2px var(--accent)}
+.cartao .ico{grid-row:span 3;width:48px;height:48px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--raised);color:var(--ink-2)}
+.cartao h2{font-size:19px;line-height:26px;font-weight:700;letter-spacing:-.015em}
+.cartao h2 small{font-size:inherit;font-weight:500;color:var(--muted)}
+.cartao p{color:var(--ink-2);font-size:15px;line-height:22px}
+.selo{justify-self:start;display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;border-radius:var(--r-pill);font-size:13px;line-height:18px;font-weight:600;background:var(--raised);color:var(--ink-2)}
+.selo.real{background:var(--accent-soft);color:var(--accent-ink)}
+
+.cartao.oficial{padding:24px}
+.cartao.oficial .ico{background:var(--accent);color:var(--on-accent)}
+.cartao.oficial h2{font-family:var(--font-num);font-size:26px;line-height:32px;letter-spacing:-.02em}
+.cartao.oficial p{font-size:16px;line-height:24px}
+.abrir{grid-column:1 / -1;justify-self:start;display:inline-flex;align-items:center;gap:8px;margin-top:16px;min-height:48px;padding:0 20px;border-radius:var(--r-pill);background:var(--accent);color:var(--on-accent);font-weight:700}
+.cartao.oficial:hover .abrir{background:var(--accent-press)}
+.abrir .ic{width:18px;height:18px}
+
+.nq{white-space:nowrap}
+.rodape{margin-top:24px;color:var(--muted);font-size:14px;line-height:20px;max-width:64ch}
+
+@media (min-width:760px){
+  .pagina{padding-top:56px}
+  h1{font-size:44px;line-height:48px}
+  .lista{grid-template-columns:1fr 1fr;gap:16px}
+  .cartao.oficial{grid-column:1 / -1;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;padding:28px}
+  .cartao.oficial .ico{width:56px;height:56px}
+  .abrir{grid-column:3;grid-row:1 / span 3;margin-top:0}
+}
+@media (prefers-reduced-motion:reduce){.cartao{transition:none}}
+</style>
+</head>
+<body>
+<main class="pagina">
+  <div class="topo">
+    <svg width="36" height="36" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+      <rect width="16" height="16" fill="#0E7A5A"/>
+      <rect x="7" y="3" width="2" height="1" fill="#fff"/><rect x="6" y="4" width="4" height="1" fill="#fff"/>
+      <rect x="5" y="5" width="6" height="1" fill="#fff"/><rect x="4" y="6" width="8" height="1" fill="#fff"/>
+      <rect x="3" y="7" width="10" height="1" fill="#fff"/><rect x="4" y="8" width="8" height="5" fill="#fff"/>
+      <rect x="7" y="10" width="2" height="3" fill="#0E7A5A"/>
+    </svg>
+    <span>Central da Família</span>
+  </div>
+  <h1>Painéis da família</h1>
+  <p class="lede">Escolha por onde entrar. Cada cartão diz o que é e se guarda os dados de verdade da casa ou se é só exemplo pra olhar.</p>
+
+  <div class="lista">
+    <a class="cartao oficial" href="https://central-da-familia-eosin.vercel.app">
+      <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+      <h2>Central da Família</h2>
+      <p>O app da casa: quanto dá pra gastar hoje, a feira e a equipe. Pede <span class="nq">e-mail</span> e senha.</p>
+      <span class="selo real"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>O oficial: seus dados de verdade</span>
+      <span class="abrir">Abrir o app<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+    </a>
+
+    <a class="cartao" href="./exemplo/">
+      <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <h2>Central da Família <small>· exemplo</small></h2>
+      <p>O mesmo app, com a Família Silva, que é inventada. Pra mostrar a alguém sem expor a casa.</p>
+      <span class="selo"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></svg>Exemplo: nada é guardado</span>
+    </a>
+
+    <a class="cartao" href="./escritorio3d/">
+      <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+      <h2>Escritório 3D</h2>
+      <p>A sala em 3D com os ajudantes da casa trabalhando. É o primeiro modelo, feito pra testar a cena.</p>
+      <span class="selo"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></svg>Exemplo: nada é guardado</span>
+    </a>
+
+    <a class="cartao" href="./financas/">
+      <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+      <h2>Finanças da Família <small>· app antigo</small></h2>
+      <p>O controle de gastos que veio antes da Central. Pede <span class="nq">e-mail</span> e senha.</p>
+      <span class="selo real"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Guarda dados de verdade</span>
+    </a>
+
+    <a class="cartao" href="./a-receber/">
+      <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 16 6 6"/><circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/></svg></span>
+      <h2>A Receber</h2>
+      <p>Dinheiro emprestado: quanto ainda falta receber e as parcelas. Pede <span class="nq">e-mail</span> e senha.</p>
+      <span class="selo real"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Guarda dados de verdade</span>
+    </a>
+  </div>
+
+  <p class="rodape">Os 3 cartões com cadeado só mostram alguma coisa depois de entrar com <span class="nq">e-mail</span> e senha. Os 2 de exemplo abrem direto e não gravam nada.</p>
+</main>
+</body>
+</html>
