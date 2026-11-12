@@ -10,6 +10,21 @@ Leia este arquivo inteiro antes de mexer em qualquer coisa aqui.
 | Parcelas da Família (oficial desde 07/11/2026) | https://romeropernambuco.github.io/central-da-familia/parcelas/ |
 | Banco de dados | Supabase, projeto `central-da-familia` (id `kcwaxvvivdckebjmjbkb`, São Paulo, plano grátis) |
 | Painel antigo do Parcelas (só exemplos, virou arquivo) | https://claude.ai/artifact/86sps3B7z2KJcKcAN33i4G |
+| App novo da Central (produto), quando publicado | https://romeropernambuco.github.io/central-da-familia/app/ |
+
+## App novo da Central (desde 12/11/2026)
+
+| Pasta | O que tem |
+|---|---|
+| `app/` | O app pronto pra abrir no navegador. É o que o GitHub Pages publica |
+| `codigo/` | O código-fonte do app (Vite, React, TypeScript). Pra gerar `app/` de novo: `npm install` e `npm run build` dentro de `codigo/`, depois copiar `dist/` pra `app/` |
+| `banco/migracoes/` | Cópia de todas as mudanças já feitas no banco, em ordem de data. Serve de backup da estrutura |
+| `banco/sql/RODAR_NO_SUPABASE.sql` | Comandos que só o dono roda no painel do Supabase (apagar e consertar) |
+| `banco/funcoes/ia-ler-cupom/` | A função de servidor que lê a foto do cupom |
+
+- O app novo usa a área `produto` do mesmo Supabase. Não mexe nas tabelas do Parcelas (`docs`, `convites` etc.).
+- Os dados ficam só no Supabase. Este repositório guarda as telas e a estrutura, nunca os dados da família.
+- A chave que aparece no código é a publicável (`sb_publishable_...`). Pode ser pública: ela só abre o que a tranca do banco deixa. A chave secreta nunca entra aqui.
 
 ## Regra de ouro: 1 lugar pra cada coisa
 
@@ -47,7 +62,7 @@ Pastas pra olhar no Supabase (mesmos dados, mesmos acessos): `parcelas_dados`, `
 |---|---|---|
 | Romero | tudo | tudo |
 | Andreza | andreza | andreza e feira |
-| Jobson | feira | feira |
+| Givaldo (no lugar de Jobson, desde 11/11/2026) | feira | feira |
 | Sem login | nada | nada |
 
 - Só cria conta quem está na tabela `convites`. E-mail estranho é barrado.
