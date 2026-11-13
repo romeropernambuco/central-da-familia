@@ -3,8 +3,8 @@ import { dataCurta, fimDoMes, hojeRecife, reais } from '../lib/formato'
 import { projecao } from '../lib/plano'
 
 /**
- * R7+G3: a semana e o fim do mês, em 2 linhas. Rodada 2: vale também pro limite do mês (ROMERO ideia 3);
- * parcela e compra grande contam 1 vez só, fora do ritmo do dia (PARCELA ideia 1); 1 número por dia só (ANDREZA ideia 2).
+ * R7+G3: a semana e o fim do mês, em 2 linhas. Rodada 2: vale também pro limite do mês (BRUNO ideia 3);
+ * parcela e compra grande contam 1 vez só, fora do ritmo do dia (PARCELA ideia 1); 1 número por dia só (ANA ideia 2).
  */
 export function RitmoMes({ e, risco }: { e: Envelope; risco?: boolean }) {
   const hoje = hojeRecife()

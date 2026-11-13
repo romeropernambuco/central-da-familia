@@ -11,6 +11,7 @@
     "build:demo": "vite build --mode demo && node scripts/demo.mjs",
     "test": "vitest run",
     "portoes": "node scripts/portoes.mjs",
+    "teste:falha": "vite build && node testes/falha.cjs",
     "e2e": "node testes/e2e.mjs",
     "zip": "node scripts/zip.mjs"
   },

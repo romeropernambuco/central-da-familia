@@ -10,6 +10,7 @@ import { perdaRendaMensal, valorNaVirada } from './f6_impacto'
 import { avaliarDesejo } from './f7_desejo'
 import { guardarPorMes } from './f9_falta'
 import { avisosFGC, fgcConta } from './f10_fgc'
+import { tetoVigente } from './f8_reajuste'
 import { cabeDesejo, futuro, impacto2029 } from './index'
 import type { Aplicacao, Desejo, FuturoEntrada, Taxa } from './tipos'
 
@@ -192,6 +193,45 @@ describe('patrimônio, folga e desejos', () => {
   })
 })
 
+describe('cabe? compara com a linha sem o desejo (REVISOR C3)', () => {
+  const d: Desejo = { id: 'viagem', dono: 'exemplo', valor: 1, mes: '2027-02', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false }
+  it('família já abaixo do piso: desejo pequeno mostra o custo e não "ainda não cabe"', () => {
+    const apertada = base({ saldo_caixa: 10_000_000 }) // piso de 6 tetos = 18 milhões de centavos: já começa abaixo
+    expect(futuro(apertada).linha[0].fica_devendo).toBeGreaterThan(0)
+    const r = cabeDesejo(apertada, { ...d, valor: 100_000 })
+    expect(r.situacao).toBe('apertado sem o desejo')
+    expect(r.primeiro_mes_abaixo).toBeNull()
+    expect(r.apertado_sem_desejo).toBe('2026-12')
+    expect(r.tira_por_mes_2029).toBeGreaterThan(0)
+  })
+  it('desejo de R$ 0,01 nunca muda o veredito da base (60 sorteios)', () => {
+    for (let k = 0; k < 60; k++) {
+      const e = base({ saldo_caixa: S.int(0, 2_500_000_000), dividas: [{ mes: MESES[S.int(0, 24)], valor: S.int(0, 50_000_000) }] })
+      const sem = futuro(e)
+      const r = cabeDesejo(e, { ...d, mes: MESES[S.int(0, 24)] })
+      const esperado = sem.linha.some((l) => l.fica_devendo > 0) ? 'apertado sem o desejo' : sem.folga >= 1 ? 'cabe' : r.situacao
+      expect(r.situacao).toBe(esperado)
+      expect(r.situacao).not.toBe('ainda nao cabe')
+    }
+  })
+  it('desejo que derruba um mês bom continua "ainda não cabe" e diz quando caberia', () => {
+    const r = cabeDesejo(base({ saldo_caixa: 100_000_000 }), { ...d, valor: 80_000_000 })
+    expect(r.situacao).toBe('ainda nao cabe'); expect(r.primeiro_mes_abaixo).toBe('2027-02'); expect(r.apertado_sem_desejo).toBeNull()
+  })
+})
+
+describe('reajuste do teto (REVISOR C4)', () => {
+  it('família de 1 adulto: 1 aprovação basta e vale no mês seguinte', () => {
+    expect(tetoVigente(3_000_000, 3_156_600, [true], '2027-01', '2027-01')).toEqual({ teto: 3_000_000, situacao: 'aprovado, vale no mes seguinte' })
+    expect(tetoVigente(3_000_000, 3_156_600, [true], '2027-01', '2027-02')).toEqual({ teto: 3_156_600, situacao: 'aprovado' })
+  })
+  it('casal: falta 1 aprovação, fica pendente; sem adulto nenhum, pendente', () => {
+    expect(tetoVigente(3_000_000, 3_156_600, [true, false], '2027-01', '2027-03').situacao).toBe('sugestao pendente')
+    expect(tetoVigente(3_000_000, 3_156_600, [], '2027-01', '2027-03').situacao).toBe('sugestao pendente')
+    expect(tetoVigente(3_000_000, 3_156_600, [true, true], '2027-01', '2027-02').teto).toBe(3_156_600)
+  })
+})
+
 describe('IR, FGC e arredondamento', () => {
   it('alíquota nunca sobe com mais dias', () => {
     let ant = aliquotaIR(0)
@@ -203,10 +243,13 @@ describe('IR, FGC e arredondamento', () => {
       const r = fgcConta(s, t)
       expect(r.fora).toBeGreaterThanOrEqual(0); expect(r.fora).toBeLessThanOrEqual(s)
     }
-    const ap = (x: Partial<Aplicacao>): Aplicacao => ({ id: 'a', titular: 'titular 1', banco: 'Banco A', saldo: 0, taxa_bruta_anual: '0.12', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, conta_conjunta_titulares: 1, fgc: true, ...x })
+    const ap = (x: Partial<Aplicacao>): Aplicacao => ({ id: 'a', titular: 'titular 1', titulares: ['titular 1'], banco: 'Banco A', saldo: 0, taxa_bruta_anual: '0.12', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, fgc: true, ...x })
     expect(avisosFGC([ap({ saldo: 90_000_000, fgc: false })])).toEqual([])
     expect(avisosFGC([ap({ saldo: 15_000_000 }), ap({ id: 'b', saldo: 11_000_000 })])).toEqual([{ banco: 'Banco A', titular: 'titular 1', fora: 1_000_000 }])
-    expect(avisosFGC([ap({ saldo: 28_000_000, conta_conjunta_titulares: 2 })])).toEqual([{ banco: 'Banco A', titular: 'titular 1', fora: 1_500_000 }])
+    // Conjunta (REVISOR C5): cada titular da lista recebe a parte dele; os 2 avisos somam os 30.000 do FGC-CONJUNTA.
+    expect(avisosFGC([ap({ saldo: 28_000_000, titulares: ['titular 1', 'titular 2'] })])).toEqual([{ banco: 'Banco A', titular: 'titular 1', fora: 1_500_000 }, { banco: 'Banco A', titular: 'titular 2', fora: 1_500_000 }])
+    // A parte do 2º titular conta no CPF dele junto com a conta individual que ele tem no mesmo banco.
+    expect(avisosFGC([ap({ saldo: 20_000_000, titulares: ['titular 1', 'titular 2'] }), ap({ id: 'b', titular: 'titular 2', titulares: ['titular 2'], saldo: 20_000_000 })])).toEqual([{ banco: 'Banco A', titular: 'titular 2', fora: 5_000_000 }]) // 100.000 da conjunta + 200.000 individual − 250.000
     const cinco = ['A', 'B', 'C', 'D', 'E'].map((b) => ap({ id: b, banco: `Banco ${b}`, saldo: 22_000_000 }))
     expect(avisosFGC(cinco)).toEqual([{ banco: 'todos os bancos', titular: 'titular 1', fora: 10_000_000 }])
   })

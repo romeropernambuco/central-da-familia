@@ -165,7 +165,7 @@ function NovaAplicacao({ fechar }: { fechar: () => void }) {
     if (tipo !== 'poupanca' && !(p > 0 && p <= 300)) { setErro('Quanto rende: um número como 100 ou 110 (é o que aparece no app do banco como "% do CDI").'); return }
     if (!valorDigitadoValido(valor) || textoParaValor(valor) <= 0) { setErro('Digite quanto tem lá hoje, por exemplo 5.000.'); return }
     setErro(''); setGravando(true)
-    // não repete o tipo quando a pessoa já escreveu ("Caixinha da Andreza" não vira "Caixinha Caixinha da Andreza")
+    // não repete o tipo quando a pessoa já escreveu ("Caixinha da Ana" não vira "Caixinha Caixinha da Ana")
     const nome = banco.trim().toLowerCase().startsWith(ROTULO_TIPO[tipo].toLowerCase()) ? banco.trim() : `${ROTULO_TIPO[tipo]} ${banco.trim()}`
     const meuId = (await api.membros(familia.id).catch(() => [])).find(m => m.nome === familia.membroNome)?.id ?? null
     const ok = await tentar(() => api.guardadoCriar(familia.id, { nome, banco: banco.trim(), tipo, pct_cdi: tipo === 'poupanca' ? 0 : p, valor_inicial: textoParaValor(valor), data: hojeRecife(), vence_em: comPrazo && vence ? vence : null, titular: titular === 'eu' ? meuId : null }))

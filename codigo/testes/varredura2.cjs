@@ -67,7 +67,7 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
   }
   /* ---------- A2: filha só vê o dela ---------- */
   if (SO.includes('A2')) {
-  const PAIS = /Andreza|Romero|Nubank|Itaú|Salário|salário|Casa mensal|Feira semanal|CDB|LCA|Tesouro|anuidade|fatura|Folha|Cozinheira|Gerar código|Apagar a família|Convidar|Seu Zé|Marcos|Jardineiro|Piscineiro|Guardado|Planejamento|Cartões|Escritório/
+  const PAIS = /Ana|Bruno|Nubank|Itaú|Salário|salário|Casa mensal|Feira semanal|CDB|LCA|Tesouro|anuidade|fatura|Folha|Cozinheira|Gerar código|Apagar a família|Convidar|Seu Zé|Marcos|Jardineiro|Piscineiro|Guardado|Planejamento|Cartões|Escritório/
   const daFilha = async (p, onde) => {
     const t = await textoEAtributos(p), h = await html(p)
     const m = t.match(PAIS); ok(!m, `A2 filha ${onde}: aparece "${m && m[0]}"`)
@@ -85,22 +85,22 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
   }
   /* ---------- A3: casal vê só o seu (cartão, fatura, salário, avisos do cartão) ---------- */
   if (SO.includes('A3')) {
-  // "pago por Romero" num gasto da Casa "· Romero" no diário e "quem fez: Andreza" na feira são permitidos: a Casa e os lembretes do casal são dos 2 (nunca valor nem item pessoal do outro)
-  const DO_OUTRO = { andreza: /Itaú|Salário Romero|9\.000|(?<!pago por |· |quem fez: )Romero/, romero: /Nubank|Salário Andreza|7\.000|anuidade de R\$|(?<!pago por |· |quem fez: )Andreza/ }
-  for (const como of ['andreza', 'romero']) for (const dia of ['2026-11-01', '2026-11-07', '2026-11-12', '2026-11-18', '2026-11-30']) for (const r of ['cartoes', 'planejamento', 'escritorio', 'lancamentos', 'orcamento']) {
+  // "pago por Bruno" num gasto da Casa "· Bruno" no diário e "quem fez: Ana" na feira são permitidos: a Casa e os lembretes do casal são dos 2 (nunca valor nem item pessoal do outro)
+  const DO_OUTRO = { ana: /Itaú|Salário Bruno|9\.000|(?<!pago por |· |quem fez: )Bruno/, bruno: /Nubank|Salário Ana|7\.000|anuidade de R\$|(?<!pago por |· |quem fez: )Ana/ }
+  for (const como of ['ana', 'bruno']) for (const dia of ['2026-11-01', '2026-11-07', '2026-11-12', '2026-11-18', '2026-11-30']) for (const r of ['cartoes', 'planejamento', 'escritorio', 'lancamentos', 'orcamento']) {
     const p = await abrir(b, como, r, dia, 21)
     let t = await textoEAtributos(p)
     if (r === 'escritorio') for (const f of await p.$$('button.li[data-func]')) { if (!(await f.isVisible())) continue; await f.click({ timeout: 3000 }).catch(() => {}); await p.waitForTimeout(250); t += await textoEAtributos(p); await p.keyboard.press('Escape') }
-    // o Romero aparece pra Andreza só no placar e como "pago por" na Casa: aqui nenhuma dessas telas pode mostrar
+    // o Bruno aparece pra Ana só no placar e como "pago por" na Casa: aqui nenhuma dessas telas pode mostrar
     const m = t.match(DO_OUTRO[como]); ok(!m, `A3 ${como} ${r} ${dia}: aparece coisa do outro: "${m && m[0]}"`)
     await p.close()
   }
-  { const p = await abrir(b, 'andreza', 'privacidade'); ok(/cada um vê o seu e a Casa; juntos, o placar/i.test(await p.textContent('body')), 'A3: texto novo da Privacidade'); await p.close() }
+  { const p = await abrir(b, 'ana', 'privacidade'); ok(/cada um vê o seu e a Casa; juntos, o placar/i.test(await p.textContent('body')), 'A3: texto novo da Privacidade'); await p.close() }
 
   }
   /* ---------- A4: olho esconde todo valor ---------- */
   if (SO.includes('A4')) {
-  for (const como of ['andreza', 'romero', 'autonoma']) for (const r of ['inicio', 'escritorio', 'guardado', 'cartoes', 'planejamento', 'orcamento', 'lancamentos', 'casa']) {
+  for (const como of ['ana', 'bruno', 'autonoma']) for (const r of ['inicio', 'escritorio', 'guardado', 'cartoes', 'planejamento', 'orcamento', 'lancamentos', 'casa']) {
     const p = await abrir(b, como, r, '2026-11-18', 21)
     await p.click('.top .olho'); await p.waitForTimeout(400)
     const ver = async onde => { const t = await textoEAtributos(p); const m = t.match(/R\$[\s ]*\d[^\n]{0,25}/); ok(!m, `A4 olho ${como} ${onde}: ainda aparece "${m && m[0]}"`) }
@@ -117,7 +117,7 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
   /* ---------- A5: nenhum "-R$" ---------- */
   if (SO.includes('A5')) {
   const NEG = /[-−–]\s?R\$|R\$[\s ]*[-−–]/
-  for (const como of ['andreza', 'romero', 'filha', 'autonoma']) for (const dia of ['2026-11-12', '2026-11-13', '2026-11-18', '2026-11-30', '2026-12-01']) for (const r of ['inicio', 'orcamento', 'casa', 'cartoes', 'planejamento', 'lancamentos', 'guardado', 'escritorio']) {
+  for (const como of ['ana', 'bruno', 'filha', 'autonoma']) for (const dia of ['2026-11-12', '2026-11-13', '2026-11-18', '2026-11-30', '2026-12-01']) for (const r of ['inicio', 'orcamento', 'casa', 'cartoes', 'planejamento', 'lancamentos', 'guardado', 'escritorio']) {
     const p = await abrir(b, como, r, dia, 21)
     ok(!NEG.test(await textoEAtributos(p)), `A5 ${como} ${r} ${dia}: tem "-R$"`)
     // cada "?" e "De onde veio" aberto

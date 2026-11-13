@@ -5,7 +5,9 @@ export type Centavos = number
 export type Mes = string /* 'AAAA-MM' */
 export type Taxa = string /* '0.1375' */
 
-export interface Aplicacao { id: string; titular: string | null; banco: string; saldo: Centavos; taxa_bruta_anual: Taxa; isenta: boolean; aplicada_em: string; resgate_previsto: string | null; conta_conjunta_titulares: number; fgc: boolean }
+// Mudança do REVISOR (C5, 13/11): conta_conjunta_titulares (número) virou titulares (lista de membros da conta),
+// pra cada titular da conjunta receber a parte dele no FGC. titular continua sendo o dono que a tela mostra.
+export interface Aplicacao { id: string; titular: string | null; titulares: string[]; banco: string; saldo: Centavos; taxa_bruta_anual: Taxa; isenta: boolean; aplicada_em: string; resgate_previsto: string | null; fgc: boolean }
 export interface Recebimento { id: string; dono: string; valor: Centavos; mes_previsto: Mes; mes_novo: Mes | null; certo: boolean; recebido: boolean }
 export interface Desejo { id: string; dono: string; valor: Centavos; mes: Mes; volta_de: 'nada' | 'contrato' | 'investimento' | 'venda'; volta: Centavos; volta_mes: Mes | null; antecipado: Centavos | null; volta_certa: boolean }
 export interface Parametros { mes_base: Mes; virada: Mes /* '2029-01' */; gasto_2029_hoje: Centavos; renda_certa_2029: Centavos; margem: Taxa; taxa_real_trabalho: Taxa; taxa_bruta_ano: Record<number, Taxa>; ipca_ano: Record<number, Taxa>; aliq_proj: Taxa; piso_meses: number; teto_mes: Centavos; mes_reajuste: number }

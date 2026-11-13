@@ -63,15 +63,15 @@ function criar(): Estado {
       { id: 'lb2', titulo: 'Pagar a escola das crianças', detalhe: null, quando: emRecife(somaDias(hoje, 3)), repetir: 'mes', para: 'casal', funcionario: 'secretaria', feito_em: null },
     ],
     diario: [
-      { id: 'd1', ref: 'lembrete:antigo', funcionario: 'secretaria', assunto: 'Levar o carro na revisão', pergunta: 'Você me pediu pra lembrar: levar o carro na revisão. Já fez?', resposta: 'Já fiz', quando: emRecife(somaDias(hoje, -2), 18), perguntado_em: emRecife(somaDias(hoje, -2), 9), adiado_ate: null, respondido_por: 'Andreza' },
-      { id: 'd2', ref: 'gas:antigo', funcionario: 'comprador', assunto: 'Troca do gás', pergunta: 'O gás acaba em 5 dias. Já pediu?', resposta: 'Já pedi o gás', quando: emRecife(somaDias(hoje, -3), 10), perguntado_em: emRecife(somaDias(hoje, -3), 8), adiado_ate: null, respondido_por: 'Romero' },
-      { id: 'd3', ref: 'feira_nota:antiga', funcionario: 'fiscal', assunto: `Nota da feira de ${dataCurta(somaDias(seg, -7))}`, pergunta: 'A feira está sem a nota.', resposta: 'Anexei a nota', quando: emRecife(somaDias(seg, -6), 11), perguntado_em: emRecife(somaDias(seg, -7), 19), adiado_ate: null, respondido_por: 'Andreza' },
+      { id: 'd1', ref: 'lembrete:antigo', funcionario: 'secretaria', assunto: 'Levar o carro na revisão', pergunta: 'Você me pediu pra lembrar: levar o carro na revisão. Já fez?', resposta: 'Já fiz', quando: emRecife(somaDias(hoje, -2), 18), perguntado_em: emRecife(somaDias(hoje, -2), 9), adiado_ate: null, respondido_por: 'Ana' },
+      { id: 'd2', ref: 'gas:antigo', funcionario: 'comprador', assunto: 'Troca do gás', pergunta: 'O gás acaba em 5 dias. Já pediu?', resposta: 'Já pedi o gás', quando: emRecife(somaDias(hoje, -3), 10), perguntado_em: emRecife(somaDias(hoje, -3), 8), adiado_ate: null, respondido_por: 'Bruno' },
+      { id: 'd3', ref: 'feira_nota:antiga', funcionario: 'fiscal', assunto: `Nota da feira de ${dataCurta(somaDias(seg, -7))}`, pergunta: 'A feira está sem a nota.', resposta: 'Anexei a nota', quando: emRecife(somaDias(seg, -6), 11), perguntado_em: emRecife(somaDias(seg, -7), 19), adiado_ate: null, respondido_por: 'Ana' },
     ],
     fatBanco: [],
     // a feira desta semana (se a semana já chegou na segunda à noite) está sem nota; a da semana passada está em dia
     feiras: [
-      { id: 'fe0', semana: somaDias(seg, -7), data: somaDias(seg, -7), valor: 312.4, loja: 'Mercadinho', tem_nota: true, sem_nota_motivo: null, feita_por: 'Andreza' },
-      ...(hoje > seg ? [{ id: 'fe1', semana: seg, data: seg, valor: 312.4, loja: 'Mercadinho', tem_nota: false, sem_nota_motivo: null, feita_por: 'Andreza' }] : []),
+      { id: 'fe0', semana: somaDias(seg, -7), data: somaDias(seg, -7), valor: 312.4, loja: 'Mercadinho', tem_nota: true, sem_nota_motivo: null, feita_por: 'Ana' },
+      ...(hoje > seg ? [{ id: 'fe1', semana: seg, data: seg, valor: 312.4, loja: 'Mercadinho', tem_nota: false, sem_nota_motivo: null, feita_por: 'Ana' }] : []),
     ],
     itens,
     contagens: [{ id: 'ct0', semana: somaDias(seg, -7), data: somaDias(seg, -6), contado_por: 'Carla', itens: itens.map((i, k) => ({ item_id: i.id, estado: (k === 3 ? 'acabou' : k === 5 ? 'pouco' : 'tem') as EstadoItem })) }],
@@ -85,7 +85,7 @@ export function reiniciarExemplo2() { e = criar() }
 export function guardadoHojeEx(eu?: string | null): GuardadoHoje {
   const meus = eu === undefined ? e.apps : e.apps.filter(a => !(a as any).titular || (a as any).titular === eu)
   const g = calcularGuardado(meus, hojeRecife(), CDI)
-  const nome = (id: string | null | undefined) => (id === 'm-andreza' ? 'Andreza' : id === 'm-romero' ? 'Romero' : id === 'm-bia' ? 'Bia' : id === 'm-claudia' ? 'Cláudia' : null)
+  const nome = (id: string | null | undefined) => (id === 'm-ana' ? 'Ana' : id === 'm-bruno' ? 'Bruno' : id === 'm-bia' ? 'Bia' : id === 'm-claudia' ? 'Cláudia' : null)
   for (const ap of g.aplicacoes) { const t = (meus.find(a => a.id === ap.id) as any)?.titular ?? null; ap.titular = t; ap.titular_nome = nome(t) }
   g.seu_total = centavos(g.aplicacoes.filter(a => a.titular && a.titular === eu).reduce((s, a) => s + a.saldo, 0))
   if (eu) g.saldo_30_seu = calcularGuardado(e.apps.filter(a => (a as any).titular === eu), hojeRecife(), CDI).saldo_30

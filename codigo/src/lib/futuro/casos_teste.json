@@ -557,8 +557,8 @@
    "formula": "F8",
    "entrada": {
     "teto_2027_sugerido": "31566.00",
-    "aprovou_romero": true,
-    "aprovou_andreza": false
+    "aprovou_pessoa_a": true,
+    "aprovou_pessoa_b": false
    },
    "saida_esperada": {
     "teto_vigente_2027": "30000.00",

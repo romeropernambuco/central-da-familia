@@ -1,5 +1,5 @@
 // A conta do envelope "por dia", igual à do banco (porte de produto._plano e _diario), mais as respostas que a
-// Andreza pediu: até domingo, ritmo do mês, valor de amanhã. Sem tela e sem rede: dá pra testar sozinho.
+// Ana pediu: até domingo, ritmo do mês, valor de amanhã. Sem tela e sem rede: dá pra testar sozinho.
 import { centavos, diasNoMes, segundaDaSemana, somaDias } from './formato'
 import { FERIADOS } from './guardado'
 

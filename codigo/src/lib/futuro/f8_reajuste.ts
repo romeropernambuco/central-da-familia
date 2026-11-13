@@ -22,7 +22,8 @@ export function tetoProjetado(teto_hoje: Centavos, mes_hoje: Mes, m: Mes, mes_re
   return t
 }
 
-/** O teto sugerido só vale com todos os adultos aprovando, a partir do mês seguinte à aprovação. */
+/** O teto sugerido só vale com todos os adultos aprovando (quem chama passa 1 voto por adulto),
+ *  a partir do mês seguinte à aprovação. */
 export function tetoVigente(
   atual: Centavos,
   sugerido: Centavos,
@@ -30,7 +31,7 @@ export function tetoVigente(
   aprovado_em: Mes | null,
   m: Mes,
 ): { teto: Centavos; situacao: 'sugestao pendente' | 'aprovado' | 'aprovado, vale no mes seguinte' } {
-  const todos = aprovacoes.length >= 2 && aprovacoes.every(Boolean)
+  const todos = aprovacoes.length >= 1 && aprovacoes.every(Boolean) // todos os adultos da família (1 basta se só há 1; REVISOR C4)
   if (!todos || aprovado_em === null) return { teto: atual, situacao: 'sugestao pendente' }
   if (compararMes(m, aprovado_em) <= 0) return { teto: atual, situacao: 'aprovado, vale no mes seguinte' }
   return { teto: sugerido, situacao: 'aprovado' }

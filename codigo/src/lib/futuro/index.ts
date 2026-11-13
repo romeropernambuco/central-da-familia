@@ -93,25 +93,33 @@ export function impacto2029(e: FuturoEntrada, desvio: { mes: Mes; valor: Centavo
   return impactoDesvio(desvio.valor, desvio.mes, taxasDe(e))
 }
 
-/** F7 "Cabe?": roda a linha com o desejo. Cabe = nenhum mês abaixo do piso e folga ≥ 0.
- *  "Cabe, mas tira" = nenhum mês abaixo do piso, só a folga de 2029 fica negativa.
- *  "Ainda não cabe" = 1º mês abaixo do piso e 1º mês (até o último da linha) em que caberia. */
+/** F7 "Cabe?" (REVISOR C3): compara a linha COM o desejo contra a linha SEM ele.
+ *  Mês derrubado = abaixo do piso com o desejo e não sem ele.
+ *  "Ainda não cabe" = o desejo derruba algum mês; mostra o 1º e o 1º mês (até o último da linha) em que caberia.
+ *  "Apertado sem o desejo" = a família já fica abaixo do piso sem ele e o desejo não derruba mês novo: mostra só o custo.
+ *  "Cabe" = nada abaixo do piso e folga ≥ 0. "Cabe, mas tira" = nada abaixo do piso, só a folga de 2029 fica negativa. */
 export function cabeDesejo(e: FuturoEntrada, desejo: Desejo): {
-  situacao: 'cabe' | 'cabe, mas tira' | 'ainda nao cabe'
+  situacao: 'cabe' | 'cabe, mas tira' | 'ainda nao cabe' | 'apertado sem o desejo'
   tira_por_mes_2029: Centavos | null
   primeiro_mes_abaixo: Mes | null
   caberia_em: Mes | null
+  apertado_sem_desejo: Mes | null /* 1º mês abaixo do piso na linha sem o desejo */
 } {
   const tira = avaliarDesejo(desejo, taxasDe(e)).impacto_renda_mensal
   const roda = (d: Desejo) => futuro({ ...e, desejos: [...e.desejos, d] })
-  const abaixo = (s: FuturoSaida) => s.linha.find((l) => l.fica_devendo > 0)?.mes ?? null
+  const semDesejo = futuro(e)
+  const apertado = semDesejo.linha.find((l) => l.fica_devendo > 0)?.mes ?? null
+  const derrubado = (s: FuturoSaida) => s.linha.find((l, i) => l.fica_devendo > 0 && semDesejo.linha[i].fica_devendo === 0)?.mes ?? null
   const s = roda(desejo)
-  const primeiro = abaixo(s)
-  if (primeiro === null) return { situacao: s.folga >= 0 ? 'cabe' : 'cabe, mas tira', tira_por_mes_2029: tira, primeiro_mes_abaixo: null, caberia_em: null }
+  const primeiro = derrubado(s)
+  if (primeiro === null) {
+    const situacao = apertado !== null ? 'apertado sem o desejo' : s.folga >= 0 ? 'cabe' : 'cabe, mas tira'
+    return { situacao, tira_por_mes_2029: tira, primeiro_mes_abaixo: null, caberia_em: null, apertado_sem_desejo: apertado }
+  }
   const ultimo = mesAnterior(e.parametros.virada)
   let caberia: Mes | null = null
   for (let m = proximoMes(desejo.mes); compararMes(m, ultimo) <= 0; m = proximoMes(m)) {
-    if (abaixo(roda({ ...desejo, mes: m })) === null) { caberia = m; break }
+    if (derrubado(roda({ ...desejo, mes: m })) === null) { caberia = m; break }
   }
-  return { situacao: 'ainda nao cabe', tira_por_mes_2029: tira, primeiro_mes_abaixo: primeiro, caberia_em: caberia }
+  return { situacao: 'ainda nao cabe', tira_por_mes_2029: tira, primeiro_mes_abaixo: primeiro, caberia_em: caberia, apertado_sem_desejo: apertado }
 }

@@ -119,7 +119,7 @@ export function Planejamento() {
           {!sozinho && casaTotal > 0 && <p className="sub" style={{ marginBottom: 8 }}>A Casa (feira e contas) tem {reais(casaTotal)} por mês, da família toda.</p>}
           <ul className="list">{rendas.map(r => <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}><span className="m"><b>{r.nome}</b><small>{r.tipo === 'extra' ? 'entrou a mais: vai pra reserva' : r.tipo === 'variavel' ? `muda todo mês: de ${reais(r.fraco || r.valor)} a ${reais(r.bom || r.valor)}. A conta usa o mês fraco.` : 'salário'}</small></span><span className="v"><Din v={r.tipo === 'variavel' ? r.fraco || r.valor : r.valor} /></span></li>)}</ul>
           {doTrabalho > 0 && <p className="sub" style={{ marginTop: 8 }}>Este mês já entrou do seu trabalho: <b>{reais(doTrabalho)}</b>.</p>}
-          {/* C17 (ROMERO ideia 2): a regra do salário cumprida, em 1 linha */}
+          {/* C17 (BRUNO ideia 2): a regra do salário cumprida, em 1 linha */}
           {extra && (extra.entrou > 0
             ? <p className={'todo ' + (extra.guardado >= extra.entrou ? 'ok' : 'warn')} style={{ marginTop: 10 }}>{extra.guardado >= extra.entrou ? <CircleCheck size={20} aria-hidden="true" /> : null}<span>Entrou a mais este mês: <b>{reais(extra.entrou)}</b>. Foi pra reserva: <b>{reais(extra.guardado)}</b>. {extra.guardado >= extra.entrou ? 'Regra cumprida.' : `Falta guardar ${reais(centavos(extra.entrou - extra.guardado))}.`}</span></p>
             : <p className="sub" style={{ marginTop: 10 }}>Este mês não entrou dinheiro a mais. Quando entrar, ele vai pra reserva (fica guardado, fora do gasto do mês).</p>)}

@@ -72,7 +72,7 @@ export function Inicio() {
         </section>
       )}
 
-      {/* rodada 2 (ROMERO ideia 1): o placar do casal, só o que vem pela frente, sem item de ninguém */}
+      {/* rodada 2 (BRUNO ideia 1): o placar do casal, só o que vem pela frente, sem item de ninguém */}
       <Placar r={resumo} />
       {/* logo abaixo do número do dia: quanto o dinheiro guardado rendeu hoje (só o casal) */}
       <CartaoGuardado />

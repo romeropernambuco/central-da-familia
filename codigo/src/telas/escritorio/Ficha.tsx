@@ -212,7 +212,7 @@ function CadCartao() {
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
         sub={c => <>{c.titular ? `de ${c.titular} · ` : ''}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Ana' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).map(m => [m.id, m.nome] as [string, string]), ['', 'Não dizer']] },
+          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).map(m => [m.id, m.nome] as [string, string]), ['', 'Não dizer']] },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
           { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
@@ -407,7 +407,7 @@ function CadContador() {
         if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n]))) throw new Error('Não deu pra salvar. Tente de novo.')
       }} />
   )
-  return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Ana')}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
+  return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena')}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
 }
 
 /** Pergunta de quem? Casa pelo id ou pelo nome do funcionário. */

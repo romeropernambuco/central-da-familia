@@ -5,9 +5,11 @@
 //   3. casos do ECONOMISTA (src/lib/futuro/casos.test.ts): mostra quantos de 39 passam.
 //      Só reprova o conjunto com --exigir-3 (vira obrigatório quando o MOTOR entregar a E1b).
 //   6. build de produção sem nenhum dado de exemplo; build de exemplo continua saindo com o exemplo
+//   6b. nenhum nome real da família no código-fonte (só a impressão digital dos nomes fica aqui)
 //   7. nenhuma chave secreta no build nem no código (só a publicável pode existir)
 // Opções: --so=1,2  (roda só esses)   --exigir-3   (casos do motor passam a reprovar)
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, sep } from 'node:path'
@@ -18,6 +20,10 @@ const args = process.argv.slice(2)
 const so = (args.find(a => a.startsWith('--so=')) || '').slice(5).split(',').filter(Boolean)
 const exigir3 = args.includes('--exigir-3')
 const roda = n => so.length === 0 || so.includes(String(n))
+// impressão digital de um nome (portão 6b): node scripts/portoes.mjs --impressao Nome
+const impressao = nome => createHash('sha256').update(nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()).digest('hex').slice(0, 16)
+const pedido = args.indexOf('--impressao')
+if (pedido >= 0) { console.log(`${args[pedido + 1]}: ${impressao(args[pedido + 1] || '')}`); process.exit(0) }
 
 const resultado = []
 const anota = (n, nome, ok, detalhe, obrigatorio = true) => {
@@ -26,12 +32,12 @@ const anota = (n, nome, ok, detalhe, obrigatorio = true) => {
 }
 const rodar = (cmd, a, extra = {}) => spawnSync(cmd, a, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...extra })
 
-function listar(pasta) {
+function listar(pasta, pularPasta = null) {
   if (!existsSync(pasta)) return []
   const out = []
   for (const n of readdirSync(pasta)) {
     const p = join(pasta, n)
-    if (statSync(p).isDirectory()) out.push(...listar(p))
+    if (statSync(p).isDirectory()) { if (!pularPasta || !pularPasta.test(n)) out.push(...listar(p, pularPasta)) }
     else out.push(p)
   }
   return out
@@ -105,7 +111,8 @@ if (roda(2) || roda(3)) {
 
 // ---------- 6. build de produção sem exemplo ----------
 if (roda(6)) {
-  const PROIBIDO = /Silva|Souza|dadosTeste|Nubank|como=/
+  // C1 (revisão E0): também os nomes da família de exemplo (Ana, Bruno, Bia, Cláudia, Carla) não podem chegar ao build
+  const PROIBIDO = /Silva|Souza|dadosTeste|Nubank|como=|\b(Ana|Bruno|Bia|Cláudia|Claudia|Carla)\b/
   rmSync(join(RAIZ, 'dist'), { recursive: true, force: true })
   const b = rodar('npx', ['vite', 'build'])
   if (b.status !== 0) anota(6, 'build de produção sem exemplo', false, `o build de produção quebrou:\n${(b.stdout + b.stderr).slice(-1500)}`)
@@ -121,6 +128,25 @@ if (roda(6)) {
     anota(6, 'build de produção sem exemplo', ok,
       `${js.length} arquivo(s) js em dist/assets, ${achados.length} achado(s) de ${PROIBIDO.source}${achados.length ? `:\n  ${achados.join('\n  ')}` : ''}. Build de exemplo: ${e.status === 0 ? (exemploTemFamilia ? 'saiu, com a família de exemplo' : 'saiu SEM a família de exemplo (a troca quebrou)') : 'quebrou'}.`)
   }
+}
+
+// ---------- 6b. nenhum nome real da família no código-fonte (C1 da revisão E0) ----------
+// O repositório é público: nome real não pode estar em código, teste, exemplo ou comentário.
+// Os nomes não ficam escritos aqui (seria vazar no próprio portão): guardo só a impressão digital (sha256, 16 letras)
+// de cada nome em minúsculas e sem acento. Pra pôr um nome novo na lista: node scripts/portoes.mjs --impressao Nome
+// Fora da busca: src/lib/futuro/casos_teste.json (do MOTOR, que vai trocar as chaves dele).
+const NOMES_REAIS = new Set(['ea796cd69664e39e', 'f3d8f6ef539025ac', 'bbe47010dd7d075f']) // 2 do casal e o sobrenome
+const FORA_DA_BUSCA = /(^|\/)(node_modules|dist|dist-[^/]+|\.git|prints)(\/|$)|\.(png|jpg|jpeg|webp|ico|woff2?)$|^src\/lib\/futuro\/casos_teste\.json$/
+if (roda(6)) {
+  const arquivos = listar(RAIZ, /^(node_modules|\.git|dist|dist-.+|prints)$/).filter(f => !FORA_DA_BUSCA.test(relative(RAIZ, f).split(sep).join('/')))
+  const achados = []
+  for (const f of arquivos) {
+    let txt; try { txt = readFileSync(f, 'utf8') } catch { continue }
+    const linhas = txt.split('\n')
+    linhas.forEach((l, i) => { for (const p of l.match(/[A-Za-zÀ-ÿ]+/g) || []) if (NOMES_REAIS.has(impressao(p))) achados.push(`${relative(RAIZ, f).split(sep).join('/')}:${i + 1}`) })
+  }
+  anota('6b', 'nenhum nome real da família no código-fonte', achados.length === 0,
+    `${arquivos.length} arquivo(s) olhados, ${achados.length} achado(s)${achados.length ? ` (linha, sem mostrar o nome):\n  ${[...new Set(achados)].slice(0, 30).join('\n  ')}` : '.'}`)
 }
 
 // ---------- 7. nenhuma chave secreta ----------

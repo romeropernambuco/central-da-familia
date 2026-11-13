@@ -6,14 +6,14 @@ App instalável no iPhone, com o código separado por tela (`src/telas/<tela>/`)
 - **Modo exemplo:** é um build à parte (`npm run build:exemplo`, pasta `dist-exemplo`, ou `npm run dev:exemplo`). O site oficial nunca abre o exemplo, nem com `?exemplo=1`: o build de produção não leva a família de exemplo (portão 6).
 - **Códigos do exemplo:** e-mail com o código 123456; equipe da casa com 2468.
 
-## Subir no GitHub Pages (repo romeropernambuco/central-da-familia), sem terminal
+## Subir no GitHub Pages (repo brunopernambuco/central-da-familia), sem terminal
 
 O que vai pro site é a pasta `dist` que já está dentro do zip. Ela foi montada com o banco real configurado.
 
 ### No Windows (Chrome ou Edge)
 
 1. Descompacte `central-app.zip` (clique direito, depois "Extrair tudo").
-2. Abra github.com/romeropernambuco/central-da-familia.
+2. Abra github.com/brunopernambuco/central-da-familia.
 3. Toque em **Add file**, depois em **Upload files**.
 4. Abra a pasta `dist` que você extraiu. Selecione **tudo o que está dentro dela** (Ctrl+A) e arraste pra página.
    - Arraste o conteúdo da pasta, não a pasta.

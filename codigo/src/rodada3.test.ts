@@ -129,25 +129,25 @@ describe('formatações', () => {
 
 describe('formato do BANCO2.md (modo real)', () => {
   it('funcionário com nome comprido vira o curto; fala, partes, abre e pede2 passam; diário com data e hora prontas', () => {
-    const e = normalizaEscritorio({ precisa_de_voce: [{ id: 'fatura:c:2026-11', funcionario: 'analista_cartao', curta: 'Fatura do Nubank', pergunta: 'Andreza, a fatura...', contexto: 'Faltam 3 dias.', partes: { vi: 'a', importa: 'b', sugiro: 'c' }, valor: 1062, dias_esperando: 2, opcoes: [{ id: 'foi_feita', rotulo: 'Foi feita', pede: 'valor', pede2: 'data' }, { id: 'lancar', rotulo: 'Anotar agora', abre: 'lancar' }] }],
+    const e = normalizaEscritorio({ precisa_de_voce: [{ id: 'fatura:c:2026-11', funcionario: 'analista_cartao', curta: 'Fatura do Nubank', pergunta: 'Ana, a fatura...', contexto: 'Faltam 3 dias.', partes: { vi: 'a', importa: 'b', sugiro: 'c' }, valor: 1062, dias_esperando: 2, opcoes: [{ id: 'foi_feita', rotulo: 'Foi feita', pede: 'valor', pede2: 'data' }, { id: 'lancar', rotulo: 'Anotar agora', abre: 'lancar' }] }],
       entregue: [{ funcionario: 'gestor_guardado', resumo: 'x', numero: 1 }],
-      funcionarios: [{ id: 'guardiao_colchao', nome: 'Guardião da Reserva', sala: 'Caixa', estado: 'entregue', frase: 'A reserva está inteira.', faz: ['1', '2', '3'], cadastro_resumo: { titulo: 'A reserva', itens: [] }, ultimas_respostas: [{ id: 'd', data: '01/01', hora: '10:05', pergunta_curta: 'Reserva', resposta: 'Já repus', por: 'Andreza', anotado: 'anotado às 10:05' }] }] })
+      funcionarios: [{ id: 'guardiao_colchao', nome: 'Guardião da Reserva', sala: 'Caixa', estado: 'entregue', frase: 'A reserva está inteira.', faz: ['1', '2', '3'], cadastro_resumo: { titulo: 'A reserva', itens: [] }, ultimas_respostas: [{ id: 'd', data: '01/01', hora: '10:05', pergunta_curta: 'Reserva', resposta: 'Já repus', por: 'Ana', anotado: 'anotado às 10:05' }] }] })
     expect(e.precisa_de_voce[0]).toMatchObject({ funcionario: 'cartao', assunto: 'Fatura do Nubank', espera_dias: 2, valor: 1062, partes: { vi: 'a' } })
     expect(e.precisa_de_voce[0].opcoes).toEqual([{ id: 'foi_feita', rotulo: 'Foi feita', pede: 'valor', pede2: 'data' }, { id: 'lancar', rotulo: 'Anotar agora', abre: 'lancar' }])
     expect(e.entregue[0].funcionario).toBe('guardado')
     expect(e.funcionarios[0]).toMatchObject({ id: 'colchao', faz: ['1', '2', '3'], cadastro_resumo: 'A reserva' })
-    expect(e.funcionarios[0].ultimas_respostas![0]).toMatchObject({ assunto: 'Reserva', resposta: 'Já repus', respondido_por: 'Andreza', quando_txt: '01/01, 10:05' })
+    expect(e.funcionarios[0].ultimas_respostas![0]).toMatchObject({ assunto: 'Reserva', resposta: 'Já repus', respondido_por: 'Ana', quando_txt: '01/01, 10:05' })
     expect(idFuncNoBanco('fiscal')).toBe('fiscal_feira'); expect(idFuncNoBanco('contador')).toBe('contador')
   })
   it('custo do gasto vem em objeto; relatório por id; conta do Guardado sem sigla sozinha', () => {
     expect(normalizaCusto({ tem_guardado: true, ate_fim_do_mes: { dias_uteis: 12, bruto: 2.6, liquido: 2.09 }, em_12_meses: { liquido: 42.77 } })).toEqual({ ate_fim_do_mes: 2.09, em_12_meses: 42.77 })
     expect(normalizaCusto({ tem_guardado: false })).toEqual({ ate_fim_do_mes: 0, em_12_meses: 0 })
-    const r = normalizaRelatorio({ funcionarios: [{ id: 'fiscal_feira', nome: 'Fiscal da Feira', perguntas: 3, respondidas: 2, pendentes: 1, tempo_medio_min: 40 }], linha_do_tempo: [{ id: 'x', funcionario: 'fiscal_feira', quando: '2026-11-12T13:00:00Z', pergunta_curta: 'Nota', resposta: 'Anexei', por: 'Andreza' }] })
+    const r = normalizaRelatorio({ funcionarios: [{ id: 'fiscal_feira', nome: 'Fiscal da Feira', perguntas: 3, respondidas: 2, pendentes: 1, tempo_medio_min: 40 }], linha_do_tempo: [{ id: 'x', funcionario: 'fiscal_feira', quando: '2026-11-12T13:00:00Z', pergunta_curta: 'Nota', resposta: 'Anexei', por: 'Ana' }] })
     expect(r.funcionarios[0]).toMatchObject({ funcionario: 'fiscal', pendentes: 1 }); expect(r.diario[0]).toMatchObject({ funcionario: 'fiscal', assunto: 'Nota' })
     const g = normalizaGuardado({ aviso: 'hoje é sábado: rende de novo na segunda', aplicacoes: [{ id: 'a' }], explicacao: [{ linha: 'Caixinha: R$\u00a010.326,07 × taxa do dia × 100% do CDI', valor: 5.24 }, { linha: 'IOF dos primeiros dias', valor: -1 }] })
     expect(g.explicacao.map(x => x.linha)).toEqual(['Caixinha: R$\u00a010.326,07 × taxa do dia × 100% da taxa dos bancos', 'imposto de quem tira antes de 30 dias dos primeiros dias'])
     expect(g.motivo_zero).toBe('Hoje é sábado: rende de novo na segunda')
-    expect(normalizaCartao({ id: 'c', apelido: 'Nubank do Romero', dia_fechamento: 8, dia_vencimento: 15, titular_nome: 'Romero', limite: '5000', taxa_valor: 480, taxa_periodo: 'ano', taxa_mes: 12 })).toMatchObject({ nome: 'Nubank do Romero', dia_fechamento: 8, titular: 'Romero', titular_id: null, limite: 5000, taxa_periodo: 'ano' })
+    expect(normalizaCartao({ id: 'c', apelido: 'Nubank do Bruno', dia_fechamento: 8, dia_vencimento: 15, titular_nome: 'Bruno', limite: '5000', taxa_valor: 480, taxa_periodo: 'ano', taxa_mes: 12 })).toMatchObject({ nome: 'Nubank do Bruno', dia_fechamento: 8, titular: 'Bruno', titular_id: null, limite: 5000, taxa_periodo: 'ano' })
   })
 })
 
@@ -155,7 +155,7 @@ describe('Guardado no exemplo: dia útil e sábado', () => {
   it('quinta rende; sábado rende 0 e diz por quê', async () => {
     em('2026-11-12')
     const qui = await apiExemplo.guardadoHoje(F)
-    // R3: Andreza vê as 3 no nome dela e a do casal (a do Romero não)
+    // R3: Ana vê as 3 no nome dela e a do casal (a do Bruno não)
     expect(qui.aplicacoes).toHaveLength(4); expect(qui.rendeu_hoje_liquido).toBeGreaterThan(10); expect(qui.motivo_zero).toBeNull()
     expect(centavos(qui.aplicacoes.reduce((s, a) => s + a.rendeu_hoje_liquido, 0))).toBeCloseTo(qui.rendeu_hoje_liquido, 1)
     em('2026-11-14')
@@ -224,7 +224,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
       expect((await fila()).find(x => x.id === p!.id)).toBeUndefined()
       const f = await doFunc(func)
       expect(f.ultimas_respostas![0].resposta).toMatch(resposta)
-      expect(f.ultimas_respostas![0].respondido_por).toBe('Andreza')
+      expect(f.ultimas_respostas![0].respondido_por).toBe('Ana')
       expect(hojeRecife(new Date(f.ultimas_respostas![0].quando))).toBe(dia)
       // e no Relatório
       const rel = await apiExemplo.escritorioRelatorio(F, dia, dia)
@@ -236,9 +236,9 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   }
   it('Guardião da Reserva: pergunta quando o livre do mês fica menor que a reserva, e guarda de onde o dinheiro volta', async () => {
     em('2026-11-12')
-    for (const id of ['env-andreza', 'env-romero', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
+    for (const id of ['env-ana', 'env-bruno', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
     const p = (await fila()).find(x => x.id.startsWith('colchao:'))!
-    expect(p.pergunta).toMatch(/^Andreza, a reserva da família \(o dinheiro que vocês combinaram nunca gastar\) está em R\$\s/)
+    expect(p.pergunta).toMatch(/^Ana, a reserva da família \(o dinheiro que vocês combinaram nunca gastar\) está em R\$\s/)
     await apiExemplo.escritorioResponder(F, p.id, 'repor', { texto: 'com o aluguel, dia 15' })
     expect((await doFunc('colchao')).ultimas_respostas![0].resposta).toBe('Dizer de onde volta e quando: com o aluguel, dia 15')
   })
@@ -252,13 +252,13 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   it('adiar volta na hora certa, com outra frase e lembrando a resposta anterior', async () => {
     em('2026-11-07') // sábado: a fatura do Nubank vence dia 10, faltam 3 dias
     const p1 = (await fila()).find(x => x.id.startsWith('fatura:car-nu'))!
-    expect(p1.pergunta).toMatch(/^Andreza, a fatura do Nubank está em R\$\s.* e vence terça, 10\/11\. Faltam 3 dias\. Já pagou\?$/)
+    expect(p1.pergunta).toMatch(/^Ana, a fatura do Nubank está em R\$\s.* e vence terça, 10\/11\. Faltam 3 dias\. Já pagou\?$/)
     await apiExemplo.escritorioResponder(F, p1.id, 'ainda_nao')
     expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-07', 23); expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-09', 8)
     const p2 = (await fila()).find(x => x.id === p1.id)!
-    expect(p2.pergunta).toMatch(/^Andreza, Dia 07\/11 você me respondeu "Ainda não paguei"\. a fatura do Nubank .* vence amanhã e você ainda não me disse se pagou\.$/)
+    expect(p2.pergunta).toMatch(/^Ana, Dia 07\/11 você me respondeu "Ainda não paguei"\. a fatura do Nubank .* vence amanhã e você ainda não me disse se pagou\.$/)
     expect(p2.contexto).toMatch(/juros e multa/)
     expect(p2.espera_dias).toBe(2)
     avanca('2026-11-12', 8)
@@ -290,7 +290,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => /ligar pro contador/.test(p.pergunta))).toBe(false)
     avanca('2026-11-13', 10)
     const p = (await fila()).find(x => /ligar pro contador/.test(x.pergunta))!
-    expect(p.pergunta).toBe('Andreza, você me pediu pra lembrar hoje: ligar pro contador. Já fez?')
+    expect(p.pergunta).toBe('Ana, você me pediu pra lembrar hoje: ligar pro contador. Já fez?')
     await apiExemplo.escritorioResponder(F, p.id, 'feito')
     const l = (await apiExemplo.lembretes(F)).find(x => x.titulo === 'Ligar pro contador')!
     expect(l.quando.slice(0, 10)).toBe('2026-12-13')
@@ -300,13 +300,13 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   })
   it('Analista de Cartão: cadastra cartão com anuidade, informa o valor do banco e pergunta da diferença', async () => {
     em('2026-11-12')
-    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-andreza', nome: 'Andreza' }, { id: 'm-romero', nome: 'Romero' }])
-    // rodada 2 (A3): cada um do casal vê só os cartões dele. O cartão do Romero cadastrado pela Andreza não aparece pra ela.
-    await apiExemplo.cartaoSalvar(F, { nome: 'Inter do Romero', banco: 'Inter', titular_id: 'm-romero', dia_fechamento: 2, dia_vencimento: 9 })
-    expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter do Romero')).toBeUndefined()
-    await apiExemplo.cartaoSalvar(F, { nome: 'Inter da Andreza', banco: 'Inter', titular_id: 'm-andreza', dia_vencimento: 15, taxa_valor: 19.9, taxa_periodo: 'mes' })
-    expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter da Andreza')).toMatchObject({ titular_id: 'm-andreza', titular: 'Andreza' })
-    expect((await fila()).find(p => p.id.startsWith('cartao_sem_dia:'))!.pergunta).toBe('Andreza, o cartão Inter da Andreza está sem o dia em que a fatura fecha.')
+    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-ana', nome: 'Ana' }, { id: 'm-bruno', nome: 'Bruno' }])
+    // rodada 2 (A3): cada um do casal vê só os cartões dele. O cartão do Bruno cadastrado pela Ana não aparece pra ela.
+    await apiExemplo.cartaoSalvar(F, { nome: 'Inter do Bruno', banco: 'Inter', titular_id: 'm-bruno', dia_fechamento: 2, dia_vencimento: 9 })
+    expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter do Bruno')).toBeUndefined()
+    await apiExemplo.cartaoSalvar(F, { nome: 'Inter da Ana', banco: 'Inter', titular_id: 'm-ana', dia_vencimento: 15, taxa_valor: 19.9, taxa_periodo: 'mes' })
+    expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter da Ana')).toMatchObject({ titular_id: 'm-ana', titular: 'Ana' })
+    expect((await fila()).find(p => p.id.startsWith('cartao_sem_dia:'))!.pergunta).toBe('Ana, o cartão Inter da Ana está sem o dia em que a fatura fecha.')
     await expect(apiExemplo.cartaoSalvar(F, { nome: 'X', final4: '12' })).rejects.toThrow(/4 últimos/)
     const fat = (await apiExemplo.faturas(F, 3)).find(f => f.total > 0)!
     await apiExemplo.faturaInformar(F, fat.cartao_id, fat.mes, { valor_banco: fat.total + 172 })
@@ -320,16 +320,16 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
     avanca('2026-11-16', 19)
     let f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Andreza, a feira desta semana ainda não apareceu aqui. Foi feita?')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira desta semana ainda não apareceu aqui. Foi feita?')
     expect(f[0].opcoes.map(o => o.rotulo)).toEqual(['Foi feita', 'Ainda não foi feita', 'Esta semana não vai ter'])
     const antes = (await apiExemplo.lancamentos(F, '2026-11')).length
     await apiExemplo.escritorioResponder(F, f[0].id, 'foi_feita', { data: '2026-11-16', valor: 1080 })
     expect((await apiExemplo.lancamentos(F, '2026-11')).length).toBe(antes + 1) // virou gasto no limite da Feira
     f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Andreza, a feira de 16/11 (R$\u00a01.080) está sem a nota.')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira de 16/11 (R$\u00a01.080) está sem a nota.')
     await apiExemplo.escritorioResponder(F, f[0].id, 'anexar_nota', { caminho: await apiExemplo.notaSubir(F, f[0].id.split(':')[1], 'exemplo') })
     f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Andreza, a contagem do estoque desta semana ainda não foi feita.')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a contagem do estoque desta semana ainda não foi feita.')
     const itens = (await apiExemplo.estoque(F)).itens.map((i, k) => ({ item_id: i.id, estado: (k < 3 ? 'acabou' : 'tem') as 'acabou' | 'tem' }))
     await apiExemplo.escritorioResponder(F, f[0].id, 'contar', { itens })
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
@@ -394,22 +394,22 @@ describe('falas dos funcionários: 4 partes, sem termo difícil, botão com verb
       }
     }
     // 1. quinta comum
-    em('2026-11-12', 10); registra('Quinta, 12/11, 10h (dia comum)', await apiExemplo.escritorioHoje(F), 'Andreza')
+    em('2026-11-12', 10); registra('Quinta, 12/11, 10h (dia comum)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 2. o mesmo dia às 21h, sem gasto anotado, e a reserva furada
     for (const l of await apiExemplo.lancamentos(F, '2026-11')) if (l.data === '2026-11-12') await apiExemplo.apagarLancamento(l.id)
-    for (const id of ['env-andreza', 'env-romero', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
-    avanca('2026-11-12', 21); registra('Quinta, 12/11, 21h (sem gasto anotado e com a reserva abaixo do combinado)', await apiExemplo.escritorioHoje(F), 'Andreza')
+    for (const id of ['env-ana', 'env-bruno', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
+    avanca('2026-11-12', 21); registra('Quinta, 12/11, 21h (sem gasto anotado e com a reserva abaixo do combinado)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 3. 2ª cobrança: 2 dias depois, lembrando o que foi respondido
     for (const p of (await fila()).filter(x => x.opcoes.some(o => o.id === 'ainda_nao'))) await apiExemplo.escritorioResponder(F, p.id, 'ainda_nao')
     await apiExemplo.escritorioResponder(F, 'lembrete:lb1', 'adiar_1_dia')
-    avanca('2026-11-14', 10); registra('Sábado, 14/11, 10h (2ª cobrança, 2 dias depois de responder "ainda não")', await apiExemplo.escritorioHoje(F), 'Andreza')
+    avanca('2026-11-14', 10); registra('Sábado, 14/11, 10h (2ª cobrança, 2 dias depois de responder "ainda não")', await apiExemplo.escritorioHoje(F), 'Ana')
     // 4. 3ª cobrança: mais 4 dias sem resposta
-    avanca('2026-11-18', 10); registra('Quarta, 18/11, 10h (3ª cobrança, 6 dias esperando)', await apiExemplo.escritorioHoje(F), 'Andreza')
+    avanca('2026-11-18', 10); registra('Quarta, 18/11, 10h (3ª cobrança, 6 dias esperando)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 5. dia 1: fecha o mês, confere o Guardado, guia do governo
-    em('2026-11-01', 9); registra('Domingo, 01/11, 9h (virada do mês)', await apiExemplo.escritorioHoje(F), 'Andreza')
+    em('2026-11-01', 9); registra('Domingo, 01/11, 9h (virada do mês)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 6. dia 5: salário, fatura que vence hoje; e segunda 16/11 às 19h com a feira por fazer
-    em('2026-11-05', 18); registra('Quinta, 05/11, 18h (dia do salário, fatura vencendo, prestador)', await apiExemplo.escritorioHoje(F), 'Andreza')
-    em('2026-11-16', 19); registra('Segunda, 16/11, 19h (feira da semana ainda não registrada)', await apiExemplo.escritorioHoje(F), 'Andreza')
+    em('2026-11-05', 18); registra('Quinta, 05/11, 18h (dia do salário, fatura vencendo, prestador)', await apiExemplo.escritorioHoje(F), 'Ana')
+    em('2026-11-16', 19); registra('Segunda, 16/11, 19h (feira da semana ainda não registrada)', await apiExemplo.escritorioHoje(F), 'Ana')
     exemploComoEquipe(); registra('Segunda, 16/11, 19h, equipe da casa (Carla): só a Casa, sem valor', await apiExemplo.escritorioHoje(F), 'Carla')
     // o que cada um faz e quando (parte 4 da ficha)
     linhas.push('\n### Ficha: "O que eu faço e quando"\n')

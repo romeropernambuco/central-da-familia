@@ -9,11 +9,15 @@ import { App } from './app/App'
 // tema: automático pelo celular; "claro" ou "escuro" se a pessoa escolher em Ajustes
 try { const t = localStorage.getItem('tema'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch { /* sem armazenamento */ }
 
-carregarApi().then(api => {
-  createRoot(document.getElementById('root')!).render(
+/** Abre o app. Se não der (banco sem endereço, pedaço que não baixou), a promessa falha e o main.tsx mostra a tela de falha. */
+export async function iniciar(): Promise<void> {
+  const api = await carregarApi()
+  const raiz = document.getElementById('root')
+  if (!raiz) throw new Error('Página sem o lugar do app (#root).')
+  createRoot(raiz).render(
     <StrictMode><Provedor api={api}><App /></Provedor></StrictMode>,
   )
-})
+}
 
 // app instalável: o service worker guarda a casca do app (não guarda dado de família)
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !import.meta.env.VITE_DEMO && !modoExemplo) {

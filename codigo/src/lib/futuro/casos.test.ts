@@ -12,7 +12,7 @@ import { impactoDesvio } from './f6_impacto'
 import { avaliarAntecipacao, avaliarDesejo } from './f7_desejo'
 import { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
 import { cortarPorMes2029, ficaDevendo, guardarPorMes } from './f9_falta'
-import { fgcConta } from './f10_fgc'
+import { avisosFGC, fgcConta } from './f10_fgc'
 import { futuro } from './index'
 import { mensal } from './decimal'
 import type { FuturoEntrada, LinhaMes, Taxa } from './tipos'
@@ -145,7 +145,8 @@ contas['F8-TETO'] = (e) => {
 }
 contas['F8-SEM-APROVACAO'] = (e) => {
   // Teto atual (30.000,00) é o teto_2026 do caso F8-TETO, que este caso continua.
-  const v = tetoVigente(c('30000.00'), c(e.teto_2027_sugerido), [e.aprovou_romero, e.aprovou_andreza], null, '2027-01')
+  // Chaves aprovou_pessoa_a/b: trocadas dos primeiros nomes reais (REVISOR C1); valores iguais aos do ECONOMISTA.
+  const v = tetoVigente(c('30000.00'), c(e.teto_2027_sugerido), [e.aprovou_pessoa_a, e.aprovou_pessoa_b], null, '2027-01')
   return { teto_vigente_2027: txt(v.teto), situacao: v.situacao }
 }
 contas['F9-MES'] = (e) => {
@@ -155,7 +156,14 @@ contas['F9-MES'] = (e) => {
   return { fica_devendo: txt(r[0].fica_devendo), data_para_quitar: r[0].devendo_ate ? MM(r[0].devendo_ate) : null, cor: semVermelho ? 'sem vermelho' : 'com sinal' }
 }
 contas['FGC-1'] = (e) => { const r = fgcConta(c(e.saldo_coberto), 1); return { garantido: txt(r.garantido_por_titular), fora_da_garantia: txt(r.fora), alerta: r.alerta } }
-contas['FGC-CONJUNTA'] = (e) => { const r = fgcConta(c(e.saldo), e.titulares); return { garantido_por_titular: txt(r.garantido_por_titular), fora_da_garantia: txt(r.fora) } }
+contas['FGC-CONJUNTA'] = (e) => {
+  const r = fgcConta(c(e.saldo), e.titulares)
+  // Pela lista de titulares (REVISOR C5): a soma do que fica fora de cada titular tem que dar o mesmo valor.
+  const lista = Array.from({ length: e.titulares }, (_, i) => `titular ${i + 1}`)
+  const avisos = avisosFGC([{ id: 'c', titular: lista[0], titulares: lista, banco: 'Banco A', saldo: c(e.saldo), taxa_bruta_anual: '0.10', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, fgc: true }])
+  expect(avisos.reduce((s, a) => s + a.fora, 0)).toBe(r.fora)
+  return { garantido_por_titular: txt(r.garantido_por_titular), fora_da_garantia: txt(r.fora) }
+}
 
 describe('Portão 3: 39 casos do ECONOMISTA, igualdade exata', () => {
   it('o arquivo tem 39 casos e cada um tem conta', () => {

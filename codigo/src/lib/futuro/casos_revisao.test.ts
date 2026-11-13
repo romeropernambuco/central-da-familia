@@ -13,7 +13,7 @@ import type { Aplicacao, Desejo, FuturoEntrada, Taxa } from './tipos'
 const TB: Record<number, Taxa> = { 2026: '0.1375', 2027: '0.125', 2028: '0.11' }
 const IP: Record<number, Taxa> = { 2026: '0.0522', 2027: '0.049', 2028: '0.04', 2029: '0.04' }
 const TAXAS = { taxa_bruta_ano: TB, aliq_proj: '0.225', virada: '2029-01', taxa_real_trabalho: '0.04' }
-const ap = (id: string, titular: string, saldo: number, conj = 1): Aplicacao => ({ id, titular, banco: 'Banco X (exemplo)', saldo, taxa_bruta_anual: '0.10', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, conta_conjunta_titulares: conj, fgc: true })
+const ap = (id: string, titular: string, saldo: number, titulares: string[] = [titular]): Aplicacao => ({ id, titular, titulares, banco: 'Banco X (exemplo)', saldo, taxa_bruta_anual: '0.10', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, fgc: true })
 const base: FuturoEntrada = {
   hoje: '2026-11-13', saldo_caixa: 20_000_000, aplicacoes: [ap('a1', 'T1', 80_000_000)], recebimentos: [], compromissos: [], dividas: [], desvios: [], desejos: [],
   parametros: { mes_base: '2026-11', virada: '2029-01', gasto_2029_hoje: 3_000_000, renda_certa_2029: 0, margem: '0.10', taxa_real_trabalho: '0.04', taxa_bruta_ano: TB, ipca_ano: IP, aliq_proj: '0.225', piso_meses: 6, teto_mes: 3_000_000, mes_reajuste: 1 },
@@ -51,7 +51,8 @@ describe('Revisão do ECONOMISTA: N1 a N5', () => {
   // Motivo: correção 2. Conta individual + conjunta no mesmo banco: cada conta limitada a 250 mil ÷ titulares,
   // depois o titular no banco limitado a 250 mil. Antes não saía aviso.
   it('N3 FGC misto', () => {
-    expect(avisosFGC([ap('i', 'T1', 10_000_000), ap('c', 'T1', 28_000_000, 2)])).toEqual([{ banco: 'Banco X (exemplo)', titular: 'T1', fora: 1_500_000 }])
+    // Com a lista de titulares (REVISOR C5), o 2º titular da conjunta também aparece; o valor de T1 é o do ECONOMISTA.
+    expect(avisosFGC([ap('i', 'T1', 10_000_000), ap('c', 'T1', 28_000_000, ['T1', 'T2'])])).toEqual([{ banco: 'Banco X (exemplo)', titular: 'T1', fora: 1_500_000 }, { banco: 'Banco X (exemplo)', titular: 'T2', fora: 1_500_000 }])
   })
   // Motivo: mês-base diferente de 11/2026.
   it('N4 gasto na virada com mês-base 06/2027', () => {

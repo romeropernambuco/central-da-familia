@@ -119,8 +119,8 @@ for (const [larg, alt, mobile] of [[390, 844, true], [1280, 800, false]]) {
   await page.keyboard.press('Escape')
   await page.click('button:has-text("Guardar dinheiro")'); await page.fill('.sheet .inp-rs input', '500'); await foto('52_guardado_guardar', false)
   await page.click('.sheet button:has-text("Anotar o que guardei")'); await page.waitForSelector('text=R$ 500 guardados em')
-  await page.click('button:has-text("Nova aplicação")'); await page.waitForSelector('.sheet input[placeholder^="Ex.: Nubank"]')
-  await page.fill('.sheet input[placeholder^="Ex.: Nubank"]', 'Inter'); await page.fill('.sheet .inp-rs input', '2000'); await foto('53_guardado_nova', false)
+  await page.click('button:has-text("Nova aplicação")'); await page.waitForSelector('.sheet input[placeholder^="Ex.: Inter"]')
+  await page.fill('.sheet input[placeholder^="Ex.: Inter"]', 'Inter'); await page.fill('.sheet .inp-rs input', '2000'); await foto('53_guardado_nova', false)
   if ((await page.$$('.sheet .campo')).length !== 4) relatorio.erros.push(`${larg}: nova aplicação tinha que ter 4 campos, tem ${(await page.$$('.sheet .campo')).length}`)
   await page.click('.sheet button:has-text("Guardar") >> nth=-1'); await page.waitForSelector('.li:has-text("Caixinha Inter")')
   await page.click('.li:has-text("Caixinha Inter")'); await page.waitForSelector('.sheet .exp'); await foto('54_guardado_aplicacao', false); await page.keyboard.press('Escape')
@@ -173,7 +173,7 @@ for (const [larg, alt, mobile] of [[390, 844, true], [1280, 800, false]]) {
   const fs = await page.evaluate(() => { const r = document.querySelector('.sheet').getBoundingClientRect(); return { esq: r.left, dir: r.right, topo: r.top, baixo: r.bottom, vw: innerWidth, vh: innerHeight } })
   if (mobile ? !(fs.esq === 0 && Math.abs(fs.baixo - fs.vh) < 2 && fs.topo > 20) : !(Math.abs(fs.dir - fs.vw) < 2 && fs.topo === 0 && fs.esq > fs.vw / 2)) relatorio.erros.push(`${larg}: ficha no lugar errado: ${JSON.stringify(fs)}`)
   // cadastro do Analista: novo cartão com mensalidade; fatura com o valor do banco
-  await page.click('[data-cad="Cartões"] button:has-text("Novo cartão")'); await page.fill('.cad-form input[placeholder^="Ex.: Nubank"]', 'Inter da Ana')
+  await page.click('[data-cad="Cartões"] button:has-text("Novo cartão")'); await page.fill('.cad-form input[placeholder^="Ex.: Inter"]', 'Inter da Ana')
   await page.click('.cad-form .campo:has-text("De quem é") .pill:has-text("Bruno")'); await page.fill('.cad-form .campo:has-text("Mensalidade ou anuidade") input', '19,90'); await page.click('.cad-form .pill:has-text("Todo mês")')
   await page.evaluate(() => [...document.querySelectorAll('.cad-form .campo')].find(c => /De quem é/.test(c.textContent)).scrollIntoView({ block: 'center' }))
   await foto('58_ficha_cartao_novo', false)
@@ -321,7 +321,7 @@ for (const [larg, alt, mobile] of [[390, 844, true], [1280, 800, false]]) {
   // tema escuro
   await page.emulateMedia({ colorScheme: 'dark' }); await vai('inicio', 'text=Hoje você pode gastar'); await foto('20_inicio_escuro'); await vai('guardado', '.guard-hoje .din.hero'); await foto('69_guardado_escuro'); await vai('escritorio', '.cena3d[data-modo="3d"]'); await page.waitForTimeout(1500); await foto('70_escritorio_escuro'); await page.emulateMedia({ colorScheme: 'light' })
   await vai('primeiro-uso', 'text=Quem é a família?'); await foto('21_primeiro_uso')
-  await page.fill('input[placeholder="Ex.: Família Silva"]', 'Família Silva'); await page.fill('input[placeholder="Ex.: Ana"]', 'Ana')
+  await page.fill('input[placeholder="Ex.: Família Oliveira"]', 'Família Silva'); await page.fill('input[placeholder="Ex.: Helena"]', 'Ana')
   await page.click('text=Criar a família'); await page.waitForSelector('text=Quanto cada um pode gastar no mês?'); await foto('22_primeiro_uso_limites')
   await page.click('text=Ver o número de hoje'); await page.waitForSelector('text=Chame a 2ª pessoa'); await foto('23_primeiro_uso_convite')
   await page.click('text=Continuar'); await page.waitForSelector('text=Chame uma família amiga'); await foto('24_primeiro_uso_pronto')

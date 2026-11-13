@@ -25,8 +25,8 @@ function criarDados() {
   const cartoes: Cartao[] = familiaTeste() === 'souza' ? [
     { id: 'car-nu', nome: 'Nubank', dia_fechamento: 3, dia_vencimento: 10, banco: 'Nubank', titular: 'Cláudia', titular_id: 'm-claudia', limite: 3000, taxa_valor: 0, taxa_periodo: 'mes', taxa_mes: null, taxa_isenta_acima: null, final4: '7788', ativo: true },
   ] : [
-    { id: 'car-nu', nome: 'Nubank', dia_fechamento: 3, dia_vencimento: 10, banco: 'Nubank', titular: 'Andreza', titular_id: 'm-andreza', limite: 8000, taxa_valor: 480, taxa_periodo: 'ano', taxa_mes: (m % 12) + 1, taxa_isenta_acima: null, final4: '4321', ativo: true },
-    { id: 'car-itau', nome: 'Itaú', dia_fechamento: 25, dia_vencimento: 5, banco: 'Itaú', titular: 'Romero', titular_id: 'm-romero', limite: 5000, taxa_valor: 0, taxa_periodo: 'mes', taxa_mes: null, taxa_isenta_acima: null, final4: null, ativo: true },
+    { id: 'car-nu', nome: 'Nubank', dia_fechamento: 3, dia_vencimento: 10, banco: 'Nubank', titular: 'Ana', titular_id: 'm-ana', limite: 8000, taxa_valor: 480, taxa_periodo: 'ano', taxa_mes: (m % 12) + 1, taxa_isenta_acima: null, final4: '4321', ativo: true },
+    { id: 'car-itau', nome: 'Itaú', dia_fechamento: 25, dia_vencimento: 5, banco: 'Itaú', titular: 'Bruno', titular_id: 'm-bruno', limite: 5000, taxa_valor: 0, taxa_periodo: 'mes', taxa_mes: null, taxa_isenta_acima: null, final4: null, ativo: true },
   ]
   const lanc: Lancamento[] = t.lanc as Lancamento[]
 
@@ -55,8 +55,8 @@ function criarDados() {
   }
   const ajustes: { mes: string; de: string; para: string; valor: number; id: string }[] = []
   const convites: ConviteFamilia[] = souza ? [{ id: 'cv1', nome: 'Cláudia', email: 'claudia@exemplo.com', papel: 'casal', situacao: 'entrou', entrou_em: '2026-11-01' }] : [
-    { id: 'cv1', nome: 'Romero', email: 'romero@exemplo.com', papel: 'casal', situacao: 'entrou', entrou_em: '2026-11-01' },
-    { id: 'cv2', nome: 'Andreza', email: 'andreza@exemplo.com', papel: 'casal', situacao: 'entrou', entrou_em: '2026-11-02' },
+    { id: 'cv1', nome: 'Bruno', email: 'bruno@exemplo.com', papel: 'casal', situacao: 'entrou', entrou_em: '2026-11-01' },
+    { id: 'cv2', nome: 'Ana', email: 'ana@exemplo.com', papel: 'casal', situacao: 'entrou', entrou_em: '2026-11-02' },
     { id: 'cv3', nome: 'Bia', email: 'bia@exemplo.com', papel: 'pessoa', situacao: 'entrou', entrou_em: '2026-11-03' },
     { id: 'cv4', nome: 'Vó Lúcia', email: 'lucia@exemplo.com', papel: 'pessoa', situacao: 'esperando', enviado_em: somaDias(hoje, -2) },
   ]
@@ -67,11 +67,11 @@ function criarDados() {
 }
 
 let db = criarDados()
-type Logado = 'andreza' | 'romero' | 'filha' | 'carla' | 'claudia'
+type Logado = 'ana' | 'bruno' | 'filha' | 'carla' | 'claudia'
 const logadoInicial = (): Logado => (pessoaDoTeste === 'equipe' ? 'carla' : pessoaDoTeste === 'autonoma' ? 'claudia' : pessoaDoTeste)
 let logado: Logado | null = logadoInicial()
 /** Quem está logado no exemplo, com papel e limite próprio. */
-const membroLogado = () => { const ms = membrosTeste(); return ms.find(x => x.id === (logado === 'romero' ? 'm-romero' : logado === 'filha' ? 'm-bia' : logado === 'claudia' ? 'm-claudia' : 'm-andreza')) || ms[0] }
+const membroLogado = () => { const ms = membrosTeste(); return ms.find(x => x.id === (logado === 'bruno' ? 'm-bruno' : logado === 'filha' ? 'm-bia' : logado === 'claudia' ? 'm-claudia' : 'm-ana')) || ms[0] }
 const papelLogado = (): 'casal' | 'pessoa' | 'equipe' => (logado === 'carla' ? 'equipe' : membroLogado().papel)
 /** Cartões que quem olha enxerga (rodada 2): cada um do casal, só os dele; pessoa e equipe, nenhum. */
 const cartoesVisiveis = () => (papelLogado() !== 'casal' ? [] : db.cartoes.filter(c => !c.titular_id || c.titular_id === membroLogado().id))
@@ -160,7 +160,7 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
     const livre = centavos(lim - g)
     Object.assign(base, { gasto_mes: g, livre, parcelas_mes: parcelas })
     hojeV = centavos(Math.max(0, livre - e.colchao) / dr)
-    // rodada 2 (ROMERO ideia 3): o limite do mês também tem "até domingo" (o valor de hoje × os dias até domingo)
+    // rodada 2 (BRUNO ideia 3): o limite do mês também tem "até domingo" (o valor de hoje × os dias até domingo)
     if (!e.casa) {
       const ateDom = Math.min(dr, ((7 - new Date(hoje + 'T12:00:00Z').getUTCDay()) % 7) + 1)
       Object.assign(base, { ate_domingo: centavos(Math.min(Math.max(0, livre - e.colchao), hojeV * ateDom)), gasto_semana_dia: gastoSemana(porDia, hoje), amanha: dr > 1 ? centavos(Math.max(0, livre - e.colchao) / (dr - 1)) : null })
@@ -189,7 +189,7 @@ export function calcularResumo(): ResumoHoje {
       : `${e.nome}: ${reais(Math.max(0, e.livre - (e.colchao_meta || 0)))} livres${e.colchao_meta ? ' (tirando a reserva)' : ''} divididos por ${dr === 1 ? '1 dia que falta' : `${dr} dias que faltam`}`, valor: e.hoje || 0 })),
     ...(colchao ? [{ linha: 'Reserva (o dinheiro que a família combinou nunca gastar): fica de fora', valor: colchao }] : []),
   ]
-  // rodada 2 (ROMERO ideia 1): placar do casal, só o que vem pela frente ("se continuar assim"), sem item de ninguém
+  // rodada 2 (BRUNO ideia 1): placar do casal, só o que vem pela frente ("se continuar assim"), sem item de ninguém
   const casal = membrosTeste().filter(x => x.papel === 'casal')
   const placar = eu?.papel === 'casal' && casal.length > 1 ? casal.map(x => {
     const env = db.envs.find(v => v.id === x.envelope)
@@ -295,10 +295,10 @@ export const apiExemplo: Api = {
     const eu = membroLogado()
     const fams = [{ id: FAM, nome: nomeFamiliaTeste(), papel: eu.papel, membroNome: eu.nome, envelopeId: eu.envelope }]
     if (familiaNova) fams.unshift({ id: FAM, nome: familiaNova.nome, papel: 'casal', membroNome: familiaNova.pessoa, envelopeId: eu.envelope })
-    return { userId: 'u-' + eu.id, email: eu.email, dono: logado === 'romero', familias: fams }
+    return { userId: 'u-' + eu.id, email: eu.email, dono: logado === 'bruno', familias: fams }
   },
   async enviarCodigo(email) { await espera(); if (!email.includes('@')) throw new Error('E-mail inválido') },
-  async confirmarCodigo(_email, codigo) { await espera(); if (codigo !== '123456') throw new Error('Código não confere. No exemplo, use 123456.'); logado = logadoInicial() === 'carla' ? 'andreza' : logadoInicial() },
+  async confirmarCodigo(_email, codigo) { await espera(); if (codigo !== '123456') throw new Error('Código não confere. No exemplo, use 123456.'); logado = logadoInicial() === 'carla' ? 'ana' : logadoInicial() },
   async entrarEquipe(convite, codigo) { await espera(); if (convite !== CONVITE_EXEMPLO) throw new Error('Esse link não é o do exemplo. Peça o link pra quem cuida da família.'); if (codigo !== '2468') throw new Error('Código não confere. No exemplo, use 2468.'); logado = 'carla' },
   async sair() { logado = null; familiaNova = null },
 
@@ -525,9 +525,9 @@ export const apiExemplo: Api = {
   },
 }
 
-export function reiniciarExemplo() { usarFamiliaTeste('silva'); ex2.reiniciarExemplo2(); db = criarDados(); logado = 'andreza'; familiaNova = null; porChave.clear() }
+export function reiniciarExemplo() { usarFamiliaTeste('silva'); ex2.reiniciarExemplo2(); db = criarDados(); logado = 'ana'; familiaNova = null; porChave.clear() }
 /** Só pros testes: entra como outra pessoa da família de exemplo. */
-export function exemploComo(p: 'andreza' | 'romero' | 'filha' | 'equipe' | 'autonoma') {
+export function exemploComo(p: 'ana' | 'bruno' | 'filha' | 'equipe' | 'autonoma') {
   const fam = p === 'autonoma' ? 'souza' : 'silva'
   if (familiaTeste() !== fam) { usarFamiliaTeste(fam); ex2.reiniciarExemplo2(); db = criarDados() }
   logado = p === 'equipe' ? 'carla' : p === 'autonoma' ? 'claudia' : p

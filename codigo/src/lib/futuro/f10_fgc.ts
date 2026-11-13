@@ -18,7 +18,7 @@ export function fgcConta(saldo: Centavos, titulares = 1): { garantido_por_titula
   return { garantido_por_titular: arred(new Dec(coberto).div(t)), fora, alerta: fora > 0 }
 }
 
-/** Avisos por banco e titular (revisão do ECONOMISTA, caso N3). Por conta: parte = saldo ÷ titulares,
+/** Avisos por banco e titular (revisão do ECONOMISTA, caso N3; REVISOR C5). Por conta: parte de cada titular da lista = saldo ÷ titulares,
  *  coberto_i = min(parte, 250 mil ÷ titulares). Por titular e banco: coberto = min(soma coberto_i, 250 mil);
  *  fora = soma das partes − coberto. */
 export function avisosFGC(aplicacoes: Aplicacao[]): { banco: string; titular: string | null; fora: Centavos }[] {
@@ -27,13 +27,20 @@ export function avisosFGC(aplicacoes: Aplicacao[]): { banco: string; titular: st
   const porTitular = new Map<string, { titular: string | null; coberto: Dec }>()
   for (const ap of aplicacoes) {
     if (!ap.fgc || ap.saldo <= 0) continue
-    const t = Number.isInteger(ap.conta_conjunta_titulares) && ap.conta_conjunta_titulares >= 1 ? ap.conta_conjunta_titulares : 1
-    const chave = JSON.stringify([ap.banco, ap.titular])
-    const g = grupos.get(chave) ?? { banco: ap.banco, titular: ap.titular, parte: new Dec(0), coberto: new Dec(0) }
+    // Cada titular da lista recebe a parte dele. Lista vazia: limitação conhecida, cai no titular da tela
+    // (ou em "sem titular", contado como 1 CPF) até o f_08 entregar a lista.
+    const lista: (string | null)[] = [...new Set(ap.titulares)]
+    if (lista.length === 0) lista.push(ap.titular)
+    const t = lista.length
     const parte = centavos(ap.saldo).div(t)
-    g.parte = g.parte.plus(parte)
-    g.coberto = g.coberto.plus(Dec.min(parte, new Dec(LIMITE_FGC).div(t)))
-    grupos.set(chave, g)
+    const cobertoConta = Dec.min(parte, new Dec(LIMITE_FGC).div(t))
+    for (const titular of lista) {
+      const chave = JSON.stringify([ap.banco, titular])
+      const g = grupos.get(chave) ?? { banco: ap.banco, titular, parte: new Dec(0), coberto: new Dec(0) }
+      g.parte = g.parte.plus(parte)
+      g.coberto = g.coberto.plus(cobertoConta)
+      grupos.set(chave, g)
+    }
   }
   const avisos: { banco: string; titular: string | null; fora: Centavos }[] = []
   for (const g of grupos.values()) {

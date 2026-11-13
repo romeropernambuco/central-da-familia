@@ -16,7 +16,7 @@ import realTs from './api/real.ts?raw'
 const css: string = readFileSync('src/estilo.css', 'utf8')
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-const novo = (chave: string, extra = {}) => ({ familia: 'f', envelope: 'env-andreza', valor: 10, data: hojeRecife(), descricao: 'Pão', chave, ...extra })
+const novo = (chave: string, extra = {}) => ({ familia: 'f', envelope: 'env-ana', valor: 10, data: hojeRecife(), descricao: 'Pão', chave, ...extra })
 
 describe('1. lançar com a chave do toque', () => {
   it('chama lancar_com_chave com 1 uuid e todos os parâmetros do banco', async () => {
@@ -82,8 +82,8 @@ describe('1. equipe entra pelo link do convite + código', () => {
   })
   it('o link gerado volta o mesmo convite e não leva o código', () => {
     const id = '3f2b8c1e-9a4d-4e7f-8b21-0c5d6e7f8a9b'
-    const link = linkEquipe('https://romeropernambuco.github.io/central-da-familia/app/', id)
-    expect(link).toBe('https://romeropernambuco.github.io/central-da-familia/app/#/equipe?c=' + id)
+    const link = linkEquipe('https://brunopernambuco.github.io/central-da-familia/app/', id)
+    expect(link).toBe('https://brunopernambuco.github.io/central-da-familia/app/#/equipe?c=' + id)
     expect(conviteDoHash(new URL(link).hash)).toBe(id)
     expect(linkEquipe('https://x/app/#/casa', id)).toBe('https://x/app/#/equipe?c=' + id)
     expect(link).not.toContain('2468')
@@ -117,7 +117,7 @@ describe('1. limites por definir_limite', () => {
   })
   it('no exemplo, muda o limite e o resumo acompanha; valor inválido é recusado', async () => {
     reiniciarExemplo()
-    // R1: a Andreza só enxerga o limite dela e os da Casa, então o teste mexe no da Casa
+    // R1: a Ana só enxerga o limite dela e os da Casa, então o teste mexe no da Casa
     await apiExemplo.definirLimite('f', 'env-casa', 3100.5)
     expect((await apiExemplo.resumoHoje('f')).envelopes.find(e => e.id === 'env-casa')?.limite_mes).toBe(3100.5)
     await expect(apiExemplo.definirLimite('f', 'env-casa', -1)).rejects.toThrow(/zero pra cima/)
@@ -186,7 +186,7 @@ describe('1. IA do cupom, função versão 2', () => {
 
 describe('2. convite pro WhatsApp sem valor em R$', () => {
   it('nenhuma das 3 mensagens leva dinheiro; a da 2ª pessoa tem o texto combinado', () => {
-    const p = mensagemConvite('pessoa', { familia: 'Silva', quem: 'Romero', link: 'https://x/app/', email: 'bruno@x.com' })
+    const p = mensagemConvite('pessoa', { familia: 'Silva', quem: 'Bruno', link: 'https://x/app/', email: 'bruno@x.com' })
     expect(p).toContain('Entra aqui pra ver o nosso número do dia')
     expect(p).toContain('https://x/app/'); expect(p).toContain('bruno@x.com')
     for (const m of [p, mensagemConvite('amiga', { familia: '', quem: '', link: 'https://x' }), mensagemConvite('equipe', { familia: 'S', quem: 'C', link: 'https://x', codigo: '1234' })]) {
