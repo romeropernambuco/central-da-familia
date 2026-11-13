@@ -128,10 +128,10 @@ describe('R6: estouro com valor, de onde sai e o amanhã', () => {
     em('2026-11-30', 21)
     const e = await ana(); const r = await resumo()
     const n = numeroEnvelope(e, r.dias_restantes)
-    expect(n.estado).toBe('devendo'); expect(n.devendo).toBe(717) // C1 (revisão E0): teto do exemplo 6.000 -> 5.500, o devendo sobe 500 (era 217)
+    expect(n.estado).toBe('devendo'); expect(n.devendo).toBe(517) // C1: teto 6.000 -> 5.500 (era 217, depois 717). E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro: novembro fica R$ 200 menor
     // rodada 2: sem "Sem culpa", com o próximo passo: de onde sai e com quanto dezembro começa
     // E3 (conserto 2): a parcela de dezembro (R$ 200 do tênis em 6x) entra na frase; era "começa com R$ 4.783 em 01/12."
-    expect(fraseEstouro(e, n)).toMatch(/^Passou R\$\s717 do combinado\. Sai do mês de dezembro: ele começa com R\$\s4\.583 em 01\/12 \(R\$\s717 de novembro e R\$\s200 de parcela\)\.$/)
+    expect(fraseEstouro(e, n)).toMatch(/^Passou R\$\s517 do combinado\. Sai do mês de dezembro: ele começa com R\$\s4\.783 em 01\/12 \(R\$\s517 de novembro e R\$\s200 de parcela\)\.$/) // E4: 517 + a 1ª parcela em dezembro
   })
   it('passou só o dia: diz quanto passou e o valor de amanhã', async () => {
     em('2026-11-18')
@@ -143,11 +143,11 @@ describe('R6: estouro com valor, de onde sai e o amanhã', () => {
   })
   it('Cobrir com a sobra da Casa (só no exemplo) zera o devendo e o Desfazer volta', async () => {
     em('2026-11-30', 21)
-    const desfazer = await apiExemplo.cobrirComCasa!(F, 'env-ana', 717) // C1: era 217 com teto 6.000
+    const desfazer = await apiExemplo.cobrirComCasa!(F, 'env-ana', 517) // C1: era 217 com teto 6.000; E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro (era 717)
     expect((await ana()).livre).toBe(0)
-    expect((await resumo()).envelopes.find(e => e.id === 'env-casa')!.livre).toBe(centavos(2500 - 524.7 - 717))
+    expect((await resumo()).envelopes.find(e => e.id === 'env-casa')!.livre).toBe(centavos(2500 - 524.7 - 517))
     await desfazer()
-    expect((await ana()).livre).toBe(-717)
+    expect((await ana()).livre).toBe(-517)
     await expect(apiExemplo.cobrirComCasa!(F, 'env-ana', 5000)).rejects.toThrow(/só tem/)
   })
 })
@@ -173,21 +173,27 @@ describe('R7+G3: semana, ritmo e projeção', () => {
 })
 
 describe('R10+G5: parcelado 1x a 12x, parcela no mês de cada fatura', () => {
-  it('R$\u00a01.200 em 6x: R$\u00a0200 por mês, 1ª no dia da compra, as outras no mês delas', () => {
+  it('R$\u00a01.200 em 6x: R$\u00a0200 por mês, cada parcela no dia 1 do mês da fatura dela (E4)', () => {
     expect(parcelasDe(1200, 6)).toEqual([200, 200, 200, 200, 200, 200])
     expect(parcelasDe(100, 3)).toEqual([33.34, 33.33, 33.33])
     const l = [{ data: '2026-11-12', valor: 1200, parcelas: 6 }]
-    expect(gastosDoMes(l, '2026-11')).toEqual({ porDia: { '2026-11-12': 200 }, parcelas: 0 })
-    expect(gastosDoMes(l, '2026-12')).toEqual({ porDia: {}, parcelas: 200 })
-    expect(gastosDoMes(l, '2027-04')).toEqual({ porDia: {}, parcelas: 200 })
-    expect(gastosDoMes(l, '2027-05')).toEqual({ porDia: {}, parcelas: 0 })
+    // E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro. Era: 1ª parcela no dia da compra (porDia de 12/11) e as outras de dezembro a abril.
+    const nubank = () => '2026-12'
+    expect(gastosDoMes(l, '2026-11', nubank)).toEqual({ porDia: {}, parcelas: 0 })
+    expect(gastosDoMes(l, '2026-12', nubank)).toEqual({ porDia: {}, parcelas: 200 })
+    expect(gastosDoMes(l, '2027-05', nubank)).toEqual({ porDia: {}, parcelas: 200 })
+    expect(gastosDoMes(l, '2027-06', nubank)).toEqual({ porDia: {}, parcelas: 0 })
+    // sem o cartão (não deveria existir: o banco recusa), a 1ª fatura é o mês da compra, e mesmo assim fora do ritmo do dia
+    expect(gastosDoMes(l, '2026-11')).toEqual({ porDia: {}, parcelas: 200 })
+    // à vista no cartão continua no dia da compra
+    expect(gastosDoMes([{ data: '2026-11-12', valor: 50 }], '2026-11', nubank)).toEqual({ porDia: { '2026-11-12': 50 }, parcelas: 0 })
   })
   it('no exemplo, lançar 6x no cartão conta R$\u00a0200 no mês e as faturas levam R$\u00a0200 cada', async () => {
     em('2026-11-18')
     const antes = (await ana()).gasto_mes
     const fAntes = await apiExemplo.faturas(F, 8)
     await apiExemplo.lancar({ familia: F, envelope: 'env-ana', valor: 600, data: '2026-11-18', descricao: 'Tênis', cartao: 'car-nu', parcelas: 6, chave: 'k-6x' })
-    expect(centavos((await ana()).gasto_mes - antes)).toBe(100)
+    expect(centavos((await ana()).gasto_mes - antes)).toBe(0) // E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro: era 100 (a 1ª parcela no dia da compra)
     const fDepois = await apiExemplo.faturas(F, 8)
     const dif = (m: string) => centavos(fDepois.find(f => f.cartao_id === 'car-nu' && f.mes === m)!.total - fAntes.find(f => f.cartao_id === 'car-nu' && f.mes === m)!.total)
     expect(['2026-12', '2027-01', '2027-02', '2027-03', '2027-04', '2027-05', '2027-06'].map(dif)).toEqual([100, 100, 100, 100, 100, 100, 0])
@@ -261,7 +267,7 @@ describe('R8, R15, N12: cofrinho, cortes e olho', () => {
   it('Guardião da Reserva não diz só "está inteira" quando a pessoa passou do combinado', async () => {
     em('2026-11-30', 21)
     const e = (await apiExemplo.escritorioHoje(F)).entregue.find(x => x.funcionario === 'colchao')!
-    expect(e.resumo).toMatch(/Ana passou R\$\s717 do combinado do mês/) // C1: era 217 com teto 6.000
+    expect(e.resumo).toMatch(/Ana passou R\$\s517 do combinado do mês/) // C1: era 217 com teto 6.000; E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro (era 717)
   })
   it('olho fechado: todo valor vira R$\u00a0•••', () => {
     esconderValores(true); expect(reais(1234.5)).toBe('R$\u00a0•••')

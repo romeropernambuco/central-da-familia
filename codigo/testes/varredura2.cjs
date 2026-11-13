@@ -88,7 +88,7 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
   // que apareça (com o nome) e que nenhum botão de escrever fique no que é dele. Marca na tela: [data-do-outro="<nome>"].
   if (SO.includes('A3')) {
   const OUTRO = { ana: 'Bruno', bruno: 'Ana' }
-  const MEXER = /Lançar|Corrigir|Apagar|Editar|Tirar|Cobrir|Guardar|Encerrar|Não gastei|Esqueci|Quero juntar|Salvar|Trazer de volta|imprevisto|Anotar/i
+  const MEXER = /Lançar|Mudar o dia|Pôr o dia|Chegou|Mudar o mês|Corrigir|Apagar|Editar|Tirar|Cobrir|Guardar|Encerrar|Não gastei|Esqueci|Quero juntar|Salvar|Trazer de volta|imprevisto|Anotar/i
   /** Nenhum botão de escrever dentro do que é do outro (o "?" que só explica pode). Devolve quantos itens do outro achou. */
   const semMexer = async (p, como, onde) => {
     const itens = await p.$$eval('[data-do-outro]', (els, re) => els.filter(e => e.offsetParent !== null || e.getClientRects().length).map(e => ({
@@ -177,15 +177,24 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
   { const p = await abrir(b, 'bruno', 'inicio', '2026-11-30', 21); const t = await p.textContent('main')
     ok(/Até o fim do mês/.test(t) && !/Até domingo/.test(t), 'E3 (10): no dia 30 o domingo já é dezembro: tem que dizer "Até o fim do mês"'); await p.close() }
   { const p = await abrir(b, 'ana', 'inicio', '2026-11-30', 21); const t = await p.textContent('main')
-    ok(/começa com R\$[\s ][\d.]+ em 01\/12 \(R\$[\s ]717 de novembro e R\$[\s ]200 de parcela\)/.test(t), 'E3 (2): o dia 30 avisa dezembro com a parcela')
+    ok(/começa com R\$[\s ][\d.]+ em 01\/12 \(R\$[\s ]517 de novembro e R\$[\s ]200 de parcela\)/.test(t), 'E3 (2): o dia 30 avisa dezembro com a parcela')
     ok(/Ana \(você\): passou R\$/.test(t), 'E3 (3): o placar diz quem passou, com o nome')
     ok(!/Juntos, sobram/.test(t), 'E3 (3): "Juntos, sobram" com alguém passando')
     await p.close() }
   { const p = await abrir(b, 'ana', 'inicio', '2026-12-01', 9); const t = await p.textContent('main')
-    ok(/Dezembro começa com R\$[\s ][\d.]+ \(R\$[\s ]717 de novembro e R\$[\s ]200 de parcela\)/.test(t), 'E3 (2): o dia 01 diz o mesmo número do dia 30'); await p.close() }
+    ok(/Dezembro começa com R\$[\s ][\d.]+ \(R\$[\s ]517 de novembro e R\$[\s ]200 de parcela\)/.test(t), 'E3 (2): o dia 01 diz o mesmo número do dia 30'); await p.close() }
   { const p = await abrir(b, 'autonoma', 'guardado', '2026-11-18', 10); await p.click('button:has-text("Nova aplicação")').catch(() => {}); await p.waitForTimeout(300)
     const t8 = await p.textContent('body'); ok(!/Do casal|No seu nome R\$/.test(t8), 'E3 (8): família de 1 adulto sem "Do casal" nem "No seu nome R$ 0"'); ok(!/Ana|Bruno/.test(t8), 'E3 (8): a Cláudia não vê o guardado de outra família'); await p.close() }
   { const p = await abrir(b, 'ana', 'ajustes', '2026-11-18', 10); ok(await p.$('label.campo:has(span:text-is("Nome")) input') !== null, 'E3 (10): rótulo "Nome" no convite'); await p.close() }
+  /* E5 e E6: recebimentos com dono e objetivo de 2029 no Planejamento */
+  { const p = await abrir(b, 'ana', 'planejamento', '2026-11-18', 10); const t = await p.textContent('main')
+    ok(/Contrato de consultoria \(exemplo\)/.test(t) && /Era pra out\/26 e ainda não chegou\. Na conta, foi pra dez\/26\. Chegou\?/.test(t), 'E5: o atrasado da Ana vai pra dezembro e vira pergunta pra ela')
+    ok(await p.$('li[data-do-outro="Bruno"]:has-text("Venda do carro antigo")') !== null, 'E5: o recebimento do Bruno aparece com o nome dele')
+    ok(/Objetivo de 2029/.test(t) && /Com estes números, a família (chega a dez\/28 com|fica devendo) R\$/.test(t) && !/com passou/.test(t), 'E6: o objetivo mostra o resultado do motor')
+    ok(/A confirmar:/.test(t), 'E6: o que é premissa aparece como "a confirmar"')
+    await p.close() }
+  { const p = await abrir(b, 'bruno', 'planejamento', '2026-11-18', 10); const t = await p.textContent('main')
+    ok(/Ana ainda não disse quando chega/.test(t), 'E5: o Bruno lê o atrasado da Ana sem botão'); await p.close() }
   // nenhum travessão em tela nenhuma
   for (const como of ['ana', 'bruno', 'filha', 'autonoma', 'equipe']) for (const r of ROTAS) { const p = await abrir(b, como, r, '2026-11-18', 21); ok(!/[\u2014\u2013]/.test(await textoEAtributos(p)), `E3 ${como} ${r}: tem travessão`); await p.close() }
   }

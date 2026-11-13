@@ -1,12 +1,13 @@
 // Banco de verdade: Supabase, schema `produto`. As contas vêm das funções (RPC) do CONTRATO.md;
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Api, AvisoCasa, Cartao, ChaveConfig, Fatura, FamiliaMinha, Lancamento, Numero, Papel, Sessao } from './tipos'
+import type { Api, AvisoCasa, Cartao, ChaveConfig, Fatura, FamiliaMinha, Lancamento, Numero, Papel, ParametrosObjetivo, Sessao } from './tipos'
+import { entradaDoBanco, type FuturoBanco } from './futuro'
 import { normalizaCartao, normalizaContagem, normalizaCusto, normalizaEscritorio, normalizaFaturaBanco, normalizaFeira, normalizaGuardado, normalizaItem, normalizaLembrete, normalizaLinha, normalizaRelatorio, idFuncNoBanco } from './normaliza2'
 import { hojeRecife } from '../lib/formato'
 import { MSG_CUPOM, mensagemCupom } from '../lib/foto'
 import { AVISOS_CONVITE, ErroRede, ErroSessao, TRADUZ, sessaoVale, traduzErro } from './erros'
-import { lancarComChave, normalizaCasa, normalizaCupom, normalizaLancamento, normalizaResumo } from './normaliza'
+import { lancarComChave, normalizaCasa, normalizaCupom, normalizaLancamento, normalizaRecebimento, normalizaResumo } from './normaliza'
 
 let cli: SupabaseClient<any, any, any> | null = null
 function sb(): SupabaseClient<any, any, any> {
@@ -30,6 +31,14 @@ async function rpc<T>(nome: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 const num = (v: unknown) => Number(v) || 0
+/** id em membros de quem está logado nesta família (pra saber o que é dele). */
+async function meuMembro(familia: string): Promise<string | null> {
+  const { data: s } = await sb().auth.getSession()
+  const u = s.session?.user?.id
+  if (!u) return null
+  const { data } = await sb().from('membros').select('id').eq('familia_id', familia).eq('user_id', u).eq('ativo', true).maybeSingle()
+  return data?.id ? String(data.id) : null
+}
 /** Papel de quem entrou em cada família: a equipe nunca guarda valor em dinheiro das perguntas do Escritório. */
 const papeis = new Map<string, Papel>()
 
@@ -107,7 +116,12 @@ export const apiReal: Api = {
   async definirLimite(familia, envelope, valor) { await rpc('definir_limite', { familia, envelope, valor }) },
   async convidar(familia, papel, nome, email) { return rpc('convidar', { familia, papel, nome, email: email?.trim() || null }) },
 
-  async resumoHoje(familia) { return normalizaResumo(await rpc('resumo_hoje', { familia })) },
+  async resumoHoje(familia) {
+    const r = normalizaResumo(await rpc('resumo_hoje', { familia }))
+    // C3: o papel do dono de cada limite (a filha tem o limite combinado com os pais). Sem a lista, segue sem o papel.
+    if (r.envelopes.some(e => e.dono_id)) { try { const ms = await this.membros(familia); for (const e of r.envelopes) if (e.dono_id) e.dono_papel = ms.find(m => m.id === e.dono_id)?.papel ?? null } catch { /* sem a lista de membros */ } }
+    return r
+  },
   async lancar(n) {
     // 1 gravação só, com a chave do toque: repetir a mesma chave (internet caiu no meio) devolve o mesmo lançamento
     let r: { data: any; error: { message?: string; code?: string } | null }
@@ -124,7 +138,7 @@ export const apiReal: Api = {
     // E2: o casal lê a família toda; `meu` = quem olha lançou (o banco só deixa mexer no que a pessoa lançou, f_02)
     const eu = (await sb().auth.getSession()).data.session?.user?.id
     for (let p = 0; p < 10; p++) {
-      const { data, error } = await sb().from('lancamentos').select('id, envelope_id, cartao_id, valor, data, descricao, apagado_em, criado_em, autor').eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
+      const { data, error } = await sb().from('lancamentos').select('*') // E4: "*" traz parcelas e pago_por depois da f_04 e não quebra antes dela.eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
       if (error) erro(error)
       out.push(...(data || []).map((l: any) => ({ ...normalizaLancamento(l), ...(eu && l.autor ? { meu: l.autor === eu } : {}) })))
       if ((data || []).length < 1000) break
@@ -200,7 +214,19 @@ export const apiReal: Api = {
   },
 
   // ---------- CONTRATO2.md, seção A: Guardado (só o casal; o banco recusa os outros) ----------
-  async guardadoHoje(familia) { return normalizaGuardado(await rpc('guardado_hoje', { familia })) },
+  async guardadoHoje(familia) {
+    const g = normalizaGuardado(await rpc('guardado_hoje', { familia }))
+    // C2: o banco manda só o id do titular; o nome vem da lista de membros. seu_total e casal_total pelo id de quem olha.
+    if (g.aplicacoes.some(a => a.titular !== undefined)) {
+      try {
+        const [ms, eu] = await Promise.all([this.membros(familia), meuMembro(familia)])
+        for (const a of g.aplicacoes) if (a.titular && !a.titular_nome) a.titular_nome = ms.find(m => m.id === a.titular)?.nome ?? null
+        const soma = (f: (a: typeof g.aplicacoes[number]) => boolean) => Math.round(g.aplicacoes.filter(f).reduce((s, a) => s + a.saldo, 0) * 100) / 100
+        if (eu) { g.seu_total = soma(a => a.titular === eu); g.casal_total = soma(a => !a.titular) }
+      } catch { /* sem a lista: aparece sem o nome */ }
+    }
+    return g
+  },
   async guardadoCriar(familia, a) { await rpc('guardado_criar', { familia, nome: a.nome, banco: a.banco, tipo: a.tipo, pct_cdi: a.pct_cdi, valor_inicial: a.valor_inicial, data: a.data, vence_em: a.vence_em || null, chave: crypto.randomUUID(), ...(a.do_casal ? { do_casal: true } : a.titular ? { titular: a.titular } : {}) }) },
   async guardadoMovimentar(aplicacao, tipo, valor, data, chave) { await rpc('guardado_movimentar', { aplicacao, tipo, valor, data, chave }) },
   async guardadoEncerrar(aplicacao) { await rpc('guardado_encerrar', { aplicacao }) },
@@ -293,6 +319,55 @@ export const apiReal: Api = {
       { chave: 'erros', nome: 'Erros de conta', valor: e, texto: String(e), meta: 'meta 0', ok: e === 0 && !atrasado, explicacao: atrasado ? 'O teste da noite não rodou nas últimas 26 horas: confira o turno.' : 'Casos do teste da noite que falharam nos últimos 7 dias.' },
     ] as Numero[]
   },
+  // ---------- E5: recebimentos com data (produto.recebimentos, f_05). A tranca do banco: o casal lê; só o dono cria e muda ----------
+  async recebimentos(familia) {
+    const { data, error } = await sb().from('recebimentos').select('*').eq('familia_id', familia).is('apagado_em', null).order('mes_previsto').order('criado_em')
+    if (error) erro(error)
+    const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
+    const eu = await meuMembro(familia)
+    return (data || []).map((r: any) => normalizaRecebimento(r, ms, eu))
+  },
+  async recebimentoCriar(familia, r) {
+    const eu = await meuMembro(familia)
+    if (!eu) throw new Error('Não achei você nesta família. Saia e entre de novo.')
+    const { error } = await sb().from('recebimentos').insert({ familia_id: familia, dono_membro: eu, descricao: r.descricao.trim(), valor_centavos: Math.round(r.valor * 100), mes_previsto: `${r.mes_previsto}-01`, tipo: r.tipo, certo: r.certo })
+    if (error) erro(error)
+  },
+  async recebimentoMudar(familia, id, m) {
+    const campos: Record<string, unknown> = {}
+    if (m.recebido_em !== undefined) { campos.recebido_em = m.recebido_em; campos.valor_recebido_centavos = m.recebido_em && m.valor_recebido != null ? Math.round(m.valor_recebido * 100) : null }
+    if (m.mes_novo !== undefined) campos.mes_novo = m.mes_novo ? `${m.mes_novo}-01` : null
+    if (m.certo !== undefined) campos.certo = m.certo
+    if (m.apagar) campos.apagado_em = new Date().toISOString()
+    // o banco só deixa o dono mudar: se não for, volta 0 linhas e a tela avisa
+    const { data, error } = await sb().from('recebimentos').update(campos).eq('id', id).eq('familia_id', familia).select('id')
+    if (error) erro(error)
+    if (!data?.length) throw new Error('Só quem é dono desse recebimento muda ele.')
+  },
+  // ---------- E6: objetivo 2029 (f_07), histórico, Focus (f_10) e os dados pro motor (f_08) ----------
+  async objetivo(familia) {
+    const [o, h, f, mb] = await Promise.all([
+      sb().from('objetivo').select('parametros').eq('familia_id', familia).maybeSingle(),
+      sb().from('objetivo_historico').select('quem, quando, antes, depois').eq('familia_id', familia).order('quando', { ascending: false }).limit(20),
+      sb().from('focus_indices').select('ano, selic_fim, ipca, divulgado_em, fonte').order('ano').order('divulgado_em', { ascending: false }),
+      sb().from('membros').select('user_id, nome').eq('familia_id', familia),
+    ])
+    if (o.error) erro(o.error)
+    const nomes = new Map((mb.data || []).map((m: any) => [m.user_id, m.nome]))
+    const focus = new Map<number, any>()
+    for (const x of f.data || []) if (!focus.has(x.ano)) focus.set(x.ano, x)
+    return {
+      parametros: (o.data?.parametros as ParametrosObjetivo) ?? null,
+      historico: (h.data || []).map((x: any) => ({ quem: nomes.get(x.quem) ?? null, quando: x.quando, antes: x.antes, depois: x.depois })),
+      focus: [...focus.values()].map((x: any) => ({ ano: Number(x.ano), selic_fim: String(x.selic_fim), ipca: String(x.ipca), divulgado_em: String(x.divulgado_em), fonte: String(x.fonte) })),
+    }
+  },
+  async objetivoSalvar(familia, p) {
+    // o banco confere as chaves e grava o histórico sozinho (gatilho); só o casal grava
+    const { error } = await sb().from('objetivo').upsert({ familia_id: familia, parametros: p }, { onConflict: 'familia_id' })
+    if (error) erro(error)
+  },
+  async futuroEntradas(familia) { return entradaDoBanco(await rpc<FuturoBanco>('futuro_entradas', { familia })) },
   async exportarFamilia(familia) { return rpc('exportar_familia', { familia }) },
   async exportarMeu(familia) { return rpc('exportar_meu', { familia }) },
   async apagarFamilia(familia, confirmacao) { await rpc('apagar_familia', { familia, confirmacao }) },

@@ -136,7 +136,8 @@ export function EnvelopeCard({ e, diasRestantes, onClick, meu }: { e: Envelope; 
       {frase && <p className="todo warn frase-estouro">{frase}</p>}
       <div className={'meter ' + (n.usado > 1 ? 'warn' : 'ok')} aria-hidden="true"><i style={{ width: pct + '%' }} /></div>
       <p className="sub">Gasto no mês <b>{reais(e.gasto_mes)}</b> de {reais(tetoDoMes(e))}{e.regra === 'diario' && e.falta_mes_anterior ? ` (${reais(e.limite_base ?? e.limite_mes)} menos ${reais(e.falta_mes_anterior)} do mês passado)` : ''}</p>
-      {doOutro && <p className="sub dono-linha">{dono ? `Limite de ${dono}: só ${dono} lança e mexe aqui.` : 'Da família: só pra ver.'}</p>}
+      {/* C3 (revisão E2/E3): o limite da filha os pais combinam (e mudam no Planejamento); quem lança é ela */}
+      {doOutro && <p className="sub dono-linha">{!dono ? 'Da família: só pra ver.' : e.dono_papel === 'pessoa' ? `Só ${dono} lança aqui. O limite é combinado com os pais.` : `Limite de ${dono}: só ${dono} lança e mexe aqui.`}</p>}
       {meu && !doOutro && n.estado === 'devendo' && e.regra !== 'semanal' && <CobrirEstouro e={e} valor={n.devendo} />}
       {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {e.nome}</button>}
     </div>

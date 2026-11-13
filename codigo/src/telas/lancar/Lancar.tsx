@@ -7,9 +7,10 @@ import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
 import type { Cartao, ResumoHoje } from '../../api/tipos'
-import { centavos, dataCurta, diaSemana, hojeRecife, mesCurto, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
+import { centavos, dataBr, dataCurta, diaSemana, hojeRecife, mesLongo, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
 import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
+import { parcelasDe } from '../../lib/plano'
 import { LerCupom } from '../../componentes/LerCupom'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
@@ -18,10 +19,12 @@ const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 /** O que fica pra ela depois do gasto, numa frase (R9: sem segundos, sem "custou de rendimento"). */
 function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number, nome: string, parcelas: number, desc?: string): string {
   const e = r?.envelopes.find(x => x.id === envelope)
-  const parte = parcelas > 1 ? `${reais(valor)} em ${parcelas}x em ${nome}: ${reais(centavos(valor / parcelas))} contam neste mês.` : `${reais(valor)} em ${nome}.`
+  // E4 (decisão do dono, TIME.md): cada parcela sai no dia 1 do mês da fatura dela; neste mês (o da compra) não conta nada
+  if (parcelas > 1) return `${reais(valor)} em ${parcelas}x em ${nome}: ${reais(parcelasDe(valor, parcelas)[parcelas - 1])} por mês, cada parcela no dia 1 do mês da fatura dela. O que você pode gastar hoje não muda.`
+  const parte = `${reais(valor)} em ${nome}.`
   if (!e) return parte
   // E1 (rodada 2): gasto grande (10% do mês e no mínimo R$ 150) ganha a conta do resto do mês, sem culpa
-  const lim = e.limite_base ?? e.limite_mes, conta = parcelas > 1 ? centavos(valor / parcelas) : valor
+  const lim = e.limite_base ?? e.limite_mes, conta = valor
   if (!e.casa && lim > 0 && conta >= Math.max(150, lim * 0.1) && e.livre >= 0) {
     const pct = Math.round((conta / lim) * 100), dias = Number(hojeRecife().slice(8)) <= 0 ? 0 : Math.max(1, (r?.dias_restantes || 1))
     return `${desc ? cap(desc) : 'Esse gasto'} de ${reais(conta)} é ${pct}% do seu mês de ${reais(lim)}. Ele entra 1 vez só: os ${dias === 1 ? 'dia que falta fica' : `${dias} dias que faltam ficam`} com ${reais(centavos(e.livre / dias))} por dia, em média.`
@@ -81,7 +84,12 @@ export function Lancar() {
   const primeiro = corr?.envelope_id || lancarAberto?.envelope || familia?.envelopeId
   const ordem = [...envs].sort((a, b) => (a.id === primeiro ? -1 : b.id === primeiro ? 1 : 0))
   const c = cartoes.find(x => x.id === cartao)
-  const sim = c && parcelas > 1 && valor > 0 ? simularCompra(valor, parcelas, quando, c.dia_fechamento || 1, c.dia_vencimento || 10) : []
+  // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
+  const temDias = !!(c?.dia_fechamento && c?.dia_vencimento)
+  const sim = c && temDias && parcelas > 1 && valor > 0 ? simularCompra(valor, parcelas, quando, c.dia_fechamento!, c.dia_vencimento!) : []
+  const venceEm = (mes: string) => { const [a, m] = mes.split('-').map(Number); return `${mes}-${String(Math.min(c?.dia_vencimento || 1, new Date(Date.UTC(a, m, 0)).getUTCDate())).padStart(2, '0')}` }
+  // o que conta NESTE mês: à vista, o valor todo; parcelado, só a parcela cuja fatura é deste mês (quase sempre nada)
+  const contaNoMes = (v: number) => (sim.length ? centavos(sim.filter(p => p.mes === hoje.slice(0, 7)).reduce((t, p) => t + p.valor, 0)) : v)
 
   // trava do duplo toque: vale no mesmo instante do 1º toque, antes de a tela redesenhar o botão desligado
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
@@ -189,9 +197,11 @@ export function Lancar() {
             <div className="parcelas">
               <span className="atl">Em quantas vezes</span>
               <div className="pills parc" role="group" aria-label="Em quantas vezes">
-                {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
+                {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} disabled={p > 1 && !temDias} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
               </div>
-              {sim.length > 1 && <p className="sub">{parcelas}x de {reais(sim[sim.length - 1].valor)}: conta {reais(sim[0].valor)} neste mês e {reais(sim[sim.length - 1].valor)} em cada mês seguinte, até a fatura de {mesCurto(sim[sim.length - 1].mes)}.</p>}
+              {!temDias && <p className="sub">O {c.nome} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
+              {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
+              {sim.length > 1 && <p className="sub parc-fatura"><b>{parcelas}x de {reais(sim[sim.length - 1].valor)}</b> nas faturas de {dataCurta(venceEm(sim[0].mes))} a {dataBr(venceEm(sim[sim.length - 1].mes)).replace(/^(\d\d\/\d\d)\/\d\d(\d\d)$/, '$1/$2')}. Cada parcela sai do seu limite no dia 1 do mês da fatura: {mesLongo(sim[0].mes + '-01')} a {mesLongo(sim[sim.length - 1].mes + '-01')}. {contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.'}</p>}
             </div>
           )}
           <p className="lbl salvar-dica">{corr ? 'Toque no nome pra salvar a correção' : valor > 0 ? 'Toque no seu nome pra salvar' : 'Digite o valor e toque no seu nome pra salvar'}</p>
@@ -202,9 +212,9 @@ export function Lancar() {
               // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
               const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
               const onde = e.regra === 'diario' ? ['hoje', 'do dia'] : e.regra === 'semanal' ? ['na semana', 'da semana'] : ['no mês', 'do mês']
-              const conta = cartao && parcelas > 1 ? centavos(valor / parcelas) : valor
+              const conta = contaNoMes(valor)
               const depois = centavos(agora - conta)
-              const linha = !n ? '' : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
+              const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
               return (
                 <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${e.nome}`}>
                   <b>{e.nome}</b>

@@ -149,7 +149,7 @@ describe('B e C: contas novas', () => {
   it('B7: Ana no dia 18 fecha bem menos do que o ritmo antigo (material e parcela contados 1 vez)', async () => {
     em('2026-11-18'); exemploComo('ana')
     const a = (await apiExemplo.resumoHoje(F)).envelopes.find(e => e.id === 'env-ana')!
-    expect(a.pontual_mes).toBe(1710) // material R$ 900 + 1ª parcela R$ 200 + Uber de R$ 610 (10% do mês)
+    expect(a.pontual_mes).toBe(1510) // material R$ 900 + Uber de R$ 610 (10% do mês). E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro (era 1710 com a 1ª parcela)
     expect(projecao(a.gasto_mes, 5500, '2026-11-18', a.pontual_mes).fecha).toBeLessThan(projecao(a.gasto_mes, 5500, '2026-11-18').fecha)
   })
   it('B11: o "?" do limite do mês tem a divisão de verdade ("Dividido pelos 13 dias que faltam")', async () => {

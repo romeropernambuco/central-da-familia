@@ -55,6 +55,10 @@ export interface Envelope {
   parcelas_mes_que_vem?: number
   /** E2 (regra nova, 13/11): de quem é (nome); null = da família (Casa ou limite sem dono). */
   dono?: string | null
+  /** C1 (revisão E2/E3): id em membros do dono (o banco manda dono: {membro_id, nome}). A tela trava pelo id, nunca pelo nome. */
+  dono_id?: string | null
+  /** C3: papel do dono (o limite de uma pessoa da família, ex.: a filha, é combinado com os pais) */
+  dono_papel?: Papel | null
   /** E2: quem olha pode lançar e mexer aqui (o seu, a Casa e o sem dono). O do outro é só pra ler. */
   escreve?: boolean
 }
@@ -205,6 +209,33 @@ export interface LinhaDiario { /** id da pergunta respondida */ ref?: string; /*
 export interface RelatorioFuncionario { funcionario: string; perguntas: number; respondidas: number; pendentes: number; /** minutos entre a pergunta e a resposta; null = ainda sem resposta */ tempo_medio_min: number | null }
 export interface RelatorioEsc { funcionarios: RelatorioFuncionario[]; diario: LinhaDiario[] }
 
+/* ---------- E5: recebimentos com data (produto.recebimentos, f_05). Ver: o casal; criar e mudar: só o dono ---------- */
+export type TipoRecebimento = 'salario' | 'contrato' | 'retorno' | 'outro'
+export interface RecebimentoTela {
+  id: string; dono_membro: string; dono_nome: string | null; descricao: string
+  /** em reais (a tela); o banco guarda em centavos inteiros */
+  valor: number
+  /** 'AAAA-MM' */ mes_previsto: string
+  /** pra onde foi o atrasado ('AAAA-MM'); null = ainda no mês previsto */ mes_novo: string | null
+  tipo: TipoRecebimento; certo: boolean; recebido_em: string | null; valor_recebido: number | null
+  /** quem olha é o dono (só ele lança e mexe) */ meu: boolean
+}
+export interface NovoRecebimento { descricao: string; valor: number; mes_previsto: string; tipo: TipoRecebimento; certo: boolean }
+
+/* ---------- E6: parâmetros do objetivo 2029 (produto.objetivo, f_07), histórico e Focus (f_10) ---------- */
+/** As chaves exatas do banco (ECONOMISTA item 4). Dinheiro em centavos inteiros; taxa em texto decimal ("0.1000" = 10%). */
+export interface ParametrosObjetivo {
+  /** gasto por mês em 2029, a preços de hoje; null = [confirmar] (a conta usa o teto do mês até a família dizer) */
+  gasto_2029_hoje: number | null
+  renda_certa_2029: number; margem: string; taxa_real_trabalho: string; aliq_proj: string
+  taxa_bruta_ano: Record<string, string>; ipca_ano: Record<string, string>
+  /** null = [confirmar] (a conta usa 6) */ piso_meses: number | null
+  mes_reajuste: number; travado_focus: boolean
+}
+export interface FocusAno { ano: number; selic_fim: string; ipca: string; divulgado_em: string; fonte: string }
+export interface HistoricoObjetivo { quem: string | null; quando: string; antes: ParametrosObjetivo | null; depois: ParametrosObjetivo }
+export interface Objetivo { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[]; focus: FocusAno[] }
+
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
 export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais'
 
@@ -308,6 +339,16 @@ export interface Api {
 
   numerosSemana(): Promise<Numero[]>
   exportarFamilia(familia: string): Promise<unknown>
+  /* E5: recebimentos (só o casal vê; só o dono cria e muda) */
+  recebimentos?(familia: string): Promise<RecebimentoTela[]>
+  recebimentoCriar?(familia: string, r: NovoRecebimento): Promise<void>
+  /** o dono marca que chegou (data e valor), muda o mês (atrasado) ou tira (nada some: fica marcado como apagado) */
+  recebimentoMudar?(familia: string, id: string, m: { recebido_em?: string | null; valor_recebido?: number | null; mes_novo?: string | null; certo?: boolean; apagar?: boolean }): Promise<void>
+  /* E6: o objetivo 2029. Só o casal; os 2 mudam e o banco guarda o histórico (quem, quando, antes e depois) */
+  objetivo?(familia: string): Promise<Objetivo>
+  objetivoSalvar?(familia: string, p: ParametrosObjetivo): Promise<void>
+  /** Os DADOS pro motor de 2029 (produto.futuro_entradas, f_08), já no formato de lib/futuro. A tela só chama futuro(). */
+  futuroEntradas?(familia: string): Promise<import('./futuro').EntradaPronta>
   /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
   exportarMeu?(familia: string): Promise<unknown>
   apagarFamilia(familia: string, confirmacao: string): Promise<void>

@@ -22,6 +22,9 @@ export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
     id: txt(a.id), nome: txt(a.nome), banco: txt(a.banco), tipo: (TIPOS.includes(a.tipo) ? a.tipo : 'caixinha') as TipoAplicacao, pct_cdi: num(a.pct_cdi), saldo: num(a.saldo),
     rendeu_hoje_liquido: num(a.rendeu_hoje_liquido), rendeu_mes_liquido: num(a.rendeu_mes_liquido), ir_faixa: num(a.ir_faixa),
     vence_em: a.vence_em || null, liquidez: a.liquidez === 'vencimento' ? 'vencimento' as const : 'diaria' as const, fgc_ok: a.fgc_ok !== false,
+    // C2 (revisão E2/E3): o banco manda titular_membro (id) e, quando vier, a lista titulares [{membro_id, nome}]; null = do casal
+    titular: a.titular_membro !== undefined ? (a.titular_membro == null ? null : txt(a.titular_membro)) : a.titular !== undefined ? (a.titular == null ? null : txt(a.titular)) : undefined,
+    titular_nome: a.titular_nome != null ? txt(a.titular_nome) : (a.titular_membro != null && Array.isArray(a.titulares) ? (a.titulares.find((t: any) => String(t?.membro_id) === String(a.titular_membro))?.nome ?? null) : null),
   }))
   const hojeLiq = num(r?.rendeu_hoje_liquido)
   // o banco diz por que rendeu 0; se o campo não vier, o app deduz pelo calendário (sábado, domingo, feriado)

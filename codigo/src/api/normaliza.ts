@@ -1,5 +1,5 @@
 // Arruma as respostas do banco no formato que as telas usam. Sem Supabase aqui: dá pra testar sozinho.
-import type { CasaDaEquipe, CupomLido, Lancamento, NovoLancamento, ResumoHoje } from './tipos'
+import type { CasaDaEquipe, CupomLido, Lancamento, NovoLancamento, RecebimentoTela, ResumoHoje } from './tipos'
 import { hojeRecife } from '../lib/formato'
 import { funcaoNaoExiste } from './erros'
 
@@ -15,6 +15,9 @@ export function normalizaResumo(r: any): ResumoHoje {
     ...(r?.so_nomes ? { so_nomes: true } : {}),
     envelopes: (r?.envelopes || []).map((e: any) => ({
       ...e, limite_mes: num(e.limite_mes), gasto_mes: num(e.gasto_mes), livre: num(e.livre),
+      // C1 (revisão E2/E3): o banco (f_03) manda dono: {membro_id, nome} ou null; a tela mostra o nome e trava pelo id
+      ...('dono' in (e || {}) ? { dono: e.dono == null ? null : typeof e.dono === 'string' ? e.dono : e.dono.nome == null ? null : String(e.dono.nome), dono_id: e.dono && typeof e.dono === 'object' && e.dono.membro_id != null ? String(e.dono.membro_id) : e.dono_id ?? null } : {}),
+      ...(typeof e?.escreve === 'boolean' ? { escreve: e.escreve } : {}),
       limite_base: e.limite_base == null ? undefined : num(e.limite_base),
       colchao_meta: e.colchao_meta == null ? undefined : num(e.colchao_meta),
       // por dia: o banco manda valor_dia (o dia inteiro) e hoje (o dia menos o que já saiu hoje). O app mostra o que ainda pode.
@@ -60,8 +63,21 @@ export type RpcCru = (nome: string, args: Record<string, unknown>) => Promise<{ 
  * Nunca cai pro lançar sem chave: aí a repetição depois de 10 s voltaria a gravar em dobro.
  */
 export async function lancarComChave(rpc: RpcCru, n: NovoLancamento): Promise<{ data: unknown; error: { message?: string; code?: string } | null }> {
-  const args = { familia: n.familia, envelope: n.envelope, valor: n.valor, chave: n.chave, data: n.data, descricao: n.descricao || null, cartao: n.cartao || null, segundos: n.segundos ?? null }
+  // E4 (f_04): "parcelas" só vai quando é parcelado; à vista não manda nada (funciona antes e depois da f_04 no banco)
+  const args = { familia: n.familia, envelope: n.envelope, valor: n.valor, chave: n.chave, data: n.data, descricao: n.descricao || null, cartao: n.cartao || null, segundos: n.segundos ?? null, ...((n.parcelas || 1) > 1 ? { parcelas: n.parcelas } : {}) }
   const r = await rpc('lancar_com_chave', args)
   if (r.error && funcaoNaoExiste(r.error)) return rpc('lancar', args)
   return r
+}
+
+/** E5: linha de produto.recebimentos (centavos inteiros, mês como data do dia 1) no formato da tela (reais, 'AAAA-MM'). */
+export function normalizaRecebimento(r: any, membros: { id: string; nome: string }[], eu: string | null): RecebimentoTela {
+  const mes = (d: unknown) => (d ? String(d).slice(0, 7) : null)
+  return {
+    id: String(r?.id), dono_membro: String(r?.dono_membro), dono_nome: membros.find(m => m.id === String(r?.dono_membro))?.nome ?? null,
+    descricao: String(r?.descricao || ''), valor: num(r?.valor_centavos) / 100, mes_previsto: mes(r?.mes_previsto) || '', mes_novo: mes(r?.mes_novo),
+    tipo: (['salario', 'contrato', 'retorno', 'outro'].includes(r?.tipo) ? r.tipo : 'outro'), certo: !!r?.certo,
+    recebido_em: r?.recebido_em ?? null, valor_recebido: r?.valor_recebido_centavos == null ? null : num(r.valor_recebido_centavos) / 100,
+    meu: !!eu && String(r?.dono_membro) === eu,
+  }
 }

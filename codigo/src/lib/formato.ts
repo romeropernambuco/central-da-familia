@@ -178,8 +178,9 @@ export const plural = (n: number, um: string, varios: string) => `${n} ${n === 1
  * Compra depois do fechamento vai pra fatura seguinte. Se o vencimento é antes do fechamento no calendário
  * (ex.: fecha 25, vence 5), a fatura vence no mês seguinte ao fechamento.
  */
-export function mesDaFatura(m: number, d: number, diaFechamento: number, diaVencimento: number): number {
-  return m + (d >= diaFechamento ? 1 : 0) + (diaVencimento <= diaFechamento ? 1 : 0)
+export function mesDaFatura(m: number, d: number, diaFechamento: number, diaVencimento: number, diasDoMes = 31): number {
+  // E4: igual a produto._mes_fatura: o fechamento num dia que o mês não tem (31 em fevereiro) vale o último dia do mês
+  return m + (d >= Math.min(diaFechamento, diasDoMes) ? 1 : 0) + (diaVencimento <= diaFechamento ? 1 : 0)
 }
 
 export interface ParcelaSimulada { mes: string; valor: number }
@@ -194,7 +195,7 @@ export function simularCompra(valor: number, parcelas: number, dataCompra: strin
   const base = Math.floor(total / n)
   const sobra = total - base * n
   const { a, m, d } = partes(dataCompra)
-  let mes = mesDaFatura(m, d, diaFechamento, diaVencimento)
+  let mes = mesDaFatura(m, d, diaFechamento, diaVencimento, new Date(Date.UTC(a, m, 0)).getUTCDate())
   let ano = a
   const out: ParcelaSimulada[] = []
   for (let i = 0; i < n; i++) {

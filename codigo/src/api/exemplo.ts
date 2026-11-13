@@ -1,12 +1,13 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
-import type { Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
+import type { FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
 import * as ex2 from './exemplo2'
+import { entradaDoBanco, type FuturoBanco } from './futuro'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
 import { dadosTeste, familiaTeste, membrosTeste, nomeFamiliaTeste, usarFamiliaTeste } from './dadosTeste'
 import { pessoaDoTeste } from '../teste/relogio'
 import { centavos, dataCurta, diaSemana, diasNoMes, previsaoGas, diasRestantes, fimDoMes, hojeRecife, mesAnterior, mesCurto, reais, segundaDaSemana, simularCompra, somaDias } from '../lib/formato'
-import { gastoSemana, gastosDoMes, mesMais, parcelasDe, pesoDia, plano, projecao, PESO_FDS } from '../lib/plano'
+import { gastoSemana, gastosDoMes, mesFatura, mesMais, parcelasDe, pesoDia, plano, projecao, PESO_FDS } from '../lib/plano'
 
 interface EnvBase { id: string; nome: string; regra: Envelope['regra']; limite_mes: number; colchao: number; casa: boolean }
 
@@ -65,9 +66,24 @@ function criarDados() {
   // compras anotadas pela equipe sem valor (o casal confere pela foto) e coberturas de imprevisto (só no exemplo)
   const comprasEquipe: { id: string; data: string; nome: string; tipo: 'feira' | 'casa'; nota: boolean; por: string }[] = []
   const imprevistos: { id: string; mes: string; envelope: string; valor: number }[] = []
-  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos }
+  // E5: recebimentos com data (exemplo, número inventado). O contrato da Ana era pra outubro e não chegou: vira pergunta pra ela
+  const m0 = hoje.slice(0, 7), mm = (i: number) => mesMais(m0, i)
+  const recebimentos: (Omit<RecebimentoTela, 'dono_nome' | 'meu'> & { apagado: boolean })[] = souza ? [] : [
+    { id: 'rc1', dono_membro: 'm-ana', descricao: 'Contrato de consultoria (exemplo)', valor: 18000, mes_previsto: mm(-1), mes_novo: null, tipo: 'contrato', certo: true, recebido_em: null, valor_recebido: null, apagado: false },
+    { id: 'rc2', dono_membro: 'm-ana', descricao: 'Bônus do fim do ano (exemplo)', valor: 5000, mes_previsto: mm(4), mes_novo: null, tipo: 'outro', certo: false, recebido_em: null, valor_recebido: null, apagado: false },
+    { id: 'rc3', dono_membro: 'm-bruno', descricao: 'Venda do carro antigo (exemplo)', valor: 30000, mes_previsto: mm(2), mes_novo: null, tipo: 'outro', certo: true, recebido_em: null, valor_recebido: null, apagado: false },
+  ]
+  // E6: o objetivo começa vazio (valem as premissas do TIME.md) e o histórico também; o Focus de exemplo tem número inventado
+  const objetivo: { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[] } = { parametros: null, historico: [] }
+  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo }
 }
 
+/** Focus de EXEMPLO (número inventado, não é o boletim do Banco Central): Selic do fim do ano e IPCA. */
+const FOCUS_EXEMPLO: FocusAno[] = [
+  { ano: 2026, selic_fim: '0.1500', ipca: '0.0450', divulgado_em: '2026-11-09', fonte: 'Focus (exemplo, número inventado)' },
+  { ano: 2027, selic_fim: '0.1250', ipca: '0.0400', divulgado_em: '2026-11-09', fonte: 'Focus (exemplo, número inventado)' },
+  { ano: 2028, selic_fim: '0.1050', ipca: '0.0380', divulgado_em: '2026-11-09', fonte: 'Focus (exemplo, número inventado)' },
+]
 let db = criarDados()
 type Logado = 'ana' | 'bruno' | 'filha' | 'carla' | 'claudia'
 const logadoInicial = (): Logado => (pessoaDoTeste === 'equipe' ? 'carla' : pessoaDoTeste === 'autonoma' ? 'claudia' : pessoaDoTeste)
@@ -113,29 +129,34 @@ function limiteNoMes(e: EnvBase, mes: string): number {
   return centavos(l)
 }
 const doEnvelope = (id: string) => vivos().filter(l => l.envelope_id === id)
+/** E4: mês da 1ª fatura da compra parcelada, pelo cartão (igual a produto._mes_fatura). */
+const faturaDoLanc = (l: { cartao_id?: string | null; data: string }) => { const c = db.cartoes.find(x => x.id === l.cartao_id); return c?.dia_fechamento && c.dia_vencimento ? mesFatura(l.data, c.dia_fechamento, c.dia_vencimento) : null }
 
 /** Conta de 1 envelope igual ao banco (_resumo + _diario + _plano). R0. */
 function contaEnvelope(e: EnvBase, hoje: string): Envelope {
   const mes = hoje.slice(0, 7), fim = fimDoMes(hoje), dr = diasRestantes(hoje)
   const lancs = doEnvelope(e.id)
-  const { porDia, parcelas } = gastosDoMes(lancs, mes)
+  // E4 (TIME.md): à vista sai no dia da compra; cada parcela sai no dia 1 do mês da fatura dela, fora do ritmo
+  const { porDia, parcelas } = gastosDoMes(lancs, mes, faturaDoLanc)
   const somaMes = centavos(Object.entries(porDia).filter(([d]) => d <= fim).reduce((s, [, v]) => s + v, 0))
   const lim = limiteNoMes(e, mes)
   // E2: de quem é e se quem olha escreve aqui. E3 (conserto 2): as parcelas que já caem no mês que vem, pra a virada avisar antes
   const base: Envelope = { id: e.id, nome: e.nome, regra: e.regra, casa: e.casa, limite_base: lim, colchao_meta: e.colchao, limite_mes: lim, gasto_mes: 0, livre: 0,
-    dono: e.casa ? null : donoDoEnv(e.id), escreve: podeEscrever(e.id), parcelas_mes_que_vem: gastosDoMes(lancs, mesMais(mes, 1)).parcelas }
-  // rodada 2: parcela e compra grande de 1 vez (10% do combinado e no mínimo R$ 150) contam 1 vez na projeção, fora do ritmo
+    dono: e.casa ? null : donoDoEnv(e.id), escreve: podeEscrever(e.id),
+    // C1/C3 (revisão E2/E3): o id e o papel do dono, como o modo real recebe do banco
+    dono_id: e.casa ? null : membrosTeste().find(x => x.envelope === e.id)?.id ?? null, dono_papel: e.casa ? null : membrosTeste().find(x => x.envelope === e.id)?.papel ?? null, parcelas_mes_que_vem: gastosDoMes(lancs, mesMais(mes, 1), faturaDoLanc).parcelas }
+  // rodada 2: parcela e compra grande de 1 vez (10% do combinado e no mínimo R$ 150) contam 1 vez na projeção, fora do ritmo.
+  // E4: a parcela já não entra no dia da compra (vem toda em `parcelas`, no dia 1): aqui sobra só a compra grande à vista
   const grande = Math.max(150, e.limite_mes * 0.1)
-  const pontuais = lancs.filter(l => l.data.startsWith(mes) && l.data <= hoje && ((l.parcelas || 1) > 1 || l.valor >= grande))
-  const primeira = (l: Lancamento) => parcelasDe(l.valor, l.parcelas || 1)[0]
+  const pontuais = lancs.filter(l => l.data.startsWith(mes) && l.data <= hoje && (l.parcelas || 1) <= 1 && l.valor >= grande)
   const seg0 = segundaDaSemana(hoje)
-  base.pontual_mes = centavos(parcelas + pontuais.reduce((t, l) => t + primeira(l), 0))
-  base.pontual_semana = centavos(pontuais.filter(l => l.data >= seg0).reduce((t, l) => t + primeira(l), 0))
+  base.pontual_mes = centavos(parcelas + pontuais.reduce((t, l) => t + l.valor, 0))
+  base.pontual_semana = centavos(pontuais.filter(l => l.data >= seg0).reduce((t, l) => t + l.valor, 0))
   let hojeV = 0
   if (e.regra === 'diario') {
     // mês passado que passou do combinado sai deste (como _diario)
     const ant = mesAnterior(mes)
-    const pa = gastosDoMes(lancs, ant)
+    const pa = gastosDoMes(lancs, ant, faturaDoLanc)
     const gastoAnt = centavos(Object.values(pa.porDia).reduce((s, v) => s + v, 0) + pa.parcelas)
     const falta = lancs.some(l => l.data.startsWith(ant)) ? Math.max(0, centavos(gastoAnt - limiteNoMes(e, ant))) : 0
     const pote = Math.max(0, lim - falta - parcelas - e.colchao)
@@ -166,7 +187,7 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
     const segs: string[] = []
     for (let d = `${mes}-01`; d <= fim; d = somaDias(d, 1)) if (new Date(d + 'T12:00:00Z').getUTCDay() === 1) segs.push(d)
     const seg = segundaDaSemana(hoje)
-    const todos = gastosDoMes(lancs, mes).porDia
+    const todos = gastosDoMes(lancs, mes, faturaDoLanc).porDia
     const daSemana = (s0: string) => { let x = 0; for (let i = 0; i < 7; i++) x += todos[somaDias(s0, i)] || 0; return x }
     // semana que começou no mês passado também conta (gasto até domingo)
     const gs = centavos(lancs.filter(l => l.data >= seg && l.data <= somaDias(seg, 6)).reduce((s, l) => s + l.valor, 0))
@@ -373,6 +394,8 @@ export const apiExemplo: Api = {
     const ja = porChave.get(nv.chave)
     if (ja) return { lancamento: semValorPraEquipe(ja), resumo: resumoDeQuemEsta(), repetido: true }
     // E2 (igual a f_02): o casal lê o limite do outro, mas lança só no seu e na Casa
+    // E4 (igual a f_04): parcelado só no cartão com dia de fechamento e de vencimento
+    if ((nv.parcelas || 1) > 1 && !faturaDoLanc({ cartao_id: nv.cartao || null, data: nv.data })) throw new Error('Parcelado só no cartão com o dia que fecha e o dia que vence. Cadastre os 2 dias em Cartões.')
     if (logado !== 'carla' && !podeEscrever(nv.envelope)) throw new Error(`Esse limite ${donoDoEnv(nv.envelope) ? `é de ${donoDoEnv(nv.envelope)}` : 'não é seu'}. Lance no seu ou num da Casa.`)
     const l: Lancamento = { id: 'l' + Date.now(), envelope_id: nv.envelope, cartao_id: nv.cartao || null, valor: centavos(nv.valor), data: nv.data, descricao: nv.descricao, apagado_em: null, criado_em: new Date().toISOString(), ...(nv.cartao && (nv.parcelas || 1) > 1 ? { parcelas: Math.min(12, Math.floor(nv.parcelas!)) } : {}), autor: logado === 'carla' ? 'carla' : membroLogado().id }
     db.lanc.push(l)
@@ -385,11 +408,11 @@ export const apiExemplo: Api = {
     // lanc_ver (E2): o casal lê os lançamentos da família toda; `meu` diz em qual dá pra mexer
     const meus = db.lanc.filter(l => podeVer(l.envelope_id)).map(l => semValorPraEquipe({ ...l, meu: logado !== 'carla' && lancMeu(l) }))
     const doMes = meus.filter(l => l.data.startsWith(mes))
-    // parcelas de compras de meses anteriores aparecem no mês delas, só pra ler
+    // E4: cada parcela aparece no mês da fatura dela (a 1ª também), no dia 1, só pra ler
     const parc: Lancamento[] = []
     for (const l of meus.filter(x => !x.apagado_em && (x.parcelas || 1) > 1)) {
-      const ps = parcelasDe(l.valor, l.parcelas!)
-      ps.forEach((v, i) => { if (i > 0 && mesMais(l.data.slice(0, 7), i) === mes) parc.push({ ...l, id: `${l.id}#${i + 1}`, valor: v, data: `${mes}-01`, criado_em: `${mes}-01T00:00:00-03:00`, parcelas: 1, parcela: { n: i + 1, de: ps.length, compra: l.data } }) })
+      const ps = parcelasDe(l.valor, l.parcelas!), m1 = faturaDoLanc(l) || l.data.slice(0, 7)
+      ps.forEach((v, i) => { if (mesMais(m1, i) === mes) parc.push({ ...l, id: `${l.id}#${i + 1}`, valor: v, data: `${mes}-01`, criado_em: `${mes}-01T00:00:00-03:00`, parcelas: 1, parcela: { n: i + 1, de: ps.length, compra: l.data } }) })
     }
     return [...doMes, ...parc].sort((x, y) => (y.data + y.criado_em).localeCompare(x.data + x.criado_em))
   },
@@ -568,6 +591,72 @@ export const apiExemplo: Api = {
     ]
   },
   // E2 (conserto 1, igual a f_03): o casal baixa a família inteira, com o nome do dono em cada linha
+  // E5 (igual a f_05): o casal vê os recebimentos de todos, com o nome do dono; criar e mudar só o dono; filha e equipe, nada
+  async recebimentos() {
+    await espera(30)
+    if (papelLogado() !== 'casal') return []
+    const eu = membroLogado().id
+    return db.recebimentos.filter(r => !r.apagado).map(({ apagado: _a, ...r }) => ({ ...r, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, meu: r.dono_membro === eu }))
+  },
+  async recebimentoCriar(_f, r) {
+    await espera(40)
+    if (papelLogado() !== 'casal') throw new Error('Só o casal anota recebimento.')
+    if (!r.descricao.trim()) throw new Error('Diga o que é (ex.: contrato, venda do carro).')
+    if (!(r.valor > 0)) throw new Error('O valor tem que ser maior que zero.')
+    if (!/^\d{4}-\d{2}$/.test(r.mes_previsto)) throw new Error('Escolha o mês em que o dinheiro entra.')
+    db.recebimentos.push({ id: 'rc' + Date.now(), dono_membro: membroLogado().id, descricao: r.descricao.trim().slice(0, 120), valor: centavos(r.valor), mes_previsto: r.mes_previsto, mes_novo: null, tipo: r.tipo, certo: r.certo, recebido_em: null, valor_recebido: null, apagado: false })
+  },
+  async recebimentoMudar(_f, id, m) {
+    await espera(40)
+    const r = db.recebimentos.find(x => x.id === id && !x.apagado)
+    if (!r) throw new Error('Esse recebimento não existe mais.')
+    if (r.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === r.dono_membro)?.nome || 'o dono'; throw new Error(`Esse recebimento é de ${n}: só ${n} muda.`) }
+    if (m.mes_novo != null && m.mes_novo <= r.mes_previsto) throw new Error('O mês novo tem que ser depois do mês previsto.')
+    if (m.recebido_em !== undefined) { r.recebido_em = m.recebido_em; r.valor_recebido = m.recebido_em ? centavos(m.valor_recebido ?? r.valor) : null }
+    if (m.mes_novo !== undefined) r.mes_novo = m.mes_novo
+    if (m.certo !== undefined) r.certo = m.certo
+    if (m.apagar) r.apagado = true
+  },
+  // ---------- E6: objetivo 2029, Focus e os dados pro motor (iguais a f_07, f_10 e f_08) ----------
+  async objetivo() {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('Só o casal vê o objetivo de 2029.')
+    return { parametros: db.objetivo.parametros ? JSON.parse(JSON.stringify(db.objetivo.parametros)) : null, historico: db.objetivo.historico.map(h => ({ ...h })), focus: FOCUS_EXEMPLO.map(f => ({ ...f })) }
+  },
+  async objetivoSalvar(_f, p) {
+    await espera(40)
+    if (papelLogado() !== 'casal') throw new Error('Só o casal muda o objetivo de 2029.')
+    const ok = (t: string) => /^-?\d+(\.\d+)?$/.test(t) && Math.abs(Number(t)) <= 1
+    if (![p.margem, p.taxa_real_trabalho, p.aliq_proj, ...Object.values(p.taxa_bruta_ano), ...Object.values(p.ipca_ano)].every(ok)) throw new Error('Confira as taxas: use um número em %, tipo 10 ou 4,5.')
+    if (!(p.mes_reajuste >= 1 && p.mes_reajuste <= 12)) throw new Error('O mês do reajuste vai de 1 a 12.')
+    const antes = db.objetivo.parametros
+    if (JSON.stringify(antes) === JSON.stringify(p)) return
+    db.objetivo.parametros = JSON.parse(JSON.stringify(p))
+    // igual ao gatilho do banco: quem, quando, antes e depois (o mais novo primeiro)
+    db.objetivo.historico.unshift({ quem: membroLogado().nome, quando: new Date().toISOString(), antes: antes ? JSON.parse(JSON.stringify(antes)) : null, depois: JSON.parse(JSON.stringify(p)) })
+  },
+  async futuroEntradas() {
+    await espera(40)
+    if (papelLogado() !== 'casal') throw new Error('Só o casal vê as contas do futuro.')
+    const hoje = hojeRecife(), m0 = hoje.slice(0, 7)
+    const g = ex2.guardadoHojeEx(membroLogado().id, true)
+    const titulares = (t: string | null | undefined) => (t ? membrosTeste().filter(x => x.id === t) : membrosTeste().filter(x => x.papel === 'casal')).map(x => ({ membro_id: x.id, nome: x.nome }))
+    // o mesmo formato de produto.futuro_entradas (f_08), em centavos inteiros: passa pelo mesmo entradaDoBanco do modo real
+    const j: FuturoBanco = {
+      hoje, mes_base: m0,
+      aplicacoes: g.aplicacoes.map(a => ({ id: a.id, titular_membro: a.titular ?? null, titular_nome: a.titular_nome ?? null, titulares: titulares(a.titular), banco: a.banco, tipo: a.tipo,
+        saldo_centavos: Math.round(a.saldo * 100), pct_cdi: String(a.pct_cdi), isenta: a.tipo === 'lci_lca' || a.tipo === 'poupanca',
+        aplicada_em: ex2.movimentosEx(a.id)[0]?.data || hoje, resgate_previsto: a.vence_em })),
+      cdi_hoje: { pct_ano: g.cdi_usado.pct_ano },
+      recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em })),
+      limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
+      config: { casa_folha: db.config.casa_folha as any },
+      parcelas_futuras: vivos().filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l)).map(l => { const m1 = faturaDoLanc(l)!; return { parcelas_lista: parcelasDe(l.valor, l.parcelas!).map((v, i) => ({ mes_fatura: mesMais(m1, i), valor_centavos: Math.round(v * 100) })) } })
+        .filter(l => l.parcelas_lista[l.parcelas_lista.length - 1].mes_fatura >= m0),
+      desejos: [], parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
+    }
+    return entradaDoBanco(j)
+  },
   async exportarFamilia() {
     if (papelLogado() !== 'casal') throw new Error('Baixar os dados da família é com o casal. Use "Baixar meus dados".')
     const dono = (id: string) => donoDoEnv(id) ?? 'Da família'
@@ -576,6 +665,7 @@ export const apiExemplo: Api = {
       cartoes: db.cartoes.map(c => ({ ...c, dono_nome: c.titular || 'Da família' })),
       lancamentos: db.lanc.map(l => ({ ...l, dono_nome: dono(l.envelope_id) })),
       guardado_aplicacoes: ex2.guardadoHojeEx(membroLogado().id, true).aplicacoes.map(a => ({ ...a, dono_nome: a.titular_nome || 'Da família' })),
+      recebimentos: db.recebimentos.map(r => ({ ...r, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome || 'Da família' })),
       config: db.config }
   },
   // filha (e quem quiser só o seu): o próprio limite e os próprios lançamentos (igual a produto.exportar_meu)

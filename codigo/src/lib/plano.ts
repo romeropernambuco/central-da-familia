@@ -89,21 +89,28 @@ export function mesMais(mes: string, i: number): string {
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`
 }
 
+/** E4: o mês (AAAA-MM) da fatura de uma compra, igual a produto._mes_fatura (fechamento no dia 31 vale o último dia do mês). */
+export function mesFatura(data: string, diaFechamento: number, diaVencimento: number): string {
+  const [a, m, d] = data.split('-').map(Number)
+  const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate()
+  const k = m - 1 + (d < Math.min(diaFechamento, ultimo) ? 0 : 1) + (diaVencimento > diaFechamento ? 0 : 1)
+  return `${a + Math.floor(k / 12)}-${String((k % 12) + 1).padStart(2, '0')}`
+}
+
 /**
- * O que conta no mês, com parcela no mês de cada fatura (decisão 3 do RANKING): a 1ª parcela conta no dia da compra,
- * cada parcela seguinte sai do mês dela (o mês já nasce menor, como conta que volta).
+ * O que conta no mês. E4 (decisão do dono, 13/11, TIME.md, igual a produto._gasto e _compromisso_mes da f_04):
+ *  - à vista (no cartão ou não) sai no DIA DA COMPRA: entra em `porDia`, no ritmo do dia e da semana;
+ *  - compra parcelada: CADA parcela (a 1ª também) entra no MÊS DA FATURA dela, abatida no dia 1, fora do ritmo (`parcelas`).
+ * `faturaDe(l)` diz o mês da 1ª fatura (pelo cartão); sem ela, a 1ª fatura é o mês da compra.
  */
-export function gastosDoMes(lancs: { data: string; valor: number; parcelas?: number }[], mes: string): { porDia: Record<string, number>; parcelas: number } {
+export function gastosDoMes<L extends { data: string; valor: number; parcelas?: number }>(lancs: L[], mes: string, faturaDe?: (l: L) => string | null): { porDia: Record<string, number>; parcelas: number } {
   const porDia: Record<string, number> = {}
   let parcelas = 0
   for (const l of lancs) {
-    const ps = parcelasDe(l.valor, l.parcelas || 1)
-    const m0 = l.data.slice(0, 7)
-    ps.forEach((v, i) => {
-      if (mesMais(m0, i) !== mes) return
-      if (i === 0) porDia[l.data] = centavos((porDia[l.data] || 0) + v)
-      else parcelas = centavos(parcelas + v)
-    })
+    const n = l.parcelas || 1
+    if (n <= 1) { if (l.data.startsWith(mes)) porDia[l.data] = centavos((porDia[l.data] || 0) + l.valor); continue }
+    const m1 = faturaDe?.(l) || l.data.slice(0, 7)
+    parcelasDe(l.valor, n).forEach((v, i) => { if (mesMais(m1, i) === mes) parcelas = centavos(parcelas + v) })
   }
   return { porDia, parcelas }
 }

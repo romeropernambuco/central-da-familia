@@ -4,6 +4,8 @@ import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
+import { Recebimentos } from './Recebimentos'
+import { Parametros } from './Parametros'
 import { novoUuid } from '../../lib/seguro'
 import { Qm } from '../../componentes/Qm'
 import type { Fatura } from '../../api/tipos'
@@ -32,7 +34,8 @@ export function Planejamento() {
   // E2 (regra nova, 13/11): o orçamento é da família. O casal vê a renda de cada um, com o nome; cada um anota a sua
   const rendas = todasRendas
   const [adultos, setAdultos] = useState(2)
-  const [casalNomes, setCasalNomes] = useState<string[]>([])
+  // C1 (revisão E2/E3): o outro adulto é reconhecido pelo id, nunca pelo nome (nome repetido não destrava)
+  const [casalIds, setCasalIds] = useState<string[] | null>(null)
   const [extra, setExtra] = useState<{ entrou: number; guardado: number; itens: { de: string; valor: number; destino: string }[] } | null>(null)
   const [entradas] = useConfig<{ data: string; valor: number; destino: string }[]>('entradas', [])
   const metas: Meta[] = lista(metasCfg).map(x => ({ id: x.id, nome: String(x.nome ?? 'Meta'), valor: Number(x.valor) || 0, guardado: Number(x.guardado) || 0 }))
@@ -53,13 +56,15 @@ export function Planejamento() {
   useEffect(() => {
     if (!familia) return
     api.faturas(familia.id, 6).then(setFaturas).catch(() => {})
-    api.membros(familia.id).then(m => { const c = m.filter(x => !x.papel || x.papel === 'casal'); setAdultos(Math.max(1, c.length)); setCasalNomes(c.map(x => x.nome)) }).catch(() => {})
+    api.membros(familia.id).then(m => { const c = m.filter(x => !x.papel || x.papel === 'casal'); setAdultos(Math.max(1, c.length)); setCasalIds(c.map(x => x.id)) }).catch(() => setCasalIds([]))
     api.entrouAMais?.(familia.id, hojeRecife().slice(0, 7)).then(setExtra).catch(() => {})
   }, [api, familia?.id, versao])
 
   if (!resumo || !familia) return <div className="card"><p className="sub">Abrindo…</p></div>
-  // E2: o limite do outro adulto é só pra ler (só ele muda); o seu, o dos filhos e a Casa o casal muda
-  const mudaLimite = (e: (typeof resumo.envelopes)[number]) => casal && (escreveNo(e, familia) || !casalNomes.includes(donoDo(e) || ''))
+  // E2: o limite do outro adulto é só pra ler (só ele muda); o seu, o dos filhos e a Casa o casal muda (decisão do coordenador).
+  // C1: pelo id do dono e pelo papel; sem saber (lista de membros não chegou), trava o que o banco diz que não escreve.
+  const outroAdulto = (e: (typeof resumo.envelopes)[number]) => !!e.dono_id && e.dono_id !== familia.membroId && (e.dono_papel === 'casal' || (casalIds ?? []).includes(e.dono_id))
+  const mudaLimite = (e: (typeof resumo.envelopes)[number]) => casal && (escreveNo(e, familia) || (e.dono_id ? !outroAdulto(e) : casalIds !== null && e.dono_papel === 'pessoa'))
   const salvarLimites = async () => {
     if (salvando) return
     // campo com 2 vírgulas ou vazio não vira zero calado: barra antes de gravar
@@ -142,6 +147,9 @@ export function Planejamento() {
           {!rendas.length && rendasLidas && <Vazio ico={<Banknote size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setForm('renda')}><Plus size={20} />Anotar renda</button> : undefined}>Nenhum salário anotado ainda. Com ele, o app mostra quanto sobra no mês.</Vazio>}
         </section>
 
+        {/* E5: recebimentos com data, dentro do Planejamento (sem tela nova) */}
+        <Recebimentos />
+
         <section className="card" aria-labelledby="pMet">
           <div className="card-h"><h2 id="pMet"><Target size={24} aria-hidden="true" />Metas</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('meta')}><Plus size={16} />Meta</button>}</div>
           {metas.map(m => (
@@ -169,6 +177,8 @@ export function Planejamento() {
             })}
           </section>
         )}
+        {/* E6: os parâmetros do objetivo de 2029 (os 2 mudam, com histórico; o Focus ao lado) */}
+        <Parametros />
       </div>
       {form && (
         <Sheet titulo={form === 'renda' ? 'Nova renda' : 'Nova meta'} fechar={() => setForm(null)}>

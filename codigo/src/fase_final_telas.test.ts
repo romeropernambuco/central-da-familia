@@ -138,3 +138,33 @@ describe('E3 (conserto 10): miúdos', () => {
     expect(todoDia(1)).toBe('toda segunda')
   })
 })
+
+// Revisão E2/E3 (C1, C2): o modo real recebe do banco formatos que o exemplo não usa. Formato copiado das migrações
+// f_03 (_resumo: dono {membro_id, nome} ou null, escreve) e g/f_08 (guardado: titular_membro, titulares).
+import { normalizaResumo } from './api/normaliza'
+import { normalizaGuardado } from './api/normaliza2'
+describe('revisão E2/E3: o formato real do banco', () => {
+  it('C1: dono como objeto vira nome + id; null (Casa, Lazer do casal) fica null; escreve é o do banco', () => {
+    const r = normalizaResumo({ envelopes: [
+      { id: 'e1', nome: 'Bruno', regra: 'mensal', limite_mes: 4000, gasto_mes: 0, livre: 4000, dono: { membro_id: 'm-b', nome: 'Bruno' }, escreve: false },
+      { id: 'e2', nome: 'Lazer do casal', regra: 'mensal', limite_mes: 500, gasto_mes: 0, livre: 500, dono: null, escreve: true },
+      { id: 'e3', nome: 'Feira', regra: 'semanal', limite_mes: 2000, gasto_mes: 0, livre: 2000, casa: true, dono: null, escreve: true },
+    ] })
+    expect(r.envelopes.map(e => [e.dono, e.dono_id, e.escreve])).toEqual([['Bruno', 'm-b', false], [null, null, true], [null, null, true]])
+    const ana = { id: 'f', nome: 'F', papel: 'casal' as const, membroNome: 'Ana', envelopeId: 'e0', membroId: 'm-a' }
+    expect(rotuloDono(r.envelopes[0], ana)).toBe('de Bruno')
+    expect(escreveNo(r.envelopes[1], ana)).toBe(true)
+    // banco antigo (sem o campo): continua igual
+    expect(normalizaResumo({ envelopes: [{ id: 'x', nome: 'X', regra: 'mensal' }] }).envelopes[0]).not.toHaveProperty('dono')
+  })
+  it('C2: aplicação com titular_membro (id) e a lista titulares; null = do casal', () => {
+    const g = normalizaGuardado({ aplicacoes: [
+      { id: 'a1', nome: 'CDB', banco: 'X', tipo: 'cdb', pct_cdi: 100, saldo: 10, titular_membro: 'm-b', titulares: [{ membro_id: 'm-b', nome: 'Bruno' }] },
+      { id: 'a2', nome: 'LCA', banco: 'Y', tipo: 'lci_lca', pct_cdi: 92, saldo: 5, titular_membro: null },
+      { id: 'a3', nome: 'Velha', banco: 'Z', tipo: 'caixinha', pct_cdi: 100, saldo: 1 },
+    ] }, '2026-11-18')
+    expect(g.aplicacoes.map(a => [a.titular, a.titular_nome])).toEqual([['m-b', 'Bruno'], [null, null], [undefined, null]])
+    const ana = { id: 'f', nome: 'F', papel: 'casal' as const, membroNome: 'Ana', envelopeId: 'e0', membroId: 'm-a' }
+    expect(g.aplicacoes.map(a => aplicacaoMinha(a, ana))).toEqual([false, true, true])
+  })
+})

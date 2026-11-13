@@ -17,6 +17,8 @@ export function Cartoes() {
   const [faturas, setFaturas] = useState<Fatura[]>([])
   const [sim, setSim] = useState(false)
   const [novo, setNovo] = useState(false)
+  // E4: o dono do cartão muda o dia que fecha e o dia que vence (a parcela cai no mês da fatura por eles)
+  const [dias, setDias] = useState<Cartao | null>(null)
   const [n, setN] = useState(0)
   useEffect(() => {
     if (!familia) return
@@ -47,8 +49,9 @@ export function Cartoes() {
             <section className="card" key={c.id} aria-label={`Cartão ${c.nome}${meu ? '' : ` de ${c.titular}`}`} {...(meu ? {} : { 'data-do-outro': c.titular || 'outra pessoa' })}>
               <div className="card-h">
                 <h2><CreditCard size={24} aria-hidden="true" />{c.nome}{!meu && c.titular ? <small className="dono"> de {c.titular}</small> : null}</h2>
-                <span className="sub">fecha dia {c.dia_fechamento} · vence dia {c.dia_vencimento}</span>
+                <span className="sub">{c.dia_fechamento && c.dia_vencimento ? `Fecha dia ${c.dia_fechamento} · Vence dia ${c.dia_vencimento}` : 'Falta o dia que fecha ou o que vence'}</span>
               </div>
+              {meu && casal && <button className="btn sm line" type="button" style={{ justifySelf: 'start', marginBottom: 10 }} onClick={() => setDias(c)}>{c.dia_fechamento && c.dia_vencimento ? 'Mudar o dia que fecha e o que vence' : 'Pôr o dia que fecha e o que vence'}</button>}
               {atual && (
                 <>
                   <p className="lbl">Fatura que vence {dataCurta(atual.vencimento)} <span className={'chip' + (atual.fechada ? '' : ' ok')}>{atual.fechada ? 'fechada' : 'aberta'}</span></p>
@@ -82,6 +85,7 @@ export function Cartoes() {
         const meu = resumo.envelopes.find(e => e.id === familia?.envelopeId && !e.casa)
         return <Simulador cartoes={meus} faturas={faturas} livre={meu ? meu.livre : resumo.livre_mes} colchao={meu ? 0 : resumo.colchao} dono={meu?.nome} fechar={() => setSim(false)} />
       })()}
+      {dias && familia && <DiasDoCartao c={dias} fechar={() => setDias(null)} salvar={async (fe, ve) => { await api.cartaoSalvar(familia.id, { ...dias, dia_fechamento: fe, dia_vencimento: ve }); setDias(null); setN(x => x + 1); await recarregar(); toast(`${dias.nome}: fecha dia ${fe}, vence dia ${ve}. As parcelas seguem as faturas novas.`) }} />}
       {novo && familia && <NovoCartao fechar={() => setNovo(false)} salvar={async c => { await api.criarCartao(familia.id, c); setNovo(false); setN(x => x + 1); await recarregar(); toast(`Cartão ${c.nome} cadastrado.`) }} />}
     </div>
   )
@@ -152,6 +156,28 @@ function NovoCartao({ fechar, salvar }: { fechar: () => void; salvar: (c: Omit<C
         <label className="campo"><span>Dia que vence</span><input className="inp" inputMode="numeric" value={ve} onChange={e => setVe(e.target.value.replace(/\D/g, '').slice(0, 2))} /></label>
         {erro && <p className="erro" role="alert">{erro}</p>}
         <button className="btn primary full" type="submit">Salvar cartão</button>
+      </form>
+    </Sheet>
+  )
+}
+
+/** E4: o dia que a fatura fecha e o dia que vence de um cartão que já existe (só o dono do cartão). */
+function DiasDoCartao({ c, fechar, salvar }: { c: Cartao; fechar: () => void; salvar: (fe: number, ve: number) => Promise<void> }) {
+  const [fe, setFe] = useState(c.dia_fechamento ? String(c.dia_fechamento) : '')
+  const [ve, setVe] = useState(c.dia_vencimento ? String(c.dia_vencimento) : '')
+  const [erro, setErro] = useState('')
+  return (
+    <Sheet titulo={`Dias do ${c.nome}`} fechar={fechar}>
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {
+        e.preventDefault()
+        const f = Number(fe), v = Number(ve)
+        if (!(f >= 1 && f <= 31) || !(v >= 1 && v <= 31)) { setErro('Os 2 dias vão de 1 a 31.'); return }
+        try { await salvar(f, v) } catch (x) { setErro((x as Error).message) }
+      }}>
+        <label className="campo"><span>Dia que a fatura fecha</span><input className="inp" inputMode="numeric" value={fe} onChange={e => setFe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Compra feita nesse dia ou depois vai pra fatura seguinte.</small></label>
+        <label className="campo"><span>Dia que a fatura vence</span><input className="inp" inputMode="numeric" value={ve} onChange={e => setVe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Cada parcela sai do seu limite no dia 1 do mês em que a fatura vence.</small></label>
+        {erro && <p className="erro" role="alert">{erro}</p>}
+        <button className="btn primary full" type="submit">Salvar os dias</button>
       </form>
     </Sheet>
   )
