@@ -4,7 +4,7 @@ import { useApp } from '../../app/contexto'
 import { Marca } from '../../componentes/Marca'
 import { codigo4Valido, codigo6Valido, emailValido } from '../../lib/formato'
 import { conviteDoHash, ehLinkEquipe } from '../../app/rotas'
-import { CONVITE_EXEMPLO } from '../../api/exemplo'
+import { CONVITE_EXEMPLO } from '../../api/conviteExemplo'
 
 type Passo = 'email' | 'codigo' | 'equipe'
 
@@ -44,7 +44,7 @@ export function Entrar() {
           </label>
           {erro && <p className="erro" role="alert">{erro}</p>}
           <button className="btn primary full" disabled={ocupado} type="submit"><Mail size={20} />Receber o código</button>
-          <button className="btn line full" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={20} />Sou da equipe da casa</button>
+          <button className="lnk equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={18} />Trabalha na casa (cozinheira, motorista)? Entre por aqui</button>
         </form>
       )}
 

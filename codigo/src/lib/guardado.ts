@@ -86,11 +86,13 @@ export function rendeQuanto(a: { tipo: TipoAplicacao; pct_cdi: number }, curto =
   return `${String(Math.round(a.pct_cdi * 100) / 100).replace('.', ',')}% ${curto ? 'da taxa dos bancos' : 'do CDI (a taxa dos bancos)'}`
 }
 
-export interface MovimentoBase { data: string; tipo: 'aporte' | 'resgate' | 'saldo_conferido'; valor: number }
+export interface MovimentoBase { data: string; tipo: 'aporte' | 'resgate' | 'saldo_conferido'; valor: number; nota?: string; chave?: string }
 export interface AplicacaoBase {
   id: string; nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number
   liquidez: 'diaria' | 'vencimento'; vence_em: string | null; encerrada_em?: string | null
   movimentos: MovimentoBase[]
+  /** no nome de quem (membro); null = do casal */
+  titular?: string | null
 }
 
 interface Lote { data: string; saldo: number }
@@ -102,6 +104,7 @@ interface Lote { data: string; saldo: number }
  */
 export function calcularGuardado(apps: AplicacaoBase[], hoje: string, cdi: { dia: number; data: string; fonte: string }): GuardadoHoje {
   const porDia: Record<string, number> = {}
+  const saldoDia: Record<string, number> = {}
   const explicacao: LinhaExplicacao[] = []
   const aplicacoes: GuardadoAplicacao[] = []
   const mes = hoje.slice(0, 7)
@@ -132,7 +135,7 @@ export function calcularGuardado(apps: AplicacaoBase[], hoje: string, cdi: { dia
         }
       }
       if (d === hoje) antesDeHoje = lotes.reduce((s, l) => s + l.saldo, 0)
-      if (!diaUtil(d)) continue
+      if (!diaUtil(d)) { saldoDia[d] = (saldoDia[d] || 0) + lotes.reduce((s, l) => s + l.saldo, 0); continue }
       let bruto = 0, liq = 0
       for (const l of lotes) {
         const dias = diasEntre(l.data, d)
@@ -145,6 +148,7 @@ export function calcularGuardado(apps: AplicacaoBase[], hoje: string, cdi: { dia
         l.saldo += b
       }
       porDia[d] = (porDia[d] || 0) + liq
+      saldoDia[d] = (saldoDia[d] || 0) + lotes.reduce((s, l) => s + l.saldo, 0)
       aTudo += liq
       if (d.startsWith(mes)) aMes += liq
       if (d === hoje) { aHojeLiq = liq; aHojeBruto = bruto; irHoje = bruto - liq }
@@ -169,11 +173,12 @@ export function calcularGuardado(apps: AplicacaoBase[], hoje: string, cdi: { dia
   if (motivo) explicacao.push({ linha: motivo, valor: 0 })
   explicacao.push({ linha: util ? 'Rendeu hoje, já sem o imposto' : 'Rendeu hoje', valor: centavos(hojeLiq) })
   const por_dia_30: { data: string; liquido: number }[] = []
-  for (let i = 29; i >= 0; i--) { const d = somaDias(hoje, -i); por_dia_30.push({ data: d, liquido: centavos(porDia[d] || 0) }) }
+  const saldo_30: { data: string; saldo: number }[] = []
+  for (let i = 29; i >= 0; i--) { const d = somaDias(hoje, -i); por_dia_30.push({ data: d, liquido: centavos(porDia[d] || 0) }); saldo_30.push({ data: d, saldo: centavos(saldoDia[d] || 0) }) }
   return {
     total: centavos(total), rendeu_hoje_bruto: centavos(hojeBruto), rendeu_hoje_liquido: centavos(hojeLiq), rendeu_mes_liquido: centavos(mesLiq),
     rendeu_desde_inicio_liquido: centavos(tudoLiq), cdi_usado: { data: cdi.data, pct_ano: Math.round(cdiAnoDoDia(cdi.dia) * 100) / 100, fonte: cdi.fonte },
-    por_dia_30, aplicacoes, explicacao, atualizado_em: new Date().toISOString(), motivo_zero: motivo,
+    por_dia_30, saldo_30, aplicacoes, explicacao, atualizado_em: new Date().toISOString(), motivo_zero: motivo,
   }
 }
 
@@ -215,4 +220,13 @@ export function demoraTexto(min: number | null | undefined): string {
 export function fraseDoDia(n: number): string {
   if (n <= 0) return 'Nada precisa de você'
   return n === 1 ? '1 coisa precisa de você' : `${n} coisas precisam de você`
+}
+
+/** Marco do guardado (G10): o maior número redondo que o saldo passou nos últimos 30 dias, ou null. Marcos de R$ 10.000 em R$ 10.000. */
+export function marcoGuardado(saldo30: { data: string; saldo: number }[], passo = 10000): { valor: number; dia: string } | null {
+  for (let i = saldo30.length - 1; i > 0; i--) {
+    const a = Math.floor(saldo30[i - 1].saldo / passo), b = Math.floor(saldo30[i].saldo / passo)
+    if (saldo30[i - 1].saldo > 0 && b > a) return { valor: b * passo, dia: saldo30[i].data }
+  }
+  return null
 }

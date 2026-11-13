@@ -1,14 +1,18 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
-import { milhar, partesDinheiro, reais } from '../lib/formato'
+import { milhar, partesDinheiro, reais, valoresOcultos } from '../lib/formato'
 import type { LinhaExplicacao } from '../api/tipos'
 
 /** Dinheiro: número em Bricolage, "R$" em Figtree cinza, ",00" some. */
-export function Din({ v, tam, className = '' }: { v: number; tam?: 'hero' | 'big' | 'mid'; className?: string }) {
+export function Din({ v, tam, className = '', menos }: { v: number; tam?: 'hero' | 'big' | 'mid'; className?: string; /** linha que tira da conta: "menos R$ 970" (nunca o sinal de menos) */ menos?: boolean }) {
+  if (valoresOcultos()) return <span className={`din ${tam || ''} ${className}`} aria-label="valor escondido"><span className="cur">R$</span>•••</span>
   const p = partesDinheiro(v)
+  // nada aparece negativo: o que passou vira "passou R$ X" em âmbar (o vermelho não existe)
+  const passou = !!p.sinal && !menos
+  const pre = menos ? 'menos ' : passou ? 'passou ' : ''
   return (
-    <span className={`din ${tam || ''} ${v < 0 ? 'neg' : ''} ${className}`} aria-label={reais(v)}>
-      {p.sinal}<span className="cur">R$</span>{p.inteiro}{p.cents && <span className="cents">{p.cents}</span>}
+    <span className={`din ${tam || ''} ${className}${passou ? ' neg' : ''}`} aria-label={pre + reais(Math.abs(v))}>
+      {pre && <span className="pre">{pre}</span>}<span className="cur">R$</span>{p.inteiro}{p.cents && <span className="cents">{p.cents}</span>}
     </span>
   )
 }
@@ -66,7 +70,8 @@ export function Explicacao({ linhas, nota }: { linhas: LinhaExplicacao[]; nota?:
         {linhas.map((l, i) => (
           <li key={i} className={i === linhas.length - 1 ? 'tot' : ''}>
             <span>{l.linha}</span>
-            <Din v={l.valor} />
+            {/* linha do meio que tira da conta: "menos R$ 970"; a última, se passou, "passou R$ 382" */}
+            <Din v={l.valor} menos={l.valor < 0 && i < linhas.length - 1} />
           </li>
         ))}
       </ul>

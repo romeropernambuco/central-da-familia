@@ -4,11 +4,12 @@ import type { FamiliaMinha, LinhaExplicacao, ResumoHoje, Sessao } from '../api/t
 import { Explicacao, Sheet } from '../componentes/base'
 import { ErroRede, ErroSessao } from '../api/erros'
 import { comIntervalo, resumoSemDinheiro } from '../lib/seguro'
-import { hojeRecife } from '../lib/formato'
+import { esconderValores, hojeRecife } from '../lib/formato'
+import { mascaraDoOlho } from './mascara'
 
-export interface PreLancar { envelope?: string; valor?: number; descricao?: string }
+export interface PreLancar { envelope?: string; valor?: number; descricao?: string; quando?: 'hoje' | 'ontem'; /** R12: corrigir este lançamento */ corrigir?: import('../api/tipos').Lancamento; /** R11: abre direto em "Entrou dinheiro" */ entrou?: boolean }
 interface Toast { msg: string; desfazer?: () => void | Promise<void>; id: number }
-interface Explicar { titulo: string; linhas: LinhaExplicacao[]; nota?: string }
+interface Explicar { titulo: string; linhas: LinhaExplicacao[]; nota?: string; /** título da folha (padrão: "De onde veio esse número?") */ cabeca?: string }
 
 export interface Ctx {
   api: Api
@@ -29,6 +30,9 @@ export interface Ctx {
   fecharLancar: () => void
   explicar: (e: Explicar) => void
   erro: string | null
+  /** N12: valores escondidos neste aparelho */
+  oculto: boolean
+  alternarOculto: () => void
 }
 
 const C = createContext<Ctx | null>(null)
@@ -43,6 +47,11 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const [exp, setExp] = useState<Explicar | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const familia = sessao?.familias[0] || null
+  const [oculto, setOculto] = useState(() => { try { const o = localStorage.getItem('esconder_valores') === '1'; esconderValores(o); return o } catch { return false } })
+  const alternarOculto = useCallback(() => setOculto(o => { const n = !o; esconderValores(n); try { localStorage.setItem('esconder_valores', n ? '1' : '0') } catch { /* sem armazenamento */ } return n }), [])
+
+  // olho fechado: além do <Din>, esconde todo "R$ 1.234" que vem pronto em frase (Escritório, avisos, fichas)
+  useEffect(() => { mascaraDoOlho(oculto); return () => mascaraDoOlho(false) }, [oculto])
 
   const equipe = familia?.papel === 'equipe'
   const [semRede, setSemRede] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false)
@@ -138,13 +147,13 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const v: Ctx = {
     api, sessao, familia, resumo, versao, recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
     abrirLancar: pre => setLancar(pre || {}), lancarAberto, fecharLancar: () => setLancar(null),
-    explicar: setExp,
+    explicar: setExp, oculto, alternarOculto,
   }
   return (
     <C.Provider value={v}>
       {children}
       {exp && (
-        <Sheet titulo="De onde veio esse número?" fechar={() => setExp(null)}>
+        <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
           <p className="corpo"><b>{exp.titulo}</b></p>
           <Explicacao linhas={exp.linhas} nota={exp.nota} />
         </Sheet>

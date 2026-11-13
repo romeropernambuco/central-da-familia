@@ -5,6 +5,8 @@ export const FUSO = 'America/Recife'
 const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const MES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 const DIA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+/** "todo sábado", "toda segunda" (sábado e domingo são masculinos). */
+export const todoDia = (dow: number) => `${dow === 0 || dow === 6 ? 'todo' : 'toda'} ${DIA_SEMANA[dow]}`
 
 /** Arredonda pra centavo sem erro de ponto flutuante. */
 export function centavos(v: number): number {
@@ -22,10 +24,26 @@ export function partesDinheiro(v: number): { sinal: string; inteiro: string; cen
   return { sinal, inteiro: txt, cents: c ? ',' + String(c).padStart(2, '0') : '' }
 }
 
-/** "R$ 1.234" ou "R$ 45,90" ou "-R$ 10". */
+/** N12: olho fechado troca todo valor por "R$ •••" (fila do mercado, criança olhando). Fica só neste aparelho. */
+let valoresEscondidos = false
+export const esconderValores = (sim: boolean) => { valoresEscondidos = sim }
+export const valoresOcultos = () => valoresEscondidos
+
+/** Espaço que não quebra: "R$" nunca fica sozinho no fim da linha (letra grande). */
+export const NBSP = '\u00a0'
+/** "R$ 1.234" ou "R$ 45,90". Nunca sinal de menos na tela: valor negativo vira "passou R$ 10". */
 export function reais(v: number): string {
+  if (valoresEscondidos) return `R$${NBSP}•••`
   const p = partesDinheiro(v)
-  return `${p.sinal}R$ ${p.inteiro}${p.cents}`
+  return `${p.sinal ? 'passou ' : ''}R$${NBSP}${p.inteiro}${p.cents}`
+}
+/** Valor de campo com 2 casas: 87.5 vira "87,50" (corrigir abre igual ao que a pessoa digitou). */
+export function valorComCentavos(v: number): string {
+  return centavos(Number(v) || 0).toFixed(2).replace('.', ',')
+}
+/** Olho fechado: troca "R$ 1.234,56" dentro de qualquer texto (fala de funcionário, aviso) por "R$ •••". */
+export function mascararTexto(s: string): string {
+  return s.replace(/(passou\s)?R\$[\s\u00a0]*\d(?:[\d.]*\d)?(,\d{1,2})?/g, `R$${NBSP}•••`)
 }
 
 /** Hoje no fuso de Recife, no formato 2026-11-11. */
@@ -150,6 +168,9 @@ export const codigo6Valido = (c: string) => /^\d{6}$/.test(c)
 export const codigo4Valido = (c: string) => /^\d{4}$/.test(c)
 export const emailValido = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim())
 
+/** "1 dia", "3 dias". */
+export const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+
 /* ---------- "E se eu comprar?" (simulação, nada é gravado) ---------- */
 
 /**
@@ -158,7 +179,7 @@ export const emailValido = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e
  * (ex.: fecha 25, vence 5), a fatura vence no mês seguinte ao fechamento.
  */
 export function mesDaFatura(m: number, d: number, diaFechamento: number, diaVencimento: number): number {
-  return m + (d > diaFechamento ? 1 : 0) + (diaVencimento <= diaFechamento ? 1 : 0)
+  return m + (d >= diaFechamento ? 1 : 0) + (diaVencimento <= diaFechamento ? 1 : 0)
 }
 
 export interface ParcelaSimulada { mes: string; valor: number }
@@ -236,7 +257,7 @@ export function linkEquipe(base: string, convite: string): string {
  */
 export function mensagemConvite(tipo: 'pessoa' | 'amiga' | 'equipe', o: { familia: string; quem: string; link: string; codigo?: string; email?: string }): string {
   if (tipo === 'pessoa')
-    return `Oi${o.quem.trim() ? ', ' + o.quem.trim() : ''}! Coloquei a casa na Central da Família. Entra aqui pra ver o nosso número do dia: ${o.link} Entra com o seu e-mail${o.email ? ' (' + o.email.trim() + ')' : ''} e digita o código de 6 números que chega nele.`
+    return `Oi${o.quem.trim() ? ', ' + o.quem.trim() : ''}! Coloquei a casa na Central da Família. Entra aqui pra ver o nosso número do dia: ${o.link} Entra com o seu e-mail${o.email ? ' (' + o.email.trim() + ')' : ''} e digita o código de 6 números que chega nele. No iPhone: toque e segure o link e escolha "Abrir no Safari" (não abra dentro do WhatsApp). Depois, no Safari, toque em Compartilhar e em "Adicionar à Tela de Início".`
   if (tipo === 'amiga')
     return `Tô usando a Central da Família: abro e vejo quanto a casa pode gastar hoje, num número só. Feira e equipe da casa ficam no mesmo lugar. Quer testar com a gente? ${o.link}`
   return `Oi, ${o.quem}! Pra anotar as compras da casa, abre este link: ${o.link} Depois digita o código ${o.codigo}. O código vale por 24 horas e só funciona nesse link.`

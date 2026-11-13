@@ -1,36 +1,70 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
-import { Delete, Camera } from 'lucide-react'
+import { Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
 import { useApp } from '../../app/contexto'
+import { useGuardado } from '../../app/useDados2'
+import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
-import type { Cartao } from '../../api/tipos'
-import { hojeRecife, reais, segundosDesde, segundosTexto, somaDias, tecla, textoParaValor } from '../../lib/formato'
+import type { Cartao, ResumoHoje } from '../../api/tipos'
+import { centavos, dataCurta, diaSemana, hojeRecife, mesCurto, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
+import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
 import { LerCupom } from '../../componentes/LerCupom'
 
-/** Lançar: valor + 1 toque no envelope. Mede os segundos do toque no botão verde até o salvo. */
+const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+/** O que fica pra ela depois do gasto, numa frase (R9: sem segundos, sem "custou de rendimento"). */
+function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number, nome: string, parcelas: number, desc?: string): string {
+  const e = r?.envelopes.find(x => x.id === envelope)
+  const parte = parcelas > 1 ? `${reais(valor)} em ${parcelas}x em ${nome}: ${reais(centavos(valor / parcelas))} contam neste mês.` : `${reais(valor)} em ${nome}.`
+  if (!e) return parte
+  // E1 (rodada 2): gasto grande (10% do mês e no mínimo R$ 150) ganha a conta do resto do mês, sem culpa
+  const lim = e.limite_base ?? e.limite_mes, conta = parcelas > 1 ? centavos(valor / parcelas) : valor
+  if (!e.casa && lim > 0 && conta >= Math.max(150, lim * 0.1) && e.livre >= 0) {
+    const pct = Math.round((conta / lim) * 100), dias = Number(hojeRecife().slice(8)) <= 0 ? 0 : Math.max(1, (r?.dias_restantes || 1))
+    return `${desc ? cap(desc) : 'Esse gasto'} de ${reais(conta)} é ${pct}% do seu mês de ${reais(lim)}. Ele entra 1 vez só: os ${dias === 1 ? 'dia que falta fica' : `${dias} dias que faltam ficam`} com ${reais(centavos(e.livre / dias))} por dia, em média.`
+  }
+  if (e.regra === 'diario') {
+    if (e.livre < 0) return `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.`
+    return `${parte} Hoje ainda pode ${reais(e.valor_dia || 0)}${e.amanha != null ? `; amanhã, ${reais(e.amanha)}` : ''}.`
+  }
+  if (e.regra === 'semanal') return `${parte} Ainda livre nesta semana: ${reais(Math.max(0, (e.teto_semana || 0) - (e.gasto_semana || 0)))}.`
+  return `${parte} Ainda livre no mês: ${reais(Math.max(0, e.livre))}.`
+}
+
+/** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
 export function Lancar() {
-  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar } = useApp()
+  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto } = useApp()
+  const corr = lancarAberto?.corrigir
   const inicio = useRef(performance.now())
-  const [txt, setTxt] = useState(lancarAberto?.valor ? String(lancarAberto.valor).replace('.', ',') : '')
-  const [quando, setQuando] = useState<'hoje' | 'ontem'>('hoje')
-  const [cartao, setCartao] = useState<string | null>(null)
+  const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : 'gasto')
+  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? String(lancarAberto.valor).replace('.', ',') : '')
+  // B9: ao corrigir, o valor antigo vem selecionado: o 1º número digitado já substitui (sem apagar 4 vezes)
+  const [selecionado, setSelecionado] = useState(!!corr)
+  const digitar = (t: string) => { setTxt(x => tecla(selecionado ? '' : x, t === 'apagar' && selecionado ? 'apagar' : t)); setSelecionado(false) }
+  const hoje = hojeRecife()
+  const [quando, setQuando] = useState<string>(corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : hoje)
+  const [cartao, setCartao] = useState<string | null>(corr ? corr.cartao_id : null)
+  const [parcelas, setParcelas] = useState(corr?.parcelas || 1)
   const [cartoes, setCartoes] = useState<Cartao[]>([])
-  const [desc, setDesc] = useState(lancarAberto?.descricao || '')
+  const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const equipe = familia?.papel === 'equipe'
+  const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
 
-  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(setCartoes).catch(() => {}) }, [api, familia?.id, equipe])
+  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => setCartoes(cs.filter(x => !x.titular || x.titular === familia.membroNome || x.id === corr?.cartao_id))).catch(() => {}) }, [api, familia?.id, equipe])
+  const digitarRef = useRef(digitar)
+  digitarRef.current = digitar
   // teclado físico no computador
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return
-      if (/^\d$/.test(e.key)) setTxt(t => tecla(t, e.key))
-      else if (e.key === ',' || e.key === '.') setTxt(t => tecla(t, ','))
-      else if (e.key === 'Backspace') setTxt(t => tecla(t, 'apagar'))
+      if (/^\d$/.test(e.key)) digitarRef.current(e.key)
+      else if (e.key === ',' || e.key === '.') digitarRef.current(',')
+      else if (e.key === 'Backspace') digitarRef.current('apagar')
     }
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
@@ -38,86 +72,245 @@ export function Lancar() {
 
   const valor = textoParaValor(txt)
   const envs = (resumo?.envelopes || []).filter(e => !equipe || e.casa)
-  const ordem = lancarAberto?.envelope ? [...envs].sort((a, b) => (a.id === lancarAberto.envelope ? -1 : b.id === lancarAberto.envelope ? 1 : 0)) : envs
+  // o limite de quem lança vem primeiro (G8); se abriu de um envelope, ele vem antes
+  const primeiro = corr?.envelope_id || lancarAberto?.envelope || familia?.envelopeId
+  const ordem = [...envs].sort((a, b) => (a.id === primeiro ? -1 : b.id === primeiro ? 1 : 0))
+  const c = cartoes.find(x => x.id === cartao)
+  const sim = c && parcelas > 1 && valor > 0 ? simularCompra(valor, parcelas, quando, c.dia_fechamento || 1, c.dia_vencimento || 10) : []
 
   // trava do duplo toque: vale no mesmo instante do 1º toque, antes de a tela redesenhar o botão desligado
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   // 1 chave por lançamento: se a internet cai no meio e a pessoa toca de novo, vai a mesma chave e o banco não grava em dobro
   const toque = useMemo(() => criarChaveToque(), [])
-  const salvar = (envelope: string, nome: string) => trava(() => gravar(envelope, nome))
+  const salvar = (envelope: string, nome: string) => trava(() => (corr ? corrigir(envelope, nome) : gravar(envelope, nome)))
   async function gravar(envelope: string, nome: string) {
     if (!familia || valor <= 0) return
     setSalvando(true); setErro('')
     try {
-      const hoje = hojeRecife()
-      // segundos do toque no + até o toque no envelope: vão no próprio lancar (o banco grava 1 evento só)
       const s = segundosDesde(inicio.current, performance.now())
-      const data = quando === 'hoje' ? hoje : somaDias(hoje, -1)
-      const chave = toque.para([envelope, valor, data, desc.trim(), cartao || ''].join('|'))
-      const r = await api.lancar({ familia: familia.id, envelope, valor, data, descricao: desc.trim(), cartao, segundos: s, chave })
+      const p = cartao ? parcelas : 1
+      // B10: nada salva como "Gasto": sem nome vira "Gasto de quarta 18/11" (o dia ajuda a lembrar depois)
+      const descricao = desc.trim() || `Gasto de ${diaSemana(quando)} ${dataCurta(quando)}`
+      const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p].join('|'))
+      const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave })
       toque.gravou()
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
-      // só pro casal e só se houver dinheiro guardado: quanto esse gasto deixa de render até o fim do mês
-      let custo = ''
-      if (familia.papel === 'casal') {
-        try { const c = await api.guardadoCustoDoGasto(familia.id, valor); if (c.ate_fim_do_mes >= 0.01) custo = ` Esse gasto também custou ${reais(c.ate_fim_do_mes)} de rendimento até o fim do mês.` } catch { /* sem Guardado ou banco ainda sem a função: o lançamento já foi salvo */ }
-      }
-      toast(equipe ? `Compra anotada em ${nome}.` : `${reais(valor)} em ${nome}. Salvo em ${segundosTexto(s)}.${custo}`, async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
+      toast(equipe ? `Compra anotada em ${nome}.` : fraseDepois(r.resumo, envelope, valor, nome, p, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
     } catch (e) {
       setSalvando(false)
       if (e instanceof ErroSessao) { await tentar(async () => { throw e }); return }
       setErro((e as Error).message)
     }
   }
+  async function corrigir(envelope: string, nome: string) {
+    if (!corr || !api.corrigirLancamento || valor <= 0) return
+    setSalvando(true); setErro('')
+    const antes = { valor: corr.valor, descricao: corr.descricao || '', data: corr.data, envelope: corr.envelope_id, cartao: corr.cartao_id, parcelas: corr.parcelas || 1 }
+    try {
+      await api.corrigirLancamento(corr.id, { valor, descricao: desc.trim(), data: quando, envelope, cartao, parcelas: cartao ? parcelas : 1 })
+      fecharLancar()
+      await recarregar()
+      toast(`Corrigido: ${reais(valor)} em ${nome}.`, async () => { await api.corrigirLancamento!(corr.id, antes); await recarregar() })
+    } catch (e) { setSalvando(false); setErro((e as Error).message) }
+  }
 
+  // A1: a equipe da casa nunca vê R$: a folha dela pergunta o que comprou e pede a foto da nota
+  if (equipe) return <AnotarCompra />
   if (cupom) return <LerCupom fechar={fecharLancar} envelopePadrao={lancarAberto?.envelope} />
+  async function apagarEste() {
+    if (!corr) return
+    const ok = await tentar(() => api.apagarLancamento(corr.id))
+    if (!ok) return
+    fecharLancar(); await recarregar()
+    toast(`${reais(corr.valor)} foi pra lixeira.`, async () => { await api.restaurarLancamento(corr.id); await recarregar() })
+  }
 
   const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'apagar']
   const [int, dec] = txt.split(',')
-  return (
-    <Sheet titulo="Lançar" fechar={fecharLancar} rotulo="Lançar gasto">
-      {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
-      {!equipe && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Camera size={18} />Ler cupom com foto</button>}
+  const visor = (
+    <>
       <div className="amount">
-        <span className="lab">Quanto gastou?</span>
-        <output className={valor ? '' : 'zero'} aria-live="polite" aria-label={'Valor ' + reais(valor)}>
-          <span className="cur">R$</span>{(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}{dec !== undefined ? ',' + dec : ''}
+        <span className="lab">{modo === 'entrou' ? 'Quanto entrou?' : corr ? 'Valor certo' : 'Quanto gastou?'}</span>
+        <output className={(valor ? '' : 'zero') + (selecionado ? ' selecionado' : '')} aria-live="polite" aria-label={oculto ? 'Valor escondido' : 'Valor ' + reais(valor)}>
+          <span className="cur">R$</span><span className="num">{oculto && valor ? '•••' : <>{(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}{dec !== undefined ? ',' + dec : ''}</>}</span>
         </output>
+        {selecionado && <small className="sub">Digite o valor certo: o antigo some no 1º número.</small>}
+        {oculto && valor > 0 && <small className="sub">Valores escondidos. Toque no olho, lá em cima, pra ver o que digitou.</small>}
       </div>
+      {/* B10: o "O que foi?" fica à vista, logo abaixo do valor */}
+      {modo === 'gasto' && <input className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
-          <button key={t} type="button" onClick={() => setTxt(x => tecla(x, t))} aria-label={t === 'apagar' ? 'Apagar' : t}>
+          <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
             {t === 'apagar' ? <Delete size={26} /> : t}
           </button>
         ))}
       </div>
-      <div className="atrow"><span className="atl">Quando</span>
-        {(['hoje', 'ontem'] as const).map(q => <button key={q} type="button" className="pill" aria-pressed={quando === q} onClick={() => setQuando(q)}>{q === 'hoje' ? 'Hoje' : 'Ontem'}</button>)}
-      </div>
-      {!equipe && cartoes.length > 0 && (
-        <div className="atrow"><span className="atl">Pagou</span>
-          <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => setCartao(null)}>Pix ou dinheiro</button>
-          {cartoes.map(c => <button key={c.id} type="button" className="pill" aria-pressed={cartao === c.id} onClick={() => setCartao(c.id)}>{c.nome}</button>)}
+    </>
+  )
+  const datas = corr && corr.data !== hoje && corr.data !== somaDias(hoje, -1) ? [corr.data, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
+  return (
+    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Lançar'} fechar={fecharLancar} rotulo={corr ? 'Corrigir lançamento' : 'Lançar gasto'}>
+      {casal && !corr && (
+        <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
+          <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}>Gastei</button>
+          <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}>Entrou dinheiro</button>
         </div>
       )}
-      <input className="inp" placeholder="O que foi? (pode deixar em branco)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />
-      <p className="lbl">{valor > 0 ? 'Toque onde o gasto entra pra salvar:' : 'Digite o valor e depois toque em quem gastou:'}</p>
-      <div className="envbtns">
-        {ordem.map(e => {
-          // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
-          const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
-          return (
-            <button key={e.id} type="button" className="envbtn" disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`Salvar em ${e.nome}`}>
-              <b>{e.nome}</b>
-              <small>{n ? `${reais(n.valor)} ${n.rotulo}` : ''}</small>
-            </button>
-          )
-        })}
-      </div>
-      {!ordem.length && <p className="sub">{equipe ? 'O casal ainda não criou o limite da Casa. Avise quem cuida da família.' : 'Nenhum limite criado ainda. Crie em Planejamento.'}</p>}
+      {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} /> : (
+        <>
+          {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
+          {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Camera size={18} />Ler cupom com foto</button>}
+          {visor}
+          <div className="atrow"><span className="atl">Quando</span>
+            {datas.map(d => <button key={d} type="button" className="pill" aria-pressed={quando === d} onClick={() => setQuando(d)}>{d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}</button>)}
+          </div>
+          {!equipe && cartoes.length > 0 && (
+            <div className="atrow"><span className="atl">Pagou</span>
+              <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => { setCartao(null); setParcelas(1) }}>Pix ou dinheiro</button>
+              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}>{x.nome}</button>)}
+            </div>
+          )}
+          {c && (
+            <div className="parcelas">
+              <span className="atl">Em quantas vezes</span>
+              <div className="pills parc" role="group" aria-label="Em quantas vezes">
+                {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
+              </div>
+              {sim.length > 1 && <p className="sub">{parcelas}x de {reais(sim[sim.length - 1].valor)}: conta {reais(sim[0].valor)} neste mês e {reais(sim[sim.length - 1].valor)} em cada mês seguinte, até a fatura de {mesCurto(sim[sim.length - 1].mes)}.</p>}
+            </div>
+          )}
+          <p className="lbl salvar-dica">{corr ? 'Toque no nome pra salvar a correção' : valor > 0 ? 'Toque no seu nome pra salvar' : 'Digite o valor e toque no seu nome pra salvar'}</p>
+          <div className="envbtns">
+            {ordem.map(e => {
+              // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
+              const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
+              // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
+              const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
+              const onde = e.regra === 'diario' ? ['hoje', 'do dia'] : e.regra === 'semanal' ? ['na semana', 'da semana'] : ['no mês', 'do mês']
+              const conta = cartao && parcelas > 1 ? centavos(valor / parcelas) : valor
+              const depois = centavos(agora - conta)
+              const linha = !n ? '' : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
+              return (
+                <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${e.nome}`}>
+                  <b>{e.nome}</b>
+                  <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
+                </button>
+              )
+            })}
+          </div>
+          {!ordem.length && <p className="sub">Nenhum limite criado ainda. Crie em Planejamento.</p>}
+          {/* B14: a lixeira mora só dentro do Corrigir (longe do lápis da lista) */}
+          {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Trash2 size={20} />Apagar este lançamento</button>}
+        </>
+      )}
       {erro && <p className="erro" role="alert">{erro}</p>}
+    </Sheet>
+  )
+}
+
+/** R11+G12: dinheiro que entrou a mais vai pra reserva. Não muda o que dá pra gastar (regra do salário). */
+function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNode }) {
+  const { api, familia, fecharLancar, toast, recarregar, tentar } = useApp()
+  const { g } = useGuardado()
+  const [entradas, salvarEntradas] = useConfig<{ id: string; data: string; valor: number; de: string; destino: string }[]>('entradas', [])
+  const [de, setDe] = useState('')
+  const apps = g?.aplicacoes || []
+  const padrao = apps.find(a => a.liquidez === 'diaria' && a.titular && a.titular !== null) || apps.find(a => a.liquidez === 'diaria') || apps[0]
+  const [destino, setDestino] = useState<string>('')
+  const alvo = destino || padrao?.id || 'combinado'
+  const [trabalho, setTrabalho] = useState(false)
+  const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
+  const toque = useMemo(() => criarChaveToque(), [])
+  const salvar = () => trava(async () => {
+    if (!familia || valor <= 0) return
+    const hoje = hojeRecife(), nota = de.trim() || (trabalho ? 'Pagamento do meu trabalho' : 'Dinheiro que entrou')
+    // AUTONOMA ideia 2: o que é do trabalho conta como renda deste mês (não é "a mais")
+    if (trabalho) {
+      const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'renda' }])
+      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados como renda deste mês, do seu trabalho.`) }
+      return
+    }
+    if (alvo === 'combinado') {
+      const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'gasto combinado' }])
+      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados pra um gasto combinado. Não muda o que você pode gastar.`) }
+      return
+    }
+    const app = apps.find(a => a.id === alvo)
+    if (!app) return
+    const chave = toque.para([app.id, valor, hoje, nota].join('|'))
+    const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
+    if (!ok) return
+    toque.gravou(); fecharLancar(); await recarregar()
+    toast(`${reais(valor)} foram pra reserva (${app.nome}). Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
+  })
+  return (
+    <>
+      <div className="pills" role="group" aria-label="De onde é esse dinheiro">
+        <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}>É do meu trabalho</button>
+        <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}>Entrou a mais</button>
+      </div>
+      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pra reserva (fica guardado, fora do gasto do mês) e <b>não aumenta</b> o que dá pra gastar.</>}</p>
+      {visor}
+      <input className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
+      {!trabalho && <div className="campo"><span id="eDest">Pra onde vai</span>
+        <div className="pills" role="group" aria-labelledby="eDest">
+          {apps.map(a => <button key={a.id} type="button" className="pill" aria-pressed={alvo === a.id} onClick={() => setDestino(a.id)}>{a.nome}<small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small></button>)}
+          <button type="button" className="pill" aria-pressed={alvo === 'combinado'} onClick={() => setDestino('combinado')}>É pra um gasto combinado</button>
+        </div>
+        {!apps.length && <small>Você ainda não tem nada no Guardado. Dá pra anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
+      </div>}
+      <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}><ArrowDownToLine size={20} />{trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}</button>
+    </>
+  )
+}
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
+/**
+ * A1 (rodada 2): a folha "Anotar compra" da equipe da casa. Nenhum R$, nenhum teclado de valor, nenhum aria-label com dinheiro.
+ * Ela diz o que comprou, se foi a feira da semana ou coisa da casa, e tira a foto da nota. O casal confere o valor pela foto.
+ */
+function AnotarCompra() {
+  const { api, familia, fecharLancar, toast, recarregar, tentar } = useApp()
+  const [nome, setNome] = useState('')
+  const [tipo, setTipo] = useState<'feira' | 'casa'>('feira')
+  const [foto, setFoto] = useState<string | null>(null)
+  const [erro, setErro] = useState('')
+  const [gravando, setGravando] = useState(false)
+  const camera = useRef<HTMLInputElement>(null)
+  const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
+  const anotar = () => trava(async () => {
+    if (!familia) return
+    if (!nome.trim()) { setErro('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.'); return }
+    if (!api.anotarCompraEquipe) { setErro('Essa parte ainda está sendo ligada no banco da família. Avise quem cuida da família.'); return }
+    setGravando(true); setErro('')
+    let aviso = ''
+    const ok = await tentar(async () => { aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso })
+    setGravando(false)
+    if (!ok) return
+    fecharLancar(); await recarregar(); toast(aviso)
+  })
+  const pegarFoto = async (arq: File | null) => { if (!arq) return; try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') } }
+  return (
+    <Sheet titulo="Anotar compra" fechar={fecharLancar} rotulo="Anotar compra">
+      <label className="campo"><span>O que você comprou?</span><input className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
+      <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
+        <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">
+          <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}>Feira da semana</button>
+          <button type="button" className="pill" aria-pressed={tipo === 'casa'} onClick={() => setTipo('casa')}>Coisa da casa</button>
+        </div>
+      </div>
+      <div className="foto-nota">
+        <input ref={camera} type="file" accept="image/*" capture="environment" onChange={ev => { const f = ev.target.files?.[0] || null; ev.target.value = ''; pegarFoto(f) }} />
+        <button type="button" className={'btn full ' + (foto ? 'line' : 'line')} onClick={() => camera.current?.click()}>{foto ? <><Check size={20} />Foto da nota pronta</> : <><Camera size={20} />Tirar foto da nota</>}</button>
+        {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
+      </div>
+      <p className="sub">O casal confere o valor pela foto. Você não precisa digitar nenhum valor.</p>
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      <button type="button" className="btn primary full" disabled={gravando} onClick={anotar}><Check size={20} />Anotar a compra</button>
     </Sheet>
   )
 }

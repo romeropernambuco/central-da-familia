@@ -212,7 +212,7 @@ function CadCartao() {
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
         sub={c => <>{c.titular ? `de ${c.titular} · ` : ''}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Nubank da Ana' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).map(m => [m.id, m.nome] as [string, string]), ['', 'Não dizer']] },
+          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Ana' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).map(m => [m.id, m.nome] as [string, string]), ['', 'Não dizer']] },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
           { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
@@ -317,7 +317,7 @@ function CadComprador() {
   return (
     <>
       <Lista<Prest> nome="Prestadores" novo="Novo prestador" itens={prest} chave={p => p.id} vazio={lidoP ? 'Nenhum prestador. Toque em "Novo prestador".' : 'Buscando…'}
-        titulo={p => `${p.servico} · ${p.nome}`} sub={p => `vem toda ${DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`} lado={p => <Din v={p.valor} />}
+        titulo={p => `${p.servico} · ${p.nome}`} sub={p => `vem ${(p.dia === 0 || p.dia === 6 ? 'todo ' : 'toda ') + DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`} lado={p => <Din v={p.valor} />}
         campos={[{ k: 'servico', rotulo: 'Serviço', ph: 'Ex.: Jardineiro' }, { k: 'nome', rotulo: 'Nome' }, { k: 'dia', rotulo: 'Dia da semana', tipo: 'opcao', opcoes: DIAS }, { k: 'valor', rotulo: 'Valor por visita', tipo: 'valor' }]}
         paraForm={p => ({ servico: p?.servico || '', nome: p?.nome || '', dia: String(p?.dia ?? 6), valor: vt(p?.valor) })}
         salvar={async (f, p) => {
@@ -386,9 +386,13 @@ function CadReserva() {
   )
 }
 
-interface Renda { id: string; nome: string; valor: number; dia?: number }
+interface Renda { id: string; nome: string; valor: number; dia?: number; dono?: string }
 function CadContador() {
-  const [rendas, salvarR, , lidoR] = useConfig<Renda[]>('rendas', [])
+  const { familia } = useApp()
+  const [todas, salvarTodas, , lidoR] = useConfig<Renda[]>('rendas', [])
+  // A3: cada um do casal vê e mexe só na renda dele; a do outro continua guardada
+  const rendas = todas.filter(r => !r.dono || r.dono === familia?.membroNome)
+  const salvarR = (v: Renda[]) => salvarTodas([...todas.filter(r => !rendas.includes(r)), ...v.map(x => ({ ...x, dono: x.dono || familia?.membroNome }))])
   const [fixas, salvarF, , lidoF] = useConfig<Renda[]>('contas_fixas', [])
   const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string) => (
     <Lista<Renda> nome={nome} novo={novo} itens={itens} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'}

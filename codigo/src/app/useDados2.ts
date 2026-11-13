@@ -46,15 +46,17 @@ export function useEscritorio() {
   const { api, familia, recarregar, tentar, toast } = useApp()
   const equipe = familia?.papel === 'equipe'
   // segurança dupla: mesmo que o banco mande, valor e entregas (que têm R$) não ficam na memória do aparelho da equipe
-  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => (equipe ? { ...v, entregue: [], precisa_de_voce: v.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : v))
+  // rodada 2 (regras de silêncio): na tela, no máximo 3 coisas por vez
+  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_de_voce: v.precisa_de_voce.slice(0, 3) }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
   const atualizar = r.atualizar
   const responder = useCallback(async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
     if (!familia) return false
-    let volta: { mensagem?: string; diario_id?: string } | undefined
+    let volta: { mensagem?: string; diario_id?: string; aviso?: string } | undefined
     const ok = await tentar(async () => { volta = (await api.escritorioResponder(familia.id, pergunta, opcao, dados)) || undefined })
     // deu certo ou não, relê: se a pergunta já tinha sido respondida em outro celular, ela some daqui também
     atualizar()
-    if (ok) { toast(equipe ? 'Anotado. O casal fica sabendo.' : 'Anotado. Fica guardado no Relatório do Escritório.'); await recarregar() }
+    // rodada 2: a confirmação diz o que foi feito e quanto falta ("Nota da feira de 16/11 guardada. Falta 1 coisa.")
+    if (ok) { toast(volta?.aviso ? (equipe ? volta.aviso + ' O casal fica sabendo.' : volta.aviso) : equipe ? 'Anotado. O casal fica sabendo.' : familia.papel === 'pessoa' ? 'Anotado.' : 'Anotado. Fica guardado no Relatório do Escritório.'); await recarregar() }
     if (ok && volta?.diario_id) perguntaDaLinha.set(volta.diario_id, pergunta)
     return ok ? volta || true : false
   }, [api, familia?.id, tentar, recarregar, atualizar, toast, equipe])

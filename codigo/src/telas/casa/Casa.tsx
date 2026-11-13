@@ -4,13 +4,14 @@ import { useConfig } from '../../app/useConfig'
 import { Users, ShoppingBasket, Flame, Wrench, FileText, Plus, MessageCircle, Check, KeyRound, CalendarDays, Trash2, Camera, LogOut, Copy } from 'lucide-react'
 import { LerCupom } from '../../componentes/LerCupom'
 import { useApp } from '../../app/contexto'
+import { useMembros } from '../../app/useMembros'
 import { PrecisaDeVoce } from '../escritorio/Escritorio'
 import { Din, Sheet, Vazio } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
 import type { CasaDaEquipe, Lancamento, MarcaCasa } from '../../api/tipos'
 import type { Folha, PessoaFolha } from '../escritorio/ajudantes'
-import { avisoDAE, centavos, dataCurta, diaSemana, hojeRecife, linkEquipe, linkWhatsApp, mensagemConvite, previsaoGas, reais, reservaFolha, segundaDaSemana, somaDias, textoParaValor } from '../../lib/formato'
+import { avisoDAE, centavos, dataCurta, diaSemana, hojeRecife, linkEquipe, linkWhatsApp, mensagemConvite, previsaoGas, reais, reservaFolha, segundaDaSemana, somaDias, textoParaValor, todoDia } from '../../lib/formato'
 
 type Aba = 'feira' | 'prestadores' | 'gas' | 'folha'
 interface Item { id: string; nome: string; ok: boolean }
@@ -22,13 +23,15 @@ const novoId = () => novoUuid().slice(0, 8)
 export function Casa() {
   const { familia } = useApp()
   const equipe = familia?.papel === 'equipe'
+  // A2: a pessoa da família (filha) vê só a lista e o gás: sem valor, sem Serviços, sem Folha, sem "Gerar código"
+  const soCasal = familia?.papel === 'casal'
   const [aba, setAba] = useState<Aba>('feira')
   if (equipe) return <CasaEquipe />
   const abas: [Aba, string, JSX.Element][] = [
-    ['feira', 'Feira', <ShoppingBasket size={18} />],
-    ...(!equipe ? [['prestadores', 'Serviços', <Wrench size={18} />] as [Aba, string, JSX.Element]] : []),
+    ['feira', soCasal ? 'Feira' : 'Lista', <ShoppingBasket size={18} />],
+    ...(soCasal ? [['prestadores', 'Serviços', <Wrench size={18} />] as [Aba, string, JSX.Element]] : []),
     ['gas', 'Gás', <Flame size={18} />],
-    ...(!equipe ? [['folha', 'Folha', <FileText size={18} />] as [Aba, string, JSX.Element]] : []),
+    ...(soCasal ? [['folha', 'Folha', <FileText size={18} />] as [Aba, string, JSX.Element]] : []),
   ]
   return (
     <div className="view">
@@ -37,9 +40,9 @@ export function Casa() {
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
       </div></div>
       {aba === 'feira' && <Feira />}
-      {aba === 'prestadores' && <Prestadores />}
+      {aba === 'prestadores' && soCasal && <Prestadores />}
       {aba === 'gas' && <Gas />}
-      {aba === 'folha' && <FolhaCasa />}
+      {aba === 'folha' && soCasal && <FolhaCasa />}
     </div>
   )
 }
@@ -70,12 +73,17 @@ function Feira() {
   const nomes = equipe ? [familia!.membroNome] : folha.pessoas.map(p => p.nome)
   const togglePres = (n: string) => setPres({ ...pres, [hoje]: veio.includes(n) ? veio.filter(x => x !== n) : [...veio, n] })
   const livreSem = feira?.teto_semana != null ? centavos(feira.teto_semana - (feira.gasto_semana || 0)) : null
+  const casal = familia?.papel === 'casal'
+  // C19 "quem pagou": quanto cada um pôs na Casa este mês
+  const nomeDe = useMembros()
+  const porQuem: Record<string, number> = {}
+  for (const l of lanc) if (!l.apagado_em && casaIds.has(l.envelope_id) && l.autor && !l.parcela) porQuem[l.autor] = centavos((porQuem[l.autor] || 0) + l.valor)
 
   return (
     <div className="tela-larga">
       <div className="col">
         <FalhaConfig m={falhaLista} />
-        <section className="card" aria-labelledby="fHoje">
+        {casal && <section className="card" aria-labelledby="fHoje">
           <div className="card-h"><h2 id="fHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
           <p className="sub" style={{ marginTop: -8, marginBottom: 12 }}>quem veio e o que saiu pra casa</p>
           <div className="duas">
@@ -92,20 +100,22 @@ function Feira() {
               <p className="sub">{saiuHoje ? 'em compras da casa hoje' : 'nenhuma compra hoje'}</p>
             </div>
           </div>
-        </section>
+        </section>}
 
         {feira && !equipe && (
           <section className="card" aria-labelledby="fSem">
             <div className="card-h"><h2 id="fSem">Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
-            <p className="lbl">{feira.nome}: livre nesta semana</p>
-            <div className="numrow"><Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />
+            {/* B8: nunca "livre" e "passou" na mesma tela */}
+            <p className="lbl">{feira.nome}: {livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
+            <div className="numrow">{livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}
               <Qm titulo={`${feira.nome}: livre nesta semana`} linhas={feira.teto_semana != null ? [
                 { linha: 'Teto da semana', valor: feira.teto_semana }, { linha: 'Já gasto desde segunda', valor: -(feira.gasto_semana || 0) }, { linha: 'Livre nesta semana', valor: livreSem! },
               ] : [{ linha: 'Combinado do mês', valor: feira.limite_mes }, { linha: 'Já gasto', valor: -feira.gasto_mes }, { linha: 'Livre', valor: feira.livre }]} />
             </div>
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
-            <div className="meter ok" style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
-            {livreSem != null && livreSem < 0 && <p className="todo" style={{ marginTop: 12 }}>A semana passou {reais(-livreSem)} do teto. Fica a conferir na conversa da casa, sem culpa.</p>}
+            <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
+            {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v]) => `${nomeDe(id) || 'alguém'} pôs ${reais(v)}`).join(', ')}.</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}
@@ -129,7 +139,7 @@ function Feira() {
           </form>
         </section>
 
-        {!equipe && (
+        {casal && (
           <section className="card" aria-labelledby="fEq">
             <div className="card-h"><h2 id="fEq">Equipe no app</h2></div>
             <p className="sub" style={{ marginBottom: 10 }}>Quem trabalha na casa entra por um link que você manda, mais um código de 4 números. Sem e-mail. Vê só a tela da Casa, nunca o dinheiro do casal.</p>
@@ -191,7 +201,7 @@ function Prestadores() {
           const msg = `Oi, ${p.nome}! Confirmando ${ehHoje ? 'hoje' : amanhã(prox, hoje)} aqui em casa. Tudo certo?`
           return (
             <section className="card env" key={p.id} aria-label={p.servico + ' ' + p.nome}>
-              <div className="env-h"><b>{p.servico}: {p.nome}</b><span className="regra">toda {DIAS[p.dia]}</span></div>
+              <div className="env-h"><b>{p.servico}: {p.nome}</b><span className="regra">{todoDia(p.dia)}</span></div>
               <div className="numrow"><Din v={p.valor} tam="mid" /><span className="sub">por visita</span></div>
               <p className="sub">Próxima visita <b>{ehHoje ? 'hoje' : dataCurta(prox)}</b>{p.ultimaVez ? ` · veio por último ${dataCurta(p.ultimaVez)}` : ''}</p>
               {(amanha || ehHoje) && <p className="todo warn">{ehHoje ? 'É hoje.' : 'É amanhã.'} Mande a confirmação.</p>}
@@ -352,6 +362,7 @@ function CasaEquipe() {
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{c.nome}</b></span></li>)}</ul>
               : <Vazio ico={<ShoppingBasket size={24} />}>Nenhuma compra anotada hoje.</Vazio>}
+            {/* A1: a folha da equipe não tem valor: o que comprou, feira ou casa, e a foto da nota */}
             <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}><Plus size={20} />Anotar compra</button>
           </section>
           <section className="card" aria-labelledby="eGas">
@@ -365,7 +376,7 @@ function CasaEquipe() {
             <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem pra casa</h2></div>
             {casa.prestadores.length ? <ul className="list">{casa.prestadores.map(p => (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b>{p.servico}: {p.nome}</b><small>toda {DIAS[p.dia]} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
+                <span className="m"><b>{p.servico}: {p.nome}</b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
                 <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado} onClick={() => marcar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
             ))}</ul> : <Vazio ico={<Wrench size={24} />}>O casal ainda não cadastrou serviços.</Vazio>}
@@ -374,7 +385,7 @@ function CasaEquipe() {
         <div className="col">
           <section className="card" aria-labelledby="eLista">
             <div className="card-h"><h2 id="eLista">Lista de compras</h2><span className="chip">{casa.lista.filter(i => !i.ok).length} faltam</span></div>
-            <p className="sub" style={{ marginBottom: 8 }}>A mesma lista do casal. Marque o que comprou; desmarque o que acabou.</p>
+            <p className="sub" style={{ marginBottom: 8 }}>A mesma lista do casal. Sem marca = falta comprar. Marque quando comprar.</p>
             <ul className="list">
               {casa.lista.map(i => (
                 <li key={i.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>

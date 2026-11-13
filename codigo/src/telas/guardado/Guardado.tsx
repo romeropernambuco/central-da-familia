@@ -1,20 +1,22 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, X } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
 import type { GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { dataBr, dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
-import { CDI_DIA_PADRAO, ROTULO_TIPO, barras30, cdiDiaDoAno, exemploVazio, pct, rendeQuanto } from '../../lib/guardado'
+import { CDI_DIA_PADRAO, ROTULO_TIPO, barras30, cdiDiaDoAno, exemploVazio, marcoGuardado, pct, rendeQuanto } from '../../lib/guardado'
 
 const TORNEIRA = 'Pense numa torneira pingando numa caixa d\'água. O que você guardou é a água da caixa. O rendimento é o pingo de cada dia útil: pinga pouco, mas pinga todo dia, e o pingo de hoje já rende amanhã. No sábado, no domingo e no feriado a torneira fecha, por isso o dia mostra R$ 0.'
 type Folha = { tipo: 'nova' } | { tipo: 'aporte' | 'resgate'; app?: GuardadoAplicacao } | { tipo: 'app'; app: GuardadoAplicacao } | null
 
 /** Guardado (a caixinha): a resposta de "quanto rendeu hoje?" em 1 número. Só o casal abre. */
 export function Guardado() {
-  const { familia, explicar } = useApp()
+  const { familia, explicar, resumo } = useApp()
   const { g, estado, motivo } = useGuardado()
+  const [grafico, setGrafico] = useState<'dia' | 'saldo'>('saldo')
+  const [marcoVisto, setMarcoVisto] = useState(() => { try { return localStorage.getItem('marco_visto') || '' } catch { return '' } })
   const [folha, setFolha] = useState<Folha>(() => (/[?&]nova=1/.test(location.hash) ? { tipo: 'nova' } : /[?&]guardar=1/.test(location.hash) ? { tipo: 'aporte' } : /[?&]tirar=1/.test(location.hash) ? { tipo: 'resgate' } : null))
 
   if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado mostra o dinheiro da família. Só o casal vê esta tela.</Vazio></div>
@@ -28,8 +30,20 @@ export function Guardado() {
 
   const barras = barras30(g.por_dia_30)
   const temFolga = barras.some(b => !b.util)
+  // G9: a reserva contada em meses do combinado de quem olha
+  const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId && !e.casa)
+  const meuLim = meuEnv ? meuEnv.limite_base ?? meuEnv.limite_mes : 0
+  const seu = g.seu_total ?? g.total
+  const meses = meuLim > 0 ? Math.floor(seu / meuLim) : 0
+  // G10: 1 aviso só por marco, que some quando a pessoa fecha
+  const marco = marcoGuardado(g.saldo_30_seu || g.saldo_30 || [])
+  const chaveMarco = marco ? `${familia.membroNome}:${marco.valor}` : ''
   return (
     <div className="view">
+      {marco && marcoVisto !== chaveMarco && (
+        <p className="todo ok marco" role="status"><PartyPopper size={20} aria-hidden="true" /><span><b>{g.saldo_30_seu ? 'Seu guardado' : 'O guardado'} passou de {reais(marco.valor)}</b> no dia {dataCurta(marco.dia)}. Está crescendo.</span>
+          <button className="iconbtn" type="button" aria-label="Fechar o aviso" onClick={() => { setMarcoVisto(chaveMarco); try { localStorage.setItem('marco_visto', chaveMarco) } catch { /* sem armazenamento */ } }}><X size={18} /></button></p>
+      )}
       <section className="card guard-hoje" aria-labelledby="gHoje">
         <h2 id="gHoje" className="lbl">Rendeu hoje</h2>
         <div className="numrow"><Din v={g.rendeu_hoje_liquido} tam="hero" /></div>
@@ -41,6 +55,8 @@ export function Guardado() {
           <div><dt>Desde o início</dt><dd><Din v={g.rendeu_desde_inicio_liquido} /></dd></div>
           <div className="tot"><dt>Você tem guardado</dt><dd><Din v={g.total} /></dd></div>
         </dl>
+        {g.seu_total != null && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
+        {meses > 0 && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}
         <button type="button" className="explica-l" onClick={abrirConta}><HelpCircle size={18} aria-hidden="true" /> De onde veio esse número?</button>
       </section>
 
@@ -54,6 +70,11 @@ export function Guardado() {
         <div className="col">
           <section className="card" aria-labelledby="g30">
             <div className="card-h"><h2 id="g30">Últimos 30 dias</h2></div>
+            <div className="seg compacta" role="group" aria-label="O que mostrar" style={{ marginBottom: 12 }}>
+              <button type="button" aria-pressed={grafico === 'saldo'} onClick={() => setGrafico('saldo')}>Quanto tenho</button>
+              <button type="button" aria-pressed={grafico === 'dia'} onClick={() => setGrafico('dia')}>Rendeu por dia</button>
+            </div>
+            {grafico === 'saldo' && g.saldo_30 ? <LinhaSaldo s={g.saldo_30} /> : <>
             <div className="barras30" role="img" aria-label={`Rendimento de cada um dos últimos 30 dias. O maior dia rendeu ${reais(Math.max(...g.por_dia_30.map(d => d.liquido)))}.`}>
               {barras.map(b => <i key={b.data} className={(b.util ? '' : 'folga') + (b.data === g.por_dia_30[g.por_dia_30.length - 1]?.data ? ' hoje' : '')} style={{ height: b.util ? `${Math.max(b.altura, 3)}%` : undefined }} title={`${dataCurta(b.data)}: ${b.util ? reais(b.liquido) : 'não rende'}`} />)}
             </div>
@@ -62,18 +83,21 @@ export function Guardado() {
               <span><i className="q" />dia útil: rendeu</span>
               <span><i className="q hoje" />hoje</span>
               {temFolga && <span><i className="q folga" />sábado, domingo e feriado: não rende</span>}
-            </div>
+            </div></>}
           </section>
         </div>
         <div className="col">
           <section className="card" aria-labelledby="gApps">
-            <div className="card-h"><h2 id="gApps">Onde está guardado</h2></div>
+            <div className="card-h"><h2 id="gApps">Onde está guardado</h2>
+              {/* B15: as palavras do banco em 1 frase simples cada */}
+              <button type="button" className="lnk" onClick={() => explicar({ cabeca: 'O que quer dizer cada palavra?', titulo: 'As palavras do banco, em 1 frase cada', linhas: [], nota: PALAVRAS })}><HelpCircle size={16} />O que é CDB, CDI, LCA?</button>
+            </div>
             <ul className="list">
               {g.aplicacoes.map(a => (
                 <li key={a.id}>
                   <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={`${a.nome}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`}>
                     <span className="tile"><Landmark size={20} /></span>
-                    <span className="m"><b>{a.nome}</b><small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
+                    <span className="m"><b>{a.nome}</b>{a.titular !== undefined && <small className="dono">{a.titular_nome ? `no nome de ${a.titular_nome}` : 'do casal'}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
                     <span className="v guard-v"><small>rendeu hoje</small><Din v={a.rendeu_hoje_liquido} /></span>
                   </button>
                 </li>
@@ -91,6 +115,8 @@ export function Guardado() {
   )
 }
 
+/** B15: as palavras do Guardado em 1 frase simples cada (fica no "O que é CDB, CDI, LCA?"). */
+const PALAVRAS = 'CDI: a taxa que os bancos usam entre si; o que rende é medido por ela (100% do CDI = rende igual a essa taxa). CDB: você empresta dinheiro pro banco e ele te devolve com rendimento. LCA e LCI: parecido com o CDB, mas sem imposto de renda; o dinheiro vai pra agricultura ou pra imóveis. Tesouro Selic: você empresta pro governo; dá pra tirar quase quando quiser. Caixinha: o cofrinho do app do banco; rende todo dia e dá pra tirar na hora. Reserva: o dinheiro guardado pra emergência, que não entra no gasto do mês.'
 /** "Taxa usada: CDI de 10/11, 13,65% ao ano (0,050788% por dia útil). Fonte: Banco Central." */
 function taxaTexto(g: GuardadoHoje): string {
   const c = g.cdi_usado
@@ -122,6 +148,7 @@ const TIPOS: TipoAplicacao[] = ['caixinha', 'cdb', 'lci_lca', 'tesouro_selic', '
 /** Nova aplicação em 4 campos: onde está, que tipo é, quanto rende e quanto tem lá. */
 function NovaAplicacao({ fechar }: { fechar: () => void }) {
   const { api, familia, tentar, recarregar, toast } = useApp()
+  const [titular, setTitular] = useState<'eu' | 'casal'>('eu')
   const [banco, setBanco] = useState('')
   const [tipo, setTipo] = useState<TipoAplicacao>('caixinha')
   const [rende, setRende] = useState('100')
@@ -138,14 +165,23 @@ function NovaAplicacao({ fechar }: { fechar: () => void }) {
     if (tipo !== 'poupanca' && !(p > 0 && p <= 300)) { setErro('Quanto rende: um número como 100 ou 110 (é o que aparece no app do banco como "% do CDI").'); return }
     if (!valorDigitadoValido(valor) || textoParaValor(valor) <= 0) { setErro('Digite quanto tem lá hoje, por exemplo 5.000.'); return }
     setErro(''); setGravando(true)
-    const nome = `${ROTULO_TIPO[tipo]} ${banco.trim()}`
-    const ok = await tentar(() => api.guardadoCriar(familia.id, { nome, banco: banco.trim(), tipo, pct_cdi: tipo === 'poupanca' ? 0 : p, valor_inicial: textoParaValor(valor), data: hojeRecife(), vence_em: comPrazo && vence ? vence : null }))
+    // não repete o tipo quando a pessoa já escreveu ("Caixinha da Andreza" não vira "Caixinha Caixinha da Andreza")
+    const nome = banco.trim().toLowerCase().startsWith(ROTULO_TIPO[tipo].toLowerCase()) ? banco.trim() : `${ROTULO_TIPO[tipo]} ${banco.trim()}`
+    const meuId = (await api.membros(familia.id).catch(() => [])).find(m => m.nome === familia.membroNome)?.id ?? null
+    const ok = await tentar(() => api.guardadoCriar(familia.id, { nome, banco: banco.trim(), tipo, pct_cdi: tipo === 'poupanca' ? 0 : p, valor_inicial: textoParaValor(valor), data: hojeRecife(), vence_em: comPrazo && vence ? vence : null, titular: titular === 'eu' ? meuId : null }))
     setGravando(false)
     if (ok) { fechar(); toast(`${nome} guardado. O rendimento aparece aqui todo dia útil.`); await recarregar() }
   })
   return (
     <Sheet titulo="Nova aplicação" fechar={fechar}>
-      <label className="campo"><span>Onde o dinheiro está</span><input className="inp" value={banco} maxLength={40} placeholder="Ex.: Nubank, Inter, Banco do Brasil" onChange={e => setBanco(e.target.value)} /></label>
+      <div className="campo"><span id="gDono">No nome de quem</span>
+        <div className="pills" role="group" aria-labelledby="gDono">
+          <button type="button" className="pill" aria-pressed={titular === 'eu'} onClick={() => setTitular('eu')}>No meu nome ({familia?.membroNome})</button>
+          <button type="button" className="pill" aria-pressed={titular === 'casal'} onClick={() => setTitular('casal')}>Do casal</button>
+        </div>
+        <small>É de quem é o CPF da aplicação. A garantia do fundo dos bancos (até R$ 250 mil) conta por pessoa.</small>
+      </div>
+      <label className="campo"><span>Onde o dinheiro está</span><input className="inp" value={banco} maxLength={40} placeholder="Ex.: Inter, Itaú, Banco do Brasil" onChange={e => setBanco(e.target.value)} /></label>
       <div className="campo"><span id="gTipo">Que tipo é</span>
         <div className="pills" role="group" aria-labelledby="gTipo">
           {TIPOS.map(t => <button key={t} type="button" className="pill" aria-pressed={tipo === t} onClick={() => setTipo(t)}>{ROTULO_TIPO[t]}</button>)}
@@ -182,7 +218,12 @@ function Movimentar({ g, tipo, inicial, fechar }: { g: GuardadoHoje; tipo: 'apor
     const chave = toque.para([app.id, tipo, v, data].join('|'))
     const ok = await tentar(() => api.guardadoMovimentar(app.id, tipo, v, data, chave))
     setGravando(false)
-    if (ok) { toque.gravou(); fechar(); toast(tipo === 'aporte' ? `${reais(v)} guardados em ${app.nome}.` : `${reais(v)} tirados de ${app.nome}.`); await recarregar() }
+    if (ok) {
+      toque.gravou(); fechar()
+      // R12: errou o valor? 10 s pra desfazer (banco: guardado_desfazer)
+      toast(tipo === 'aporte' ? `${reais(v)} guardados em ${app.nome}.` : `${reais(v)} tirados de ${app.nome}.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
+      await recarregar()
+    }
   })
   return (
     <Sheet titulo={tipo === 'aporte' ? 'Guardar dinheiro' : 'Tirar dinheiro'} fechar={fechar}>
@@ -245,5 +286,26 @@ export function CartaoGuardado() {
       )}
       <ChevronRight size={20} className="muted" aria-hidden="true" />
     </a>
+  )
+}
+
+/** G10: a linha do saldo subindo nos últimos 30 dias (SVG simples, sem biblioteca). */
+function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
+  const v = s.filter(x => x.saldo > 0)
+  if (v.length < 2) return <p className="sub">Ainda sem 30 dias de histórico.</p>
+  const min = Math.min(...v.map(x => x.saldo)), max = Math.max(...v.map(x => x.saldo))
+  const W = 300, H = 110, folga = Math.max(1, (max - min) * 0.15)
+  const y = (x: number) => H - 8 - ((x - (min - folga)) / (max - min + 2 * folga)) * (H - 16)
+  const pts = v.map((x, i) => `${(i / (v.length - 1)) * W},${y(x.saldo).toFixed(1)}`).join(' ')
+  const cresceu = v[v.length - 1].saldo - v[0].saldo
+  return (
+    <figure className="linha-saldo" aria-label={`Saldo foi de ${reais(v[0].saldo)} pra ${reais(v[v.length - 1].saldo)} em 30 dias`}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-hidden="true">
+        <polyline points={`0,${H} ${pts} ${W},${H}`} className="area" />
+        <polyline points={pts} className="linha" />
+      </svg>
+      <figcaption className="barras30-pe"><span>{dataCurta(v[0].data)}: {reais(v[0].saldo)}</span><span>hoje: {reais(v[v.length - 1].saldo)}</span></figcaption>
+      <p className="sub" style={{ marginTop: 8 }}>{cresceu > 0 ? <>Cresceu <b>{reais(cresceu)}</b> em 30 dias, somando o que rendeu e o que entrou.</> : 'Ficou parado nestes 30 dias.'}</p>
+    </figure>
   )
 }

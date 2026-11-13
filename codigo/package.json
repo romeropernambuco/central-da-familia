@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:exemplo": "vite --mode exemplo",
     "build": "tsc -p . && vite build",
     "build:exemplo": "vite build --mode exemplo",
     "build:demo": "vite build --mode demo && node scripts/demo.mjs",
     "test": "vitest run",
+    "portoes": "node scripts/portoes.mjs",
     "e2e": "node testes/e2e.mjs",
     "zip": "node scripts/zip.mjs"
   },
@@ -16,6 +18,7 @@
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
     "@supabase/supabase-js": "^2.119.0",
+    "decimal.js": "10.4.3",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -199,7 +199,7 @@ export const apiReal: Api = {
 
   // ---------- CONTRATO2.md, seção A: Guardado (só o casal; o banco recusa os outros) ----------
   async guardadoHoje(familia) { return normalizaGuardado(await rpc('guardado_hoje', { familia })) },
-  async guardadoCriar(familia, a) { await rpc('guardado_criar', { familia, nome: a.nome, banco: a.banco, tipo: a.tipo, pct_cdi: a.pct_cdi, valor_inicial: a.valor_inicial, data: a.data, vence_em: a.vence_em || null, chave: crypto.randomUUID() }) },
+  async guardadoCriar(familia, a) { await rpc('guardado_criar', { familia, nome: a.nome, banco: a.banco, tipo: a.tipo, pct_cdi: a.pct_cdi, valor_inicial: a.valor_inicial, data: a.data, vence_em: a.vence_em || null, chave: crypto.randomUUID(), ...(a.titular !== undefined ? { titular: a.titular } : {}) }) },
   async guardadoMovimentar(aplicacao, tipo, valor, data, chave) { await rpc('guardado_movimentar', { aplicacao, tipo, valor, data, chave }) },
   async guardadoEncerrar(aplicacao) { await rpc('guardado_encerrar', { aplicacao }) },
   async guardadoCustoDoGasto(familia, valor) { return normalizaCusto(await rpc('guardado_custo_do_gasto', { familia, valor })) },

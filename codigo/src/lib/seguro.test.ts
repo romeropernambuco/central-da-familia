@@ -82,7 +82,7 @@ describe('campo de dinheiro digitado', () => {
     expect(textoParaValor('1,500,90')).toBe(1500.9)
     expect(textoParaValor('1500')).toBe(1500)
     expect(textoParaValor('0,1') + textoParaValor('0,2')).toBeCloseTo(0.3, 10)
-    expect(textoParaValor('R$ 45,9')).toBe(45.9)
+    expect(textoParaValor('R$\u00a045,9')).toBe(45.9)
     expect(valorDigitadoValido('1,5,3')).toBe(false)
     expect(valorDigitadoValido('')).toBe(false)
     expect(valorDigitadoValido('1500,00')).toBe(true)
@@ -91,7 +91,7 @@ describe('campo de dinheiro digitado', () => {
   it('valor do banco vai pro campo e volta igual (antes 1153.85 virava 115385)', () => {
     for (const v of [1153.85, 5769.25, 5000, 0.07, 1000.1]) expect(textoParaValor(valorParaTexto(v))).toBe(v)
     expect(valorParaTexto(null)).toBe('')
-    expect(reais(textoParaValor(valorParaTexto(1153.85)))).toBe('R$ 1.153,85')
+    expect(reais(textoParaValor(valorParaTexto(1153.85)))).toBe('R$\u00a01.153,85')
   })
 })
 

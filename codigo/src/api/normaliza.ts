@@ -19,6 +19,7 @@ export function normalizaResumo(r: any): ResumoHoje {
       colchao_meta: e.colchao_meta == null ? undefined : num(e.colchao_meta),
       // por dia: o banco manda valor_dia (o dia inteiro) e hoje (o dia menos o que já saiu hoje). O app mostra o que ainda pode.
       valor_dia: e.regra === 'diario' ? (e.hoje != null ? num(e.hoje) : e.valor_dia != null ? num(e.valor_dia) : undefined) : undefined,
+      valor_dia_inteiro: e.regra === 'diario' && e.valor_dia != null ? num(e.valor_dia) : undefined,
       teto_semana: e.teto_semana == null ? undefined : num(e.teto_semana),
       gasto_semana: e.gasto_semana == null ? undefined : num(e.gasto_semana),
     })),
@@ -39,7 +40,7 @@ export function normalizaCasa(r: any): CasaDaEquipe {
 
 /** Lançamento que volta do banco. Pra equipe ele vem sem `valor` (e sem cartão): fica 0 e a tela da equipe nunca mostra. */
 export function normalizaLancamento(l: any): Lancamento {
-  return { id: String(l?.id), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || '') }
+  return { id: String(l?.id), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || ''), ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}) }
 }
 
 export function normalizaCupom(j: any): CupomLido {

@@ -23,6 +23,34 @@ export interface Envelope {
   limite_base?: number
   /** Colchão combinado deste envelope (envelopes.colchao). */
   colchao_meta?: number
+  /* Vêm do banco (_resumo/_diario); o modo exemplo agora manda igual (R0). */
+  /** O que ainda pode gastar hoje neste envelope (nunca menor que 0). */
+  hoje?: number
+  gasto_hoje?: number
+  /** O dia inteiro de hoje, antes do gasto de hoje (banco: _diario.valor_dia). */
+  valor_dia_inteiro?: number
+  /** Saldo do mês depois do gasto de hoje (pode ser negativo: aí "fica devendo"). */
+  ate_fim_mes?: number
+  peso_fds?: number
+  /** Quanto o mês passado passou do combinado e saiu deste mês. */
+  falta_mes_anterior?: number
+  /** Parcelas de compras antigas que caem neste mês (já descontadas). */
+  parcelas_mes?: number
+  /** Valor do dia de amanhã se nada mais for gasto hoje (só no "por dia"). */
+  amanha?: number | null
+  /** Quanto ainda dá pra gastar de hoje até domingo (só no "por dia"). */
+  ate_domingo?: number
+  /** Gasto desde segunda (só no "por dia"). */
+  gasto_semana_dia?: number
+  /* Rodada 2 (modo exemplo; no banco precisa de campo novo no _resumo) */
+  /** Parcelas e compras grandes de 1 vez neste mês: contam 1 vez na projeção, fora do ritmo do dia. */
+  pontual_mes?: number
+  /** Parte de gasto_semana_dia que é compra grande ou parcela. */
+  pontual_semana?: number
+  /** L2 "Por que mudou?": o valor do dia de ontem e o que mexeu nele. */
+  mudou?: { ontem: number; motivo: string } | null
+  /** Quanto o mês passado passou (pra a frase da virada: "Dezembro começa com R$ X"). */
+  mes_anterior?: { mes: string; gasto: number; limite: number } | null
 }
 
 export interface ResumoHoje {
@@ -34,6 +62,10 @@ export interface ResumoHoje {
   explicacao: LinhaExplicacao[]
   /** Equipe da casa: o banco manda só o nome dos envelopes da Casa, sem nenhum número de dinheiro. */
   so_nomes?: boolean
+  /** R1: soma dos limites dos outros (sem detalhe), pra o Planejamento fechar a conta com a renda do casal. */
+  limites_outros?: number
+  /** Rodada 2: placar do casal "se continuar assim" (só o que vem pela frente, sem item de ninguém). */
+  placar_casal?: { nome: string; fecha: number; limite: number; eu: boolean }[]
 }
 
 export interface Lancamento {
@@ -45,7 +77,16 @@ export interface Lancamento {
   descricao: string | null
   apagado_em: string | null
   criado_em: string
+  /** Compra no cartão em N vezes (1 = à vista). */
+  parcelas?: number
+  /** Linha que é só a parcela de uma compra de outro mês (não dá pra apagar sozinha). */
+  parcela?: { n: number; de: number; compra: string }
+  /** Membro que lançou. */
+  autor?: string
 }
+
+/** Pessoa da família e como está o convite dela. */
+export interface ConviteFamilia { id: string; nome: string; email: string | null; papel: Papel; situacao: 'esperando' | 'entrou' | 'cancelado'; entrou_em?: string | null; enviado_em?: string | null }
 
 export interface Cartao {
   id: string; nome: string; dia_fechamento: number | null; dia_vencimento: number | null
@@ -63,14 +104,14 @@ export interface ItemEstoque { id: string; nome: string; categoria: string; ativ
 export interface Contagem { id: string; semana: string; data: string; contado_por: string | null; itens: { item_id: string; estado: EstadoItem }[] }
 export interface Estoque { itens: ItemEstoque[]; contagens: Contagem[] }
 
-export interface Fatura { cartao_id: string; cartao: string; mes: string; vencimento: string; fecha_em?: string; total: number; fechada: boolean }
+export interface Fatura { cartao_id: string; cartao: string; mes: string; vencimento: string; fecha_em?: string; total: number; fechada: boolean; /** quanto desta fatura é gasto da Casa (quem pagou) */ da_casa?: number }
 
 /** Equipe: `convite` é o id que vai no link e `codigo_4_digitos` o código. Casal e pessoa: `convite` vem como 'email'. */
 export interface Convite { convite?: string; codigo_4_digitos?: string; expira_em?: string; email?: string; ok?: boolean }
 
 export interface Numero { chave: string; nome: string; valor: number; texto: string; meta: string; ok: boolean; explicacao: string }
 
-export interface NovoLancamento { familia: string; envelope: string; valor: number; data: string; descricao: string; cartao?: string | null; /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number; /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string }
+export interface NovoLancamento { familia: string; envelope: string; valor: number; data: string; descricao: string; cartao?: string | null; /** compra no cartão em N vezes */ parcelas?: number; /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number; /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string }
 
 /** O que a equipe anota na Casa sem ler config_familia (a tranca não deixa): vai como evento. */
 export type AvisoCasa = 'casa_gas' | 'casa_presenca'
@@ -98,6 +139,8 @@ export interface GuardadoAplicacao {
   id: string; nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; saldo: number
   rendeu_hoje_liquido: number; rendeu_mes_liquido: number; ir_faixa: number
   vence_em: string | null; liquidez: 'diaria' | 'vencimento'; fgc_ok: boolean
+  /** No nome de quem (membro); null = do casal. */
+  titular?: string | null; titular_nome?: string | null
 }
 /** O que produto.guardado_hoje devolve. Só o casal recebe. */
 export interface GuardadoHoje {
@@ -113,15 +156,21 @@ export interface GuardadoHoje {
   atualizado_em: string
   /** Por que hoje rendeu R$ 0 ("Hoje é sábado: rende de novo na segunda"). Vazio em dia útil. */
   motivo_zero?: string | null
+  /** Saldo total no fim de cada um dos últimos 30 dias (linha subindo). */
+  saldo_30?: { data: string; saldo: number }[]
+  /** Quanto está no nome de quem olha e quanto é do casal. */
+  seu_total?: number; casal_total?: number
+  /** Saldo só do que está no nome de quem olha, nos últimos 30 dias (pro marco G10). */
+  saldo_30_seu?: { data: string; saldo: number }[]
 }
-export interface NovaAplicacao { nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; valor_inicial: number; data: string; vence_em?: string | null }
+export interface NovaAplicacao { nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; valor_inicial: number; data: string; vence_em?: string | null; /** membro dono; null = do casal */ titular?: string | null }
 export interface CustoDoGasto { ate_fim_do_mes: number; em_12_meses: number }
 
 /* ---------- Escritório que cobra e Lembretes: CONTRATO2.md, seção B ---------- */
 export type EstadoFuncionario = 'vai_comecar' | 'trabalhando' | 'entregue' | 'precisa_de_voce'
 /** `pede`: campo obrigatório antes de gravar; `pede2`: 2º campo, opcional; `abre`: o que o app abre (lancar, guardado, cartao, nota, contagem). Igual ao BANCO2.md. */
 export type Pede = 'data' | 'valor' | 'texto'
-export type Abre = 'lancar' | 'guardado' | 'cartao' | 'nota' | 'contagem'
+export type Abre = 'lancar' | 'guardado' | 'cartao' | 'nota' | 'contagem' | 'orcamento'
 export interface OpcaoPergunta { id: string; rotulo: string; pede?: Pede; pede2?: Pede; abre?: Abre }
 export interface PerguntaEsc {
   id: string; funcionario: string; pergunta: string; contexto: string
@@ -131,7 +180,7 @@ export interface PerguntaEsc {
   vence_em?: string | null; atrasado_dias?: number
   /** texto pronto pra copiar (opção "Copiar mensagem") */
   mensagem?: string
-  /** nome curto do assunto, pro diário ("Fatura do Nubank") */
+  /** nome curto do assunto, pro diário ("Fatura do cartão Inter") */
   assunto?: string
   /** há quantos dias a pergunta espera resposta */
   espera_dias?: number
@@ -149,7 +198,7 @@ export interface RelatorioFuncionario { funcionario: string; perguntas: number; 
 export interface RelatorioEsc { funcionarios: RelatorioFuncionario[]; diario: LinhaDiario[] }
 
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
-export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito'
+export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais'
 
 export interface Api {
   modo: 'real' | 'exemplo'
@@ -175,6 +224,21 @@ export interface Api {
   lancamentos(familia: string, mes: string): Promise<Lancamento[]>
   apagarLancamento(id: string): Promise<void>
   restaurarLancamento(id: string): Promise<void>
+  /** Corrige valor, descrição, dia, envelope ou cartão de um lançamento (banco: lanc_mudar deixa a autora mudar). */
+  corrigirLancamento?(id: string, campos: { valor?: number; descricao?: string; data?: string; envelope?: string; cartao?: string | null; parcelas?: number }): Promise<void>
+  /** Passou do combinado: cobre com a sobra da Casa neste mês (SÓ NO EXEMPLO: no banco precisa de função nova). Devolve como desfazer. */
+  cobrirComCasa?(familia: string, envelope: string, valor: number): Promise<() => Promise<void>>
+  /** Quem está na família e como está o convite de cada um. */
+  convites?(familia: string): Promise<ConviteFamilia[]>
+  reenviarConvite?(familia: string, id: string): Promise<void>
+  cancelarConvite?(familia: string, id: string): Promise<void>
+
+  /** Equipe: anota a compra SEM valor (o que comprou, feira ou coisa da casa, foto da nota). O casal confere pela foto. */
+  anotarCompraEquipe?(familia: string, c: { tipo: 'feira' | 'casa'; nome: string; foto?: string | null }): Promise<{ aviso: string }>
+  /** Regra do salário: o que entrou a mais neste mês pra quem olha e quanto disso foi pra reserva. */
+  entrouAMais?(familia: string, mes: string): Promise<{ entrou: number; guardado: number; itens: { de: string; valor: number; destino: string }[] }>
+  /** V3 "Foi imprevisto" (SÓ NO EXEMPLO): o que passou sai da reserva pra mês ruim. Devolve como desfazer. */
+  cobrirImprevisto?(familia: string, envelope: string, valor: number): Promise<() => Promise<void>>
 
   cartoes(familia: string): Promise<Cartao[]>
   criarCartao(familia: string, c: Omit<Cartao, 'id'>): Promise<void>
@@ -196,7 +260,9 @@ export interface Api {
   guardadoHoje(familia: string): Promise<GuardadoHoje>
   guardadoCriar(familia: string, a: NovaAplicacao): Promise<void>
   /** Guardar (aporte), tirar (resgate) ou conferir o saldo. `chave`: 1 uuid por toque, o banco não grava 2 vezes. */
-  guardadoMovimentar(aplicacao: string, tipo: 'aporte' | 'resgate' | 'saldo_conferido', valor: number, data: string, chave: string): Promise<void>
+  guardadoMovimentar(aplicacao: string, tipo: 'aporte' | 'resgate' | 'saldo_conferido', valor: number, data: string, chave: string, nota?: string): Promise<void>
+  /** Desfaz o último movimento gravado com essa chave (banco: guardado_desfazer). */
+  guardadoDesfazer?(aplicacao: string, chave: string): Promise<void>
   guardadoEncerrar(aplicacao: string): Promise<void>
   /** Quanto esse gasto deixa de render. */
   guardadoCustoDoGasto(familia: string, valor: number): Promise<CustoDoGasto>
@@ -204,7 +270,7 @@ export interface Api {
   /* Escritório: perguntas de quem precisa de você, respostas no diário, relatório e lembretes. */
   escritorioHoje(familia: string): Promise<EscritorioHoje>
   /** Grava no diário e faz o efeito. Responder de novo a mesma pergunta corrige (a linha antiga fica). Devolve a mensagem pronta quando a opção é copiar. */
-  escritorioResponder(familia: string, perguntaId: string, opcao: string, dados?: Record<string, unknown>): Promise<{ mensagem?: string; /** id da linha gravada no diário */ diario_id?: string } | void>
+  escritorioResponder(familia: string, perguntaId: string, opcao: string, dados?: Record<string, unknown>): Promise<{ mensagem?: string; /** id da linha gravada no diário */ diario_id?: string; /** confirmação do que foi feito (rodada 2) */ aviso?: string } | void>
   escritorioRelatorio(familia: string, de: string, ate: string): Promise<RelatorioEsc>
   /** Diário de 1 funcionário, do mais novo pro mais velho ("ver tudo"). */
   escritorioDiario(familia: string, funcionario: string, limite: number, antes?: string): Promise<LinhaDiario[]>

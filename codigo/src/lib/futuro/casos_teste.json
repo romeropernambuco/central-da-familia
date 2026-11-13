@@ -1,0 +1,612 @@
+{
+ "versao": "13/11/2026",
+ "convencoes": {
+  "dinheiro": "2 casas, arredondamento meio pra cima, em cada valor gravado",
+  "taxas": "percentual com 4 casas so na exibicao; conta usa precisao cheia",
+  "mes": "rendimento sobre o saldo do 1o dia; movimentos no ultimo dia",
+  "dias": "dias corridos do mes, base 365"
+ },
+ "casos": [
+  {
+   "id": "IR-179",
+   "nome": "IR com 179 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 179,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "22.5000",
+    "ir": "225.00",
+    "rendimento_liquido": "775.00"
+   }
+  },
+  {
+   "id": "IR-180",
+   "nome": "IR com 180 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 180,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "22.5000",
+    "ir": "225.00",
+    "rendimento_liquido": "775.00"
+   }
+  },
+  {
+   "id": "IR-181",
+   "nome": "IR com 181 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 181,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "20.0000",
+    "ir": "200.00",
+    "rendimento_liquido": "800.00"
+   }
+  },
+  {
+   "id": "IR-360",
+   "nome": "IR com 360 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 360,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "20.0000",
+    "ir": "200.00",
+    "rendimento_liquido": "800.00"
+   }
+  },
+  {
+   "id": "IR-361",
+   "nome": "IR com 361 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 361,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "17.5000",
+    "ir": "175.00",
+    "rendimento_liquido": "825.00"
+   }
+  },
+  {
+   "id": "IR-720",
+   "nome": "IR com 720 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 720,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "17.5000",
+    "ir": "175.00",
+    "rendimento_liquido": "825.00"
+   }
+  },
+  {
+   "id": "IR-721",
+   "nome": "IR com 721 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 721,
+    "isenta": false
+   },
+   "saida_esperada": {
+    "aliquota_pct": "15.0000",
+    "ir": "150.00",
+    "rendimento_liquido": "850.00"
+   }
+  },
+  {
+   "id": "IR-LCA",
+   "nome": "LCA isenta com 100 dias",
+   "formula": "F1",
+   "entrada": {
+    "rendimento_bruto": "1000.00",
+    "dias_corridos": 100,
+    "isenta": true
+   },
+   "saida_esperada": {
+    "aliquota_pct": "0.0000",
+    "ir": "0.00",
+    "rendimento_liquido": "1000.00"
+   }
+  },
+  {
+   "id": "IR-DATA-2027-06-30",
+   "nome": "Contagem de dias por data (aplicou 01/01/2027)",
+   "formula": "F1",
+   "entrada": {
+    "data_aplicacao": "2027-01-01",
+    "data_resgate": "2027-06-30"
+   },
+   "saida_esperada": {
+    "dias_corridos": 180,
+    "aliquota_pct": "22.5000"
+   }
+  },
+  {
+   "id": "IR-DATA-2027-07-01",
+   "nome": "Contagem de dias por data (aplicou 01/01/2027)",
+   "formula": "F1",
+   "entrada": {
+    "data_aplicacao": "2027-01-01",
+    "data_resgate": "2027-07-01"
+   },
+   "saida_esperada": {
+    "dias_corridos": 181,
+    "aliquota_pct": "20.0000"
+   }
+  },
+  {
+   "id": "F1-2027-01",
+   "nome": "Rendimento liquido do mes, mes de 31 dias",
+   "formula": "F1",
+   "entrada": {
+    "saldo_inicial": "100000.00",
+    "taxa_bruta_anual_pct": "12.5000",
+    "aliquota_ir_pct": "22.5000",
+    "dias_no_mes": 31
+   },
+   "saida_esperada": {
+    "rendimento_liquido": "788.41"
+   }
+  },
+  {
+   "id": "F1-2027-02",
+   "nome": "Rendimento liquido do mes, mes de 28 dias",
+   "formula": "F1",
+   "entrada": {
+    "saldo_inicial": "100000.00",
+    "taxa_bruta_anual_pct": "12.5000",
+    "aliquota_ir_pct": "22.5000",
+    "dias_no_mes": 28
+   },
+   "saida_esperada": {
+    "rendimento_liquido": "711.84"
+   }
+  },
+  {
+   "id": "F1-2028-02",
+   "nome": "Rendimento liquido do mes, fevereiro bissexto 29 dias",
+   "formula": "F1",
+   "entrada": {
+    "saldo_inicial": "100000.00",
+    "taxa_bruta_anual_pct": "11.0000",
+    "aliquota_ir_pct": "22.5000",
+    "dias_no_mes": 29
+   },
+   "saida_esperada": {
+    "rendimento_liquido": "652.12"
+   }
+  },
+  {
+   "id": "F1-2027-04",
+   "nome": "Rendimento liquido do mes, mes de 30 dias",
+   "formula": "F1",
+   "entrada": {
+    "saldo_inicial": "100000.00",
+    "taxa_bruta_anual_pct": "12.5000",
+    "aliquota_ir_pct": "22.5000",
+    "dias_no_mes": 30
+   },
+   "saida_esperada": {
+    "rendimento_liquido": "762.88"
+   }
+  },
+  {
+   "id": "F1-NEG",
+   "nome": "Saldo inicial negativo nao rende",
+   "formula": "F4",
+   "entrada": {
+    "saldo_inicial": "-5000.00",
+    "taxa_bruta_anual_pct": "11.0000",
+    "dias_no_mes": 31
+   },
+   "saida_esperada": {
+    "rendimento": "0.00"
+   }
+  },
+  {
+   "id": "F2-FONTE",
+   "nome": "Fisher, exemplo da fonte (12% e 6%)",
+   "formula": "F2",
+   "entrada": {
+    "taxa_nominal_anual_pct": "12.0000",
+    "aliquota_ir_pct": "0.0000",
+    "ipca_anual_pct": "6.0000"
+   },
+   "saida_esperada": {
+    "taxa_real_anual_pct": "5.6604",
+    "taxa_real_mensal_pct": "0.4599"
+   }
+  },
+  {
+   "id": "F2-FOCUS2029",
+   "nome": "Taxa real liquida com Focus 2029 (Selic 10,25%, IPCA 4%, IR 15%)",
+   "formula": "F2",
+   "entrada": {
+    "taxa_nominal_anual_pct": "10.2500",
+    "aliquota_ir_pct": "15.0000",
+    "ipca_anual_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "taxa_liquida_anual_pct": "8.7125",
+    "taxa_real_anual_pct": "4.5313",
+    "taxa_real_mensal_pct": "0.3700"
+   }
+  },
+  {
+   "id": "F2-NEG",
+   "nome": "Taxa real negativa",
+   "formula": "F2/F3",
+   "entrada": {
+    "taxa_nominal_anual_pct": "5.0000",
+    "aliquota_ir_pct": "20.0000",
+    "ipca_anual_pct": "5.0000",
+    "gasto_mensal_2029": "20000.00"
+   },
+   "saida_esperada": {
+    "taxa_real_anual_pct": "-0.9524",
+    "patrimonio_necessario": null,
+    "alerta": "rendimento nao repoe a inflacao"
+   }
+  },
+  {
+   "id": "F2-ZERO",
+   "nome": "Taxa real zero",
+   "formula": "F3",
+   "entrada": {
+    "taxa_real_anual_pct": "0.0000",
+    "gasto_mensal_2029": "20000.00"
+   },
+   "saida_esperada": {
+    "patrimonio_necessario": null,
+    "alerta": "rendimento nao repoe a inflacao"
+   }
+  },
+  {
+   "id": "F3-BASE",
+   "nome": "Patrimonio necessario, margem 0",
+   "formula": "F3",
+   "entrada": {
+    "gasto_mensal_2029": "20000.00",
+    "taxa_real_anual_pct": "4.0000",
+    "margem_pct": "0.0000"
+   },
+   "saida_esperada": {
+    "taxa_real_mensal_pct": "0.3274",
+    "patrimonio_necessario": "6109221.05"
+   }
+  },
+  {
+   "id": "F3-MARGEM",
+   "nome": "Patrimonio necessario, margem 10%",
+   "formula": "F3",
+   "entrada": {
+    "gasto_mensal_2029": "20000.00",
+    "taxa_real_anual_pct": "4.0000",
+    "margem_pct": "10.0000"
+   },
+   "saida_esperada": {
+    "patrimonio_necessario": "6720143.16"
+   }
+  },
+  {
+   "id": "F3-RENDA",
+   "nome": "Renda sustentavel 2029 de um patrimonio",
+   "formula": "F3",
+   "entrada": {
+    "patrimonio_jan_2029": "5000000.00",
+    "taxa_real_anual_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "renda_mensal_sustentavel": "16368.70"
+   }
+  },
+  {
+   "id": "F3-CORRIGE",
+   "nome": "Gasto de hoje (nov/2026) levado a jan/2029",
+   "formula": "F3a",
+   "entrada": {
+    "gasto_hoje": "20000.00",
+    "mes_base": "11/2026",
+    "ipca_2026_pct": "5.2200",
+    "ipca_2027_pct": "4.9000",
+    "ipca_2028_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "fator_inflacao": "1.095596",
+    "gasto_mensal_2029": "21911.92"
+   }
+  },
+  {
+   "id": "F4-LINHA",
+   "nome": "Linha de 10/2028 a 12/2028",
+   "formula": "F4",
+   "entrada": {
+    "saldo_inicial_01_10_2028": "1000000.00",
+    "taxa_bruta_2028_pct": "11.0000",
+    "aliquota_ir_pct": "22.5000",
+    "teto_mensal": "30000.00",
+    "divida_mensal": "5000.00",
+    "recebimento": {
+     "11/2028": "50000.00"
+    },
+    "compromisso": {
+     "12/2028": "12000.00"
+    }
+   },
+   "saida_esperada": {
+    "meses": [
+     {
+      "mes": "10/2028",
+      "saldo_inicial": "1000000.00",
+      "rendimento": "6972.47",
+      "movimento": "-35000.00",
+      "saldo_final": "971972.47"
+     },
+     {
+      "mes": "11/2028",
+      "saldo_inicial": "971972.47",
+      "rendimento": "6557.70",
+      "movimento": "15000.00",
+      "saldo_final": "993530.17"
+     },
+     {
+      "mes": "12/2028",
+      "saldo_inicial": "993530.17",
+      "rendimento": "6927.36",
+      "movimento": "-47000.00",
+      "saldo_final": "953457.53"
+     }
+    ],
+    "saldo_final_12_2028": "953457.53"
+   }
+  },
+  {
+   "id": "F4-ATRASO",
+   "nome": "Recebimento previsto 10/2028 atrasa e entra 11/2028",
+   "formula": "F4",
+   "entrada": {
+    "igual_a": "F4-LINHA, mas recebimento previsto em 10/2028",
+    "status": "atrasado",
+    "data_nova": "11/2028"
+   },
+   "saida_esperada": {
+    "saldo_final_se_chegasse_em_10_2028": "953797.23",
+    "saldo_final_com_atraso": "953457.53",
+    "custo_do_atraso": "339.70"
+   }
+  },
+  {
+   "id": "F5-FOLGA",
+   "nome": "Folga ou falta em 01/2029",
+   "formula": "F5",
+   "entrada": {
+    "saldo_final_12_2028": "7000000.00",
+    "patrimonio_necessario": "6720143.16"
+   },
+   "saida_esperada": {
+    "folga": "279856.84",
+    "situacao": "folga"
+   }
+  },
+  {
+   "id": "F5-FALTA",
+   "nome": "Falta em 01/2029 vira plano com data",
+   "formula": "F5/F9",
+   "entrada": {
+    "saldo_final_12_2028": "5500000.00",
+    "patrimonio_necessario": "6720143.16",
+    "taxa_real_anual_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "falta": "1220143.16",
+    "reduzir_gasto_2029_por_mes": "3994.43",
+    "situacao": "ajuste"
+   }
+  },
+  {
+   "id": "F9-GUARDAR",
+   "nome": "Guardar por mes pra fechar a falta em 24 meses",
+   "formula": "F9",
+   "entrada": {
+    "falta": "1220143.16",
+    "meses": 24,
+    "taxa_liquida_anual_pct": "8.5250"
+   },
+   "saida_esperada": {
+    "taxa_liquida_mensal_pct": "0.6841",
+    "guardar_por_mes": "46953.36"
+   }
+  },
+  {
+   "id": "F6-HOJE",
+   "nome": "Desvio de R$ 50.000 em 12/2026",
+   "formula": "F6",
+   "entrada": {
+    "valor": "50000.00",
+    "mes_do_desvio": "12/2026",
+    "taxas_brutas_pct": {
+     "2027": "12.5000",
+     "2028": "11.0000"
+    },
+    "aliquota_ir_pct": "22.5000",
+    "taxa_real_2029_anual_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "valor_em_jan_2029": "59532.52",
+    "renda_mensal_2029_perdida": "194.89"
+   }
+  },
+  {
+   "id": "F6-ULTIMO",
+   "nome": "Desvio de R$ 10.000 no ultimo mes (12/2028)",
+   "formula": "F6",
+   "entrada": {
+    "valor": "10000.00",
+    "mes_do_desvio": "12/2028",
+    "taxa_real_2029_anual_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "valor_em_jan_2029": "10000.00",
+    "renda_mensal_2029_perdida": "32.74"
+   }
+  },
+  {
+   "id": "F6-PENULTIMO",
+   "nome": "Desvio de R$ 10.000 em 11/2028",
+   "formula": "F6",
+   "entrada": {
+    "valor": "10000.00",
+    "mes_do_desvio": "11/2028"
+   },
+   "saida_esperada": {
+    "valor_em_jan_2029": "10069.72",
+    "renda_mensal_2029_perdida": "32.97"
+   }
+  },
+  {
+   "id": "F7-RETORNO-CERTO",
+   "nome": "Desejo de R$ 50.000 em 01/2027 com retorno certo de R$ 60.000 em 01/2028",
+   "formula": "F7",
+   "entrada": {
+    "valor": "50000.00",
+    "mes": "01/2027",
+    "retorno": "60000.00",
+    "mes_retorno": "01/2028",
+    "certeza": "certo"
+   },
+   "saida_esperada": {
+    "saida_em_jan_2029": "59066.85",
+    "retorno_em_jan_2029": "64678.64",
+    "perda_em_jan_2029": "-5611.79",
+    "impacto_renda_mensal_2029": "-18.37",
+    "taxa_implicita_mensal_pct": "1.5309",
+    "leitura": "ganha mais do que deixou de render"
+   }
+  },
+  {
+   "id": "F7-RETORNO-INCERTO",
+   "nome": "Mesmo desejo com retorno incerto",
+   "formula": "F7",
+   "entrada": {
+    "valor": "50000.00",
+    "mes": "01/2027",
+    "retorno": "60000.00",
+    "mes_retorno": "01/2028",
+    "certeza": "incerto"
+   },
+   "saida_esperada": {
+    "impacto_liquido_jan_2029": "59066.85",
+    "impacto_renda_mensal_2029": "193.37",
+    "retorno_mostrado_como": "se vier"
+   }
+  },
+  {
+   "id": "F7-ANTECIPA",
+   "nome": "Contrato antecipado: R$ 120.000 em 12/2027 trocados por R$ 100.000 em 12/2026",
+   "formula": "F7",
+   "entrada": {
+    "recebe_hoje": "100000.00",
+    "mes": "12/2026",
+    "abre_mao_de": "120000.00",
+    "mes_original": "12/2027"
+   },
+   "saida_esperada": {
+    "desconto_implicito_mensal_pct": "1.5309",
+    "efeito_em_jan_2029": "-11194.13",
+    "leitura": "antecipar custa mais do que o caixa rende"
+   }
+  },
+  {
+   "id": "F8-TETO",
+   "nome": "Reajuste anual do teto em janeiro pela inflacao do ano anterior",
+   "formula": "F8",
+   "entrada": {
+    "teto_2026": "30000.00",
+    "ipca_2026_pct": "5.2200",
+    "ipca_2027_pct": "4.9000",
+    "ipca_2028_pct": "4.0000"
+   },
+   "saida_esperada": {
+    "teto_2027": "31566.00",
+    "teto_2028": "33112.73",
+    "teto_2029": "34437.24"
+   }
+  },
+  {
+   "id": "F8-SEM-APROVACAO",
+   "nome": "Reajuste sem aprovacao dos 2",
+   "formula": "F8",
+   "entrada": {
+    "teto_2027_sugerido": "31566.00",
+    "aprovou_romero": true,
+    "aprovou_andreza": false
+   },
+   "saida_esperada": {
+    "teto_vigente_2027": "30000.00",
+    "situacao": "sugestao pendente"
+   }
+  },
+  {
+   "id": "F9-MES",
+   "nome": "Linha fica abaixo do piso em 03/2027",
+   "formula": "F9",
+   "entrada": {
+    "saldo_final_03_2027": "40000.00",
+    "piso_caixa": "60000.00",
+    "saldo_final_04_2027": "95000.00"
+   },
+   "saida_esperada": {
+    "fica_devendo": "20000.00",
+    "data_para_quitar": "04/2027",
+    "cor": "sem vermelho"
+   }
+  },
+  {
+   "id": "FGC-1",
+   "nome": "Aplicacoes acima do limite num mesmo conglomerado",
+   "formula": "FGC",
+   "entrada": {
+    "cpf": "titular 1",
+    "conglomerado": "Banco A",
+    "saldo_coberto": "260000.00"
+   },
+   "saida_esperada": {
+    "garantido": "250000.00",
+    "fora_da_garantia": "10000.00",
+    "alerta": true
+   }
+  },
+  {
+   "id": "FGC-CONJUNTA",
+   "nome": "Conta conjunta de 2 titulares com R$ 280.000",
+   "formula": "FGC",
+   "entrada": {
+    "titulares": 2,
+    "saldo": "280000.00"
+   },
+   "saida_esperada": {
+    "garantido_por_titular": "125000.00",
+    "fora_da_garantia": "30000.00"
+   }
+  }
+ ]
+}

@@ -19,7 +19,8 @@ export function Cartoes() {
   const [n, setN] = useState(0)
   useEffect(() => {
     if (!familia) return
-    api.cartoes(familia.id).then(setCartoes).catch(() => {})
+    // rodada 2: cada um do casal vê só os cartões dele (a fatura do outro não aparece)
+    api.cartoes(familia.id).then(cs => setCartoes(cs.filter(c => !c.titular || c.titular === familia.membroNome))).catch(() => {})
     api.faturas(familia.id, MESES).then(setFaturas).catch(() => {})
   }, [api, familia?.id, versao, n])
   const hoje = hojeRecife()
@@ -51,6 +52,8 @@ export function Cartoes() {
                     <Qm titulo={`Fatura ${c.nome} de ${mesCurto(atual.mes)}`} linhas={[{ linha: `Compras no ${c.nome} que caem na fatura que vence ${dataCurta(atual.vencimento)}`, valor: atual.total }]}
                       nota={`A compra conta no "pode gastar" pelo dia em que foi feita, e na fatura pelo mês em que vence. Compra feita depois do dia ${c.dia_fechamento} vai pra fatura seguinte.`} />
                   </div>
+                  {/* quem pagou (CASAL): a parte da Casa que está na fatura de quem pagou */}
+                  {atual.da_casa ? <p className="todo ok" style={{ margin: '6px 0 0' }}><span>Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>. Foi você quem pagou pela Casa.</span></p> : null}
                   <p className="sub" style={{ margin: '6px 0 14px' }}>{atual.fechada ? 'Pague no app do banco. Aqui é só pra acompanhar: o app não paga nada sozinho.' : 'Ainda entra compra nesta fatura até o dia do fechamento.'}</p>
                 </>
               )}
@@ -70,13 +73,17 @@ export function Cartoes() {
           )
         })}
       </div>
-      {sim && resumo && <Simulador cartoes={cartoes} faturas={faturas} livre={resumo.livre_mes} colchao={resumo.colchao} fechar={() => setSim(false)} />}
+      {sim && resumo && (() => {
+        // R8: "E se eu comprar?" responde com o limite de quem compra, não com o da família
+        const meu = resumo.envelopes.find(e => e.id === familia?.envelopeId && !e.casa)
+        return <Simulador cartoes={cartoes} faturas={faturas} livre={meu ? meu.livre : resumo.livre_mes} colchao={meu ? 0 : resumo.colchao} dono={meu?.nome} fechar={() => setSim(false)} />
+      })()}
       {novo && familia && <NovoCartao fechar={() => setNovo(false)} salvar={async c => { await api.criarCartao(familia.id, c); setNovo(false); setN(x => x + 1); await recarregar(); toast(`Cartão ${c.nome} cadastrado.`) }} />}
     </div>
   )
 }
 
-function Simulador({ cartoes, faturas, livre, colchao, fechar }: { cartoes: Cartao[]; faturas: Fatura[]; livre: number; colchao: number; fechar: () => void }) {
+function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes: Cartao[]; faturas: Fatura[]; livre: number; colchao: number; fechar: () => void; dono?: string }) {
   const [txt, setTxt] = useState('')
   const [parc, setParc] = useState(1)
   const [cid, setCid] = useState(cartoes[0]?.id)
@@ -88,23 +95,25 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar }: { cartoes: Cart
   const meses = [...new Set([...fs.map(f => f.mes), ...ps.map(p => p.mes)])].sort().slice(0, 8)
   const linha = meses.map(m => ({ mes: m, antes: fs.find(f => f.mes === m)?.total || 0, mais: ps.find(p => p.mes === m)?.valor || 0 }))
   const max = Math.max(1, ...linha.map(l => l.antes + l.mais))
-  const depois = centavos(livre - valor)
+  // conta no mês só a 1ª parcela (as outras saem dos meses delas)
+  const noMes = ps.length ? ps[0].valor : valor
+  const depois = centavos(livre - noMes)
   const cabe = depois >= colchao
   return (
     <Sheet titulo="E se eu comprar?" fechar={fechar}>
-      <p className="sub">Simulação: nada é gravado. Mostra como ficam as faturas e se a compra mexe na reserva (o dinheiro que vocês combinaram nunca gastar).</p>
+      <p className="sub">Simulação: nada é gravado. Mostra como ficam as faturas e se a compra cabe{dono ? ' no seu combinado do mês' : ' sem mexer na reserva (o dinheiro que vocês combinaram nunca gastar)'}.</p>
       <label className="campo"><span>Valor da compra</span><input className="inp" inputMode="decimal" placeholder="R$" value={txt} onChange={e => setTxt(e.target.value.replace(/[^\d,]/g, ''))} /></label>
       <div className="atrow"><span className="atl">Cartão</span>{cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={x.id === c?.id} onClick={() => setCid(x.id)}>{x.nome}</button>)}</div>
-      <div className="atrow"><span className="atl">Parcelas</span>{[1, 2, 3, 6, 10, 12].map(p => <button key={p} type="button" className="pill" aria-pressed={p === parc} onClick={() => setParc(p)}>{p}x</button>)}</div>
+      <div className="atrow"><span className="atl">Parcelas</span>{[1, 2, 3, 4, 5, 6, 10, 12].map(p => <button key={p} type="button" className="pill" aria-pressed={p === parc} onClick={() => setParc(p)}>{p}x</button>)}</div>
       {valor > 0 && (
         <>
           <p className={'todo ' + (cabe ? 'ok' : 'warn')}>{cabe ? <CircleCheck size={20} aria-hidden="true" /> : <TriangleAlert size={20} aria-hidden="true" />}
-            <span>{cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
+            <span>{dono ? (cabe ? <><b>Cabe no seu combinado.</b> O seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
           <ul className="exp">
-            <li><span>Livre no mês hoje</span><Din v={livre} /></li>
-            <li><span>Compra (conta inteira no dia da compra)</span><Din v={-valor} /></li>
-            <li><span>Reserva: o dinheiro que vocês combinaram nunca gastar</span><Din v={-colchao} /></li>
-            <li className="tot"><span>Sobra depois da compra</span><Din v={centavos(depois - colchao)} /></li>
+            <li><span>{dono ? `Livre no mês (${dono})` : 'Livre no mês hoje'}</span><Din v={livre} /></li>
+            <li><span>{parc > 1 ? `1ª parcela (as outras saem dos meses seguintes)` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
+            {!dono && <li><span>Reserva: o dinheiro que a família combinou nunca gastar</span><Din v={-colchao} menos /></li>}
+            <li className="tot"><span>{depois - colchao >= 0 ? 'Sobra depois da compra' : 'Depois da compra, passa'}</span><Din v={Math.abs(centavos(depois - colchao))} /></li>
           </ul>
           <h3 className="dayh">Faturas do {c?.nome} com a compra ({parc}x de {reais(ps[ps.length - 1]?.valor || 0)})</h3>
           {linha.map(l => (
@@ -134,7 +143,7 @@ function NovoCartao({ fechar, salvar }: { fechar: () => void; salvar: (c: Omit<C
         if (!nome.trim() || !(f >= 1 && f <= 31) || !(v >= 1 && v <= 31)) { setErro('Preencha o nome e os 2 dias, de 1 a 31.'); return }
         try { await salvar({ nome: nome.trim(), dia_fechamento: f, dia_vencimento: v }) } catch (x) { setErro((x as Error).message) }
       }}>
-        <label className="campo"><span>Nome do cartão</span><input className="inp" placeholder="Ex.: Nubank" value={nome} onChange={e => setNome(e.target.value)} /></label>
+        <label className="campo"><span>Nome do cartão</span><input className="inp" placeholder="Ex.: Inter" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <label className="campo"><span>Dia que a fatura fecha</span><input className="inp" inputMode="numeric" value={fe} onChange={e => setFe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Está no app do banco, como "melhor dia de compra" menos 1.</small></label>
         <label className="campo"><span>Dia que vence</span><input className="inp" inputMode="numeric" value={ve} onChange={e => setVe(e.target.value.replace(/\D/g, '').slice(0, 2))} /></label>
         {erro && <p className="erro" role="alert">{erro}</p>}

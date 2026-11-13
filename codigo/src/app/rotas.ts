@@ -2,6 +2,11 @@
 export type Rota = 'inicio' | 'lancamentos' | 'orcamento' | 'casa' | 'guardado' | 'cartoes' | 'planejamento' | 'escritorio' | 'ajustes' | 'privacidade' | 'painel' | 'primeiro-uso' | 'entrar'
 
 
+/** Telas que mostram dinheiro do casal: a pessoa da família (filha) não abre nem pelo endereço. */
+export const SO_CASAL: Rota[] = ['guardado', 'cartoes', 'planejamento', 'escritorio']
+/** O menu de cada papel. */
+export const podeVerNoMenu = (r: Rota, papel: 'casal' | 'pessoa' | 'equipe' | null) => (papel === 'equipe' ? r === 'casa' : papel === 'casal' || !SO_CASAL.includes(r))
+
 const ROTAS: Rota[] = ['inicio', 'lancamentos', 'orcamento', 'casa', 'guardado', 'cartoes', 'planejamento', 'escritorio', 'ajustes', 'privacidade', 'painel', 'primeiro-uso', 'entrar']
 /** Endereço desconhecido (link velho, digitado errado) abre o Início em vez de uma tela em branco. */
 export function rotaDoHash(hash: string): Rota {
@@ -12,9 +17,12 @@ export function rotaDoHash(hash: string): Rota {
 export function rotaPermitida(rota: Rota, papel: 'casal' | 'pessoa' | 'equipe' | null, dono = false): Rota {
   if (papel === 'equipe') return 'casa'
   if (rota === 'entrar') return 'inicio'
+  if (rota === 'primeiro-uso' && papel !== 'casal') return 'inicio'
   if (rota === 'painel' && !dono) return 'inicio'
   // o dinheiro guardado é só do casal
   if (rota === 'guardado' && papel !== 'casal') return 'inicio'
+  // pessoa da família (ex.: a filha) vê só o dela: cartões, planejamento e escritório são do casal (rodada 2)
+  if (papel === 'pessoa' && SO_CASAL.includes(rota)) return 'inicio'
   return rota
 }
 

@@ -3,7 +3,7 @@
 App instalável no iPhone, com o código separado por tela (`src/telas/<tela>/`) e ligado ao Supabase (schema `produto`).
 
 - **Ver agora, sem internet:** abra `demo.html`. É a Família Silva de exemplo e nada é gravado.
-- **Modo exemplo no site:** acrescente `?exemplo=1` no fim do endereço.
+- **Modo exemplo:** é um build à parte (`npm run build:exemplo`, pasta `dist-exemplo`, ou `npm run dev:exemplo`). O site oficial nunca abre o exemplo, nem com `?exemplo=1`: o build de produção não leva a família de exemplo (portão 6).
 - **Códigos do exemplo:** e-mail com o código 123456; equipe da casa com 2468.
 
 ## Subir no GitHub Pages (repo romeropernambuco/central-da-familia), sem terminal
@@ -69,6 +69,7 @@ O upload de pasta pelo Safari falha com frequência, então faça o upload pelo 
 - `src/rodada3.test.ts` também escreve `escritorio2/FALAS.md` (todas as falas dos funcionários, conferidas).
 
 - `npm run build` monta a pasta `dist`. **O `sw.js` é gerado no build** (`src/sw.modelo.js` + `scripts/sw.mjs`): ele sai com a lista dos arquivos e uma versão nova a cada build. Não existe mais `public/sw.js` e não se edita o `dist/sw.js` na mão.
+- `npm run portoes` roda os portões 1, 2, 6 e 7 (tsc, testes, build sem exemplo, sem chave secreta) e mostra o 3 (39 casos do motor 2029).
 - `npm test` roda o Vitest. `npm run build:exemplo && npm run e2e` roda o Playwright no modo exemplo, em 390 e 1280.
 - `npm run build:demo` gera o `demo.html`. `npm run zip` monta o `central-app.zip` (sem os prints e sem `node_modules`).
 - Os prints do teste ficam em `testes/prints` e não entram no zip. As folhas `folha_390.png` e `folha_1280.png` juntam todos.

@@ -7,14 +7,15 @@ import {
 
 describe('dinheiro', () => {
   it('formata sem ,00 e com milhar', () => {
-    expect(reais(8380)).toBe('R$ 8.380')
-    expect(reais(1234567.5)).toBe('R$ 1.234.567,50')
-    expect(reais(45.9)).toBe('R$ 45,90')
-    expect(reais(0)).toBe('R$ 0')
-    expect(reais(-10)).toBe('-R$ 10')
+    expect(reais(8380)).toBe('R$\u00a08.380')
+    expect(reais(1234567.5)).toBe('R$\u00a01.234.567,50')
+    expect(reais(45.9)).toBe('R$\u00a045,90')
+    expect(reais(0)).toBe('R$\u00a00')
+    // rodada 2: nunca sinal de menos na tela: o que passou vira "passou R$ 10"
+    expect(reais(-10)).toBe('passou R$\u00a010')
   })
   it('não erra centavo de ponto flutuante', () => {
-    expect(reais(0.1 + 0.2)).toBe('R$ 0,30')
+    expect(reais(0.1 + 0.2)).toBe('R$\u00a00,30')
     expect(centavos(1.005)).toBe(1.01)
     expect(partesDinheiro(19.99)).toEqual({ sinal: '', inteiro: '19', cents: ',99' })
   })

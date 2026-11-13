@@ -71,6 +71,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
     if (o.abre === 'lancar' || /^lancar/.test(o.id)) { abrirLancar(/dif/.test(p.id) && p.valor ? { valor: p.valor, descricao: 'Diferença da fatura' } : undefined); return }
     if (o.abre === 'cartao') { if (abrirCadastro) abrirCadastro(); else location.hash = '#/escritorio?f=' + p.funcionario; return }
     if (o.abre === 'guardado') { await trava(o.id, extra); location.hash = '#/guardado'; return }
+    if (o.abre === 'orcamento') { await trava(o.id, extra); location.hash = '#/orcamento'; return }
     if (/^copiar/.test(o.id)) {
       // a mensagem pronta vem na resposta do banco (efeito.mensagem)
       setGravando(true)

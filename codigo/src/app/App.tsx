@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical } from 'lucide-react'
+import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
@@ -17,8 +17,8 @@ import { Planejamento } from '../telas/planejamento/Planejamento'
 import { Painel } from '../telas/painel/Painel'
 import { Privacidade } from '../telas/privacidade/Privacidade'
 import { Ajustes } from '../telas/ajustes/Ajustes'
-import { mesLongo, hojeRecife } from '../lib/formato'
-import { rotaDoHash, rotaPermitida, type Rota } from './rotas'
+import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
+import { podeVerNoMenu, rotaDoHash, rotaPermitida, type Rota } from './rotas'
 export type { Rota } from './rotas'
 
 const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
@@ -34,8 +34,8 @@ const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
 ]
 
 const TITULO: Record<string, [string, string]> = {
-  lancamentos: ['o que entrou na conta, com lixeira', 'Lançamentos'],
-  orcamento: ['valor do dia e cofrinho', 'Meu orçamento'],
+  lancamentos: ['o que entrou na conta', 'Lançamentos'],
+  orcamento: ['hoje, semana e fim do mês', 'Meu orçamento'],
   guardado: ['quanto rendeu hoje', 'Guardado'],
   casa: ['feira, prestadores, gás e folha', 'Casa'],
   cartoes: ['faturas e "E se eu comprar?"', 'Cartões'],
@@ -50,7 +50,7 @@ function lerRota(): Rota { return rotaDoHash(location.hash) }
 export function ir(r: Rota) { location.hash = '#/' + r }
 
 export function App() {
-  const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede } = useApp()
+  const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto, alternarOculto } = useApp()
   const [rota, setRota] = useState<Rota>(lerRota())
   const [mais, setMais] = useState(false)
   const [carregou, setCarregou] = useState(false)
@@ -68,10 +68,11 @@ export function App() {
   }
   const equipe = familia?.papel === 'equipe'
   // a equipe nunca vê o primeiro uso (tela de criar família e limites em R$), nem digitando o endereço
-  if (!familia || (rota === 'primeiro-uso' && !equipe)) return <PrimeiroUso />
+  // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
+  if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <PrimeiroUso />
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
-  const permitidas = MENU.filter(m => (!equipe || m.r === 'casa') && (m.r !== 'guardado' || familia.papel === 'casal'))
-  const [subt, titulo] = r === 'inicio' ? [`${familia.nome} · Central da Família`, cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
+  const permitidas = MENU.filter(m => podeVerNoMenu(m.r, familia.papel))
+  const [subt, titulo] = r === 'inicio' ? [familia.nome, cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
   const navAtivo = r === 'privacidade' || r === 'painel' ? 'ajustes' : r
 
   return (
@@ -88,10 +89,11 @@ export function App() {
         <header className="top">
           <div className="tt"><small>{subt}</small><h1>{titulo}</h1></div>
           <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'sem internet' : 'salvo'}</span>
-          {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label="Mais telas: guardado, cartões, planejamento, escritório e ajustes"><Settings2 size={22} /></button>}
+          {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}
+          {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: ajustes e privacidade'}><Settings2 size={22} /></button>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
-          <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Família Silva de exemplo. Pode mexer à vontade: nada é gravado de verdade.</p>
+          <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {familia.membroNome}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
         )}
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
@@ -111,7 +113,7 @@ export function App() {
         {equipe ? (
           <>
             <a href="#/casa" aria-current="page"><ShoppingBasket size={22} />Casa</a>
-            <button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Lançar gasto da casa"><Plus size={28} strokeWidth={2.25} /></button>
+            <button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar compra da casa"><Plus size={28} strokeWidth={2.25} /></button>
             <span />
           </>
         ) : (
@@ -125,7 +127,7 @@ export function App() {
       {mais && (
         <Sheet titulo="Mais telas" fechar={() => setMais(false)}>
           <ul className="list">
-            {[...MENU.slice(4).filter(m => m.r !== 'guardado' || familia.papel === 'casal'), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <ShieldCheck size={22} /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Gauge size={22} /> }] : [])].map(m => (
+            {[...MENU.slice(4).filter(m => podeVerNoMenu(m.r, familia.papel)), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <ShieldCheck size={22} /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Gauge size={22} /> }] : [])].map(m => (
               <li key={m.r}>
                 <button className="li" type="button" onClick={() => { setMais(false); ir(m.r) }}>
                   <span className="tile">{m.ico}</span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><ChevronRight size={20} className="muted" />

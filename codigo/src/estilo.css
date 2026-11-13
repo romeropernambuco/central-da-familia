@@ -510,3 +510,93 @@ svg{flex-shrink:0}
 .lemb-b{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .lemb-b .iconbtn{margin-left:auto}
 .toast{max-width:min(560px,calc(100vw - 32px))}
+/* ---- protótipo de melhorias (13/11) ---- */
+.din-warn .din,.din-warn{color:var(--warn)}
+.frase-estouro{margin-top:6px}
+.ritmo{display:grid;gap:8px;margin:8px 0 2px}
+.ritmo-l{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:baseline;padding:8px 12px;border-radius:var(--r-md);background:var(--raised);font-size:15px}
+.ritmo-l>span{color:var(--ink-2);font-weight:600}
+.ritmo-l>b{justify-self:end;font-variant-numeric:tabular-nums}
+.ritmo-l>small{grid-column:1 / -1;color:var(--muted);font-size:14px;line-height:1.35;margin-top:2px}
+.ritmo-l.ok{background:var(--accent-soft)}.ritmo-l.ok>span,.ritmo-l.ok>small{color:var(--accent-ink)}
+.ritmo-l.warn{background:var(--warn-soft)}.ritmo-l.warn>span,.ritmo-l.warn>small,.ritmo-l.warn>b{color:var(--warn-ink)}
+.ritmo-meter{overflow:visible;margin-top:4px}
+.ritmo-meter i{background:var(--accent)}.ritmo-meter i.acima{background:var(--warn)}
+.ritmo-meter .risco{position:absolute;top:-4px;width:3px;height:16px;border-radius:2px;background:var(--ink);transform:translateX(-1px)}
+.casa-linha{font-size:14px}
+.cobrir{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.iconbtn.olho[aria-pressed="true"]{color:var(--accent)}
+.lancar-modo{width:100%}
+.lancar-modo button{flex:1}
+.parcelas{display:grid;gap:8px}
+.parcelas .atl{font-size:14px;color:var(--ink-2);font-weight:600}
+.pills.parc{gap:6px}
+.pills.parc .pill{height:34px;padding:0 11px;font-size:14px}
+.envbtn.meu{box-shadow:inset 0 0 0 2px var(--accent)}
+.envbtn small.passa{color:var(--warn-ink);font-weight:600}
+.pill-dono{font-size:12px;font-weight:600;opacity:.7;margin-left:2px}
+.sheet ~ .toast{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.todo.ontem .row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.guard-dono{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:15px;color:var(--ink-2);margin-top:4px}
+.guard-dono b{color:var(--ink);font-variant-numeric:tabular-nums}
+.guard-meses{margin-top:2px}
+.li .m small.dono{color:var(--accent-ink);font-weight:600}
+.todo.marco{align-items:center}.todo.marco span{flex:1}
+.linha-saldo{margin:0}
+.linha-saldo svg{width:100%;height:110px;display:block}
+.linha-saldo .linha{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.linha-saldo .area{fill:var(--accent-soft);stroke:none}
+.li.quem{align-items:start}
+.quem-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+@media (max-width:1099px){.esc-grade>.esc-cena-card{order:2}}
+.equipe-lnk{justify-self:center;font-size:14px;color:var(--ink-2)}
+.cobrir{margin:2px 0 8px}
+/* ---------- Rodada 2 (13/11): letra grande, dedo, nada negativo ---------- */
+/* o que passou é âmbar, nunca vermelho; e "R$" nunca se separa do número */
+.din.neg,.exp .din.neg{color:var(--warn-ink)}
+.din .pre{font-family:var(--font);font-size:max(.5em,14px);font-weight:600;letter-spacing:0;margin-right:.25em}
+.din.neg .pre{color:var(--warn-ink)}
+/* 44 px de altura em todo botão e pílula (dedo e letra a 130%) */
+.btn.sm,.pill,.atrow .pill,.pills.parc .pill,.cena3d-salas .pill,.cad-form .pill{min-height:44px;height:auto}
+.pill{padding-top:4px;padding-bottom:4px}
+.qm{width:44px;height:44px;font-size:14px;border:0;background:transparent;isolation:isolate}
+.qm::before{content:"";position:absolute;inset:9px;border-radius:50%;border:1px solid var(--control);background:var(--surface);z-index:-1}
+.qm::after{inset:0}
+.explica-l{min-height:44px}
+.lnk,.card-h .lnk{min-height:44px}
+.pills.parc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pills.parc .pill{justify-content:center;padding:0 4px}
+.lanc-o-que{font-size:17px}
+.amount output.selecionado .num{background:var(--accent-soft);border-radius:8px;padding:0 4px}
+.salvar-dica{font-weight:700;color:var(--ink)}
+.placar{display:grid;gap:6px;margin-top:4px;padding:10px 12px;border-radius:var(--r-md);background:var(--raised);font-size:15px}
+.placar.ok{background:var(--accent-soft);color:var(--accent-ink)}
+.placar.warn{background:var(--warn-soft);color:var(--warn-ink)}
+.placar p{margin:0}
+.placar .pes{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px}
+.virada{font-size:15px}
+.anotar-tipo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.anotar-tipo .pill{justify-content:center;white-space:normal;text-align:center;line-height:1.15}
+.foto-nota input{display:none}
+.mudou{background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left}
+.meta-cofre{display:grid;gap:8px;margin-top:10px}
+.ritmo-l>b{white-space:nowrap}
+/* rodada 2: rótulo em cima, valor embaixo (cabe com letra a 130% e com "R$ 1.616 de R$ 4.000") */
+.ritmo-l{grid-template-columns:minmax(0,1fr) auto}
+.ritmo-l>span{white-space:nowrap}
+@media (max-width:480px){.ritmo-l{grid-template-columns:1fr}.ritmo-l>b{justify-self:start;font-size:17px}}
+/* rodada 2: letra a 130% (tela útil de ~300 px): título não encosta no "exemplo", botão longo quebra a linha em vez de vazar */
+@media (max-width:360px){
+  .top .sync{display:none}
+  .btn,.pill{white-space:normal;text-align:center;line-height:1.2;padding-top:6px;padding-bottom:6px}
+  .linha-campo{grid-template-columns:minmax(0,1fr) minmax(0,9em)}
+}
+.card-h{flex-wrap:wrap;row-gap:4px}
+.card-h>h2{min-width:0}
+.card-h>.sub{flex-basis:auto}
+@media (max-width:360px){.top h1{font-size:24px;line-height:30px}.seg button{font-size:14px;gap:4px}.seg button svg{display:none}}
+/* rodada 2: a fila "Quando / Pagou" quebra a linha em vez de esconder o rótulo de lado; o cartão do Guardado não encosta na seta */
+.atrow{flex-wrap:wrap;overflow-x:visible}
+.atrow .atl{flex-basis:100%;min-width:0}
+@media (min-width:361px){.atrow .atl{flex-basis:auto;min-width:56px}}
+.guard-l{flex-wrap:wrap;column-gap:8px}

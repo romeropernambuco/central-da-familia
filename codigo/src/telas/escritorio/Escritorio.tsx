@@ -86,7 +86,9 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
 
 /** Relatório: o diário de tudo que foi perguntado e respondido, com a conta de quanto demorou. */
 function Relatorio() {
-  const { api, familia, versao } = useApp()
+  const { api, familia, versao, sessao } = useApp()
+  // R15: "demora pra responder" soa como bronca: só o dono do produto vê
+  const dono = !!sessao?.dono
   const [dias, setDias] = useState(7)
   const [r, setR] = useState<RelatorioEsc | null>(null)
   const [erro, setErro] = useState('')
@@ -123,7 +125,7 @@ function Relatorio() {
           <div><dt>Perguntas feitas</dt><dd>{tot.p}</dd></div>
           <div><dt>Respondidas</dt><dd>{tot.r}</dd></div>
           <div><dt>Esperando você</dt><dd>{tot.pe}</dd></div>
-          <div><dt>Demora pra responder</dt><dd className="txt">{demoraTexto(demora)}</dd></div>
+          {dono && <div><dt>Demora pra responder</dt><dd className="txt">{demoraTexto(demora)}</dd></div>}
         </dl>
         <p className="sub" style={{ marginTop: 12 }}>De onde vêm esses números: cada pergunta que um funcionário faz e cada resposta sua ficam anotadas no diário abaixo, com dia e hora. Nada é apagado.</p>
         {r.funcionarios.length > 0 && (
@@ -131,7 +133,7 @@ function Relatorio() {
             {r.funcionarios.map(f => (
               <li key={f.funcionario} className="li">
                 <FuncIco id={idDe(f.funcionario)} />
-                <span className="m"><b>{nome(f.funcionario)}</b><small style={{ whiteSpace: 'normal' }}>{f.respondidas} de {f.perguntas} respondidas{f.tempo_medio_min != null ? ` · demora: ${demoraTexto(f.tempo_medio_min)}` : ''}</small></span>
+                <span className="m"><b>{nome(f.funcionario)}</b><small style={{ whiteSpace: 'normal' }}>{f.respondidas} de {f.perguntas} respondidas{dono && f.tempo_medio_min != null ? ` · demora: ${demoraTexto(f.tempo_medio_min)}` : ''}</small></span>
                 <span className="v">{f.pendentes > 0 ? <span className="chip warn">{f.pendentes} esperando</span> : <span className="chip">em dia</span>}</span>
               </li>
             ))}
@@ -253,20 +255,23 @@ function Lembretes() {
  */
 export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   const { e, estado, responder } = useEscritorio()
+  const { familia } = useApp()
+  // A2: a pessoa da família (filha) só vê o cartão quando é sobre ela, e não tem a tela do Escritório
+  const pessoa = familia?.papel === 'pessoa'
   if (estado === 'desligado' || !e) return null
   const fila = e.precisa_de_voce
-  if (equipe && !fila.length) return null
+  if ((equipe || pessoa) && !fila.length) return null
   const p = fila[0]
   return (
     <section className="card precisa" aria-labelledby="pvT" data-precisa={fila.length}>
       <div className="card-h">
         <h2 id="pvT">{equipe ? (fila.length === 1 ? '1 coisa da casa precisa de você' : `${fila.length} coisas da casa precisam de você`) : fraseDoDia(fila.length)}</h2>
-        {!equipe && <a className="lnk" href="#/escritorio">Escritório<ChevronRight size={16} /></a>}
+        {!equipe && !pessoa && <a className="lnk" href="#/escritorio">Escritório<ChevronRight size={16} /></a>}
       </div>
       {p ? (
         <>
           <PerguntaCard key={p.id} p={p} quem={nomeDoDono(p, e.funcionarios)} responder={responder} posicao={fila.length > 1 ? `1 de ${fila.length}` : undefined} />
-          {fila.length > 1 && !equipe && <p className="sub" style={{ marginTop: 10 }}>Depois desta: {fila.slice(1, 3).map(x => nomeDoDono(x, e.funcionarios)).join(' e ')}{fila.length > 3 ? ` e mais ${fila.length - 3}` : ''}.</p>}
+          {fila.length > 1 && !equipe && <p className="sub" style={{ marginTop: 10 }}>Depois desta: {(() => { const nomes = [...new Set(fila.slice(1).map(x => nomeDoDono(x, e.funcionarios)))]; return nomes.slice(0, 2).join(' e ') + (nomes.length > 2 ? ` e mais ${nomes.length - 2}` : '') })()}.</p>}
         </>
       ) : (
         <p className="sub">Tudo em ordem. Os {e.funcionarios.length} funcionários do Escritório conferiram os números da família. Quando um deles precisar de uma resposta sua, a pergunta aparece aqui.</p>
