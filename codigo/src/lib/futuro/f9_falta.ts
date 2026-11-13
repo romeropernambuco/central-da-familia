@@ -28,6 +28,21 @@ export function guardarPorMes(falta: Centavos, meses: number, taxa_liquida_mensa
   return arred(F.times(i).div(potencia(UM.plus(i), meses).minus(1)))
 }
 
+/** (a) com os fatores mês a mês da linha (F4), depósito no fim de cada mês (revisão do ECONOMISTA, caso N1):
+ *  P = F ÷ S, S = soma, pra cada mês k, do produto de (1 + fator_m) dos meses depois de k. Sem meses: F de uma vez. */
+export function guardarPorMesNaLinha(falta: Centavos, fatores: Dec[]): Centavos {
+  const F = centavos(falta)
+  if (falta <= 0) return 0
+  if (fatores.length === 0) return falta
+  let S = new Dec(0)
+  let acumulado = UM // produto de (1 + fator) dos meses depois do mês k, de trás pra frente
+  for (let k = fatores.length - 1; k >= 0; k--) {
+    S = S.plus(acumulado)
+    acumulado = acumulado.times(UM.plus(fatores[k]))
+  }
+  return arred(F.div(S))
+}
+
 /** (b) reduzir o gasto de 2029 em F × taxa_real_mensal. */
 export function cortarPorMes2029(falta: Centavos, taxa_real_anual: Taxa | Dec): Centavos {
   if (falta <= 0 || taxa(taxa_real_anual).lte(0)) { centavos(falta); return 0 }

@@ -11,7 +11,7 @@ export function taxaImplicitaMensal(V: Centavos, R: Centavos, n: number): Dec | 
 
 export interface ResultadoDesejo {
   saida_na_virada: Centavos
-  retorno_na_virada: Centavos /* 0 quando incerto: aparece fora da linha como "se vier" */
+  retorno_na_virada: Centavos /* 0 quando incerto ("se vier"); no contrato antecipado, F6(A, d) − F6(R, r) */
   perda_na_virada: Centavos /* negativo = o desejo devolve mais do que tirou */
   impacto_renda_mensal: Centavos | null
   taxa_implicita_mensal: Dec | null
@@ -19,19 +19,31 @@ export interface ResultadoDesejo {
   leitura: 'ganha mais do que deixou de render' | 'tira da renda de 2029' | 'empata'
 }
 
-/** perda = F6(V, d) − F6(R, r) se certo; = F6(V, d) se incerto ou sem retorno. */
-export function avaliarDesejo(d: Pick<Desejo, 'valor' | 'mes' | 'volta' | 'volta_mes' | 'volta_certa' | 'volta_de'>, t: TaxasProjecao & { taxa_real_trabalho: Taxa }): ResultadoDesejo {
-  const temVolta = d.volta_de !== 'nada' && d.volta > 0 && d.volta_mes !== null
+/** perda = F6(V, d) − F6(R, r) se certo; = F6(V, d) se incerto ou sem retorno.
+ *  Pago com contrato antecipado (volta_de = 'contrato' e antecipado preenchido): entra A em d e deixa de entrar R em r,
+ *  igual à linha (fluxosDoDesejo): perda = F6(V, d) − F6(A, d) + F6(R, r) (revisão do ECONOMISTA, caso N2). */
+export function avaliarDesejo(d: Pick<Desejo, 'valor' | 'mes' | 'volta' | 'volta_mes' | 'volta_certa' | 'volta_de'> & { antecipado?: Centavos | null }, t: TaxasProjecao & { taxa_real_trabalho: Taxa }): ResultadoDesejo {
   const saida = valorNaVirada(d.valor, d.mes, t)
-  const retorno = temVolta && d.volta_certa ? valorNaVirada(d.volta, d.volta_mes as Mes, t) : 0
+  const antecipa = d.volta_de === 'contrato' && d.antecipado != null && d.volta_mes !== null
+  const temVolta = antecipa || (d.volta_de !== 'nada' && d.volta > 0 && d.volta_mes !== null)
+  let retorno: Centavos
+  let implicita: Dec | null
+  if (antecipa) {
+    // Retorno líquido na virada: o que entra antes (A em d) menos o contrato que deixa de entrar (R em r).
+    retorno = valorNaVirada(d.antecipado as Centavos, d.mes, t) - valorNaVirada(d.volta, d.volta_mes as Mes, t)
+    implicita = taxaImplicitaMensal(d.antecipado as Centavos, d.volta, mesesEntre(d.mes, d.volta_mes as Mes))
+  } else {
+    retorno = temVolta && d.volta_certa ? valorNaVirada(d.volta, d.volta_mes as Mes, t) : 0
+    implicita = temVolta ? taxaImplicitaMensal(d.valor, d.volta, mesesEntre(d.mes, d.volta_mes as Mes)) : null
+  }
   const perda = saida - retorno
   return {
     saida_na_virada: saida,
     retorno_na_virada: retorno,
     perda_na_virada: perda,
     impacto_renda_mensal: perdaRendaMensal(perda, t.taxa_real_trabalho),
-    taxa_implicita_mensal: temVolta ? taxaImplicitaMensal(d.valor, d.volta, mesesEntre(d.mes, d.volta_mes as Mes)) : null,
-    retorno_mostrado_como: !temVolta ? 'sem retorno' : d.volta_certa ? 'na conta' : 'se vier',
+    taxa_implicita_mensal: implicita,
+    retorno_mostrado_como: !temVolta ? 'sem retorno' : antecipa || d.volta_certa ? 'na conta' : 'se vier',
     leitura: perda < 0 ? 'ganha mais do que deixou de render' : perda > 0 ? 'tira da renda de 2029' : 'empata',
   }
 }

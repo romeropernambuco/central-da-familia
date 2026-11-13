@@ -1,7 +1,7 @@
 // Junção do motor do dinheiro infinito: futuro() e impacto2029() (PLANO_TECNICO 3A).
 // Função pura: só recebe os dados (futuro_entradas do banco) e devolve as contas. Nenhuma taxa fixa aqui:
 // tudo vem de e.parametros. A tela nunca calcula 2029: só chama estas funções.
-import { anoDe, compararMes, mensal, mesAnterior, mesDaData, proximoMes, taxa } from './decimal'
+import { anoDe, compararMes, diasDoMes, mesAnterior, mesDaData, proximoMes } from './decimal'
 import { avisosFGC } from './f10_fgc'
 import { gastoNaVirada, patrimonioNecessario, rendaSustentavel } from './f3_necessario'
 import { mesDoRecebimento, projetarLinha, somarPorMes } from './f4_linha'
@@ -9,8 +9,8 @@ import { folga as calcFolga } from './f5_folga'
 import { impactoDesvio } from './f6_impacto'
 import { avaliarDesejo, fluxosDoDesejo } from './f7_desejo'
 import { tetoProjetado } from './f8_reajuste'
-import { cortarPorMes2029, desejosPraAdiar, guardarPorMes } from './f9_falta'
-import { taxaLiquidaAnual } from './f2_taxa_real'
+import { cortarPorMes2029, desejosPraAdiar, guardarPorMesNaLinha } from './f9_falta'
+import { fatorLiquido } from './f1_rendimento'
 import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, Mes } from './tipos'
 
 export * from './tipos'
@@ -28,7 +28,7 @@ function taxasDe(e: FuturoEntrada) {
  *  - desejo com mês já passado entra no 1º mês da linha (ainda é plano, não some);
  *  - teto reajusta no mês de reajuste pelo IPCA do ano anterior (F8, projeção);
  *  - piso do mês = piso_meses × teto do mês;
- *  - taxa do "guardar por mês" (F9a) = taxa bruta do último ano da linha × (1 − IR da projeção). */
+ *  - "guardar por mês" (F9a) usa os mesmos fatores mês a mês da linha, depósito no fim do mês (revisão do ECONOMISTA). */
 export function futuro(e: FuturoEntrada): FuturoSaida {
   const p = e.parametros
   const mes_hoje = mesDaData(e.hoje)
@@ -70,10 +70,9 @@ export function futuro(e: FuturoEntrada): FuturoSaida {
   const f = necessario === null ? 0 : calcFolga(saldo_final, necessario)
   let ajustes_falta: FuturoSaida['ajustes_falta'] = null
   if (f < 0) {
-    const tb = p.taxa_bruta_ano[anoDe(ultimo)]
-    const i = tb === undefined ? taxa('0') : mensal(taxaLiquidaAnual(tb, p.aliq_proj))
+    const fatores = linha.map((l) => fatorLiquido(p.taxa_bruta_ano[anoDe(l.mes)], p.aliq_proj, diasDoMes(l.mes)))
     ajustes_falta = {
-      guardar_por_mes: guardarPorMes(-f, linha.length, i),
+      guardar_por_mes: guardarPorMesNaLinha(-f, fatores),
       cortar_por_mes_2029: cortarPorMes2029(-f, p.taxa_real_trabalho),
       desejos_pra_adiar: desejosPraAdiar(e.desejos),
     }
