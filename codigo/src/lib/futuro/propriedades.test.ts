@@ -1,11 +1,5 @@
 // Testes de propriedade do motor (além dos 39 casos). Todo número é exemplo inventado.
 // Sorteio com semente fixa: o mesmo resultado em toda rodada.
-// @ts-ignore: o projeto não traz os tipos do Node; o Vitest roda em Node
-import { readdirSync, readFileSync } from 'node:fs'
-// @ts-ignore
-import { dirname, join } from 'node:path'
-// @ts-ignore
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { arred, comCasas, Dec, listaMeses, mesAnterior, proximoMes } from './decimal'
 import { aliquotaIR, rendimentoMes } from './f1_rendimento'
@@ -232,10 +226,11 @@ describe('IR, FGC e arredondamento', () => {
 
 describe('regra da pasta', () => {
   it('nenhum arquivo do motor usa a potência nem a formatação nativas', () => {
-    const pasta = dirname(fileURLToPath(import.meta.url))
+    // Lê o texto de todo .ts da pasta pelo próprio Vite (sem tipos do Node).
+    const fontes = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    expect(Object.keys(fontes).length).toBeGreaterThanOrEqual(14)
     const proibido = ['Math' + '\\.pow', 'to' + 'Fixed', '[\\w)\\]]\\s*\\*\\*\\s*[\\w(]']
-    for (const f of (readdirSync(pasta) as string[]).filter((x) => x.endsWith('.ts'))) {
-      const txt: string = readFileSync(join(pasta, f), 'utf8')
+    for (const [f, txt] of Object.entries(fontes)) {
       for (const p of proibido) expect(new RegExp(p).test(txt), `${f} usa ${p}`).toBe(false)
     }
   })
