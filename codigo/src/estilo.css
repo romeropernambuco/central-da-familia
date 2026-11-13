@@ -606,3 +606,54 @@ body.com-aviso main{padding-bottom:calc(var(--tabbar-h) + 120px + env(safe-area-
 /* E2: o que é do outro, com o nome dele, só pra ler */
 .dono-linha{font-size:14px;color:var(--ink-2);margin-top:6px}
 .placar .pes .placar-passa{font-weight:700}
+
+/* E7: linha do caixa até dez/2028 (mesmo desenho da linha do Guardado), piso tracejado e mês abaixo do piso em âmbar */
+.linha-2028 .linha-saldo svg{height:120px}
+.linha-saldo .piso{fill:none;stroke:var(--control);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
+.linha-saldo .zero{stroke:var(--rule);stroke-width:1;vector-effect:non-scaling-stroke}
+.linha-saldo .abaixo{fill:var(--warn)}
+.leg .q.piso{height:0;border-top:2px dashed var(--control);background:none;border-radius:0}
+.leg .q.abaixo{border-radius:50%;background:var(--warn)}
+.linha-virada{margin-top:8px}
+.mes-a-mes{margin-top:8px}
+.mes-a-mes summary{min-height:44px;display:flex;align-items:center;font-weight:600;color:var(--accent-ink);cursor:pointer}
+.mes-a-mes .fat{border-top:1px solid var(--rule)}
+.impacto-2029{font-size:14px;color:var(--warn-ink);line-height:1.4;margin-top:4px;text-wrap:pretty}
+.cobrir .impacto-2029{flex-basis:100%;margin:0 0 2px}
+.reajuste-quem{display:block;font-size:14px;margin-top:4px;opacity:.9}
+.fgc-lista{margin:6px 0;padding-left:18px;display:grid;gap:4px}
+.linha-2028 .leg{margin-top:6px;row-gap:4px}
+.linha-2028 .leg .q{background:var(--accent);height:3px;border-radius:2px}
+.linha-2028 .leg .q.piso{height:0;background:none}
+.linha-2028 .leg .q.abaixo{height:8px;width:8px;border-radius:50%;background:var(--warn)}
+/* E8: desejos */
+.desejo-res{margin-top:12px}
+.li.desejo .m{gap:4px}
+.desejo-cabe.ok{color:var(--accent-ink)}.desejo-cabe.warn{color:var(--warn-ink)}
+.desejo-sit{margin-top:6px}
+select.inp{appearance:auto}
+.desejo-form{display:grid;gap:14px}
+/* E9: passo a passo do Atalho do iPhone */
+.passos-atalho{margin:10px 0 0;padding-left:22px;display:grid;gap:8px;font-size:15px;line-height:1.45}
+.atalho-end{background:var(--raised);border-radius:var(--r-md);padding:10px 12px;margin:6px 0;overflow-wrap:anywhere;font-size:14px}
+.atalho-end code{font-family:ui-monospace,Menlo,monospace}
+.atalho-aviso{margin-bottom:4px}
+/* revisão E4 a E6 (baixa): a 130% os 2 valores de "Próximos meses" ficavam um por cima do outro; as faturas descem pra 2ª linha */
+.fat.prev{grid-template-columns:minmax(0,1fr) auto;row-gap:0;padding:8px 0}
+.fat.prev>span:first-child{grid-column:1;grid-row:1}
+.fat.prev>.sub{grid-column:1;grid-row:2;font-size:13px}
+.fat.prev>span:last-child{grid-column:2;grid-row:1 / span 2}
+.fat.prev+.fat.prev{border-top:1px solid var(--rule)}
+/* E10: a previsão desenhada. Cada bloco: rótulo e número, a barra com o traço de onde deveria estar hoje, 1 frase */
+.ritmo-b{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-md);background:var(--raised)}
+.ritmo-b.ok{background:var(--accent-soft)}.ritmo-b.ok .ritmo-t span,.ritmo-b.ok .ritmo-f{color:var(--accent-ink)}
+.ritmo-b.warn{background:var(--warn-soft)}.ritmo-b.warn .ritmo-t span,.ritmo-b.warn .ritmo-f,.ritmo-b.warn .ritmo-t b{color:var(--warn-ink)}
+.ritmo-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.ritmo-t span{color:var(--ink-2);font-weight:600}
+.ritmo-t b{font-variant-numeric:tabular-nums;text-align:right}
+.ritmo-f{font-size:14px;color:var(--muted);line-height:1.35}
+.ritmo-b .ritmo-meter{background:var(--surface);margin:4px 0 2px}
+.ritmo-leg{font-size:13px;margin-top:2px}
+.leg .q.risco-q{width:3px;height:12px;border-radius:2px;background:var(--ink)}
+.ritmo-t{flex-wrap:wrap;row-gap:0}.ritmo-t span{white-space:nowrap}.ritmo-t b{margin-left:auto}
+.atalho-montado{overflow-wrap:anywhere}

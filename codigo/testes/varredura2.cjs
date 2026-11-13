@@ -7,10 +7,10 @@
 // A5: nenhum "-R$" (nem "−R$") em tela nenhuma, nem nos "?" abertos.
 const { chromium } = require('playwright')
 const BASE = process.argv[2] || 'http://127.0.0.1:8791/depois'
-const ROTAS = ['inicio', 'lancamentos', 'orcamento', 'casa', 'guardado', 'cartoes', 'planejamento', 'escritorio', 'ajustes', 'privacidade', 'painel', 'primeiro-uso', 'entrar', 'qualquer-coisa']
+const ROTAS = ['inicio', 'lancamentos', 'orcamento', 'casa', 'desejos', 'guardado', 'cartoes', 'planejamento', 'escritorio', 'ajustes', 'privacidade', 'painel', 'primeiro-uso', 'entrar', 'qualquer-coisa']
 const falhas = [], erros = []
 // SO=A1,A3 roda só essas partes (padrão: todas)
-const SO = (process.env.SO || 'A1,A2,A3,A4,A5,E3').split(',')
+const SO = (process.env.SO || 'A1,A2,A3,A4,A5,E3,E7').split(',')
 let checagens = 0
 const ok = (c, msg) => { checagens++; if (!c) falhas.push(msg) }
 
@@ -197,6 +197,63 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
     ok(/Ana ainda não disse quando chega/.test(t), 'E5: o Bruno lê o atrasado da Ana sem botão'); await p.close() }
   // nenhum travessão em tela nenhuma
   for (const como of ['ana', 'bruno', 'filha', 'autonoma', 'equipe']) for (const r of ROTAS) { const p = await abrir(b, como, r, '2026-11-18', 21); ok(!/[\u2014\u2013]/.test(await textoEAtributos(p)), `E3 ${como} ${r}: tem travessão`); await p.close() }
+  }
+  /* ---------- E7 a E10 (TELAS 2): linha até 2028, impacto de 2029, reajuste, Desejos, Atalho do iPhone, previsão desenhada ---------- */
+  if (SO.includes('E7')) {
+  const tx = async p => (await textoEAtributos(p)).replace(/\u00a0/g, ' ')
+  { const p = await abrir(b, 'ana', 'inicio', '2026-11-30', 21); const t = await tx(p)
+    ok(/Isso tira R\$ [\d.,]+ por mês da renda de 2029, pra sempre\./.test(t), 'E7: o estouro diz quanto tira da renda de 2029')
+    ok(await p.$('a.linha-2028-resumo[href="#/planejamento"]') !== null, 'E7: o Início tem a linha até dez/2028 em 1 linha'); await p.close() }
+  { const p = await abrir(b, 'ana', 'planejamento', '2026-11-18', 10); const t = await tx(p)
+    ok(await p.$('section[aria-labelledby=pObj] .linha-2028 svg polyline.linha') !== null && await p.$('.linha-2028 svg polyline.piso') !== null, 'E7: a linha mês a mês está desenhada (saldo e piso)')
+    ok(/fica devendo R\$ [\d.,]+ pro caixa até (\d\d\/\d{4}|depois de 12\/2028)/.test(t) || !/abaixo do piso/.test(t), 'E7: mês abaixo do piso diz "fica devendo ... até MM/AAAA"')
+    ok(/Em 2029 o dinheiro rende|Pra viver do rendimento em 2029 faltam|não repõe a inflação/.test(t), 'E7: a folga ou a falta de 2029 (F5) aparece')
+    await p.click('summary:has-text("Ver mês a mês")'); await p.waitForTimeout(200)
+    ok((await p.$$('.mes-a-mes li')).length >= 20, 'E7: "Ver mês a mês" lista cada mês até dez/28'); await p.close() }
+  { const p = await abrir(b, 'ana', 'planejamento', '2027-01-05', 10); const t = await tx(p)
+    ok(/Reajuste do teto de 2027/.test(t) && /Só vale com os 2 aprovando/.test(t), 'E7: em janeiro o reajuste é sugerido e vale só com os 2')
+    await p.click('button:has-text("Aprovo o reajuste")'); await p.waitForTimeout(500)
+    ok(/Ana aprovou em 05\/01\. Falta Bruno\./.test(await tx(p)), 'E7: depois do "aprovo" da Ana, falta o Bruno'); await p.close() }
+  { const p = await abrir(b, 'ana', 'planejamento', '2026-11-18', 10); ok(!/Reajuste do teto/.test(await tx(p)), 'E7: fora do mês do reajuste não aparece'); await p.close() }
+  { const p = await abrir(b, 'ana', 'inicio', '2026-11-18', 10); await p.click('.tabbar .plus'); for (const k of ['2', '0', '0', '0']) await p.click(`.keys button[aria-label="${k}"]`); await p.waitForTimeout(400)
+    ok(/Gasto grande: se não estava no combinado, isso tira R\$ [\d.,]+ por mês da renda de 2029, pra sempre\./.test(await tx(p)), 'E7: o Lançar mostra o impacto de 2029 quando o gasto é grande'); await p.close() }
+  for (const como of ['filha', 'equipe']) { const p = await abrir(b, como, 'inicio', '2026-11-30', 21); ok(!/2029|dezembro de 2028/.test(await tx(p)), `E7: ${como} não vê 2029`); await p.close() }
+  // E8: Desejos
+  { const p = await abrir(b, 'ana', 'desejos', '2026-11-18', 10)
+    ok(await p.$('li[data-do-outro="Bruno"]:has-text("Troca do carro")') !== null, 'E8: o desejo do Bruno aparece com o nome dele')
+    ok(await p.$('li[data-do-outro] .desejo-sit') === null, 'E8: no desejo do outro não tem botão de mexer')
+    ok(await p.$('li.desejo:not([data-do-outro]) .desejo-sit button') !== null, 'E8: no seu desejo tem os botões')
+    await p.fill('.desejo-form input.inp', 'Viagem (teste)'); await p.fill('input[aria-label="Quanto custa"]', '50000'); await p.waitForTimeout(300)
+    ok(/^(Cabe\.|Cabe, mas tira de 2029\.|Ainda não cabe\.|O caixa já está apertado\.)/.test((await p.textContent('.desejo-res')) || ''), 'E8: a calculadora responde cabe / cabe mas tira / ainda não cabe')
+    ok(/por mês (da|na) renda de 2029/.test((await p.textContent('.desejo-res')) || ''), 'E8: o desejo diz quanto tira (ou soma) de 2029')
+    await p.click('button:has-text("Guardar na lista")'); await p.waitForTimeout(500)
+    ok(/Viagem \(teste\)/.test(await p.textContent('.list')), 'E8: o desejo novo entra na lista'); await p.close() }
+  { const p = await abrir(b, 'filha', 'desejos', '2026-11-18', 10); const t = await tx(p)
+    ok(!/2029|Ana|Bruno|Troca do carro|Viagem de férias/.test(t), 'E8: a filha vê só os dela e nada de 2029')
+    await p.fill('.desejo-form input.inp', 'Tênis'); await p.fill('input[aria-label="Quanto custa"]', '120'); await p.waitForTimeout(300)
+    ok(/Dá pra comprar com o seu/.test(await tx(p)), 'E8: a filha lê "dá pra comprar com o seu"'); await p.close() }
+  // E9: Atalho do iPhone
+  { const p = await abrir(b, 'ana', 'lancar?valor=R%24%2045%2C90&loja=Padaria%20S%C3%A3o%20Jos%C3%A9&cartao=Nubank', '2026-11-18', 10)
+    ok(await p.$('.sheet .keys') !== null, 'E9: o Atalho abre o Lançar')
+    ok(/45,90/.test((await p.textContent('.sheet .amount output')) || ''), 'E9: o valor veio preenchido')
+    ok(await p.inputValue('.sheet .lanc-o-que') === 'Padaria São José', 'E9: a loja com acento veio no "O que foi?"')
+    ok(await p.$('.sheet .pill[aria-pressed="true"]:has-text("Nubank")') !== null, 'E9: o cartão veio marcado')
+    ok(/Nada foi salvo/.test(await tx(p)), 'E9: o aviso diz que nada foi salvo')
+    ok(!/#\/lancar/.test(p.url()), 'E9: o endereço volta pro Início (voltar não reabre)')
+    await p.click('.sheet .x, .sheet button[aria-label^="Fechar"]').catch(() => {}); await p.waitForTimeout(300)
+    await p.evaluate(() => { location.hash = '#/lancamentos' }); await p.waitForTimeout(600)
+    ok(!/Padaria São José/.test(await p.textContent('main')), 'E9: o Atalho nunca salva sozinho'); await p.close() }
+  { const p = await abrir(b, 'ana', 'lancar?valor=abc&loja=X', '2026-11-18', 10)
+    ok(/não é um número com até 2 casas\. Digite o valor\./.test(await tx(p)), 'E9: valor inválido pede pra digitar'); await p.close() }
+  { const p = await abrir(b, 'ana', 'ajustes', '2026-11-18', 10)
+    ok((await p.$$('.passos-atalho li')).length === 9 && /Transação/.test(await tx(p)) && /#\/lancar\?valor=/.test(await tx(p)), 'E9: o passo a passo do Atalho está em Ajustes'); await p.close() }
+  // E10: previsão desenhada, até 2 frases por bloco
+  for (const [como, r] of [['ana', 'inicio'], ['bruno', 'orcamento'], ['autonoma', 'inicio']]) {
+    const p = await abrir(b, como, r, '2026-11-18', 10)
+    ok((await p.$$('.ritmo-b .ritmo-meter .risco')).length >= 1, `E10 ${como} ${r}: a barra tem a marca de onde deveria estar hoje`)
+    for (const f of await p.$$eval('.ritmo-b', l => l.map(x => x.innerText))) ok((f.match(/[.!?](\s|$)/g) || []).length <= 2, `E10 ${como} ${r}: bloco com mais de 2 frases: ${f.slice(0, 80)}`)
+    await p.close()
+  }
   }
   await b.close()
   console.log(`Varredura rodada 2: ${checagens} checagens, ${falhas.length} falhas, ${erros.length} erros de página.`)

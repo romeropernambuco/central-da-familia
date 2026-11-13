@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff } from 'lucide-react'
+import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
@@ -17,8 +17,10 @@ import { Planejamento } from '../telas/planejamento/Planejamento'
 import { Painel } from '../telas/painel/Painel'
 import { Privacidade } from '../telas/privacidade/Privacidade'
 import { Ajustes } from '../telas/ajustes/Ajustes'
+import { Desejos } from '../telas/desejos/Desejos'
 import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
 import { podeVerNoMenu, rotaDoHash, rotaPermitida, type Rota } from './rotas'
+import { ehAtalho, lerAtalho } from '../lib/atalho'
 export type { Rota } from './rotas'
 
 const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
@@ -26,6 +28,8 @@ const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
   { r: 'lancamentos', nome: 'Lançamentos', ico: <ListChecks size={22} /> },
   { r: 'orcamento', nome: 'Meu orçamento', ico: <Wallet size={22} /> },
   { r: 'casa', nome: 'Casa', ico: <ShoppingBasket size={22} /> },
+  // E8: a calculadora de desejos (a filha também abre: vê só os dela, sem 2029)
+  { r: 'desejos', nome: 'Desejos', ico: <Sparkles size={22} /> },
   { r: 'guardado', nome: 'Guardado', ico: <Landmark size={22} /> },
   { r: 'cartoes', nome: 'Cartões', ico: <CreditCard size={22} /> },
   { r: 'planejamento', nome: 'Planejamento', ico: <Target size={22} /> },
@@ -40,6 +44,7 @@ const TITULO: Record<string, [string, string]> = {
   casa: ['feira, prestadores, gás e folha', 'Casa'],
   cartoes: ['faturas e "E se eu comprar?"', 'Cartões'],
   planejamento: ['limites, reserva, rendas e metas', 'Planejamento'],
+  desejos: ['o que quero, quando e se cabe', 'Desejos'],
   escritorio: ['quem cuida e cobra por você', 'Escritório'],
   ajustes: ['quem está na família e aparência', 'Família e ajustes'],
   privacidade: ['termo, baixar e apagar dados', 'Privacidade'],
@@ -60,6 +65,21 @@ export function App() {
     return () => removeEventListener('hashchange', f)
   }, [])
   useEffect(() => { const t = setTimeout(() => setCarregou(true), 400); return () => clearTimeout(t) }, [])
+  // E9: o Atalho do iPhone abre #/lancar?valor=&loja=&cartao= e o Lançar abre preenchido. Nunca salva sozinho:
+  // a pessoa confere e toca no nome dela. O endereço volta pro Início (voltar no navegador não reabre o Lançar).
+  useEffect(() => {
+    const ver = () => {
+      if (!familia || !ehAtalho(location.hash)) return
+      const a = lerAtalho(location.hash)
+      history.replaceState(null, '', location.pathname + location.search + '#/inicio')
+      setRota('inicio')
+      if (!a || familia.papel === 'equipe') return
+      abrirLancar({ valor: a.valor, descricao: a.loja, atalho: { cartao: a.cartao, erro: a.erro } })
+    }
+    ver()
+    addEventListener('hashchange', ver)
+    return () => removeEventListener('hashchange', ver)
+  }, [familia?.id])
   useEffect(() => { if (sessao) setCarregou(true) }, [sessao])
 
   if (!sessao) {
@@ -90,7 +110,7 @@ export function App() {
           <div className="tt"><small>{subt}</small><h1>{titulo}</h1></div>
           <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'sem internet' : 'salvo'}</span>
           {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}
-          {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: ajustes e privacidade'}><Settings2 size={22} /></button>}
+          {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Settings2 size={22} /></button>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
           <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {familia.membroNome}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
@@ -104,6 +124,7 @@ export function App() {
         {r === 'guardado' && <Guardado />}
         {r === 'cartoes' && <Cartoes />}
         {r === 'planejamento' && <Planejamento />}
+        {r === 'desejos' && <Desejos />}
         {r === 'escritorio' && <Escritorio />}
         {r === 'ajustes' && <Ajustes />}
         {r === 'privacidade' && <Privacidade />}

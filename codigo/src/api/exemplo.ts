@@ -1,6 +1,6 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
-import type { FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
+import type { DesejoTela, FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
 import * as ex2 from './exemplo2'
 import { entradaDoBanco, type FuturoBanco } from './futuro'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
@@ -75,7 +75,13 @@ function criarDados() {
   ]
   // E6: o objetivo começa vazio (valem as premissas do TIME.md) e o histórico também; o Focus de exemplo tem número inventado
   const objetivo: { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[] } = { parametros: null, historico: [] }
-  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo }
+  // E8: desejos de exemplo (número inventado). A Bia vê só o dela; o casal vê todos, com o nome do dono
+  const desejos: (Omit<DesejoTela, 'dono_nome' | 'meu'> & { apagado: boolean })[] = souza ? [] : [
+    { id: 'ds1', dono_membro: 'm-ana', nome: 'Viagem de férias (exemplo)', valor: 20000, mes: mm(8), volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false, situacao: 'pensando', apagado: false },
+    { id: 'ds2', dono_membro: 'm-bruno', nome: 'Troca do carro (exemplo)', valor: 60000, mes: mm(12), volta_de: 'venda', volta: 35000, volta_mes: mm(12), antecipado: null, volta_certa: true, situacao: 'combinado', apagado: false },
+    { id: 'ds3', dono_membro: 'm-bia', nome: 'Fone de ouvido (exemplo)', valor: 250, mes: mm(1), volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false, situacao: 'pensando', apagado: false },
+  ]
+  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos }
 }
 
 /** Focus de EXEMPLO (número inventado, não é o boletim do Banco Central): Selic do fim do ano e IPCA. */
@@ -648,14 +654,45 @@ export const apiExemplo: Api = {
         saldo_centavos: Math.round(a.saldo * 100), pct_cdi: String(a.pct_cdi), isenta: a.tipo === 'lci_lca' || a.tipo === 'poupanca',
         aplicada_em: ex2.movimentosEx(a.id)[0]?.data || hoje, resgate_previsto: a.vence_em })),
       cdi_hoje: { pct_ano: g.cdi_usado.pct_ano },
+      // f_11: a família de exemplo não anotou dinheiro em conta corrente (soma 0, igual ao banco sem linhas)
+      saldo_caixa: 0,
       recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em })),
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
       config: { casa_folha: db.config.casa_folha as any },
       parcelas_futuras: vivos().filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l)).map(l => { const m1 = faturaDoLanc(l)!; return { parcelas_lista: parcelasDe(l.valor, l.parcelas!).map((v, i) => ({ mes_fatura: mesMais(m1, i), valor_centavos: Math.round(v * 100) })) } })
         .filter(l => l.parcelas_lista[l.parcelas_lista.length - 1].mes_fatura >= m0),
-      desejos: [], parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
+      // E8: igual ao f_08: os desejos vivos, menos os de quem desistiu
+      desejos: db.desejos.filter(d => !d.apagado && d.situacao !== 'desisti').map(d => ({ id: d.id, dono_membro: d.dono_membro, valor_centavos: Math.round(d.valor * 100), mes: d.mes, volta_de: d.volta_de, volta_centavos: Math.round(d.volta * 100), volta_mes: d.volta_mes, antecipado_centavos: d.antecipado == null ? null : Math.round(d.antecipado * 100), volta_certa: d.volta_certa })),
+      parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
     }
     return entradaDoBanco(j)
+  },
+  // ---------- E8: desejos (igual a f_06): o casal vê todos; a pessoa só os dela; só o dono cria e muda ----------
+  async desejos() {
+    await espera(30)
+    const papel = papelLogado()
+    if (papel === 'equipe') return []
+    const eu = membroLogado().id
+    return db.desejos.filter(d => !d.apagado && (papel === 'casal' || d.dono_membro === eu)).map(({ apagado: _a, ...d }) => ({ ...d, dono_nome: membrosTeste().find(x => x.id === d.dono_membro)?.nome ?? null, meu: d.dono_membro === eu }))
+  },
+  async desejoCriar(_f, d) {
+    await espera(40)
+    if (papelLogado() === 'equipe') throw new Error('Desejos são da família: a equipe da casa não anota.')
+    if (!d.nome.trim()) throw new Error('Diga o que é o desejo (ex.: viagem, bicicleta).')
+    if (!(d.valor > 0)) throw new Error('O valor tem que ser maior que zero.')
+    if (!/^\d{4}-\d{2}$/.test(d.mes)) throw new Error('Escolha o mês do desejo.')
+    // a mesma regra do banco (desejos_volta_coerente): sem volta, sem valor de volta; com volta, valor e mês
+    const nada = d.volta_de === 'nada'
+    if (!nada && !(d.volta > 0 && d.volta_mes)) throw new Error('Diga quanto volta e em que mês.')
+    db.desejos.push({ id: 'ds' + Date.now(), dono_membro: membroLogado().id, nome: d.nome.trim().slice(0, 80), valor: centavos(d.valor), mes: d.mes, volta_de: d.volta_de, volta: nada ? 0 : centavos(d.volta), volta_mes: nada ? null : d.volta_mes, antecipado: d.volta_de === 'contrato' && d.antecipado != null ? centavos(d.antecipado) : null, volta_certa: !nada && d.volta_certa, situacao: 'pensando', apagado: false })
+  },
+  async desejoMudar(_f, id, m) {
+    await espera(40)
+    const d = db.desejos.find(x => x.id === id && !x.apagado)
+    if (!d) throw new Error('Esse desejo não existe mais.')
+    if (d.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === d.dono_membro)?.nome || 'o dono'; throw new Error(`Esse desejo é de ${n}: só ${n} muda.`) }
+    if (m.situacao) d.situacao = m.situacao
+    if (m.apagar) d.apagado = true
   },
   async exportarFamilia() {
     if (papelLogado() !== 'casal') throw new Error('Baixar os dados da família é com o casal. Use "Baixar meus dados".')

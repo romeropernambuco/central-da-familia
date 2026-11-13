@@ -12,6 +12,8 @@ import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
 import { parcelasDe } from '../../lib/plano'
 import { LerCupom } from '../../componentes/LerCupom'
+import { Impacto2029 } from '../../componentes/Impacto2029'
+import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -46,7 +48,7 @@ export function Lancar() {
   const corr = lancarAberto?.corrigir
   const inicio = useRef(performance.now())
   const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : 'gasto')
-  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? String(lancarAberto.valor).replace('.', ',') : '')
+  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? (lancarAberto.atalho ? valorComCentavos(lancarAberto.valor) : String(lancarAberto.valor).replace('.', ',')) : '')
   // B9: ao corrigir, o valor antigo vem selecionado: o 1º número digitado já substitui (sem apagar 4 vezes)
   const [selecionado, setSelecionado] = useState(!!corr)
   const digitar = (t: string) => { setTxt(x => tecla(selecionado ? '' : x, t === 'apagar' && selecionado ? 'apagar' : t)); setSelecionado(false) }
@@ -62,7 +64,14 @@ export function Lancar() {
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
 
-  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => setCartoes(cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id))).catch(() => {}) }, [api, familia?.id, equipe])
+  const atalho = !corr ? lancarAberto?.atalho : undefined
+  const [cartaoAtalho, setCartaoAtalho] = useState<'achou' | 'nao achou' | null>(null)
+  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => {
+    const meus = cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id)
+    setCartoes(meus)
+    // E9: o cartão que o iPhone mandou, se for um dos seus (o do outro nunca entra)
+    if (atalho?.cartao) { const c = acharCartao(meus, atalho.cartao); if (c) setCartao(c.id); setCartaoAtalho(c ? 'achou' : 'nao achou') }
+  }).catch(() => {}) }, [api, familia?.id, equipe])
   const digitarRef = useRef(digitar)
   digitarRef.current = digitar
   // teclado físico no computador
@@ -91,6 +100,8 @@ export function Lancar() {
   // o que conta NESTE mês: à vista, o valor todo; parcelado, só a parcela cuja fatura é deste mês (quase sempre nada)
   const contaNoMes = (v: number) => (sim.length ? centavos(sim.filter(p => p.mes === hoje.slice(0, 7)).reduce((t, p) => t + p.valor, 0)) : v)
 
+  const meuLim = (() => { const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId); return e ? e.limite_base ?? e.limite_mes : 0 })()
+  const gastoGrande = valor > 0 && valor >= Math.max(150, meuLim * 0.1)
   // trava do duplo toque: vale no mesmo instante do 1º toque, antes de a tela redesenhar o botão desligado
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   // 1 chave por lançamento: se a internet cai no meio e a pessoa toca de novo, vai a mesma chave e o banco não grava em dobro
@@ -179,6 +190,8 @@ export function Lancar() {
           <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}>Entrou dinheiro</button>
         </div>
       )}
+      {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
+      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome pra salvar.'}{cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : ''}</span></p>}
       {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} /> : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
@@ -204,6 +217,8 @@ export function Lancar() {
               {sim.length > 1 && <p className="sub parc-fatura"><b>{parcelas}x de {reais(sim[sim.length - 1].valor)}</b> nas faturas de {dataCurta(venceEm(sim[0].mes))} a {dataBr(venceEm(sim[sim.length - 1].mes)).replace(/^(\d\d\/\d\d)\/\d\d(\d\d)$/, '$1/$2')}. Cada parcela sai do seu limite no dia 1 do mês da fatura: {mesLongo(sim[0].mes + '-01')} a {mesLongo(sim[sim.length - 1].mes + '-01')}. {contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.'}</p>}
             </div>
           )}
+          {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
+          {casal && !corr && gastoGrande && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
           <p className="lbl salvar-dica">{corr ? 'Toque no nome pra salvar a correção' : valor > 0 ? 'Toque no seu nome pra salvar' : 'Digite o valor e toque no seu nome pra salvar'}</p>
           <div className="envbtns">
             {ordem.map(e => {

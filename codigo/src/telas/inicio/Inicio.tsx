@@ -9,6 +9,7 @@ import { escreveNo, rotuloDono } from '../../app/dono'
 import { RitmoMes } from '../../componentes/RitmoMes'
 import { PrecisaDeVoce } from '../escritorio/Escritorio'
 import { CartaoGuardado } from '../guardado/Guardado'
+import { Linha2028Resumo } from '../../componentes/Linha2028'
 import type { Envelope, Lancamento, ResumoHoje } from '../../api/tipos'
 import { centavos, dataCurta, fimDoMes, hojeRecife, mesAnterior, mesLongo, plural, reais, saudacao, somaDias } from '../../lib/formato'
 
@@ -82,6 +83,8 @@ export function Inicio() {
       <Placar r={resumo} />
       {/* logo abaixo do número do dia: quanto o dinheiro guardado rendeu hoje (só o casal) */}
       <CartaoGuardado />
+      {/* E7: a linha até dez/2028 em 1 linha (só o casal); o desenho fica no Planejamento */}
+      <Linha2028Resumo />
       {/* o Escritório: quantas coisas precisam de você, com a 1ª pergunta respondível aqui mesmo (a pessoa só ouve o que é dela) */}
       <PrecisaDeVoce />
 

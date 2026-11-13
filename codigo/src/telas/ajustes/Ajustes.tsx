@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
-import { MessageCircle, Sun, Moon, Smartphone, LogOut, ShieldCheck, Gauge, ChevronRight, UserPlus, Share } from 'lucide-react'
+import { MessageCircle, Sun, Moon, Smartphone, LogOut, ShieldCheck, Gauge, ChevronRight, UserPlus, Share, Copy, Zap } from 'lucide-react'
+import { enderecoDoAtalho } from '../../lib/atalho'
 import { useApp } from '../../app/contexto'
 import { Sheet } from '../../componentes/base'
 import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from '../../lib/formato'
@@ -61,6 +62,8 @@ export function Ajustes() {
           <h2 id="aInst"><Share size={22} aria-hidden="true" />Pôr na tela do iPhone</h2>
           <p className="sub" style={{ marginTop: 6 }}>No Safari, toque em Compartilhar (o quadrado com a seta) e depois em "Adicionar à Tela de Início". O ícone "Central" abre sem a barra do navegador.</p>
         </section>
+        {/* E9: o passo a passo literal pra montar a automação "Transação" no app Atalhos do iPhone */}
+        <AtalhoIphone />
       </div>
       <div className="col">
         <section className="card" aria-labelledby="aTema">
@@ -122,6 +125,37 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
           <button className="btn ghost full" type="button" onClick={() => setCancelar(null)}>Não, deixar como está</button>
         </Sheet>
       )}
+    </section>
+  )
+}
+
+/** E9: o Atalho do iPhone. Pagou com Apple Pay, o app abre o Lançar já preenchido (nunca salva sozinho). */
+export const PASSOS_ATALHO = [
+  'Abra o app Atalhos (o ícone de quadrados coloridos) e toque em "Automação", na parte de baixo.',
+  'Toque em "Nova Automação" (ou no "+", em cima) e escolha "Transação". Em alguns iPhones o nome é "Carteira".',
+  'Marque os cartões que você usa no Apple Pay. Deixe todas as categorias marcadas. Escolha "Executar Imediatamente" e toque em "Seguinte".',
+  'Toque em "Nova Automação em Branco" e depois em "Adicionar Ação". Na busca, escreva URL e toque em "URL".',
+  'Toque no campo da URL e cole o endereço copiado aqui embaixo (botão "Copiar o endereço"). Ele termina em valor=.',
+  'Logo depois de valor=, toque em "Entrada do Atalho" (aparece em cima do teclado) e escolha "Quantia".',
+  'Escreva &loja= e escolha "Entrada do Atalho" de novo, agora "Comerciante". Escreva &cartao= e escolha "Entrada do Atalho", agora "Cartão ou Passe".',
+  'Toque em "Adicionar Ação" de novo, escreva Abrir URLs na busca e toque em "Abrir URLs". Toque em "OK" pra terminar.',
+  'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Lançar preenchido: confira e toque no seu nome pra salvar. Nada é salvo sozinho.',
+]
+function AtalhoIphone() {
+  const { toast } = useApp()
+  const base = location.origin + location.pathname
+  const endereco = enderecoDoAtalho(base)
+  const copiar = async () => { try { await navigator.clipboard.writeText(endereco); toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não deu pra copiar. Segure o dedo no endereço e escolha Copiar.') } }
+  return (
+    <section className="card" aria-labelledby="aAtalho">
+      <h2 id="aAtalho"><Zap size={22} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>
+      <p className="sub" style={{ marginTop: 6 }}>Pagou com Apple Pay, o app abre o Lançar com o valor, a loja e o cartão já preenchidos. Você só confere e toca no seu nome. Monta 1 vez só, em uns 3 minutos:</p>
+      <ol className="passos-atalho">{PASSOS_ATALHO.map((p, i) => <li key={i}>{p}</li>)}</ol>
+      <p className="lbl" style={{ marginTop: 10 }}>O endereço pra colar no passo 5</p>
+      <p className="atalho-end"><code>{endereco}</code></p>
+      <p className="sub atalho-montado">Montado, o campo da URL fica assim: {endereco}<b>Quantia</b>&amp;loja=<b>Comerciante</b>&amp;cartao=<b>Cartão ou Passe</b> (as palavras em negrito são as que você escolhe em "Entrada do Atalho").</p>
+      <button className="btn line" type="button" style={{ marginTop: 10 }} onClick={copiar}><Copy size={20} />Copiar o endereço</button>
+      <p className="sub" style={{ marginTop: 10 }}>O iPhone abre o endereço no Safari. Na 1ª vez, entre no app pelo Safari também, com o mesmo e-mail. Os nomes dos botões podem mudar um pouco conforme a versão do iPhone.</p>
     </section>
   )
 }

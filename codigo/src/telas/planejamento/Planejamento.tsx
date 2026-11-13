@@ -6,6 +6,7 @@ import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
 import { Recebimentos } from './Recebimentos'
 import { Parametros } from './Parametros'
+import { Reajuste } from './Reajuste'
 import { novoUuid } from '../../lib/seguro'
 import { Qm } from '../../componentes/Qm'
 import type { Fatura } from '../../api/tipos'
@@ -112,6 +113,8 @@ export function Planejamento() {
             </label>
           </div>
           {casal && <button className="btn primary" type="button" disabled={salvando} onClick={salvarLimites} style={{ marginTop: 14 }}><Save size={20} />Salvar limites</button>}
+          {/* E7 (F8): no mês do reajuste, o teto novo pela inflação; vale com os 2 aprovando */}
+          {casal && <Reajuste envelopes={resumo.envelopes} mudaLimite={mudaLimite} />}
         </section>
       </div>
       <div className="col">
@@ -170,7 +173,7 @@ export function Planejamento() {
               const fat = centavos(faturas.filter(f => f.mes === m).reduce((s, f) => s + f.total, 0))
               const s = centavos(renda - limites - fat)
               return (
-                <div key={m} className="fat"><span>{mesCurto(m)}</span><span className="sub">faturas {reais(fat)}</span>
+                <div key={m} className="fat prev"><span>{mesCurto(m)}</span><span className="sub">faturas {reais(fat)}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{s >= 0 ? <Din v={s} /> : <span className="din-warn" title="passa da renda">passa <Din v={-s} /></span>}<Qm titulo={`Previsão de ${mesCurto(m)}`} linhas={[{ linha: sozinho ? 'Rendas' : 'Rendas da família', valor: renda }, { linha: sozinho ? 'Limites' : 'Limites de todos e da Casa', valor: -limites }, { linha: sozinho ? 'Já comprometido nas suas faturas' : 'Já comprometido nas faturas da família', valor: -fat }, { linha: 'Sobra prevista', valor: s }]} /></span>
                 </div>
               )

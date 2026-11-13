@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { History, Save, Target } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor } from '../../componentes/base'
-import { PARAMETROS_INICIAIS, VIRADA, taxaDoTexto, textoDaTaxa, type EntradaPronta } from '../../api/futuro'
-import { futuro } from '../../lib/futuro'
+import { PARAMETROS_INICIAIS, VIRADA, taxaDoTexto, textoDaTaxa } from '../../api/futuro'
+import { useFuturo } from '../../app/useDados2'
+import { Linha2028 } from '../../componentes/Linha2028'
 import type { Objetivo, ParametrosObjetivo } from '../../api/tipos'
 import { dataCurta, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 
@@ -34,7 +35,6 @@ function mudancas(a: ParametrosObjetivo | null, d: ParametrosObjetivo): string {
 export function Parametros() {
   const { api, familia, versao, tentar, toast } = useApp()
   const [obj, setObj] = useState<Objetivo | null>(null)
-  const [ent, setEnt] = useState<EntradaPronta | null>(null)
   const [f, setF] = useState<Record<string, string>>({})
   const [travado, setTravado] = useState(false)
   const [n, setN] = useState(0)
@@ -50,10 +50,9 @@ export function Parametros() {
         piso: p.piso_meses == null ? '' : String(p.piso_meses), reajuste: String(p.mes_reajuste || 1),
         ...Object.fromEntries(anos.flatMap(a => [[`selic${a}`, textoDaTaxa(p.taxa_bruta_ano[a])], [`ipca${a}`, textoDaTaxa(p.ipca_ano[a])]])) })
     }).catch(() => setObj({ parametros: null, historico: [], focus: [] }))
-    api.futuroEntradas?.(familia.id).then(setEnt).catch(e => setEnt({ entrada: null, confirmar: [], motivo: (e as Error).message }))
   }, [api, familia?.id, versao, n])
-  // a única conta de 2029 é a do motor
-  const saida = useMemo(() => { try { return ent?.entrada ? futuro(ent.entrada) : null } catch { return null } }, [ent])
+  // E7: a única conta de 2029 é a do motor (useFuturo chama futuro()); a tela só desenha
+  const { ent, saida, estado: estFuturo, motivo: motivoFuturo, atualizar } = useFuturo()
   if (!familia || familia.papel !== 'casal' || !api.objetivo) return null
   if (!obj) return <section className="card"><p className="sub">Buscando o objetivo de 2029…</p></section>
   const focus = new Map(obj.focus.map(x => [String(x.ano), x]))
@@ -76,23 +75,19 @@ export function Parametros() {
     setGravando(true)
     const ok = await tentar(() => api.objetivoSalvar!(familia.id, p))
     setGravando(false)
-    if (ok) { setN(x => x + 1); toast('Objetivo salvo. Fica no histórico quem mudou e o que era antes.') }
+    if (ok) { setN(x => x + 1); atualizar(); toast('Objetivo salvo. Fica no histórico quem mudou e o que era antes.') }
   }
 
-  const ultimo = saida?.linha[saida.linha.length - 1]
   return (
     <section className="card" aria-labelledby="pObj">
       <div className="card-h"><h2 id="pObj"><Target size={24} aria-hidden="true" />Objetivo de 2029</h2></div>
       <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. Os 2 mudam; o que era antes fica no histórico.</p>
 
-      {/* o resultado é do motor (futuro()); a tela só escreve */}
-      {saida && ultimo ? (
-        <div className={'todo ' + (saida.folga >= 0 ? 'ok' : 'warn')} style={{ marginBottom: 12 }}><span>
-          {ultimo.saldo_final >= 0 ? <>Com estes números, a família chega a {mesCurto(ultimo.mes)} com <b>{reais(ultimo.saldo_final / 100)}</b>.</> : <>Com estes números, a família fica devendo <b>{reais(-ultimo.saldo_final / 100)}</b> em {mesCurto(ultimo.mes)}{saida.linha.find(l => l.saldo_final < 0) ? `, desde ${mesCurto(saida.linha.find(l => l.saldo_final < 0)!.mes)}` : ''}.</>}{' '}
-          {saida.patrimonio_necessario == null ? 'Nesse cenário o rendimento não repõe a inflação.' : <>A renda que dura pra sempre: <b>{reais(saida.renda_sustentavel / 100)} por mês</b>. {saida.folga >= 0 ? <>Sobram {reais(saida.folga / 100)} além do necessário.</> : <>Pra fechar, faltam {reais(-saida.folga / 100)}.</>}</>}
-        </span></div>
-      ) : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{ent.motivo}</span></p> : null}
-      {ent && ent.confirmar.length > 0 && <p className="sub" style={{ marginBottom: 12 }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
+      {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
+      {saida && ent?.entrada ? <Linha2028 saida={saida} entrada={ent.entrada} />
+        : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{ent.motivo}</span></p>
+        : estFuturo === 'erro' ? <p className="todo warn" style={{ marginBottom: 12 }}><span>Não deu pra fazer a conta de 2029 agora: {motivoFuturo}</span></p> : null}
+      {ent && ent.confirmar.length > 0 && <p className="sub" style={{ margin: '10px 0 12px' }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
 
       <div>
         <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => setF({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>

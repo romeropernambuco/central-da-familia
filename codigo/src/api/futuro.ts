@@ -24,6 +24,8 @@ export interface FuturoBanco {
   hoje: string; mes_base: string
   aplicacoes: { id: string; titular_membro: string | null; titular_nome: string | null; titulares: { membro_id: string; nome: string }[]; banco: string; tipo: string; saldo_centavos: number; pct_cdi: string | number; isenta: boolean; aplicada_em: string; resgate_previsto: string | null }[]
   cdi_hoje: { pct_ano: string | number | null }
+  /** f_11: soma do dinheiro em conta corrente, fora das aplicações (centavos). Ausente = banco antes da f_11. */
+  saldo_caixa?: number | string | null
   recebimentos: { id: string; dono_nome: string | null; valor_centavos: number; mes_previsto: string; mes_novo: string | null; certo: boolean; recebido_em: string | null }[]
   limites_mes: { envelope_id: string; limite_centavos: number }[]
   config: { casa_folha?: { pessoas?: { salario?: number }[] } } | null
@@ -78,8 +80,9 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
     isenta: !!a.isenta, aplicada_em: String(a.aplicada_em).slice(0, 10), resgate_previsto: a.resgate_previsto ? String(a.resgate_previsto).slice(0, 10) : null,
     fgc: a.tipo !== 'tesouro_selic',
   }))
-  // o caixa da conta corrente ainda não tem lugar no banco: entra 0 e a tela diz [confirmar]
-  confirmar.push('dinheiro parado na conta, fora das aplicações (a conta usa R$ 0)')
+  // f_11: o banco manda a soma do dinheiro em conta corrente (saldos_conta). Sem o campo (banco antes da f_11): 0 e [confirmar]
+  const saldo_caixa = j.saldo_caixa == null ? 0 : Number(j.saldo_caixa) || 0
+  if (j.saldo_caixa == null) confirmar.push('dinheiro parado na conta, fora das aplicações (a conta usa R$ 0)')
 
   const compromissos: FuturoEntrada['compromissos'] = []
   for (const l of j.parcelas_futuras || []) for (const x of l.parcelas_lista || []) compromissos.push({ mes: x.mes_fatura, valor: Number(x.valor_centavos) || 0, tipo: 'parcela' })
@@ -90,7 +93,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   return {
     confirmar,
     entrada: {
-      hoje, saldo_caixa: 0, aplicacoes,
+      hoje, saldo_caixa, aplicacoes,
       recebimentos: (j.recebimentos || []).map(r => ({ id: String(r.id), dono: r.dono_nome || '', valor: Number(r.valor_centavos) || 0, mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: !!r.certo, recebido: !!r.recebido_em })),
       compromissos, dividas: [], desvios: [],
       desejos: (j.desejos || []).map(d => ({ id: String(d.id), dono: String(d.dono_membro), valor: Number(d.valor_centavos) || 0, mes: d.mes, volta_de: d.volta_de, volta: Number(d.volta_centavos) || 0, volta_mes: d.volta_mes, antecipado: d.antecipado_centavos == null ? null : Number(d.antecipado_centavos), volta_certa: !!d.volta_certa })),

@@ -236,8 +236,23 @@ export interface FocusAno { ano: number; selic_fim: string; ipca: string; divulg
 export interface HistoricoObjetivo { quem: string | null; quando: string; antes: ParametrosObjetivo | null; depois: ParametrosObjetivo }
 export interface Objetivo { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[]; focus: FocusAno[] }
 
+/* ---------- E8: desejos (produto.desejos, f_06). Ver: o casal todos, a pessoa (filha) só os dela. Mexer: só o dono ---------- */
+export type VoltaDe = 'nada' | 'contrato' | 'investimento' | 'venda'
+export type SituacaoDesejo = 'pensando' | 'combinado' | 'feito' | 'desisti'
+export interface NovoDesejo {
+  nome: string
+  /** em reais (a tela); o banco guarda em centavos */ valor: number
+  /** 'AAAA-MM' */ mes: string
+  volta_de: VoltaDe
+  /** quanto volta (ou, no contrato antecipado, quanto receberia no contrato); 0 quando não volta */ volta: number
+  volta_mes: string | null
+  /** contrato antecipado: quanto entra agora, adiantado */ antecipado: number | null
+  volta_certa: boolean
+}
+export interface DesejoTela extends NovoDesejo { id: string; dono_membro: string; dono_nome: string | null; situacao: SituacaoDesejo; /** quem olha é o dono (só ele muda) */ meu: boolean }
+
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
-export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais'
+export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto'
 
 export interface Api {
   modo: 'real' | 'exemplo'
@@ -349,6 +364,10 @@ export interface Api {
   objetivoSalvar?(familia: string, p: ParametrosObjetivo): Promise<void>
   /** Os DADOS pro motor de 2029 (produto.futuro_entradas, f_08), já no formato de lib/futuro. A tela só chama futuro(). */
   futuroEntradas?(familia: string): Promise<import('./futuro').EntradaPronta>
+  /* E8: desejos. O casal vê todos; a pessoa (filha) só os dela; só o dono cria e muda (ninguém apaga linha: fica marcada) */
+  desejos?(familia: string): Promise<DesejoTela[]>
+  desejoCriar?(familia: string, d: NovoDesejo): Promise<void>
+  desejoMudar?(familia: string, id: string, m: { situacao?: SituacaoDesejo; apagar?: boolean }): Promise<void>
   /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
   exportarMeu?(familia: string): Promise<unknown>
   apagarFamilia(familia: string, confirmacao: string): Promise<void>

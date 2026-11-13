@@ -1,8 +1,10 @@
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from './contexto'
 import type { EscritorioHoje, GuardadoHoje } from '../api/tipos'
 import { ErroSessao } from '../api/erros'
+import type { EntradaPronta } from '../api/futuro'
+import { futuro, type FuturoSaida } from '../lib/futuro'
 
 /** buscando: 1ª leitura · ok · erro: não deu pra buscar (mostra o motivo) · desligado: o banco ainda não tem essa parte. */
 export type Leitura = 'buscando' | 'ok' | 'erro' | 'desligado'
@@ -62,4 +64,14 @@ export function useEscritorio() {
   }, [api, familia?.id, tentar, recarregar, atualizar, toast, equipe])
   for (const p of r.dado?.precisa_de_voce || []) perguntasVistas.set(p.id, p)
   return { e: r.dado, estado: r.estado, motivo: r.motivo, atualizar, responder }
+}
+
+/** E7: os dados de 2029 (produto.futuro_entradas) e a saída do motor. Só o casal: a filha e a equipe nem perguntam ao banco.
+ *  A única conta de 2029 é a de futuro() (lib/futuro); aqui só se chama. */
+export function useFuturo(): { ent: EntradaPronta | null; saida: FuturoSaida | null; estado: Leitura; motivo: string; atualizar: () => void } {
+  const { api, familia } = useApp()
+  const pode = familia?.papel === 'casal' && !!api.futuroEntradas
+  const r = useLeitura<EntradaPronta>(pode ? f => api.futuroEntradas!(f) : null)
+  const saida = useMemo(() => { try { return r.dado?.entrada ? futuro(r.dado.entrada) : null } catch { return null } }, [r.dado])
+  return { ent: r.dado, saida, estado: r.estado, motivo: r.motivo, atualizar: r.atualizar }
 }

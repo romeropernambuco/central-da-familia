@@ -138,7 +138,9 @@ export const apiReal: Api = {
     // E2: o casal lê a família toda; `meu` = quem olha lançou (o banco só deixa mexer no que a pessoa lançou, f_02)
     const eu = (await sb().auth.getSession()).data.session?.user?.id
     for (let p = 0; p < 10; p++) {
-      const { data, error } = await sb().from('lancamentos').select('*') // E4: "*" traz parcelas e pago_por depois da f_04 e não quebra antes dela.eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
+      // E4: "*" traz parcelas e pago_por depois da f_04 e não quebra antes dela
+      // D1 (revisão E4 a E6): o comentário ficava no meio desta linha e apagava família, mês, ordem e paginação
+      const { data, error } = await sb().from('lancamentos').select('*').eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
       if (error) erro(error)
       out.push(...(data || []).map((l: any) => ({ ...normalizaLancamento(l), ...(eu && l.autor ? { meu: l.autor === eu } : {}) })))
       if ((data || []).length < 1000) break
@@ -364,10 +366,49 @@ export const apiReal: Api = {
   },
   async objetivoSalvar(familia, p) {
     // o banco confere as chaves e grava o histórico sozinho (gatilho); só o casal grava
-    const { error } = await sb().from('objetivo').upsert({ familia_id: familia, parametros: p }, { onConflict: 'familia_id' })
+    // D2 (revisão E4 a E6): a f_07 dá insert na tabela e update SÓ na coluna parametros. O upsert do PostgREST manda
+    // "on conflict do update set familia_id, parametros" e o 2º salvar dava "permission denied". Agora: existe, update; não, insert.
+    const { data: tem, error: e1 } = await sb().from('objetivo').select('familia_id').eq('familia_id', familia).maybeSingle()
+    if (e1) erro(e1)
+    const { error } = tem
+      ? await sb().from('objetivo').update({ parametros: p }).eq('familia_id', familia)
+      : await sb().from('objetivo').insert({ familia_id: familia, parametros: p })
     if (error) erro(error)
   },
   async futuroEntradas(familia) { return entradaDoBanco(await rpc<FuturoBanco>('futuro_entradas', { familia })) },
+  // ---------- E8: desejos (produto.desejos, f_06). A tranca do banco: o casal lê todos, a pessoa só os dela; só o dono muda ----------
+  async desejos(familia) {
+    const { data, error } = await sb().from('desejos').select('*').eq('familia_id', familia).is('apagado_em', null).order('mes').order('criado_em')
+    if (error) erro(error)
+    const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
+    const eu = await meuMembro(familia)
+    const reaisDe = (c: unknown) => (c == null ? null : num(c) / 100)
+    return (data || []).map((d: any) => ({
+      id: String(d.id), dono_membro: String(d.dono_membro), dono_nome: ms.find(m => m.id === String(d.dono_membro))?.nome ?? null, meu: !!eu && String(d.dono_membro) === eu,
+      nome: String(d.nome), valor: num(d.valor_centavos) / 100, mes: String(d.mes).slice(0, 7), volta_de: d.volta_de, volta: num(d.volta_centavos) / 100,
+      volta_mes: d.volta_mes ? String(d.volta_mes).slice(0, 7) : null, antecipado: reaisDe(d.antecipado_centavos), volta_certa: !!d.volta_certa, situacao: d.situacao,
+    }))
+  },
+  async desejoCriar(familia, d) {
+    const eu = await meuMembro(familia)
+    if (!eu) throw new Error('Não achei você nesta família. Saia e entre de novo.')
+    const nada = d.volta_de === 'nada'
+    const { error } = await sb().from('desejos').insert({
+      familia_id: familia, dono_membro: eu, nome: d.nome.trim(), valor_centavos: Math.round(d.valor * 100), mes: `${d.mes}-01`, volta_de: d.volta_de,
+      volta_centavos: nada ? 0 : Math.round(d.volta * 100), volta_mes: nada || !d.volta_mes ? null : `${d.volta_mes}-01`,
+      antecipado_centavos: d.volta_de === 'contrato' && d.antecipado != null ? Math.round(d.antecipado * 100) : null, volta_certa: !nada && d.volta_certa,
+    })
+    if (error) erro(error)
+  },
+  async desejoMudar(familia, id, m) {
+    const campos: Record<string, unknown> = {}
+    if (m.situacao) campos.situacao = m.situacao
+    if (m.apagar) campos.apagado_em = new Date().toISOString()
+    // o banco só deixa o dono mudar: se não for, volta 0 linhas e a tela avisa
+    const { data, error } = await sb().from('desejos').update(campos).eq('id', id).eq('familia_id', familia).select('id')
+    if (error) erro(error)
+    if (!data?.length) throw new Error('Só quem é dono desse desejo muda ele.')
+  },
   async exportarFamilia(familia) { return rpc('exportar_familia', { familia }) },
   async exportarMeu(familia) { return rpc('exportar_meu', { familia }) },
   async apagarFamilia(familia, confirmacao) { await rpc('apagar_familia', { familia, confirmacao }) },

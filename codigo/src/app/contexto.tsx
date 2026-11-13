@@ -7,7 +7,7 @@ import { comIntervalo, resumoSemDinheiro } from '../lib/seguro'
 import { esconderValores, hojeRecife } from '../lib/formato'
 import { mascaraDoOlho } from './mascara'
 
-export interface PreLancar { envelope?: string; valor?: number; descricao?: string; quando?: 'hoje' | 'ontem'; /** R12: corrigir este lançamento */ corrigir?: import('../api/tipos').Lancamento; /** R11: abre direto em "Entrou dinheiro" */ entrou?: boolean }
+export interface PreLancar { envelope?: string; valor?: number; descricao?: string; quando?: 'hoje' | 'ontem'; /** R12: corrigir este lançamento */ corrigir?: import('../api/tipos').Lancamento; /** R11: abre direto em "Entrou dinheiro" */ entrou?: boolean; /** E9: veio do Atalho do iPhone (nunca salva sozinho) */ atalho?: { cartao?: string; erro?: string } }
 interface Toast { msg: string; desfazer?: () => void | Promise<void>; id: number }
 interface Explicar { titulo: string; linhas: LinhaExplicacao[]; nota?: string; /** título da folha (padrão: "De onde veio esse número?") */ cabeca?: string }
 

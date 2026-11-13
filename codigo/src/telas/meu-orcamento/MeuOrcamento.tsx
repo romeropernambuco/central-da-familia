@@ -87,7 +87,7 @@ export function MeuOrcamento() {
             {frase && <p className="todo warn frase-estouro">{frase}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
-            {n.estado !== 'devendo' && <RitmoMes e={env} risco={env.regra === 'diario'} quem={meu ? undefined : dono} />}
+            {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} />}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}><CalendarCheck size={20} aria-hidden="true" />
                 <span><b>Ontem você não gastou nada?</b> É só pra conta ficar certa.

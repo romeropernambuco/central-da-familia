@@ -1,5 +1,5 @@
 // Rotas do app e quem pode abrir cada uma. Sem tela: dá pra testar sozinho.
-export type Rota = 'inicio' | 'lancamentos' | 'orcamento' | 'casa' | 'guardado' | 'cartoes' | 'planejamento' | 'escritorio' | 'ajustes' | 'privacidade' | 'painel' | 'primeiro-uso' | 'entrar'
+export type Rota = 'inicio' | 'lancamentos' | 'orcamento' | 'casa' | 'guardado' | 'cartoes' | 'planejamento' | 'desejos' | 'escritorio' | 'ajustes' | 'privacidade' | 'painel' | 'primeiro-uso' | 'entrar'
 
 
 /** Telas que mostram dinheiro do casal: a pessoa da família (filha) não abre nem pelo endereço. */
@@ -7,7 +7,7 @@ export const SO_CASAL: Rota[] = ['guardado', 'cartoes', 'planejamento', 'escrito
 /** O menu de cada papel. */
 export const podeVerNoMenu = (r: Rota, papel: 'casal' | 'pessoa' | 'equipe' | null) => (papel === 'equipe' ? r === 'casa' : papel === 'casal' || !SO_CASAL.includes(r))
 
-const ROTAS: Rota[] = ['inicio', 'lancamentos', 'orcamento', 'casa', 'guardado', 'cartoes', 'planejamento', 'escritorio', 'ajustes', 'privacidade', 'painel', 'primeiro-uso', 'entrar']
+const ROTAS: Rota[] = ['inicio', 'lancamentos', 'orcamento', 'casa', 'guardado', 'cartoes', 'planejamento', 'desejos', 'escritorio', 'ajustes', 'privacidade', 'painel', 'primeiro-uso', 'entrar']
 /** Endereço desconhecido (link velho, digitado errado) abre o Início em vez de uma tela em branco. */
 export function rotaDoHash(hash: string): Rota {
   const h = hash.replace(/^#\/?/, '').split('?')[0] as Rota

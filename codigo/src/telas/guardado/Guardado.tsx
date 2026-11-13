@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, X } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, ShieldAlert, X } from 'lucide-react'
 import { useApp } from '../../app/contexto'
-import { useGuardado } from '../../app/useDados2'
+import { useFuturo, useGuardado } from '../../app/useDados2'
+import { TODOS_OS_BANCOS } from '../../lib/futuro/f10_fgc'
+import type { FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
 import { aplicacaoMinha } from '../../app/dono'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
@@ -17,6 +19,8 @@ type Folha = { tipo: 'nova' } | { tipo: 'aporte' | 'resgate'; app?: GuardadoApli
 export function Guardado() {
   const { familia, explicar, resumo } = useApp()
   const { g, estado, motivo } = useGuardado()
+  // E7 (F10): o aviso do FGC vem do motor (futuro().avisos_fgc); a tela só escreve
+  const { saida } = useFuturo()
   const [grafico, setGrafico] = useState<'dia' | 'saldo'>('saldo')
   const [marcoVisto, setMarcoVisto] = useState(() => { try { return localStorage.getItem('marco_visto') || '' } catch { return '' } })
   const [folha, setFolha] = useState<Folha>(() => (/[?&]nova=1/.test(location.hash) ? { tipo: 'nova' } : /[?&]guardar=1/.test(location.hash) ? { tipo: 'aporte' } : /[?&]tirar=1/.test(location.hash) ? { tipo: 'resgate' } : null))
@@ -110,6 +114,7 @@ export function Guardado() {
               ))}
             </ul>
           </section>
+          {saida && saida.avisos_fgc.length > 0 && <AvisoFGC avisos={saida.avisos_fgc} />}
           <p className="sub guard-taxa"><Droplets size={18} aria-hidden="true" /><span>{taxaTexto(g)}</span></p>
         </div>
       </div>
@@ -320,5 +325,28 @@ function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
       <figcaption className="barras30-pe"><span>{dataCurta(v[0].data)}: {reais(v[0].saldo)}</span><span>hoje: {reais(v[v.length - 1].saldo)}</span></figcaption>
       <p className="sub" style={{ marginTop: 8 }}>{cresceu > 0 ? <>Cresceu <b>{reais(cresceu)}</b> em 30 dias, somando o que rendeu e o que entrou.</> : 'Ficou parado nestes 30 dias.'}</p>
     </figure>
+  )
+}
+
+/** E7 (F10): as frases do aviso do FGC, uma por banco e pessoa, a partir do que o motor devolveu (sem conta aqui). */
+export function frasesFGC(avisos: FuturoSaida['avisos_fgc']): string[] {
+  return avisos.map(a => {
+    const quem = a.titular ? `no nome de ${a.titular}` : 'do casal'
+    return a.banco === TODOS_OS_BANCOS
+      ? `Somando todos os bancos, ${quem} passa ${reais(a.fora / 100)} do teto de R$ 1 milhão que o fundo garante por pessoa a cada 4 anos.`
+      : `No banco ${a.banco}, ${quem}: ${reais(a.fora / 100)} ficam fora da garantia (até R$ 250 mil por pessoa e banco).`
+  })
+}
+
+/** Só avisa: não muda onde o dinheiro está (premissa 5 do TIME.md). */
+function AvisoFGC({ avisos }: { avisos: FuturoSaida['avisos_fgc'] }) {
+  const f = frasesFGC(avisos)
+  return (
+    <section className="todo warn aviso-fgc" aria-labelledby="gFgc" style={{ marginBottom: 12 }}>
+      <ShieldAlert size={20} aria-hidden="true" />
+      <span><b id="gFgc">Aviso do fundo que protege quem guarda dinheiro (FGC).</b> Se um banco quebrar, ele devolve até R$ 250 mil por pessoa em cada banco.
+        <ul className="fgc-lista">{f.map((x, i) => <li key={i}>{x}</li>)}</ul>
+        É só um aviso: o dinheiro continua onde está. Repartir entre bancos deixa tudo dentro da garantia.</span>
+    </section>
   )
 }
