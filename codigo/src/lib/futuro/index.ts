@@ -4,7 +4,7 @@
 import { anoDe, compararMes, diasDoMes, mesAnterior, mesDaData, proximoMes } from './decimal'
 import { avisosFGC } from './f10_fgc'
 import { gastoNaVirada, patrimonioNecessario, rendaSustentavel } from './f3_necessario'
-import { mesDoRecebimento, projetarLinha, somarPorMes } from './f4_linha'
+import { mesDoRecebimento, pisoDoMes, projetarLinha, somarPorMes } from './f4_linha'
 import { folga as calcFolga } from './f5_folga'
 import { impactoDesvio } from './f6_impacto'
 import { avaliarDesejo, fluxosDoDesejo } from './f7_desejo'
@@ -14,7 +14,18 @@ import { fatorLiquido } from './f1_rendimento'
 import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, Mes } from './tipos'
 
 export * from './tipos'
-export { textoDeCentavos, centavosDeTexto, pct } from './decimal'
+// Fronteira única (PLANO 3A; REVISOR 2): fora de lib/futuro, tudo se importa daqui. Lista em fase_final/entregas/MOTOR_index.md.
+export { Dec, textoDeCentavos, centavosDeTexto, pct, comCasas, mensal, diasDoMes, proximoMes, mesAnterior, compararMes, listaMeses, mesDaData } from './decimal'
+export { aliquotaIR, irSobre, diasIR, rendimentoMes, rendimentoAplicacao } from './f1_rendimento'
+export { taxaLiquidaAnual, taxaRealAnual, taxaRealMensal, semValor, ALERTA_SEM_VALOR } from './f2_taxa_real'
+export { fatorInflacao, gastoNaVirada, patrimonioNecessario, rendaSustentavel } from './f3_necessario'
+export { mesDoRecebimento, pisoDoMes, folha13 } from './f4_linha'
+export { situacao as situacaoDaFolga } from './f5_folga'
+export { valorNaVirada, perdaRendaMensal, impactoDesvio } from './f6_impacto'
+export { avaliarDesejo, avaliarAntecipacao, taxaImplicitaMensal, type ResultadoDesejo } from './f7_desejo'
+export { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
+export { ficaDevendo, cortarPorMes2029, desejosPraAdiar } from './f9_falta'
+export { avisosFGC, fgcConta, TODOS_OS_BANCOS, LIMITE_FGC, TETO_CPF_FGC } from './f10_fgc'
 
 function taxasDe(e: FuturoEntrada) {
   const p = e.parametros
@@ -57,7 +68,7 @@ export function futuro(e: FuturoEntrada): FuturoSaida {
   const linha = projetarLinha({
     saldo_inicial, de, ate: ultimo,
     taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj,
-    teto, piso: (m) => p.piso_meses * teto(m),
+    teto, piso: (m) => pisoDoMes(p.piso_meses, teto(m)),
     recebimentos: somarPorMes(recs),
     compromissos: somarPorMes(e.compromissos.filter((c) => naLinha(c.mes))),
     dividas: somarPorMes(e.dividas.filter((c) => naLinha(c.mes))),

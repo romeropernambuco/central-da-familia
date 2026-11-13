@@ -3,13 +3,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesLinha, mesAno } from './componentes/Linha2028'
-import { situacaoReajuste, type ReajusteAno } from './telas/planejamento/Reajuste'
+import { situacaoReajuste } from './telas/planejamento/Reajuste'
+import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
 import { desejoDoMotor, fraseDaFilha, frasesDesejo } from './telas/desejos/Desejos'
 import { acharCartao, ehAtalho, lerAtalho, lerValor } from './lib/atalho'
 import { marcaDaSemana } from './componentes/RitmoMes'
 import { cabeDesejo, futuro, type FuturoEntrada, type FuturoSaida } from './lib/futuro'
-import { reajustarTeto } from './lib/futuro/f8_reajuste'
+import { reajustarTeto, avaliarAntecipacao } from './lib/futuro'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { rotaDoHash, rotaPermitida } from './app/rotas'
 
@@ -45,13 +46,19 @@ describe('E7: impacto de 2029 (F6) pela tela', () => {
 })
 
 describe('E7: linha até dez/2028 (F4, F9, F5)', () => {
-  const l = (mes: string, saldo_final: number, fica_devendo = 0, devendo_ate: string | null = null) => ({ mes, saldo_inicial: 0, rendimento: 0, recebimentos: 0, teto: 0, compromissos: 0, dividas: 0, desvios: 0, retornos: 0, saldo_final, fica_devendo, devendo_ate })
+  const l = (mes: string, saldo_final: number, fica_devendo = 0, devendo_ate: string | null = null) => ({ mes, saldo_inicial: 0, rendimento: 0, recebimentos: 0, teto: 0, compromissos: 0, dividas: 0, desvios: 0, retornos: 0, saldo_final, piso: 0, fica_devendo, devendo_ate })
   it('F9-MES: "fica devendo R$ 20.000 pro caixa até 04/2027", sem sinal de menos', () => {
     const s: FuturoSaida = { linha: [l('2027-03', 4_000_000, 2_000_000, '2027-04'), l('2027-04', 9_500_000)], patrimonio_necessario: 9_000_000, renda_sustentavel: 31_000, folga: 500_000, ajustes_falta: null, perguntas: [], avisos_fgc: [] }
     const f = frasesLinha(s)
     expect(limpa(f.devendo)).toBe('Em 03/2027 o caixa fica abaixo do piso: fica devendo R$ 20.000 pro caixa até 04/2027.')
     expect(limpa(f.virada)).toMatch(/^Em 2029 o dinheiro rende R\$ 310 por mês, pra sempre, e sobram R\$ 5\.000/)
     expect(JSON.stringify(f)).not.toMatch(/-R\$|R\$\s?-/)
+  })
+  it('B4 (revisão): com a família devendo no fim, a frase do piso não diz "fica devendo" de novo', () => {
+    const s: FuturoSaida = { linha: [l('2026-12', 7_000_000, 798_537, null), l('2028-12', -30_409_053, 30_409_053 + 1, null)], patrimonio_necessario: 1, renda_sustentavel: 0, folga: -1, ajustes_falta: null, perguntas: [], avisos_fgc: [] }
+    const f = frasesLinha(s)
+    expect(limpa(f.devendo)).toBe('Em 12/2026 o caixa fica R$ 7.985,37 abaixo do piso e não volta pra cima dele até 12/2028.')
+    expect(((f.caixa + ' ' + f.devendo).match(/fica devendo/g) || []).length).toBe(1)
   })
   it('F5 com falta: os ajustes do F9 com número (guardar por mês ou gastar menos em 2029)', () => {
     const s: FuturoSaida = { linha: [l('2028-12', -100_000)], patrimonio_necessario: 1_000_000_00, renda_sustentavel: 0, folga: -122_014_316, ajustes_falta: { guardar_por_mes: 4_695_336, cortar_por_mes_2029: 399_443, desejos_pra_adiar: [] }, perguntas: [], avisos_fgc: [] }
@@ -69,20 +76,60 @@ describe('E7: linha até dez/2028 (F4, F9, F5)', () => {
   })
 })
 
-describe('E7: reajuste do teto (F8) só com os 2 aprovando', () => {
-  const rec = (aprovado: ReajusteAno['aprovado']): ReajusteAno => ({ ipca: '0.0522', teto: 3_000_000, sugerido: reajustarTeto(3_000_000, '0.0522'), aprovado })
-  const adultos = [{ id: 'a' }, { id: 'b' }]
+describe('E7: reajuste do teto (F8) votado no banco (f_12)', () => {
+  // o formato que produto.reajuste_situacao devolve (exemplo)
+  const doBanco = (votos: [string, string, number][], faltam: [string, string][], aprovado: boolean) => normalizaReajuste({
+    mes_vigencia: '2027-02', aprovado, teto_aprovado_centavos: aprovado ? votos[0][2] : null,
+    votos: votos.map(([membro_id, nome, teto_centavos]) => ({ membro_id, nome, teto_centavos, votou_em: '2027-01-05T10:00:00-03:00' })),
+    faltam: faltam.map(([membro_id, nome]) => ({ membro_id, nome })),
+  })
   it('F8-TETO: R$ 30.000 com IPCA de 5,22% sugere R$ 31.566 (conta do motor)', () => { expect(reajustarTeto(3_000_000, '0.0522')).toBe(3_156_600) })
-  it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente', () => {
-    expect(situacaoReajuste(rec({ a: { nome: 'Ana', em: '2027-01-05' } }), adultos, '2027-01-20')).toBe('sugestao pendente')
+  it('normaliza o formato do banco (mês AAAA-MM, centavos, votos e quem falta)', () => {
+    const s = doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false)
+    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
   })
-  it('os 2 aprovaram em janeiro: vale só no mês seguinte', () => {
-    const r = rec({ a: { nome: 'Ana', em: '2027-01-05' }, b: { nome: 'Bruno', em: '2027-01-12' } })
-    expect(situacaoReajuste(r, adultos, '2027-01-20')).toBe('aprovado, vale no mes seguinte')
-    expect(situacaoReajuste(r, adultos, '2027-02-01')).toBe('aprovado')
+  it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente; tetos diferentes não aprovam', () => {
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false), '2027-01-20')).toBe('sugestao pendente')
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_100_000]], [], false), '2027-01-20')).toBe('tetos diferentes')
+    expect(situacaoReajuste(null, '2027-01-20')).toBe('sem sugestao')
   })
-  it('família de 1 adulto: o "aprovo" dela basta', () => {
-    expect(situacaoReajuste(rec({ a: { nome: 'Cláudia', em: '2027-01-05' } }), [{ id: 'a' }], '2027-02-01')).toBe('aprovado')
+  it('os 2 aprovaram: vale só a partir do mês de vigência', () => {
+    const s = doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_156_600]], [], true)
+    expect(situacaoReajuste(s, '2027-01-20')).toBe('aprovado, vale no mes seguinte')
+    expect(situacaoReajuste(s, '2027-02-01')).toBe('aprovado')
+  })
+})
+
+describe('E7: o exemplo imita as regras da f_12', () => {
+  const mm = (dia: string) => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`)); reiniciarExemplo() }
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('1 voto por adulto (votar de novo troca só o seu), aprovado só com os 2 no mesmo teto, aplicar só no mês certo e nunca no limite do outro', async () => {
+    mm('2027-01-05')
+    let s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000)
+    expect(s.faltam.map(x => x.nome)).toEqual(['Bruno'])
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000)
+    expect(s.votos.length).toBe(1)
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02', 5800)).rejects.toThrow(/ainda não foi aprovado/)
+    exemploComo('bruno')
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000)
+    expect(s.aprovado).toBe(false) // tetos diferentes
+    // o exemplo começa de novo ao trocar de pessoa? não: mesma família, os votos ficam
+    expect(s.votos.map(v => v.nome).sort()).toEqual(['Ana', 'Bruno'])
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000)
+    expect(s.aprovado).toBe(true)
+    expect(s.teto_aprovado).toBe(1_050_000)
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02', 4200)).rejects.toThrow(/vale a partir de 02\/2027/)
+    vi.setSystemTime(new Date('2027-02-02T10:00:00-03:00'))
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02', 5800)).rejects.toThrow(/O limite de Ana só Ana ajusta/)
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02', 4200)
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-casa', '2027-02', 2600)
+    exemploComo('filha')
+    await expect(apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1)).rejects.toThrow(/Só os adultos/)
+    await expect(apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).rejects.toThrow(/Só o casal/)
+  })
+  it('família de 1 adulto: 1 voto basta', async () => {
+    mm('2027-01-05'); exemploComo('autonoma')
+    expect((await apiExemplo.reajusteVotar!('fam-souza', '2027-02', 500_000)).aprovado).toBe(true)
   })
 })
 
@@ -116,16 +163,22 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     const f = frasesDesejo(c, des)
     expect(['Cabe.', 'Cabe, mas tira de 2029.', 'Ainda não cabe.', 'O caixa já está apertado.']).toContain(f.titulo)
     if (c.situacao === 'ainda nao cabe') expect(f.linhas.join(' ')).toMatch(/abaixo do piso\./)
+    // MOTOR_index (observação do cabeDesejo): em "ainda não cabe", o caixa já apertado sem o desejo também aparece
+    const forjado = frasesDesejo({ situacao: 'ainda nao cabe', tira_por_mes_2029: 100, primeiro_mes_abaixo: '2027-01', caberia_em: '2027-02', apertado_sem_desejo: '2026-12' }, des)
+    expect(forjado.linhas).toContain('Mesmo sem este desejo, em 12/2026 o caixa já fica abaixo do piso.')
     const folgado = cabeDesejo(entrada(t), desejoDoMotor({ nome: 'Fone (exemplo)', valor: 500, mes: '2027-01', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false }))
     expect(frasesDesejo(folgado, d(true)).titulo).toBe('Cabe.')
   })
   it('F7-ANTECIPA: contrato adiantado de R$ 120.000 por R$ 100.000 custa mais do que o caixa rende', async () => {
-    const { avaliarAntecipacao } = await import('./lib/futuro/f7_desejo')
     const a = avaliarAntecipacao(10_000_000, '2026-12', 12_000_000, '2027-12', { taxa_bruta_ano: { 2026: '0.1375', 2027: '0.125', 2028: '0.11' }, aliq_proj: '0.225', virada: '2029-01', taxa_real_trabalho: '0.04' })
     expect(a.efeito_na_virada).toBe(-1_119_413)
     const des = desejoDoMotor({ nome: 'Carro (exemplo)', valor: 100000, mes: '2026-12', volta_de: 'contrato', volta: 120000, volta_mes: '2027-12', antecipado: 100000, volta_certa: false })
     expect(des.volta_certa).toBe(true)
-    expect(frasesDesejo(cabeDesejo(entrada(t), des), des, a).linhas).toContain('Adiantar o contrato custa mais do que o caixa rende no mesmo tempo.')
+    // M3 (revisão): a frase mostra a perda até 2029 e quanto tira por mês (impacto_renda_mensal do motor), sem sinal
+    expect(a.impacto_renda_mensal).toBeLessThan(0)
+    const linha = limpa(frasesDesejo(cabeDesejo(entrada(t), des), des, a).linhas.find(x => /^Adiantar/.test(x))!)
+    expect(linha).toBe(`Adiantar o contrato custa mais do que o caixa rende: perde R$ 11.194,13 até 2029 e tira R$ ${(Math.abs(a.impacto_renda_mensal!) / 100).toFixed(2).replace('.', ',')} por mês da renda de 2029.`)
+    expect(linha).not.toMatch(/-R\$|R\$\s?-/)
   })
   it('filha: só "dá pra comprar com o seu", sem 2029', () => {
     expect(limpa(fraseDaFilha(120, 200, 300))).toBe('Dá pra comprar com o seu: sobram R$ 80 no seu mês.')
@@ -189,6 +242,11 @@ describe('E9: Atalho do iPhone (#/lancar?valor=&loja=&cartao=)', () => {
     const a = lerAtalho('#/lancar?valor=R%24%2045%2C90&loja=Padaria%20S%C3%A3o%20Jos%C3%A9&cartao=Ita%C3%BA')!
     expect(a).toEqual({ valor: 45.9, loja: 'Padaria São José', cartao: 'Itaú' })
     expect(lerAtalho('#/lancar?valor=10&loja=C&A Modas&cartao=Nubank')!.loja).toBe('C&A Modas')
+    // B1 (revisão): < > " ` nunca entram na loja nem no cartão
+    const inj = lerAtalho('#/lancar?valor=1&loja=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E&cartao=%22%3E%3Cscript%3E')!
+    expect(inj.loja).toBe('img src=x onerror=alert(1)')
+    expect(inj.cartao).toBe('script')
+    expect(JSON.stringify(inj)).not.toMatch(/[<>`]|\\"/)
     expect(lerAtalho('#/lancar?loja=Farmácia sem codificar&valor=7,5')!).toEqual({ valor: 7.5, loja: 'Farmácia sem codificar' })
     const cs = [{ id: 'c1', nome: 'Itaú', banco: 'Itaú', final4: null }, { id: 'c2', nome: 'Roxinho', banco: 'Nubank', final4: '4321' }]
     expect(acharCartao(cs, 'itau')!.id).toBe('c1')

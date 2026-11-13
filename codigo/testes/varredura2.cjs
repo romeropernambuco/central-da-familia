@@ -206,7 +206,9 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
     ok(await p.$('a.linha-2028-resumo[href="#/planejamento"]') !== null, 'E7: o Início tem a linha até dez/2028 em 1 linha'); await p.close() }
   { const p = await abrir(b, 'ana', 'planejamento', '2026-11-18', 10); const t = await tx(p)
     ok(await p.$('section[aria-labelledby=pObj] .linha-2028 svg polyline.linha') !== null && await p.$('.linha-2028 svg polyline.piso') !== null, 'E7: a linha mês a mês está desenhada (saldo e piso)')
-    ok(/fica devendo R\$ [\d.,]+ pro caixa até (\d\d\/\d{4}|depois de 12\/2028)/.test(t) || !/abaixo do piso/.test(t), 'E7: mês abaixo do piso diz "fica devendo ... até MM/AAAA"')
+    // B4 (revisão): 1 "fica devendo" só por caixa; quando o fim já fica devendo, o piso vira "fica R$ X abaixo do piso e ... MM/AAAA"
+    ok(/fica devendo R\$ [\d.,]+ pro caixa até (\d\d\/\d{4}|depois de 12\/2028)/.test(t) || /fica R\$ [\d.,]+ abaixo do piso e (volta pra cima dele em|não volta pra cima dele até) \d\d\/\d{4}/.test(t) || !/abaixo do piso/.test(t), 'E7: mês abaixo do piso diz quanto e até quando (MM/AAAA)')
+    ok(((await p.textContent('.linha-2028 .todo')) || '').split('fica devendo').length <= 2, 'E7 (B4): 1 "fica devendo" só na caixa da linha')
     ok(/Em 2029 o dinheiro rende|Pra viver do rendimento em 2029 faltam|não repõe a inflação/.test(t), 'E7: a folga ou a falta de 2029 (F5) aparece')
     await p.click('summary:has-text("Ver mês a mês")'); await p.waitForTimeout(200)
     ok((await p.$$('.mes-a-mes li')).length >= 20, 'E7: "Ver mês a mês" lista cada mês até dez/28'); await p.close() }
@@ -223,7 +225,7 @@ async function tocarTodos(b, como, rota, seletor, dia, hora, cada) {
     ok(await p.$('li[data-do-outro="Bruno"]:has-text("Troca do carro")') !== null, 'E8: o desejo do Bruno aparece com o nome dele')
     ok(await p.$('li[data-do-outro] .desejo-sit') === null, 'E8: no desejo do outro não tem botão de mexer')
     ok(await p.$('li.desejo:not([data-do-outro]) .desejo-sit button') !== null, 'E8: no seu desejo tem os botões')
-    await p.fill('.desejo-form input.inp', 'Viagem (teste)'); await p.fill('input[aria-label="Quanto custa"]', '50000'); await p.waitForTimeout(300)
+    await p.fill('.desejo-form input.inp', 'Viagem (teste)'); await p.fill('input[aria-label="Quanto custa"]', '50000'); await p.waitForTimeout(800)
     ok(/^(Cabe\.|Cabe, mas tira de 2029\.|Ainda não cabe\.|O caixa já está apertado\.)/.test((await p.textContent('.desejo-res')) || ''), 'E8: a calculadora responde cabe / cabe mas tira / ainda não cabe')
     ok(/por mês (da|na) renda de 2029/.test((await p.textContent('.desejo-res')) || ''), 'E8: o desejo diz quanto tira (ou soma) de 2029')
     await p.click('button:has-text("Guardar na lista")'); await p.waitForTimeout(500)

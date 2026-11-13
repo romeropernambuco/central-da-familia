@@ -7,7 +7,7 @@ import { CalendarClock, Check, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
 import type { NovoRecebimento, RecebimentoTela, TipoRecebimento } from '../../api/tipos'
-import { mesDoRecebimento } from '../../lib/futuro/f4_linha'
+import { mesDoRecebimento } from '../../lib/futuro'
 import { dataCurta, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 
 /** Último mês antes da virada (premissa do TIME.md: a família vive de rendimento a partir de jan/2029). */

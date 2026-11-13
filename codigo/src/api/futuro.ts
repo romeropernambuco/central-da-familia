@@ -2,8 +2,7 @@
 // devolve. O modo exemplo monta o MESMO formato do banco e passa por aqui também: as 2 pontas saem iguais.
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
-import { Dec } from '../lib/futuro/decimal'
-import type { FuturoEntrada, Parametros, Taxa } from '../lib/futuro'
+import { Dec, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
 import type { FocusAno, ParametrosObjetivo } from './tipos'
 
 /** A virada: a partir de jan/2029 a família vive de rendimento (BRIEF). */
@@ -87,8 +86,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   const compromissos: FuturoEntrada['compromissos'] = []
   for (const l of j.parcelas_futuras || []) for (const x of l.parcelas_lista || []) compromissos.push({ mes: x.mes_fatura, valor: Number(x.valor_centavos) || 0, tipo: 'parcela' })
   // 13º só nos pagamentos (decisão do dono): 1 salário de cada pessoa da folha em dezembro de cada ano até a virada
-  const folha13 = ((j.config?.casa_folha?.pessoas) || []).reduce((s, x) => s + Math.round((Number(x.salario) || 0) * 100), 0)
-  if (folha13 > 0) for (let a = anoHoje; a <= ultimoAno; a++) compromissos.push({ mes: `${a}-12`, valor: folha13, tipo: 'folha_13' })
+  compromissos.push(...folha13(((j.config?.casa_folha?.pessoas) || []).map(x => Math.round((Number(x.salario) || 0) * 100)), m0, VIRADA))
 
   return {
     confirmar,

@@ -7,7 +7,7 @@ import { normalizaCartao, normalizaContagem, normalizaCusto, normalizaEscritorio
 import { hojeRecife } from '../lib/formato'
 import { MSG_CUPOM, mensagemCupom } from '../lib/foto'
 import { AVISOS_CONVITE, ErroRede, ErroSessao, TRADUZ, sessaoVale, traduzErro } from './erros'
-import { lancarComChave, normalizaCasa, normalizaCupom, normalizaLancamento, normalizaRecebimento, normalizaResumo } from './normaliza'
+import { lancarComChave, normalizaReajuste, normalizaCasa, normalizaCupom, normalizaLancamento, normalizaRecebimento, normalizaResumo } from './normaliza'
 
 let cli: SupabaseClient<any, any, any> | null = null
 function sb(): SupabaseClient<any, any, any> {
@@ -365,16 +365,15 @@ export const apiReal: Api = {
     }
   },
   async objetivoSalvar(familia, p) {
-    // o banco confere as chaves e grava o histórico sozinho (gatilho); só o casal grava
-    // D2 (revisão E4 a E6): a f_07 dá insert na tabela e update SÓ na coluna parametros. O upsert do PostgREST manda
-    // "on conflict do update set familia_id, parametros" e o 2º salvar dava "permission denied". Agora: existe, update; não, insert.
-    const { data: tem, error: e1 } = await sb().from('objetivo').select('familia_id').eq('familia_id', familia).maybeSingle()
-    if (e1) erro(e1)
-    const { error } = tem
-      ? await sb().from('objetivo').update({ parametros: p }).eq('familia_id', familia)
-      : await sb().from('objetivo').insert({ familia_id: familia, parametros: p })
-    if (error) erro(error)
+    // f_12: 1 função no banco (objetivo_salvar). Antes (D2): select e depois update só de parametros ou insert; os 2
+    // salvando juntos pela 1ª vez davam chave repetida. O banco grava o histórico (quem, quando, antes e depois).
+    await rpc('objetivo_salvar', { familia, parametros: p })
   },
+  // ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco ----------
+  async reajusteSituacao(familia, mes) { return normalizaReajuste(await rpc('reajuste_situacao', { familia, mes_vigencia: `${mes}-01` })) },
+  async reajusteVotar(familia, mes, teto) { return normalizaReajuste(await rpc('reajuste_votar', { familia, mes_vigencia: `${mes}-01`, teto_centavos: teto })) },
+  async reajusteAplicar(familia, envelope, mes, valor) { await rpc('reajuste_aplicar', { familia, envelope, mes_vigencia: `${mes}-01`, valor }) },
+
   async futuroEntradas(familia) { return entradaDoBanco(await rpc<FuturoBanco>('futuro_entradas', { familia })) },
   // ---------- E8: desejos (produto.desejos, f_06). A tranca do banco: o casal lê todos, a pessoa só os dela; só o dono muda ----------
   async desejos(familia) {

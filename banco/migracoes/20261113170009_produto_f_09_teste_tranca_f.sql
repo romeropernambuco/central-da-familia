@@ -366,6 +366,60 @@ begin
       r_obt := r_obt || v;
     end if;
 
+    -- reajuste do teto com voto de cada adulto (f_12), quando existir
+    if to_regprocedure('produto.reajuste_votar(uuid,date,bigint)') is not null then
+      declare
+        m_cur constant date := date_trunc('month', produto._hoje())::date;
+        m_ant constant date := (date_trunc('month', produto._hoje()) - interval '1 month')::date;
+        m_dif constant date := (date_trunc('month', produto._hoje()) - interval '2 months')::date;
+      begin
+        perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+        perform produto.reajuste_votar(fam::uuid, m_ant, 300000);   -- só A votou
+        perform produto.reajuste_votar(fam::uuid, m_cur, 310000);   -- A e B, mesmo teto
+        perform produto.reajuste_votar(fam::uuid, m_dif, 300000);   -- A e B, tetos diferentes
+        perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+        perform produto.reajuste_votar(fam::uuid, m_cur, 310000);
+        perform produto.reajuste_votar(fam::uuid, m_dif, 310000);
+        perform set_config('request.jwt.claims', json_build_object('sub', ux, 'role', 'authenticated')::text, true);
+        perform produto.reajuste_votar(fam2::uuid, m_cur, 100000);   -- família de 1 adulto
+        perform set_config('request.jwt.claims', '', true);
+        for c in select * from (values
+          ('Reajuste: A grava o voto de B direto na tabela', ua, 'authenticated', format('insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos) values (%L, %L, %L, 1)', fam, m_ant, mb), 'linhas', 'bloqueado'),
+          ('Reajuste: A muda o voto de B', ua, 'authenticated', format('update produto.reajuste_votos set teto_centavos = 1 where membro_id = %L', mb), 'linhas', '0'),
+          ('Reajuste: A apaga o voto de B', ua, 'authenticated', format('delete from produto.reajuste_votos where membro_id = %L', mb), 'linhas', 'bloqueado'),
+          ('Reajuste: os 2 votos juntos ficam os 2 (nenhum apaga o outro)', ua, 'authenticated', format('select count(*) from produto.reajuste_votos where familia_id = %L and mes_vigencia = %L', fam, m_cur), 'contar', '2'),
+          ('Reajuste: com os 2 no mesmo teto esta aprovado', ub, 'authenticated', format('select case when (produto.reajuste_situacao(%L, %L)->>''aprovado'')::boolean then 1 else 0 end', fam, m_cur), 'contar', '1'),
+          ('Reajuste: so A votou, falta B', ua, 'authenticated', format('select jsonb_array_length(produto.reajuste_situacao(%L, %L)->''faltam'')', fam, m_ant), 'contar', '1'),
+          ('Reajuste: aplicar com 1 voto so', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, m_ant), 'contar', 'bloqueado'),
+          ('Reajuste: aplicar com tetos diferentes', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, m_dif), 'contar', 'bloqueado'),
+          ('CONTROLE Reajuste: aplicar com os 2 no mesmo teto', ua, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L, 3100) is not null then 1 else 0 end', fam, env_a, m_cur), 'contar', '1'),
+          ('Reajuste: aprovado nao abre o limite de B pra A', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_b, m_cur), 'contar', 'bloqueado'),
+          ('CONTROLE Reajuste: na familia de 1 adulto, 1 voto basta', ux, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L, 1000) is not null then 1 else 0 end', fam2, env_x, m_cur), 'contar', '1'),
+          ('Reajuste: a filha vota', up, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1)', fam, m_cur), 'contar', 'bloqueado'),
+          ('Reajuste: a equipe vota', ue, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1)', fam, m_cur), 'contar', 'bloqueado'),
+          ('Reajuste: a filha le os votos', up, 'authenticated', 'select count(*) from produto.reajuste_votos', 'contar', '0'),
+          ('Reajuste: a equipe le o teto aprovado', ue, 'authenticated', format('select count(produto._reajuste_aprovado(%L, %L))', fam, m_cur), 'contar', '0'),
+          ('Reajuste: o estranho le o teto aprovado', ux, 'authenticated', format('select count(produto._reajuste_aprovado(%L, %L))', fam, m_cur), 'contar', '0'),
+          ('Reajuste: vale so a partir do mes de vigencia', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, (m_cur + interval '1 month')::date), 'contar', 'bloqueado'),
+          -- B5: objetivo salvo 2 vezes (como os 2 salvando juntos) não dá erro nem deixa linha fantasma no histórico
+          ('Objetivo: 1o salvar pela funcao na familia sem objetivo', ux, 'authenticated', format('select case when produto.objetivo_salvar(%L, %L::jsonb) is not null then 1 else 0 end', fam2, obj), 'contar', '1'),
+          ('Objetivo: salvar quando o outro ja criou vira mudanca, sem erro', ub, 'authenticated', format('select case when produto.objetivo_salvar(%L, jsonb_set(%L::jsonb, ''{margem}'', ''"0.15"'')) is not null then 1 else 0 end', fam, obj), 'contar', '1')
+        ) as v(nome, uid, papel_db, sql, modo, esp) loop
+          r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
+          r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
+        end loop;
+        -- o mesmo salvar de B, de verdade: 1 linha no objetivo e só 1 linha nova no histórico
+        perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+        perform produto.objetivo_salvar(fam::uuid, jsonb_set(obj::jsonb, '{margem}', '"0.15"'));
+        perform set_config('request.jwt.claims', '', true);
+        r_caso := r_caso || 'Objetivo: 2 salvamentos = 1 linha e 2 registros no historico (sem fantasma)'::text;
+        r_esp := r_esp || '1 linha, 2 registros, margem 0.15'::text;
+        r_obt := r_obt || ((select count(*) from produto.objetivo where familia_id = fam::uuid) || ' linha, '
+                           || (select count(*) from produto.objetivo_historico where familia_id = fam::uuid) || ' registros, margem '
+                           || (select parametros->>'margem' from produto.objetivo where familia_id = fam::uuid));
+      end;
+    end if;
+
     -- ===== contas que o banco ainda faz (sem login, como o turno da noite) =====
     -- 1.200 em 6x comprado em 05/11/2026, cartão fecha dia 1 e vence dia 10: faturas de dez a mai, 200 cada
     select string_agg((x->>'mes') || ':' || (x->>'total'), ',' order by x->>'mes') into v

@@ -81,3 +81,15 @@ export function normalizaRecebimento(r: any, membros: { id: string; nome: string
     meu: !!eu && String(r?.dono_membro) === eu,
   }
 }
+
+/** f_12: o que reajuste_situacao (e reajuste_votar) devolve, no formato da tela. Centavos continuam centavos. */
+export function normalizaReajuste(r: any): import('./tipos').ReajusteSituacao {
+  const n = (v: unknown) => (v == null ? null : Number(v))
+  return {
+    mes_vigencia: String(r?.mes_vigencia || '').slice(0, 7),
+    aprovado: !!r?.aprovado,
+    teto_aprovado: n(r?.teto_aprovado_centavos),
+    votos: (r?.votos || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? ''), teto: Number(v.teto_centavos) || 0, votou_em: String(v.votou_em ?? '') })),
+    faltam: (r?.faltam || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
+  }
+}

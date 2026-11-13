@@ -66,9 +66,10 @@ export function lerAtalho(hash: string): DoAtalho | null {
   }
   const loja = pegar(q, 'loja')
   // tira caracteres de controle e espaços repetidos; corta em 60 (cabe no "O que foi?")
-  if (loja) { const l = loja.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); if (l) out.loja = l }
+  // B1 (revisão): fora os caracteres de controle e < > " ` (o React já escapa; aqui nem entram)
+  if (loja) { const l = loja.replace(/[\u0000-\u001f\u007f<>"`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); if (l) out.loja = l }
   const cartao = pegar(q, 'cartao')
-  if (cartao) { const c = cartao.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); if (c) out.cartao = c }
+  if (cartao) { const c = cartao.replace(/[\u0000-\u001f\u007f<>"`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); if (c) out.cartao = c }
   return out
 }
 

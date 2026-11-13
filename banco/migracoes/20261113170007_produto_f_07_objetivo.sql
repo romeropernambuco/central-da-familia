@@ -52,18 +52,30 @@ create table produto.objetivo_historico (
 );
 create index objetivo_historico_familia on produto.objetivo_historico (familia_id, quando);
 
-create function produto._objetivo_guardar_historico() returns trigger
-language plpgsql security definer set search_path = '' as $$
+-- carimbo antes (sem efeito fora da linha) e histórico DEPOIS: assim um insert que bate na chave e vira update
+-- (1º salvar dos 2 ao mesmo tempo) não deixa linha fantasma no histórico (revisão B5 do E4 a E10)
+create function produto._objetivo_carimbo() returns trigger
+language plpgsql set search_path = '' as $$
 begin
   if tg_op = 'UPDATE' and new.parametros is not distinct from old.parametros then return new; end if;
   new.atualizado_em := now();
   new.atualizado_por := (select auth.uid());
-  insert into produto.objetivo_historico (familia_id, quem, antes, depois)
-  values (new.familia_id, (select auth.uid()), case when tg_op = 'UPDATE' then old.parametros end, new.parametros);
   return new;
 end $$;
+revoke all on function produto._objetivo_carimbo() from public, anon, authenticated;
+create trigger objetivo_carimbo_t before insert or update on produto.objetivo
+  for each row execute function produto._objetivo_carimbo();
+
+create function produto._objetivo_guardar_historico() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if tg_op = 'UPDATE' and new.parametros is not distinct from old.parametros then return null; end if;
+  insert into produto.objetivo_historico (familia_id, quem, antes, depois)
+  values (new.familia_id, (select auth.uid()), case when tg_op = 'UPDATE' then old.parametros end, new.parametros);
+  return null;
+end $$;
 revoke all on function produto._objetivo_guardar_historico() from public, anon, authenticated;
-create trigger objetivo_historico_t before insert or update on produto.objetivo
+create trigger objetivo_historico_t after insert or update on produto.objetivo
   for each row execute function produto._objetivo_guardar_historico();
 
 alter table produto.objetivo enable row level security;

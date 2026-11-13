@@ -45,14 +45,14 @@ export function projetarLinha(e: LinhaEntrada): LinhaMes[] {
       mes: m, saldo_inicial: saldo, rendimento,
       recebimentos: v(e.recebimentos, m), teto: e.teto(m), compromissos: v(e.compromissos, m),
       dividas: v(e.dividas, m), desvios: v(e.desvios, m), retornos: v(e.retornos, m),
-      saldo_final: 0, fica_devendo: 0, devendo_ate: null,
+      saldo_final: 0, piso: e.piso(m), fica_devendo: 0, devendo_ate: null,
     }
     l.saldo_final = saldo + rendimento + l.recebimentos - l.teto - l.compromissos - l.dividas - l.desvios + l.retornos
     if (!Number.isSafeInteger(l.saldo_final)) throw new Error('Saldo fora do limite')
     linha.push(l)
     saldo = l.saldo_final
   }
-  const dev = ficaDevendo(linha.map((l) => ({ mes: l.mes, saldo_final: l.saldo_final, piso: e.piso(l.mes) })))
+  const dev = ficaDevendo(linha.map((l) => ({ mes: l.mes, saldo_final: l.saldo_final, piso: l.piso })))
   dev.forEach((d, i) => { linha[i].fica_devendo = d.fica_devendo; linha[i].devendo_ate = d.devendo_ate })
   return linha
 }
@@ -70,4 +70,22 @@ export function mesDoRecebimento(r: Recebimento, mes_hoje: Mes, ultimo: Mes): { 
   else if (atrasado && r.mes_novo === null) pergunta = true
   if (compararMes(alvo, ultimo) > 0) return { mes: null, pergunta }
   return { mes: alvo, pergunta }
+}
+
+/** Piso do caixa no mês: meses de piso × teto do mês (premissa do ECONOMISTA item 4; REVISOR 2, B3). */
+export function pisoDoMes(piso_meses: number, teto_do_mes: Centavos): Centavos {
+  if (!Number.isInteger(piso_meses) || piso_meses < 0) throw new Error(`Meses de piso inválidos: ${piso_meses}`)
+  const v = piso_meses * teto_do_mes
+  if (!Number.isSafeInteger(v)) throw new Error('Piso fora do limite')
+  return v
+}
+
+/** 13º da folha da casa (decisão do dono: só nos pagamentos, nunca como receita): 1 salário de cada pessoa
+ *  em dezembro de cada ano, do ano de hoje até o ano antes da virada. Salários em centavos. (REVISOR 2, B3) */
+export function folha13(salarios: Centavos[], mes_hoje: Mes, virada: Mes): { mes: Mes; valor: Centavos; tipo: 'folha_13' }[] {
+  const total = salarios.reduce((s, x) => { if (!Number.isSafeInteger(x)) throw new Error('Centavos precisam ser inteiros'); return s + Math.max(0, x) }, 0)
+  if (total <= 0) return []
+  const out: { mes: Mes; valor: Centavos; tipo: 'folha_13' }[] = []
+  for (let a = anoDe(mes_hoje); a < anoDe(virada); a++) out.push({ mes: `${a}-12`, valor: total, tipo: 'folha_13' })
+  return out
 }

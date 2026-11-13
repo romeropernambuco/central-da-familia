@@ -1,27 +1,31 @@
 // E7 (F8): o reajuste do teto, sugerido no mês do reajuste (padrão janeiro) pela inflação do ano anterior. Vale só com
-// os 2 do casal aprovando, a partir do mês seguinte à aprovação; aí cada um aplica no que é seu (o banco só deixa cada
-// um mudar o próprio limite; Casa e filhos o casal muda). A conta é do motor (reajustarTeto e tetoVigente, lib/futuro):
-// a tela só chama e escreve. O que cada um aprovou fica na config da família (chave reajuste_teto), com nome e data.
+// os 2 do casal aprovando no mesmo teto, a partir do mês de vigência; aí cada um aplica no que ajusta. Com a f_12 quem
+// decide é o banco: reajuste_situacao, reajuste_votar (1 voto por adulto, só o próprio) e reajuste_aplicar (recusa sem
+// todos os votos, antes do mês e no limite do outro adulto). A conta do teto novo é do motor (reajustarTeto); a config
+// reajuste_teto guarda só o que é pra mostrar (inflação, teto de antes, onde já aplicou).
 import { useEffect, useState } from 'react'
 import { CalendarClock, Check } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { useFuturo } from '../../app/useDados2'
-import { reajustarTeto, tetoVigente } from '../../lib/futuro/f8_reajuste'
+import { reajustarTeto } from '../../lib/futuro'
 import { textoDaTaxa } from '../../api/futuro'
-import type { Envelope, Objetivo } from '../../api/tipos'
+import type { Envelope, Objetivo, ReajusteSituacao } from '../../api/tipos'
 import { dataCurta, hojeRecife, mesLongo, reais } from '../../lib/formato'
+import { mesMais } from '../../lib/plano'
 
-/** O que fica gravado por ano: a sugestão que os 2 aprovaram (congelada no 1º "Aprovo") e quem já aplicou em qual limite. */
-export interface ReajusteAno { ipca: string; teto: number; sugerido: number; aprovado: Record<string, { nome: string; em: string }>; aplicado?: Record<string, string> }
-export type ReajusteCfg = Record<string, ReajusteAno>
+/** Só pra mostrar (f_12: quem decide o "aprovado" é o banco): a inflação e o teto de antes, gravados no 1º voto,
+ *  e em quais limites o reajuste já foi aplicado. Chave: o mês de vigência 'AAAA-MM'. */
+export interface ReajusteMostra { ipca: string; teto: number; aplicado?: Record<string, string> }
+export type ReajusteCfg = Record<string, ReajusteMostra>
+export type PeReajuste = 'sem sugestao' | 'sugestao pendente' | 'tetos diferentes' | 'aprovado, vale no mes seguinte' | 'aprovado'
 
-/** Em que pé está o reajuste deste ano (sem conta: quem decide é tetoVigente, do motor). */
-export function situacaoReajuste(rec: ReajusteAno | undefined, adultos: { id: string }[], hoje: string): 'sem sugestao' | 'sugestao pendente' | 'aprovado, vale no mes seguinte' | 'aprovado' {
-  if (!rec) return 'sem sugestao'
-  const votos = adultos.map(a => !!rec.aprovado[a.id])
-  const ultima = Object.values(rec.aprovado).map(x => x.em).sort().pop() || null
-  return tetoVigente(rec.teto, rec.sugerido, votos, votos.every(Boolean) && ultima ? ultima.slice(0, 7) : null, hoje.slice(0, 7)).situacao
+/** Em que pé está o reajuste, pelo que o banco devolveu (reajuste_situacao). Sem conta. */
+export function situacaoReajuste(sit: ReajusteSituacao | null, hoje: string): PeReajuste {
+  if (!sit || !sit.votos.length) return 'sem sugestao'
+  if (sit.aprovado) return hoje.slice(0, 7) < sit.mes_vigencia ? 'aprovado, vale no mes seguinte' : 'aprovado'
+  if (!sit.faltam.length) return 'tetos diferentes'
+  return 'sugestao pendente'
 }
 
 export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mudaLimite: (e: Envelope) => boolean }) {
@@ -29,74 +33,84 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const { ent } = useFuturo()
   const [cfg, salvar, , lido] = useConfig<ReajusteCfg>('reajuste_teto', {})
   const [obj, setObj] = useState<Objetivo | null>(null)
-  const [adultos, setAdultos] = useState<{ id: string; nome: string }[]>([])
+  const [sit, setSit] = useState<ReajusteSituacao | null>(null)
+  const [lidoSit, setLidoSit] = useState(false)
   const [gravando, setGravando] = useState(false)
+  const hoje = hojeRecife(), ano = Number(hoje.slice(0, 4)), mesNum = Number(hoje.slice(5, 7))
+  const mesReajuste = obj?.parametros?.mes_reajuste || ent?.entrada?.parametros.mes_reajuste || 1
+  // o teto novo vale a partir do mês seguinte ao mês do reajuste (dezembro vale em janeiro do ano que vem)
+  const vigencia = mesMais(`${ano}-${String(mesReajuste).padStart(2, '0')}`, 1)
   useEffect(() => {
     if (!familia || familia.papel !== 'casal') return
     api.objetivo?.(familia.id).then(setObj).catch(() => {})
-    api.membros(familia.id).then(m => setAdultos(m.filter(x => !x.papel || x.papel === 'casal'))).catch(() => {})
   }, [api, familia?.id])
-  if (!familia || familia.papel !== 'casal' || !ent?.entrada || !lido || !adultos.length) return null
+  useEffect(() => {
+    if (!familia || familia.papel !== 'casal' || !api.reajusteSituacao) return
+    api.reajusteSituacao(familia.id, vigencia).then(x => { setSit(x); setLidoSit(true) }).catch(() => setLidoSit(true))
+  }, [api, familia?.id, vigencia])
+  if (!familia || familia.papel !== 'casal' || !ent?.entrada || !lido || !lidoSit || !api.reajusteVotar) return null
 
-  const hoje = hojeRecife(), ano = Number(hoje.slice(0, 4)), mesNum = Number(hoje.slice(5, 7))
-  const mesReajuste = obj?.parametros?.mes_reajuste || ent.entrada.parametros.mes_reajuste || 1
-  const rec = cfg[String(ano)]
-  const aplicadoTudo = !!rec?.aplicado && envelopes.every(e => rec.aplicado![e.id])
-  if (!(mesNum === mesReajuste && !aplicadoTudo) && !(rec && !aplicadoTudo)) return null
+  const mostra = cfg[vigencia]
+  const meus = envelopes.filter(e => mudaLimite(e) && !mostra?.aplicado?.[e.id])
+  const pe = situacaoReajuste(sit, hoje)
+  const noMes = mesNum === mesReajuste && hoje.slice(0, 7) < vigencia
+  if (!noMes && (pe === 'sem sugestao' || (pe === 'aprovado' && !meus.length))) return null
 
   // a inflação do ano que passou: a que a família digitou no Objetivo de 2029; senão a do Focus (marcada pra conferir)
-  const daFamilia = obj?.parametros?.ipca_ano?.[String(ano - 1)]
-  const focus = obj?.focus.find(f => f.ano === ano - 1)
-  const ipca = rec?.ipca ?? daFamilia ?? focus?.ipca ?? null
-  if (!ipca) return <p className="todo warn reajuste" style={{ marginTop: 12 }}><CalendarClock size={20} aria-hidden="true" /><span>{cap(mesLongo(hoje))} é o mês do reajuste do teto, mas falta a inflação de {ano - 1}. Digite o IPCA de {ano - 1} no Objetivo de 2029, aqui embaixo.</span></p>
-  const teto = rec?.teto ?? ent.entrada.parametros.teto_mes
-  const sugerido = rec?.sugerido ?? reajustarTeto(teto, ipca)
-  const sit = situacaoReajuste(rec, adultos, hoje)
+  const anoIpca = Number(vigencia.slice(0, 4)) - 1
+  const daFamilia = obj?.parametros?.ipca_ano?.[String(anoIpca)]
+  const focus = obj?.focus.find(f => f.ano === anoIpca)
+  const ipca = mostra?.ipca ?? daFamilia ?? focus?.ipca ?? null
+  if (!ipca) return <p className="todo warn reajuste" style={{ marginTop: 12 }}><CalendarClock size={20} aria-hidden="true" /><span>{cap(mesLongo(hoje))} é o mês do reajuste do teto, mas falta a inflação de {anoIpca}. Digite o IPCA de {anoIpca} no Objetivo de 2029, aqui embaixo.</span></p>
+  const teto = mostra?.teto ?? ent.entrada.parametros.teto_mes
+  // o teto em votação: o do 1º voto (os 2 votam no mesmo número); sem voto ainda, a sugestão do motor (F8)
+  const sugerido = sit?.teto_aprovado ?? sit?.votos[0]?.teto ?? reajustarTeto(teto, ipca)
   const eu = familia.membroId || ''
-  const jaAprovei = !!rec?.aprovado[eu]
-  const faltam = adultos.filter(a => !rec?.aprovado[a.id])
-  const meus = envelopes.filter(e => mudaLimite(e) && !rec?.aplicado?.[e.id])
-  const deOutros = envelopes.filter(e => !mudaLimite(e) && !rec?.aplicado?.[e.id])
-  const fonte = rec || daFamilia ? '' : ' (do Focus; confira com o IPCA fechado do ano)'
-  const proximo = mesLongo(`${ano}-${String(Math.min(12, mesNum + 1)).padStart(2, '0')}-01`)
+  const meuVoto = sit?.votos.find(v => v.membro_id === eu)
+  const adultos = (sit?.votos.length || 0) + (sit?.faltam.length || 0)
+  const fonte = mostra || daFamilia ? '' : ', do Focus: confira com o IPCA fechado do ano'
+  const quando = mesLongo(vigencia + '-01')
 
   async function aprovar() {
-    if (gravando) return
+    if (gravando || !familia) return
     setGravando(true)
-    const base: ReajusteAno = rec ?? { ipca, teto, sugerido, aprovado: {} }
-    const ok = await salvar({ ...cfg, [String(ano)]: { ...base, aprovado: { ...base.aprovado, [eu]: { nome: familia!.membroNome, em: hoje } } } })
+    let nova: ReajusteSituacao | null = null
+    // 1 voto por adulto, só o próprio (o banco tranca); a inflação e o teto de antes ficam na config só pra mostrar
+    const ok = await tentar(async () => { nova = await api.reajusteVotar!(familia.id, vigencia, sugerido) })
+    if (ok && !mostra) await salvar({ ...cfg, [vigencia]: { ipca, teto } })
     setGravando(false)
-    if (ok) toast(faltam.length <= 1 ? `Aprovado pelos ${adultos.length === 1 ? 'seus números' : '2'}. Vale a partir de ${proximo}.` : 'Seu "aprovo" está guardado. Falta a outra pessoa do casal aprovar.')
+    if (ok && nova) { setSit(nova); toast((nova as ReajusteSituacao).aprovado ? `${adultos === 1 ? 'Aprovado' : 'Aprovado pelos 2'}. Vale a partir de ${quando}.` : 'Seu "aprovo" está guardado. Falta a outra pessoa do casal aprovar.') }
   }
   async function aplicar() {
-    if (gravando || !rec) return
+    if (gravando || !familia) return
     setGravando(true)
     const feitos: Record<string, string> = {}
     const ok = await tentar(async () => {
       for (const e of meus) {
-        // cada limite sobe pela mesma inflação aprovada (a conta é do motor, F8)
-        const novo = reajustarTeto(Math.round((e.limite_base ?? e.limite_mes) * 100), rec.ipca)
-        await api.definirLimite(familia!.id, e.id, novo / 100)
+        // cada limite sobe pela mesma inflação aprovada (a conta é do motor, F8); o banco confere votos e mês
+        const novo = reajustarTeto(Math.round((e.limite_base ?? e.limite_mes) * 100), ipca)
+        await api.reajusteAplicar!(familia.id, e.id, vigencia, novo / 100)
         feitos[e.id] = hoje
       }
     })
-    if (Object.keys(feitos).length) await salvar({ ...cfg, [String(ano)]: { ...rec, aplicado: { ...(rec.aplicado || {}), ...feitos } } })
+    if (Object.keys(feitos).length) await salvar({ ...cfg, [vigencia]: { ...(mostra || { ipca, teto }), aplicado: { ...(mostra?.aplicado || {}), ...feitos } } })
     await recarregar()
     setGravando(false)
-    if (ok) toast(`Reajuste aplicado em ${meus.map(e => e.nome).join(', ')}.${deOutros.length ? ` ${deOutros.map(e => e.nome).join(', ')}: só quem é dono aplica.` : ''}`)
+    if (ok) toast(`Reajuste aplicado em ${meus.map(e => e.nome).join(', ')}. O limite da outra pessoa do casal, só ela aplica.`)
   }
 
   return (
-    <div className={'todo reajuste ' + (sit === 'aprovado' || sit === 'aprovado, vale no mes seguinte' ? 'ok' : 'quieto')} style={{ marginTop: 12 }}>
+    <div className={'todo reajuste ' + (pe === 'aprovado' || pe === 'aprovado, vale no mes seguinte' ? 'ok' : 'quieto')} style={{ marginTop: 12 }}>
       <CalendarClock size={20} aria-hidden="true" />
       <span>
-        <b>Reajuste do teto de {ano}.</b> Pela inflação de {ano - 1} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
-        {sit === 'aprovado' ? (meus.length ? 'Os 2 aprovaram e já vale. Toque pra aplicar nos limites que você muda.' : deOutros.length ? `Você já aplicou. Falta ${deOutros.map(e => e.nome).join(', ')}: só quem é dono aplica.` : '')
-          : sit === 'aprovado, vale no mes seguinte' ? `${adultos.length === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${proximo}: aí cada um aplica no que é seu.`
-          : `Só vale com ${adultos.length === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir do mês seguinte.`}
-        {rec && sit === 'sugestao pendente' && <small className="reajuste-quem">{Object.values(rec.aprovado).map(a => `${a.nome} aprovou em ${dataCurta(a.em)}`).join('. ')}{faltam.length ? `. Falta ${faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
-        {sit !== 'aprovado' && sit !== 'aprovado, vale no mes seguinte' && !jaAprovei && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
-        {sit === 'aprovado' && meus.length > 0 && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
+        <b>Reajuste do teto de {vigencia.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
+        {pe === 'aprovado' ? 'Aprovado e já vale. Toque pra aplicar nos limites que você ajusta.'
+          : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: aí cada um aplica no que é seu.`
+          : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
+          : `Só vale com ${adultos === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir de ${quando}.`}
+        {sit && sit.votos.length > 0 && pe !== 'aprovado' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
+        {(pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
+        {pe === 'aprovado' && meus.length > 0 && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
       </span>
     </div>
   )

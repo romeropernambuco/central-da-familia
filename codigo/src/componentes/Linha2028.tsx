@@ -19,7 +19,11 @@ export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | 
     : ult.saldo_final >= 0 ? `Com estes números, a família chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}.`
     : `Com estes números, a família fica devendo ${r$(ult.saldo_final)} em ${curto(ult.mes)}.`
   const d = s.linha.find(l => l.fica_devendo > 0)
-  const devendo = d ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso: fica devendo ${r$(d.fica_devendo)} pro caixa ${d.devendo_ate ? `até ${mesAno(d.devendo_ate)}` : 'até depois de 12/2028'}.` : null
+  // B4 (revisão): 1 "fica devendo" só por caixa. Se a frase de cima já diz que a família fica devendo, esta fala do piso
+  const jaDevendo = !!ult && ult.saldo_final < 0
+  const devendo = !d ? null : jaDevendo
+    ? `Em ${mesAno(d.mes)} o caixa fica ${r$(d.fica_devendo)} abaixo do piso e ${d.devendo_ate ? `volta pra cima dele em ${mesAno(d.devendo_ate)}` : 'não volta pra cima dele até 12/2028'}.`
+    : `Em ${mesAno(d.mes)} o caixa fica abaixo do piso: fica devendo ${r$(d.fica_devendo)} pro caixa ${d.devendo_ate ? `até ${mesAno(d.devendo_ate)}` : 'até depois de 12/2028'}.`
   if (s.patrimonio_necessario === null) return { caixa, devendo, virada: 'Nesse cenário o rendimento não repõe a inflação.', ajuste: null }
   const virada = s.folga >= 0
     ? `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, pra sempre, e sobram ${r$(s.folga)} além do necessário.`
@@ -53,8 +57,8 @@ function Desenho({ linha, piso }: { linha: LinhaMes[]; piso: (l: LinhaMes) => nu
 export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: FuturoEntrada }) {
   const f = frasesLinha(saida)
   const pisoMeses = entrada.parametros.piso_meses
-  // o piso é a regra que a família combinou (meses de teto); a linha desenha o que o motor já devolveu
-  const piso = (l: LinhaMes) => pisoMeses * l.teto
+  // B3 (revisão): o piso de cada mês vem pronto do motor (LinhaMes.piso); a tela só desenha
+  const piso = (l: LinhaMes) => l.piso
   const l = saida.linha
   const primeiro = l[0], ultimo = l[l.length - 1]
   return (

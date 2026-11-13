@@ -236,6 +236,15 @@ export interface FocusAno { ano: number; selic_fim: string; ipca: string; divulg
 export interface HistoricoObjetivo { quem: string | null; quando: string; antes: ParametrosObjetivo | null; depois: ParametrosObjetivo }
 export interface Objetivo { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[]; focus: FocusAno[] }
 
+/* ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco (reajuste_situacao, reajuste_votar, reajuste_aplicar) ---------- */
+export interface ReajusteSituacao {
+  /** 'AAAA-MM': o mês a partir do qual o teto novo vale */ mes_vigencia: string
+  /** todos os adultos do casal votaram e no mesmo teto (o banco decide) */ aprovado: boolean
+  /** em centavos; null enquanto não aprovou */ teto_aprovado: number | null
+  votos: { membro_id: string; nome: string; teto: number; votou_em: string }[]
+  faltam: { membro_id: string; nome: string }[]
+}
+
 /* ---------- E8: desejos (produto.desejos, f_06). Ver: o casal todos, a pessoa (filha) só os dela. Mexer: só o dono ---------- */
 export type VoltaDe = 'nada' | 'contrato' | 'investimento' | 'venda'
 export type SituacaoDesejo = 'pensando' | 'combinado' | 'feito' | 'desisti'
@@ -364,6 +373,12 @@ export interface Api {
   objetivoSalvar?(familia: string, p: ParametrosObjetivo): Promise<void>
   /** Os DADOS pro motor de 2029 (produto.futuro_entradas, f_08), já no formato de lib/futuro. A tela só chama futuro(). */
   futuroEntradas?(familia: string): Promise<import('./futuro').EntradaPronta>
+  /* E7 (F8, f_12): o reajuste do teto. 1 voto por adulto (só o próprio); aplicar só com todos no mesmo teto, a partir do
+     mês de vigência, e só nos limites que a pessoa ajusta (nunca no do outro adulto). mes_vigencia 'AAAA-MM'. */
+  reajusteSituacao?(familia: string, mes_vigencia: string): Promise<ReajusteSituacao>
+  reajusteVotar?(familia: string, mes_vigencia: string, teto_centavos: number): Promise<ReajusteSituacao>
+  /** valor em reais, como no definirLimite */
+  reajusteAplicar?(familia: string, envelope: string, mes_vigencia: string, valor: number): Promise<void>
   /* E8: desejos. O casal vê todos; a pessoa (filha) só os dela; só o dono cria e muda (ninguém apaga linha: fica marcada) */
   desejos?(familia: string): Promise<DesejoTela[]>
   desejoCriar?(familia: string, d: NovoDesejo): Promise<void>

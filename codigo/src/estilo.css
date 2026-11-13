@@ -657,3 +657,4 @@ select.inp{appearance:auto}
 .leg .q.risco-q{width:3px;height:12px;border-radius:2px;background:var(--ink)}
 .ritmo-t{flex-wrap:wrap;row-gap:0}.ritmo-t span{white-space:nowrap}.ritmo-t b{margin-left:auto}
 .atalho-montado{overflow-wrap:anywhere}
+.li .m .desejo-cabe b{display:inline;white-space:normal;overflow:visible;font-size:inherit;line-height:inherit}

@@ -12,4 +12,5 @@ end $$;
 drop table produto.objetivo_historico;
 drop table produto.objetivo;
 drop function produto._objetivo_guardar_historico();
+drop function produto._objetivo_carimbo();
 drop function produto._objetivo_ok(jsonb);

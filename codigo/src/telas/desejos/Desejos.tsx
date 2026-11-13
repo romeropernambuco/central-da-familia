@@ -8,8 +8,7 @@ import { useApp } from '../../app/contexto'
 import { useFuturo } from '../../app/useDados2'
 import { CampoValor, Din, Vazio } from '../../componentes/base'
 import { mesAno } from '../../componentes/Linha2028'
-import { cabeDesejo, type Desejo, type FuturoEntrada } from '../../lib/futuro'
-import { avaliarAntecipacao } from '../../lib/futuro/f7_desejo'
+import { avaliarAntecipacao, cabeDesejo, type Desejo, type FuturoEntrada } from '../../lib/futuro'
 import type { DesejoTela, NovoDesejo, SituacaoDesejo, VoltaDe } from '../../api/tipos'
 import { centavos, hojeRecife, mesCurto, plural, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
@@ -45,12 +44,18 @@ export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, anteci
   let titulo: string, ok: boolean
   if (c.situacao === 'cabe') { titulo = 'Cabe.'; ok = true; linhas.push('Nenhum mês até 12/2028 fica abaixo do piso e 2029 continua coberto.') }
   else if (c.situacao === 'cabe, mas tira') { titulo = 'Cabe, mas tira de 2029.'; ok = false; linhas.push('Nenhum mês fica abaixo do piso, mas a conta de 2029 fica mais curta.') }
-  else if (c.situacao === 'ainda nao cabe') { titulo = 'Ainda não cabe.'; ok = false; linhas.push(`Em ${mesAno(c.primeiro_mes_abaixo!)} o caixa fica abaixo do piso.`, c.caberia_em ? `Cabe a partir de ${mesAno(c.caberia_em)}.` : 'Até 12/2028 não cabe: só com mais dinheiro entrando.') }
+  else if (c.situacao === 'ainda nao cabe') { titulo = 'Ainda não cabe.'; ok = false; linhas.push(`Em ${mesAno(c.primeiro_mes_abaixo!)} o caixa fica abaixo do piso.`, c.caberia_em ? `Cabe a partir de ${mesAno(c.caberia_em)}.` : 'Até 12/2028 não cabe: só com mais dinheiro entrando.'); if (c.apertado_sem_desejo) linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo)} o caixa já fica abaixo do piso.`) }
   else { titulo = 'O caixa já está apertado.'; ok = false; linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo!)} o caixa fica abaixo do piso.`) }
   const t = c.tira_por_mes_2029
   linhas.push(t === null ? 'Nesse cenário o rendimento não repõe a inflação.' : t > 0 ? `Tira ${r$(t)} por mês da renda de 2029, pra sempre.` : t < 0 ? `Volta mais do que sai: soma ${r$(t)} por mês na renda de 2029.` : 'Não muda a renda de 2029.')
   if (d.volta_de !== 'nada' && d.volta_de !== 'contrato' && !d.volta_certa) linhas.push('A volta é incerta: fica fora da conta, só entra se vier.')
-  if (antecipa) linhas.push(antecipa.leitura === 'antecipar custa mais do que o caixa rende' ? 'Adiantar o contrato custa mais do que o caixa rende no mesmo tempo.' : 'Adiantar o contrato compensa: o desconto é menor do que o caixa rende.')
+  // M3: a antecipação mostra quanto se perde (valor em 2029 e por mês, do motor), nunca com sinal
+  if (antecipa) {
+    const pm = antecipa.impacto_renda_mensal
+    linhas.push(antecipa.leitura === 'antecipar custa mais do que o caixa rende'
+      ? `Adiantar o contrato custa mais do que o caixa rende: perde ${r$(antecipa.efeito_na_virada)} até 2029${pm ? ` e tira ${r$(pm)} por mês da renda de 2029` : ''}.`
+      : `Adiantar o contrato compensa: o desconto é menor do que o caixa rende${pm ? ` e soma ${r$(pm)} por mês na renda de 2029` : ''}.`)
+  }
   return { titulo, ok, linhas }
 }
 
@@ -92,9 +97,7 @@ export function Desejos() {
     api.desejos(familia.id).then(setLista).catch(() => setLista([]))
   }, [api, familia?.id, versao, n])
 
-  if (!familia || familia.papel === 'equipe') return null
-  if (!api.desejos) return <div className="card"><Vazio ico={<Sparkles size={24} />}>Os desejos ainda estão sendo ligados no banco da família.</Vazio></div>
-
+  // calculado antes dos retornos: os ganchos (useMemo, useEffect) abaixo precisam rodar sempre na mesma ordem
   const mes = f.mes || meses[1]
   const voltaMes = f.volta_mes || mesMais(mes, 12)
   const novo: NovoDesejo = { nome: f.nome.trim(), valor: textoParaValor(f.valor), mes, volta_de: f.volta_de, volta: textoParaValor(f.volta), volta_mes: f.volta_de === 'nada' ? null : voltaMes, antecipado: f.volta_de === 'contrato' ? textoParaValor(f.antecipado) : null, volta_certa: f.volta_de === 'contrato' || f.volta_certa }
@@ -103,8 +106,23 @@ export function Desejos() {
     : novo.volta_de !== 'nada' && !(novo.volta > 0) ? (novo.volta_de === 'contrato' ? 'Digite quanto receberia no contrato.' : 'Digite quanto volta.')
     : novo.volta_de === 'contrato' && !(novo.antecipado! > 0) ? 'Digite quanto recebe adiantado.'
     : novo.volta_de !== 'nada' && novo.volta_mes! < novo.mes ? 'O mês em que volta tem que ser depois do mês do desejo.' : ''
+  // M2 (revisão E4 a E10): o "cabe?" é pesado (até ~27 rodadas do motor). O formulário só recalcula 300 ms depois da
+  // última tecla, e a lista guarda o resultado de cada desejo até a lista ou os dados de 2029 mudarem.
+  const chaveNovo = casal && !falta && novo.valor > 0 ? JSON.stringify(novo) : ''
+  const [chaveFeita, setChaveFeita] = useState('')
+  useEffect(() => { const t = setTimeout(() => setChaveFeita(chaveNovo), 300); return () => clearTimeout(t) }, [chaveNovo])
+  const resultado = useMemo(() => (chaveFeita && ent?.entrada ? avaliar(ent.entrada, desejoDoMotor(JSON.parse(chaveFeita) as NovoDesejo)) : null), [chaveFeita, ent])
+  const resultadoPronto = !!chaveNovo && chaveFeita === chaveNovo
+  const daLista = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof avaliar>>()
+    if (casal && ent?.entrada) for (const d of lista || []) if (d.situacao !== 'feito' && d.situacao !== 'desisti') m.set(d.id, avaliar(ent.entrada, desejoDoMotor(d, d.id, d.dono_membro), true))
+    return m
+  }, [casal, ent, lista])
+
+  if (!familia || familia.papel === 'equipe') return null
+  if (!api.desejos) return <div className="card"><Vazio ico={<Sparkles size={24} />}>Os desejos ainda estão sendo ligados no banco da família.</Vazio></div>
+
   const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId)
-  const resultado = !falta && novo.valor > 0 ? (casal ? (ent?.entrada ? avaliar(ent.entrada, desejoDoMotor(novo)) : null) : null) : null
 
   async function guardar() {
     if (!familia || falta || gravando) return
@@ -154,7 +172,7 @@ export function Desejos() {
 
           {/* o resultado: casal, do motor (cabeDesejo); filha, só o mês dela */}
           {!falta && novo.valor > 0 && (casal
-            ? resultado ? <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
+            ? resultado && resultadoPronto ? <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
               : <p className="sub">Fazendo a conta…</p>
             : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))}</span></p> : null)}
           {falta && (f.nome || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{falta}</p> : null}
@@ -168,14 +186,14 @@ export function Desejos() {
             <ul className="list">
               {lista.map(d => {
                 const m = desejoDoMotor(d, d.id, d.dono_membro)
-                const r = casal && ent?.entrada && d.situacao !== 'feito' && d.situacao !== 'desisti' ? avaliar(ent.entrada, m, true) : null
+                const r = daLista.get(d.id) ?? null
                 const dono = d.meu ? 'seu' : `de ${d.dono_nome || 'outra pessoa'}`
                 const volta = d.volta_de === 'nada' ? '' : d.volta_de === 'contrato' ? ` · contrato adiantado: entra ${reais(d.antecipado || 0)} no lugar de ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}` : ` · volta ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}${d.volta_certa ? '' : ', se vier'}`
                 return (
                   <li key={d.id} className="li desejo" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': d.dono_nome || 'outra pessoa' })}>
-                    <span className="m"><b>{d.nome}</b>
+                    <span className="m"><b className="quebra">{d.nome}</b>
                       <small>{casal ? `${dono} · ` : ''}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
-                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{r.titulo}</b> {[...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /renda de 2029|não repõe/.test(x))].join(' ')}</small>}
+                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{r.titulo}</b> {[...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /renda de 2029|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' ')}</small>}
                       {!casal && meuEnv && d.situacao === 'pensando' && <small>{fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7))}</small>}
                       {d.meu ? (
                         <span className="pills desejo-sit" role="group" aria-label={`Como está: ${d.nome}`}>

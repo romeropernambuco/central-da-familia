@@ -81,7 +81,9 @@ function criarDados() {
     { id: 'ds2', dono_membro: 'm-bruno', nome: 'Troca do carro (exemplo)', valor: 60000, mes: mm(12), volta_de: 'venda', volta: 35000, volta_mes: mm(12), antecipado: null, volta_certa: true, situacao: 'combinado', apagado: false },
     { id: 'ds3', dono_membro: 'm-bia', nome: 'Fone de ouvido (exemplo)', valor: 250, mes: mm(1), volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false, situacao: 'pensando', apagado: false },
   ]
-  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos }
+  // E7 (F8) com a f_12: votos do reajuste do teto (1 por adulto por mês de vigência)
+  const reajusteVotos: { mes: string; membro_id: string; teto: number; votou_em: string }[] = []
+  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos, reajusteVotos }
 }
 
 /** Focus de EXEMPLO (número inventado, não é o boletim do Banco Central): Selic do fim do ano e IPCA. */
@@ -91,6 +93,20 @@ const FOCUS_EXEMPLO: FocusAno[] = [
   { ano: 2028, selic_fim: '0.1050', ipca: '0.0380', divulgado_em: '2026-11-09', fonte: 'Focus (exemplo, número inventado)' },
 ]
 let db = criarDados()
+/** Igual a produto.reajuste_situacao (f_12): aprovado só com todos os adultos do casal votando no mesmo teto. */
+function situacaoReajusteEx(mes: string) {
+  if (papelLogado() !== 'casal') throw new Error('Só o casal vê o reajuste.')
+  const adultos = membrosTeste().filter(x => x.papel === 'casal')
+  const votos = db.reajusteVotos.filter(v => v.mes === mes).sort((a, b) => a.votou_em.localeCompare(b.votou_em))
+  const faltam = adultos.filter(a => !votos.some(v => v.membro_id === a.id))
+  const tetos = new Set(votos.filter(v => adultos.some(a => a.id === v.membro_id)).map(v => v.teto))
+  const aprovado = faltam.length === 0 && tetos.size === 1
+  return {
+    mes_vigencia: mes, aprovado, teto_aprovado: aprovado ? [...tetos][0] : null,
+    votos: votos.map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(x => x.id === v.membro_id)?.nome || '', teto: v.teto, votou_em: v.votou_em })),
+    faltam: faltam.map(a => ({ membro_id: a.id, nome: a.nome })),
+  }
+}
 type Logado = 'ana' | 'bruno' | 'filha' | 'carla' | 'claudia'
 const logadoInicial = (): Logado => (pessoaDoTeste === 'equipe' ? 'carla' : pessoaDoTeste === 'autonoma' ? 'claudia' : pessoaDoTeste)
 let logado: Logado | null = logadoInicial()
@@ -666,6 +682,28 @@ export const apiExemplo: Api = {
       parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
     }
     return entradaDoBanco(j)
+  },
+  // ---------- E7 (F8): o reajuste do teto, com as mesmas regras da f_12 ----------
+  async reajusteSituacao(_f, mes) { await espera(20); return situacaoReajusteEx(mes) },
+  async reajusteVotar(_f, mes, teto) {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('Só os adultos do casal votam o reajuste.')
+    if (!(Number.isSafeInteger(teto) && teto > 0)) throw new Error('O teto tem que ser maior que zero.')
+    // 1 voto por adulto: votar de novo troca só o próprio teto; ninguém mexe no voto do outro
+    const eu = membroLogado().id
+    const v = db.reajusteVotos.find(x => x.mes === mes && x.membro_id === eu)
+    if (v) { v.teto = teto; v.votou_em = new Date().toISOString() } else db.reajusteVotos.push({ mes, membro_id: eu, teto, votou_em: new Date().toISOString() })
+    return situacaoReajusteEx(mes)
+  },
+  async reajusteAplicar(_f, envelope, mes, valor) {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('Só o casal aplica o reajuste.')
+    if (!situacaoReajusteEx(mes).aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto.')
+    if (hojeRecife().slice(0, 7) < mes) throw new Error(`O reajuste vale a partir de ${mes.slice(5)}/${mes.slice(0, 4)}.`)
+    // o limite do outro adulto continua com ele (mesma regra do banco)
+    const dono = membrosTeste().find(x => x.envelope === envelope)
+    if (dono && dono.papel === 'casal' && dono.id !== membroLogado().id) throw new Error(`O limite de ${dono.nome} só ${dono.nome} ajusta.`)
+    await apiExemplo.definirLimite(_f, envelope, valor)
   },
   // ---------- E8: desejos (igual a f_06): o casal vê todos; a pessoa só os dela; só o dono cria e muda ----------
   async desejos() {
