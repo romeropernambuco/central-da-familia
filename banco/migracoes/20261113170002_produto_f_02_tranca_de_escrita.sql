@@ -159,6 +159,48 @@ alter table produto.esc_diario add constraint esc_diario_casa_sem_dinheiro
 alter function produto.numeros_semana() security definer;
 revoke execute on function produto._numeros(timestamptz) from authenticated;
 
+-- B10 (3ª revisão): o Escritório só pergunta o que quem pergunta pode responder. O Analista de Cartão fala só dos
+-- cartões que a pessoa mexe (o dela e os sem titular); o Gestor do Guardado só das aplicações dela e das do casal;
+-- e "guardar a sobra" do Contador escolhe só entre essas. Sem login (turno da noite) continua vendo tudo.
+create or replace function produto._aplicacao_pra_guardar(p_familia uuid, p_hoje date) returns uuid
+language sql stable set search_path = '' as $$
+  select (x->>'id')::uuid from jsonb_array_elements(produto._guardado(p_familia, p_hoje)->'aplicacoes') x
+   where x->>'liquidez' = 'diaria' and x->>'tipo' <> 'poupanca'
+     and (x->>'titular_membro' is null or (x->>'titular_membro')::uuid = produto.meu_membro(p_familia))
+   order by (x->>'saldo')::numeric desc limit 1
+$$;
+revoke all on function produto._aplicacao_pra_guardar(uuid, date) from public, anon;
+grant execute on function produto._aplicacao_pra_guardar(uuid, date) to authenticated, service_role;
+do $$ begin
+  if position($a$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              order by x.vence_em loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              order by x.vence_em loop$a$, $b$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              where uid is null or x.cartao_id in (select produto.meus_cartoes_escrita())
+              order by x.vence_em loop$b$);
+end $$;
+do $$ begin
+  if position($a$              where c.familia_id = f and c.ativo order by c.criado_em loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$              where c.familia_id = f and c.ativo order by c.criado_em loop$a$, $b$              where c.familia_id = f and c.ativo and (uid is null or c.id in (select produto.meus_cartoes_escrita())) order by c.criado_em loop$b$);
+end $$;
+do $$ begin
+  if position($a$      for a in select x from jsonb_array_elements(g->'aplicacoes') x loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$      for a in select x from jsonb_array_elements(g->'aplicacoes') x loop$a$, $b$      for a in select x from jsonb_array_elements(g->'aplicacoes') x
+                where uid is null or x->>'titular_membro' is null or (x->>'titular_membro')::uuid = eu loop$b$);
+end $$;
+do $$ begin
+  if position($a$        select (x->>'id')::uuid into aid from jsonb_array_elements(produto._guardado(f, hoje)->'aplicacoes') x where x->>'liquidez' = 'diaria' and x->>'tipo' <> 'poupanca' order by (x->>'saldo')::numeric desc limit 1;$a$ in (select prosrc from pg_proc where oid = 'produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)'::regprocedure)) = 0 then
+    raise exception 'f_02: trecho nao achado em produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)'::regprocedure), $a$        select (x->>'id')::uuid into aid from jsonb_array_elements(produto._guardado(f, hoje)->'aplicacoes') x where x->>'liquidez' = 'diaria' and x->>'tipo' <> 'poupanca' order by (x->>'saldo')::numeric desc limit 1;$a$, $b$        aid := produto._aplicacao_pra_guardar(f, hoje);$b$);
+end $$;
+
 -- Teste antigo mudado (motivo): "Equipe muda lancamento da Casa pra envelope do casal" esperava 'bloqueado' porque a
 -- equipe ENXERGAVA o lançamento que ela mesma fez (furo b) e o check barrava a troca. Com a f_02 a equipe não enxerga
 -- lançamento nenhum, então o UPDATE não acha linha: volta 0 linhas e nada muda. Continua sendo a mesma proteção, mais forte.

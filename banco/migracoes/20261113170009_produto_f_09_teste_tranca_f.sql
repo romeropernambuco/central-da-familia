@@ -36,6 +36,7 @@ declare
   l_parc_s constant text := 'b0000000-0000-4e0e-8000-00000000fa04';
   cart_a constant text := 'c0000000-0000-4e0e-8000-00000000fa01';
   cart_b constant text := 'c0000000-0000-4e0e-8000-00000000fb01';
+  cart_b2 constant text := 'c0000000-0000-4e0e-8000-00000000fb02';  -- de B, sem os dias
   l_a   constant text := 'b0000000-0000-4e0e-8000-00000000fa01';
   l_b   constant text := 'b0000000-0000-4e0e-8000-00000000fb01';
   l_b_lixo constant text := 'b0000000-0000-4e0e-8000-00000000fb02';  -- de B, na lixeira
@@ -79,13 +80,15 @@ begin
       (mx::uuid, fam2::uuid, ux::uuid, 'casal', 'Estranho', env_x::uuid);
     insert into produto.cartoes (id, familia_id, nome, dia_fechamento, dia_vencimento, titular_membro, final4) values
       (cart_a::uuid, fam::uuid, 'Cartao de A', 1, 10, ma::uuid, '1111'),
-      (cart_b::uuid, fam::uuid, 'Cartao de B', 1, 10, mb::uuid, '2222');
+      (cart_b::uuid, fam::uuid, 'Cartao de B', 1, 10, mb::uuid, '2222'),
+      (cart_b2::uuid, fam::uuid, 'Outro de B', null, null, mb::uuid, '3333');
     insert into produto.lancamentos (id, familia_id, envelope_id, cartao_id, valor, data, descricao, autor) values
       (l_a::uuid, fam::uuid, env_a::uuid, null, 50, date '2026-09-10', 'gasto de A', ua::uuid),
       (l_b::uuid, fam::uuid, env_b::uuid, cart_b::uuid, 80, date '2026-09-11', 'gasto de B', ub::uuid),
       (l_p::uuid, fam::uuid, env_p::uuid, null, 20, date '2026-09-12', 'gasto da filha', up::uuid),
       (l_casa_a::uuid, fam::uuid, env_casa::uuid, null, 30, date '2026-09-13', 'casa por A', ua::uuid),
-      (l_x::uuid, fam2::uuid, env_x::uuid, null, 99, date '2026-09-14', 'gasto do estranho', ux::uuid);
+      (l_x::uuid, fam2::uuid, env_x::uuid, null, 99, date '2026-09-14', 'gasto do estranho', ux::uuid),
+      ('b0000000-0000-4e0e-8000-00000000fb03', fam::uuid, env_b::uuid, cart_b::uuid, 70, date '2026-12-05', 'a vista no cartao de B', ub::uuid);
     insert into produto.lancamentos (id, familia_id, envelope_id, valor, data, descricao, autor, apagado_em) values
       (l_b_lixo::uuid, fam::uuid, env_b::uuid, 40, date '2026-09-15', 'de B na lixeira', ub::uuid, now());
     insert into produto.lancamentos (id, familia_id, envelope_id, cartao_id, valor, data, descricao, autor, parcelas) values
@@ -105,7 +108,7 @@ begin
       (app_c::uuid, fam::uuid, null, 'Conta conjunta', 'Banco W', 'cdb', 100, ua::uuid);
     insert into produto.pat_movimentos (familia_id, aplicacao_id, data, tipo, valor, chave, autor) values
       (fam::uuid, app_a::uuid, date '2026-10-01', 'aporte', 1000, gen_random_uuid(), ua::uuid),
-      (fam::uuid, app_b::uuid, date '2026-10-01', 'aporte', 2000, gen_random_uuid(), ub::uuid),
+      (fam::uuid, app_b::uuid, date '2026-10-01', 'aporte', 5000, gen_random_uuid(), ub::uuid),
       (fam::uuid, app_c::uuid, date '2026-10-01', 'aporte', 3000, gen_random_uuid(), ua::uuid);
     -- o objetivo gravado "por A": o histórico tem que registrar A como quem mudou
     perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
@@ -119,7 +122,7 @@ begin
       ('A le os lancamentos da filha', ua, 'authenticated', format('select count(*) from produto.lancamentos where id = %L', l_p), 'contar', '1'),
       ('A baixa a familia e o gasto de B vem com o nome de B', ua, 'authenticated', format('select count(*) from json_array_elements(produto.exportar_familia(%L)->''lancamentos'') x where x->>''id'' = %L and x->>''dono_nome'' = ''Adulto B''', fam, l_b), 'contar', '1'),
       ('A baixa a familia com recebimentos, desejos e objetivo', ua, 'authenticated', format('select count(*) from json_object_keys(produto.exportar_familia(%L)) k where k in (''recebimentos'',''desejos'',''objetivo'',''objetivo_historico'')', fam), 'contar', '4'),
-      ('A le os cartoes da familia (o dele e o de B)', ua, 'authenticated', format('select count(*) from produto.cartoes where familia_id = %L', fam), 'contar', '2'),
+      ('A le os cartoes da familia (o dele e os 2 de B)', ua, 'authenticated', format('select count(*) from produto.cartoes where familia_id = %L', fam), 'contar', '3'),
       ('A le os recebimentos de B', ua, 'authenticated', format('select count(*) from produto.recebimentos where id = %L', rec_b), 'contar', '1'),
       ('A le os desejos de B', ua, 'authenticated', format('select count(*) from produto.desejos where id = %L', des_b), 'contar', '1'),
       ('A le os desejos da filha', ua, 'authenticated', format('select count(*) from produto.desejos where id = %L', des_p), 'contar', '1'),
@@ -162,7 +165,7 @@ begin
       ('CONTROLE B muda a margem do objetivo', ub, 'authenticated', format('update produto.objetivo set parametros = jsonb_set(parametros, ''{margem}'', ''"0.12"'') where familia_id = %L', fam), 'linhas', '1'),
       ('O historico do objetivo diz que foi A', ua, 'authenticated', format('select count(*) from produto.objetivo_historico where familia_id = %L and quem = %L', fam, ua), 'contar', '1'),
       ('Ninguem escreve no historico do objetivo', ua, 'authenticated', format('insert into produto.objetivo_historico (familia_id, quem, depois) values (%L, %L, ''{}'')', fam, ua), 'linhas', 'bloqueado'),
-      ('CONTROLE A recebe os dados do futuro (12 blocos)', ua, 'authenticated', format('select count(*) from jsonb_object_keys(produto.futuro_entradas(%L))', fam), 'contar', '12'),
+      ('CONTROLE A recebe os dados do futuro (os 12 blocos de base)', ua, 'authenticated', format('select count(*) from jsonb_object_keys(produto.futuro_entradas(%L)) k where k in (''hoje'',''mes_base'',''aplicacoes'',''cdi_hoje'',''recebimentos'',''limites_mes'',''config'',''parcelas_futuras'',''dividas'',''desejos'',''parametros'',''focus'')', fam), 'contar', '12'),
       ('Dados do futuro trazem os recebimentos dos 2', ub, 'authenticated', format('select jsonb_array_length(produto.futuro_entradas(%L)->''recebimentos'')', fam), 'contar', '2'),
       ('Dados do futuro trazem as 2 compras parceladas', ua, 'authenticated', format('select jsonb_array_length(produto.futuro_entradas(%L)->''parcelas_futuras'')', fam), 'contar', '2'),
       -- aplicação "do casal" (pedido C2) e a lista de titulares pro motor (pedido C5)
@@ -238,6 +241,15 @@ begin
       ('Resumo: o limite de B vem com o dono B e sem escrever pra A', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x->>''id'' = %L and x->''dono''->>''membro_id'' = %L and not (x->>''escreve'')::boolean', fam, env_b, mb), 'contar', '1'),
       ('Resumo: todo envelope do casal traz gasto_hoje', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where not (x ? ''gasto_hoje'')', fam), 'contar', '0'),
       ('Resumo da equipe continua sem R$ (so nomes, dono e escreve)', ue, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x ?| array[''gasto_hoje'', ''livre'', ''limite_mes'', ''hoje'']', fam), 'contar', '0'),
+      -- B10: o Escritório só pergunta o que a pessoa pode responder
+      ('Escritorio: A nao recebe pergunta da fatura do cartao de B', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-08 15:00-03'', ''casal'', ''Adulto A'')->''q'') x where x->>''id'' like ''fatura:%s%%''', fam, cart_b), 'contar', '0'),
+      ('CONTROLE Escritorio: B recebe a pergunta da fatura do cartao dele', ub, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-08 15:00-03'', ''casal'', ''Adulto B'')->''q'') x where x->>''id'' like ''fatura:%s%%''', fam, cart_b), 'contar', '1'),
+      ('CONTROLE Escritorio: A recebe as perguntas das faturas do proprio cartao (dez e jan)', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-08 15:00-03'', ''casal'', ''Adulto A'')->''q'') x where x->>''id'' like ''fatura:%s%%''', fam, cart_a), 'contar', '2'),
+      ('Escritorio: A nao recebe pergunta dos dias do cartao de B', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-08 15:00-03'', ''casal'', ''Adulto A'')->''q'') x where x->>''id'' = ''cartao_dias:%s''', fam, cart_b2), 'contar', '0'),
+      ('CONTROLE Escritorio: B recebe a pergunta dos dias do cartao dele', ub, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-08 15:00-03'', ''casal'', ''Adulto B'')->''q'') x where x->>''id'' = ''cartao_dias:%s''', fam, cart_b2), 'contar', '1'),
+      ('Escritorio: A nao confere o saldo da aplicacao de B', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-04 15:00-03'', ''casal'', ''Adulto A'')->''q'') x where x->>''id'' like ''saldo_conferir:%s%%''', fam, app_b), 'contar', '0'),
+      ('CONTROLE Escritorio: A confere o saldo da propria e da do casal', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._esc_brutas(%L, ''2027-01-04 15:00-03'', ''casal'', ''Adulto A'')->''q'') x where x->>''id'' like ''saldo_conferir:%s%%'' or x->>''id'' like ''saldo_conferir:%s%%''', fam, app_a, app_c), 'contar', '2'),
+      ('Contador: guardar a sobra nunca escolhe a aplicacao de B (a maior)', ua, 'authenticated', format('select count(*) from (select produto._aplicacao_pra_guardar(%L, produto._hoje()) id) q where q.id = %L', fam, app_c), 'contar', '1'),
       -- B6: a equipe manda a mesma compra 2 vezes (internet caiu): a 2a volta "repetido", não erro
       ('Equipe manda a mesma chave 2 vezes e recebe repetido', ue, 'authenticated', format('select count(*) from (values (1), (2)) v(n) cross join lateral (select produto.lancar_com_chave(%L, %L, 10 + 0 * v.n, %L::uuid)::jsonb->>''repetido'' r) x where x.r = ''true''', fam, env_casa, chave_e), 'contar', '1'),
       ('CONTROLE equipe recebe o id do que anotou', ue, 'authenticated', format('select case when produto.lancar(%L, %L, 10)::jsonb->''lancamento''->>''id'' is not null then 1 else 0 end', fam, env_casa), 'contar', '1'),
@@ -320,6 +332,38 @@ begin
         r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
         r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
       end loop;
+    end if;
+
+    -- saldo em conta corrente (f_11), quando existir: tranca igual à das aplicações
+    if to_regclass('produto.saldos_conta') is not null then
+      execute format('insert into produto.saldos_conta (id, familia_id, dono_membro, banco, valor_centavos) values
+        (%L, %L, %L, ''Banco X'', 100000), (%L, %L, %L, ''Banco Y'', 200000), (%L, %L, null, ''Banco W'', 50000)',
+        '50000000-0000-4e0e-8000-00000000fa01', fam, ma, '50000000-0000-4e0e-8000-00000000fb01', fam, mb, '50000000-0000-4e0e-8000-00000000f0c1', fam);
+      for c in select * from (values
+        ('Conta: A le o saldo de B (com dono)', ua, 'authenticated', 'select count(*) from produto.saldos_conta where dono_membro = ''' || mb || '''', 'contar', '1'),
+        ('Conta: A muda o saldo de B', ua, 'authenticated', 'update produto.saldos_conta set valor_centavos = 1 where id = ''50000000-0000-4e0e-8000-00000000fb01''', 'linhas', '0'),
+        ('Conta: A cria conta no nome de B', ua, 'authenticated', format('insert into produto.saldos_conta (familia_id, dono_membro, banco, valor_centavos) values (%L, %L, ''x'', 1)', fam, mb), 'linhas', 'bloqueado'),
+        ('CONTROLE Conta: A muda o proprio saldo', ua, 'authenticated', 'update produto.saldos_conta set valor_centavos = 120000 where id = ''50000000-0000-4e0e-8000-00000000fa01''', 'linhas', '1'),
+        ('CONTROLE Conta: B muda o saldo da conta do casal', ub, 'authenticated', 'update produto.saldos_conta set valor_centavos = 60000 where id = ''50000000-0000-4e0e-8000-00000000f0c1''', 'linhas', '1'),
+        ('Conta: ninguem apaga linha (DELETE)', ua, 'authenticated', 'delete from produto.saldos_conta where id = ''50000000-0000-4e0e-8000-00000000fa01''', 'linhas', 'bloqueado'),
+        ('Conta: filha le os saldos', up, 'authenticated', 'select count(*) from produto.saldos_conta', 'contar', '0'),
+        ('Conta: equipe le os saldos', ue, 'authenticated', 'select count(*) from produto.saldos_conta', 'contar', '0'),
+        ('Conta: estranho le os saldos da familia', ux, 'authenticated', format('select count(*) from produto.saldos_conta where familia_id = %L', fam), 'contar', '0'),
+        ('Conta: sem login le os saldos', null, 'anon', 'select count(*) from produto.saldos_conta', 'contar', 'bloqueado'),
+        ('Conta: dados do futuro mandam saldo_caixa somado (1.000 + 2.000 + 500)', ua, 'authenticated', format('select (produto.futuro_entradas(%L)->>''saldo_caixa'')::bigint', fam), 'contar', '350000'),
+        ('Conta: A baixa a familia com os saldos e o dono', ua, 'authenticated', format('select count(*) from json_array_elements(produto.exportar_familia(%L)->''saldos_conta'') x where x->>''dono_nome'' = ''Adulto B''', fam), 'contar', '1')
+      ) as v(nome, uid, papel_db, sql, modo, esp) loop
+        r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
+        r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
+      end loop;
+      -- o carimbo: B muda a conta do casal e o banco grava B como quem atualizou
+      r_caso := r_caso || 'Conta: o banco grava quem mudou o saldo'::text;
+      r_esp := r_esp || 'B'::text;
+      perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+      execute 'update produto.saldos_conta set valor_centavos = 70000 where id = ''50000000-0000-4e0e-8000-00000000f0c1''';
+      perform set_config('request.jwt.claims', '', true);
+      execute 'select case when atualizado_por = $1::uuid then ''B'' else coalesce(atualizado_por::text, ''ninguem'') end from produto.saldos_conta where id = ''50000000-0000-4e0e-8000-00000000f0c1''' into v using ub;
+      r_obt := r_obt || v;
     end if;
 
     -- ===== contas que o banco ainda faz (sem login, como o turno da noite) =====

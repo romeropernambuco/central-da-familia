@@ -113,3 +113,37 @@ end $$;
 -- N4: volta como era
 grant execute on function produto._numeros(timestamptz) to authenticated;
 alter function produto.numeros_semana() security invoker;
+
+-- B10: volta o Escritório como era
+do $$ begin
+  if position($a$        aid := produto._aplicacao_pra_guardar(f, hoje);$a$ in (select prosrc from pg_proc where oid = 'produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_02: trecho nao achado em produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_responder(uuid,text,text,jsonb,timestamp with time zone)'::regprocedure), $a$        aid := produto._aplicacao_pra_guardar(f, hoje);$a$, $b$        select (x->>'id')::uuid into aid from jsonb_array_elements(produto._guardado(f, hoje)->'aplicacoes') x where x->>'liquidez' = 'diaria' and x->>'tipo' <> 'poupanca' order by (x->>'saldo')::numeric desc limit 1;$b$);
+end $$;
+do $$ begin
+  if position($a$      for a in select x from jsonb_array_elements(g->'aplicacoes') x
+                where uid is null or x->>'titular_membro' is null or (x->>'titular_membro')::uuid = eu loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$      for a in select x from jsonb_array_elements(g->'aplicacoes') x
+                where uid is null or x->>'titular_membro' is null or (x->>'titular_membro')::uuid = eu loop$a$, $b$      for a in select x from jsonb_array_elements(g->'aplicacoes') x loop$b$);
+end $$;
+do $$ begin
+  if position($a$              where c.familia_id = f and c.ativo and (uid is null or c.id in (select produto.meus_cartoes_escrita())) order by c.criado_em loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$              where c.familia_id = f and c.ativo and (uid is null or c.id in (select produto.meus_cartoes_escrita())) order by c.criado_em loop$a$, $b$              where c.familia_id = f and c.ativo order by c.criado_em loop$b$);
+end $$;
+do $$ begin
+  if position($a$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              where uid is null or x.cartao_id in (select produto.meus_cartoes_escrita())
+              order by x.vence_em loop$a$ in (select prosrc from pg_proc where oid = 'produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_02: trecho nao achado em produto._esc_brutas(uuid,timestamp with time zone,text,text)';
+  end if;
+  execute replace(pg_get_functiondef('produto._esc_brutas(uuid,timestamp with time zone,text,text)'::regprocedure), $a$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              where uid is null or x.cartao_id in (select produto.meus_cartoes_escrita())
+              order by x.vence_em loop$a$, $b$               left join produto.cartao_custos k on k.familia_id = f and k.cartao_id = x.cartao_id
+              order by x.vence_em loop$b$);
+end $$;
+drop function if exists produto._aplicacao_pra_guardar(uuid, date);
