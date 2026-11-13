@@ -1,0 +1,5 @@
+# banco de teste local: nada daqui vai pro git
+dados/
+sock/
+log/
+*.log
