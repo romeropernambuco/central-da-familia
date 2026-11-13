@@ -128,6 +128,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   useEffect(() => { const f = () => setToast(t => (t?.desfazer ? t : null)); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
   const toast = useCallback((msg: string, desfazer?: () => void | Promise<void>) => setToast({ msg, desfazer, id: Date.now() }), [])
+  // E3 (conserto 6): com o aviso na tela, a página ganha folga embaixo: nada fica escondido atrás dele (Lançar um gasto, Por que mudou?)
+  useEffect(() => { document.body.classList.toggle('com-aviso', !!toastE); return () => document.body.classList.remove('com-aviso') }, [toastE])
   useEffect(() => {
     if (!toastE) return
     // com Desfazer o aviso fica 10 s (dá tempo de ler e tocar); sem, 4 s
@@ -146,7 +148,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   const v: Ctx = {
     api, sessao, familia, resumo, versao, recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
-    abrirLancar: pre => setLancar(pre || {}), lancarAberto, fecharLancar: () => setLancar(null),
+    // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
+    abrirLancar: pre => { if (pre?.corrigir) setToast(null); setLancar(pre || {}) }, lancarAberto, fecharLancar: () => setLancar(null),
     explicar: setExp, oculto, alternarOculto,
   }
   return (

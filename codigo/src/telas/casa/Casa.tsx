@@ -331,7 +331,7 @@ function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: Pessoa
 /** Tela da equipe da casa: lista, compras, prestadores, gás e presença. Nenhum valor em dinheiro aparece aqui.
  *  Lê e marca pelo banco (casa_da_equipe e casa_marcar), na mesma lista que o casal usa. */
 function CasaEquipe() {
-  const { api, familia, versao, toast, abrirLancar } = useApp()
+  const { api, familia, versao, toast, abrirLancar, recarregar } = useApp()
   const [casa, setCasa] = useState<CasaDaEquipe | null>(null)
   const [erro, setErro] = useState('')
   const [novo, setNovo] = useState('')
@@ -341,7 +341,8 @@ function CasaEquipe() {
   const marcar = async (tipo: MarcaCasa, dados?: { id?: string; nome?: string }, aviso?: string) => {
     if (!familia || ocupado) return
     setOcupado(true)
-    try { setCasa(await api.casaMarcar(familia.id, tipo, dados)); if (aviso) toast(aviso) } catch (e) { toast((e as Error).message) } finally { setOcupado(false) }
+    // E3 (conserto 9): depois de marcar, o "precisa de você" se refaz na hora (o piscineiro que veio sai da conta)
+    try { setCasa(await api.casaMarcar(familia.id, tipo, dados)); if (aviso) toast(aviso); await recarregar() } catch (e) { toast((e as Error).message) } finally { setOcupado(false) }
   }
   if (!casa) return <div className="view">{erro ? <p className="erro" role="alert">{erro}</p> : <p className="sub">Abrindo a Casa...</p>}</div>
   const ponto = casa.presenca.meu_ponto

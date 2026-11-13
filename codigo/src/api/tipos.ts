@@ -2,7 +2,7 @@
 
 export type Papel = 'casal' | 'pessoa' | 'equipe'
 
-export interface FamiliaMinha { id: string; nome: string; papel: Papel; membroNome: string; envelopeId: string | null }
+export interface FamiliaMinha { id: string; nome: string; papel: Papel; membroNome: string; envelopeId: string | null; /** id em membros de quem entrou (pra saber o que é dele: cartão, aplicação) */ membroId?: string | null }
 
 export interface Sessao { userId: string; email: string | null; familias: FamiliaMinha[]; dono: boolean }
 
@@ -51,6 +51,12 @@ export interface Envelope {
   mudou?: { ontem: number; motivo: string } | null
   /** Quanto o mês passado passou (pra a frase da virada: "Dezembro começa com R$ X"). */
   mes_anterior?: { mes: string; gasto: number; limite: number } | null
+  /** Parcelas de compras já feitas que caem no mês que vem (E3, conserto 2: a virada avisa antes). */
+  parcelas_mes_que_vem?: number
+  /** E2 (regra nova, 13/11): de quem é (nome); null = da família (Casa ou limite sem dono). */
+  dono?: string | null
+  /** E2: quem olha pode lançar e mexer aqui (o seu, a Casa e o sem dono). O do outro é só pra ler. */
+  escreve?: boolean
 }
 
 export interface ResumoHoje {
@@ -64,8 +70,8 @@ export interface ResumoHoje {
   so_nomes?: boolean
   /** R1: soma dos limites dos outros (sem detalhe), pra o Planejamento fechar a conta com a renda do casal. */
   limites_outros?: number
-  /** Rodada 2: placar do casal "se continuar assim" (só o que vem pela frente, sem item de ninguém). */
-  placar_casal?: { nome: string; fecha: number; limite: number; eu: boolean }[]
+  /** Rodada 2: placar do casal "se continuar assim" (só o que vem pela frente, sem item de ninguém). E3: `gasto` = já gasto no mês. */
+  placar_casal?: { nome: string; fecha: number; limite: number; eu: boolean; gasto?: number }[]
 }
 
 export interface Lancamento {
@@ -83,6 +89,8 @@ export interface Lancamento {
   parcela?: { n: number; de: number; compra: string }
   /** Membro que lançou. */
   autor?: string
+  /** E2: quem olha pode corrigir e apagar (lançou e o limite é dele ou da Casa). Sem o campo: a tela decide pelo limite. */
+  meu?: boolean
 }
 
 /** Pessoa da família e como está o convite dela. */
@@ -163,7 +171,7 @@ export interface GuardadoHoje {
   /** Saldo só do que está no nome de quem olha, nos últimos 30 dias (pro marco G10). */
   saldo_30_seu?: { data: string; saldo: number }[]
 }
-export interface NovaAplicacao { nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; valor_inicial: number; data: string; vence_em?: string | null; /** membro dono; null = do casal */ titular?: string | null }
+export interface NovaAplicacao { nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; valor_inicial: number; data: string; vence_em?: string | null; /** membro dono (só o próprio); sem o campo = no nome de quem cria */ titular?: string | null; /** E2: aplicação do casal (o banco grava sem titular). Nunca junto com `titular`. */ do_casal?: boolean }
 export interface CustoDoGasto { ate_fim_do_mes: number; em_12_meses: number }
 
 /* ---------- Escritório que cobra e Lembretes: CONTRATO2.md, seção B ---------- */
@@ -189,7 +197,7 @@ export interface PerguntaEsc {
 }
 export interface FuncionarioEsc { id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[] }
 export interface EntregaEsc { funcionario: string; resumo: string; numero?: number | null }
-export interface EscritorioHoje { precisa_de_voce: PerguntaEsc[]; trabalhando: { funcionario: string; resumo?: string }[]; entregue: EntregaEsc[]; funcionarios: FuncionarioEsc[] }
+export interface EscritorioHoje { precisa_de_voce: PerguntaEsc[]; /** E3 (conserto 9): quantas são no total (a tela mostra até 3) */ precisa_total?: number; trabalhando: { funcionario: string; resumo?: string }[]; entregue: EntregaEsc[]; funcionarios: FuncionarioEsc[] }
 export type Repetir = 'nunca' | 'dia' | 'semana' | 'mes' | 'ano'
 export interface Lembrete { id: string; titulo: string; detalhe: string | null; quando: string; repetir: Repetir; para: string; funcionario?: string | null; feito_em: string | null }
 export interface NovoLembrete { titulo: string; quando: string; repetir: Repetir; detalhe?: string; para?: string }
@@ -275,7 +283,7 @@ export interface Api {
   /** Diário de 1 funcionário, do mais novo pro mais velho ("ver tudo"). */
   escritorioDiario(familia: string, funcionario: string, limite: number, antes?: string): Promise<LinhaDiario[]>
   /** Quem é da família (casal e pessoas), pra escolher de quem é o cartão. */
-  membros(familia: string): Promise<{ id: string; nome: string }[]>
+  membros(familia: string): Promise<{ id: string; nome: string; papel?: Papel }[]>
   /* Analista de Cartão */
   cartaoSalvar(familia: string, c: Partial<Cartao> & { nome: string }): Promise<void>
   faturasBanco(familia: string): Promise<FaturaBanco[]>
@@ -300,5 +308,7 @@ export interface Api {
 
   numerosSemana(): Promise<Numero[]>
   exportarFamilia(familia: string): Promise<unknown>
+  /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
+  exportarMeu?(familia: string): Promise<unknown>
   apagarFamilia(familia: string, confirmacao: string): Promise<void>
 }

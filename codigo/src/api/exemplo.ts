@@ -12,7 +12,9 @@ interface EnvBase { id: string; nome: string; regra: Envelope['regra']; limite_m
 
 const FAM = 'fam-silva'
 // ?como=autonoma abre a Família Souza (Cláudia, mãe solo, renda que muda)
-if (pessoaDoTeste === 'autonoma') usarFamiliaTeste('souza')
+// E3 (conserto 8): o Guardado e o Escritório (exemplo2) nascem antes desta linha; refaz pra a Cláudia não ver o guardado da Família Silva
+// (era o "No seu nome R$ 0" da Autônoma)
+if (pessoaDoTeste === 'autonoma') { usarFamiliaTeste('souza'); ex2.reiniciarExemplo2() }
 /** Convite de exemplo da equipe: o link do exemplo é #/equipe?c=<este id> e o código é 2468. */
 export { CONVITE_EXEMPLO }
 const espera = (ms = 60) => new Promise(r => setTimeout(r, ms))
@@ -73,22 +75,37 @@ let logado: Logado | null = logadoInicial()
 /** Quem está logado no exemplo, com papel e limite próprio. */
 const membroLogado = () => { const ms = membrosTeste(); return ms.find(x => x.id === (logado === 'bruno' ? 'm-bruno' : logado === 'filha' ? 'm-bia' : logado === 'claudia' ? 'm-claudia' : 'm-ana')) || ms[0] }
 const papelLogado = (): 'casal' | 'pessoa' | 'equipe' => (logado === 'carla' ? 'equipe' : membroLogado().papel)
-/** Cartões que quem olha enxerga (rodada 2): cada um do casal, só os dele; pessoa e equipe, nenhum. */
-const cartoesVisiveis = () => (papelLogado() !== 'casal' ? [] : db.cartoes.filter(c => !c.titular_id || c.titular_id === membroLogado().id))
+/** Cartões que quem olha enxerga. E2 (regra nova, 13/11): o casal lê todos, com o nome do dono; pessoa e equipe, nenhum. */
+const cartoesVisiveis = () => (papelLogado() !== 'casal' ? [] : db.cartoes)
+/** Cartões em que quem olha mexe (cadastro, fatura, Analista de Cartão): os dele e os sem titular. */
+const cartoesMeus = () => (papelLogado() !== 'casal' ? [] : db.cartoes.filter(c => !c.titular_id || c.titular_id === membroLogado().id))
+/** Igual ao banco (f_02): quem é dono de cada coisa. */
+const donoDoEnv = (id: string): string | null => membrosTeste().find(x => x.envelope === id)?.nome ?? null
 let familiaNova: { id: string; nome: string; pessoa: string } | null = null
 const tempos: number[] = [6.8, 8.1, 5.9, 9.4, 7.2]
 const avisos: { tipo: AvisoCasa; data: string; nome: string }[] = []
 
 function vivos() { return db.lanc.filter(l => !l.apagado_em) }
 
-/** Envelopes que quem está logado enxerga (R1/R2): o casal vê o próprio e os da Casa; a pessoa, só o dela. */
+/** Envelopes que quem está logado enxerga. E2 (regra nova, 13/11): o casal LÊ todos (com o nome do dono); a pessoa, só o dela. */
 function visiveis(): EnvBase[] {
   if (logado === 'carla') return db.envs.filter(e => e.casa)
   const eu = membroLogado()
   if (familiaNova) return db.envs.filter(e => e.casa || e.id === eu.envelope || e.id === db.envs[0].id)
-  return db.envs.filter(e => (eu.papel === 'casal' && e.casa) || e.id === eu.envelope)
+  return db.envs.filter(e => eu.papel === 'casal' || e.id === eu.envelope)
 }
 const podeVer = (envelope: string) => visiveis().some(e => e.id === envelope)
+/** Envelopes em que quem está logado ESCREVE (igual a produto.meus_envelopes_escrita, f_01): o casal, o próprio, os da Casa
+ * e os sem dono; a pessoa, só o dela; a equipe, os da Casa. */
+function escrita(): EnvBase[] {
+  if (logado === 'carla') return db.envs.filter(e => e.casa)
+  const eu = membroLogado()
+  if (familiaNova) return visiveis()
+  return db.envs.filter(e => e.id === eu.envelope || (eu.papel === 'casal' && (e.casa || !donoDoEnv(e.id))))
+}
+const podeEscrever = (envelope: string) => escrita().some(e => e.id === envelope)
+/** Lançamento que quem olha pode corrigir ou apagar: no limite em que escreve e lançado por ele (o banco exige o autor). */
+const lancMeu = (l: Lancamento) => podeEscrever(l.envelope_id) && (!l.autor || l.autor === (logado === 'carla' ? 'carla' : membroLogado().id))
 /** Limite do envelope no mês, com o que a Casa cobriu (só no exemplo). */
 function limiteNoMes(e: EnvBase, mes: string): number {
   let l = e.limite_mes
@@ -104,7 +121,9 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
   const { porDia, parcelas } = gastosDoMes(lancs, mes)
   const somaMes = centavos(Object.entries(porDia).filter(([d]) => d <= fim).reduce((s, [, v]) => s + v, 0))
   const lim = limiteNoMes(e, mes)
-  const base: Envelope = { id: e.id, nome: e.nome, regra: e.regra, casa: e.casa, limite_base: lim, colchao_meta: e.colchao, limite_mes: lim, gasto_mes: 0, livre: 0 }
+  // E2: de quem é e se quem olha escreve aqui. E3 (conserto 2): as parcelas que já caem no mês que vem, pra a virada avisar antes
+  const base: Envelope = { id: e.id, nome: e.nome, regra: e.regra, casa: e.casa, limite_base: lim, colchao_meta: e.colchao, limite_mes: lim, gasto_mes: 0, livre: 0,
+    dono: e.casa ? null : donoDoEnv(e.id), escreve: podeEscrever(e.id), parcelas_mes_que_vem: gastosDoMes(lancs, mesMais(mes, 1)).parcelas }
   // rodada 2: parcela e compra grande de 1 vez (10% do combinado e no mínimo R$ 150) contam 1 vez na projeção, fora do ritmo
   const grande = Math.max(150, e.limite_mes * 0.1)
   const pontuais = lancs.filter(l => l.data.startsWith(mes) && l.data <= hoje && ((l.parcelas || 1) > 1 || l.valor >= grande))
@@ -158,7 +177,8 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
   } else {
     const g = centavos(somaMes + parcelas)
     const livre = centavos(lim - g)
-    Object.assign(base, { gasto_mes: g, livre, parcelas_mes: parcelas })
+    // E3 (conserto 5): o gasto de hoje também no limite do mês ("Hoje já saiu R$ X. Ainda pode hoje R$ Y")
+    Object.assign(base, { gasto_mes: g, livre, parcelas_mes: parcelas, gasto_hoje: porDia[hoje] || 0 })
     hojeV = centavos(Math.max(0, livre - e.colchao) / dr)
     // rodada 2 (BRUNO ideia 3): o limite do mês também tem "até domingo" (o valor de hoje × os dias até domingo)
     if (!e.casa) {
@@ -174,7 +194,11 @@ export function calcularResumo(): ResumoHoje {
   const hoje = hojeRecife()
   const dr = diasRestantes(hoje)
   const envs = visiveis()
-  const envelopes = envs.map(e => contaEnvelope(e, hoje))
+  // E2: o casal lê todos; o seu vem 1º, depois os dos outros, a Casa por último
+  const ordem = (e: EnvBase) => (e.casa ? 2 : podeEscrever(e.id) ? 0 : 1)
+  const todos = [...envs].sort((a, b) => ordem(a) - ordem(b)).map(e => contaEnvelope(e, hoje))
+  // o "pode gastar hoje" e a explicação somam só o que é de quem olha (o seu e a Casa): o do outro é só pra ler
+  const envelopes = todos.filter(e => e.escreve)
   const tot = (f: (e: Envelope) => number) => centavos(envelopes.reduce((s, e) => s + f(e), 0))
   const pode = tot(e => e.hoje || 0)
   const livre = tot(e => e.livre)
@@ -196,18 +220,19 @@ export function calcularResumo(): ResumoHoje {
     if (!env) return null
     const c = contaEnvelope(env, hoje)
     const lim = c.limite_base ?? c.limite_mes
-    return { nome: x.nome, fecha: Math.round(projecao(c.gasto_mes, lim, hoje, c.pontual_mes || 0).fecha), limite: lim, eu: x.id === eu.id }
+    return { nome: x.nome, fecha: Math.round(projecao(c.gasto_mes, lim, hoje, c.pontual_mes || 0).fecha), limite: lim, eu: x.id === eu.id, gasto: c.gasto_mes }
   }).filter(Boolean) as NonNullable<ResumoHoje['placar_casal']> : undefined
-  const outros = centavos(db.envs.filter(e => !envs.includes(e)).reduce((t, e) => t + limiteNoMes(e, hoje.slice(0, 7)), 0))
-  return { pode_gastar_hoje: pode, livre_mes: livre, colchao, dias_restantes: dr, envelopes, explicacao, ...(eu?.papel === 'casal' && outros ? { limites_outros: outros } : {}), ...(placar ? { placar_casal: placar } : {}) }
+  // E2: some o "total dos limites dos outros sem detalhe": o casal já vê o limite de cada um, com o nome
+  return { pode_gastar_hoje: pode, livre_mes: livre, colchao, dias_restantes: dr, envelopes: todos, explicacao, ...(placar ? { placar_casal: placar } : {}) }
 }
 
-function faturasCalc(meses: number): Fatura[] {
+/** Faturas dos próximos meses. `so` = 'meus' pro Analista de Cartão (fala só do cartão de quem olha); a tela lê todos. */
+function faturasCalc(meses: number, so: 'todos' | 'meus' = 'todos'): Fatura[] {
   const hoje = hojeRecife()
   const [a, m] = hoje.split('-').map(Number)
   const out: Fatura[] = []
   const casaIds = new Set(db.envs.filter(e => e.casa).map(e => e.id))
-  for (const c of cartoesVisiveis()) {
+  for (const c of so === 'meus' ? cartoesMeus() : cartoesVisiveis()) {
     const fe = c.dia_fechamento || 1, ve = c.dia_vencimento || 10
     const porMes: Record<string, number> = {}, daCasa: Record<string, number> = {}
     for (const l of vivos().filter(l => l.cartao_id === c.id)) {
@@ -268,23 +293,36 @@ const mundo: ex2.Mundo = {
   equipe: () => logado === 'carla',
   papel: () => papelLogado(),
   quem: () => (logado === 'carla' ? 'Carla' : (familiaNova?.pessoa || membroLogado().nome).split(' ')[0]),
-  resumo: () => calcularResumo(),
+  // E2: os funcionários perguntam e mexem, então falam só do que é de quem olha (o seu e a Casa), nunca do limite do outro
+  resumo: () => { const r = calcularResumo(); return { ...r, envelopes: r.envelopes.filter(e => e.escreve) } },
   eu: () => (logado === 'carla' ? null : membroLogado().id),
-  // rodada 2: o Analista de Cartão só fala do cartão de quem está olhando
-  faturas: () => faturasCalc(3),
-  cartoes: () => (papelLogado() === 'casal' ? cartoesVisiveis() : []),
+  // rodada 2: o Analista de Cartão só fala do cartão de quem está olhando (E2: ele pergunta e mexe, então continua só o seu)
+  faturas: () => faturasCalc(3, 'meus'),
+  cartoes: () => cartoesMeus(),
   todosCartoes: () => db.cartoes,
   entradasNaConta: () => ((db.config.entradas as any[]) || []).filter(x => x.destino === 'na conta' && (!x.dono || x.dono === membroLogado().nome)),
   guardarEntrada: (id: string) => { const x = ((db.config.entradas as any[]) || []).find(y => y.id === id); if (x) x.destino = 'reserva' },
   config: () => db.config as Record<string, any>,
   // o último dia anotado de quem olha: gasto nos limites que ele vê ou "não gastei" marcado (R9)
-  ultimoGasto: () => [...vivos().filter(l => podeVer(l.envelope_id)).map(l => l.data), ...((db.config.dias_sem_gasto as string[] | undefined) || [])].filter(d => d <= hojeRecife()).sort().pop() || null,
+  // E2: só o que ele escreve (o seu e a Casa): o gasto do outro, que ele agora lê, não conta como "anotou hoje"
+  ultimoGasto: () => [...vivos().filter(l => podeEscrever(l.envelope_id)).map(l => l.data), ...((db.config.dias_sem_gasto as string[] | undefined) || [])].filter(d => d <= hojeRecife()).sort().pop() || null,
   // exemplo: no mês passado sobraram 4% do combinado
   sobraMesPassado: () => centavos(db.envs.reduce((t, x) => t + x.limite_mes, 0) * 0.04),
   lancarFeira: (data, valor, loja) => { const l: Lancamento = { id: 'l' + Date.now(), envelope_id: 'env-feira', cartao_id: null, valor: centavos(valor), data, descricao: loja, apagado_em: null, criado_em: new Date().toISOString() }; db.lanc.push(l); return l.id },
 }
-const membrosExemplo = () => membrosTeste().filter(x => x.papel === 'casal').map(x => ({ id: x.id, nome: x.nome }))
+const membrosExemplo = () => membrosTeste().filter(x => x.papel === 'casal').map(x => ({ id: x.id, nome: x.nome, papel: x.papel }))
 const soCasal = () => { if (logado === 'carla') throw new Error('Só o casal vê o dinheiro guardado.') }
+/** E2 (igual a f_02): aplicação no nome do outro é só pra ler. */
+function minhaAplicacao(id: string) {
+  const t = ex2.titularDaAplicacaoEx(id)
+  if (t && t !== membroLogado().id) { const n = membrosTeste().find(x => x.id === t)?.nome || 'outra pessoa'; throw new Error(`Essa aplicação está no nome de ${n}: só ${n} anota guardar, tirar ou encerrar.`) }
+}
+/** E2: o cartão é de quem olha ou da família? (o do outro é só pra ler) */
+function meuCartao(id: string | undefined, titular?: string | null) {
+  const c = id ? db.cartoes.find(x => x.id === id) : undefined
+  if (c && c.titular_id && c.titular_id !== membroLogado().id) throw new Error(`Esse cartão é de ${c.titular || 'outra pessoa'}: só ${c.titular || 'quem é dono'} muda.`)
+  if (titular && titular !== membroLogado().id) throw new Error('Cada um cadastra só o próprio cartão (ou um da família, sem dono).')
+}
 
 export const apiExemplo: Api = {
   modo: 'exemplo',
@@ -293,8 +331,8 @@ export const apiExemplo: Api = {
     if (!logado) return null
     if (logado === 'carla') return { userId: 'u-carla', email: null, dono: false, familias: [{ id: FAM, nome: nomeFamiliaTeste(), papel: 'equipe', membroNome: 'Carla', envelopeId: 'env-feira' }] }
     const eu = membroLogado()
-    const fams = [{ id: FAM, nome: nomeFamiliaTeste(), papel: eu.papel, membroNome: eu.nome, envelopeId: eu.envelope }]
-    if (familiaNova) fams.unshift({ id: FAM, nome: familiaNova.nome, papel: 'casal', membroNome: familiaNova.pessoa, envelopeId: eu.envelope })
+    const fams = [{ id: FAM, nome: nomeFamiliaTeste(), papel: eu.papel, membroNome: eu.nome, envelopeId: eu.envelope, membroId: eu.id }]
+    if (familiaNova) fams.unshift({ id: FAM, nome: familiaNova.nome, papel: 'casal', membroNome: familiaNova.pessoa, envelopeId: eu.envelope, membroId: eu.id })
     return { userId: 'u-' + eu.id, email: eu.email, dono: logado === 'bruno', familias: fams }
   },
   async enviarCodigo(email) { await espera(); if (!email.includes('@')) throw new Error('E-mail inválido') },
@@ -334,7 +372,8 @@ export const apiExemplo: Api = {
     // igual ao banco: a mesma chave do toque nunca grava 2 vezes
     const ja = porChave.get(nv.chave)
     if (ja) return { lancamento: semValorPraEquipe(ja), resumo: resumoDeQuemEsta(), repetido: true }
-    if (logado !== 'carla' && !podeVer(nv.envelope)) throw new Error('Esse limite não é seu. Lance no seu ou num da Casa.')
+    // E2 (igual a f_02): o casal lê o limite do outro, mas lança só no seu e na Casa
+    if (logado !== 'carla' && !podeEscrever(nv.envelope)) throw new Error(`Esse limite ${donoDoEnv(nv.envelope) ? `é de ${donoDoEnv(nv.envelope)}` : 'não é seu'}. Lance no seu ou num da Casa.`)
     const l: Lancamento = { id: 'l' + Date.now(), envelope_id: nv.envelope, cartao_id: nv.cartao || null, valor: centavos(nv.valor), data: nv.data, descricao: nv.descricao, apagado_em: null, criado_em: new Date().toISOString(), ...(nv.cartao && (nv.parcelas || 1) > 1 ? { parcelas: Math.min(12, Math.floor(nv.parcelas!)) } : {}), autor: logado === 'carla' ? 'carla' : membroLogado().id }
     db.lanc.push(l)
     porChave.set(nv.chave, l)
@@ -343,8 +382,8 @@ export const apiExemplo: Api = {
   },
   async lancamentos(_f, mes) {
     await espera(40)
-    // lanc_ver (R1): cada um vê os lançamentos dos limites que enxerga
-    const meus = db.lanc.filter(l => podeVer(l.envelope_id))
+    // lanc_ver (E2): o casal lê os lançamentos da família toda; `meu` diz em qual dá pra mexer
+    const meus = db.lanc.filter(l => podeVer(l.envelope_id)).map(l => semValorPraEquipe({ ...l, meu: logado !== 'carla' && lancMeu(l) }))
     const doMes = meus.filter(l => l.data.startsWith(mes))
     // parcelas de compras de meses anteriores aparecem no mês delas, só pra ler
     const parc: Lancamento[] = []
@@ -358,9 +397,10 @@ export const apiExemplo: Api = {
     await espera(60)
     const l = db.lanc.find(x => x.id === id)
     if (!l) throw new Error('Esse lançamento não existe mais. Feche e abra a tela de novo.')
-    if (logado === 'carla' || !podeVer(l.envelope_id)) throw new Error('Só dá pra corrigir o que você enxerga.')
+    // E2 (igual a f_02): só quem lançou, e só no seu limite ou na Casa
+    if (logado === 'carla' || !lancMeu(l)) throw new Error(donoDoEnv(l.envelope_id) && !podeEscrever(l.envelope_id) ? `Esse gasto é de ${donoDoEnv(l.envelope_id)}: só ${donoDoEnv(l.envelope_id)} corrige.` : 'Só quem lançou corrige esse gasto.')
     if (campos.valor != null && !(campos.valor > 0)) throw new Error('O valor tem que ser maior que zero.')
-    if (campos.envelope && !podeVer(campos.envelope)) throw new Error('Esse limite não é seu.')
+    if (campos.envelope && !podeEscrever(campos.envelope)) throw new Error('Esse limite não é seu.')
     if (campos.valor != null) l.valor = centavos(campos.valor)
     if (campos.descricao != null) l.descricao = campos.descricao
     if (campos.data) l.data = campos.data
@@ -370,6 +410,8 @@ export const apiExemplo: Api = {
   },
   async cobrirComCasa(_f, envelope, valor) {
     await espera(60)
+    // E2 (premissa 6): só o dono do gasto aperta "Cobrir com a Casa"
+    if (!podeEscrever(envelope)) throw new Error('Só quem passou do combinado escolhe de onde sai.')
     const mes = hojeRecife().slice(0, 7)
     const casa = db.envs.find(e => e.casa && e.regra === 'mensal')
     if (!casa) throw new Error('Não tem limite da Casa pra cobrir.')
@@ -383,11 +425,12 @@ export const apiExemplo: Api = {
   async convites() { await espera(30); return db.convites.filter(c => c.situacao !== 'cancelado').map(c => ({ ...c })) },
   async reenviarConvite(_f, id) { await espera(40); const c = db.convites.find(x => x.id === id); if (!c) throw new Error('Esse convite não existe mais.'); if (c.situacao !== 'esperando') throw new Error(`${c.nome} já entrou.`); c.enviado_em = hojeRecife() },
   async cancelarConvite(_f, id) { await espera(40); const c = db.convites.find(x => x.id === id); if (!c) throw new Error('Esse convite não existe mais.'); if (c.situacao !== 'esperando') throw new Error(`${c.nome} já entrou: não dá pra cancelar o convite.`); c.situacao = 'cancelado' },
-  async apagarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l) l.apagado_em = new Date().toISOString() },
-  async restaurarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l) l.apagado_em = null },
+  // E2 (igual a f_02): apagar e trazer de volta só quem lançou, no seu limite ou na Casa
+  async apagarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l && !lancMeu(l)) throw new Error('Só quem lançou apaga esse gasto.'); if (l) l.apagado_em = new Date().toISOString() },
+  async restaurarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l && !lancMeu(l)) throw new Error('Só quem lançou traz esse gasto de volta.'); if (l) l.apagado_em = null },
 
-  // rodada 2: cada um do casal vê só os cartões dele; a pessoa da família e a equipe, nenhum
-  async cartoes() { await espera(30); return cartoesVisiveis().filter(c => c.ativo !== false) },
+  // E2 (regra nova, 13/11): o casal vê todos os cartões, com o nome do dono; a pessoa da família e a equipe, nenhum
+  async cartoes() { await espera(30); return cartoesVisiveis().filter(c => c.ativo !== false).map(c => ({ ...c })) },
   async criarCartao(_f, c) { db.cartoes.push({ id: 'car-' + Date.now(), ...c }) },
   async faturas(_f, meses) { await espera(40); return faturasCalc(meses) },
 
@@ -445,8 +488,11 @@ export const apiExemplo: Api = {
       // a feira da semana fica registrada pro Fiscal (sem valor: o casal confere pela foto)
       const f = ex2.feirasEx(mundo).find(x => x.semana === segundaDaSemana(hoje))
       const id = f ? f.id : (ex2.feiraRegistrarEx(mundo, { data: hoje, loja: nome }), ex2.feirasEx(mundo).find(x => x.semana === segundaDaSemana(hoje))?.id)
-      if (id && c.foto) ex2.feiraAnexarEx(id)
-      if (!c.foto) falta = ' Quando tiver a nota, tire a foto no cartão do Fiscal.'
+      // E3 (conserto 9): a foto de hoje é da compra de hoje. Ela não vale como a nota de uma feira de outro dia (o pedido continua)
+      const outroDia = f && f.data !== hoje && !f.tem_nota
+      if (id && c.foto && !outroDia) ex2.feiraAnexarEx(id)
+      if (outroDia) falta = ` A nota da feira de ${dataCurta(f!.data)} ainda falta: tire a foto dela no cartão do Fiscal.`
+      else if (!c.foto) falta = ' Quando tiver a nota, tire a foto no cartão do Fiscal.'
     }
     return { aviso: `Anotado: ${nome}${c.tipo === 'feira' ? ' (feira da semana)' : ''}.${c.foto ? ' A foto da nota foi pro casal. O casal confere o valor pela foto.' : ' O casal confere o valor.'}${falta}` }
   },
@@ -463,7 +509,7 @@ export const apiExemplo: Api = {
   },
   async cobrirImprevisto(_f, envelope, valor) {
     await espera(60)
-    if (!podeVer(envelope)) throw new Error('Esse limite não é seu.')
+    if (!podeEscrever(envelope)) throw new Error('Esse limite não é seu.')
     const id = 'im' + Date.now()
     db.ajustes.push({ id, mes: hojeRecife().slice(0, 7), de: 'reserva-mes-ruim', para: envelope, valor: centavos(valor) })
     return async () => { db.ajustes = db.ajustes.filter(a => a.id !== id) }
@@ -475,11 +521,18 @@ export const apiExemplo: Api = {
     return { itens: [{ nome: 'Arroz 5 kg', valor: 28.9, qtd: 1 }, { nome: 'Feijão 1 kg', valor: 8.49, qtd: 1 }, { nome: 'Banana prata', valor: 7.98, qtd: 1.2 }, { nome: 'Detergente', valor: 2.79, qtd: 1 }], total: 48.16, soma_dos_itens: 48.16, total_confere: true, data: hojeRecife(), loja: 'Mercadinho', aviso: 'Confira antes de salvar. Nada foi lançado.' }
   },
 
-  async guardadoHoje() { await espera(30); soCasal(); return ex2.guardadoHojeEx(membroLogado().id) },
-  async guardadoCriar(_f, a) { await espera(60); soCasal(); ex2.guardadoCriarEx({ ...a, titular: a.titular === undefined ? membroLogado().id : a.titular }) },
-  async guardadoMovimentar(aplicacao, tipo, valor, data, chave, nota) { await espera(60); soCasal(); ex2.guardadoMovimentarEx(aplicacao, tipo, valor, data, chave, nota) },
-  async guardadoDesfazer(aplicacao, chave) { await espera(40); soCasal(); ex2.guardadoDesfazerEx(aplicacao, chave) },
-  async guardadoEncerrar(aplicacao) { await espera(40); soCasal(); ex2.guardadoEncerrarEx(aplicacao) },
+  // E2: o casal lê todas as aplicações (com o nome do titular); guarda, tira e encerra só na sua e na do casal
+  async guardadoHoje() { await espera(30); soCasal(); return ex2.guardadoHojeEx(membroLogado().id, true) },
+  async guardadoCriar(_f, a) {
+    await espera(60); soCasal()
+    // igual ao banco (f_08): "do casal" vai explícito; titular só o próprio; sem os 2, fica no nome de quem cria
+    if (a.do_casal && a.titular) throw new Error('Escolha: no seu nome ou do casal, não os 2.')
+    if (a.titular && a.titular !== membroLogado().id) throw new Error('Cada um cria aplicação só no próprio nome ou do casal.')
+    ex2.guardadoCriarEx({ ...a, titular: a.do_casal ? null : membroLogado().id })
+  },
+  async guardadoMovimentar(aplicacao, tipo, valor, data, chave, nota) { await espera(60); soCasal(); minhaAplicacao(aplicacao); ex2.guardadoMovimentarEx(aplicacao, tipo, valor, data, chave, nota) },
+  async guardadoDesfazer(aplicacao, chave) { await espera(40); soCasal(); minhaAplicacao(aplicacao); ex2.guardadoDesfazerEx(aplicacao, chave) },
+  async guardadoEncerrar(aplicacao) { await espera(40); soCasal(); minhaAplicacao(aplicacao); ex2.guardadoEncerrarEx(aplicacao) },
   async guardadoCustoDoGasto(_f, valor) { await espera(20); soCasal(); return ex2.custoDoGastoEx(valor, membroLogado().id) },
 
   async escritorioHoje() { await espera(30); return ex2.escritorioHojeEx(mundo) },
@@ -487,9 +540,9 @@ export const apiExemplo: Api = {
   async escritorioRelatorio(_f, de, ate) { await espera(30); return ex2.relatorioEx(mundo, de, ate) },
   async escritorioDiario(_f, funcionario, limite, antes) { await espera(20); return ex2.diarioEx(mundo, funcionario, limite, antes) },
   async membros() { await espera(20); return membrosExemplo() },
-  async cartaoSalvar(_f, c) { await espera(40); soCasal(); ex2.cartaoSalvarEx(mundo, { ...c, titular: membrosExemplo().find(m => m.id === c.titular_id)?.nome || null }) },
+  async cartaoSalvar(_f, c) { await espera(40); soCasal(); meuCartao(c.id, c.titular_id); ex2.cartaoSalvarEx(mundo, { ...c, titular: membrosExemplo().find(m => m.id === c.titular_id)?.nome || null }) },
   async faturasBanco() { await espera(20); soCasal(); return ex2.faturasBancoEx() },
-  async faturaInformar(_f, cartao, mes, d) { await espera(40); soCasal(); ex2.faturaInformarEx(mundo, cartao, mes, d) },
+  async faturaInformar(_f, cartao, mes, d) { await espera(40); soCasal(); meuCartao(cartao); ex2.faturaInformarEx(mundo, cartao, mes, d) },
   async feiras() { await espera(20); return ex2.feirasEx(mundo) },
   async feiraRegistrar(_f, f) { await espera(40); ex2.feiraRegistrarEx(mundo, f) },
   async notaSubir(_f, feira) { await espera(80); return `fam-silva/${feira}.jpg` },
@@ -514,8 +567,23 @@ export const apiExemplo: Api = {
       { chave: 'erros', nome: 'Erros de conta', valor: 0, texto: '0', meta: 'meta 0', ok: true, explicacao: 'Testes da noite que falharam: a soma bate, nenhum mês abaixo da reserva, nenhum lançamento repetido.' },
     ]
   },
+  // E2 (conserto 1, igual a f_03): o casal baixa a família inteira, com o nome do dono em cada linha
   async exportarFamilia() {
-    return { familia: nomeFamiliaTeste(), exportado_em: new Date().toISOString(), envelopes: db.envs, cartoes: db.cartoes, lancamentos: db.lanc, config: db.config }
+    if (papelLogado() !== 'casal') throw new Error('Baixar os dados da família é com o casal. Use "Baixar meus dados".')
+    const dono = (id: string) => donoDoEnv(id) ?? 'Da família'
+    return { familia: nomeFamiliaTeste(), exportado_em: new Date().toISOString(),
+      envelopes: db.envs.map(e => ({ ...e, dono_nome: dono(e.id) })),
+      cartoes: db.cartoes.map(c => ({ ...c, dono_nome: c.titular || 'Da família' })),
+      lancamentos: db.lanc.map(l => ({ ...l, dono_nome: dono(l.envelope_id) })),
+      guardado_aplicacoes: ex2.guardadoHojeEx(membroLogado().id, true).aplicacoes.map(a => ({ ...a, dono_nome: a.titular_nome || 'Da família' })),
+      config: db.config }
+  },
+  // filha (e quem quiser só o seu): o próprio limite e os próprios lançamentos (igual a produto.exportar_meu)
+  async exportarMeu() {
+    const eu = membroLogado()
+    const env = db.envs.find(e => e.id === eu.envelope)
+    return { familia: nomeFamiliaTeste(), exportado_em: new Date().toISOString(), membro: { nome: eu.nome, papel: eu.papel },
+      envelopes: env ? [{ ...env, dono_nome: eu.nome }] : [], lancamentos: db.lanc.filter(l => l.envelope_id === eu.envelope).map(l => ({ ...l, dono_nome: eu.nome })) }
   },
   async apagarFamilia(_f, confirmacao) {
     await espera()

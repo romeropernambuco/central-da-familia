@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../lib/seguro'
 import { Camera, ImageUp, Receipt, Check, TriangleAlert } from 'lucide-react'
 import { useApp } from '../app/contexto'
+import { escreveNo } from '../app/dono'
 import { Sheet } from './base'
 import type { CupomLido } from '../api/tipos'
 import { centavos, dataCurta, reais } from '../lib/formato'
@@ -16,7 +17,8 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
   const [erro, setErro] = useState('')
   const [lido, setLido] = useState<CupomLido | null>(null)
   const [marcados, setMarcados] = useState<boolean[]>([])
-  const envs = (resumo?.envelopes || [])
+  // E2: o cupom vira gasto só no seu limite, na Casa ou no sem dono
+  const envs = (resumo?.envelopes || []).filter(e => escreveNo(e, familia))
   const padrao = envelopePadrao || envs.find(e => e.casa && e.regra === 'semanal')?.id || envs.find(e => e.casa)?.id || envs[0]?.id
   const [env, setEnv] = useState<string | undefined>(padrao)
   const [salvando, setSalvando] = useState(false)

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, ListChecks, History, Pencil } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
+import { donoDo, mexeNoLancamento, rotuloDono } from '../../app/dono'
 import { Din, Vazio } from '../../componentes/base'
 import type { Cartao, Lancamento } from '../../api/tipos'
 import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reais, somaDias } from '../../lib/formato'
@@ -36,6 +37,7 @@ export function Lancamentos() {
   const maisMeses = meses.length < 24
 
   const nomeEnv = (id: string) => resumo?.envelopes.find(e => e.id === id)?.nome || 'Limite'
+  const envDe = (id: string) => resumo?.envelopes.find(e => e.id === id)
   const nomeCartao = (id: string | null) => (id ? cartoes.find(c => c.id === id)?.nome : null)
   const vis = lista.filter(l => (lixeira ? !!l.apagado_em : !l.apagado_em))
   const rot = (d: string) => (d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : `${diaSemana(d).replace(/^./, c => c.toUpperCase())}, ${dataCurta(d)}`)
@@ -70,7 +72,7 @@ export function Lancamentos() {
           <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Trash2 size={18} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
         </div>
       </div>
-      {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis pra corrigir ou apagar. O que for apagado fica na lixeira.</p>}
+      {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis pra corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
       {lixeira && <p className="todo"><Trash2 size={20} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
       <section className="card">
         {falha && <p className="aviso-erro" role="alert">Não deu pra buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
@@ -84,20 +86,24 @@ export function Lancamentos() {
             <div key={d}>
               <h3 className="dayh">{rot(d)} · {reais(centavos(doDia.reduce((s, l) => s + l.valor, 0)))}</h3>
               <ul className="list">
-                {doDia.map(l => (
-                  <li key={l.id} className="li">
+                {doDia.map(l => {
+                  // E2: o casal lê o gasto do outro com o nome dele, sem lápis nem lixeira
+                  const mexe = mexeNoLancamento(l, envDe(l.envelope_id), familia), dono = rotuloDono(envDe(l.envelope_id), familia)
+                  return (
+                  <li key={l.id} className="li" {...(dono ? { 'data-do-outro': (envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família' } : {})}>
                     <span className="tile">{nomeEnv(l.envelope_id).charAt(0)}</span>
-                    <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{nomeEnv(l.envelope_id)}{resumo?.envelopes.find(e => e.id === l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {nomeCartao(l.cartao_id)}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
+                    <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id)}{resumo?.envelopes.find(e => e.id === l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {nomeCartao(l.cartao_id)}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
-                      {l.parcela ? null : lixeira
+                      {l.parcela || !mexe ? null : lixeira
                         ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={`Trazer de volta ${l.descricao || 'gasto'} de ${reais(l.valor)}`} title="Trazer de volta"><Undo2 size={20} /></button>
                         // B14: só o lápis na linha; a lixeira fica dentro do Corrigir (sem o risco de apagar por engano)
                         : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={`Corrigir ou apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`} title="Corrigir"><Pencil size={19} /></button>
                         : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={`Apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`}><Trash2 size={20} /></button>}
                     </span>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             </div>
           )
@@ -112,3 +118,4 @@ export function Lancamentos() {
     </div>
   )
 }
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)

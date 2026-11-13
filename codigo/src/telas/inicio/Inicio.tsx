@@ -4,12 +4,13 @@ import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { Din, Vazio } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
-import { EnvelopeCard, fraseEstouro, numeroEnvelope } from '../../componentes/EnvelopeCard'
+import { EnvelopeCard, comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem, tetoDoMes } from '../../componentes/EnvelopeCard'
+import { escreveNo, rotuloDono } from '../../app/dono'
 import { RitmoMes } from '../../componentes/RitmoMes'
 import { PrecisaDeVoce } from '../escritorio/Escritorio'
 import { CartaoGuardado } from '../guardado/Guardado'
 import type { Envelope, Lancamento, ResumoHoje } from '../../api/tipos'
-import { centavos, dataCurta, fimDoMes, hojeRecife, mesAnterior, mesLongo, plural, reais, saudacao } from '../../lib/formato'
+import { centavos, dataCurta, fimDoMes, hojeRecife, mesAnterior, mesLongo, plural, reais, saudacao, somaDias } from '../../lib/formato'
 
 /** Início: 1º o número de hoje (o seu, quando você tem limite próprio); depois o Guardado em 1 cartão, o que precisa de você e quanto cada um pode gastar. */
 export function Inicio() {
@@ -37,6 +38,8 @@ export function Inicio() {
   // R5: quem tem limite próprio vê o número DELE em cima; a Casa vira uma linha menor
   const meu = resumo.envelopes.find(e => e.id === familia?.envelopeId && !e.casa)
   const temCasa = resumo.envelopes.some(e => e.casa)
+  // E2: o casal vê o limite de cada um, com o nome; o seu vem 1º e o do outro sem botão de mexer
+  const temOutros = resumo.envelopes.some(e => !escreveNo(e, familia))
   const casaHoje = centavos(resumo.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje || 0), 0))
   const n = meu ? numeroEnvelope(meu, resumo.dias_restantes) : null
   // L2: tocar no número grande diz por que ele mudou desde ontem
@@ -52,10 +55,13 @@ export function Inicio() {
             : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque pra ver o que mexeu no número de hoje"><Din v={meu.hoje ?? n.valor} tam="hero" /></button>
             : <Din v={meu.hoje ?? n.valor} tam="hero" />}</div>
           {n.estado === 'devendo' && <p className="apoio"><b>fica devendo</b> neste mês</p>}
+          {/* E3 (conserto 5): depois de gastar, o número do dia diz quanto já saiu e quanto ainda pode */}
+          {n.estado !== 'devendo' && (meu.gasto_hoje || 0) > 0 && <p className="apoio hoje-saiu">Hoje já saiu <b>{reais(meu.gasto_hoje || 0)}</b>. Ainda pode hoje <b>{reais(meu.hoje ?? n.valor)}</b>.</p>}
           <Virada e={meu} />
+          {n.estado !== 'devendo' && <ViradaAntes e={meu} />}
           {fraseEstouro(meu, n) && <p className="todo warn frase-estouro">{fraseEstouro(meu, n)}</p>}
           {n.estado !== 'devendo' && <RitmoMes e={meu} />}
-          {n.estado !== 'devendo' && <p className="apoio">Do seu combinado de <b>{reais(meu.limite_base ?? meu.limite_mes)}</b>, sobram <b>{reais(Math.max(0, meu.livre))}</b> até {dataCurta(fimDoMes(hoje))}.</p>}
+          {n.estado !== 'devendo' && <p className="apoio">{meu.livre < 0 ? <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, passou <b>{reais(-meu.livre)}</b>.</> : <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, sobram <b>{reais(meu.livre)}</b> até {dataCurta(fimDoMes(hoje))}.</>}</p>}
           {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null}</p>}
           <div className="row-btns">
             <Qm texto titulo={n.estado === 'devendo' ? 'Seu mês' : 'Hoje você pode gastar'} linhas={n.linhas} nota={`A mesma conta do banco da família.${meu.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`} />
@@ -80,7 +86,7 @@ export function Inicio() {
       <PrecisaDeVoce />
 
       <section aria-labelledby="hEnv" className="view">
-        <h2 id="hEnv" className="sec-t">{meu ? (temCasa ? 'O seu e o da Casa' : 'O seu') : 'Quanto cada um pode gastar'}</h2>
+        <h2 id="hEnv" className="sec-t">{meu && !temOutros ? (temCasa ? 'O seu e o da Casa' : 'O seu') : 'Quanto cada um pode gastar'}</h2>
         <div className="envs">
           {resumo.envelopes.map(e => <EnvelopeCard key={e.id} e={e} diasRestantes={resumo.dias_restantes} meu={e.id === meu?.id} />)}
         </div>
@@ -93,7 +99,7 @@ export function Inicio() {
             {ult.map(l => (
               <li key={l.id} className="li">
                 <span className="tile">{(nomeEnv(l.envelope_id) || '?').charAt(0)}</span>
-                <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{nomeEnv(l.envelope_id)}{env(l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''} · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
+                <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{nomeEnv(l.envelope_id)}{rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : ''}{env(l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''} · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
                 <span className="v"><Din v={l.valor} /></span>
               </li>
             ))}
@@ -113,27 +119,49 @@ function Virada({ e }: { e: Envelope }) {
   const ant = e.mes_anterior
   if (Number(hoje.slice(8)) > 3 || !ant) return null
   const falta = e.falta_mes_anterior || 0, parc = e.parcelas_mes || 0
-  const comeca = centavos((e.limite_base ?? e.limite_mes) - falta - parc)
   const mesAnt = mesLongo(ant.mes + '-01'), esteMes = mesLongo(hoje)
-  const partes = [falta ? `${reais(falta)} de ${mesAnt}` : '', parc ? `${reais(parc)} de parcela` : ''].filter(Boolean)
+  // E3 (conserto 2): a mesma conta e a mesma frase do dia 30 (comecoDoMes)
+  const c = comecoDoMes(e.limite_base ?? e.limite_mes, falta, parc, mesAnt)
   return (
     <p className={'todo virada ' + (falta ? 'warn' : 'ok')}><span>
-      {cap(mesAnt)}: {reais(ant.gasto)} de {reais(ant.limite)}{falta ? `, passou ${reais(falta)}` : ', dentro'}. {cap(esteMes)} começa com <b>{reais(comeca)}</b>{partes.length ? ` (${partes.join(' e ')})` : ''}.
+      {cap(mesAnt)}: {reais(ant.gasto)} de {reais(ant.limite)}{falta ? `, passou ${reais(falta)}` : ', dentro'}. {cap(esteMes)} começa com <b>{reais(c.valor)}</b>{c.partes}.
     </span></p>
   )
 }
 
-/** C16: "Juntos, se continuar assim: fecham o mês com R$ 870" e cada um "R$ X de R$ Y", sem itens. */
+/** E3 (conserto 2): nos 2 últimos dias do mês, o aviso de como o mês que vem começa (com a parcela que já cai nele). */
+function ViradaAntes({ e }: { e: Envelope }) {
+  const hoje = hojeRecife()
+  const parc = e.parcelas_mes_que_vem || 0
+  if (fimDoMes(hoje) > somaDias(hoje, 1) || !parc) return null
+  const prox = primeiroDoMesQueVem()
+  const c = comecoDoMes(e.limite_base ?? e.limite_mes, 0, parc, mesLongo(hoje))
+  return <p className="todo virada ok"><span>{cap(mesLongo(prox))} começa com <b>{reais(c.valor)}</b>{c.partes}.</span></p>
+}
+
+/**
+ * C16 + E3 (conserto 3): o placar do casal, visto pelos 2, com cada um pelo nome e o valor. Quem passa aparece em âmbar
+ * ("Ana: passou R$ 717, sai de dezembro"). "Juntos, sobram" só quando os 2 fecham dentro: antes a caixa ficava verde com alguém estourado.
+ */
 function Placar({ r }: { r: ResumoHoje }) {
   const p = r.placar_casal
   if (!p || p.length < 2 || Number(hojeRecife().slice(8)) < 3) return null
+  const passa = (x: { fecha: number; limite: number }) => x.fecha > x.limite + 0.005
+  const passam = p.filter(passa)
   const sobra = centavos(p.reduce((s, x) => s + x.limite - x.fecha, 0))
+  const prox = mesLongo(primeiroDoMesQueVem())
+  const linha = (x: (typeof p)[number]) => {
+    const nome = `${x.nome}${x.eu ? ' (você)' : ''}`
+    if (!passa(x)) return `${nome}: fecha com ${reais(x.fecha)} de ${reais(x.limite)}`
+    const ja = (x.gasto ?? 0) > x.limite + 0.005
+    return `${nome}: ${ja ? `passou ${reais(centavos((x.gasto ?? 0) - x.limite))}` : `vai passar ${reais(centavos(x.fecha - x.limite))}`}, sai de ${prox}`
+  }
   return (
-    <section className={'card placar ' + (sobra >= 0 ? 'ok' : 'warn')} aria-labelledby="hPlacar">
+    <section className={'card placar ' + (passam.length ? 'warn' : 'ok')} aria-labelledby="hPlacar">
       <h2 id="hPlacar" style={{ fontSize: 16 }}>O casal, se continuar assim</h2>
-      <p>{sobra >= 0 ? <>Juntos, fecham o mês com <b>{reais(sobra)}</b> de sobra.</> : <>Juntos, passam <b>{reais(-sobra)}</b> do combinado no fim do mês.</>}</p>
-      <p className="pes">{p.map(x => <span key={x.nome}>{x.eu ? 'Você' : x.nome}: {reais(x.fecha)} de {reais(x.limite)}</span>)}</p>
-      <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês, sem nenhum gasto de ninguém.</p>
+      <p>{passam.length ? <>{passam.length === p.length ? 'Os 2 passam do combinado neste mês.' : `${passam[0].eu ? 'Você passa' : `${passam[0].nome} passa`} do combinado neste mês.`} O que passa sai de {prox}.</> : <>Juntos, sobram <b>{reais(sobra)}</b> no fim do mês.</>}</p>
+      <p className="pes">{p.map(x => <span key={x.nome} className={passa(x) ? 'placar-passa' : ''}>{linha(x)}</span>)}</p>
+      <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês. Os gastos de cada um estão em Lançamentos, com o nome de quem gastou.</p>
     </section>
   )
 }

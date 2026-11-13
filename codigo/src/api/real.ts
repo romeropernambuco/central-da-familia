@@ -41,9 +41,9 @@ export const apiReal: Api = {
     const u = data.session?.user
     if (!u) return null
     const buscar = async (): Promise<FamiliaMinha[]> => {
-      const { data: membros, error } = await sb().from('membros').select('familia_id, papel, nome, envelope_id, familias(nome)').eq('user_id', u.id).eq('ativo', true).order('criado_em')
+      const { data: membros, error } = await sb().from('membros').select('id, familia_id, papel, nome, envelope_id, familias(nome)').eq('user_id', u.id).eq('ativo', true).order('criado_em')
       if (error) erro(error)
-      return (membros || []).map((m: any) => ({ id: m.familia_id, nome: m.familias?.nome || 'Família', papel: m.papel, membroNome: m.nome, envelopeId: m.envelope_id }))
+      return (membros || []).map((m: any) => ({ id: m.familia_id, nome: m.familias?.nome || 'Família', papel: m.papel, membroNome: m.nome, envelopeId: m.envelope_id, membroId: m.id ? String(m.id) : null }))
     }
     let familias = await buscar()
     const lembra = (fs: FamiliaMinha[]) => { papeis.clear(); for (const f of fs) papeis.set(f.id, f.papel) }
@@ -121,10 +121,12 @@ export const apiReal: Api = {
     const [a, m] = mes.split('-').map(Number)
     const ini = `${mes}-01`, fim = m === 12 ? `${a + 1}-01-01` : `${a}-${String(m + 1).padStart(2, '0')}-01`
     const out: Lancamento[] = []
+    // E2: o casal lê a família toda; `meu` = quem olha lançou (o banco só deixa mexer no que a pessoa lançou, f_02)
+    const eu = (await sb().auth.getSession()).data.session?.user?.id
     for (let p = 0; p < 10; p++) {
-      const { data, error } = await sb().from('lancamentos').select('id, envelope_id, cartao_id, valor, data, descricao, apagado_em, criado_em').eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
+      const { data, error } = await sb().from('lancamentos').select('id, envelope_id, cartao_id, valor, data, descricao, apagado_em, criado_em, autor').eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
       if (error) erro(error)
-      out.push(...(data || []).map(normalizaLancamento))
+      out.push(...(data || []).map((l: any) => ({ ...normalizaLancamento(l), ...(eu && l.autor ? { meu: l.autor === eu } : {}) })))
       if ((data || []).length < 1000) break
     }
     return out
@@ -199,7 +201,7 @@ export const apiReal: Api = {
 
   // ---------- CONTRATO2.md, seção A: Guardado (só o casal; o banco recusa os outros) ----------
   async guardadoHoje(familia) { return normalizaGuardado(await rpc('guardado_hoje', { familia })) },
-  async guardadoCriar(familia, a) { await rpc('guardado_criar', { familia, nome: a.nome, banco: a.banco, tipo: a.tipo, pct_cdi: a.pct_cdi, valor_inicial: a.valor_inicial, data: a.data, vence_em: a.vence_em || null, chave: crypto.randomUUID(), ...(a.titular !== undefined ? { titular: a.titular } : {}) }) },
+  async guardadoCriar(familia, a) { await rpc('guardado_criar', { familia, nome: a.nome, banco: a.banco, tipo: a.tipo, pct_cdi: a.pct_cdi, valor_inicial: a.valor_inicial, data: a.data, vence_em: a.vence_em || null, chave: crypto.randomUUID(), ...(a.do_casal ? { do_casal: true } : a.titular ? { titular: a.titular } : {}) }) },
   async guardadoMovimentar(aplicacao, tipo, valor, data, chave) { await rpc('guardado_movimentar', { aplicacao, tipo, valor, data, chave }) },
   async guardadoEncerrar(aplicacao) { await rpc('guardado_encerrar', { aplicacao }) },
   async guardadoCustoDoGasto(familia, valor) { return normalizaCusto(await rpc('guardado_custo_do_gasto', { familia, valor })) },
@@ -218,7 +220,7 @@ export const apiReal: Api = {
   async membros(familia) {
     const { data, error } = await sb().from('membros').select('id, nome, papel').eq('familia_id', familia).eq('ativo', true).in('papel', ['casal', 'pessoa']).order('criado_em')
     if (error) erro(error)
-    return (data || []).map((m: any) => ({ id: String(m.id), nome: String(m.nome) }))
+    return (data || []).map((m: any) => ({ id: String(m.id), nome: String(m.nome), ...(m.papel ? { papel: m.papel as Papel } : {}) }))
   },
   async cartaoSalvar(familia, c) {
     // com `cartao` o banco troca TODOS os campos: a ficha sempre manda o cadastro inteiro. `titular` é o id do membro da família.
@@ -292,5 +294,6 @@ export const apiReal: Api = {
     ] as Numero[]
   },
   async exportarFamilia(familia) { return rpc('exportar_familia', { familia }) },
+  async exportarMeu(familia) { return rpc('exportar_meu', { familia }) },
   async apagarFamilia(familia, confirmacao) { await rpc('apagar_familia', { familia, confirmacao }) },
 }

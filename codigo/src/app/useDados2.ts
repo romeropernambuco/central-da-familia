@@ -46,8 +46,8 @@ export function useEscritorio() {
   const { api, familia, recarregar, tentar, toast } = useApp()
   const equipe = familia?.papel === 'equipe'
   // segurança dupla: mesmo que o banco mande, valor e entregas (que têm R$) não ficam na memória do aparelho da equipe
-  // rodada 2 (regras de silêncio): na tela, no máximo 3 coisas por vez
-  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_de_voce: v.precisa_de_voce.slice(0, 3) }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
+  // rodada 2 (regras de silêncio): na tela, no máximo 3 coisas por vez. E3 (conserto 9): o total continua contado (precisa_total)
+  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_total: v.precisa_de_voce.length, precisa_de_voce: v.precisa_de_voce.slice(0, 3) }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
   const atualizar = r.atualizar
   const responder = useCallback(async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
     if (!familia) return false

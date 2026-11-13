@@ -86,7 +86,9 @@ function silva(hoje: string) {
   const [ta, tm] = MES_TESTE.split('-').map(Number)
   // só no mês logo depois do mês do teste (dezembro): é ali que os testadores conferem a virada
   const depoisDoTeste = hoje.slice(0, 7) === `${tm === 12 ? ta + 1 : ta}-${String(tm === 12 ? 1 : tm + 1).padStart(2, '0')}`
-  if (depoisDoTeste) mesDeExemplo(ta, tm, ultimoDia(ta, tm) + 1)
+  // E3 (conserto 2): o mês lembrado é igual ao que o dia 30 mostrava (dias 1 a 29 e o Café do último dia), pra o dia 30 e o dia 1
+  // falarem o mesmo número. Antes o dia 30 ganhava os R$ 90 do dia a dia só depois de virar o mês (R$ 717 no dia 30 e R$ 795 no dia 1).
+  if (depoisDoTeste) { const ult = ultimoDia(ta, tm), md = `${ta}-${String(tm).padStart(2, '0')}`; mesDeExemplo(ta, tm, ult); add('env-ana', 12, `${md}-${ult}`, 'Café') }
   else {
     // mês passado (cartão: entra nas faturas de agora)
     add('env-bruno', 620, somaDias(ini, -10), 'Pneu do carro', 'car-itau')
@@ -133,10 +135,17 @@ function souza(hoje: string) {
   let n = 0
   const add = (env: string, valor: number, data: string, descricao: string, cartao: string | null = null, extra: Partial<LancTeste> = {}) =>
     lanc.push({ id: 's' + ++n, envelope_id: env, cartao_id: cartao, valor, data, descricao, apagado_em: null, criado_em: data + 'T12:00:00-03:00', autor: 'm-claudia', ...extra })
-  for (let i = 1; i < d; i++) {
-    if (CLAUDIA[i - 1]) add('env-claudia', CLAUDIA[i - 1], dia(i), DESC_C[i % DESC_C.length], i % 5 === 0 ? 'car-nu' : null)
-    if (new Date(Date.UTC(a, m - 1, i)).getUTCDay() === 6) add('env-feira', 128.5, dia(i), 'Feira da semana')
+  const mesC = (aa: number, mm: number, ate: number) => {
+    const d2 = (i: number) => `${aa}-${String(mm).padStart(2, '0')}-${String(i).padStart(2, '0')}`
+    for (let i = 1; i < ate; i++) {
+      if (CLAUDIA[i - 1]) add('env-claudia', CLAUDIA[i - 1], d2(i), DESC_C[i % DESC_C.length], i % 5 === 0 ? 'car-nu' : null)
+      if (new Date(Date.UTC(aa, mm - 1, i)).getUTCDay() === 6) add('env-feira', 128.5, d2(i), 'Feira da semana')
+    }
   }
+  // E3 (conserto 2): no mês seguinte ao do teste, a Souza também lembra o mês do teste (antes o dia 1 não descontava nada)
+  const [ta, tm] = MES_TESTE.split('-').map(Number)
+  if (`${a}-${m2}` === `${tm === 12 ? ta + 1 : ta}-${String(tm === 12 ? 1 : tm + 1).padStart(2, '0')}`) { const ult = ultimoDia(ta, tm); mesC(ta, tm, ult); add('env-claudia', 8, `${MES_TESTE}-${ult}`, 'Café') }
+  mesC(a, m, d)
   if (d > 5) add('env-casa', 160, dia(5), 'Conta de luz')
   if (d > 10) add('env-casa', 95, dia(10), 'Internet')
   add('env-claudia', 8, hoje, 'Café')

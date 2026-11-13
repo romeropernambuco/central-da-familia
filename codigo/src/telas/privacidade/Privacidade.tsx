@@ -13,9 +13,13 @@ export function Privacidade() {
   const casal = familia?.papel === 'casal'
   const [json, setJson] = useState<string | null>(null)
 
+  // E2 (conserto 1): o casal baixa a família inteira, com o nome do dono em cada linha; a filha baixa só o dela
+  const soOMeu = !casal
   async function baixar() {
     if (!familia) return
-    const dados = await api.exportarFamilia(familia.id)
+    if (soOMeu && !api.exportarMeu) { toast('Baixar só os seus dados ainda está sendo ligado no banco da família.'); return }
+    let dados: unknown
+    try { dados = soOMeu ? await api.exportarMeu!(familia.id) : await api.exportarFamilia(familia.id) } catch (e) { toast((e as Error).message); return }
     // modo exemplo: o visualizador do demo não deixa baixar arquivo, então mostra o conteúdo na tela pra copiar
     if (api.modo === 'exemplo') { setJson(JSON.stringify(dados, null, 2)); return }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
@@ -24,7 +28,7 @@ export function Privacidade() {
     a.download = `central-da-familia-${hojeRecife()}.json`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 2000)
-    toast('Arquivo com todos os dados baixado.')
+    toast(soOMeu ? 'Arquivo com os seus dados baixado.' : 'Arquivo com os dados da família baixado, com o nome do dono em cada linha.')
   }
 
   return (
@@ -32,30 +36,29 @@ export function Privacidade() {
       <section className="card termo" aria-labelledby="tT">
         <h2 id="tT"><ShieldCheck size={24} aria-hidden="true" />Termo de uso, em 1 tela</h2>
         <h3>O que guardamos</h3>
-        <p>Nome da família, quem participa, limites, cartões (só nome e dias), lançamentos e o que vocês anotam da casa. Não guardamos senha de banco nem número de cartão.</p>
+        <p>Nome da família, quem participa, limites, cartões (só nome e dias), lançamentos e o que a família anota da casa. Não guardamos senha de banco nem número de cartão.</p>
         <h3>Quem vê</h3>
-        <p>Só a sua família. Cada um vê o seu e a Casa; juntos, o placar: cada um do casal vê o próprio limite, os próprios cartões e a própria renda, e os 2 veem a Casa e a conta do fim do mês do casal, sem nenhum gasto do outro. Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. A equipe da casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
+        <p>Só a sua família. Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2. Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. A equipe da casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
         <h3>Inteligência artificial</h3>
         <p>A IA só lê a foto do cupom quando você manda e mostra pra você conferir antes de salvar. A conta de dinheiro é sempre do banco, nunca da IA. Cupom pode ter CPF: o app avisa antes de enviar.</p>
         <h3>Seus direitos (LGPD)</h3>
         <p>Você pode baixar tudo a qualquer hora e apagar a família inteira. Apagar é de vez e não tem volta.</p>
       </section>
-      {!casal && <div className="col"><section className="card"><p className="sub">Baixar e apagar os dados da família é com o casal.</p></section></div>}
-      {casal && <div className="col">
+      <div className="col">
         <section className="card" aria-labelledby="bT">
-          <h2 id="bT">Baixar meus dados</h2>
-          <p className="sub" style={{ margin: '8px 0 12px' }}>Um arquivo com tudo da família, pra guardar ou levar pra outro lugar.</p>
-          <button className="btn line" type="button" onClick={baixar} disabled={!casal}><Download size={20} />Baixar os dados</button>
-          {!casal && <p className="sub" style={{ marginTop: 8 }}>Só o casal pode baixar.</p>}
+          <h2 id="bT">{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</h2>
+          <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com tudo da família, com o nome do dono em cada linha, pra guardar ou levar pra outro lugar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
+          <button className="btn line" type="button" onClick={baixar}><Download size={20} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
         </section>
-        <section className="card" aria-labelledby="aT">
+        {!casal && <section className="card"><p className="sub">Quem pode apagar tudo é o casal.</p></section>}
+        {casal && <section className="card" aria-labelledby="aT">
           <h2 id="aT">Apagar a família</h2>
           <p className="sub" style={{ margin: '8px 0 12px' }}>Apaga lançamentos, cartões, limites, equipe e convites. Não tem como desfazer.</p>
           <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Trash2 size={20} />Apagar a família</button>
-        </section>
-      </div>}
+        </section>}
+      </div>
       {json != null && (
-        <Sheet titulo="Seus dados" fechar={() => setJson(null)}>
+        <Sheet titulo={casal ? 'Dados da família' : 'Seus dados'} fechar={() => setJson(null)}>
           <p className="sub">No exemplo o arquivo não é baixado: o conteúdo aparece aqui. Toque em Copiar e cole onde quiser guardar.</p>
           <textarea className="inp" readOnly value={json} aria-label="Dados da família em texto" style={{ minHeight: 260, fontFamily: 'ui-monospace, monospace', fontSize: 12, whiteSpace: 'pre', overflow: 'auto' }} onFocus={e => e.currentTarget.select()} />
           <button className="btn primary full" type="button" onClick={async () => {

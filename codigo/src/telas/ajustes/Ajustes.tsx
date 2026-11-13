@@ -37,7 +37,9 @@ export function Ajustes() {
           {/* A2: a pessoa da família (filha) não convida ninguém */}
           {!casal && <p className="sub">Quem convida e cuida da família é o casal. Aqui você muda a aparência e vê a privacidade.</p>}
           {casal && <>
-          <label className="campo"><span>{casalCompleto ? 'Convidar alguém da família (filho, avó, quem mora com vocês)' : 'Convidar a 2ª pessoa do casal'}</span><input className="inp" placeholder="Nome" value={nome2} onChange={e => setNome2(e.target.value)} /></label>
+          {/* E3 (conserto 10): o campo ganha o rótulo "Nome" (antes só tinha a dica dentro do campo, que some ao digitar) */}
+          <p className="lbl">{casalCompleto ? 'Convidar alguém da família (filho, avó, quem mora com vocês)' : 'Convidar a 2ª pessoa do casal'}</p>
+          <label className="campo" style={{ marginTop: 8 }}><span>Nome</span><input className="inp" placeholder="Ex.: Helena" value={nome2} onChange={e => setNome2(e.target.value)} /></label>
           <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><input className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
             {convidado && convidado.email === email2.trim().toLowerCase()

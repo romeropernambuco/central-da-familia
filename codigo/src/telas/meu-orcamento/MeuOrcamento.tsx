@@ -3,9 +3,10 @@ import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck,
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
-import { CobrirEstouro, fraseEstouro, numeroEnvelope } from '../../componentes/EnvelopeCard'
+import { CobrirEstouro, fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { RitmoMes } from '../../componentes/RitmoMes'
 import { useConfig } from '../../app/useConfig'
+import { donoDo, escreveNo } from '../../app/dono'
 import { cofrinhoDoMes } from '../../lib/plano'
 import type { Lancamento } from '../../api/tipos'
 import { centavos, dataCurta, diasNoMes, diasRestantes, fimDoMes, hojeRecife, plural, reais, somaDias, textoParaValor } from '../../lib/formato'
@@ -43,10 +44,12 @@ export function MeuOrcamento() {
   if (!env) return <div className="card"><p className="sub">Ainda não tem limite de pessoa. Crie em Planejamento.</p></div>
 
   const n = numeroEnvelope(env, resumo.dias_restantes)
+  // E2 (regra nova, 13/11): o casal abre o orçamento do outro pra ler, com o nome dele, sem nenhum botão de mexer
+  const meu = escreveNo(env, familia), dono = donoDo(env) || 'outra pessoa'
   const gastoHoje = dados.porDia[hoje] || 0
   const ontem = somaDias(hoje, -1)
   // R9: no lugar de "N dias em branco", 1 pergunta sobre ontem
-  const perguntarOntem = ontem.startsWith(mes) && !dados.anot.has(ontem)
+  const perguntarOntem = meu && ontem.startsWith(mes) && !dados.anot.has(ontem)
   const ult3 = [1, 2, 3].map(i => somaDias(hoje, -i)).filter(d => d.startsWith(mes))
   const branco = ult3.filter(d => !dados.anot.has(d)).length
   const dentro = dados.fechados.filter(d => dados.anot.has(d) && (dados.porDia[d] || 0) <= dados.base).length
@@ -63,7 +66,7 @@ export function MeuOrcamento() {
     <div className="view">
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
-          {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{e.nome}</button>)}
+          {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{e.nome}{escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}</button>)}
         </div>
       )}
       <nav className="segbar" aria-label="Ir para">
@@ -76,14 +79,15 @@ export function MeuOrcamento() {
 
       <div className="tela-larga">
         <div className="col">
-          <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }}>
+          <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': dono })}>
             <h2 id="oHojeT">{env.nome}, hoje</h2>
+            {!meu && <p className="sub dono-linha">Orçamento de {dono}: aqui é só pra ver. Quem lança e mexe é {dono}.</p>}
             <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o livre do mês ÷ os dias que faltam)'}</p>
             <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={`${env.nome}: ${n.rotulo}`} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{frase}</p>}
-            {n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
-            <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(env.limite_base ?? env.limite_mes)}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
-            {n.estado !== 'devendo' && <RitmoMes e={env} risco={env.regra === 'diario'} />}
+            {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
+            <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
+            {n.estado !== 'devendo' && <RitmoMes e={env} risco={env.regra === 'diario'} quem={meu ? undefined : dono} />}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}><CalendarCheck size={20} aria-hidden="true" />
                 <span><b>Ontem você não gastou nada?</b> É só pra conta ficar certa.
@@ -94,27 +98,28 @@ export function MeuOrcamento() {
                 </span>
               </div>
             )}
-            <div className="row-btns" style={{ marginTop: 14 }}>
+            {meu && <div className="row-btns" style={{ marginTop: 14 }}>
               <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Lançar em {env.nome}</button>
               {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
               <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá pra comprar?</button>
-            </div>
+            </div>}
           </section>
 
           <section className="card" id="oCofrinho" aria-labelledby="oCofT" style={{ scrollMarginTop: 72 }}>
             <div className="card-h"><h2 id="oCofT"><PiggyBank size={24} aria-hidden="true" />Cofrinho</h2></div>
             <div className="numrow"><Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
               <Qm titulo="Cofrinho" linhas={[
-                { linha: 'Valor do dia de base (combinado do mês dividido pelos dias do mês)', valor: dados.base },
+                { linha: 'Dia de base (combinado do mês dividido pelos dias do mês)', valor: dados.base },
                 { linha: `Nos ${plural(dados.fechados.filter(d => dados.anot.has(d)).length, 'dia anotado', 'dias anotados')} até ontem: o que sobrou menos o que passou`, valor: dados.cof },
-              ]} nota="Dia que passou do valor come a sobra dos outros dias. Dia sem anotação não conta. Hoje só entra amanhã." />
+              ]} nota="A mesma base do número de hoje: o que sobra do dia de base fica no cofrinho e volta dividido pelos dias que faltam. Dia que passou do valor come a sobra dos outros dias. Dia sem anotação não conta. Hoje só entra amanhã." />
             </div>
             <p className="sub">{env.livre < 0 ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
-              : dados.cof <= 0 ? `Ainda vazio. Ele enche nos dias em que você gasta menos que ${reais(dados.base)}. Livre no mês: ${reais(Math.max(0, env.livre))}.`
-              : 'Sobra do seu combinado até ontem. No fim do mês, o que ficar aqui é o que você não gastou.'}</p>
+              : dados.cof <= 0 ? `Ainda vazio. Ele enche nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que ${reais(dados.base)}, o dia de base. Livre no mês: ${reais(Math.max(0, env.livre))}.`
+              // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o dia de base mais o cofrinho dividido pelos dias que faltam
+              : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do dia de base de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`}</p>
             {(() => {
               const m = metas?.[env.id]
-              if (!m) return <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button>
+              if (!m) return meu ? <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button> : null
               const tem = env.livre < 0 ? 0 : dados.cof, falta = centavos(Math.max(0, m.valor - tem))
               // no ritmo do valor de base, quando dá pra comprar: o livre do mês até o fim do mês cobre a meta?
               const quando = falta <= 0 ? 'já dá pra comprar' : env.livre >= m.valor ? `compra em ${dataCurta(fimDoMes(hoje))} se gastar até ${reais(centavos((env.livre - m.valor) / diasRestantes(hoje)))} por dia` : 'não cabe no livre deste mês'
@@ -122,7 +127,7 @@ export function MeuOrcamento() {
                 <div className="meta-cofre">
                   <p className="corpo"><b>Quero juntar pra: {m.nome} {reais(m.valor)}</b> · faltam {reais(falta)} · {quando}</p>
                   <div className="meter ok" aria-hidden="true"><i style={{ width: Math.min(100, (tem / m.valor) * 100) + '%' }} /></div>
-                  <button className="btn sm ghost" type="button" style={{ justifySelf: 'start' }} onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>
+                  {meu && <button className="btn sm ghost" type="button" style={{ justifySelf: 'start' }} onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>}
                 </div>
               )
             })()}

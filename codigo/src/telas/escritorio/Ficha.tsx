@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Check, ChevronRight, Pencil, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
+import { cartaoMeu } from '../../app/dono'
 import { perguntaDaLinha, perguntasVistas } from '../../app/useDados2'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Contagem, FuncIco, PerguntaCard, type Responder } from '../../componentes/Pergunta'
@@ -16,8 +17,8 @@ import { IcoEstado, ROTULO_ESTADO } from './Cena3D'
 
 /** O que cada funcionário faz e quando cobra: 3 linhas, sempre na 1ª pessoa. */
 export const FAZ: Record<string, [string, string, string]> = {
-  contador: ['Confiro todo dia se o mês fecha dentro do que vocês combinaram.', 'Depois das 20h, se não tiver nenhum gasto anotado no dia, eu pergunto.', 'No dia 01 eu fecho o mês e digo quanto sobrou.'],
-  colchao: ['Cuido da reserva: o dinheiro que vocês combinaram nunca gastar.', 'Se o que está livre no mês ficar menor que a reserva, eu aviso na hora.', 'Pergunto de onde o dinheiro volta e cobro no dia que você marcar.'],
+  contador: ['Confiro todo dia se o mês fecha dentro do que a família combinou.', 'Depois das 20h, se não tiver nenhum gasto anotado no dia, eu pergunto.', 'No dia 01 eu fecho o mês e digo quanto sobrou.'],
+  colchao: ['Cuido da reserva: o dinheiro que a família combinou nunca gastar.', 'Se o que está livre no mês ficar menor que a reserva, eu aviso na hora.', 'Pergunto de onde o dinheiro volta e cobro no dia que você marcar.'],
   cartao: ['Somo as compras de cada cartão e digo quanto vem na fatura.', 'Começo a cobrar 3 dias antes do vencimento e paro quando você diz que pagou.', 'Aviso 1 mês antes da anuidade e quando o valor do banco não bate com a minha soma.'],
   folha: ['Cuido de quem trabalha na casa: salário, férias e 13º.', 'Do dia 01 ao 07 eu lembro a guia mensal do governo.', 'No dia do salário de cada pessoa eu pergunto se foi pago.'],
   comprador: ['Cuido dos prestadores (jardineiro, piscineiro) e do gás.', 'Na véspera do prestador eu deixo a mensagem pronta; no dia, às 17h, pergunto se ele veio.', 'Aviso 5 dias antes de o gás acabar, pela média das últimas trocas.'],
@@ -116,7 +117,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 /* ---------- cadastro genérico: lista com "Novo" e editar em cada linha ---------- */
 interface Campo { k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
 type Form = Record<string, string>
-interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; semEditar?: boolean; extra?: (t: T) => ReactNode }
+interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?: boolean | ((t: T) => boolean); extra?: (t: T) => ReactNode }
 
 function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, salvar, novo, vazio, semEditar, extra }: PropsLista<T>) {
   const { tentar, recarregar, toast } = useApp()
@@ -159,7 +160,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
             <div className="cad-l">
               <span className="m"><b>{titulo(t)}</b><small>{sub(t)}</small></span>
               {lado && <span className="v">{lado(t)}</span>}
-              {!semEditar && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Pencil size={18} /></button>}
+              {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Pencil size={18} /></button>}
             </div>
             {extra && extra(t)}
             {aberto === chave(t) && formulario(t)}
@@ -200,6 +201,8 @@ function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
 /* Analista de Cartão: cartões (com mensalidade ou anuidade) e a fatura do mês como veio no banco */
 function CadCartao() {
   const { api, familia } = useApp()
+  // E2: o casal vê os cartões de todos, com o nome do dono; edita e informa fatura só do seu (e dos sem dono)
+  const doOutro = (c?: Cartao) => !!c && !cartaoMeu(c, familia)
   const cartoes = useBusca<Cartao[]>(f => api.cartoes(f))
   const faturas = useBusca<Fatura[]>(f => api.faturas(f, 2))
   const banco = useBusca<FaturaBanco[]>(f => api.faturasBanco(f))
@@ -208,11 +211,11 @@ function CadCartao() {
   const doBanco = (f: Fatura) => banco?.find(b => b.cartao_id === f.cartao_id && b.mes === f.mes)
   return (
     <>
-      <Lista<Cartao> nome="Cartões" novo="Novo cartão" itens={cartoes || []} chave={c => c.id} vazio={cartoes ? 'Nenhum cartão cadastrado. Toque em "Novo cartão".' : 'Buscando os cartões…'}
+      <Lista<Cartao> nome="Cartões" novo="Novo cartão" itens={cartoes || []} chave={c => c.id} semEditar={c => doOutro(c)} vazio={cartoes ? 'Nenhum cartão cadastrado. Toque em "Novo cartão".' : 'Buscando os cartões…'}
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
         sub={c => <>{c.titular ? `de ${c.titular} · ` : ''}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).map(m => [m.id, m.nome] as [string, string]), ['', 'Não dizer']] },
+          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
           { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
@@ -229,8 +232,8 @@ function CadCartao() {
           if (f.final4 && f.final4.length !== 4) return 'São só os 4 últimos números do cartão.'
           await api.cartaoSalvar(familia!.id, { id: c?.id, nome: f.nome.trim(), banco: f.banco.trim() || null, titular_id: f.titular || null, dia_fechamento: num(f.dia_fechamento), dia_vencimento: num(f.dia_vencimento), limite: val(f.limite), taxa_valor: val(f.taxa_valor), taxa_periodo: f.taxa_periodo === 'mes' ? 'mes' : 'ano', taxa_mes: num(f.taxa_mes), taxa_isenta_acima: val(f.taxa_isenta_acima), final4: f.final4 || null, ativo: f.ativo !== 'nao' })
         }} />
-      <Lista<Fatura> nome="Faturas" itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))} chave={f => f.cartao_id + f.mes} vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
-        titulo={f => `${f.cartao} · ${mesCurto(f.mes + '-01')}`}
+      <Lista<Fatura> nome="Faturas" itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))} chave={f => f.cartao_id + f.mes} semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))} vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
+        titulo={f => { const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
         sub={f => { const b = doBanco(f); const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
           return <>eu somei {reais(f.total)}{b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco'}{Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : ''} · vence {dataCurta(f.vencimento)}</> }}
         lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Check size={14} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
@@ -375,7 +378,7 @@ function CadReserva() {
   const nomeOnde = onde === 'conta' ? 'na conta comum, que não rende' : 'guardada onde rende (veja no Guardado)'
   return (
     <Lista<number> nome="A reserva" itens={[combinado]} chave={() => 'r'} vazio=""
-      titulo={() => 'Reserva combinada'} sub={() => `É o dinheiro que vocês combinaram nunca gastar. Fica ${nomeOnde}. Quando ela baixa e quando volta, eu anoto nas respostas aqui embaixo.`} lado={v => <Din v={v} />}
+      titulo={() => 'Reserva combinada'} sub={() => `É o dinheiro que a família combinou nunca gastar. Fica ${nomeOnde}. Quando ela baixa e quando volta, eu anoto nas respostas aqui embaixo.`} lado={v => <Din v={v} />}
       campos={[{ k: 'valor', rotulo: 'Valor combinado da reserva', tipo: 'valor' }, { k: 'onde', rotulo: 'Onde ela fica', tipo: 'opcao', opcoes: [['conta', 'Na conta comum'], ['guardada', 'Guardada onde rende']] }]}
       paraForm={() => ({ valor: vt(combinado), onde })}
       salvar={async f => {
@@ -390,13 +393,14 @@ interface Renda { id: string; nome: string; valor: number; dia?: number; dono?: 
 function CadContador() {
   const { familia } = useApp()
   const [todas, salvarTodas, , lidoR] = useConfig<Renda[]>('rendas', [])
-  // A3: cada um do casal vê e mexe só na renda dele; a do outro continua guardada
+  // E2 (regra nova, 13/11): o casal vê a renda de cada um, com o nome; cada um mexe só na sua (a do outro continua guardada)
   const rendas = todas.filter(r => !r.dono || r.dono === familia?.membroNome)
-  const salvarR = (v: Renda[]) => salvarTodas([...todas.filter(r => !rendas.includes(r)), ...v.map(x => ({ ...x, dono: x.dono || familia?.membroNome }))])
+  const doOutro = todas.filter(r => r.dono && r.dono !== familia?.membroNome)
+  const salvarR = (v: Renda[]) => salvarTodas([...doOutro, ...v.map(x => ({ ...x, dono: x.dono || familia?.membroNome }))])
   const [fixas, salvarF, , lidoF] = useConfig<Renda[]>('contas_fixas', [])
-  const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string) => (
-    <Lista<Renda> nome={nome} novo={novo} itens={itens} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'}
-      titulo={r => r.nome} sub={r => (r.dia ? `todo dia ${r.dia}` : 'sem dia marcado')} lado={r => <Din v={r.valor} />}
+  const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string, outros: Renda[] = []) => (
+    <Lista<Renda> nome={nome} novo={novo} itens={[...itens, ...outros]} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'} semEditar={r => outros.includes(r)}
+      titulo={r => r.nome} sub={r => `${outros.includes(r) ? `de ${r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
       campos={[{ k: 'nome', rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
       paraForm={r => ({ nome: r?.nome || '', valor: vt(r?.valor), dia: r?.dia ? String(r.dia) : '' })}
       salvar={async (f, r) => {
@@ -407,7 +411,7 @@ function CadContador() {
         if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n]))) throw new Error('Não deu pra salvar. Tente de novo.')
       }} />
   )
-  return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena')}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
+  return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena', doOutro)}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
 }
 
 /** Pergunta de quem? Casa pelo id ou pelo nome do funcionário. */

@@ -4,6 +4,7 @@ import { useApp } from '../../app/contexto'
 import { Din, Sheet, Vazio } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
+import { cartaoMeu } from '../../app/dono'
 import type { Cartao, Fatura } from '../../api/tipos'
 import { agruparFaturas, centavos, dataCurta, hojeRecife, mesCurto, reais, simularCompra, textoParaValor } from '../../lib/formato'
 
@@ -19,18 +20,20 @@ export function Cartoes() {
   const [n, setN] = useState(0)
   useEffect(() => {
     if (!familia) return
-    // rodada 2: cada um do casal vê só os cartões dele (a fatura do outro não aparece)
-    api.cartoes(familia.id).then(cs => setCartoes(cs.filter(c => !c.titular || c.titular === familia.membroNome))).catch(() => {})
+    // E2 (regra nova, 13/11): o casal vê todos os cartões da família, com o nome do dono; o seu vem 1º
+    api.cartoes(familia.id).then(cs => setCartoes([...cs].sort((a, b) => Number(!cartaoMeu(a, familia)) - Number(!cartaoMeu(b, familia))))).catch(() => {})
     api.faturas(familia.id, MESES).then(setFaturas).catch(() => {})
   }, [api, familia?.id, versao, n])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
+  // "E se eu comprar?" é com o seu cartão: o do outro só aparece pra ler
+  const meus = cartoes.filter(c => cartaoMeu(c, familia))
 
   return (
     <div className="view">
       {cartoes.length > 0 && <p className="lbl"><FuncIco id="cartao" size={24} />Analista de Cartão: acompanha as faturas, não paga nada sozinho</p>}
       <div className="row-btns">
-        <button className="btn primary" type="button" onClick={() => setSim(true)} disabled={!cartoes.length}><ShoppingBag size={20} />E se eu comprar?</button>
+        <button className="btn primary" type="button" onClick={() => setSim(true)} disabled={!meus.length}><ShoppingBag size={20} />E se eu comprar?</button>
         {casal && <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Novo cartão</button>}
       </div>
       {!cartoes.length && <div className="card"><Vazio ico={<CreditCard size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Cadastrar cartão</button> : undefined}>Nenhum cartão cadastrado. Com o dia que a fatura fecha e o dia que vence, a compra cai na fatura certa sozinha.</Vazio></div>}
@@ -39,10 +42,11 @@ export function Cartoes() {
           const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes))
           const atual = fs.find(f => f.vencimento >= hoje) || fs[0]
           const max = Math.max(1, ...fs.map(f => f.total))
+          const meu = cartaoMeu(c, familia)
           return (
-            <section className="card" key={c.id} aria-label={`Cartão ${c.nome}`}>
+            <section className="card" key={c.id} aria-label={`Cartão ${c.nome}${meu ? '' : ` de ${c.titular}`}`} {...(meu ? {} : { 'data-do-outro': c.titular || 'outra pessoa' })}>
               <div className="card-h">
-                <h2><CreditCard size={24} aria-hidden="true" />{c.nome}</h2>
+                <h2><CreditCard size={24} aria-hidden="true" />{c.nome}{!meu && c.titular ? <small className="dono"> de {c.titular}</small> : null}</h2>
                 <span className="sub">fecha dia {c.dia_fechamento} · vence dia {c.dia_vencimento}</span>
               </div>
               {atual && (
@@ -53,7 +57,7 @@ export function Cartoes() {
                       nota={`A compra conta no "pode gastar" pelo dia em que foi feita, e na fatura pelo mês em que vence. Compra feita depois do dia ${c.dia_fechamento} vai pra fatura seguinte.`} />
                   </div>
                   {/* quem pagou (CASAL): a parte da Casa que está na fatura de quem pagou */}
-                  {atual.da_casa ? <p className="todo ok" style={{ margin: '6px 0 0' }}><span>Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>. Foi você quem pagou pela Casa.</span></p> : null}
+                  {atual.da_casa ? <p className="todo ok" style={{ margin: '6px 0 0' }}><span>Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>. {meu ? 'Foi você quem pagou pela Casa.' : `Foi ${c.titular || 'quem é dono do cartão'} quem pagou pela Casa.`}</span></p> : null}
                   <p className="sub" style={{ margin: '6px 0 14px' }}>{atual.fechada ? 'Pague no app do banco. Aqui é só pra acompanhar: o app não paga nada sozinho.' : 'Ainda entra compra nesta fatura até o dia do fechamento.'}</p>
                 </>
               )}
@@ -76,7 +80,7 @@ export function Cartoes() {
       {sim && resumo && (() => {
         // R8: "E se eu comprar?" responde com o limite de quem compra, não com o da família
         const meu = resumo.envelopes.find(e => e.id === familia?.envelopeId && !e.casa)
-        return <Simulador cartoes={cartoes} faturas={faturas} livre={meu ? meu.livre : resumo.livre_mes} colchao={meu ? 0 : resumo.colchao} dono={meu?.nome} fechar={() => setSim(false)} />
+        return <Simulador cartoes={meus} faturas={faturas} livre={meu ? meu.livre : resumo.livre_mes} colchao={meu ? 0 : resumo.colchao} dono={meu?.nome} fechar={() => setSim(false)} />
       })()}
       {novo && familia && <NovoCartao fechar={() => setNovo(false)} salvar={async c => { await api.criarCartao(familia.id, c); setNovo(false); setN(x => x + 1); await recarregar(); toast(`Cartão ${c.nome} cadastrado.`) }} />}
     </div>
@@ -101,7 +105,7 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
   const cabe = depois >= colchao
   return (
     <Sheet titulo="E se eu comprar?" fechar={fechar}>
-      <p className="sub">Simulação: nada é gravado. Mostra como ficam as faturas e se a compra cabe{dono ? ' no seu combinado do mês' : ' sem mexer na reserva (o dinheiro que vocês combinaram nunca gastar)'}.</p>
+      <p className="sub">Simulação: nada é gravado. Mostra como ficam as faturas e se a compra cabe{dono ? ' no seu combinado do mês' : ' sem mexer na reserva (o dinheiro que a família combinou nunca gastar)'}.</p>
       <label className="campo"><span>Valor da compra</span><input className="inp" inputMode="decimal" placeholder="R$" value={txt} onChange={e => setTxt(e.target.value.replace(/[^\d,]/g, ''))} /></label>
       <div className="atrow"><span className="atl">Cartão</span>{cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={x.id === c?.id} onClick={() => setCid(x.id)}>{x.nome}</button>)}</div>
       <div className="atrow"><span className="atl">Parcelas</span>{[1, 2, 3, 4, 5, 6, 10, 12].map(p => <button key={p} type="button" className="pill" aria-pressed={p === parc} onClick={() => setParc(p)}>{p}x</button>)}</div>

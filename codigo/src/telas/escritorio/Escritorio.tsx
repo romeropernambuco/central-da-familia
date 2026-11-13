@@ -260,17 +260,19 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   const pessoa = familia?.papel === 'pessoa'
   if (estado === 'desligado' || !e) return null
   const fila = e.precisa_de_voce
+  // E3 (conserto 9): o título e o "1 de N" contam tudo (nota, contagem, piscineiro), não só as 3 que aparecem
+  const total = Math.max(fila.length, e.precisa_total ?? 0)
   if ((equipe || pessoa) && !fila.length) return null
   const p = fila[0]
   return (
     <section className="card precisa" aria-labelledby="pvT" data-precisa={fila.length}>
       <div className="card-h">
-        <h2 id="pvT">{equipe ? (fila.length === 1 ? '1 coisa da casa precisa de você' : `${fila.length} coisas da casa precisam de você`) : fraseDoDia(fila.length)}</h2>
+        <h2 id="pvT">{equipe ? (total === 1 ? '1 coisa da casa precisa de você' : `${total} coisas da casa precisam de você`) : fraseDoDia(total)}</h2>
         {!equipe && !pessoa && <a className="lnk" href="#/escritorio">Escritório<ChevronRight size={16} /></a>}
       </div>
       {p ? (
         <>
-          <PerguntaCard key={p.id} p={p} quem={nomeDoDono(p, e.funcionarios)} responder={responder} posicao={fila.length > 1 ? `1 de ${fila.length}` : undefined} />
+          <PerguntaCard key={p.id} p={p} quem={nomeDoDono(p, e.funcionarios)} responder={responder} posicao={total > 1 ? `1 de ${total}` : undefined} />
           {fila.length > 1 && !equipe && <p className="sub" style={{ marginTop: 10 }}>Depois desta: {(() => { const nomes = [...new Set(fila.slice(1).map(x => nomeDoDono(x, e.funcionarios)))]; return nomes.slice(0, 2).join(' e ') + (nomes.length > 2 ? ` e mais ${nomes.length - 2}` : '') })()}.</p>}
         </>
       ) : (

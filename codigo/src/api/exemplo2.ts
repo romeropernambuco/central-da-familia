@@ -81,9 +81,10 @@ let e = criar()
 export function reiniciarExemplo2() { e = criar() }
 
 /* ---------- Guardado ---------- */
-/** R3: cada um vê o que está no nome dele e o que é do casal. Sem `eu` (contas internas), vê tudo. */
-export function guardadoHojeEx(eu?: string | null): GuardadoHoje {
-  const meus = eu === undefined ? e.apps : e.apps.filter(a => !(a as any).titular || (a as any).titular === eu)
+/** R3: o que está no nome de `eu` e o do casal. E2 (regra nova, 13/11): com `lerTudo` (a tela do casal), todas, com o nome do titular.
+ * Sem `eu` (contas internas), vê tudo. */
+export function guardadoHojeEx(eu?: string | null, lerTudo = false): GuardadoHoje {
+  const meus = eu === undefined || lerTudo ? e.apps : e.apps.filter(a => !(a as any).titular || (a as any).titular === eu)
   const g = calcularGuardado(meus, hojeRecife(), CDI)
   const nome = (id: string | null | undefined) => (id === 'm-ana' ? 'Ana' : id === 'm-bruno' ? 'Bruno' : id === 'm-bia' ? 'Bia' : id === 'm-claudia' ? 'Cláudia' : null)
   for (const ap of g.aplicacoes) { const t = (meus.find(a => a.id === ap.id) as any)?.titular ?? null; ap.titular = t; ap.titular_nome = nome(t) }
@@ -92,6 +93,8 @@ export function guardadoHojeEx(eu?: string | null): GuardadoHoje {
   g.casal_total = centavos(g.aplicacoes.filter(a => !a.titular).reduce((s, a) => s + a.saldo, 0))
   return g
 }
+/** De quem é a aplicação (id do membro); null = do casal. */
+export function titularDaAplicacaoEx(id: string): string | null { return ((e.apps.find(x => x.id === id) as any)?.titular as string | null) ?? null }
 export function guardadoCriarEx(a: NovaAplicacao) {
   if (!a.nome.trim()) throw new Error('Falta dizer onde o dinheiro está guardado.')
   if (!(a.valor_inicial > 0)) throw new Error('O valor tem que ser maior que zero.')
@@ -318,7 +321,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   const onde = cfg.reserva_onde || 'conta'
   if (r.colchao > 0 && onde === 'conta' && g.aplicacoes.length) P({ id: `reserva_parada:${mes}`, funcionario: 'guardado', assunto: 'Reserva parada na conta', valor: r.colchao,
     falas: (n, l) => [
-      { vi: `a reserva de ${rs(r.colchao)} (o dinheiro que vocês combinaram nunca gastar) está na conta comum, que não rende.`, importa: `Guardada onde rende todo dia e dá pra tirar na hora, daria mais ou menos ${rs(rendePorMes(r.colchao))} por mês.`, sugiro: 'Quer que eu mostre como guardar?' },
+      { vi: `a reserva de ${rs(r.colchao)} (o dinheiro que a família combinou nunca gastar) está na conta comum, que não rende.`, importa: `Guardada onde rende todo dia e dá pra tirar na hora, daria mais ou menos ${rs(rendePorMes(r.colchao))} por mês.`, sugiro: 'Quer que eu mostre como guardar?' },
       { vi: `${l}a reserva de ${rs(r.colchao)} continua na conta comum, sem render, já faz ${dias(n)} que avisei.`, importa: `São mais ou menos ${rs(rendePorMes(r.colchao))} por mês que deixam de entrar.`, sugiro: 'Leva 2 minutos pra guardar.' },
       { vi: `${l}faz ${dias(n)} que a reserva de ${rs(r.colchao)} está parada na conta comum.`, importa: `Em 1 ano são mais ou menos ${rs(rendePorMes(r.colchao) * 12)} que deixam de entrar.`, sugiro: 'Se preferir deixar na conta, me diz que eu não toco mais no assunto este mês.' },
     ],
@@ -344,7 +347,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const tem = Math.max(0, r.livre_mes), faltam = centavos(r.colchao - tem)
     P({ id: `colchao:${mes}`, funcionario: 'colchao', assunto: 'Reserva abaixo do combinado', valor: faltam,
       falas: (n, l) => [
-        { vi: `a reserva da família (o dinheiro que vocês combinaram nunca gastar) está em ${rs(tem)}. O combinado é ${rs(r.colchao)}, então faltam ${rs(faltam)}.`, importa: 'Sem a reserva inteira, um imprevisto vira dívida.', sugiro: 'De onde esse dinheiro volta, e em que dia?' },
+        { vi: `a reserva da família (o dinheiro que a família combinou nunca gastar) está em ${rs(tem)}. O combinado é ${rs(r.colchao)}, então faltam ${rs(faltam)}.`, importa: 'Sem a reserva inteira, um imprevisto vira dívida.', sugiro: 'De onde esse dinheiro volta, e em que dia?' },
         { vi: `${l}hoje ainda faltam ${rs(faltam)} pra reserva voltar aos ${rs(r.colchao)}, ${dias(n)} depois do meu aviso.`, importa: 'Enquanto ela não volta, qualquer gasto fora do combinado sai do dinheiro de emergência.', sugiro: l ? 'O dinheiro entrou?' : 'Me diz de onde ele volta, e em que dia.' },
         { vi: `${l}faz ${dias(n)} que a reserva está ${rs(faltam)} abaixo do combinado.`, importa: 'Reserva furada por muito tempo deixa de ser reserva.', sugiro: 'Vale rever os limites do mês em Planejamento, ou me dizer de onde o dinheiro volta.' },
       ],
@@ -366,9 +369,9 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const de = x.de.charAt(0).toLowerCase() + x.de.slice(1)
     P({ id: `entrou_extra:${x.id}`, funcionario: 'guardado', assunto: 'Dinheiro que entrou a mais', valor: x.valor, espera: Math.max(0, diasEntre(x.data, hoje)),
       falas: (_n, l) => [
-        { vi: `entraram ${rs(x.valor)} a mais: ${de}.`, importa: `Pelo combinado de vocês, o que entra a mais do que o salário não aumenta o gasto do mês. Guardado, rende uns ${rs(Math.max(1, rendePorMes(x.valor)))} por mês.`, sugiro: 'Eu guardaria hoje.' },
+        { vi: `entraram ${rs(x.valor)} a mais: ${de}.`, importa: `Pelo combinado da família, o que entra a mais do que o salário não aumenta o gasto do mês. Guardado, rende uns ${rs(Math.max(1, rendePorMes(x.valor)))} por mês.`, sugiro: 'Eu guardaria hoje.' },
         { vi: `${l}os ${rs(x.valor)} que entraram a mais continuam parados na conta.`, importa: 'Parado na conta, esse dinheiro acaba virando gasto sem ninguém decidir.', sugiro: 'Eu guardaria hoje.' },
-        { vi: `${l}faz ${dias(Math.max(0, diasEntre(x.data, hoje)))} que os ${rs(x.valor)} estão na conta.`, importa: 'Regra do salário: o que entra a mais vai pra reserva.', sugiro: 'Guarda hoje ou me diz pra que gasto ele é.' },
+        { vi: `${l}faz ${dias(Math.max(0, diasEntre(x.data, hoje)))} que os ${rs(x.valor)} estão na conta.`, importa: 'Regra do salário: o que entra a mais vai pro guardado e conta pra 2029.', sugiro: 'Guarda hoje ou me diz pra que gasto ele é.' },
       ],
       opcoes: [{ id: 'guardar_entrada', rotulo: `Guardar os ${rs(x.valor)}` }, { id: 'gasto_combinado', rotulo: 'É pra um gasto combinado' }, { id: 'ainda_nao', rotulo: 'Me lembra amanhã' }] })
   }
@@ -392,6 +395,18 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   return out
 }
 
+/** E3 (conserto 3): o Contador usa o mesmo número do placar do casal (antes dizia "sobram R$ 5.002" contra o placar de R$ 2.103). */
+function contadorDoMes(r: ReturnType<Mundo['resumo']>, sobra: number): EntregaEsc {
+  const p = r.placar_casal
+  if (p && p.length > 1) {
+    const passam = p.filter(x => x.fecha > x.limite + 0.005)
+    const juntos = centavos(p.reduce((t, x) => t + x.limite - x.fecha, 0))
+    if (passam.length) return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, ${passam.map(x => `${x.nome} passa ${rs(centavos(x.fecha - x.limite))}`).join(' e ')} do combinado. Isso sai do mês que vem.`, numero: centavos(passam.reduce((t, x) => t + x.fecha - x.limite, 0)) }
+    return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, juntos vocês fecham com ${rs(juntos)} de sobra.`, numero: juntos }
+  }
+  return { funcionario: 'contador', resumo: sobra >= 0 ? `Conferi o mês: sobram ${rs(sobra)} até o fim${r.colchao ? ', já sem contar a reserva' : ''}.` : `Conferi o mês: faltam ${rs(-sobra)} pra não mexer na reserva.`, numero: sobra }
+}
+
 /** 1 linha do que cada um fez hoje (quando não tem pergunta, ele mostra isso e não inventa assunto). */
 function entregas(m: Mundo, agora: Date): EntregaEsc[] {
   const hoje = hojeRecife(agora), r = m.resumo(), cfg = m.config(), g = guardadoHojeEx(m.eu?.()), seg = segundaDaSemana(hoje)
@@ -406,7 +421,7 @@ function entregas(m: Mundo, agora: Date): EntregaEsc[] {
   const fiscal = !feira ? (e.semFeira[seg] ? 'Esta semana não tem feira, como você avisou.' : 'A feira desta semana ainda não apareceu. Eu cobro a partir de segunda, 18h.')
     : `Feira de ${dataCurta(feira.data)} feita, ${rs(feira.valor)}${env?.teto_semana ? ` de ${rs(env.teto_semana)} da semana` : ''}. ${feira.tem_nota ? 'Nota anexada.' : feira.sem_nota_motivo ? `Sem nota (${feira.sem_nota_motivo}).` : 'Falta a nota.'} ${cont ? `Estoque contado: ${acabou === 0 ? 'nada acabou' : acabou === 1 ? 'acabou 1 item' : `acabaram ${acabou} itens`}.` : 'Falta contar o estoque.'}${env?.teto_semana && (env.gasto_semana || 0) > env.teto_semana ? ` A semana passou ${rs((env.gasto_semana || 0) - env.teto_semana)} do combinado.` : ''}`
   return [
-    { funcionario: 'contador', resumo: sobra >= 0 ? `Conferi o mês: sobram ${rs(sobra)} até o fim${r.colchao ? ', já sem contar a reserva' : ''}.` : `Conferi o mês: faltam ${rs(-sobra)} pra não mexer na reserva.`, numero: sobra },
+    contadorDoMes(r, sobra),
     (() => { const meu = r.envelopes.find(x => !x.casa && x.regra === 'diario' && x.livre < 0)
       return meu ? { funcionario: 'colchao', resumo: `A reserva de ${rs(r.colchao)} está inteira, mas ${meu.nome} passou ${rs(-meu.livre)} do combinado do mês. Isso sai do mês que vem, não da reserva.`, numero: r.colchao }
         : { funcionario: 'colchao', resumo: `A reserva de ${rs(r.colchao)} está inteira. O número de hoje já deixa esse valor de fora.`, numero: r.colchao } })(),
@@ -523,7 +538,7 @@ export function escritorioResponderEx(m: Mundo, perguntaId: string, opcao: strin
       if (!app) throw new Error('Você ainda não tem nada no Guardado no seu nome. Crie a aplicação no Guardado.')
       guardadoMovimentarEx(app.id, 'aporte', x.valor, hoje, 'e4-' + x.id, x.de)
       m.guardarEntrada?.(x.id)
-      aviso = `${rs(x.valor)} foram pra reserva (${app.nome}). Regra do salário cumprida.`
+      aviso = `${rs(x.valor)} foram pro guardado (${app.nome}). Regra do salário cumprida.`
     }
     if (x && opcao === 'gasto_combinado') { (x as any).destino = 'gasto combinado'; aviso = `Anotado: os ${rs(x.valor)} são pra um gasto combinado.` }
   }

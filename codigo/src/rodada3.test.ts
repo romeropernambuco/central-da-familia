@@ -155,8 +155,8 @@ describe('Guardado no exemplo: dia útil e sábado', () => {
   it('quinta rende; sábado rende 0 e diz por quê', async () => {
     em('2026-11-12')
     const qui = await apiExemplo.guardadoHoje(F)
-    // R3: Ana vê as 3 no nome dela e a do casal (a do Bruno não)
-    expect(qui.aplicacoes).toHaveLength(4); expect(qui.rendeu_hoje_liquido).toBeGreaterThan(10); expect(qui.motivo_zero).toBeNull()
+    // R3 + E2 (regra nova, 13/11): Ana lê as 3 no nome dela, a do casal e a do Bruno (era 4: a do Bruno não aparecia)
+    expect(qui.aplicacoes).toHaveLength(5); expect(qui.rendeu_hoje_liquido).toBeGreaterThan(10); expect(qui.motivo_zero).toBeNull()
     expect(centavos(qui.aplicacoes.reduce((s, a) => s + a.rendeu_hoje_liquido, 0))).toBeCloseTo(qui.rendeu_hoje_liquido, 1)
     em('2026-11-14')
     const sab = await apiExemplo.guardadoHoje(F)
@@ -170,7 +170,7 @@ describe('Guardado no exemplo: dia útil e sábado', () => {
     expect(centavos((await apiExemplo.guardadoHoje(F)).total - antes)).toBe(500)
     await expect(apiExemplo.guardadoMovimentar('g1', 'resgate', 999999, '2026-11-12', 'chave-2')).rejects.toThrow(/Só tem/)
     await apiExemplo.guardadoCriar(F, { nome: 'Caixinha Inter', banco: 'Inter', tipo: 'caixinha', pct_cdi: 100, valor_inicial: 1000, data: '2026-11-12' })
-    expect((await apiExemplo.guardadoHoje(F)).aplicacoes).toHaveLength(5)
+    expect((await apiExemplo.guardadoHoje(F)).aplicacoes).toHaveLength(6) // E2: era 5; agora conta a do Bruno, que ela lê
     expect((await apiExemplo.guardadoCustoDoGasto(F, 200)).ate_fim_do_mes).toBeGreaterThan(0.5)
   })
   it('a equipe não recebe o Guardado nem os lembretes', async () => {
@@ -216,7 +216,8 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     it(`${func}: ${comeco} ${opcao} some da fila e aparece em "O que você já me respondeu"`, async () => {
       em(dia, hora)
       // 12/11 às 21h: tira o gasto de hoje pra o Contador ter o que perguntar
-      if (comeco === 'lancou:') { for (const l of await apiExemplo.lancamentos(F, dia.slice(0, 7))) if (l.data === dia) await apiExemplo.apagarLancamento(l.id) }
+      // E2: ela agora lê o gasto do Bruno, mas só apaga o que ela lançou (l.meu)
+      if (comeco === 'lancou:') { for (const l of await apiExemplo.lancamentos(F, dia.slice(0, 7))) if (l.data === dia && l.meu) await apiExemplo.apagarLancamento(l.id) }
       const p = (await fila()).find(x => x.id.startsWith(comeco))
       expect(p, `não achei a pergunta ${comeco} em ${dia}`).toBeTruthy()
       expect(p!.funcionario).toBe(func)
@@ -238,7 +239,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     em('2026-11-12')
     for (const id of ['env-ana', 'env-bruno', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
     const p = (await fila()).find(x => x.id.startsWith('colchao:'))!
-    expect(p.pergunta).toMatch(/^Ana, a reserva da família \(o dinheiro que vocês combinaram nunca gastar\) está em R\$\s/)
+    expect(p.pergunta).toMatch(/^Ana, a reserva da família \(o dinheiro que a família combinou nunca gastar\) está em R\$\s/) // E3 (conserto 8): sem "vocês", que não serve pra família de 1 adulto
     await apiExemplo.escritorioResponder(F, p.id, 'repor', { texto: 'com o aluguel, dia 15' })
     expect((await doFunc('colchao')).ultimas_respostas![0].resposta).toBe('Dizer de onde volta e quando: com o aluguel, dia 15')
   })
@@ -300,9 +301,10 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   })
   it('Analista de Cartão: cadastra cartão com anuidade, informa o valor do banco e pergunta da diferença', async () => {
     em('2026-11-12')
-    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-ana', nome: 'Ana' }, { id: 'm-bruno', nome: 'Bruno' }])
-    // rodada 2 (A3): cada um do casal vê só os cartões dele. O cartão do Bruno cadastrado pela Ana não aparece pra ela.
-    await apiExemplo.cartaoSalvar(F, { nome: 'Inter do Bruno', banco: 'Inter', titular_id: 'm-bruno', dia_fechamento: 2, dia_vencimento: 9 })
+    // E3 (conserto 8): membros traz o papel, pra família de 1 adulto não ver "Do casal"
+    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-ana', nome: 'Ana', papel: 'casal' }, { id: 'm-bruno', nome: 'Bruno', papel: 'casal' }])
+    // E2 (regra nova, 13/11, igual a f_02): cada um cadastra só o próprio cartão. Antes a Ana cadastrava o do Bruno e ele sumia pra ela.
+    await expect(apiExemplo.cartaoSalvar(F, { nome: 'Inter do Bruno', banco: 'Inter', titular_id: 'm-bruno', dia_fechamento: 2, dia_vencimento: 9 })).rejects.toThrow(/próprio cartão/)
     expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter do Bruno')).toBeUndefined()
     await apiExemplo.cartaoSalvar(F, { nome: 'Inter da Ana', banco: 'Inter', titular_id: 'm-ana', dia_vencimento: 15, taxa_valor: 19.9, taxa_periodo: 'mes' })
     expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter da Ana')).toMatchObject({ titular_id: 'm-ana', titular: 'Ana' })
@@ -396,7 +398,7 @@ describe('falas dos funcionários: 4 partes, sem termo difícil, botão com verb
     // 1. quinta comum
     em('2026-11-12', 10); registra('Quinta, 12/11, 10h (dia comum)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 2. o mesmo dia às 21h, sem gasto anotado, e a reserva furada
-    for (const l of await apiExemplo.lancamentos(F, '2026-11')) if (l.data === '2026-11-12') await apiExemplo.apagarLancamento(l.id)
+    for (const l of await apiExemplo.lancamentos(F, '2026-11')) if (l.data === '2026-11-12' && l.meu) await apiExemplo.apagarLancamento(l.id) // E2: só o que ela lançou
     for (const id of ['env-ana', 'env-bruno', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
     avanca('2026-11-12', 21); registra('Quinta, 12/11, 21h (sem gasto anotado e com a reserva abaixo do combinado)', await apiExemplo.escritorioHoje(F), 'Ana')
     // 3. 2ª cobrança: 2 dias depois, lembrando o que foi respondido

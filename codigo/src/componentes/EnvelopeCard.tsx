@@ -5,10 +5,21 @@ import { centavos, dataCurta, hojeRecife, mesLongo, plural, reais, somaDias, fim
 import { pesoDia } from '../lib/plano'
 import { Din } from './base'
 import { Qm } from './Qm'
+import { donoDo, escreveNo } from '../app/dono'
 
 const REGRA = { diario: 'por dia', semanal: 'por semana', mensal: 'no mês' }
 
 export type EstadoEnv = 'ok' | 'dia_passou' | 'devendo'
+/**
+ * E3 (conserto 2): o teto deste mês, o mesmo no topo e no cartão. No "por dia", o que passou no mês passado já saiu
+ * (limite_mes = combinado menos o que passou); antes o cartão dizia "de R$ 6.000" e o topo "sobram R$ 5.493".
+ */
+export const tetoDoMes = (e: Envelope) => (e.regra === 'diario' ? e.limite_mes : e.limite_base ?? e.limite_mes)
+/** "Dezembro começa com R$ 4.583 (R$ 717 de novembro e R$ 200 de parcela)": a mesma frase no dia 30 e no dia 1. */
+export function comecoDoMes(lim: number, passou: number, parcela: number, mesQuePassou: string): { valor: number; partes: string } {
+  const partes = [passou ? `${reais(passou)} de ${mesQuePassou}` : '', parcela ? `${reais(parcela)} de parcela` : ''].filter(Boolean)
+  return { valor: Math.max(0, centavos(lim - passou - parcela)), partes: partes.length ? ` (${partes.join(' e ')})` : '' }
+}
 /** 1º dia do mês seguinte (de onde sai o que passou). */
 export const primeiroDoMesQueVem = (hoje = hojeRecife()) => somaDias(fimDoMes(hoje), 1)
 
@@ -66,7 +77,9 @@ export function fraseEstouro(e: Envelope, n: ReturnType<typeof numeroEnvelope>):
   if (n.estado === 'devendo') {
     const prox = primeiroDoMesQueVem(), lim = e.limite_base ?? e.limite_mes
     const ultimo = hojeRecife() === fimDoMes(hojeRecife())
-    return `Passou ${reais(n.devendo)} do combinado. Sai do mês de ${mesLongo(prox)}: ele começa com ${reais(Math.max(0, lim - n.devendo))} em ${dataCurta(prox)}.${ultimo ? '' : ` Até ${dataCurta(fimDoMes(hojeRecife()))}, o que não gastar diminui o que fica devendo.`}`
+    // E3 (conserto 2): a parcela que já cai no mês que vem entra na frase (antes o dia 30 dizia R$ 200 a mais que o dia 1)
+    const c = comecoDoMes(lim, n.devendo, e.parcelas_mes_que_vem || 0, mesLongo(hojeRecife()))
+    return `Passou ${reais(n.devendo)} do combinado. Sai do mês de ${mesLongo(prox)}: ele começa com ${reais(c.valor)} em ${dataCurta(prox)}${c.partes}.${ultimo ? '' : ` Até ${dataCurta(fimDoMes(hojeRecife()))}, o que não gastar diminui o que fica devendo.`}`
   }
   if (n.estado === 'dia_passou') return `Hoje passou ${reais(n.passouHoje)} do valor do dia.${e.amanha != null ? ` A partir de amanhã: ${reais(e.amanha)} por dia.` : ''}`
   return null
@@ -81,13 +94,13 @@ export function CobrirEstouro({ e, valor }: { e: Envelope; valor: number }) {
   if (ok) return <p className="sub">Combinado: sai de {mesLongo(prox)}.</p>
   return (
     <div className="cobrir" role="group" aria-label="O que fazer com o que passou">
-      <button className="btn sm line" type="button" onClick={() => { setOk(true); toast(`Combinado: ${reais(valor)} saem do mês de ${mesLongo(prox)}. Ele começa com ${reais(Math.max(0, (e.limite_base ?? e.limite_mes) - valor))}.`) }}>Tirar de {mesLongo(prox)}</button>
-      {/* V3 (só no exemplo): imprevisto sai da reserva pra mês ruim e não derruba o dia */}
+      <button className="btn sm line" type="button" onClick={() => { setOk(true); toast(`Combinado: ${reais(valor)} saem do mês de ${mesLongo(prox)}. Ele começa com ${reais(comecoDoMes(e.limite_base ?? e.limite_mes, valor, e.parcelas_mes_que_vem || 0, mesLongo(hojeRecife())).valor)}.`) }}>Tirar de {mesLongo(prox)}</button>
+      {/* V3 (só no exemplo): imprevisto sai do guardado e não derruba o dia. E3 (conserto 4): "reserva" é só o dinheiro da Casa que nunca se gasta */}
       {api.cobrirImprevisto && familia?.papel === 'casal' && (
         <button className="btn sm line" type="button" onClick={() => tentar(async () => {
           const desfazer = await api.cobrirImprevisto!(familia.id, e.id, valor)
           await recarregar()
-          toast(`Foi imprevisto: ${reais(valor)} saíram da reserva pra mês ruim. Ela volta em 3 meses de ${reais(Math.ceil(valor / 3))}.`, async () => { await desfazer(); await recarregar() })
+          toast(`Foi imprevisto: ${reais(valor)} saíram do guardado e não derrubam o seu dia. Eles voltam pro guardado em 3 meses de ${reais(Math.ceil(valor / 3))}, tirados do que entrar a mais.`, async () => { await desfazer(); await recarregar() })
         })}>Foi imprevisto (saúde, carro, casa)</button>
       )}
       {api.cobrirComCasa && familia?.papel === 'casal' && (
@@ -102,13 +115,16 @@ export function CobrirEstouro({ e, valor }: { e: Envelope; valor: number }) {
 }
 
 export function EnvelopeCard({ e, diasRestantes, onClick, meu }: { e: Envelope; diasRestantes: number; onClick?: () => void; meu?: boolean }) {
+  const { familia } = useApp()
   const n = numeroEnvelope(e, diasRestantes)
+  // E2 (regra nova, 13/11): o limite do outro aparece com o nome dele e sem nenhum botão de mexer
+  const doOutro = !escreveNo(e, familia), dono = donoDo(e)
   const pct = Math.max(2, Math.min(100, n.usado * 100))
   const frase = fraseEstouro(e, n)
   return (
-    <div className="card env">
+    <div className="card env" {...(doOutro ? { 'data-do-outro': dono || 'família' } : {})}>
       <div className="env-h">
-        <b>{e.nome}</b>
+        <b>{e.nome}{doOutro && dono && !dono.endsWith(e.nome) ? ` · de ${dono}` : ''}</b>
         {/* quem passou do mês não vê "por dia R$ 217": vê "fica devendo" */}
         <span className="regra">{n.estado === 'devendo' ? (e.regra === 'semanal' ? 'passou nesta semana' : 'fica devendo') : REGRA[e.regra]}</span>
       </div>
@@ -119,9 +135,10 @@ export function EnvelopeCard({ e, diasRestantes, onClick, meu }: { e: Envelope; 
       <p className="sub">{n.rotulo}</p>
       {frase && <p className="todo warn frase-estouro">{frase}</p>}
       <div className={'meter ' + (n.usado > 1 ? 'warn' : 'ok')} aria-hidden="true"><i style={{ width: pct + '%' }} /></div>
-      <p className="sub">Gasto no mês <b>{reais(e.gasto_mes)}</b> de {reais(e.limite_base ?? e.limite_mes)}</p>
-      {meu && n.estado === 'devendo' && e.regra !== 'semanal' && <CobrirEstouro e={e} valor={n.devendo} />}
-      {onClick && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {e.nome}</button>}
+      <p className="sub">Gasto no mês <b>{reais(e.gasto_mes)}</b> de {reais(tetoDoMes(e))}{e.regra === 'diario' && e.falta_mes_anterior ? ` (${reais(e.limite_base ?? e.limite_mes)} menos ${reais(e.falta_mes_anterior)} do mês passado)` : ''}</p>
+      {doOutro && <p className="sub dono-linha">{dono ? `Limite de ${dono}: só ${dono} lança e mexe aqui.` : 'Da família: só pra ver.'}</p>}
+      {meu && !doOutro && n.estado === 'devendo' && e.regra !== 'semanal' && <CobrirEstouro e={e} valor={n.devendo} />}
+      {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {e.nome}</button>}
     </div>
   )
 }

@@ -52,18 +52,29 @@ describe('R0: o modo exemplo faz a mesma conta do banco', () => {
   })
 })
 
-describe('R1, R2, R3: cada um vê o seu e a Casa', () => {
-  it('Ana: o limite dela e os da Casa; nada do Bruno nem da Bia', async () => {
+// E2 (regra nova do dono, 13/11): "o orçamento é da família". O casal LÊ tudo, com o nome do dono, e ESCREVE só no seu e na Casa.
+// Os testes de R1 ("cada um vê só o seu") mudaram por isso: o motivo está ao lado de cada expect que mudou.
+describe('R1, R2, R3 (E2): o casal lê tudo com o dono; escreve no seu e na Casa', () => {
+  it('Ana: lê todos os limites (o dela 1º, a Casa por último), cada um com dono; escreve só no dela e na Casa', async () => {
     em('2026-11-18'); exemploComo('ana')
-    const ids = (await resumo()).envelopes.map(e => e.id)
-    expect(ids).toEqual(['env-ana', 'env-feira', 'env-casa'])
+    const r = await resumo()
+    // E2: era ['env-ana', 'env-feira', 'env-casa'] (cada um via só o seu)
+    expect(r.envelopes.map(e => e.id)).toEqual(['env-ana', 'env-bruno', 'env-bia', 'env-feira', 'env-casa'])
+    expect(r.envelopes.map(e => [e.dono, e.escreve])).toEqual([['Ana', true], ['Bruno', false], ['Bia', false], [null, true], [null, true]])
     const l = await apiExemplo.lancamentos(F, '2026-11')
-    expect(l.some(x => x.envelope_id === 'env-bruno')).toBe(false)
-    expect((await resumo()).limites_outros).toBe(4300)
+    // E2: era "nenhum do Bruno"; agora ela lê o do Bruno, sem poder mexer
+    expect(l.some(x => x.envelope_id === 'env-bruno')).toBe(true)
+    expect(l.filter(x => x.envelope_id === 'env-bruno').every(x => x.meu === false)).toBe(true)
+    expect(l.filter(x => x.envelope_id === 'env-ana' && !x.apagado_em).every(x => x.meu === true)).toBe(true)
+    // E2: some o "total dos limites dos outros sem detalhe" (era 4300): cada limite aparece com o nome
+    expect(r.limites_outros).toBeUndefined()
+    // o "pode gastar hoje" continua só o dela e o da Casa: o limite do Bruno não entra na soma
+    expect(r.pode_gastar_hoje).toBe(centavos(r.envelopes.filter(e => e.escreve).reduce((s, e) => s + (e.hoje || 0), 0)))
   })
-  it('Bruno: o dele e a Casa; a filha: só o dela; a equipe: só nomes da Casa, sem R$', async () => {
+  it('Bruno: lê tudo, o dele 1º; a filha: só o dela; a equipe: só nomes da Casa, sem R$', async () => {
     em('2026-11-18'); exemploComo('bruno')
-    expect((await resumo()).envelopes.map(e => e.id)).toEqual(['env-bruno', 'env-feira', 'env-casa'])
+    // E2: era ['env-bruno', 'env-feira', 'env-casa']
+    expect((await resumo()).envelopes.map(e => e.id)).toEqual(['env-bruno', 'env-ana', 'env-bia', 'env-feira', 'env-casa'])
     expect((await apiExemplo.sessao())!.familias[0].envelopeId).toBe('env-bruno')
     exemploComo('filha')
     expect((await resumo()).envelopes.map(e => e.id)).toEqual(['env-bia'])
@@ -72,19 +83,38 @@ describe('R1, R2, R3: cada um vê o seu e a Casa', () => {
     const r = await resumo()
     expect(r.so_nomes).toBe(true); expect(r.envelopes.every(e => e.limite_mes === 0 && e.casa)).toBe(true)
   })
-  it('lançar no limite de outra pessoa é recusado', async () => {
+  it('lançar, corrigir e apagar no limite do outro é recusado (igual a f_02)', async () => {
     em('2026-11-18'); exemploComo('ana')
-    await expect(apiExemplo.lancar({ familia: F, envelope: 'env-bruno', valor: 10, data: '2026-11-18', descricao: '', chave: 'x1' })).rejects.toThrow(/não é seu/)
+    // E2: a mensagem agora diz de quem é (era /não é seu/)
+    await expect(apiExemplo.lancar({ familia: F, envelope: 'env-bruno', valor: 10, data: '2026-11-18', descricao: '', chave: 'x1' })).rejects.toThrow(/é de Bruno/)
+    const doBruno = (await apiExemplo.lancamentos(F, '2026-11')).find(l => l.envelope_id === 'env-bruno' && !l.apagado_em)!
+    await expect(apiExemplo.corrigirLancamento!(doBruno.id, { valor: 1 })).rejects.toThrow(/só Bruno corrige/)
+    await expect(apiExemplo.apagarLancamento(doBruno.id)).rejects.toThrow(/Só quem lançou/)
+    // a luz da Casa foi lançada pelo Bruno: ela lê, mas só quem lançou corrige (o banco exige o autor)
+    const luz = (await apiExemplo.lancamentos(F, '2026-11')).find(l => l.descricao === 'Conta de luz')!
+    expect(luz.meu).toBe(false)
+    await expect(apiExemplo.corrigirLancamento!(luz.id, { valor: 1 })).rejects.toThrow(/Só quem lançou/)
+    await expect(apiExemplo.cobrirComCasa!(F, 'env-bruno', 10)).rejects.toThrow(/Só quem passou/)
   })
-  it('Guardado com dono: R$\u00a050.000 no nome dela (exemplo), a do casal aparece, a do Bruno não', async () => {
+  it('Guardado com dono (E2): ela lê as 5 aplicações, com o titular; guarda, tira e encerra só na dela e na do casal', async () => {
     em('2026-11-18'); exemploComo('ana')
     const g = await apiExemplo.guardadoHoje(F)
-    expect(g.aplicacoes.map(a => a.id)).toEqual(['g1', 'g2', 'g3', 'g4'])
+    // E2: era ['g1', 'g2', 'g3', 'g4'] (a do Bruno não aparecia)
+    expect(g.aplicacoes.map(a => a.id)).toEqual(['g1', 'g2', 'g3', 'g4', 'g5'])
+    expect(g.aplicacoes.find(a => a.id === 'g5')!.titular_nome).toBe('Bruno')
+    await expect(apiExemplo.guardadoMovimentar('g5', 'aporte', 10, '2026-11-18', 'k-g5')).rejects.toThrow(/no nome de Bruno/)
+    await expect(apiExemplo.guardadoEncerrar('g5')).rejects.toThrow(/no nome de Bruno/)
+    await apiExemplo.guardadoMovimentar('g4', 'aporte', 10, '2026-11-18', 'k-g4')
+    // C2 (revisão E0): "Do casal" vai explícito e grava sem titular; no nome do Bruno, recusado
+    await apiExemplo.guardadoCriar(F, { nome: 'Caixinha Teste', banco: 'Teste', tipo: 'caixinha', pct_cdi: 100, valor_inicial: 100, data: '2026-11-18', do_casal: true })
+    expect((await apiExemplo.guardadoHoje(F)).aplicacoes.find(a => a.nome === 'Caixinha Teste')!.titular).toBeNull()
+    await expect(apiExemplo.guardadoCriar(F, { nome: 'X', banco: 'X', tipo: 'caixinha', pct_cdi: 100, valor_inicial: 1, data: '2026-11-18', titular: 'm-bruno' })).rejects.toThrow(/próprio nome/)
     expect(g.seu_total!).toBeGreaterThan(50000); expect(g.seu_total!).toBeLessThan(51000)
     expect(g.aplicacoes.find(a => a.id === 'g4')!.titular).toBeNull()
     expect(g.aplicacoes.find(a => a.id === 'g1')!.titular_nome).toBe('Ana')
     exemploComo('bruno')
-    expect((await apiExemplo.guardadoHoje(F)).aplicacoes.map(a => a.id)).toEqual(['g4', 'g5'])
+    // E2: era ['g4', 'g5']; ele lê as da Ana com o nome dela
+    expect((await apiExemplo.guardadoHoje(F)).aplicacoes.map(a => a.id)).toEqual(['g1', 'g2', 'g3', 'g4', 'g5', expect.any(String)])
   })
   it('G10: o marco de R$\u00a050.000 dela aparece (o presente de R$\u00a0500 do dia 06 fez passar)', async () => {
     em('2026-11-18'); exemploComo('ana')
@@ -100,7 +130,8 @@ describe('R6: estouro com valor, de onde sai e o amanhã', () => {
     const n = numeroEnvelope(e, r.dias_restantes)
     expect(n.estado).toBe('devendo'); expect(n.devendo).toBe(717) // C1 (revisão E0): teto do exemplo 6.000 -> 5.500, o devendo sobe 500 (era 217)
     // rodada 2: sem "Sem culpa", com o próximo passo: de onde sai e com quanto dezembro começa
-    expect(fraseEstouro(e, n)).toMatch(/^Passou R\$\s717 do combinado\. Sai do mês de dezembro: ele começa com R\$\s4\.783 em 01\/12\.$/)
+    // E3 (conserto 2): a parcela de dezembro (R$ 200 do tênis em 6x) entra na frase; era "começa com R$ 4.783 em 01/12."
+    expect(fraseEstouro(e, n)).toMatch(/^Passou R\$\s717 do combinado\. Sai do mês de dezembro: ele começa com R\$\s4\.583 em 01\/12 \(R\$\s717 de novembro e R\$\s200 de parcela\)\.$/)
   })
   it('passou só o dia: diz quanto passou e o valor de amanhã', async () => {
     em('2026-11-18')

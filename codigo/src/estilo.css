@@ -600,3 +600,9 @@ svg{flex-shrink:0}
 .atrow .atl{flex-basis:100%;min-width:0}
 @media (min-width:361px){.atrow .atl{flex-basis:auto;min-width:56px}}
 .guard-l{flex-wrap:wrap;column-gap:8px}
+/* E3 (conserto 6): aviso de baixo com botão de 44 px e a página com folga embaixo enquanto ele aparece */
+.toast button{min-height:44px;min-width:44px}
+body.com-aviso main{padding-bottom:calc(var(--tabbar-h) + 120px + env(safe-area-inset-bottom,0px))}
+/* E2: o que é do outro, com o nome dele, só pra ler */
+.dono-linha{font-size:14px;color:var(--ink-2);margin-top:6px}
+.placar .pes .placar-passa{font-weight:700}

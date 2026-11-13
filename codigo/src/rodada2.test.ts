@@ -83,27 +83,32 @@ describe('A2: a filha (papel pessoa) só vê o dela', () => {
   })
   it('lançar no limite dos pais é recusado', async () => {
     em('2026-11-18'); exemploComo('filha')
-    await expect(apiExemplo.lancar({ familia: F, envelope: 'env-ana', valor: 10, data: '2026-11-18', descricao: 'x', chave: 'k-f' })).rejects.toThrow(/não é seu/)
+    // E2: a mensagem agora diz de quem é o limite (era /não é seu/); a filha continua sem ver nada dos pais
+    await expect(apiExemplo.lancar({ familia: F, envelope: 'env-ana', valor: 10, data: '2026-11-18', descricao: 'x', chave: 'k-f' })).rejects.toThrow(/é de Ana/)
   })
 })
 
-describe('A3: casal sem a fatura e o salário do outro', () => {
-  it('Ana vê só o Nubank; Bruno vê só o Itaú (cartões, faturas e Analista de Cartão)', async () => {
+describe('A3 (E2): o casal lê os 2 cartões com o dono; o Analista de Cartão fala só do seu', () => {
+  it('Ana e Bruno leem Nubank e Itaú com o titular; o Analista de Cartão de cada um só fala do dele', async () => {
     for (const dia of ['2026-11-07', '2026-11-12', '2026-11-18']) {
       em(dia, 21); exemploComo('ana')
-      expect((await apiExemplo.cartoes(F)).map(c => c.nome)).toEqual(['Nubank'])
-      expect([...new Set((await apiExemplo.faturas(F, 6)).map(f => f.cartao))]).toEqual(['Nubank'])
+      // E2 (regra nova, 13/11): era só ['Nubank']; agora ela lê o Itaú do Bruno com o nome dele
+      expect((await apiExemplo.cartoes(F)).map(c => [c.nome, c.titular])).toEqual([['Nubank', 'Ana'], ['Itaú', 'Bruno']])
+      expect([...new Set((await apiExemplo.faturas(F, 6)).map(f => f.cartao))]).toEqual(['Nubank', 'Itaú'])
+      // o Analista pergunta e mexe: continua só com o cartão dela
       expect(tudo(await apiExemplo.escritorioHoje(F))).not.toMatch(/Itaú/)
+      await expect(apiExemplo.faturaInformar(F, 'car-itau', '2026-12', { valor_banco: 1 })).rejects.toThrow(/é de Bruno/)
       exemploComo('bruno')
-      expect((await apiExemplo.cartoes(F)).map(c => c.nome)).toEqual(['Itaú'])
-      expect([...new Set((await apiExemplo.faturas(F, 6)).map(f => f.cartao))]).toEqual(['Itaú'])
+      expect((await apiExemplo.cartoes(F)).map(c => c.nome)).toEqual(['Nubank', 'Itaú'])
+      expect([...new Set((await apiExemplo.faturas(F, 6)).map(f => f.cartao))]).toEqual(['Nubank', 'Itaú'])
       const esc = tudo(await apiExemplo.escritorioHoje(F))
       expect(esc).not.toMatch(/Nubank|anuidade de R\$/)
     }
   })
   it('quem pagou: a luz da Casa paga pelo Bruno no Itaú aparece como "Da Casa" na fatura dele', async () => {
     em('2026-11-18'); exemploComo('bruno')
-    const dez = (await apiExemplo.faturas(F, 3)).find(f => f.mes === '2026-12')!
+    // E2: as faturas trazem os 2 cartões; a do Itaú (dele) é a que tem a luz da Casa
+    const dez = (await apiExemplo.faturas(F, 3)).find(f => f.mes === '2026-12' && f.cartao_id === 'car-itau')!
     expect(dez.da_casa).toBe(286.5)
     expect((await apiExemplo.lancamentos(F, '2026-11')).find(l => l.descricao === 'Conta de luz')!.autor).toBe('m-bruno')
   })

@@ -11,6 +11,7 @@ import { centavos, dataCurta, diaSemana, hojeRecife, mesCurto, reais, segundosDe
 import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
 import { LerCupom } from '../../componentes/LerCupom'
+import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
@@ -27,10 +28,13 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
   }
   if (e.regra === 'diario') {
     if (e.livre < 0) return `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.`
-    return `${parte} Hoje ainda pode ${reais(e.valor_dia || 0)}${e.amanha != null ? `; amanhã, ${reais(e.amanha)}` : ''}.`
+    // E3 (conserto 5): a mesma frase do Início: quanto já saiu hoje e quanto ainda pode
+    return `${parte} Hoje já saiu ${reais(e.gasto_hoje || 0)}. Ainda pode hoje ${reais(e.valor_dia || 0)}${e.amanha != null ? `; amanhã, ${reais(e.amanha)}` : ''}.`
   }
-  if (e.regra === 'semanal') return `${parte} Ainda livre nesta semana: ${reais(Math.max(0, (e.teto_semana || 0) - (e.gasto_semana || 0)))}.`
-  return `${parte} Ainda livre no mês: ${reais(Math.max(0, e.livre))}.`
+  if (e.regra === 'mensal' && !e.casa && e.livre >= 0 && e.gasto_hoje != null) return `${parte} Hoje já saiu ${reais(e.gasto_hoje)}. Ainda pode hoje ${reais(e.hoje || 0)}.`
+  // E3 (conserto 10): quem passou lê "passou R$ X", nunca "livre R$ 0"
+  if (e.regra === 'semanal') { const l = centavos((e.teto_semana || 0) - (e.gasto_semana || 0)); return l < 0 ? `${parte} A semana passou ${reais(-l)}. Na segunda começa uma semana nova.` : `${parte} Ainda livre nesta semana: ${reais(l)}.` }
+  return e.livre < 0 ? `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.` : `${parte} Ainda livre no mês: ${reais(e.livre)}.`
 }
 
 /** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
@@ -55,7 +59,7 @@ export function Lancar() {
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
 
-  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => setCartoes(cs.filter(x => !x.titular || x.titular === familia.membroNome || x.id === corr?.cartao_id))).catch(() => {}) }, [api, familia?.id, equipe])
+  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => setCartoes(cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id))).catch(() => {}) }, [api, familia?.id, equipe])
   const digitarRef = useRef(digitar)
   digitarRef.current = digitar
   // teclado físico no computador
@@ -71,7 +75,8 @@ export function Lancar() {
   }, [])
 
   const valor = textoParaValor(txt)
-  const envs = (resumo?.envelopes || []).filter(e => !equipe || e.casa)
+  // E2: lança só no seu, na Casa e no sem dono; o limite do outro é só pra ler
+  const envs = (resumo?.envelopes || []).filter(e => (!equipe || e.casa) && escreveNo(e, familia))
   // o limite de quem lança vem primeiro (G8); se abriu de um envelope, ele vem antes
   const primeiro = corr?.envelope_id || lancarAberto?.envelope || familia?.envelopeId
   const ordem = [...envs].sort((a, b) => (a.id === primeiro ? -1 : b.id === primeiro ? 1 : 0))
@@ -82,7 +87,14 @@ export function Lancar() {
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   // 1 chave por lançamento: se a internet cai no meio e a pessoa toca de novo, vai a mesma chave e o banco não grava em dobro
   const toque = useMemo(() => criarChaveToque(), [])
-  const salvar = (envelope: string, nome: string) => trava(() => (corr ? corrigir(envelope, nome) : gravar(envelope, nome)))
+  // E3 (conserto 10): valor maior que o mês inteiro do limite pede confirmação antes de salvar (ex.: R$ 28.650 digitado sem vírgula)
+  const [confirmar, setConfirmar] = useState<{ envelope: string; nome: string; mes: number } | null>(null)
+  const salvar = (envelope: string, nome: string, certeza = false) => {
+    const e = resumo?.envelopes.find(x => x.id === envelope), mes = e ? e.limite_base ?? e.limite_mes : 0
+    if (!certeza && !equipe && mes > 0 && valor > mes) { setConfirmar({ envelope, nome, mes }); return }
+    setConfirmar(null)
+    return trava(() => (corr ? corrigir(envelope, nome) : gravar(envelope, nome)))
+  }
   async function gravar(envelope: string, nome: string) {
     if (!familia || valor <= 0) return
     setSalvando(true); setErro('')
@@ -201,6 +213,14 @@ export function Lancar() {
               )
             })}
           </div>
+          {confirmar && (
+            <div className="todo warn confirmar-valor" role="alert"><span><b>{reais(valor)} é mais que o mês todo de {confirmar.nome} ({reais(confirmar.mes)}).</b> Está certo?</span>
+              <span className="row-btns" style={{ marginTop: 8 }}>
+                <button className="btn sm primary" type="button" disabled={salvando} onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}>Sim, salvar {reais(valor)}</button>
+                <button className="btn sm line" type="button" onClick={() => { setConfirmar(null); setTxt(''); setSelecionado(false) }}>Corrigir o valor</button>
+              </span>
+            </div>
+          )}
           {!ordem.length && <p className="sub">Nenhum limite criado ainda. Crie em Planejamento.</p>}
           {/* B14: a lixeira mora só dentro do Corrigir (longe do lápis da lista) */}
           {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Trash2 size={20} />Apagar este lançamento</button>}
@@ -211,13 +231,15 @@ export function Lancar() {
   )
 }
 
-/** R11+G12: dinheiro que entrou a mais vai pra reserva. Não muda o que dá pra gastar (regra do salário). */
+/** R11+G12: dinheiro que entrou a mais vai pro guardado (E3, conserto 4: "reserva" é só o dinheiro da Casa que nunca se gasta). Não muda o que dá pra gastar (regra do salário). */
 function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNode }) {
   const { api, familia, fecharLancar, toast, recarregar, tentar } = useApp()
   const { g } = useGuardado()
+  const { familia: fam } = useApp()
   const [entradas, salvarEntradas] = useConfig<{ id: string; data: string; valor: number; de: string; destino: string }[]>('entradas', [])
   const [de, setDe] = useState('')
-  const apps = g?.aplicacoes || []
+  // E2: guarda só na sua aplicação ou na do casal
+  const apps = (g?.aplicacoes || []).filter(a => aplicacaoMinha(a, fam))
   const padrao = apps.find(a => a.liquidez === 'diaria' && a.titular && a.titular !== null) || apps.find(a => a.liquidez === 'diaria') || apps[0]
   const [destino, setDestino] = useState<string>('')
   const alvo = destino || padrao?.id || 'combinado'
@@ -244,7 +266,7 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
     const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
     if (!ok) return
     toque.gravou(); fecharLancar(); await recarregar()
-    toast(`${reais(valor)} foram pra reserva (${app.nome}). Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
+    toast(`${reais(valor)} foram pro guardado (${app.nome}) e contam pra 2029. Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
   })
   return (
     <>
@@ -252,7 +274,7 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
         <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}>É do meu trabalho</button>
         <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}>Entrou a mais</button>
       </div>
-      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pra reserva (fica guardado, fora do gasto do mês) e <b>não aumenta</b> o que dá pra gastar.</>}</p>
+      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta pra 2029) e <b>não aumenta</b> o que dá pra gastar.</>}</p>
       {visor}
       <input className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
       {!trabalho && <div className="campo"><span id="eDest">Pra onde vai</span>
