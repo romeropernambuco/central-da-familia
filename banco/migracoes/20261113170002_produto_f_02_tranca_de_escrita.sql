@@ -153,6 +153,12 @@ alter table produto.esc_diario add constraint esc_diario_casa_sem_dinheiro
   check (not casa or (coalesce(pergunta, '') !~ 'R\$' and coalesce(resposta, '') !~ 'R\$'
                       and not coalesce(dados ?| array['valor', 'diferenca', 'valor_pergunta'], false)));
 
+-- N4 (2ª revisão): _numeros (contagens do produto) só pelo numeros_semana, que tem a trava de dono do produto.
+-- numeros_semana passa a rodar como dono do banco pra continuar chamando _numeros; o dono vê o mesmo de antes
+-- (o RLS já mostrava todas as famílias pra ele).
+alter function produto.numeros_semana() security definer;
+revoke execute on function produto._numeros(timestamptz) from authenticated;
+
 -- Teste antigo mudado (motivo): "Equipe muda lancamento da Casa pra envelope do casal" esperava 'bloqueado' porque a
 -- equipe ENXERGAVA o lançamento que ela mesma fez (furo b) e o check barrava a troca. Com a f_02 a equipe não enxerga
 -- lançamento nenhum, então o UPDATE não acha linha: volta 0 linhas e nada muda. Continua sendo a mesma proteção, mais forte.

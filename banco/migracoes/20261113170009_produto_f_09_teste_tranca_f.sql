@@ -32,6 +32,8 @@ declare
   env_casa  constant text := 'e0000000-0000-4e0e-8000-00000000f0c1';
   env_comum constant text := 'e0000000-0000-4e0e-8000-00000000f0c2';  -- sem dono: "do casal"
   env_x constant text := 'e0000000-0000-4e0e-8000-00000000fe01';
+  env_s constant text := 'e0000000-0000-4e0e-8000-00000000f0c3';  -- semanal, sem dono
+  l_parc_s constant text := 'b0000000-0000-4e0e-8000-00000000fa04';
   cart_a constant text := 'c0000000-0000-4e0e-8000-00000000fa01';
   cart_b constant text := 'c0000000-0000-4e0e-8000-00000000fb01';
   l_a   constant text := 'b0000000-0000-4e0e-8000-00000000fa01';
@@ -56,7 +58,7 @@ declare
                           "aliq_proj": "0.225", "piso_meses": null, "mes_reajuste": 1, "travado_focus": false}';
   sem_valor constant text := 'lax $.**.valor';
   r_caso text[] := '{}'; r_esp text[] := '{}'; r_obt text[] := '{}';
-  c record; i int; v text; nova uuid;
+  c record; i int; v text; nova uuid; u text; en text; r1 text; r2 text; difere int;
 begin
   begin
     -- ===== montagem (como dono do banco; tudo some no fim) =====
@@ -67,6 +69,7 @@ begin
       (env_p::uuid, fam::uuid, 'Limite da filha', 'mensal', 300, false),
       (env_casa::uuid, fam::uuid, 'Casa', 'mensal', 2000, true),
       (env_comum::uuid, fam::uuid, 'Lazer do casal', 'mensal', 500, false),
+      (env_s::uuid, fam::uuid, 'Feira da semana', 'semanal', 2600, false),
       (env_x::uuid, fam2::uuid, 'Geral', 'mensal', 1000, false);
     insert into produto.membros (id, familia_id, user_id, papel, nome, envelope_id) values
       (ma::uuid, fam::uuid, ua::uuid, 'casal', 'Adulto A', env_a::uuid),
@@ -86,7 +89,8 @@ begin
     insert into produto.lancamentos (id, familia_id, envelope_id, valor, data, descricao, autor, apagado_em) values
       (l_b_lixo::uuid, fam::uuid, env_b::uuid, 40, date '2026-09-15', 'de B na lixeira', ub::uuid, now());
     insert into produto.lancamentos (id, familia_id, envelope_id, cartao_id, valor, data, descricao, autor, parcelas) values
-      (l_parc::uuid, fam::uuid, env_a::uuid, cart_a::uuid, 1200, date '2026-11-05', 'compra em 6x (exemplo)', ua::uuid, 6);
+      (l_parc::uuid, fam::uuid, env_a::uuid, cart_a::uuid, 1200, date '2026-11-05', 'compra em 6x (exemplo)', ua::uuid, 6),
+      (l_parc_s::uuid, fam::uuid, env_s::uuid, cart_a::uuid, 520, date '2026-12-05', 'compra em 4x no semanal (exemplo)', ua::uuid, 4);
     insert into produto.config_familia (familia_id, chave, valor, atualizado_por) values (fam::uuid, 'renda_mes', '9000', ua::uuid);
     insert into produto.recebimentos (id, familia_id, dono_membro, descricao, valor_centavos, mes_previsto, tipo, certo, criado_por) values
       (rec_a::uuid, fam::uuid, ma::uuid, 'contrato de A (exemplo)', 1000000, date '2027-03-01', 'contrato', true, ua::uuid),
@@ -160,7 +164,7 @@ begin
       ('Ninguem escreve no historico do objetivo', ua, 'authenticated', format('insert into produto.objetivo_historico (familia_id, quem, depois) values (%L, %L, ''{}'')', fam, ua), 'linhas', 'bloqueado'),
       ('CONTROLE A recebe os dados do futuro (12 blocos)', ua, 'authenticated', format('select count(*) from jsonb_object_keys(produto.futuro_entradas(%L))', fam), 'contar', '12'),
       ('Dados do futuro trazem os recebimentos dos 2', ub, 'authenticated', format('select jsonb_array_length(produto.futuro_entradas(%L)->''recebimentos'')', fam), 'contar', '2'),
-      ('Dados do futuro trazem a compra parcelada', ua, 'authenticated', format('select jsonb_array_length(produto.futuro_entradas(%L)->''parcelas_futuras'')', fam), 'contar', '1'),
+      ('Dados do futuro trazem as 2 compras parceladas', ua, 'authenticated', format('select jsonb_array_length(produto.futuro_entradas(%L)->''parcelas_futuras'')', fam), 'contar', '2'),
       -- aplicação "do casal" (pedido C2) e a lista de titulares pro motor (pedido C5)
       ('CONTROLE A cria aplicacao do casal (do_casal)', ua, 'authenticated', format('select count(*) from (select produto.guardado_criar(%L, ''Conjunta nova (exemplo)'', ''Banco Z'', ''cdb'', 100, 0, null, null, null, null, true)::jsonb r) q, jsonb_array_elements(q.r->''aplicacoes'') x where x->>''id'' = q.r->>''aplicacao_id'' and x->>''titular_membro'' is null', fam), 'contar', '1'),
       ('CONTROLE sem do_casal continua no nome de quem cria', ua, 'authenticated', format('select count(*) from (select produto.guardado_criar(%L, ''Minha (exemplo)'', ''Banco Z'', ''cdb'', 100, 0)::jsonb r) q, jsonb_array_elements(q.r->''aplicacoes'') x where x->>''id'' = q.r->>''aplicacao_id'' and x->>''titular_membro'' = %L', fam, ma), 'contar', '1'),
@@ -219,6 +223,21 @@ begin
       ('Parcelado sem cartao e recusado', ua, 'authenticated', format('select 1 from produto.lancar(%L, %L, 300, null, null, null, null, 3::smallint)', fam, env_a), 'contar', 'erro: parcelado so no cartao com dia de fechamento e de vencimento'),
       ('Parcelado sem cartao direto na tabela', ua, 'authenticated', format('insert into produto.lancamentos (familia_id, envelope_id, valor, autor, parcelas) values (%L, %L, 300, %L, 3)', fam, env_a, ua), 'linhas', 'bloqueado'),
       ('Dados do futuro: compra parcelada com o mes da 1a fatura', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto.futuro_entradas(%L)->''parcelas_futuras'') x where x->>''mes_primeira_fatura'' = ''2026-12''', fam), 'contar', '1'),
+      -- N1 (2ª revisão): no semanal a parcela também baixa o teto da semana e o "hoje" (520 em 4x: 130 por mês de jan a abr)
+      ('Semanal: teto da semana de jan/27 ja sem a parcela (2.470 x 12 / 52 = 570)', ua, 'authenticated', format('select ((x->>''teto_semana'')::numeric * 100)::bigint from jsonb_array_elements(produto._resumo(%L, ''2027-01-15'')->''envelopes'') x where x->>''id'' = %L', fam, env_s), 'contar', '57000'),
+      ('Semanal: o hoje de sex 15/01/27 sai do teto menor (570 / 3 dias)', ua, 'authenticated', format('select ((x->>''hoje'')::numeric * 100)::bigint from jsonb_array_elements(produto._resumo(%L, ''2027-01-15'')->''envelopes'') x where x->>''id'' = %L', fam, env_s), 'contar', '19000'),
+      ('Semanal: livre de jan/27 sem descontar a parcela 2 vezes (570 x 4 semanas)', ua, 'authenticated', format('select ((x->>''livre'')::numeric * 100)::bigint from jsonb_array_elements(produto._resumo(%L, ''2027-01-15'')->''envelopes'') x where x->>''id'' = %L', fam, env_s), 'contar', '228000'),
+      ('Semanal: dez/26 (antes da 1a fatura) tem o teto cheio (600)', ua, 'authenticated', format('select ((x->>''teto_semana'')::numeric * 100)::bigint from jsonb_array_elements(produto._resumo(%L, ''2026-12-15'')->''envelopes'') x where x->>''id'' = %L', fam, env_s), 'contar', '60000'),
+      -- N3: a lista de parcelas vai pronta pro motor
+      ('Dados do futuro: as 6 parcelas prontas, dez a mai, 200 cada', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto.futuro_entradas(%L)->''parcelas_futuras'') x, jsonb_array_elements(x->''parcelas_lista'') p where x->>''lancamento_id'' = %L and p->>''mes_fatura'' between ''2026-12'' and ''2027-05'' and p->>''valor_centavos'' = ''20000''', fam, l_parc), 'contar', '6'),
+      -- N4: contagens do produto só pro dono do produto
+      ('Casal chama _numeros direto', ua, 'authenticated', 'select 1 from produto._numeros(now())', 'contar', 'bloqueado'),
+      ('Quem nao e dono do produto pede numeros_semana', ua, 'authenticated', 'select 1 from produto.numeros_semana()', 'contar', 'bloqueado'),
+      -- pedido do TELAS: dono e gasto de hoje em cada envelope do resumo
+      ('Resumo: Lazer do casal vem sem dono', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x->>''id'' = %L and x->''dono'' = ''null''::jsonb', fam, env_comum), 'contar', '1'),
+      ('Resumo: o limite de B vem com o dono B e sem escrever pra A', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x->>''id'' = %L and x->''dono''->>''membro_id'' = %L and not (x->>''escreve'')::boolean', fam, env_b, mb), 'contar', '1'),
+      ('Resumo: todo envelope do casal traz gasto_hoje', ua, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where not (x ? ''gasto_hoje'')', fam), 'contar', '0'),
+      ('Resumo da equipe continua sem R$ (so nomes, dono e escreve)', ue, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x ?| array[''gasto_hoje'', ''livre'', ''limite_mes'', ''hoje'']', fam), 'contar', '0'),
       -- B6: a equipe manda a mesma compra 2 vezes (internet caiu): a 2a volta "repetido", não erro
       ('Equipe manda a mesma chave 2 vezes e recebe repetido', ue, 'authenticated', format('select count(*) from (values (1), (2)) v(n) cross join lateral (select produto.lancar_com_chave(%L, %L, 10 + 0 * v.n, %L::uuid)::jsonb->>''repetido'' r) x where x.r = ''true''', fam, env_casa, chave_e), 'contar', '1'),
       ('CONTROLE equipe recebe o id do que anotou', ue, 'authenticated', format('select case when produto.lancar(%L, %L, 10)::jsonb->''lancamento''->>''id'' is not null then 1 else 0 end', fam, env_casa), 'contar', '1'),
@@ -307,8 +326,8 @@ begin
     -- 1.200 em 6x comprado em 05/11/2026, cartão fecha dia 1 e vence dia 10: faturas de dez a mai, 200 cada
     select string_agg((x->>'mes') || ':' || (x->>'total'), ',' order by x->>'mes') into v
       from jsonb_array_elements(produto._faturas(fam::uuid, date '2026-12-01', 6)) x where x->>'cartao_id' = cart_a;
-    r_caso := r_caso || 'Fatura: 1.200 em 6x cai de dez a mai, 200 por mes'::text;
-    r_esp := r_esp || '2026-12:200.00,2027-01:200.00,2027-02:200.00,2027-03:200.00,2027-04:200.00,2027-05:200.00'::text;
+    r_caso := r_caso || 'Fatura do cartao de A: 1.200 em 6x (dez a mai, 200) + 520 em 4x (jan a abr, 130)'::text;
+    r_esp := r_esp || '2026-12:200.00,2027-01:330.00,2027-02:330.00,2027-03:330.00,2027-04:330.00,2027-05:200.00'::text;
     r_obt := r_obt || v;
     r_caso := r_caso || 'Parcela: 1.000 em 3x = 333,34 + 333,33 + 333,33'::text;
     r_esp := r_esp || '333.34,333.33,333.33'::text;
@@ -328,6 +347,15 @@ begin
     r_esp := r_esp || 'Pessoa 2'::text;
     r_obt := r_obt || (select e.nome from produto.membros m join produto.envelopes e on e.id = m.envelope_id
                         where m.id = 'd0000000-0000-4e0e-8000-00000000ff02');
+
+    -- N2: o 3o adulto que entra não pega o envelope comum do casal; ganha um limite novo
+    insert into produto.envelopes (familia_id, nome, regra, limite_mes, casa) values (nova, 'Lazer do casal', 'mensal', 300, false);
+    insert into produto.membros (id, familia_id, user_id, papel, nome) values ('d0000000-0000-4e0e-8000-00000000ff04', nova, null, 'casal', 'Terceiro');
+    perform produto._ligar_envelope(nova, 'd0000000-0000-4e0e-8000-00000000ff04');
+    r_caso := r_caso || 'Adulto que entra nunca pega o envelope comum do casal'::text;
+    r_esp := r_esp || 'Limite de Terceiro'::text;
+    r_obt := r_obt || (select e.nome from produto.membros m join produto.envelopes e on e.id = m.envelope_id
+                        where m.id = 'd0000000-0000-4e0e-8000-00000000ff04');
 
     -- a filha que entra pelo convite ganha o limite dela (envelope novo), nunca um 2º, nunca o de ninguém
     insert into produto.membros (id, familia_id, user_id, papel, nome) values ('d0000000-0000-4e0e-8000-00000000ff03', fam::uuid, null, 'pessoa', 'Filha nova');
@@ -350,6 +378,19 @@ begin
     r_caso := r_caso || 'Convite da filha chama a funcao do limite dela'::text;
     r_esp := r_esp || 'sim'::text;
     r_obt := r_obt || (case when (select prosrc from pg_proc where oid = 'produto.entrar_por_convite()'::regprocedure) like '%_ligar_envelope_pessoa%' then 'sim' else 'nao' end);
+
+    -- pedido do TELAS: "escreve" do _resumo bate com o que o banco aceita de verdade, pra cada papel
+    foreach u in array array[ua, ub, up, ue] loop
+      difere := 0;
+      foreach en in array array[env_a, env_b, env_p, env_casa, env_comum, env_s] loop
+        r1 := produto._tentativa(u, 'authenticated', format('select count(*) from jsonb_array_elements(produto._resumo(%L, produto._hoje())->''envelopes'') x where x->>''id'' = %L and (x->>''escreve'')::boolean', fam, en), 'contar');
+        r2 := produto._tentativa(u, 'authenticated', format('insert into produto.lancamentos (familia_id, envelope_id, valor, autor) values (%L, %L, 10, %L)', fam, en, u), 'linhas');
+        if (r1 = '1') is distinct from (r2 = '1') then difere := difere + 1; end if;
+      end loop;
+      r_caso := r_caso || ('Resumo: "escreve" bate com o que o banco aceita (' || case u when ua then 'adulto A' when ub then 'adulto B' when up then 'filha' else 'equipe' end || ')');
+      r_esp := r_esp || '0 diferencas'::text;
+      r_obt := r_obt || (difere || ' diferencas');
+    end loop;
 
     -- vigia noturno (sem login) nunca recebe os dados do futuro
     r_caso := r_caso || 'Turno da noite (sem login) pede os dados do futuro'::text;

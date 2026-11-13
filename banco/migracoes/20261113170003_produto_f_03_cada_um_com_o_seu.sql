@@ -1,5 +1,6 @@
 -- f_03 (fase final): cada adulto ligado ao próprio limite, e o que se baixa diz de quem é cada coisa.
---  * produto._ligar_envelope(familia, membro): liga o membro ao 1º envelope pessoal livre (sem Casa, sem dono)
+--  * produto._ligar_envelope(familia, membro): liga o adulto ao 1º "Pessoa N" livre; se não houver, cria um limite novo
+--    só dele (nunca pega o envelope comum do casal, revisão N2)
 --  * criar_familia: quem cria fica com "Pessoa 1"; entrar_por_convite: o adulto do casal que entra fica com o próximo livre
 --    e a filha (pessoa) ganha um envelope novo, só dela (_ligar_envelope_pessoa); o limite dela quem define são os pais
 --  * exportar_familia (casal baixa a família inteira): cada envelope, limite, cartão, lançamento e aplicação vem com dono_nome
@@ -9,16 +10,24 @@
 
 create or replace function produto._ligar_envelope(p_familia uuid, p_membro uuid) returns uuid
 language plpgsql security definer set search_path = '' as $$
-declare v uuid;
+declare v uuid; v_nome text; v_atual uuid;
 begin
+  select m.nome, m.envelope_id into v_nome, v_atual from produto.membros m
+   where m.id = p_membro and m.familia_id = p_familia and m.papel = 'casal' for update;
+  if not found then return null; end if;
+  if v_atual is not null then return v_atual; end if;
+  -- só o limite pessoal que o app criou ("Pessoa 1", "Pessoa 2") e ninguém usa; envelope comum do casal nunca (revisão N2)
   select e.id into v from produto.envelopes e
-   where e.familia_id = p_familia and not e.casa
+   where e.familia_id = p_familia and not e.casa and e.nome ~ '^Pessoa [0-9]+$'
      and not exists (select 1 from produto.membros m where m.familia_id = e.familia_id and m.envelope_id = e.id)
    order by e.criado_em, e.nome limit 1
    for update;
-  if v is not null then
-    update produto.membros set envelope_id = v where id = p_membro and familia_id = p_familia and envelope_id is null;
+  if v is null then
+    insert into produto.envelopes (familia_id, nome, regra, limite_mes, casa)
+    values (p_familia, left('Limite de ' || v_nome, 60), 'mensal', 0, false)
+    returning id into v;
   end if;
+  update produto.membros set envelope_id = v where id = p_membro and familia_id = p_familia and envelope_id is null;
   return v;
 end $$;
 revoke all on function produto._ligar_envelope(uuid, uuid) from public, anon, authenticated;
@@ -170,6 +179,27 @@ begin
 end $$;
 revoke all on function produto.exportar_meu(uuid) from public, anon;
 grant execute on function produto.exportar_meu(uuid) to authenticated;
+
+-- _resumo (pedido do TELAS): cada envelope vem com dono (membro e nome, ou nulo quando é da Casa ou sem dono),
+-- escreve (se quem pede pode lançar ali, pela regra da f_02) e gasto_hoje. A equipe recebe só dono nulo e escreve.
+do $$ begin
+  if position($a$    envs := envs || o;$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'f_03: trecho nao achado em produto._resumo';
+  end if;
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$    envs := envs || o;$a$, $b$    -- f_03 (pedido do TELAS): de quem é o envelope, se quem pede pode lançar nele (mesma regra da tranca) e o gasto de hoje
+    o := o || jsonb_build_object(
+      'dono', (select jsonb_build_object('membro_id', mm.id, 'nome', mm.nome) from produto.membros mm
+                where mm.familia_id = p_familia and mm.envelope_id = e.id order by mm.criado_em limit 1),
+      'escreve', coalesce(e.id in (select produto.meus_envelopes_escrita()), false),
+      'gasto_hoje', coalesce((o->>'gasto_hoje')::numeric, produto._gasto(e.id, p_hoje, p_hoje)));
+    envs := envs || o;$b$);
+end $$;
+do $$ begin
+  if position($a$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true) order by x.criado_em, x.nome)$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'f_03: trecho nao achado em produto._resumo';
+  end if;
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true) order by x.criado_em, x.nome)$a$, $b$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true, 'dono', null, 'escreve', x.id in (select produto.meus_envelopes_escrita())) order by x.criado_em, x.nome)$b$);
+end $$;
 
 -- portão: todos os testes que existirem no banco têm que continuar 100% ok
 do $$

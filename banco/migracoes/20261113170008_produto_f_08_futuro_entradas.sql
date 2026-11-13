@@ -71,7 +71,13 @@ begin
         'lancamento_id', l.id, 'envelope_id', l.envelope_id, 'valor_centavos', round(l.valor * 100)::bigint, 'parcelas', l.parcelas,
         'data', l.data, 'cartao_id', l.cartao_id, 'dia_fechamento', c.dia_fechamento, 'dia_vencimento', c.dia_vencimento,
         -- a regra do cartão fica num lugar só (_mes_fatura): o motor recebe o mês da 1ª fatura pronto
-        'mes_primeira_fatura', to_char(produto._mes_fatura(c.dia_fechamento, c.dia_vencimento, l.data), 'YYYY-MM'))
+        'mes_primeira_fatura', to_char(produto._mes_fatura(c.dia_fechamento, c.dia_vencimento, l.data), 'YYYY-MM'),
+        -- revisão N3: a lista pronta (mês da fatura e valor de cada parcela); a regra de dividir mora só no banco
+        'parcelas_lista', (select jsonb_agg(jsonb_build_object(
+            'n', g.i + 1,
+            'mes_fatura', to_char(produto._mes_fatura(c.dia_fechamento, c.dia_vencimento, l.data) + make_interval(months => g.i), 'YYYY-MM'),
+            'valor_centavos', round(produto._parcela_valor(l.valor, l.parcelas, g.i) * 100)::bigint) order by g.i)
+            from generate_series(0, l.parcelas - 1) g(i)))
         order by l.data, l.id), '[]'::jsonb)
         from produto.lancamentos l join produto.cartoes c on c.id = l.cartao_id and c.familia_id = l.familia_id
         where l.familia_id = f and l.apagado_em is null and l.parcelas > 1

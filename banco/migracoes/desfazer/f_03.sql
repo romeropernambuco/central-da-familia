@@ -1,6 +1,30 @@
 -- Desfaz f_03: volta criar_familia, entrar_por_convite e exportar_familia ao corpo de antes (copiado do banco em 13/11/26)
 -- e apaga as funções novas. Os membros já ligados a um envelope continuam ligados (é dado, não estrutura).
 drop function if exists produto.exportar_meu(uuid);
+do $$ begin
+  if position($a$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true, 'dono', null, 'escreve', x.id in (select produto.meus_envelopes_escrita())) order by x.criado_em, x.nome)$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_03: trecho nao achado em produto._resumo';
+  end if;
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true, 'dono', null, 'escreve', x.id in (select produto.meus_envelopes_escrita())) order by x.criado_em, x.nome)$a$, $b$'envelopes', coalesce((select jsonb_agg(jsonb_build_object('id', x.id, 'nome', x.nome, 'regra', x.regra, 'casa', true) order by x.criado_em, x.nome)$b$);
+end $$;
+do $$ begin
+  if position($a$    -- f_03 (pedido do TELAS): de quem é o envelope, se quem pede pode lançar nele (mesma regra da tranca) e o gasto de hoje
+    o := o || jsonb_build_object(
+      'dono', (select jsonb_build_object('membro_id', mm.id, 'nome', mm.nome) from produto.membros mm
+                where mm.familia_id = p_familia and mm.envelope_id = e.id order by mm.criado_em limit 1),
+      'escreve', coalesce(e.id in (select produto.meus_envelopes_escrita()), false),
+      'gasto_hoje', coalesce((o->>'gasto_hoje')::numeric, produto._gasto(e.id, p_hoje, p_hoje)));
+    envs := envs || o;$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'desfazer f_03: trecho nao achado em produto._resumo';
+  end if;
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$    -- f_03 (pedido do TELAS): de quem é o envelope, se quem pede pode lançar nele (mesma regra da tranca) e o gasto de hoje
+    o := o || jsonb_build_object(
+      'dono', (select jsonb_build_object('membro_id', mm.id, 'nome', mm.nome) from produto.membros mm
+                where mm.familia_id = p_familia and mm.envelope_id = e.id order by mm.criado_em limit 1),
+      'escreve', coalesce(e.id in (select produto.meus_envelopes_escrita()), false),
+      'gasto_hoje', coalesce((o->>'gasto_hoje')::numeric, produto._gasto(e.id, p_hoje, p_hoje)));
+    envs := envs || o;$a$, $b$    envs := envs || o;$b$);
+end $$;
 
 CREATE OR REPLACE FUNCTION produto.criar_familia(nome text, nome_pessoa text)
  RETURNS json

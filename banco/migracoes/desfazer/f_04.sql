@@ -38,12 +38,9 @@ do $$ begin
   execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$      g := produto._gasto(e.id, m0, fim) + produto._compromisso_mes(e.id, m0);$a$, $b$      g := produto._gasto(e.id, m0, fim);$b$);
 end $$;
 do $$ begin
-  if position($a$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;
-      g := g + produto._compromisso_mes(e.id, m0);$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
-    raise exception 'desfazer f_04: trecho nao achado em produto._resumo(uuid,date)';
-  end if;
-  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;
-      g := g + produto._compromisso_mes(e.id, m0);$a$, $b$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;$b$);
+  execute replace(pg_get_functiondef('produto._pote_inicio(uuid,date)'::regprocedure), $b$lx := produto._lim(p_env, x); tx := round(greatest(0, lx - produto._compromisso_mes(p_env, x)) * 12 / 52, 2);$b$, $a$lx := produto._lim(p_env, x); tx := round(lx * 12 / 52, 2);$a$);
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $b$produto._brl(lim - produto._compromisso_mes(e.id, m0)) || ' por mês (já sem as parcelas) × 12 ÷ 52 = '$b$, $a$produto._brl(lim) || ' por mês × 12 ÷ 52 = '$a$);
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $b$      lim := produto._lim(e.id, m0); t := round(greatest(0, lim - produto._compromisso_mes(e.id, m0)) * 12 / 52, 2);$b$, $a$      lim := produto._lim(e.id, m0); t := round(lim * 12 / 52, 2);$a$);
 end $$;
 do $$ begin
   if position($a$    where l.envelope_id = e.id and l.apagado_em is null and l.parcelas = 1 and date_trunc('month', l.data) = m0

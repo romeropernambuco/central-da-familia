@@ -9,7 +9,8 @@
 --    dez a mai, 200 por mês; nov e jun, nada.
 --  * _gasto continua sendo o RITMO (dia e semana): só compra à vista (parcelas = 1). O total do mês = _gasto + _compromisso_mes.
 --  * _faturas, _plano (pote do dia sem o compromisso; gasto_mes com ele), _diario (sobra de mês passado com ele),
---    _pote_inicio (semanal), _resumo (mensal, semanal, "no cartão" e a linha de explicação) e _esc_brutas (Contador:
+--    _pote_inicio (semanal: a semana antes do começo usa o teto já sem a parcela), _resumo (mensal; semanal com o teto
+--    da semana = (limite menos as parcelas do mês) x 12 / 52, revisão N1; "no cartão" e a linha de explicação) e _esc_brutas (Contador:
 --    "hoje já saiu" sem a compra parcelada) passam a seguir a regra. Com parcelas = 1 nenhuma conta muda.
 --  * (revisão B6) quem lança acha a própria chave repetida por _lanc_repetido (a equipe não lê lançamentos, mas
 --    continua recebendo "repetido" em vez de erro quando a internet cai e a tela manda de novo)
@@ -235,11 +236,22 @@ do $$ begin
         and produto._mes_fatura$b$);
 end $$;
 do $$ begin
-  if position($a$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+  if position($a$      lim := produto._lim(e.id, m0); t := round(lim * 12 / 52, 2);$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
     raise exception 'f_04: trecho nao achado em produto._resumo(uuid,date)';
   end if;
-  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;$a$, $b$      select coalesce(sum(produto._gasto(e.id, s, s + 6)),0) into g from produto._segundas(m0) s;
-      g := g + produto._compromisso_mes(e.id, m0);$b$);
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$      lim := produto._lim(e.id, m0); t := round(lim * 12 / 52, 2);$a$, $b$      lim := produto._lim(e.id, m0); t := round(greatest(0, lim - produto._compromisso_mes(e.id, m0)) * 12 / 52, 2);$b$);
+end $$;
+do $$ begin
+  if position($a$produto._brl(lim) || ' por mês × 12 ÷ 52 = '$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'f_04: trecho nao achado em produto._resumo(uuid,date)';
+  end if;
+  execute replace(pg_get_functiondef('produto._resumo(uuid,date)'::regprocedure), $a$produto._brl(lim) || ' por mês × 12 ÷ 52 = '$a$, $b$produto._brl(lim - produto._compromisso_mes(e.id, m0)) || ' por mês (já sem as parcelas) × 12 ÷ 52 = '$b$);
+end $$;
+do $$ begin
+  if position($a$lx := produto._lim(p_env, x); tx := round(lx * 12 / 52, 2);$a$ in (select prosrc from pg_proc where oid = 'produto._pote_inicio(uuid,date)'::regprocedure)) = 0 then
+    raise exception 'f_04: trecho nao achado em produto._pote_inicio(uuid,date)';
+  end if;
+  execute replace(pg_get_functiondef('produto._pote_inicio(uuid,date)'::regprocedure), $a$lx := produto._lim(p_env, x); tx := round(lx * 12 / 52, 2);$a$, $b$lx := produto._lim(p_env, x); tx := round(greatest(0, lx - produto._compromisso_mes(p_env, x)) * 12 / 52, 2);$b$);
 end $$;
 do $$ begin
   if position($a$      g := produto._gasto(e.id, m0, fim);$a$ in (select prosrc from pg_proc where oid = 'produto._resumo(uuid,date)'::regprocedure)) = 0 then

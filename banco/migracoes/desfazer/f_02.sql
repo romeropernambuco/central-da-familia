@@ -109,3 +109,7 @@ do $$ begin
   execute replace(pg_get_functiondef('produto._teste_revisao()'::regprocedure),
     $b$'linhas', 'bloqueado' /* f_02 B1: papel so muda pelas funcoes */),$b$, $a$'linhas', '1'),$a$);
 end $$;
+
+-- N4: volta como era
+grant execute on function produto._numeros(timestamptz) to authenticated;
+alter function produto.numeros_semana() security invoker;
