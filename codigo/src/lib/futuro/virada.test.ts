@@ -107,3 +107,31 @@ describe('erro 4: "cabe" nunca num mês em que a linha sem o desejo já fica dev
     expect(comCaberia).toBeGreaterThan(0)
   })
 })
+
+describe('card de 2029: falta do mês e corte são o mesmo número na frase principal (QA E11, card de 02/01/2029)', () => {
+  for (const hoje of ['2028-12-31', '2029-01-01', '2029-01-02']) {
+    it(`${hoje}: corte = falta_por_mes + margem_por_mes, e a margem é a de 10% do gasto a cobrir`, () => {
+      const s = futuro(ent(hoje))
+      const a = s.ajustes_falta!
+      expect(a.falta_por_mes! + a.margem_por_mes!).toBe(a.cortar_por_mes_2029)
+      expect(a.falta_por_mes).toBeGreaterThan(0); expect(a.margem_por_mes).toBeGreaterThan(0)
+      const gasto = gastoNaVirada(2_000_000, '2026-11', '2029-01', PAR.ipca_ano)
+      expect(Math.abs(a.margem_por_mes! - Math.round(gasto * 0.1))).toBeLessThanOrEqual(1) // a margem de 10%, até 1 centavo de arredondamento
+      if (s.modo === 'renda') expect(a.falta_por_mes).toBe(-s.renda!.folga_do_mes) // o mesmo número do "faltam por mês"
+      else expect(a.falta_por_mes).toBe(gasto - s.renda_sustentavel)
+    })
+  }
+  it('margem zero: o corte inteiro é a falta do mês', () => {
+    const a = futuro(ent('2029-01-02', {}, { margem: '0' })).ajustes_falta!
+    expect(a.margem_por_mes).toBeLessThanOrEqual(1); expect(a.falta_por_mes! + a.margem_por_mes!).toBe(a.cortar_por_mes_2029)
+  })
+  it('renda cobre o mês mas não a margem: falta 0 e o corte é só margem', () => {
+    // patrimônio entre o que cobre o gasto e o que cobre gasto + 10%
+    const gasto = gastoNaVirada(2_000_000, '2026-11', '2029-01', PAR.ipca_ano)
+    const sem = patrimonioNecessario(gasto, '0', '0.04')!, com = patrimonioNecessario(gasto, '0.10', '0.04')!
+    const s = futuro(ent('2029-01-02', { saldo_caixa: Math.round((sem + com) / 2) }))
+    expect(s.renda!.folga_do_mes).toBeGreaterThanOrEqual(0)
+    expect(s.ajustes_falta).toMatchObject({ falta_por_mes: 0 })
+    expect(s.ajustes_falta!.margem_por_mes).toBe(s.ajustes_falta!.cortar_por_mes_2029)
+  })
+})

@@ -77,9 +77,17 @@ function futuroRenda(e: FuturoEntrada): FuturoSaida {
   }
   return {
     modo: 'renda', linha: [], patrimonio_necessario: necessario, renda_sustentavel: renda, folga: f,
-    ajustes_falta: f < 0 ? { guardar_por_mes: 0, cortar_por_mes_2029: cortarPorMes2029(-f, real), desejos_pra_adiar: desejosPraAdiar(e.desejos), sugerido: 'cortar', meses_restantes: 0 } : null,
+    ajustes_falta: f < 0 ? { guardar_por_mes: 0, ...partesDoCorte(cortarPorMes2029(-f, real), a_cobrir, renda), desejos_pra_adiar: desejosPraAdiar(e.desejos), sugerido: 'cortar', meses_restantes: 0 } : null,
     renda: rendaDoMes, perguntas, avisos_fgc: avisosFGC(e.aplicacoes),
   }
+}
+
+/** Divide o corte (F9b, com a margem dentro) em: o que falta no mês sem margem + a folga de segurança.
+ *  falta_por_mes = gasto a cobrir − renda sustentável (nunca negativo); margem_por_mes = o resto do corte.
+ *  A soma das 2 é sempre o corte, centavo por centavo (QA E11: card com 2 números diferentes lado a lado). */
+function partesDoCorte(cortar: Centavos, a_cobrir: Centavos, renda: Centavos): { cortar_por_mes_2029: Centavos; falta_por_mes: Centavos; margem_por_mes: Centavos } {
+  const falta = Math.min(cortar, Math.max(0, a_cobrir - renda))
+  return { cortar_por_mes_2029: cortar, falta_por_mes: falta, margem_por_mes: cortar - falta }
 }
 
 /** Meses em que a linha fica devendo pro caixa: do mês abaixo do piso até o mês antes de quitar (ou o fim da linha). */
@@ -141,7 +149,8 @@ export function futuro(e: FuturoEntrada): FuturoSaida {
   const saldo_final = linha.length ? linha[linha.length - 1].saldo_final : saldo_inicial
 
   const gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)
-  const necessario = patrimonioNecessario(gasto - p.renda_certa_2029, p.margem, p.taxa_real_trabalho)
+  const a_cobrir = gasto - p.renda_certa_2029
+  const necessario = patrimonioNecessario(a_cobrir, p.margem, p.taxa_real_trabalho)
   const f = necessario === null ? 0 : calcFolga(saldo_final, necessario)
   let ajustes_falta: FuturoSaida['ajustes_falta'] = null
   if (f < 0) {
@@ -150,7 +159,7 @@ export function futuro(e: FuturoEntrada): FuturoSaida {
     const fatores = linha.map((l) => fatorLiquido(p.taxa_bruta_ano[anoDe(l.mes)], p.aliq_proj, diasDoMes(l.mes)))
     ajustes_falta = {
       guardar_por_mes: sugerido === 'guardar' ? guardarPorMesNaLinha(-f, fatores) : 0,
-      cortar_por_mes_2029: cortarPorMes2029(-f, p.taxa_real_trabalho),
+      ...partesDoCorte(cortarPorMes2029(-f, p.taxa_real_trabalho), a_cobrir, rendaSustentavel(saldo_final, p.taxa_real_trabalho)),
       desejos_pra_adiar: desejosPraAdiar(e.desejos),
       sugerido, meses_restantes: linha.length,
     }

@@ -24,7 +24,9 @@ export interface FuturoSaida {
   folga: Centavos /* negativo = falta, a tela nunca mostra sinal */
   ajustes_falta: {
     guardar_por_mes: Centavos /* 0 quando sugerido = 'cortar' (faltam poucos meses: não serve) */
-    cortar_por_mes_2029: Centavos
+    cortar_por_mes_2029: Centavos /* total do corte, com a margem de segurança dentro (= falta_por_mes + margem_por_mes) */
+    falta_por_mes?: Centavos /* o que falta no mês sem margem: a tela escreve ESTE na frase principal (= renda.folga_do_mes sem sinal no modo renda) */
+    margem_por_mes?: Centavos /* a parte do corte que é só a folga de segurança (margem); a tela escreve como explicação */
     desejos_pra_adiar: string[]
     sugerido?: 'guardar' | 'cortar'
     meses_restantes?: number
