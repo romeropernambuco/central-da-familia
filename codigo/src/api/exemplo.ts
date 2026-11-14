@@ -117,12 +117,14 @@ function baseReajusteEx(mes: string) {
     faltam: faltam.map(a => ({ membro_id: a.id, nome: a.nome })),
   }
 }
-/** Igual à f_14 com o ajuste do BANCO: voto_aberto vem quando o mês pedido não tem voto ou está vencido; é o voto mais
+/** Igual à f_14 (regra final do BANCO): voto_aberto vem quando o mês pedido não está vivo; é o voto mais
  *  recente da família pra um mês que ainda não começou e ainda não aprovado. null com o mês pedido em votação ou aprovado no prazo. */
 function situacaoReajusteEx(mes: string) {
   const s = baseReajusteEx(mes)
   let voto_aberto: { mes_vigencia: string; teto: number; ipca: string; votou: { membro_id: string; nome: string }[] } | null = null
-  if (!s.votos.length || s.vencido) {
+  // regra final da f_14: vem sempre que o mês pedido não está vivo (sem voto, vencido, ou não aprovado com a vigência já passada)
+  const vivo = s.votos.length > 0 && !s.vencido && (s.aprovado || mes > hojeRecife().slice(0, 7))
+  if (!vivo) {
     const x = db.reajusteVotos.filter(v => v.mes !== mes && v.mes > hojeRecife().slice(0, 7) && !baseReajusteEx(v.mes).aprovado)
       .sort((a, b) => b.votou_em.localeCompare(a.votou_em))[0]
     if (x) voto_aberto = { mes_vigencia: x.mes, teto: x.teto, ipca: x.ipca, votou: db.reajusteVotos.filter(v => v.mes === x.mes).map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(m => m.id === v.membro_id)?.nome || '' })) }

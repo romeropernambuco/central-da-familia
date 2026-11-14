@@ -547,6 +547,10 @@ describe('f_14: voto_aberto é a fonte principal pra achar o voto refeito (a con
     expect((await ler('fam-silva', '2027-06')).voto_aberto?.mes_vigencia).toBe('2027-04')
     // em votação: null
     expect((await ler('fam-silva', '2027-04')).voto_aberto).toBeNull()
+    // não aprovado com a vigência já passada (2027-03 com só 1 voto, lido em março): não está vivo, aponta o refeito
+    em('2027-02-20'); await apiExemplo.reajusteVotar!('fam-silva', '2027-03', 1_010_000, '0.05'); em('2027-03-05')
+    expect((await ler('fam-silva', '2027-03')).voto_aberto?.mes_vigencia).toBe('2027-04')
+    expect((await achaVigencia(ler, 'fam-silva', '2027-03', '2027-03-05'))[0]).toBe('2027-04')
     // a tela de Ana, com a config vazia (vigência pedida 2027-02), acha 2027-04
     const [v, sit] = await achaVigencia(ler, 'fam-silva', vigenciaAtiva({}, '2027-02'), '2027-03-05')
     expect(v).toBe('2027-04')

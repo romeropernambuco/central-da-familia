@@ -30,17 +30,20 @@ export const vigenciaDoRevoto = (hoje: string) => mesMais(hoje.slice(0, 7), 1)
 export type ReajusteCfg = Record<string, ReajusteMostra>
 
 /** Acha o voto em andamento. Fonte principal: o banco (voto_aberto da reajuste_situacao, f_14), que aponta o voto refeito
- *  mesmo sem a config gravada. Se o mês pedido não tem voto ou venceu: usa o voto_aberto; sem ele (banco antes do ajuste),
+ *  mesmo sem a config gravada. Se o mês pedido não está vivo (sem voto, vencido, ou não aprovado com a vigência já passada):
+ *  usa o voto_aberto; sem ele (banco antes do ajuste),
  *  pergunta pelo mês do voto refeito (o seguinte ao de hoje). A config (a vigência pedida) fica só como apoio. */
 export async function achaVigencia(ler: (f: string, mes: string) => Promise<ReajusteSituacao>, familia: string, pedida: string, hoje: string): Promise<[string, ReajusteSituacao]> {
   const s = await ler(familia, pedida)
-  if (s.votos.length && !s.vencido) return [pedida, s]
+  // vivo (regra final da f_14): em votação com vigência futura, ou aprovado dentro do prazo
+  const vivo = (x: ReajusteSituacao, m: string) => x.votos.length > 0 && !x.vencido && (x.aprovado || m > hoje.slice(0, 7))
+  if (vivo(s, pedida)) return [pedida, s]
   let alvo = s.voto_aberto?.mes_vigencia || null
   if (!alvo) {
     const r = vigenciaDoRevoto(hoje)
     if (r === pedida) return [pedida, s]
     const s2 = await ler(familia, r)
-    if (s2.votos.length && !s2.vencido) return [r, s2]
+    if (vivo(s2, r)) return [r, s2]
     alvo = s2.voto_aberto?.mes_vigencia || null
   }
   if (!alvo || alvo === pedida) return [pedida, s]
