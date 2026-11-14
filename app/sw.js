@@ -1,8 +1,8 @@
 // Service worker da Central: guarda só a casca do app (HTML, JS, CSS, fontes, ícones).
 // Dado de família nunca fica no cache: tudo que vai pro supabase.co passa direto pela rede.
 // Este arquivo é um modelo: o build troca VERSAO e ARQUIVOS (ver vite.config.ts) e grava sw.js na pasta publicada.
-const VERSAO = "67722c955442"
-const ARQUIVOS = ["assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2","assets/figtree-latin-wght-normal-D_ZTVpCC.woff2","assets/index-C5Vp1VSJ.css","assets/index-hxyL6wbU.js","assets/real-Da8zdygV.js","icone-180.png","icone-192.png","icone-512-maskable.png","icone-512.png","index.html","manifest.webmanifest"]
+const VERSAO = "c272d9708407"
+const ARQUIVOS = ["assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2","assets/figtree-latin-wght-normal-D_ZTVpCC.woff2","assets/index-CcHkyJjm.js","assets/partida-B2cogJDD.js","assets/partida-BVnkhC64.css","assets/real-CDeQvdY_.js","icone-180.png","icone-192.png","icone-512-maskable.png","icone-512.png","index.html","manifest.webmanifest"]
 const PREFIXO = 'central-'
 const CACHE = PREFIXO + VERSAO
 // pasta onde o app mora (ex.: /central-da-familia/app/). Nada fora dela entra no cache.
