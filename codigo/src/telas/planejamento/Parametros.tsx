@@ -84,7 +84,7 @@ export function Parametros() {
   }
 
   return (
-    <section className="card" aria-labelledby="pObj">
+    <section className="card plan-topo" aria-labelledby="pObj">
       <div className="card-h"><h2 id="pObj"><Target size={24} aria-hidden="true" />Objetivo de 2029</h2></div>
       <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.</p>
 
@@ -95,6 +95,9 @@ export function Parametros() {
         : estFuturo === 'erro' ? <p className="todo warn" style={{ marginBottom: 12 }}><span>Não deu pra fazer a conta de 2029 agora: {motivoFuturo}</span></p> : null}
       {ent && ent.confirmar.length > 0 && <p className="sub" style={{ margin: '10px 0 12px' }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
 
+      {/* C3 (sim do dono): as premissas descem pra um bloco recolhido; o gráfico e os 3 números ficam em cima */}
+      <details className="numeros-conta">
+        <summary><span><b>Os números da conta</b><small>gasto de 2029, margem, rendimento, impostos, piso, Selic e IPCA. Toque pra ver ou mudar</small></span></summary>
       <div>
         <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => setF({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>
         <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto</small></span><CampoValor valor={f.renda || ''} mudar={v => setF({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
@@ -129,6 +132,7 @@ export function Parametros() {
       {obj.historico.length ? <ul className="list">{obj.historico.slice(0, 6).map((h, i) => (
         <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{h.quem || (sozinho ? 'Você' : 'Alguém do casal')}, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
       ))}</ul> : <p className="sub">Ninguém mudou ainda. Valem as premissas: margem 10%, 4% acima da inflação, piso de 6 meses.</p>}
+      </details>
       {saida && saida.perguntas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>{saida.perguntas.length === 1 ? '1 recebimento atrasado espera' : `${saida.perguntas.length} recebimentos atrasados esperam`} a resposta do dono, em Recebimentos com data.</p>}
     </section>
   )

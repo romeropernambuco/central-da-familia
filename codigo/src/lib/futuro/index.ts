@@ -33,10 +33,10 @@ export { aluguelLiquidoMes, rentabilidadeAno, aluguelNoMes, analisarImoveis, gat
 /** Padrões do ECONOMISTA.md pra quem monta os parâmetros iniciais (todos editáveis pela família).
  *  IR da projeção até 2028: 22,5% (item 4: "o caixa gira, preparar pro pior").
  *  IR do modo renda, 2029 em diante: 15% (exemplo F2 dele, aplicação longa). O motor não usa este objeto: só lê parametros. */
-export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', aliq_aluguel: '0.15', piso_meses: 6, mes_reajuste: 1 } as const
-// aliq_aluguel: o ECONOMISTA.md não fixa IR de aluguel. 15% editável, [confirmar] com ele (RODADA_PATRIMONIO).
+export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', aliq_aluguel: '0.275', piso_meses: 6, mes_reajuste: 1 } as const
+// aliq_aluguel: o ECONOMISTA.md não fixa IR de aluguel. Decisão do chefe: 27,5% (pior caso do carnê-leão, preparar pro pior), editável, [confirmar].
 
-/** IR do aluguel: o do parâmetro; sem ele, 15% marcado [confirmar]. */
+/** IR do aluguel: o do parâmetro; sem ele, 27,5% marcado [confirmar]. */
 function aliqAluguel(e: FuturoEntrada): { aliq: Taxa; confirmar: boolean } {
   const a = e.parametros.aliq_aluguel
   return a === undefined ? { aliq: PADROES_ECONOMISTA.aliq_aluguel, confirmar: true } : { aliq: a, confirmar: false }

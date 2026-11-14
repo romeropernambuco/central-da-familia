@@ -1,5 +1,6 @@
 // F11 Imóveis (RODADA_PATRIMONIO.md, premissa nova do dono, 14/11/2026). Função pura.
-// - Aluguel líquido mensal = (aluguel − custos) × (1 − vacância) × (1 − aliq_aluguel).
+// - Aluguel líquido mensal = (aluguel × (1 − vacância) − custos) × (1 − aliq_aluguel).
+// - Venda com contrato entra bruta: IR de ganho de capital não modelado [confirmar].
 // - Entra como renda SÓ com contrato assinado e só até contrato_ate; depois, ou sem contrato, vira gatilho (fora da conta).
 // - Venda planejada entra como recebimento SÓ com contrato; sem contrato, gatilho.
 // - O valor do imóvel é patrimônio à parte: o plano nunca saca nem vende.
@@ -7,16 +8,17 @@
 import { arred, centavos, compararMes, Dec, proximoMes, taxa, UM, ZERO } from './decimal'
 import type { Centavos, Gatilho, Imovel, ImovelSaida, Mes, Recebimento, Taxa } from './tipos'
 
-/** Aluguel líquido do mês (centavos). Mora, sem aluguel ou custos maiores que o aluguel: 0 (os custos de quem
- *  mora ou de imóvel parado já estão no teto da casa). */
+/** Aluguel líquido do mês (centavos) = (aluguel × (1 − vacância) − custos) × (1 − aliq_aluguel), arredondado 1 vez
+ *  (ordem do VERIFICADOR, ESPERADO.md item 5). Mora, sem aluguel ou custos maiores que o aluguel recebido: 0
+ *  (os custos de quem mora ou de imóvel parado já estão no teto da casa). */
 export function aluguelLiquidoMes(im: Imovel, aliq_aluguel: Taxa | Dec): Centavos {
   if (im.uso === 'mora') return 0
-  const base = im.aluguel_bruto - im.custos_mes
   centavos(im.aluguel_bruto); centavos(im.custos_mes)
-  if (base <= 0) return 0
   const vac = taxa(im.vacancia)
   if (vac.lt(0) || vac.gt(1)) throw new Error(`Vacância inválida: ${im.vacancia}`)
-  return arred(centavos(base).times(UM.minus(vac)).times(UM.minus(taxa(aliq_aluguel))))
+  const antesIR = centavos(im.aluguel_bruto).times(UM.minus(vac)).minus(im.custos_mes)
+  if (antesIR.lte(0)) return 0
+  return arred(antesIR.times(UM.minus(taxa(aliq_aluguel))))
 }
 
 /** Rentabilidade ao ano: aluguel líquido × 12 ÷ valor estimado. Imóvel sem valor: 0. */

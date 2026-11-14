@@ -663,3 +663,69 @@ select.inp{appearance:auto}
 /* PACOTE 1 (A6): no celular o selo "exemplo" sai do topo (o rodapé e a faixa já avisam); A20: o + com 64 px e as 4 abas iguais */
 @media (max-width:599px){.top .sync.ex{display:none}}
 .tabbar:not(.so2){grid-template-columns:1fr 1fr 64px 1fr 1fr}
+
+/* ---------- C3 e pacote 2 do design: gráficos A, B e C (SVG à mão, largura medida) ---------- */
+.graf{margin:4px 0 0;min-width:0}
+.graf .graf-area{width:100%;min-width:0;border-radius:var(--r-sm);touch-action:pan-y;cursor:crosshair}
+.graf .graf-area>svg{display:block;width:100%;height:auto;overflow:visible}
+.graf-leitura{font-size:14px;line-height:20px;min-height:20px;color:var(--ink-2);margin-top:2px;font-variant-numeric:tabular-nums}
+.graf-leitura .graf-dica{color:var(--muted)}
+.graf .g-eixo{font-size:12px;fill:var(--muted);font-family:var(--font)}
+.graf .g-eixo.forte{fill:var(--ink-2);font-weight:600}
+.graf .g-rot{font-size:12px;fill:var(--muted);font-family:var(--font);font-variant-numeric:tabular-nums}
+.graf .g-rot.forte{font-size:13px;font-weight:700;fill:var(--ink)}
+.graf .g-rot.acima{fill:var(--warn);font-weight:700;font-size:13px}
+.graf .g-mira{stroke:var(--control);stroke-width:1}
+.graf .g-ponto{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+/* A: o mês */
+.graf-mes .g-teto{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4}
+.graf-mes .g-cheia{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.graf-mes .g-pont{stroke:var(--accent);stroke-width:2.5;stroke-dasharray:1 5;stroke-linecap:round}
+.graf-mes .g-pont.acima{stroke:var(--warn)}
+.graf-mes .g-hoje{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.graf-mes .g-fim{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.graf-mes .g-fim.acima{fill:var(--warn);stroke:var(--surface)}
+.ritmo-b .graf{margin-top:6px}
+.leg .q.g-q-pont{width:14px;height:0;border-top:3px dotted var(--accent);background:none;border-radius:0}
+/* B: o caixa até 12/2028 */
+.graf-caixa .g-faixa{fill:var(--raised)}
+.graf-caixa .piso{fill:none;stroke:var(--control);stroke-width:1.5;stroke-dasharray:none}
+.graf-caixa .linha{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.graf-caixa .g-degrau{stroke:var(--accent);stroke-width:2.5;stroke-dasharray:6 4}
+.graf-caixa .g-receb{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.graf-caixa .abaixo{fill:var(--warn);stroke:var(--surface);stroke-width:2}
+.linha-2028 .leg .q.piso-faixa{width:14px;height:10px;border-radius:2px;background:var(--raised);box-shadow:inset 0 2px 0 var(--control)}
+.linha-2028 .leg .q.receb{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.linha-2028 .leg .q.degrau{width:14px;height:0;border-top:3px dashed var(--accent);background:none;border-radius:0}
+.plan-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 12px}
+.plan-nums>div{min-width:0}
+.plan-nums dt{font-size:13px;line-height:18px;color:var(--muted)}
+.plan-nums dd{margin:0;font-family:var(--font-num);font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.plan-nums dd.plan-nums-p{font-family:var(--font);font-size:13px;line-height:18px;font-weight:500;color:var(--muted);letter-spacing:0}
+@media (max-width:599px){.plan-nums{grid-template-columns:1fr 1fr}.plan-nums>div:first-child{grid-column:1 / -1}.plan-nums dd{font-size:24px;line-height:30px}}
+.tela-larga>.col-toda{grid-column:1 / -1}
+.tela-larga>.col-toda:empty{display:none}
+.numeros-conta{margin-top:14px;border-radius:var(--r-md);background:var(--sunken);padding:0 14px}
+.numeros-conta>summary{min-height:56px;display:flex;align-items:center;cursor:pointer;list-style:none;padding:10px 0}
+.numeros-conta>summary::-webkit-details-marker{display:none}
+.numeros-conta>summary>span{display:grid;gap:2px}
+.numeros-conta>summary b{color:var(--accent-ink);font-size:16px}
+.numeros-conta>summary small{color:var(--muted);font-size:13px;line-height:18px}
+.numeros-conta>summary::after{content:"";margin-left:auto;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none}
+.numeros-conta[open]>summary::after{transform:rotate(225deg)}
+.numeros-conta[open]{padding-bottom:14px}
+/* C: o desejo */
+.desejo-resp{display:grid;gap:8px}
+.desejo-selo{justify-self:start;font-family:var(--font-num);font-size:20px;line-height:28px;font-weight:700;padding:4px 14px;border-radius:var(--r-pill)}
+.desejo-selo.ok{background:var(--accent-soft);color:var(--accent-ink)}
+.desejo-selo.warn{background:var(--warn-soft);color:var(--warn-ink)}
+.graf-desejo .g-sem{fill:none;stroke:var(--muted);stroke-width:2;stroke-linejoin:round}
+.graf-desejo .g-com{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.graf-desejo .g-entre{fill:var(--accent);fill-opacity:.15;stroke:none}
+.graf-desejo .abaixo{fill:var(--warn);stroke:var(--surface);stroke-width:2}
+.graf-leg{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px}
+.graf-leg li{display:grid;grid-template-columns:16px auto minmax(0,1fr);align-items:center;gap:8px;font-size:14px;line-height:20px}
+.graf-leg li span{color:var(--muted)}
+.graf-leg li b{justify-self:end;text-align:right;font-variant-numeric:tabular-nums}
+.graf-leg .q{width:16px;height:0;border-top:3px solid var(--muted)}
+.graf-leg .q.com{border-top-color:var(--accent)}

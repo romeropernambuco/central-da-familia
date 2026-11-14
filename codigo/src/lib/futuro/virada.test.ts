@@ -40,6 +40,7 @@ describe('erros 1 e 2: modo renda depois da virada', () => {
       expect(s.renda).toEqual({
         mes: '2029-01', patrimonio: 300_000_000, taxa_real_anual: '0.04', taxa_real_mensal: new Dec('1.04').pow(new Dec(1).div(12)).minus(1).toString(),
         renda_sustentavel: renda, gasto_do_mes: gasto, folga_do_mes: renda - gasto, falta_taxa: true,
+        aluguel_liquido: 0, renda_total: renda, // campos novos da RODADA_PATRIMONIO (sem imóveis: 0); valores antigos iguais
       })
       expect(s.renda_sustentavel).toBe(renda)
       expect(s.patrimonio_necessario).toBe(patrimonioNecessario(gasto, '0.10', '0.04'))

@@ -9,7 +9,8 @@ import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
 import { CampoValor, Din, Vazio } from '../../componentes/base'
 import { mesAno } from '../../componentes/Linha2028'
-import { avaliarAntecipacao, cabeDesejo, type Desejo, type FuturoEntrada } from '../../lib/futuro'
+import { avaliarAntecipacao, cabeDesejo, futuro, type Desejo, type FuturoEntrada } from '../../lib/futuro'
+import { GraficoDesejo } from '../../componentes/Graficos'
 import type { DesejoTela, NovoDesejo, SituacaoDesejo, VoltaDe } from '../../api/tipos'
 import { centavos, hojeRecife, mesCurto, plural, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
@@ -40,7 +41,12 @@ export function desejoDoMotor(d: NovoDesejo, id = 'novo', dono = ''): Desejo {
 }
 
 /** As frases do "cabe?" a partir do que o motor devolveu (até 3 frases curtas, nunca sinal de menos nem vermelho). */
-export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, antecipa?: ReturnType<typeof avaliarAntecipacao> | null): { titulo: string; ok: boolean; linhas: string[] } {
+/** C3 (pacote 2): a resposta em 1 palavra, antes da conta. Os 4 casos do motor, sem inventar um 5º. */
+export function seloDesejo(situacao: ReturnType<typeof cabeDesejo>['situacao']): string {
+  return situacao === 'cabe' ? 'Cabe' : situacao === 'cabe, mas tira' ? 'Aperta' : situacao === 'ainda nao cabe' ? 'Ainda não' : 'Apertado'
+}
+
+export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, antecipa?: ReturnType<typeof avaliarAntecipacao> | null): { titulo: string; ok: boolean; linhas: string[]; selo: string } {
   const linhas: string[] = []
   let titulo: string, ok: boolean
   // modo renda (depois da virada, QA E11): sem linha até 2028; compara o dinheiro guardado de hoje com o piso
@@ -64,7 +70,16 @@ export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, anteci
       ? `Adiantar o contrato custa mais do que o caixa rende: perde ${r$(antecipa.efeito_na_virada)} até 2029${pm ? ` e tira ${r$(pm)} por mês da renda de 2029` : ''}.`
       : `Adiantar o contrato compensa: o desconto é menor do que o caixa rende${pm ? ` e soma ${r$(pm)} por mês na renda de 2029` : ''}.`)
   }
-  return { titulo, ok, linhas }
+  return { titulo, ok, linhas, selo: seloDesejo(c.situacao) }
+}
+
+/** Gráfico C: a linha do caixa sem e com o desejo. Só chama futuro() 2 vezes (o motor faz a conta). */
+function linhasDoDesejo(entrada: FuturoEntrada, d: Desejo) {
+  try {
+    const sem = futuro(entrada), com = futuro({ ...entrada, desejos: [...entrada.desejos, d] })
+    if (sem.modo === 'renda' || !sem.linha.length) return null
+    return { sem: sem.linha, com: com.linha, rendaSem: sem.patrimonio_necessario === null ? null : sem.renda_sustentavel, rendaCom: com.patrimonio_necessario === null ? null : com.renda_sustentavel }
+  } catch { return null }
 }
 
 /** O motor responde "cabe?" pra 1 desejo. `semEste`: tira o próprio desejo da entrada (ele já está na lista da família). */
@@ -121,6 +136,7 @@ export function Desejos() {
   const [chaveFeita, setChaveFeita] = useState('')
   useEffect(() => { const t = setTimeout(() => setChaveFeita(chaveNovo), 300); return () => clearTimeout(t) }, [chaveNovo])
   const resultado = useMemo(() => (chaveFeita && ent?.entrada ? avaliar(ent.entrada, desejoDoMotor(JSON.parse(chaveFeita) as NovoDesejo)) : null), [chaveFeita, ent])
+  const linhasC = useMemo(() => (chaveFeita && ent?.entrada ? linhasDoDesejo(ent.entrada, desejoDoMotor(JSON.parse(chaveFeita) as NovoDesejo)) : null), [chaveFeita, ent])
   const resultadoPronto = !!chaveNovo && chaveFeita === chaveNovo
   // tempo limite: se em 5 s a conta não saiu, a tela diz (nunca fica parada em "Fazendo a conta…")
   const [demorou, setDemorou] = useState(false)
@@ -142,7 +158,12 @@ export function Desejos() {
 
   // o resultado: casal, do motor (cabeDesejo); filha, só o mês dela. QA E11 (E1): nunca fica parado em "Fazendo a conta…"
   const resposta = falta || !(novo.valor > 0) ? null : casal
-    ? resultado && resultadoPronto ? <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
+    ? resultado && resultadoPronto ? <div className="desejo-resp">
+        {/* C3: a resposta em 1 palavra antes de qualquer conta (o leitor de tela lê a frase inteira logo abaixo) */}
+        <p className={'desejo-selo ' + (resultado.ok ? 'ok' : 'warn')} aria-hidden="true">{resultado.selo}</p>
+        <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
+        {linhasC && <GraficoDesejo {...linhasC} />}
+      </div>
       : semConta ? <p className="todo warn desejo-res" role="status"><span>{semConta}</span></p>
       : <p className="sub desejo-res">{demorou ? 'A conta está demorando. Espere um pouco ou mude um número pra tentar de novo.' : 'Fazendo a conta…'}</p>
     : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))}</span></p> : null

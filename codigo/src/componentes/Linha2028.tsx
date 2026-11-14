@@ -6,6 +6,7 @@ import { useFuturo } from '../app/useDados2'
 import { useApp } from '../app/contexto'
 import type { FuturoEntrada, FuturoSaida, LinhaMes, RendaDoMes } from '../lib/futuro'
 import { mesCurto, reais } from '../lib/formato'
+import { GraficoCaixa, mesMaisApertado } from './Graficos'
 
 /** '2027-03' vira '03/2027'. */
 export const mesAno = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
@@ -48,41 +49,25 @@ export function frasesCorte(a: NonNullable<FuturoSaida['ajustes_falta']>): { fal
   return { falta, principal: `Fecha cortando ${r$(falta)} por mês.`, margem: m > 0 ? `Mais ${r$(m)} de folga de segurança, se der.` : null }
 }
 
-/** O desenho: saldo de cada mês (linha verde), piso tracejado e um ponto âmbar nos meses abaixo do piso. */
-function Desenho({ linha, piso }: { linha: LinhaMes[]; piso: (l: LinhaMes) => number }) {
-  if (linha.length < 2) return null
-  const W = 300, H = 120
-  const vals = [...linha.map(l => l.saldo_final), ...linha.map(piso), 0]
-  const min = Math.min(...vals), max = Math.max(...vals), folga = Math.max(1, (max - min) * 0.08)
-  const x = (i: number) => (i / (linha.length - 1)) * W
-  const y = (v: number) => H - 6 - ((v - (min - folga)) / (max - min + 2 * folga)) * (H - 12)
-  const pts = linha.map((l, i) => `${x(i).toFixed(1)},${y(l.saldo_final).toFixed(1)}`).join(' ')
-  const pisoPts = linha.map((l, i) => `${x(i).toFixed(1)},${y(piso(l)).toFixed(1)}`).join(' ')
-  return (
-    <svg viewBox={`0 -4 ${W} ${H + 8}`} preserveAspectRatio="none" role="img" aria-hidden="true">
-      {min < 0 && <line x1="0" x2={W} y1={y(0)} y2={y(0)} className="zero" />}
-      <polyline points={pisoPts} className="piso" />
-      <polyline points={pts} className="linha" />
-      {linha.map((l, i) => (l.fica_devendo > 0 ? <circle key={l.mes} cx={x(i)} cy={y(l.saldo_final)} r="3.5" className="abaixo" /> : null))}
-    </svg>
-  )
-}
-
 /** Planejamento: a linha mês a mês até dez/2028, as frases do motor e a lista de cada mês (aberta num toque). */
 export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: FuturoEntrada }) {
   const f = frasesLinha(saida)
   const pisoMeses = entrada.parametros.piso_meses
   // B3 (revisão): o piso de cada mês vem pronto do motor (LinhaMes.piso); a tela só desenha
-  const piso = (l: LinhaMes) => l.piso
   const l = saida.linha
-  const primeiro = l[0], ultimo = l[l.length - 1]
+  const ultimo = l[l.length - 1]
+  const aperto = mesMaisApertado(l)
+  const renda = saida.patrimonio_necessario === null ? null : saida.renda_sustentavel
   return (
     <div className="linha-2028">
-      <figure className="linha-saldo" aria-label={primeiro && ultimo ? `Caixa da família de ${curto(primeiro.mes)} a ${curto(ultimo.mes)}: começa com ${r$(primeiro.saldo_final)} e termina com ${r$(ultimo.saldo_final)}${ultimo.saldo_final < 0 ? ' devendo' : ''}.` : 'Caixa da família até dezembro de 2028'}>
-        <Desenho linha={l} piso={piso} />
-        {primeiro && ultimo && <figcaption className="barras30-pe"><span>{curto(primeiro.mes)}: {ultimo === primeiro ? '' : r$(primeiro.saldo_final)}</span><span>{curto(ultimo.mes)}: {ultimo.saldo_final < 0 ? 'devendo ' : ''}{r$(ultimo.saldo_final)}</span></figcaption>}
-      </figure>
-      <div className="leg"><span><i className="q" />o caixa no fim de cada mês</span><span><i className="q piso" />piso: {pisoMeses} {pisoMeses === 1 ? 'mês' : 'meses'} de teto que não se mexe</span>{l.some(x => x.fica_devendo > 0) && <span><i className="q abaixo" />mês abaixo do piso</span>}</div>
+      {/* C3 (pacote 2, gráfico B): 3 números em cima, nada de texto entre eles e o gráfico */}
+      {ultimo && <dl className="plan-nums">
+        <div><dt>Caixa em {curto(ultimo.mes)}</dt><dd className={ultimo.saldo_final < 0 ? 'din-warn' : ''}>{ultimo.saldo_final < 0 ? 'devendo ' : ''}{r$(ultimo.saldo_final)}</dd></div>
+        <div><dt>Renda por mês em 2029</dt><dd>{renda == null ? 'sem renda' : r$(renda)}</dd></div>
+        {aperto && <div><dt>Mês mais apertado</dt><dd className={aperto.fica_devendo > 0 ? 'din-warn' : ''}>{curto(aperto.mes)}</dd><dd className="plan-nums-p">{aperto.saldo_final >= aperto.piso ? `${r$(aperto.saldo_final - aperto.piso)} acima do piso` : `${r$(aperto.piso - aperto.saldo_final)} abaixo do piso`}</dd></div>}
+      </dl>}
+      <GraficoCaixa linha={l} renda2029={renda} />
+      <p className="leg"><span><i className="q piso-faixa" />faixa cinza: o piso, {pisoMeses} {pisoMeses === 1 ? 'mês' : 'meses'} de teto que não se mexe</span>{l.some(x => x.recebimentos > 0) && <span><i className="q receb" />bolinha: mês em que entra dinheiro</span>}{l.some(x => x.fica_devendo > 0) && <span><i className="q abaixo" />âmbar: o caixa encosta no piso</span>}<span><i className="q degrau" />2029: o caixa para e vive do que rende</span></p>
       <p className={'todo ' + (saida.folga >= 0 && !f.devendo && saida.patrimonio_necessario !== null ? 'ok' : 'warn')} style={{ marginTop: 10 }}><span>{f.caixa} {f.devendo}</span></p>
       <p className="sub linha-virada">{f.virada}{f.ajuste ? ` ${f.ajuste}` : ''}</p>
       {f.margem && <p className="sub linha-margem">{f.margem}</p>}

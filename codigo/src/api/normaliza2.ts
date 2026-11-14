@@ -3,11 +3,13 @@
 import type { Abre, Cartao, Contagem, EstadoItem, FaturaBanco, Feira, ItemEstoque, LinhaDiario, Pede, CustoDoGasto, EscritorioHoje, EstadoFuncionario, GuardadoHoje, Lembrete, PerguntaEsc, RelatorioEsc, Repetir, TipoAplicacao } from './tipos'
 import { hojeRecife } from '../lib/formato'
 import { motivoSemRender } from '../lib/guardado'
+import { APELIDO_BANCO } from '../telas/escritorio/equipe'
 
 const num = (v: unknown) => Number(v) || 0
 const txt = (v: unknown) => (v == null ? '' : String(v))
 /** O banco chama os funcionários por nomes compridos; as telas usam os curtos. */
-const APELIDO: Record<string, string> = { guardiao_colchao: 'colchao', analista_cartao: 'cartao', folha_casa: 'folha', fiscal_feira: 'fiscal', gestor_guardado: 'guardado' }
+// C2 (14/11): a lista vem da fonte única da equipe (telas/escritorio/equipe.ts)
+const APELIDO: Record<string, string> = APELIDO_BANCO
 const NOME_NO_BANCO: Record<string, string> = Object.fromEntries(Object.entries(APELIDO).map(([a, b]) => [b, a]))
 export const idFunc = (v: unknown) => APELIDO[txt(v)] || txt(v)
 export const idFuncNoBanco = (id: string) => NOME_NO_BANCO[id] || id

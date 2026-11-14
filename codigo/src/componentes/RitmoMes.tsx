@@ -1,5 +1,6 @@
 import type { Envelope } from '../api/tipos'
-import { centavos, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
+import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
+import { GraficoMes } from './Graficos'
 import { pesoDia, projecao } from '../lib/plano'
 
 /**
@@ -31,7 +32,9 @@ function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo:
   )
 }
 
-export function RitmoMes({ e, quem }: { e: Envelope; /** E2: no orçamento do outro, o nome dele no lugar de "você" */ quem?: string }) {
+export function RitmoMes({ e, quem, porDia }: { e: Envelope; /** E2: no orçamento do outro, o nome dele no lugar de "você" */ quem?: string
+  /** C3 (gráfico A): o gasto à vista de cada dia deste envelope no mês (AAAA-MM-DD: reais). Sem ele, a linha vai reta até hoje. */
+  porDia?: Record<string, number> | null }) {
   const hoje = hojeRecife()
   // E3 (conserto 10): quando o domingo já é do mês que vem, a conta para no fim do mês e o rótulo diz isso
   const domingo = somaDias(hoje, (7 - new Date(hoje + 'T12:00:00Z').getUTCDay()) % 7)
@@ -44,7 +47,6 @@ export function RitmoMes({ e, quem }: { e: Envelope; /** E2: no orçamento do ou
   const semana = e.gasto_semana_dia != null ? Math.max(0, e.gasto_semana_dia - ps) : null
   const totalSemana = semana != null && e.ate_domingo != null ? centavos(semana + e.ate_domingo) : null
   const marcaSem = marcaDaSemana(hoje)
-  const marcaMes = lim > 0 ? p.deveria / lim : 0
   const quemFecha = quem ? `${quem} fecha` : 'Fecha'
   return (
     <div className="ritmo">
@@ -58,11 +60,12 @@ export function RitmoMes({ e, quem }: { e: Envelope; /** E2: no orçamento do ou
       {dia >= 2 && lim > 0 && (
         <div className={'ritmo-b ' + (dia >= 3 ? (p.dentro ? 'ok' : 'warn') : '')}>
           <p className="ritmo-t"><span>{dia >= 3 ? 'Se continuar assim' : 'No mês'}</span><b>{dia >= 3 ? `${reais(p.fecha)} de ${reais(lim)}` : `${reais(e.gasto_mes)} de ${reais(lim)}`}</b></p>
-          <Barra feito={e.gasto_mes / lim} marca={marcaMes} rotulo={`Mês: já saíram ${reais(e.gasto_mes)} de ${reais(lim)}. O traço é onde deveria estar hoje: ${reais(p.deveria)}.`} />
+          {/* C3, gráfico A (no lugar da barra do mês): gasto acumulado, pontilhado "se continuar assim", combinado tracejado; âmbar só se passar */}
+          <GraficoMes gasto={e.gasto_mes} limite={lim} fecha={dia >= 3 ? p.fecha : e.gasto_mes} hoje={hoje} dias={diasNoMes(hoje)} porDia={porDia} />
           <p className="ritmo-f">{dia < 3 ? `Já saíram ${reais(e.gasto_mes)}.` : p.dentro ? `${quemFecha} o mês dentro do combinado.` : `Passa ${reais(p.passa)} no fim do mês. Siga o valor de cada dia.`}</p>
         </div>
       )}
-      {(e.ate_domingo != null || (dia >= 2 && lim > 0)) && <p className="leg ritmo-leg"><span><i className="q risco-q" />onde deveria estar hoje</span>{pontual > 0 && <span>parcelas e compras grandes ({reais(pontual)}) contam 1 vez só</span>}</p>}
+      {(e.ate_domingo != null || (dia >= 2 && lim > 0)) && <p className="leg ritmo-leg">{e.ate_domingo != null && <span><i className="q risco-q" />na barra da semana, o traço é onde deveria estar hoje</span>}{dia >= 3 && lim > 0 && <span><i className="q g-q-pont" />no gráfico do mês, o pontilhado é se continuar assim</span>}{pontual > 0 && <span>parcelas e compras grandes ({reais(pontual)}) contam 1 vez só</span>}</p>}
     </div>
   )
 }

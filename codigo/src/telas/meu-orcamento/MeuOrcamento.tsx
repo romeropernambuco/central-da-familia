@@ -5,6 +5,7 @@ import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { CobrirEstouro, fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { RitmoMes } from '../../componentes/RitmoMes'
+import { porDiaDe } from '../inicio/Inicio'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
 import { cofrinhoDoMes } from '../../lib/plano'
@@ -87,7 +88,7 @@ export function MeuOrcamento() {
             {frase && <p className="todo warn frase-estouro">{frase}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
-            {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} />}
+            {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}><CalendarCheck size={20} aria-hidden="true" />
                 <span><b>Ontem você não gastou nada?</b> É só pra conta ficar certa.

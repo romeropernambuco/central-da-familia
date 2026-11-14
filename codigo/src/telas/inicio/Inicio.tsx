@@ -13,11 +13,20 @@ import { Linha2028Resumo } from '../../componentes/Linha2028'
 import type { Envelope, Lancamento, ResumoHoje } from '../../api/tipos'
 import { centavos, dataCurta, fimDoMes, hojeRecife, mesAnterior, mesLongo, plural, reais, saudacao, somaDias } from '../../lib/formato'
 
+/** C3: gasto à vista por dia de 1 envelope no mês de hoje (parcelado fica de fora: o gráfico põe no dia 1). Só soma pra desenhar. */
+export function porDiaDe(l: Lancamento[], envelope: string, hoje: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const x of l) if (!x.apagado_em && x.envelope_id === envelope && x.data.startsWith(hoje.slice(0, 7)) && x.data <= hoje && !x.parcela && !((x.parcelas || 1) > 1)) out[x.data] = centavos((out[x.data] || 0) + x.valor)
+  return out
+}
+
 /** Início: 1º o número de hoje (o seu, quando você tem limite próprio); depois o Guardado em 1 cartão, o que precisa de você e quanto cada um pode gastar. */
 export function Inicio() {
   const { resumo, familia, api, versao, abrirLancar, explicar } = useApp()
   const nomeDe = useMembros()
   const [ult, setUlt] = useState<Lancamento[]>([])
+  // C3 (gráfico A): os lançamentos do mês, pra desenhar o gasto acumulado de cada dia
+  const [doMes, setDoMes] = useState<Lancamento[]>([])
   useEffect(() => {
     if (!familia) return
     let vivo = true
@@ -25,6 +34,7 @@ export function Inicio() {
     const mes = hojeRecife().slice(0, 7)
     ;(async () => {
       let l = (await api.lancamentos(familia.id, mes)).filter(x => !x.apagado_em)
+      if (vivo) setDoMes(l)
       if (l.length < 4) l = [...l, ...(await api.lancamentos(familia.id, mesAnterior(mes))).filter(x => !x.apagado_em)]
       if (vivo) setUlt(l.slice(0, 4))
     })().catch(() => {})
@@ -61,7 +71,7 @@ export function Inicio() {
           <Virada e={meu} />
           {n.estado !== 'devendo' && <ViradaAntes e={meu} />}
           {fraseEstouro(meu, n) && <p className="todo warn frase-estouro">{fraseEstouro(meu, n)}</p>}
-          {n.estado !== 'devendo' && <RitmoMes e={meu} />}
+          {n.estado !== 'devendo' && <RitmoMes e={meu} porDia={porDiaDe(doMes, meu.id, hoje)} />}
           {n.estado !== 'devendo' && <p className="apoio">{meu.livre < 0 ? <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, passou <b>{reais(-meu.livre)}</b>.</> : <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, sobram <b>{reais(meu.livre)}</b> até {dataCurta(fimDoMes(hoje))}.</>}</p>}
           {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null}</p>}
           <div className="row-btns">

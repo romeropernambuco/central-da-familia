@@ -96,6 +96,8 @@ export function Planejamento() {
 
   return (
     <div className="tela-larga">
+      {/* C3 (sim do dono): o Objetivo de 2029, com o gráfico até 12/2028 e os 3 números, sobe pro topo da tela */}
+      <div className="col col-toda"><Parametros /></div>
       <div className="col">
         <section className="card" aria-labelledby="pLim">
           <div className="card-h"><h2 id="pLim"><Wallet size={24} aria-hidden="true" />Limites do mês</h2></div>
@@ -180,8 +182,6 @@ export function Planejamento() {
             })}
           </section>
         )}
-        {/* E6: os parâmetros do objetivo de 2029 (os 2 mudam, com histórico; o Focus ao lado) */}
-        <Parametros />
       </div>
       {form && (
         <Sheet titulo={form === 'renda' ? 'Nova renda' : 'Nova meta'} fechar={() => setForm(null)}>

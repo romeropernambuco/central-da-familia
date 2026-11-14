@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { BellRing, Calculator, Camera, Check, ClipboardCheck, Copy, CreditCard, FileText, ShieldCheck, ShoppingBasket, UserRound, Landmark } from 'lucide-react'
+import { BellRing, Calculator, Camera, Check, ClipboardCheck, Coins, Copy, CreditCard, FileText, HeartHandshake, PackageSearch, ShieldCheck, ShoppingBasket, Sun, UserCheck, UserRound, Landmark } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
 import { useApp } from '../app/contexto'
 import { CampoValor } from './base'
@@ -10,6 +10,8 @@ import { hojeRecife, textoParaValor, valorDigitadoValido } from '../lib/formato'
 const ICO: Record<string, (s: number) => ReactNode> = {
   contador: s => <Calculator size={s} />, colchao: s => <ShieldCheck size={s} />, cartao: s => <CreditCard size={s} />, folha: s => <FileText size={s} />,
   comprador: s => <ShoppingBasket size={s} />, fiscal: s => <ClipboardCheck size={s} />, guardado: s => <Landmark size={s} />, secretaria: s => <BellRing size={s} />,
+  // C2: os 5 que entraram pela lista única (telas/escritorio/equipe.ts)
+  tesoureiro: s => <Coins size={s} />, assistente: s => <HeartHandshake size={s} />, usina: s => <Sun size={s} />, presenca: s => <UserCheck size={s} />, auditor: s => <PackageSearch size={s} />,
 }
 /** Rosto do funcionário nas listas: ícone num círculo (o boneco 3D só existe na tela Escritório). */
 export function FuncIco({ id, size = 40, precisa }: { id: string; size?: number; precisa?: boolean }) {
