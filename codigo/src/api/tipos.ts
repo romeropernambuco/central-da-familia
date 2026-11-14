@@ -244,6 +244,7 @@ export interface ReajusteSituacao {
   /** IPCA aprovado, em texto decimal ("0.0450"); null enquanto não aprovou */ ipca_aprovado: string | null
   /** R1: 'AAAA-MM' de quando vale de verdade (o banco decide: o mês de vigência ou o seguinte ao último voto); null sem aprovação */ vale_a_partir: string | null
   /** o mês de hoje já chegou em vale_a_partir (o banco decide) */ ja_vale: boolean
+  /** revisão E12: até que mês ('AAAA-MM') ainda dá pra aplicar (o banco decide); null = o banco ainda não manda */ aplicar_ate: string | null
   votos: { membro_id: string; nome: string; teto: number; ipca: string | null; votou_em: string }[]
   faltam: { membro_id: string; nome: string }[]
 }

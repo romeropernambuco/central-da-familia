@@ -135,3 +135,25 @@ describe('card de 2029: falta do mês e corte são o mesmo número na frase prin
     expect(s.ajustes_falta!.margem_por_mes).toBe(s.ajustes_falta!.cortar_por_mes_2029)
   })
 })
+
+describe('desejo feito não sai 2 vezes (REVISOR E12, C2)', () => {
+  const pend = { ...desejo(2_000_000, '2027-03'), id: 'pendente' }
+  const feito: Desejo = { ...desejo(5_000_000, '2026-10'), id: 'feito', situacao: 'feito' }
+  const desistiu: Desejo = { ...desejo(9_000_000, '2027-05'), id: 'desisti', situacao: 'desisti' }
+  it('projeção: 1 feito e 1 pendente dão a mesma linha que só o pendente', () => {
+    const so = futuro(ent('2026-11-18', { desejos: [pend] }))
+    const os2 = futuro(ent('2026-11-18', { desejos: [feito, pend, desistiu] }))
+    expect(os2.linha).toEqual(so.linha)
+    expect(os2.linha.reduce((t, l) => t + l.desvios, 0)).toBe(2_000_000)
+    expect(os2.ajustes_falta?.desejos_pra_adiar).toEqual(['pendente'])
+  })
+  it('modo renda: o feito não sai de novo do patrimônio; o pendente sai', () => {
+    const r = futuro(ent('2029-01-02', { desejos: [{ ...feito, mes: '2028-12' }, { ...pend, mes: '2029-02' }] })).renda!
+    expect(r.patrimonio).toBe(300_000_000 - 2_000_000)
+  })
+  it('cabe? não conta o feito que já está na lista', () => {
+    const a = cabeDesejo(ent('2026-11-18', { desejos: [feito] }), pend)
+    const b = cabeDesejo(ent('2026-11-18'), pend)
+    expect(a).toEqual(b)
+  })
+})

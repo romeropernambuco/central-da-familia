@@ -28,10 +28,18 @@ export { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
 export { ficaDevendo, cortarPorMes2029, desejosPraAdiar, ajusteSugerido, MESES_MINIMOS_PRA_GUARDAR } from './f9_falta'
 export { avisosFGC, fgcConta, TODOS_OS_BANCOS, LIMITE_FGC, TETO_CPF_FGC } from './f10_fgc'
 
+/** Padrões do ECONOMISTA.md item 4 pra quem monta os parâmetros iniciais (todos editáveis pela família).
+ *  IR da projeção até 2028: 22,5% ("o caixa gira, preparar pro pior"). O motor não usa este objeto: só lê parametros. */
+export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', piso_meses: 6, mes_reajuste: 1 } as const
+
 function taxasDe(e: FuturoEntrada) {
   const p = e.parametros
   return { taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj, virada: p.virada, taxa_real_trabalho: p.taxa_real_trabalho }
 }
+
+/** Desejo que ainda vai sair do caixa. "feito" já saiu do saldo (contar de novo descontaria 2 vezes) e "desisti" não sai.
+ *  Os 2 ficam só no histórico da tela (REVISOR E12, C2). */
+export function desejoPendente(d: Desejo): boolean { return d.situacao !== 'feito' && d.situacao !== 'desisti' }
 
 /** Depois da virada (hoje no mês da virada ou depois) o motor entra em modo renda (QA E11, erros 1 e 2). */
 export function emModoRenda(e: FuturoEntrada): boolean { return compararMes(mesDaData(e.hoje), e.parametros.virada) >= 0 }
@@ -48,7 +56,7 @@ function taxaRealDoAno(e: FuturoEntrada, ano: number): { real: Dec; falta_taxa: 
 /** Patrimônio real hoje no modo renda: caixa + aplicações − o que os desejos da lista tiram (saída menos volta certa). */
 function patrimonioHoje(e: FuturoEntrada): Centavos {
   let s = e.aplicacoes.reduce((t, a) => t + a.saldo, e.saldo_caixa)
-  for (const d of e.desejos) {
+  for (const d of e.desejos.filter(desejoPendente)) {
     const f = fluxosDoDesejo(d)
     s -= f.desvios.reduce((t, x) => t + x.valor, 0)
     s += f.retornos.reduce((t, x) => t + x.valor, 0)
@@ -57,7 +65,8 @@ function patrimonioHoje(e: FuturoEntrada): Centavos {
 }
 
 /** Modo renda: sem linha; renda do mês que o patrimônio real sustenta pra sempre, contra o gasto do mês. Nunca trava. */
-function futuroRenda(e: FuturoEntrada): FuturoSaida {
+function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
+  const e: FuturoEntrada = { ...entrada, desejos: entrada.desejos.filter(desejoPendente) }
   const p = e.parametros
   const mes = mesDaData(e.hoje)
   const { real, falta_taxa: semTaxa } = taxaRealDoAno(e, anoDe(mes))
@@ -111,7 +120,8 @@ function mesesDevendo(linha: LinhaMes[]): Set<Mes> {
  *  - teto reajusta no mês de reajuste pelo IPCA do ano anterior (F8, projeção);
  *  - piso do mês = piso_meses × teto do mês;
  *  - "guardar por mês" (F9a) usa os mesmos fatores mês a mês da linha, depósito no fim do mês (revisão do ECONOMISTA). */
-export function futuro(e: FuturoEntrada): FuturoSaida {
+export function futuro(entrada: FuturoEntrada): FuturoSaida {
+  const e: FuturoEntrada = { ...entrada, desejos: entrada.desejos.filter(desejoPendente) }
   if (emModoRenda(e)) return futuroRenda(e)
   const p = e.parametros
   const mes_hoje = mesDaData(e.hoje)

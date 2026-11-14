@@ -102,13 +102,15 @@ function situacaoReajusteEx(mes: string) {
   const votos = db.reajusteVotos.filter(v => v.mes === mes).sort((a, b) => a.votou_em.localeCompare(b.votou_em))
   const faltam = adultos.filter(a => !votos.some(v => v.membro_id === a.id))
   const dosAdultos = votos.filter(v => adultos.some(a => a.id === v.membro_id))
-  const aprovado = faltam.length === 0 && new Set(dosAdultos.map(v => v.teto)).size === 1 && new Set(dosAdultos.map(v => v.ipca)).size === 1
+  const aprovado = faltam.length === 0 && new Set(dosAdultos.map(v => v.teto)).size === 1 && new Set(dosAdultos.map(v => Number(v.ipca))).size === 1 /* revisão E12: IPCA comparado como número */
   // R1 (igual a f_12): vale no mais tarde entre o mês de vigência e o mês seguinte ao último voto (fuso de Recife)
   const ultimo = dosAdultos.map(v => hojeRecife(new Date(v.votou_em)).slice(0, 7)).sort().pop()
   const vale = aprovado && ultimo ? [mes, mesMais(ultimo, 1)].sort().pop()! : null
   return {
     mes_vigencia: mes, aprovado, teto_aprovado: aprovado ? dosAdultos[0].teto : null, ipca_aprovado: aprovado ? dosAdultos[0].ipca : null,
     vale_a_partir: vale, ja_vale: !!vale && hojeRecife().slice(0, 7) >= vale,
+    // revisão E12: o exemplo dá até o fim do mês em que passa a valer pra aplicar (o banco manda aplicar_ate)
+    aplicar_ate: vale,
     votos: votos.map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(x => x.id === v.membro_id)?.nome || '', teto: v.teto, ipca: v.ipca, votou_em: v.votou_em })),
     faltam: faltam.map(a => ({ membro_id: a.id, nome: a.nome })),
   }
@@ -712,6 +714,7 @@ export const apiExemplo: Api = {
     const s = situacaoReajusteEx(mes)
     if (!s.aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto e IPCA.')
     if (!s.ja_vale) throw new Error(`O reajuste vale a partir de ${s.vale_a_partir!.slice(5)}/${s.vale_a_partir!.slice(0, 4)}.`)
+    if (s.aplicar_ate && hojeRecife().slice(0, 7) > s.aplicar_ate) throw new Error(`O prazo pra aplicar o reajuste acabou em ${s.aplicar_ate.slice(5)}/${s.aplicar_ate.slice(0, 4)}.`)
     // o limite do outro adulto continua com ele (mesma regra do banco)
     const dono = membrosTeste().find(x => x.envelope === envelope)
     if (dono && dono.papel === 'casal' && dono.id !== membroLogado().id) throw new Error(`O limite de ${dono.nome} só ${dono.nome} ajusta.`)

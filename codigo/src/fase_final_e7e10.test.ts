@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
-import { situacaoReajuste } from './telas/planejamento/Reajuste'
+import { mesmoIpca, situacaoReajuste } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
 import { desejoDoMotor, fraseDaFilha, frasesDesejo } from './telas/desejos/Desejos'
@@ -92,7 +92,7 @@ describe('E7: reajuste do teto (F8) votado no banco (f_12)', () => {
   it('F8-TETO: R$ 30.000 com IPCA de 5,22% sugere R$ 31.566 (conta do motor)', () => { expect(reajustarTeto(3_000_000, '0.0522')).toBe(3_156_600) })
   it('normaliza o formato do banco (mês AAAA-MM, centavos, IPCA, vale_a_partir, votos e quem falta)', () => {
     const s = doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false)
-    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
+    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
   })
   it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente; tetos diferentes não aprovam', () => {
     expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false))).toBe('sugestao pendente')
@@ -374,5 +374,42 @@ describe('PACOTE 1 do design: o âmbar de texto passa 4,5:1 nos 3 fundos claros'
     const lum = (h: string) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] }
     const cr = (a: string, b: string) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
     for (const cor of ['warn', 'warn-ink']) for (const fundo of ['ground', 'raised', 'surface', 'warn-soft']) expect(cr(tk(cor), tk(fundo))).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+describe('Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo de aplicar', () => {
+  const css: string = readFileSync('src/estilo.css', 'utf8')
+  const claro = css.slice(css.indexOf(':root{'), css.indexOf('@media (prefers-color-scheme:dark)'))
+  const tk = (n: string) => new RegExp(`--${n}:(#[0-9A-Fa-f]{6})`).exec(claro)![1]
+  const lum = (h: string) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] }
+  const cr = (a: string, b: string) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
+  it('C3: texto verde sobre a faixa usa --accent-ink (≥ 4,5); --accent só pinta ícone, borda, barra e fundo de botão (≥ 3)', () => {
+    expect(cr(tk('accent-ink'), tk('raised'))).toBeGreaterThanOrEqual(4.5)
+    expect(cr(tk('accent'), tk('raised'))).toBeGreaterThanOrEqual(3)
+    // toda regra "color:var(--accent)" (texto) tem que ser de ícone (svg) ou do botão de ícone
+    const regras = [...css.matchAll(/([^{}]+)\{[^}]*(?<![-\w])color:var\(--accent\)[;}]/g)].map(m => m[1].trim())
+    for (const sel of regras) expect(sel).toMatch(/svg|iconbtn/)
+  })
+  it('1 adulto: "aí você aplica", nunca "cada um aplica"', () => {
+    const src: string = readFileSync('src/telas/planejamento/Reajuste.tsx', 'utf8')
+    expect(src).toMatch(/adultos === 1 \? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'/)
+  })
+  it('IPCA comparado como número ("0.05" = "0.0500")', () => {
+    expect(mesmoIpca('0.05', '0.0500')).toBe(true)
+    expect(mesmoIpca('0.045', '0.0450')).toBe(true)
+    expect(mesmoIpca('0.045', '0.046')).toBe(false)
+    expect(mesmoIpca(null, '0.05')).toBe(false)
+  })
+  const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('exemplo: votos "0.045" e "0.0450" aprovam; aplicar_ate vem na situação e depois dele é recusado', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); em('2027-01-05'); reiniciarExemplo()
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
+    exemploComo('bruno')
+    const s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.0450')
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-02', aplicar_ate: '2027-02' })
+    expect(normalizaReajuste({ ...s, aplicar_ate: '2027-02' }).aplicar_ate).toBe('2027-02')
+    em('2027-03-02')
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')).rejects.toThrow(/prazo pra aplicar o reajuste acabou em 02\/2027/)
   })
 })

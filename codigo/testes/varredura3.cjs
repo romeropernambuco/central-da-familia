@@ -22,7 +22,7 @@ try { pw = require('playwright') } catch { pw = require('/opt/node-tools/node_mo
 
 const args = process.argv.slice(2)
 const PARTE = (args.find(a => a.startsWith('--parte=')) || '--parte=tudo').slice(8)
-const RAPIDA = args.includes('--rapida') || process.env.VARREDURA_RAPIDA === '1' // só 390 px e 2 dias (pra conferir o script, nunca pro portão)
+const RAPIDA = args.includes('--rapida') || process.env.VARREDURA_RAPIDA === '1' // só 390 px e 4 dias (pra conferir o script, nunca pro portão)
 const PRINTS = process.env.PRINTS || join(__dirname, 'prints', 'varredura3')
 const SAIDA = process.env.SAIDA || ''
 const TRABALHOS = Number(process.env.TRABALHOS || 4)
@@ -39,7 +39,7 @@ const PESSOAS = [
   { nome: 'Casal jovem', usa: ['ana', 'bruno'] },
 ]
 const VARRIDAS = PESSOAS.filter(p => p.chave)
-const DIAS = RAPIDA ? [['2026-11-18', 10], ['2029-01-02', 10]] : [['2026-11-18', 10], ['2026-11-30', 21], ['2026-12-01', 9], ['2028-12-31', 10], ['2029-01-02', 10]]
+const DIAS = RAPIDA ? [['2026-11-18', 10], ['2028-12-31', 10], ['2029-01-01', 10], ['2029-01-02', 10]] : [['2026-11-18', 10], ['2026-11-30', 21], ['2026-12-01', 9], ['2028-12-31', 10], ['2029-01-02', 10]]
 const LARGURAS = RAPIDA ? [[390, 844]] : [[390, 844], [1280, 800]]
 const ROTAS_BOTOES = ['inicio', 'lancamentos', 'orcamento', 'casa', 'desejos', 'guardado', 'cartoes', 'planejamento', 'escritorio', 'ajustes', 'privacidade']
 const ROTAS_SO_ABRIR = ['painel', 'primeiro-uso', 'entrar', 'qualquer-coisa']
@@ -196,11 +196,17 @@ async function varrer(browser, pessoa, [larg, alt], [dia, hora]) {
     const depois = dia >= '2029-01-01'
     onde = `${tag} #/planejamento linha até 2028`
     await carregar(p, url(pessoa, dia, hora, 'planejamento'))
-    await p.waitForSelector(depois ? 'section[aria-labelledby=pObj]' : '.linha-2028 svg polyline.linha', { timeout: 8000 }).catch(() => {})
+    await p.waitForSelector(depois || dia === '2028-12-31' ? 'section[aria-labelledby=pObj]' : '.linha-2028 svg polyline.linha', { timeout: 8000 }).catch(() => {})
     const obj = await p.$('section[aria-labelledby=pObj]')
     const tObj = obj ? ((await obj.innerText()) || '').replace(/ /g, ' ') : ''
     marca(k, 'V9', !!obj && tObj.length > 40, `${onde}: o card Objetivo de 2029 não aparece`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
-    if (!depois) {
+    if (dia === '2028-12-31') {
+      // Q1 (revisão E12): no último dia de 2028 não sobra mês pra desenhar; a tela diz de propósito "Dezembro de 2028 é o último
+      // mês..." e mostra a falta (ou a folga) em R$. Exige esse texto com número e nenhuma linha desenhada.
+      const semLinha = !(await p.$('.linha-2028 svg polyline.linha'))
+      marca(k, 'V9', semLinha && /Dezembro de 2028 é o último mês/.test(tObj) && /R\$ ?[\d.]+/.test(tObj), `${onde}: em 31/12/2028 falta o texto do último mês com R$ (ou ainda desenha a linha): "${tObj.replace(/\s+/g, ' ').slice(0, 200)}"`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
+      if (larg === 390) await printa(p, `${pessoa.nome}_linha2028_${dia}_${larg}`)
+    } else if (!depois) {
       const linha = await p.$('.linha-2028 svg polyline.linha')
       marca(k, 'V9', !!linha && /R\$ ?[\d.]+,?\d*/.test((await p.$eval('.linha-2028', e => e.innerText).catch(() => '')).replace(/\u00a0/g, ' ')), `${onde}: a linha até dez/2028 não está desenhada com número`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
       if (larg === 390) await printa(p, `${pessoa.nome}_linha2028_${dia}_${larg}`)

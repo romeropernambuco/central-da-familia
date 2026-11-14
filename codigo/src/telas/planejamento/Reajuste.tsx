@@ -20,6 +20,9 @@ export interface ReajusteMostra { ipca: string; teto: number; aplicado?: Record<
 export type ReajusteCfg = Record<string, ReajusteMostra>
 export type PeReajuste = 'sem sugestao' | 'sugestao pendente' | 'tetos diferentes' | 'aprovado, vale no mes seguinte' | 'aprovado'
 
+/** O IPCA é texto decimal ("0.05" e "0.0500" são o mesmo número): compara como número (revisão E12). */
+export const mesmoIpca = (a: string | null | undefined, b: string | null | undefined) => a != null && b != null && Number(a) === Number(b)
+
 /** Em que pé está o reajuste, pelo que o banco devolveu (reajuste_situacao). Sem conta: "já vale" é do banco (R1). */
 export function situacaoReajuste(sit: ReajusteSituacao | null): PeReajuste {
   if (!sit || !sit.votos.length) return 'sem sugestao'
@@ -55,6 +58,8 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const pe = situacaoReajuste(sit)
   // o voto só vale pra um mês que ainda não começou (o banco recusa depois)
   const prazo = hoje.slice(0, 7) < vigencia
+  // revisão E12: aplicar tem prazo quando o banco manda aplicar_ate; depois dele o botão some e a tela avisa
+  const passouAplicar = !!sit?.aplicar_ate && hoje.slice(0, 7) > sit.aplicar_ate
   const noMes = mesNum === mesReajuste && prazo
   if (!noMes && (pe === 'sem sugestao' || (pe === 'aprovado' && !meus.length))) return null
 
@@ -111,14 +116,15 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
       <CalendarClock size={20} aria-hidden="true" />
       <span>
         <b>Reajuste do teto de {vigencia.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
-        {pe === 'aprovado' ? 'Aprovado e já vale. Toque pra aplicar nos limites que você ajusta.'
-          : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: aí cada um aplica no que é seu.`
+        {pe === 'aprovado' ? `Aprovado e já vale. Toque pra aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até o fim de ${mesLongo(sit.aplicar_ate + '-01')}` : ''}.`
+          : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
           : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
           : `Só vale com ${adultos === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir de ${quando}.`}
         {sit && sit.votos.length > 0 && pe !== 'aprovado' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
         {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo pra aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
-        {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || meuVoto.ipca !== ipcaVoto) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
-        {pe === 'aprovado' && meus.length > 0 && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
+        {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || !mesmoIpca(meuVoto.ipca, ipcaVoto)) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
+        {pe === 'aprovado' && meus.length > 0 && passouAplicar && <small className="reajuste-quem">O prazo pra aplicar acabou em {mesLongo(sit!.aplicar_ate + '-01')}. Cada um ainda muda o próprio limite aqui em cima.</small>}
+        {pe === 'aprovado' && meus.length > 0 && !passouAplicar && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
       </span>
     </div>
   )
