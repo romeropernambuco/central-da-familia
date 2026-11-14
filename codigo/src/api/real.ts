@@ -2,7 +2,7 @@
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Api, AvisoCasa, Cartao, ChaveConfig, Fatura, FamiliaMinha, Lancamento, Numero, Papel, ParametrosObjetivo, Sessao } from './tipos'
-import { entradaDoBanco, type FuturoBanco } from './futuro'
+import { BANCO_GUARDA_ALIQ_RENDA, entradaDoBanco, type FuturoBanco } from './futuro'
 import { normalizaCartao, normalizaContagem, normalizaCusto, normalizaEscritorio, normalizaFaturaBanco, normalizaFeira, normalizaGuardado, normalizaItem, normalizaLembrete, normalizaLinha, normalizaRelatorio, idFuncNoBanco } from './normaliza2'
 import { hojeRecife } from '../lib/formato'
 import { MSG_CUPOM, mensagemCupom } from '../lib/foto'
@@ -367,7 +367,10 @@ export const apiReal: Api = {
   async objetivoSalvar(familia, p) {
     // f_12: 1 função no banco (objetivo_salvar). Antes (D2): select e depois update só de parametros ou insert; os 2
     // salvando juntos pela 1ª vez davam chave repetida. O banco grava o histórico (quem, quando, antes e depois).
-    await rpc('objetivo_salvar', { familia, parametros: p })
+    // aliq_renda (IR de 2029 em diante) ainda não é uma chave aceita pela f_07 (o banco confere as chaves exatas):
+    // até o BANCO passar o nome, não vai pro banco e vale o padrão (15%). A tela avisa no campo.
+    const { aliq_renda: _r, ...semRenda } = p
+    await rpc('objetivo_salvar', { familia, parametros: BANCO_GUARDA_ALIQ_RENDA ? p : semRenda })
   },
   // ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco ----------
   async reajusteSituacao(familia, mes) { return normalizaReajuste(await rpc('reajuste_situacao', { familia, mes_vigencia: `${mes}-01` })) },

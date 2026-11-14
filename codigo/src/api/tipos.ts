@@ -228,6 +228,8 @@ export interface ParametrosObjetivo {
   /** gasto por mês em 2029, a preços de hoje; null = [confirmar] (a conta usa o teto do mês até a família dizer) */
   gasto_2029_hoje: number | null
   renda_certa_2029: number; margem: string; taxa_real_trabalho: string; aliq_proj: string
+  /** IR de 2029 em diante (aplicação longa); sem o campo vale o padrão do ECONOMISTA (15%). aliq_proj é o de até 2028 */
+  aliq_renda?: string
   taxa_bruta_ano: Record<string, string>; ipca_ano: Record<string, string>
   /** null = [confirmar] (a conta usa 6) */ piso_meses: number | null
   mes_reajuste: number; travado_focus: boolean

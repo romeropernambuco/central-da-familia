@@ -431,3 +431,28 @@ describe('Revisão E12 (C2): desejo "feito" não conta 2 vezes', () => {
     expect(PARAMETROS_INICIAIS.aliq_proj).toBe('0.225')
   })
 })
+
+describe('Revisão E12: 2 impostos, até 2028 (aliq_proj) e depois de 2029 (aliq_renda)', () => {
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('vazio vale o padrão; mudar um não mexe no outro (exemplo grava, entrada leva os 2)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-18T10:00:00-03:00')); reiniciarExemplo()
+    let p = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!.parametros
+    expect([p.aliq_proj, p.aliq_renda]).toEqual(['0.225', '0.15'])
+    const { PARAMETROS_INICIAIS } = await import('./api/futuro')
+    await apiExemplo.objetivoSalvar!('fam-silva', { ...PARAMETROS_INICIAIS, aliq_renda: '0.175' })
+    p = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!.parametros
+    expect([p.aliq_proj, p.aliq_renda]).toEqual(['0.225', '0.175'])
+    await apiExemplo.objetivoSalvar!('fam-silva', { ...PARAMETROS_INICIAIS, aliq_proj: '0.2', aliq_renda: '0.175' })
+    p = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!.parametros
+    expect([p.aliq_proj, p.aliq_renda]).toEqual(['0.2', '0.175'])
+  })
+  it('o modo renda usa o imposto de 2029: mudar o de até 2028 não muda a renda de 2029', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2029-01-02T10:00:00-03:00')); reiniciarExemplo()
+    const e = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!
+    const comTaxa = { ...e, parametros: { ...e.parametros, taxa_bruta_ano: { 2029: '0.1025' }, ipca_ano: { 2029: '0.04' } } }
+    const a = futuro(comTaxa).renda!, b = futuro({ ...comTaxa, parametros: { ...comTaxa.parametros, aliq_proj: '0.10' } }).renda!
+    expect(b.renda_sustentavel).toBe(a.renda_sustentavel)
+    const c = futuro({ ...comTaxa, parametros: { ...comTaxa.parametros, aliq_renda: '0.225' } }).renda!
+    expect(c.renda_sustentavel).toBeLessThan(a.renda_sustentavel)
+  })
+})

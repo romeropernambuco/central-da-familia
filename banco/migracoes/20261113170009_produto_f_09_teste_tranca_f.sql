@@ -430,6 +430,22 @@ begin
       end;
     end if;
 
+    -- aliq_renda (f_13), quando existir: o IR de 2029 em diante, só os 2 adultos gravam
+    if coalesce(produto._objetivo_ok(obj::jsonb || '{"aliq_renda": "0.15"}'::jsonb), false) then
+      update produto.objetivo set parametros = parametros || '{"aliq_renda": "0.15"}'::jsonb where familia_id = fam::uuid;
+      for c in select * from (values
+        ('CONTROLE IR 2029: A grava aliq_renda', ua, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_renda": "0.15"}'' where familia_id = %L', fam), 'linhas', '1'),
+        ('IR 2029: aliq_renda como numero (tem que ser texto)', ua, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_renda": 0.15}'' where familia_id = %L', fam), 'linhas', 'bloqueado'),
+        ('IR 2029: aliq_renda acima de 100%', ub, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_renda": "1.5"}'' where familia_id = %L', fam), 'linhas', 'bloqueado'),
+        ('IR 2029: a filha grava aliq_renda', up, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_renda": "0"}'' where familia_id = %L', fam), 'linhas', '0'),
+        ('IR 2029: a equipe grava aliq_renda', ue, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_renda": "0"}'' where familia_id = %L', fam), 'linhas', '0'),
+        ('IR 2029: dados do futuro devolvem aliq_proj e aliq_renda', ua, 'authenticated', format('select count(*) from (select produto.futuro_entradas(%L)->''parametros'' p) q where q.p->>''aliq_proj'' = ''0.225'' and q.p->>''aliq_renda'' = ''0.15''', fam), 'contar', '1')
+      ) as v(nome, uid, papel_db, sql, modo, esp) loop
+        r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
+        r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
+      end loop;
+    end if;
+
     -- ===== contas que o banco ainda faz (sem login, como o turno da noite) =====
     -- 1.200 em 6x comprado em 05/11/2026, cartão fecha dia 1 e vence dia 10: faturas de dez a mai, 200 cada
     select string_agg((x->>'mes') || ':' || (x->>'total'), ',' order by x->>'mes') into v

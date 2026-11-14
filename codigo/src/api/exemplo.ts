@@ -659,7 +659,7 @@ export const apiExemplo: Api = {
     await espera(40)
     if (papelLogado() !== 'casal') throw new Error('Só o casal muda o objetivo de 2029.')
     const ok = (t: string) => /^-?\d+(\.\d+)?$/.test(t) && Math.abs(Number(t)) <= 1
-    if (![p.margem, p.taxa_real_trabalho, p.aliq_proj, ...Object.values(p.taxa_bruta_ano), ...Object.values(p.ipca_ano)].every(ok)) throw new Error('Confira as taxas: use um número em %, tipo 10 ou 4,5.')
+    if (![p.margem, p.taxa_real_trabalho, p.aliq_proj, ...(p.aliq_renda != null ? [p.aliq_renda] : []), ...Object.values(p.taxa_bruta_ano), ...Object.values(p.ipca_ano)].every(ok)) throw new Error('Confira as taxas: use um número em %, tipo 10 ou 4,5.')
     if (!(p.mes_reajuste >= 1 && p.mes_reajuste <= 12)) throw new Error('O mês do reajuste vai de 1 a 12.')
     const antes = db.objetivo.parametros
     if (JSON.stringify(antes) === JSON.stringify(p)) return

@@ -5,13 +5,16 @@
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
 import type { FocusAno, ParametrosObjetivo } from './tipos'
 
+/** Vira true quando o BANCO aceitar a chave aliq_renda (IR de 2029 em diante) nos parâmetros do objetivo (f_07 confere as chaves). */
+export const BANCO_GUARDA_ALIQ_RENDA = false
+
 /** A virada: a partir de jan/2029 a família vive de rendimento (BRIEF). */
 export const VIRADA = '2029-01'
 
 /** Parâmetros que a tela começa a mostrar enquanto a família não gravou os dela: as premissas do TIME.md.
  *  Nenhum valor real: gasto e piso ficam [confirmar]; taxas são as recomendadas (margem 10%, 4% real, IR 15%). */
 export const PARAMETROS_INICIAIS: ParametrosObjetivo = {
-  gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1000', taxa_real_trabalho: '0.0400', aliq_proj: PADROES_ECONOMISTA.aliq_proj /* revisão E12: 22,5% até 2028 (ECONOMISTA), editável no Objetivo */,
+  gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1000', taxa_real_trabalho: '0.0400', aliq_proj: PADROES_ECONOMISTA.aliq_proj /* revisão E12: 22,5% até 2028 (ECONOMISTA), editável no Objetivo */, aliq_renda: PADROES_ECONOMISTA.aliq_renda /* de 2029 em diante: 15% */,
   taxa_bruta_ano: {}, ipca_ano: {}, piso_meses: null, mes_reajuste: 1, travado_focus: false,
 }
 
@@ -72,6 +75,8 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   const parametros: Parametros = {
     mes_base: m0, virada: VIRADA, gasto_2029_hoje: p.gasto_2029_hoje ?? teto_mes, renda_certa_2029: p.renda_certa_2029 || 0,
     margem: p.margem, taxa_real_trabalho: p.taxa_real_trabalho, taxa_bruta_ano, ipca_ano, aliq_proj: p.aliq_proj,
+    // os 2 impostos: até 2028 (aliq_proj) e de 2029 em diante (aliq_renda); vazio = padrão do ECONOMISTA
+    aliq_renda: p.aliq_renda || PADROES_ECONOMISTA.aliq_renda,
     piso_meses: p.piso_meses ?? 6, teto_mes, mes_reajuste: p.mes_reajuste || 1,
   }
 
