@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
-import { mesmoIpca, prazoPassou, situacaoReajuste } from './telas/planejamento/Reajuste'
+import { mesmoIpca, prazoPassou, situacaoReajuste, vigenciaAtiva, vigenciaDoRevoto } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
 import { desejoDoMotor, fraseDaFilha, frasesDesejo } from './telas/desejos/Desejos'
@@ -490,5 +490,38 @@ describe('f_14: o voto vence depois do último dia', () => {
     expect(await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).toMatchObject({ ja_vale: true, vencido: false, aplicar_ate: '2027-02-28' })
     vi.setSystemTime(new Date('2027-03-01T10:00:00-03:00'))
     expect(await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).toMatchObject({ ja_vale: false, vencido: true })
+  })
+})
+
+describe('Decisão: voto vencido, "Votar de novo" com a vigência no mês que vem', () => {
+  it('a vigência ativa segue o voto refeito; o refeito é o 1º mês que ainda não começou', () => {
+    expect(vigenciaAtiva({}, '2027-02')).toBe('2027-02')
+    expect(vigenciaAtiva({ '2027-02': { ipca: '0.045', teto: 1, revoto: '2027-04' } }, '2027-02')).toBe('2027-04')
+    expect(vigenciaAtiva({ '2027-02': { ipca: '0.045', teto: 1, revoto: '2027-04' }, '2027-04': { ipca: '0.045', teto: 1, revoto: '2027-07' } }, '2027-02')).toBe('2027-07')
+    expect(vigenciaDoRevoto('2027-03-05')).toBe('2027-04')
+    expect(vigenciaDoRevoto('2027-12-31')).toBe('2028-01')
+  })
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('vencido, votar de novo, os 2 aprovam e vale no mês seguinte (mesmas recusas do banco)', async () => {
+    const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
+    vi.useFakeTimers({ toFake: ['Date'] }); em('2027-01-05'); reiniciarExemplo()
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045'); exemploComo('bruno')
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
+    em('2027-03-05')
+    expect(situacaoReajuste(await apiExemplo.reajusteSituacao!('fam-silva', '2027-02'), '2027-03-05')).toBe('vencido')
+    // o voto refeito vai pro mês que vem; pro mês de hoje o banco recusa
+    await expect(apiExemplo.reajusteVotar!('fam-silva', '2027-03', 1_000_000, '0.045')).rejects.toThrow(/ainda não começou/)
+    const nova = vigenciaDoRevoto('2027-03-05')
+    let s = await apiExemplo.reajusteVotar!('fam-silva', nova, 1_020_000, '0.05') // teto e IPCA editados
+    expect(s.aprovado).toBe(false)
+    exemploComo('ana')
+    s = await apiExemplo.reajusteVotar!('fam-silva', nova, 1_020_000, '0.0500')
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-04', ja_vale: false, aplicar_ate: '2027-04-30' })
+    expect(situacaoReajuste(s, '2027-03-05')).toBe('aprovado, vale no mes seguinte')
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', nova)).rejects.toThrow(/vale a partir de 04\/2027/)
+    em('2027-04-02')
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', nova)
+    const a = (await apiExemplo.resumoHoje('fam-silva')).envelopes.find(e => e.id === 'env-ana')!
+    expect(a.limite_base ?? a.limite_mes).toBe(5775) // 5.500 × 1,05
   })
 })

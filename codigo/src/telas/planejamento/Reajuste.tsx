@@ -9,14 +9,24 @@ import { useApp } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { useFuturo } from '../../app/useDados2'
 import { reajustarTeto } from '../../lib/futuro'
-import { textoDaTaxa } from '../../api/futuro'
+import { taxaDoTexto, textoDaTaxa } from '../../api/futuro'
+import { CampoValor } from '../../componentes/base'
 import type { Envelope, Objetivo, ReajusteSituacao } from '../../api/tipos'
-import { dataCurta, hojeRecife, mesLongo, reais } from '../../lib/formato'
+import { dataCurta, hojeRecife, mesLongo, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 
 /** Só pra mostrar (f_12: quem decide o "aprovado" é o banco): a inflação e o teto de antes, gravados no 1º voto,
  *  e em quais limites o reajuste já foi aplicado. Chave: o mês de vigência 'AAAA-MM'. */
-export interface ReajusteMostra { ipca: string; teto: number; aplicado?: Record<string, string> }
+export interface ReajusteMostra { ipca: string; teto: number; aplicado?: Record<string, string>; /** voto vencido refeito: a vigência nova ('AAAA-MM') */ revoto?: string }
+
+/** A vigência em votação: a do mês do reajuste, ou a do voto refeito depois que o anterior venceu (segue a corrente). */
+export function vigenciaAtiva(cfg: ReajusteCfg, base: string): string {
+  let v = base
+  for (let i = 0; i < 36 && cfg[v]?.revoto; i++) v = cfg[v]!.revoto!
+  return v
+}
+/** Votar de novo: o 1º mês que ainda não começou. */
+export const vigenciaDoRevoto = (hoje: string) => mesMais(hoje.slice(0, 7), 1)
 export type ReajusteCfg = Record<string, ReajusteMostra>
 export type PeReajuste = 'sem sugestao' | 'sugestao pendente' | 'tetos diferentes' | 'aprovado, vale no mes seguinte' | 'aprovado' | 'vencido'
 
@@ -47,7 +57,10 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const hoje = hojeRecife(), ano = Number(hoje.slice(0, 4)), mesNum = Number(hoje.slice(5, 7))
   const mesReajuste = obj?.parametros?.mes_reajuste || ent?.entrada?.parametros.mes_reajuste || 1
   // o mês em que o voto é guardado (o seguinte ao mês do reajuste). Quando vale de verdade é o banco que diz (vale_a_partir)
-  const vigencia = mesMais(`${ano}-${String(mesReajuste).padStart(2, '0')}`, 1)
+  const vigenciaBase = mesMais(`${ano}-${String(mesReajuste).padStart(2, '0')}`, 1)
+  // decisão do coordenador: voto vencido se refaz com a vigência no mês que vem; a config guarda o caminho (só pra achar)
+  const vigencia = vigenciaAtiva(cfg, vigenciaBase)
+  const [refazer, setRefazer] = useState<{ teto: string; ipca: string } | null>(null)
   useEffect(() => {
     if (!familia || familia.papel !== 'casal') return
     api.objetivo?.(familia.id).then(setObj).catch(() => {})
@@ -65,7 +78,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const prazo = hoje.slice(0, 7) < vigencia
   // revisão E12: aplicar tem prazo quando o banco manda aplicar_ate; depois dele o botão some e a tela avisa
   const passouAplicar = prazoPassou(sit?.aplicar_ate, hoje)
-  const noMes = mesNum === mesReajuste && prazo
+  const noMes = mesNum === mesReajuste && hoje.slice(0, 7) < vigenciaBase
   if (!noMes && (pe === 'sem sugestao' || ((pe === 'aprovado' || pe === 'vencido') && !meus.length))) return null
 
   // a inflação do ano que passou: a que a família digitou no Objetivo de 2029; senão a do Focus (marcada pra conferir)
@@ -99,6 +112,19 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     setGravando(false)
     if (ok && nova) { setSit(nova); toast((nova as ReajusteSituacao).aprovado ? `${adultos === 1 ? 'Aprovado' : 'Aprovado pelos 2'}. Vale a partir de ${quando}.` : 'Seu "aprovo" está guardado. Falta a outra pessoa do casal aprovar.') }
   }
+  // decisão do coordenador: depois que vence, "Votar de novo" abre o voto já com teto e IPCA do voto vencido (editáveis)
+  async function votarDeNovo() {
+    if (gravando || !familia || !refazer) return
+    const nova = vigenciaDoRevoto(hoje)
+    const ipcaNovo = taxaDoTexto(refazer.ipca)
+    if (!valorDigitadoValido(refazer.teto) || !(textoParaValor(refazer.teto) > 0) || !ipcaNovo || !(Number(ipcaNovo) >= 0 && Number(ipcaNovo) < 1)) { toast('Confira o teto (tipo 14.943,50) e o IPCA (tipo 4,5).'); return }
+    const tetoNovo = Math.round(textoParaValor(refazer.teto) * 100)
+    setGravando(true)
+    const ok = await tentar(async () => { await api.reajusteVotar!(familia.id, nova, tetoNovo, ipcaNovo) })
+    if (ok) await salvar({ ...cfg, [vigencia]: { ...(mostra || { ipca: ipcaNovo, teto }), revoto: nova }, [nova]: { ipca: ipcaNovo, teto: mostra?.teto ?? teto } })
+    setGravando(false)
+    if (ok) { setRefazer(null); toast(adultos === 1 ? `Voto novo guardado. Vale a partir de ${mesLongo(mesMais(nova, 0) + '-01')}.` : 'Voto novo guardado. Falta a outra pessoa do casal aprovar.') }
+  }
   async function aplicar() {
     if (gravando || !familia) return
     setGravando(true)
@@ -121,7 +147,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
       <CalendarClock size={20} aria-hidden="true" />
       <span>
         <b>Reajuste do teto de {vigencia.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
-        {pe === 'vencido' ? `O prazo pra aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}. ${adultos === 1 ? 'Vote de novo pra valer.' : 'Votem de novo pra valer.'}`
+        {pe === 'vencido' ? `O prazo pra aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}.`
           : pe === 'aprovado' ? `Aprovado e já vale. Toque pra aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até ${dataCurta(sit.aplicar_ate)}` : ''}.`
           : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
           : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
@@ -129,6 +155,15 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
         {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
         {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo pra aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
         {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || !mesmoIpca(meuVoto.ipca, ipcaVoto)) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
+        {pe === 'vencido' && !refazer && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" onClick={() => setRefazer({ teto: valorParaTexto((sit?.teto_aprovado ?? sugerido) / 100), ipca: textoDaTaxa(sit?.ipca_aprovado ?? ipcaVoto) })}>Votar de novo</button></span>}
+        {pe === 'vencido' && refazer && (
+          <span className="reajuste-refazer" style={{ display: 'grid', gap: 10, marginTop: 10 }}>
+            <span className="campo"><span>Teto da família por mês</span><CampoValor valor={refazer.teto} mudar={v => setRefazer({ ...refazer, teto: v })} rotulo="Teto da família por mês" /></span>
+            <label className="campo"><span>IPCA (%)</span><input className="inp" inputMode="decimal" value={refazer.ipca} onChange={e => setRefazer({ ...refazer, ipca: e.target.value.replace(/[^\d,.]/g, '') })} /></label>
+            <small>Vale a partir de {mesLongo(vigenciaDoRevoto(hoje) + '-01')}, {adultos === 1 ? 'com o seu voto' : 'se os 2 aprovarem os mesmos números'}.</small>
+            <span className="row-btns"><button className="btn sm primary" type="button" disabled={gravando} onClick={votarDeNovo}><Check size={18} />Aprovo com estes números</button><button className="btn sm line" type="button" onClick={() => setRefazer(null)}>Deixar como está</button></span>
+          </span>
+        )}
         {pe === 'aprovado' && meus.length > 0 && !passouAplicar && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
       </span>
     </div>
