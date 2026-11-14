@@ -92,7 +92,8 @@ export function normalizaReajuste(r: any): import('./tipos').ReajusteSituacao {
     ipca_aprovado: r?.ipca_aprovado == null ? null : String(r.ipca_aprovado),
     vale_a_partir: r?.vale_a_partir ? String(r.vale_a_partir).slice(0, 7) : null,
     ja_vale: !!r?.ja_vale,
-    aplicar_ate: r?.aplicar_ate ? String(r.aplicar_ate).slice(0, 7) : null,
+    aplicar_ate: r?.aplicar_ate ? String(r.aplicar_ate).slice(0, 10) : null,
+    vencido: !!r?.vencido,
     votos: (r?.votos || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? ''), teto: Number(v.teto_centavos) || 0, ipca: v.ipca == null ? null : String(v.ipca), votou_em: String(v.votou_em ?? '') })),
     faltam: (r?.faltam || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
   }

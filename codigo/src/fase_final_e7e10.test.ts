@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
-import { mesmoIpca, situacaoReajuste } from './telas/planejamento/Reajuste'
+import { mesmoIpca, prazoPassou, situacaoReajuste } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
 import { desejoDoMotor, fraseDaFilha, frasesDesejo } from './telas/desejos/Desejos'
@@ -92,7 +92,7 @@ describe('E7: reajuste do teto (F8) votado no banco (f_12)', () => {
   it('F8-TETO: R$ 30.000 com IPCA de 5,22% sugere R$ 31.566 (conta do motor)', () => { expect(reajustarTeto(3_000_000, '0.0522')).toBe(3_156_600) })
   it('normaliza o formato do banco (mês AAAA-MM, centavos, IPCA, vale_a_partir, votos e quem falta)', () => {
     const s = doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false)
-    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
+    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, vencido: false, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
   })
   it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente; tetos diferentes não aprovam', () => {
     expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false))).toBe('sugestao pendente')
@@ -403,20 +403,24 @@ describe('Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo 
   })
   const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
   afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
-  it('exemplo: votos "0.045" e "0.0450" aprovam; sem prazo final (igual ao banco: aplicar_ate null) e aplicar de novo não acumula', async () => {
+  it('exemplo (f_14): votos "0.045" e "0.0450" aprovam; aplicar até o último dia do mês de vale_a_partir, no dia seguinte é recusado', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); em('2027-01-05'); reiniciarExemplo()
     await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
     exemploComo('bruno')
     const s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.0450')
-    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-02', aplicar_ate: null })
-    // o banco ainda não manda o campo: a tela lê null (sem prazo); se um dia mandar, a tela lê o mês
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-02', aplicar_ate: '2027-02-28' })
+    // o banco antes da f_14 não manda o campo: null = sem prazo; com a f_14, a data inteira
     expect(normalizaReajuste({ mes_vigencia: '2027-02' }).aplicar_ate).toBeNull()
-    expect(normalizaReajuste({ mes_vigencia: '2027-02', aplicar_ate: '2027-12' }).aplicar_ate).toBe('2027-12')
-    em('2027-06-02')
+    expect(normalizaReajuste({ mes_vigencia: '2027-02', aplicar_ate: '2027-02-28' }).aplicar_ate).toBe('2027-02-28')
+    // último dia: aplica (e aplicar de novo não acumula)
+    em('2027-02-28')
     await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
     await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
     const b = (await apiExemplo.resumoHoje('fam-silva')).envelopes.find(e => e.id === 'env-bruno')!
     expect(b.limite_base ?? b.limite_mes).toBe(4180)
+    // dia seguinte: o voto venceu
+    em('2027-03-01')
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-casa', '2027-02')).rejects.toThrow(/O prazo pra aplicar acabou em 28\/02\. Votem de novo pra valer\./)
   })
 })
 
@@ -459,5 +463,32 @@ describe('Revisão E12: 2 impostos, até 2028 (aliq_proj) e depois de 2029 (aliq
     expect(b.renda_sustentavel).toBe(a.renda_sustentavel)
     const c = futuro({ ...comTaxa, parametros: { ...comTaxa.parametros, aliq_renda: '0.225' } }).renda!
     expect(c.renda_sustentavel).toBeLessThan(a.renda_sustentavel)
+  })
+})
+
+describe('f_14: a tela tira o botão de aplicar só depois do último dia', () => {
+  it('último dia ainda aplica; o dia seguinte não; sem aplicar_ate nunca vence', () => {
+    expect(prazoPassou('2027-02-28', '2027-02-28')).toBe(false)
+    expect(prazoPassou('2027-02-28', '2027-03-01')).toBe(true)
+    expect(prazoPassou(null, '2030-01-01')).toBe(false)
+  })
+})
+
+describe('f_14: o voto vence depois do último dia', () => {
+  it('situação do banco com vencido (ou aplicar_ate passado) vira "vencido"; no último dia ainda vale', () => {
+    const base = { mes_vigencia: '2027-02', aprovado: true, teto_aprovado_centavos: 1, ipca_aprovado: '0.045', vale_a_partir: '2027-02', votos: [{ membro_id: 'a', nome: 'A', teto_centavos: 1, ipca: '0.045', votou_em: '2027-01-05' }], faltam: [] }
+    expect(situacaoReajuste(normalizaReajuste({ ...base, ja_vale: true, aplicar_ate: '2027-02-28', vencido: false }), '2027-02-28')).toBe('aprovado')
+    expect(situacaoReajuste(normalizaReajuste({ ...base, ja_vale: false, aplicar_ate: '2027-02-28', vencido: true }), '2027-03-01')).toBe('vencido')
+    expect(situacaoReajuste(normalizaReajuste({ ...base, ja_vale: true, aplicar_ate: '2027-02-28' }), '2027-03-01')).toBe('vencido')
+  })
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('exemplo: no dia seguinte ja_vale fica falso e vencido verdadeiro, igual ao banco', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2027-01-05T10:00:00-03:00')); reiniciarExemplo()
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045'); exemploComo('bruno')
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
+    vi.setSystemTime(new Date('2027-02-28T10:00:00-03:00'))
+    expect(await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).toMatchObject({ ja_vale: true, vencido: false, aplicar_ate: '2027-02-28' })
+    vi.setSystemTime(new Date('2027-03-01T10:00:00-03:00'))
+    expect(await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).toMatchObject({ ja_vale: false, vencido: true })
   })
 })

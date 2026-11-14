@@ -108,10 +108,11 @@ function situacaoReajusteEx(mes: string) {
   const vale = aprovado && ultimo ? [mes, mesMais(ultimo, 1)].sort().pop()! : null
   return {
     mes_vigencia: mes, aprovado, teto_aprovado: aprovado ? dosAdultos[0].teto : null, ipca_aprovado: aprovado ? dosAdultos[0].ipca : null,
-    vale_a_partir: vale, ja_vale: !!vale && hojeRecife().slice(0, 7) >= vale,
-    // igual ao banco hoje (f_12): sem prazo final pra aplicar; aplicar de novo dá o mesmo número. Se o dono decidir um prazo,
-    // o BANCO cria aplicar_ate e o exemplo passa a mandar o mesmo
-    aplicar_ate: null as string | null,
+    // f_14: ja_vale só dentro do prazo (do 1º dia de vale_a_partir até o último dia daquele mês); depois, vencido
+    vale_a_partir: vale, ja_vale: !!vale && hojeRecife().slice(0, 7) >= vale && hojeRecife() <= fimDoMes(vale + '-01'),
+    vencido: !!vale && hojeRecife() > fimDoMes(vale + '-01'),
+    // decisão do coordenador (f_14): aplicar até o último dia do mês de vale_a_partir; depois o voto vence
+    aplicar_ate: vale ? fimDoMes(vale + '-01') : null as string | null,
     votos: votos.map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(x => x.id === v.membro_id)?.nome || '', teto: v.teto, ipca: v.ipca, votou_em: v.votou_em })),
     faltam: faltam.map(a => ({ membro_id: a.id, nome: a.nome })),
   }
@@ -715,6 +716,7 @@ export const apiExemplo: Api = {
     if (papelLogado() !== 'casal') throw new Error('Só o casal aplica o reajuste.')
     const s = situacaoReajusteEx(mes)
     if (!s.aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto e IPCA.')
+    if (s.aplicar_ate && hojeRecife() > s.aplicar_ate) throw new Error(`O prazo pra aplicar acabou em ${dataCurta(s.aplicar_ate)}. Votem de novo pra valer.`)
     if (!s.ja_vale) throw new Error(`O reajuste vale a partir de ${s.vale_a_partir!.slice(5)}/${s.vale_a_partir!.slice(0, 4)}.`)
     // o limite do outro adulto continua com ele (mesma regra do banco)
     const dono = membrosTeste().find(x => x.envelope === envelope)

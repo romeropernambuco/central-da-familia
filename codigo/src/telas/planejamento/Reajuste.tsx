@@ -18,14 +18,19 @@ import { mesMais } from '../../lib/plano'
  *  e em quais limites o reajuste já foi aplicado. Chave: o mês de vigência 'AAAA-MM'. */
 export interface ReajusteMostra { ipca: string; teto: number; aplicado?: Record<string, string> }
 export type ReajusteCfg = Record<string, ReajusteMostra>
-export type PeReajuste = 'sem sugestao' | 'sugestao pendente' | 'tetos diferentes' | 'aprovado, vale no mes seguinte' | 'aprovado'
+export type PeReajuste = 'sem sugestao' | 'sugestao pendente' | 'tetos diferentes' | 'aprovado, vale no mes seguinte' | 'aprovado' | 'vencido'
 
 /** O IPCA é texto decimal ("0.05" e "0.0500" são o mesmo número): compara como número (revisão E12). */
 export const mesmoIpca = (a: string | null | undefined, b: string | null | undefined) => a != null && b != null && Number(a) === Number(b)
 
+/** f_14: o prazo de aplicar é até o último dia (aplicar_ate) inclusive; null = sem prazo. */
+export const prazoPassou = (aplicarAte: string | null | undefined, hoje: string) => !!aplicarAte && hoje > aplicarAte
+
 /** Em que pé está o reajuste, pelo que o banco devolveu (reajuste_situacao). Sem conta: "já vale" é do banco (R1). */
-export function situacaoReajuste(sit: ReajusteSituacao | null): PeReajuste {
+export function situacaoReajuste(sit: ReajusteSituacao | null, hoje?: string): PeReajuste {
   if (!sit || !sit.votos.length) return 'sem sugestao'
+  // f_14: depois do último dia (aplicar_ate) o voto vence; o banco também manda vencido e ja_vale falso
+  if (sit.aprovado && (sit.vencido || (hoje != null && prazoPassou(sit.aplicar_ate, hoje)))) return 'vencido'
   if (sit.aprovado) return sit.ja_vale ? 'aprovado' : 'aprovado, vale no mes seguinte'
   if (!sit.faltam.length) return 'tetos diferentes'
   return 'sugestao pendente'
@@ -55,13 +60,13 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
 
   const mostra = cfg[vigencia]
   const meus = envelopes.filter(e => mudaLimite(e) && !mostra?.aplicado?.[e.id])
-  const pe = situacaoReajuste(sit)
+  const pe = situacaoReajuste(sit, hoje)
   // o voto só vale pra um mês que ainda não começou (o banco recusa depois)
   const prazo = hoje.slice(0, 7) < vigencia
   // revisão E12: aplicar tem prazo quando o banco manda aplicar_ate; depois dele o botão some e a tela avisa
-  const passouAplicar = !!sit?.aplicar_ate && hoje.slice(0, 7) > sit.aplicar_ate
+  const passouAplicar = prazoPassou(sit?.aplicar_ate, hoje)
   const noMes = mesNum === mesReajuste && prazo
-  if (!noMes && (pe === 'sem sugestao' || (pe === 'aprovado' && !meus.length))) return null
+  if (!noMes && (pe === 'sem sugestao' || ((pe === 'aprovado' || pe === 'vencido') && !meus.length))) return null
 
   // a inflação do ano que passou: a que a família digitou no Objetivo de 2029; senão a do Focus (marcada pra conferir)
   const anoIpca = Number(vigencia.slice(0, 4)) - 1
@@ -116,14 +121,14 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
       <CalendarClock size={20} aria-hidden="true" />
       <span>
         <b>Reajuste do teto de {vigencia.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
-        {pe === 'aprovado' ? `Aprovado e já vale. Toque pra aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até o fim de ${mesLongo(sit.aplicar_ate + '-01')}` : ''}.`
+        {pe === 'vencido' ? `O prazo pra aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}. ${adultos === 1 ? 'Vote de novo pra valer.' : 'Votem de novo pra valer.'}`
+          : pe === 'aprovado' ? `Aprovado e já vale. Toque pra aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até ${dataCurta(sit.aplicar_ate)}` : ''}.`
           : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
           : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
           : `Só vale com ${adultos === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir de ${quando}.`}
-        {sit && sit.votos.length > 0 && pe !== 'aprovado' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
+        {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
         {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo pra aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
         {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || !mesmoIpca(meuVoto.ipca, ipcaVoto)) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
-        {pe === 'aprovado' && meus.length > 0 && passouAplicar && <small className="reajuste-quem">O prazo pra aplicar acabou em {mesLongo(sit!.aplicar_ate + '-01')}. Cada um ainda muda o próprio limite aqui em cima.</small>}
         {pe === 'aprovado' && meus.length > 0 && !passouAplicar && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
       </span>
     </div>
