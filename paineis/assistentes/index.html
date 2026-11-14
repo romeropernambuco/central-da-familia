@@ -8,17 +8,18 @@
 <meta name="description" content="A Clara e a equipe de assistentes da casa: o que precisa de você, o que já fizeram sozinhos e a rotina do dia.">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ===== Sistema visual da agência (tokens únicos dos painéis da família) ===== */
 :root{
-  --ground:#F5F5F3; --surface:#FFFFFF; --raised:#EFEFEC; --sunken:#F8F8F6; --border:#E4E4E0; --rule:#EEEEEA; --control:#D6D6D1;
-  --ink:#111111; --ink-2:#3D3D3A; --muted:#6B6A66; --faint:#9C9B97;
+  --ground:#F1F3EF; --surface:#FFFFFF; --raised:#E8EBE6; --sunken:#F8F8F6; --border:#E3E6E1; --rule:#ECEEEA; --control:#D6D6D1;
+  --ink:#16130F; --ink-2:#3D3D3A; --muted:#62615D; --faint:#676662;
   --accent:#0E7A5A; --accent-press:#0A6047; --accent-soft:#E3F2EC; --accent-ink:#064E3A; --on-accent:#FFFFFF;
   --warn:#A15C07; --warn-soft:#FDF3E1; --warn-ink:#7A4505;
-  --neg:#B42318; --neg-soft:#FDECEA; --neg-ink:#8F1C13;
-  --scrim:rgba(17,17,17,.42); --toast-bg:#111111; --toast-ink:#F5F5F3;
-  --font:"Geist", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* sem vermelho (regra do dono): o que era "negativo" usa o âmbar */
+  --neg:#94540A; --neg-soft:#FDF3E1; --neg-ink:#7A4505;
+  --scrim:rgba(17,17,17,.42); --toast-bg:#111111; --toast-ink:#F1F3EF;
+  --font:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --fs-hero:48px; --fs-kpi:28px; --fs-title:20px; --fs-h2:16px; --fs-body:15px; --fs-sm:13px; --fs-xs:12px;
   --gutter:16px; --card-pad:20px; --gap:12px; --tap:44px; --maxw:1180px;
   --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px;
@@ -37,7 +38,7 @@
   --ink:#F4F4F2; --ink-2:#D6D5D1; --muted:#A3A29E; --faint:#6E6D69;
   --accent:#34D399; --accent-press:#22B07E; --accent-soft:#0F2A21; --accent-ink:#A7F3D0; --on-accent:#04150F;
   --warn:#FBBF24; --warn-soft:#2A2010; --warn-ink:#FCD98A;
-  --neg:#F97066; --neg-soft:#2C1412; --neg-ink:#FCB4AE;
+  --neg:#FBBF24; --neg-soft:#2A2010; --neg-ink:#FCD98A;
   --scrim:rgba(0,0,0,.6); --toast-bg:#F4F4F2; --toast-ink:#111111;
   --shadow-float:0 8px 24px rgba(0,0,0,.5), 0 0 0 1px #262626; --shadow-fab:0 6px 16px rgba(0,0,0,.5);
   --hatch:#3A3A38; --p2:#A6A5A1; --bar:#6E6D69; color-scheme:dark}}
@@ -46,7 +47,7 @@
   --ink:#F4F4F2; --ink-2:#D6D5D1; --muted:#A3A29E; --faint:#6E6D69;
   --accent:#34D399; --accent-press:#22B07E; --accent-soft:#0F2A21; --accent-ink:#A7F3D0; --on-accent:#04150F;
   --warn:#FBBF24; --warn-soft:#2A2010; --warn-ink:#FCD98A;
-  --neg:#F97066; --neg-soft:#2C1412; --neg-ink:#FCB4AE;
+  --neg:#FBBF24; --neg-soft:#2A2010; --neg-ink:#FCD98A;
   --scrim:rgba(0,0,0,.6); --toast-bg:#F4F4F2; --toast-ink:#111111;
   --shadow-float:0 8px 24px rgba(0,0,0,.5), 0 0 0 1px #262626; --shadow-fab:0 6px 16px rgba(0,0,0,.5);
   --hatch:#3A3A38; --p2:#A6A5A1; --bar:#6E6D69; color-scheme:dark}
@@ -649,9 +650,9 @@ plant(-6.3,-3.3,1.2);plant(6.4,-3.3,1);plant(-6.3,3,1);
 /* texto em placa (canvas) */
 function placaTex(linhas,cor){var c=document.createElement("canvas");c.width=512;c.height=320;var x=c.getContext("2d");
   x.fillStyle="#FFFFFF";x.fillRect(0,0,512,320);x.fillStyle=cor;x.fillRect(0,0,512,14);
-  x.fillStyle="#6B6A66";x.font="600 40px Geist, system-ui, sans-serif";x.fillText(linhas[0],32,82);
-  x.fillStyle="#111111";x.font="700 64px Geist, system-ui, sans-serif";x.fillText(linhas[1],32,178);
-  x.fillStyle="#3D3D3A";x.font="500 44px Geist, system-ui, sans-serif";x.fillText(linhas[2],32,252);
+  x.fillStyle="#6B6A66";x.font="600 40px Figtree, system-ui, sans-serif";x.fillText(linhas[0],32,82);
+  x.fillStyle="#111111";x.font="700 64px Figtree, system-ui, sans-serif";x.fillText(linhas[1],32,178);
+  x.fillStyle="#3D3D3A";x.font="500 44px Figtree, system-ui, sans-serif";x.fillText(linhas[2],32,252);
   var t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
 
 /* boneco: articulações de verdade (ombro, cotovelo, quadril, joelho) */

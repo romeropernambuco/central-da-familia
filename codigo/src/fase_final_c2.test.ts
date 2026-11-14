@@ -1,0 +1,67 @@
+// C2 (14/11): lista única da equipe. O app (telas/escritorio/equipe.ts) e a página publicada (paineis/escritorio3d) têm
+// os mesmos funcionários; quem não tem dado no banco aparece com "ainda sem dado" e nenhum número.
+import { describe, expect, it } from 'vitest'
+// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node (a pasta de trabalho é codigo/)
+import { readFileSync } from 'node:fs'
+import { EQUIPE, POR_ID } from './telas/escritorio/equipe'
+import { completarEquipe } from './telas/escritorio/useEquipe'
+import { FAZ } from './telas/escritorio/Ficha'
+import type { FuncionarioEsc } from './api/tipos'
+
+const pagina = readFileSync('../paineis/escritorio3d/index.html', 'utf8')
+const bloco = pagina.slice(pagina.indexOf('var EQUIPE=['), pagina.indexOf('var POR_ID={};'))
+const daPagina = [...bloco.matchAll(/\{id:'([a-z]+)',nome:'([^']+)',curto:'([^']+)',ini:'[A-Z]+',sala:'([a-z]+)',slot:(-?\d)/g)].map(m => ({ id: m[1], nome: m[2], curto: m[3], sala: m[4], mesa: Number(m[5]) }))
+const DO_BANCO: FuncionarioEsc[] = [
+  { id: 'contador', nome: 'Contador', sala: 'Caixa', estado: 'entregue', frase: 'x' }, { id: 'colchao', nome: 'Guardião da Reserva', sala: 'Caixa', estado: 'entregue', frase: 'x' },
+  { id: 'cartao', nome: 'Analista de Cartão', sala: 'Cartões', estado: 'entregue', frase: 'x' }, { id: 'folha', nome: 'Folha da Casa', sala: 'Casa', estado: 'entregue', frase: 'x' },
+  { id: 'comprador', nome: 'Comprador', sala: 'Casa', estado: 'entregue', frase: 'x' }, { id: 'fiscal', nome: 'Fiscal da Feira', sala: 'Casa', estado: 'precisa_de_voce', frase: 'x' },
+  { id: 'guardado', nome: 'Gestor do Guardado', sala: 'Patrimônio', estado: 'entregue', frase: 'x' }, { id: 'secretaria', nome: 'Secretária', sala: 'Recepção', estado: 'entregue', frase: 'x' },
+]
+
+describe('C2: lista única da equipe', () => {
+  it('13 funcionários, com os 5 que faltavam, cada um com papel, dado, 3 linhas do que faz e mesa', () => {
+    expect(EQUIPE).toHaveLength(13)
+    for (const id of ['auditor', 'assistente', 'tesoureiro', 'usina', 'presenca']) expect(POR_ID[id], id).toBeTruthy()
+    expect(POR_ID.auditor.nome).toBe('Auditor de Estoque'); expect(POR_ID.tesoureiro.nome).toBe('Tesoureiro de Receitas')
+    expect(POR_ID.usina.nome).toBe('Gerente da Usina'); expect(POR_ID.presenca.nome).toBe('Controlador de Presença')
+    for (const m of EQUIPE) { expect(m.papel.length, m.id).toBeGreaterThan(10); expect(m.dado.length, m.id).toBeGreaterThan(5); expect(m.faz).toHaveLength(3); expect(FAZ[m.id]).toEqual(m.faz) }
+  })
+  it('nenhuma sala com 2 pessoas na mesma mesa nem mais de 3 mesas', () => {
+    const por: Record<string, number[]> = {}
+    for (const m of EQUIPE) (por[m.sala] ||= []).push(m.mesa)
+    for (const [s, ms] of Object.entries(por)) { expect(new Set(ms).size, s).toBe(ms.length); expect(ms.length, s).toBeLessThanOrEqual(3) }
+  })
+  it('nada de nome real de pessoa no código: o assistente é "de quem cuida da casa"', () => {
+    expect(POR_ID.assistente.nome).toBe('Assistente de quem cuida da casa')
+    const tudo = JSON.stringify(EQUIPE) + bloco
+    expect(tudo).not.toMatch(/Andreza|Romero|Albuquerque/)
+  })
+  it('a página publicada usa a mesma lista (id, nome, nome curto, sala e mesa)', () => {
+    expect(daPagina.map(x => x.id)).toEqual(EQUIPE.map(m => m.id))
+    for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome, p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
+  })
+  it('na página, quem não tem dado no banco não tem número (semDado, sem num)', () => {
+    for (const id of ['assistente', 'usina']) { const linha = bloco.slice(bloco.indexOf(`{id:'${id}'`), bloco.indexOf('cor:', bloco.indexOf(`{id:'${id}'`))); expect(linha).toContain('semDado:true'); expect(linha).not.toMatch(/num:/) }
+  })
+  it('o app completa os 8 do banco com os 5, na ordem da lista; sem dado = "ainda sem dado" e nenhum R$', () => {
+    const r = completarEquipe(DO_BANCO, { rec: null, est: null, avisos: [], pres: {} }, '2026-11-18')
+    expect(r.map(f => f.id)).toEqual(EQUIPE.map(m => m.id))
+    const sem = r.filter(f => f.semDado).map(f => f.id).sort()
+    expect(sem).toEqual(['assistente', 'auditor', 'tesoureiro', 'usina']) // sem leitura do banco: só a presença tem dado (ninguém veio)
+    for (const f of r.filter(f => f.semDado)) { expect(f.frase).toMatch(/^Ainda sem dado\./); expect(f.frase).not.toMatch(/R\$|\d/) }
+    expect(r.find(f => f.id === 'fiscal')!.estado).toBe('precisa_de_voce') // o que veio do banco fica como veio
+  })
+  it('com dado no banco: Tesoureiro diz o próximo recebimento, Auditor a última contagem, Presença quem veio', () => {
+    const r = completarEquipe(DO_BANCO, {
+      rec: [{ id: 'r1', dono_membro: 'm', dono_nome: null, descricao: 'Contrato (exemplo)', valor: 50000, mes_previsto: '2027-03', mes_novo: null, tipo: 'contrato', certo: true, recebido_em: null, valor_recebido: null, meu: true },
+        { id: 'r2', dono_membro: 'm', dono_nome: null, descricao: 'Já entrou', valor: 10, mes_previsto: '2026-10', mes_novo: null, tipo: 'outro', certo: true, recebido_em: '2026-10-05', valor_recebido: 10, meu: true }],
+      est: { itens: [], contagens: [{ id: 'c1', semana: '2026-11-09', data: '2026-11-10', contado_por: null, itens: [{ item_id: 'a', estado: 'acabou' }, { item_id: 'b', estado: 'pouco' }, { item_id: 'c', estado: 'tem' }] }] },
+      avisos: [{ tipo: 'casa_presenca', data: '2026-11-18', nome: 'Carla' }], pres: {},
+    }, '2026-11-18')
+    const f = (id: string) => r.find(x => x.id === id)!
+    expect(f('tesoureiro').frase.replace(/\u00a0/g, ' ')).toBe('1 recebimento com data pra entrar. O próximo: Contrato (exemplo), R$ 50.000 em 03/2027.')
+    expect(f('auditor').frase).toBe('Última contagem do estoque: 10/11. 1 item acabou, 1 com pouco.')
+    expect(f('presenca').frase).toBe('Hoje marcou presença: Carla.')
+    expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['assistente', 'usina'])
+  })
+})

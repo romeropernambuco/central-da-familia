@@ -2,7 +2,7 @@
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Api, AvisoCasa, Cartao, ChaveConfig, Fatura, FamiliaMinha, Lancamento, Numero, Papel, ParametrosObjetivo, Sessao } from './tipos'
-import { BANCO_GUARDA_ALIQ_RENDA, entradaDoBanco, type FuturoBanco } from './futuro'
+import { BANCO_GUARDA_ALIQ_ALUGUEL, BANCO_GUARDA_ALIQ_RENDA, entradaDoBanco, imovelInvalido, type FuturoBanco } from './futuro'
 import { normalizaCartao, normalizaContagem, normalizaCusto, normalizaEscritorio, normalizaFaturaBanco, normalizaFeira, normalizaGuardado, normalizaItem, normalizaLembrete, normalizaLinha, normalizaRelatorio, idFuncNoBanco } from './normaliza2'
 import { hojeRecife } from '../lib/formato'
 import { MSG_CUPOM, mensagemCupom } from '../lib/foto'
@@ -370,7 +370,10 @@ export const apiReal: Api = {
     // aliq_renda (IR de 2029 em diante): chave opcional aceita pela f_13 ao lado de aliq_proj; sem a f_13, pôr
     // BANCO_GUARDA_ALIQ_RENDA = false (api/futuro.ts) e ela não vai, valendo o padrão (15%).
     const { aliq_renda: _r, ...semRenda } = p
-    await rpc('objetivo_salvar', { familia, parametros: BANCO_GUARDA_ALIQ_RENDA ? p : semRenda })
+    const q = BANCO_GUARDA_ALIQ_RENDA ? p : semRenda
+    // f_15: aliq_aluguel só vai se o banco já tem a f_15
+    const { aliq_aluguel: _a, ...semAluguel } = q
+    await rpc('objetivo_salvar', { familia, parametros: BANCO_GUARDA_ALIQ_ALUGUEL ? q : semAluguel })
   },
   // ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco ----------
   async reajusteSituacao(familia, mes) { return normalizaReajuste(await rpc('reajuste_situacao', { familia, mes_vigencia: `${mes}-01` })) },
@@ -411,6 +414,45 @@ export const apiReal: Api = {
     const { data, error } = await sb().from('desejos').update(campos).eq('id', id).eq('familia_id', familia).select('id')
     if (error) erro(error)
     if (!data?.length) throw new Error('Só quem é dono desse desejo muda ele.')
+  },
+  // ---------- RODADA_PATRIMONIO: imóveis (produto.imovel, f_15). A tranca do banco: só o casal lê; só o dono grava ----------
+  async imoveis(familia) {
+    const { data, error } = await sb().from('imovel').select('*').eq('familia_id', familia).is('apagado_em', null).order('criado_em').order('id')
+    if (error) erro(error)
+    const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
+    const eu = await meuMembro(familia)
+    return (data || []).map((i: any) => ({
+      id: String(i.id), dono_membro: String(i.dono_membro), dono_nome: ms.find(m => m.id === String(i.dono_membro))?.nome ?? null, meu: !!eu && String(i.dono_membro) === eu,
+      apelido: String(i.apelido), valor: num(i.valor_estimado_centavos) / 100, uso: i.uso, aluguel: num(i.aluguel_centavos) / 100, custos: num(i.custos_centavos) / 100,
+      vacancia: String(i.vacancia ?? '0'), tem_contrato: !!i.tem_contrato, contrato_ate: i.contrato_ate ? String(i.contrato_ate).slice(0, 7) : null,
+      venda_valor: i.venda_valor_centavos == null ? null : num(i.venda_valor_centavos) / 100, venda_mes: i.venda_mes ? String(i.venda_mes).slice(0, 7) : null, venda_contrato: !!i.venda_contrato,
+    }))
+  },
+  async imovelSalvar(familia, id, d) {
+    const falta = imovelInvalido(d)
+    if (falta) throw new Error(falta)
+    // contrato_ate no banco é data: o último dia do mês escolhido; venda_mes é o dia 1
+    const fimDe = (m: string) => { const [a, mm] = m.split('-').map(Number); return `${m}-${String(new Date(Date.UTC(a, mm, 0)).getUTCDate()).padStart(2, '0')}` }
+    const campos = {
+      apelido: d.apelido.trim(), valor_estimado_centavos: Math.round(d.valor * 100), uso: d.uso, aluguel_centavos: Math.round(d.aluguel * 100), custos_centavos: Math.round(d.custos * 100),
+      vacancia: d.vacancia, tem_contrato: d.tem_contrato, contrato_ate: d.contrato_ate ? fimDe(d.contrato_ate) : null,
+      venda_valor_centavos: d.venda_valor == null ? null : Math.round(d.venda_valor * 100), venda_mes: d.venda_valor == null || !d.venda_mes ? null : `${d.venda_mes}-01`, venda_contrato: d.venda_valor != null && d.venda_contrato,
+    }
+    if (!id) {
+      const eu = await meuMembro(familia)
+      if (!eu) throw new Error('Não achei você nesta família. Saia e entre de novo.')
+      const { error } = await sb().from('imovel').insert({ familia_id: familia, dono_membro: eu, ...campos })
+      if (error) erro(error)
+      return
+    }
+    const { data, error } = await sb().from('imovel').update(campos).eq('id', id).eq('familia_id', familia).select('id')
+    if (error) erro(error)
+    if (!data?.length) throw new Error('Só quem é dono desse imóvel muda ele.')
+  },
+  async imovelTirar(familia, id) {
+    const { data, error } = await sb().from('imovel').update({ apagado_em: new Date().toISOString() }).eq('id', id).eq('familia_id', familia).select('id')
+    if (error) erro(error)
+    if (!data?.length) throw new Error('Só quem é dono desse imóvel tira ele da lista.')
   },
   async exportarFamilia(familia) { return rpc('exportar_familia', { familia }) },
   async exportarMeu(familia) { return rpc('exportar_meu', { familia }) },

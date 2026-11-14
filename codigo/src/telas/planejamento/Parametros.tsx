@@ -17,7 +17,14 @@ import { dataCurta, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoVa
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 const ROTULO: Record<string, string> = {
   gasto_2029_hoje: 'gasto por mês em 2029', renda_certa_2029: 'renda certa em 2029', margem: 'margem', taxa_real_trabalho: 'rendimento acima da inflação',
-  aliq_proj: 'imposto até 2028', aliq_renda: 'imposto depois de 2029', piso_meses: 'piso do caixa', mes_reajuste: 'mês do reajuste', travado_focus: 'taxas travadas', taxa_bruta_ano: 'Selic', ipca_ano: 'IPCA',
+  aliq_proj: 'imposto até 2028', aliq_renda: 'imposto depois de 2029', aliq_aluguel: 'imposto do aluguel', piso_meses: 'piso do caixa', mes_reajuste: 'mês do reajuste', travado_focus: 'taxas travadas', taxa_bruta_ano: 'Selic', ipca_ano: 'IPCA',
+}
+/** Aviso do VERIFICADOR: aluguel de imóvel com contrato lançado também em "Renda certa em 2029" conta 2 vezes.
+ *  Se o valor do campo for igual ou maior que o aluguel líquido de algum imóvel com contrato, avisa (âmbar). Só compara. */
+export function avisoRendaCerta(rendaCentavos: number, imoveis: { apelido: string; aluguel_liquido_mes: number; entra_na_conta: boolean }[] | undefined): string | null {
+  if (!(rendaCentavos > 0)) return null
+  const i = (imoveis || []).find(x => x.entra_na_conta && x.aluguel_liquido_mes > 0 && rendaCentavos >= x.aluguel_liquido_mes)
+  return i ? `Esse valor parece incluir o aluguel de ${i.apelido}. Ele já conta sozinho.` : null
 }
 const reaisDe = (c: number | null) => (c == null ? '' : valorParaTexto(c / 100))
 const centDe = (t: string) => Math.round(textoParaValor(t) * 100)
@@ -49,7 +56,7 @@ export function Parametros() {
       setObj(o)
       const p = o.parametros || PARAMETROS_INICIAIS
       setTravado(p.travado_focus)
-      setF({ gasto: reaisDe(p.gasto_2029_hoje), renda: reaisDe(p.renda_certa_2029 || null), margem: textoDaTaxa(p.margem), real: textoDaTaxa(p.taxa_real_trabalho), ir: textoDaTaxa(p.aliq_proj), ir2: textoDaTaxa(p.aliq_renda || PADROES_ECONOMISTA.aliq_renda),
+      setF({ gasto: reaisDe(p.gasto_2029_hoje), renda: reaisDe(p.renda_certa_2029 || null), margem: textoDaTaxa(p.margem), real: textoDaTaxa(p.taxa_real_trabalho), ir: textoDaTaxa(p.aliq_proj), ir2: textoDaTaxa(p.aliq_renda || PADROES_ECONOMISTA.aliq_renda), ir3: textoDaTaxa(p.aliq_aluguel || PADROES_ECONOMISTA.aliq_aluguel),
         piso: p.piso_meses == null ? '' : String(p.piso_meses), reajuste: String(p.mes_reajuste || 1),
         ...Object.fromEntries(anos.flatMap(a => [[`selic${a}`, textoDaTaxa(p.taxa_bruta_ano[a])], [`ipca${a}`, textoDaTaxa(p.ipca_ano[a])]])) })
     }).catch(() => setObj({ parametros: null, historico: [], focus: [] }))
@@ -66,7 +73,7 @@ export function Parametros() {
   async function salvar() {
     if (!familia || gravando) return
     const t = (k: string) => taxaDoTexto(f[k] || '')
-    const ruins = [['margem', 'margem'], ['real', 'rendimento acima da inflação'], ['ir', 'imposto até 2028'], ['ir2', 'imposto depois de 2029']].filter(([k]) => t(k) == null).map(([, r]) => r)
+    const ruins = [['margem', 'margem'], ['real', 'rendimento acima da inflação'], ['ir', 'imposto até 2028'], ['ir2', 'imposto depois de 2029'], ['ir3', 'imposto do aluguel']].filter(([k]) => t(k) == null).map(([, r]) => r)
     const anoTaxa = (pre: string) => Object.fromEntries(anos.filter(a => (f[pre + a] || '').trim()).map(a => [a, taxaDoTexto(f[pre + a])]))
     const selic = anoTaxa('selic'), ipca = anoTaxa('ipca')
     if (Object.values(selic).some(x => x == null) || Object.values(ipca).some(x => x == null)) ruins.push('Selic ou IPCA de algum ano')
@@ -75,7 +82,7 @@ export function Parametros() {
     if (piso != null && !(Number.isInteger(piso) && piso >= 0 && piso <= 99)) ruins.push('piso do caixa (meses, de 0 a 99)')
     if (!(mes >= 1 && mes <= 12)) ruins.push('mês do reajuste (1 a 12)')
     if (ruins.length) { toast(`Confira: ${ruins.join(', ')}. Use só números, tipo 10 ou 4,5.`); return }
-    const p: ParametrosObjetivo = { gasto_2029_hoje: f.gasto.trim() ? centDe(f.gasto) : null, renda_certa_2029: f.renda.trim() ? centDe(f.renda) : 0, margem: t('margem')!, taxa_real_trabalho: t('real')!, aliq_proj: t('ir')!, aliq_renda: t('ir2')!,
+    const p: ParametrosObjetivo = { gasto_2029_hoje: f.gasto.trim() ? centDe(f.gasto) : null, renda_certa_2029: f.renda.trim() ? centDe(f.renda) : 0, margem: t('margem')!, taxa_real_trabalho: t('real')!, aliq_proj: t('ir')!, aliq_renda: t('ir2')!, aliq_aluguel: t('ir3')!,
       taxa_bruta_ano: selic as Record<string, string>, ipca_ano: ipca as Record<string, string>, piso_meses: piso, mes_reajuste: mes, travado_focus: travado }
     setGravando(true)
     const ok = await tentar(() => api.objetivoSalvar!(familia.id, p))
@@ -100,12 +107,14 @@ export function Parametros() {
         <summary><span><b>Os números da conta</b><small>gasto de 2029, margem, rendimento, impostos, piso, Selic e IPCA. Toque pra ver ou mudar</small></span></summary>
       <div>
         <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => setF({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>
-        <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto</small></span><CampoValor valor={f.renda || ''} mudar={v => setF({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
+        <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto. Não inclua aluguel de imóvel cadastrado: ele já entra sozinho.</small></span><CampoValor valor={f.renda || ''} mudar={v => setF({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
+        {(() => { const a = avisoRendaCerta(f.renda && valorDigitadoValido(f.renda) ? centDe(f.renda) : 0, saida?.imoveis); return a ? <p className="todo warn aviso-renda-certa" role="status"><span>{a}</span></p> : null })()}
         <label className="linha-campo"><span className="n">Margem de segurança (%)<small>a mais, pra imprevisto</small></span><input className="inp" inputMode="decimal" {...campo('margem')} /></label>
         <label className="linha-campo"><span className="n">Rendimento acima da inflação (%)<small>por ano, a taxa que a conta usa pra 2029</small></span><input className="inp" inputMode="decimal" {...campo('real')} /></label>
         {/* revisão E12: 2 impostos. Até 2028 o dinheiro gira (pior caso, 22,5%); de 2029 em diante fica aplicado mais de 2 anos (15%) */}
         <div className="linha-campo"><span className="n"><label htmlFor="pIr">Imposto até 2028 (%)</label><small>o que o banco desconta do que rende até dezembro de 2028 <Qm titulo="Imposto até 2028" linhas={[]} nota="Até 2028 o dinheiro entra e sai do caixa, então a conta usa o imposto mais alto do rendimento (22,5%), pra não contar com dinheiro que não vem." /></small></span><input id="pIr" className="inp" inputMode="decimal" {...campo('ir')} /></div>
         <div className="linha-campo"><span className="n"><label htmlFor="pIr2">Imposto depois de 2029 (%)</label><small>{api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA ? `por enquanto vale ${textoDaTaxa(PADROES_ECONOMISTA.aliq_renda)}%: o banco ainda não guarda este número ` : 'o que o banco desconta do que rende a partir de janeiro de 2029 '}<Qm titulo="Imposto depois de 2029" linhas={[]} nota="A partir de 2029 o dinheiro fica aplicado por mais de 2 anos, e aí o imposto do rendimento cai pra 15%. É com ele que a conta diz quanto rende por mês, pra sempre." /></small></span><input id="pIr2" className="inp" inputMode="decimal" disabled={api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA} {...campo('ir2')} /></div>
+        <div className="linha-campo"><span className="n"><label htmlFor="pIr3">Imposto do aluguel (%)</label><small>o que sai do aluguel pro imposto de renda <Qm titulo="Imposto do aluguel" linhas={[]} nota="O aluguel paga imposto de renda todo mês (carnê-leão). A conta começa com 27,5%, o mais alto, pra não contar com dinheiro que não vem. Se o contador disser outro número, troque aqui." /></small></span><input id="pIr3" className="inp" inputMode="decimal" {...campo('ir3')} /></div>
         <label className="linha-campo"><span className="n">Piso do caixa (meses)<small>meses de teto que nunca vão pra desejo. Vazio = a confirmar (usa 6)</small></span><input className="inp" inputMode="numeric" {...campo('piso')} /></label>
         <label className="linha-campo"><span className="n">Mês do reajuste do teto<small>o teto sobe pela inflação nesse mês ({MESES[(Number(f.reajuste) || 1) - 1]})</small></span><input className="inp" inputMode="numeric" {...campo('reajuste')} /></label>
       </div>

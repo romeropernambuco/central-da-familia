@@ -190,7 +190,9 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect(e.funcionarios.map(f => f.id)).toEqual(['contador', 'colchao', 'cartao', 'folha', 'comprador', 'fiscal', 'guardado', 'secretaria'])
     expect(e.funcionarios.find(f => f.id === 'colchao')!.nome).toBe('Guardião da Reserva')
     expect(e.funcionarios.find(f => f.id === 'fiscal')).toMatchObject({ nome: 'Fiscal da Feira', sala: 'Casa' })
-    expect(Object.keys(FAZ).sort()).toEqual(e.funcionarios.map(f => f.id).sort())
+    // mudado em 14/11 (C2, TELAS 3): FAZ agora vem da lista única da equipe, que tem os 8 do banco e mais 5 que ainda não estão no banco;
+    // a regra que importa continua: todo funcionário do banco tem o seu "O que eu faço e quando"
+    for (const f of e.funcionarios) expect(Object.keys(FAZ)).toContain(f.id)
     for (const f of e.funcionarios) { expect(FAZ[f.id]).toHaveLength(3); expect(f.cadastro_resumo).toBeTruthy(); expect(f.ultimas_respostas).toBeDefined() }
   })
   // cada tipo de pergunta: [dia, hora, começo do id, opção, dados, funcionário, pedaço da resposta guardada]

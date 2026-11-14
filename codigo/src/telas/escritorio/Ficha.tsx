@@ -14,18 +14,11 @@ import { dataCurta, diaSemana, FUSO, hojeRecife, mesCurto, reais, textoParaValor
 import { rendeQuanto } from '../../lib/guardado'
 import type { Folha } from './ajudantes'
 import { IcoEstado, ROTULO_ESTADO } from './Cena3D'
+import { EQUIPE } from './equipe'
 
 /** O que cada funcionário faz e quando cobra: 3 linhas, sempre na 1ª pessoa. */
-export const FAZ: Record<string, [string, string, string]> = {
-  contador: ['Confiro todo dia se o mês fecha dentro do que a família combinou.', 'Depois das 20h, se não tiver nenhum gasto anotado no dia, eu pergunto.', 'No dia 01 eu fecho o mês e digo quanto sobrou.'],
-  colchao: ['Cuido da reserva: o dinheiro que a família combinou nunca gastar.', 'Se o que está livre no mês ficar menor que a reserva, eu aviso na hora.', 'Pergunto de onde o dinheiro volta e cobro no dia que você marcar.'],
-  cartao: ['Somo as compras de cada cartão e digo quanto vem na fatura.', 'Começo a cobrar 3 dias antes do vencimento e paro quando você diz que pagou.', 'Aviso 1 mês antes da anuidade e quando o valor do banco não bate com a minha soma.'],
-  folha: ['Cuido de quem trabalha na casa: salário, férias e 13º.', 'Do dia 01 ao 07 eu lembro a guia mensal do governo.', 'No dia do salário de cada pessoa eu pergunto se foi pago.'],
-  comprador: ['Cuido dos prestadores (jardineiro, piscineiro) e do gás.', 'Na véspera do prestador eu deixo a mensagem pronta; no dia, às 17h, pergunto se ele veio.', 'Aviso 5 dias antes de o gás acabar, pela média das últimas trocas.'],
-  fiscal: ['Confiro 3 coisas da feira de toda semana: se foi feita, se a nota está guardada e se o estoque foi contado.', 'Começo a perguntar na segunda, às 18h, 1 coisa por vez e só a que falta.', 'Aviso quando a semana passa do valor combinado.'],
-  guardado: ['Faço a conta de quanto o dinheiro guardado rendeu em cada dia útil.', 'No dia 01 eu peço pra você conferir o valor no app do banco.', 'Aviso 15 dias antes de uma aplicação vencer.'],
-  secretaria: ['Guardo os lembretes que você me passa.', 'Na hora marcada eu pergunto no Início e aqui.', 'Cobro de novo todo dia até você dizer que fez ou marcar outro dia.'],
-}
+// C2: o "O que eu faço e quando" de cada um vem da lista única (equipe.ts)
+export const FAZ: Record<string, [string, string, string]> = Object.fromEntries(EQUIPE.map(m => [m.id, m.faz]))
 const hhmm = (iso: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 const diaDe = (iso: string) => hojeRecife(new Date(iso))
 
@@ -57,7 +50,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
   return (
     <Sheet titulo={f.nome} fechar={fechar} lado rotulo={`Ficha: ${f.nome}`}>
       <div className="ficha" data-ficha={f.id}>
-        <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{ROTULO_ESTADO[f.estado]}</span></p>
+        <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></p>
 
         <section aria-labelledby="fAgora" data-parte="agora" ref={topo}>
           <h3 id="fAgora">Agora</h3>
@@ -74,8 +67,8 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
             </>
           ) : (
             <>
-              <p className="perg-t">Hoje não preciso de nada seu.</p>
-              <p className="perg-c">{entrega?.resumo || f.frase}</p>
+              <p className="perg-t">{f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}</p>
+              <p className="perg-c">{f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase}</p>
             </>
           )}
         </section>

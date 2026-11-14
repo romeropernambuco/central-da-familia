@@ -96,10 +96,9 @@ export function GraficoMes({ gasto, limite, fecha, hoje, dias, porDia }: { gasto
         // onde o pontilhado cruza o combinado (só se passar)
         const t = passa && fecha !== gasto ? Math.max(0, Math.min(1, (limite - gasto) / (fecha - gasto))) : 1
         const xc = xh + (xf - xh) * t, yc = yh + (yf - yh) * t
-        const tetoEmCima = !passa
         return <>
           <line x1={x(1)} x2={xf} y1={yt} y2={yt} className="g-teto" />
-          <text x={xf} y={tetoEmCima ? yt - 6 : yt + 15} textAnchor="end" className="g-rot">combinado {reais(limite)}</text>
+          <text x={x(1)} y={yt - 6} className="g-rot">combinado {reais(limite)}</text>
           <polyline points={cheia} className="g-cheia" />
           {dia < dias && <line x1={xh} y1={yh} x2={xc} y2={yc} className="g-pont" />}
           {passa && <line x1={xc} y1={yc} x2={xf} y2={yf} className="g-pont acima" />}
@@ -138,7 +137,7 @@ export function GraficoCaixa({ linha, renda2029, rendaRotulo }: { linha: LinhaMe
   const toca = linha.map((l, i) => l.fica_devendo > 0 && !(i > 0 && linha[i - 1].fica_devendo > 0))
   return (
     <Quadro classe="graf-caixa linha-saldo" n={n + 1} altura={w => (w >= 600 ? 180 : 150)}
-      indice={(px, w) => { const degrau = Math.max(44, Math.round(w * 0.12)); const fim = w - degrau - 10; return px > fim + 5 ? n : Math.round(((px - 6) / Math.max(1, fim - 6)) * (n - 1)) }}
+      indice={(px, w) => { const degrau = Math.max(92, Math.round(w * 0.14)); const fim = w - degrau - 10; return px > fim + 5 ? n : Math.round(((px - 6) / Math.max(1, fim - 6)) * (n - 1)) }}
       rotulo={`Caixa da família de ${curto(linha[0].mes)} a ${curto(ult.mes)}: começa com ${r$(linha[0].saldo_final)} e termina com ${ult.saldo_final < 0 ? 'devendo ' : ''}${r$(ult.saldo_final)}. A faixa cinza é o piso.${renda2029 != null ? ` Em 2029 rende ${r$(renda2029)} por mês.` : ''}`}
       leitura={i => {
         if (i == null) return <span className="graf-dica">Toque na linha pra ver cada mês</span>
@@ -149,20 +148,23 @@ export function GraficoCaixa({ linha, renda2029, rendaRotulo }: { linha: LinhaMe
       desenho={(w, h, ativo) => {
         const vals = [...linha.map(l => l.saldo_final), ...linha.map(l => l.piso)]
         const lo = Math.min(0, ...vals), hi = Math.max(...vals) * 1.1 || 1
-        const degrau = Math.max(44, Math.round(w * 0.12))
+        const degrau = Math.max(92, Math.round(w * 0.14))
         const x = escala(0, n - 1, 6, w - degrau - 10), y = escala(lo, hi, h - 22, 12)
         const pts = linha.map((l, i) => `${x(i).toFixed(1)},${y(l.saldo_final).toFixed(1)}`).join(' ')
         const topoPiso = linha.map((l, i) => `${x(i).toFixed(1)},${y(l.piso).toFixed(1)}`).join(' ')
-        const faixa = `${x(0).toFixed(1)},${y(lo).toFixed(1)} ${topoPiso} ${x(n - 1).toFixed(1)},${y(lo).toFixed(1)}`
+        const faixa = `${x(0).toFixed(1)},${y(0).toFixed(1)} ${topoPiso} ${x(n - 1).toFixed(1)},${y(0).toFixed(1)}`
         const x29a = x(n - 1) + 10, x29b = w - 4, y29 = y(ult.saldo_final)
         const xa = ativo == null ? null : ativo >= n ? (x29a + x29b) / 2 : x(ativo)
         return <>
           <polygon points={faixa} className="g-faixa" />
+          {lo < 0 && <line x1={x(0)} x2={x29b} y1={y(0)} y2={y(0)} className="g-zero" />}
           <polyline points={topoPiso} className="piso" />
           <polyline points={pts} className="linha" />
           {/* o degrau de 2029: o caixa para de mexer e vive do que rende */}
           <line x1={x(n - 1)} y1={y29} x2={x29b} y2={y29} className="g-degrau" />
-          <text x={x29b} y={y29 - 8} textAnchor="end" className="g-rot forte">{renda2029 != null ? rendaRotulo ?? `${r$(renda2029)} por mês` : 'sem renda'}</text>
+          {/* o rótulo do degrau em 2 linhas, dentro da coluna de 2029 (não passa por cima da linha) */}
+          <text x={x29b} y={y29 > h / 2 ? y29 - 26 : y29 + 18} textAnchor="end" className="g-rot forte">{renda2029 != null ? rendaRotulo ?? r$(renda2029) : 'sem renda'}</text>
+          {renda2029 != null && !rendaRotulo && <text x={x29b} y={y29 > h / 2 ? y29 - 10 : y29 + 34} textAnchor="end" className="g-rot">por mês</text>}
           {linha.map((l, i) => l.recebimentos > 0 && !toca[i] ? <circle key={'r' + l.mes} cx={x(i)} cy={y(l.saldo_final)} r={4} className="g-receb" /> : null)}
           {linha.map((l, i) => toca[i] ? <circle key={'a' + l.mes} cx={x(i)} cy={y(l.saldo_final)} r={4} className="abaixo" /> : null)}
           {xa != null && <line x1={xa} x2={xa} y1={8} y2={h - 22} className="g-mira" />}

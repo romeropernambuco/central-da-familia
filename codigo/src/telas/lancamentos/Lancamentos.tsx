@@ -4,7 +4,7 @@ import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { donoDo, mexeNoLancamento, rotuloDono } from '../../app/dono'
 import { Din, Vazio } from '../../componentes/base'
-import type { Cartao, Lancamento } from '../../api/tipos'
+import type { Cartao, Fatura, Lancamento } from '../../api/tipos'
 import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reais, somaDias } from '../../lib/formato'
 
 /** Lançamentos do mês com lixeira: apagar não some de vez, dá pra trazer de volta. */
@@ -14,9 +14,11 @@ export function Lancamentos() {
   const [carregou, setCarregou] = useState(false)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [cartoes, setCartoes] = useState<Cartao[]>([])
+  const [faturas, setFaturas] = useState<Fatura[]>([])
   const [lixeira, setLixeira] = useState(false)
   const [n, setN] = useState(0)
   const nomeDe = useMembros()
+  const casal = familia?.papel === 'casal'
   const hoje = hojeRecife()
   // recorte por mês: abre só o mês de hoje; "Ver meses anteriores" traz 1 mês de cada vez
   const [meses, setMeses] = useState<string[]>([hoje.slice(0, 7)])
@@ -31,6 +33,8 @@ export function Lancamentos() {
       .catch(e => { if (vivo) setFalha((e as Error).message) })
       .finally(() => { if (vivo) setBuscandoMes(false) })
     api.cartoes(familia.id).then(c => { if (vivo) setCartoes(c) }).catch(() => {})
+    // C5: a 2ª coluna do computador só mostra totais que o app já tem (o resumo do mês e as faturas); o casal lê
+    if (familia.papel === 'casal') api.faturas(familia.id, 2).then(f => { if (vivo) setFaturas(f) }).catch(() => {})
     return () => { vivo = false }
   }, [api, familia?.id, versao, n, meses.join()])
   const proximo = mesAnterior(meses[meses.length - 1])
@@ -74,6 +78,7 @@ export function Lancamentos() {
       </div>
       {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis pra corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
       {lixeira && <p className="todo"><Trash2 size={20} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
+      <div className={casal ? 'tela-larga lanc-larga' : undefined}>
       <section className="card">
         {falha && <p className="aviso-erro" role="alert">Não deu pra buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
         {!falha && !carregou && <p className="sub">Buscando os lançamentos…</p>}
@@ -115,7 +120,43 @@ export function Lancamentos() {
           </div>
         )}
       </section>
+      {casal && <TotaisDoMes envelopes={resumo?.envelopes || []} faturas={faturas} hoje={hoje} />}
+      </div>
     </div>
+  )
+}
+
+/**
+ * C5 (decisão do dono, 14/11): no computador, ao lado da lista, os totais que já existem no app:
+ * quanto cada limite já gastou no mês (o resumo do banco) e a próxima fatura de cada cartão (a soma do banco).
+ * Nenhuma conta nova aqui: só mostra. No celular fica escondida (a lista ocupa a tela).
+ */
+function TotaisDoMes({ envelopes, faturas, hoje }: { envelopes: { id: string; nome: string; gasto_mes: number; limite_mes: number }[]; faturas: Fatura[]; hoje: string }) {
+  // a 1ª fatura com valor que ainda vai vencer, de cada cartão
+  const proxPorCartao: Fatura[] = []
+  for (const f of faturas.filter(x => x.vencimento >= hoje && x.total > 0).sort((a, b) => a.vencimento.localeCompare(b.vencimento))) if (!proxPorCartao.some(x => x.cartao_id === f.cartao_id)) proxPorCartao.push(f)
+  return (
+    <aside className="col lanc-totais" aria-label="Totais do mês">
+      <section className="card" aria-labelledby="ltMes">
+        <div className="card-h"><h2 id="ltMes">Este mês, por limite</h2></div>
+        <p className="sub">Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.</p>
+        <ul className="list">
+          {envelopes.map(e => (
+            <li key={e.id} className="li"><span className="tile">{e.nome.charAt(0)}</span><span className="m"><b>{e.nome}</b><small>de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
+          ))}
+        </ul>
+      </section>
+      <section className="card" aria-labelledby="ltCart">
+        <div className="card-h"><h2 id="ltCart">Próxima fatura de cada cartão</h2></div>
+        {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
+          <ul className="list">
+            {proxPorCartao.map(f => (
+              <li key={f.cartao_id + f.mes} className="li"><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{f.cartao}</b><small>vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </aside>
   )
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)

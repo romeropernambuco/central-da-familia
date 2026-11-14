@@ -448,7 +448,7 @@ svg{flex-shrink:0}
 .esc-cena-card{padding:12px}
 .cena3d-bloco{display:grid;gap:10px;min-width:0}
 .cena3d{position:relative;width:100%;aspect-ratio:4 / 3.4;border-radius:14px;overflow:hidden;background:var(--raised);touch-action:pan-y}
-@media (min-width:900px){.cena3d{aspect-ratio:16 / 11}}
+@media (min-width:900px){.cena3d{aspect-ratio:16 / 10}}
 .cena3d.fora{display:none}
 .cena3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cena3d-espera{position:absolute;inset:0;display:grid;place-items:center;font-size:15px;color:var(--muted)}
@@ -548,7 +548,7 @@ svg{flex-shrink:0}
 .linha-saldo .area{fill:var(--accent-soft);stroke:none}
 .li.quem{align-items:start}
 .quem-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-@media (max-width:1099px){.esc-grade>.esc-cena-card{order:2}}
+/* C1 (decisão do dono, 14/11): a cena 3D vem primeiro também no celular, na mesma ordem do computador */
 .equipe-lnk{justify-self:center;font-size:14px;color:var(--ink-2);white-space:normal;text-align:center;justify-content:center;max-width:100%}
 .cobrir{margin:2px 0 8px}
 /* ---------- Rodada 2 (13/11): letra grande, dedo, nada negativo ---------- */
@@ -729,3 +729,32 @@ select.inp{appearance:auto}
 .graf-leg li b{justify-self:end;text-align:right;font-variant-numeric:tabular-nums}
 .graf-leg .q{width:16px;height:0;border-top:3px solid var(--muted)}
 .graf-leg .q.com{border-top-color:var(--accent)}
+/* C4 (14/11): equipe da casa com 1 botão grande "Anotar compra" no lugar da barra de baixo */
+.tabbar.so1{grid-template-columns:1fr;align-items:center;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
+.tabbar.so1 .plus.anotar{width:100%;height:56px;border-radius:var(--r-pill);transform:none;display:flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:18px;font-weight:700;box-shadow:none}
+.tabbar.so1 .plus.anotar:active{transform:scale(.98)}
+/* C5 (14/11): Lançamentos no computador ganha a 2ª coluna com os totais que já existem; no celular ela não aparece */
+.lanc-totais{display:none}
+@media (min-width:900px){.lanc-larga .lanc-totais{display:grid;position:sticky;top:16px}}
+@media (max-width:899px){.lanc-larga{display:block}}
+
+/* ---------- RODADA_PATRIMONIO: imóveis no Guardado e "pode entrar" no Planejamento ---------- */
+.imo-total{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 8px}
+.imo-total>div{min-width:0}
+.imo-total dt{font-size:13px;line-height:18px;color:var(--muted)}
+.imo-total dd{margin:0;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.imo-total .tot dd{font-size:20px;font-weight:700}
+@media (max-width:599px){.imo-total{grid-template-columns:1fr 1fr}.imo-total>.tot{grid-column:1 / -1}}
+.imo-frase{margin-bottom:8px}
+.li.imo .m small strong{display:inline;font-weight:600;color:var(--ink-2)}
+.imo-selo{justify-self:start;display:inline-block;margin-top:2px;padding:2px 10px;border-radius:var(--r-pill);font-size:13px;line-height:20px;font-weight:600}
+.imo-selo.ok{background:var(--accent-soft);color:var(--accent-ink)}
+.imo-selo.warn{background:var(--raised);color:var(--ink-2)}
+.imo-form{border:0;margin:0;padding:0;display:grid;gap:12px;min-width:0}
+.imo-form .campo>span{display:flex;align-items:center;gap:6px}
+.pode-entrar{margin-top:12px;padding:12px 14px;border-radius:var(--r-md);background:var(--sunken)}
+.pode-entrar h3{font-size:16px;line-height:22px;display:grid;gap:2px}
+.pode-entrar h3 small{font-size:13px;font-weight:500;color:var(--muted)}
+.pode-entrar ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px;line-height:20px;color:var(--ink-2)}
+.aviso-renda-certa{margin:4px 0 8px}
+.graf .g-zero{stroke:var(--control);stroke-width:1}

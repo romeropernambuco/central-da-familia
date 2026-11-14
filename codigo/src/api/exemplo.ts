@@ -1,8 +1,8 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
-import type { DesejoTela, FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
+import type { DesejoTela, ImovelTela, FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
 import * as ex2 from './exemplo2'
-import { entradaDoBanco, type FuturoBanco } from './futuro'
+import { entradaDoBanco, imovelInvalido, type FuturoBanco } from './futuro'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
 import { dadosTeste, familiaTeste, membrosTeste, nomeFamiliaTeste, usarFamiliaTeste } from './dadosTeste'
 import { pessoaDoTeste } from '../teste/relogio'
@@ -85,7 +85,15 @@ function criarDados() {
   const reajusteVotos: { mes: string; membro_id: string; teto: number; ipca: string; votou_em: string }[] = []
   /** limite de antes do reajuste, por mês de vigência e envelope (aplicar de novo dá o mesmo número, como no banco) */
   const reajusteBase: Record<string, number> = {}
-  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos, reajusteVotos, reajusteBase }
+  // RODADA_PATRIMONIO: imóveis de exemplo (números inventados, o cenário do teste "do que entra de patrimônio").
+  // O apartamento de praia aluga por temporada: R$ 4.000 por mês de média, sem contrato (não entra na conta, vira "pode entrar")
+  const imoveis: (Omit<ImovelTela, 'dono_nome' | 'meu'> & { apagado: boolean })[] = souza ? [] : [
+    { id: 'im1', dono_membro: 'm-bruno', apelido: 'Sala comercial (exemplo)', valor: 600000, uso: 'aluga', aluguel: 3000, custos: 500, vacancia: '0.08', tem_contrato: true, contrato_ate: '2029-12', venda_valor: null, venda_mes: null, venda_contrato: false, apagado: false },
+    { id: 'im2', dono_membro: 'm-ana', apelido: 'Apartamento de praia (exemplo)', valor: 900000, uso: 'aluga', aluguel: 4000, custos: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: null, venda_mes: null, venda_contrato: false, apagado: false },
+    { id: 'im3', dono_membro: 'm-bruno', apelido: 'Casa onde moramos (exemplo)', valor: 1500000, uso: 'mora', aluguel: 0, custos: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: null, venda_mes: null, venda_contrato: false, apagado: false },
+    { id: 'im4', dono_membro: 'm-ana', apelido: 'Lote (exemplo)', valor: 200000, uso: 'vende', aluguel: 0, custos: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: 220000, venda_mes: '2028-10', venda_contrato: false, apagado: false },
+  ]
+  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos, reajusteVotos, reajusteBase, imoveis }
 }
 
 /** Focus de EXEMPLO (número inventado, não é o boletim do Banco Central): Selic do fim do ano e IPCA. */
@@ -707,6 +715,10 @@ export const apiExemplo: Api = {
       // revisão E12 (C2): manda todos os vivos com a situação, como o f_08 (o motor pula "feito" e "desisti")
       desejos: db.desejos.filter(d => !d.apagado).map(d => ({ id: d.id, dono_membro: d.dono_membro, valor_centavos: Math.round(d.valor * 100), mes: d.mes, volta_de: d.volta_de, volta_centavos: Math.round(d.volta * 100), volta_mes: d.volta_mes, antecipado_centavos: d.antecipado == null ? null : Math.round(d.antecipado * 100), volta_certa: d.volta_certa, situacao: d.situacao })),
       parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
+      // f_15: igual ao banco (os vivos, com as chaves do tipo Imovel do motor: centavos, meses AAAA-MM, dono = id do membro)
+      imoveis: db.imoveis.filter(i => !i.apagado).map(i => ({ id: i.id, dono: i.dono_membro, apelido: i.apelido, valor: Math.round(i.valor * 100), uso: i.uso,
+        aluguel_bruto: Math.round(i.aluguel * 100), custos_mes: Math.round(i.custos * 100), vacancia: i.vacancia, tem_contrato: i.tem_contrato, contrato_ate: i.contrato_ate,
+        venda_valor: i.venda_valor == null ? null : Math.round(i.venda_valor * 100), venda_mes: i.venda_mes, venda_contrato: i.venda_contrato })),
     }
     return entradaDoBanco(j)
   },
@@ -768,6 +780,33 @@ export const apiExemplo: Api = {
     if (d.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === d.dono_membro)?.nome || 'o dono'; throw new Error(`Esse desejo é de ${n}: só ${n} muda.`) }
     if (m.situacao) d.situacao = m.situacao
     if (m.apagar) d.apagado = true
+  },
+  // ---------- RODADA_PATRIMONIO: imóveis (igual a f_15): só o casal lê, com o dono; só o dono grava e tira ----------
+  async imoveis() {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('Os imóveis são só do casal.')
+    const eu = membroLogado().id
+    return db.imoveis.filter(i => !i.apagado).map(({ apagado: _a, ...i }) => ({ ...i, dono_nome: membrosTeste().find(x => x.id === i.dono_membro)?.nome ?? null, meu: i.dono_membro === eu }))
+  },
+  async imovelSalvar(_f, id, d) {
+    await espera(40)
+    if (papelLogado() !== 'casal') throw new Error('Os imóveis são só do casal.')
+    const erro = imovelInvalido(d)
+    if (erro) throw new Error(erro)
+    const limpo = { apelido: d.apelido.trim().slice(0, 60), valor: centavos(d.valor), uso: d.uso, aluguel: centavos(d.aluguel), custos: centavos(d.custos), vacancia: d.vacancia, tem_contrato: d.tem_contrato, contrato_ate: d.contrato_ate,
+      venda_valor: d.venda_valor == null ? null : centavos(d.venda_valor), venda_mes: d.venda_valor == null ? null : d.venda_mes, venda_contrato: d.venda_valor != null && d.venda_contrato }
+    if (!id) { db.imoveis.push({ id: 'im' + Date.now(), dono_membro: membroLogado().id, ...limpo, apagado: false }); return }
+    const i = db.imoveis.find(x => x.id === id && !x.apagado)
+    if (!i) throw new Error('Esse imóvel não existe mais.')
+    if (i.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === i.dono_membro)?.nome || 'o dono'; throw new Error(`Esse imóvel é de ${n}: só ${n} muda.`) }
+    Object.assign(i, limpo)
+  },
+  async imovelTirar(_f, id) {
+    await espera(40)
+    const i = db.imoveis.find(x => x.id === id && !x.apagado)
+    if (!i) throw new Error('Esse imóvel não existe mais.')
+    if (i.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === i.dono_membro)?.nome || 'o dono'; throw new Error(`Esse imóvel é de ${n}: só ${n} muda.`) }
+    i.apagado = true
   },
   async exportarFamilia() {
     if (papelLogado() !== 'casal') throw new Error('Baixar os dados da família é com o casal. Use "Baixar meus dados".')

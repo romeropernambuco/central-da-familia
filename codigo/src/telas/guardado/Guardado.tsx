@@ -4,6 +4,7 @@ import { useApp } from '../../app/contexto'
 import { useFuturo, useGuardado } from '../../app/useDados2'
 import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
+import { Imoveis } from './Imoveis'
 import { aplicacaoMinha } from '../../app/dono'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
 import type { GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
@@ -113,6 +114,8 @@ export function Guardado() {
               ))}
             </ul>
           </section>
+          {/* RODADA_PATRIMONIO: imóveis dentro do Guardado (só o casal; o bloco some pra filha e equipe) */}
+          <Imoveis aplicado={g.total} />
           {saida && saida.avisos_fgc.length > 0 && <AvisoFGC avisos={saida.avisos_fgc} />}
           <p className="sub guard-taxa"><Droplets size={18} aria-hidden="true" /><span>{taxaTexto(g)}</span></p>
         </div>

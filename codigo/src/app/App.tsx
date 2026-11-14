@@ -130,13 +130,10 @@ export function App() {
         {r === 'privacidade' && <Privacidade />}
         {r === 'painel' && <Painel />}
       </main>
-      <nav className={'tabbar' + (equipe ? ' so2' : '')} aria-label="Telas">
+      {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
+      <nav className={'tabbar' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas'}>
         {equipe ? (
-          <>
-            <a href="#/casa" aria-current="page"><ShoppingBasket size={22} />Casa</a>
-            <button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar compra da casa"><Plus size={28} strokeWidth={2.25} /></button>
-            <span />
-          </>
+          <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Plus size={24} strokeWidth={2.25} aria-hidden="true" />Anotar compra</button>
         ) : (
           <>
             {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}

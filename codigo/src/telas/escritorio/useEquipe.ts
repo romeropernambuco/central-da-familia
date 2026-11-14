@@ -29,16 +29,20 @@ export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): Funcio
     return () => { vivo = false }
   }, [api, familia?.id, versao])
 
-  return useMemo(() => {
+  return useMemo(() => completarEquipe(doBanco, { rec, est, avisos, pres }, hojeRecife()), [doBanco, rec, est, avisos, pres])
+}
+
+/** A conta da lista (sem React, pra dar pra testar): os do banco + os que faltam da lista única, na ordem dela. */
+export function completarEquipe(doBanco: FuncionarioEsc[] | undefined, d: { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[]; pres: Record<string, string[]> }, hoje: string): FuncionarioEsc[] {
     if (!doBanco) return []
-    const hoje = hojeRecife()
+    const { rec, est, avisos, pres } = d
     const frase: Record<string, string | null> = {
       // Tesoureiro: o que tem data pra entrar e ainda não entrou (produto.recebimentos)
       tesoureiro: rec == null ? null : (() => {
         const abertos = rec.filter(r => !r.recebido_em).sort((a, b) => (a.mes_novo || a.mes_previsto).localeCompare(b.mes_novo || b.mes_previsto))
         if (!abertos.length) return 'Nenhum dinheiro com data pra entrar. Cadastre no Planejamento e eu acompanho.'
         const p = abertos[0], m = p.mes_novo || p.mes_previsto
-        return `${n(abertos.length, 'dinheiro', 'dinheiros')} com data pra entrar. O próximo: ${p.descricao}, ${reais(p.valor)} em ${mesAno(m)}${p.mes_novo ? ' (mudou de mês)' : ''}${p.certo ? '' : ', ainda sem contrato'}.`
+        return `${n(abertos.length, 'recebimento', 'recebimentos')} com data pra entrar. O próximo: ${p.descricao}, ${reais(p.valor)} em ${mesAno(m)}${p.mes_novo ? ' (mudou de mês)' : ''}${p.certo ? '' : ', ainda sem contrato'}.`
       })(),
       // Presença: quem marcou "Cheguei" hoje na tela Casa
       presenca: (() => {
@@ -63,7 +67,6 @@ export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): Funcio
     // a ordem da lista única (quem não está nela vai pro fim, na ordem do banco)
     const ordem = (id: string) => { const i = EQUIPE.findIndex(m => m.id === id); return i < 0 ? 99 : i }
     return [...doBanco, ...extras].map((f, i) => ({ f, i })).sort((a, b) => ordem(a.f.id) - ordem(b.f.id) || a.i - b.i).map(x => x.f)
-  }, [doBanco, rec, est, avisos, pres])
 }
 
 export const papelDe = (id: string) => POR_ID[id]?.papel

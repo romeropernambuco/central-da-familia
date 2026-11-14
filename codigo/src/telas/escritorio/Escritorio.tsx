@@ -11,6 +11,7 @@ import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/form
 import { demoraTexto, fraseDoDia } from '../../lib/guardado'
 import { Cena3D, IcoEstado, ROTULO_ESTADO, salaDe } from './Cena3D'
 import { SALAS_NOME } from './cenaBase'
+import { useEquipeCompleta } from './useEquipe'
 import { umaPorVez } from '../../lib/seguro'
 
 type Aba = 'hoje' | 'relatorio' | 'lembretes'
@@ -36,13 +37,15 @@ export function Escritorio() {
 function Hoje() {
   const { e, estado, motivo, responder } = useEscritorio()
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
+  // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
+  const funcs = useEquipeCompleta(e?.funcionarios)
   if (estado === 'desligado') return <div className="card"><Vazio ico={<ClipboardList size={24} />}>O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia.</Vazio></div>
   if (estado === 'erro' && !e) return <div className="card"><p className="aviso-erro" role="alert">Não deu pra buscar o Escritório: {motivo}</p></div>
   if (!e) return <div className="card"><p className="sub">Chamando a equipe…</p></div>
 
   const fila = e.precisa_de_voce
-  const aberto = e.funcionarios.find(f => f.id === sel) || null
-  const salas = Object.keys(SALAS_NOME).filter(k => e.funcionarios.some(f => salaDe(f.sala) === k))
+  const aberto = funcs.find(f => f.id === sel) || null
+  const salas = Object.keys(SALAS_NOME).filter(k => funcs.some(f => salaDe(f.sala) === k))
   const primeiro = fila[0] && donoDaPergunta(fila[0], e.funcionarios)
 
   return (
@@ -54,7 +57,7 @@ function Hoje() {
       </div>
       <div className="esc-grade">
         <section className="card esc-cena-card" aria-label="O escritório da família em 3D">
-          <Cena3D funcionarios={e.funcionarios} selecionado={aberto?.id || null} aoTocar={setSel} />
+          <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />
         </section>
         <section className="card" aria-labelledby="eEq">
           <div className="card-h"><h2 id="eEq">A equipe, sala por sala</h2></div>
@@ -62,11 +65,11 @@ function Hoje() {
             <div key={k} className="esc-sala">
               <h3>{SALAS_NOME[k]}</h3>
               <ul className="list">
-                {e.funcionarios.filter(f => salaDe(f.sala) === k).map(f => (
+                {funcs.filter(f => salaDe(f.sala) === k).map(f => (
                   <li key={f.id}>
-                    <button className="li" type="button" data-func={f.id} onClick={() => setSel(f.id)} aria-label={`${f.nome}: ${ROTULO_ESTADO[f.estado]}. Abrir a ficha.`}>
+                    <button className="li" type="button" data-func={f.id} onClick={() => setSel(f.id)} aria-label={`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir a ficha.`}>
                       <FuncIco id={f.id} precisa={f.estado === 'precisa_de_voce'} />
-                      <span className="m"><b className="quebra">{f.nome}</b><small style={{ whiteSpace: 'normal' }}>{f.frase}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{ROTULO_ESTADO[f.estado]}</span></span>
+                      <span className="m"><b className="quebra">{f.nome}</b><small style={{ whiteSpace: 'normal' }}>{f.frase}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></span>
                       <ChevronRight size={20} className="muted" aria-hidden="true" />
                     </button>
                   </li>

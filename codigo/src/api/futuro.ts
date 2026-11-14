@@ -3,11 +3,13 @@
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from '../lib/futuro'
-import type { FocusAno, ParametrosObjetivo } from './tipos'
+import type { FocusAno, NovoImovel, ParametrosObjetivo } from './tipos'
 
 /** O BANCO aceita a chave aliq_renda (IR de 2029 em diante, texto decimal, opcional) nos parâmetros do objetivo desde a f_13.
  *  Se um dia precisar voltar a não mandar (banco sem a f_13), basta pôr false: o campo fica travado no padrão de 15%. */
 export const BANCO_GUARDA_ALIQ_RENDA = true
+/** f_15: o banco aceita aliq_aluguel nos parâmetros. Banco sem a f_15: pôr false (a chave não vai; vale o padrão de 27,5%). */
+export const BANCO_GUARDA_ALIQ_ALUGUEL = true
 
 /** A virada: a partir de jan/2029 a família vive de rendimento (BRIEF). */
 export const VIRADA = '2029-01'
@@ -43,7 +45,7 @@ export interface FuturoBanco {
 /** Formato de cada imóvel em produto.futuro_entradas (f_15). Aceita também as chaves do tipo Imovel do motor (valor, aluguel_bruto,
  *  custos_mes), caso o BANCO passe a mandar com esses nomes. Só troca de formato. */
 export interface ImovelBanco {
-  id: string; dono_membro?: string; dono_nome?: string | null; apelido: string; uso: Imovel['uso']
+  id: string; /** f_15 final: o id do membro dono */ dono?: string; dono_membro?: string; dono_nome?: string | null; apelido: string; uso: Imovel['uso']
   valor_estimado_centavos?: number | string; valor?: number | string
   aluguel_centavos?: number | string; aluguel_bruto?: number | string
   custos_centavos?: number | string; custos_mes?: number | string
@@ -57,7 +59,7 @@ export function imovelDoBanco(i: ImovelBanco): Imovel {
   const n = (...v: unknown[]) => { for (const x of v) if (x != null && x !== '') return Number(x) || 0; return 0 }
   const venda = i.venda_valor_centavos ?? i.venda_valor
   return {
-    id: String(i.id), dono: i.dono_nome || String(i.dono_membro || ''), apelido: i.apelido, uso: i.uso,
+    id: String(i.id), dono: String(i.dono ?? i.dono_membro ?? ''), apelido: i.apelido, uso: i.uso,
     valor: n(i.valor_estimado_centavos, i.valor), aluguel_bruto: n(i.aluguel_centavos, i.aluguel_bruto), custos_mes: n(i.custos_centavos, i.custos_mes),
     vacancia: String(i.vacancia ?? '0'), tem_contrato: !!i.tem_contrato, contrato_ate: i.contrato_ate ? String(i.contrato_ate).slice(0, 7) : null,
     venda_valor: venda == null ? null : Number(venda) || null, venda_mes: i.venda_mes ? String(i.venda_mes).slice(0, 7) : null, venda_contrato: !!i.venda_contrato,
@@ -152,4 +154,18 @@ export function taxaDoTexto(t: string): string | null {
 export function textoDaTaxa(t: string | null | undefined): string {
   if (t == null || !/^-?\d+(\.\d+)?$/.test(String(t))) return ''
   return new Dec(String(t)).times(100).toDecimalPlaces(4).toString().replace('.', ',')
+}
+
+/** As regras de gravação do imóvel (as mesmas checagens da tabela produto.imovel, f_15). Volta a frase do que falta, ou ''. */
+export function imovelInvalido(d: NovoImovel): string {
+  if (!d.apelido.trim()) return 'Dê um apelido pro imóvel (ex.: sala do centro).'
+  if (d.apelido.trim().length > 60) return 'O apelido pode ter até 60 letras.'
+  if (!(d.valor >= 0) || d.valor > 1e9) return 'Confira o valor do imóvel.'
+  if (!['mora', 'aluga', 'parado', 'vende'].includes(d.uso)) return 'Escolha pra que serve o imóvel.'
+  if (!(d.aluguel >= 0) || !(d.custos >= 0) || d.aluguel > 1e8 || d.custos > 1e8) return 'Confira o aluguel e os custos.'
+  if (!/^[0-9]+(\.[0-9]+)?$/.test(d.vacancia) || Number(d.vacancia) > 1) return 'Os meses vazios vão de 0 a 100%.'
+  if (d.contrato_ate != null && !/^\d{4}-(0[1-9]|1[0-2])$/.test(d.contrato_ate)) return 'Escolha o mês em que o contrato acaba.'
+  if ((d.venda_valor == null) !== (d.venda_mes == null)) return 'Na venda planejada, diga o valor e o mês.'
+  if (d.venda_valor != null && !(d.venda_valor > 0)) return 'O valor da venda tem que ser maior que zero.'
+  return ''
 }
