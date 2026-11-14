@@ -10,9 +10,10 @@ import { folga as calcFolga } from './f5_folga'
 import { impactoDesvio, perdaRendaMensal } from './f6_impacto'
 import { avaliarDesejo, fluxosDoDesejo } from './f7_desejo'
 import { tetoProjetado } from './f8_reajuste'
+import { analisarImoveis, gatilhosDeRecebimento } from './f11_imoveis'
 import { ajusteSugerido, cortarPorMes2029, desejosPraAdiar, guardarPorMesNaLinha } from './f9_falta'
 import { fatorLiquido } from './f1_rendimento'
-import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, LinhaMes, Mes, RendaDoMes } from './tipos'
+import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, LinhaMes, Mes, RendaDoMes, Taxa } from './tipos'
 
 export * from './tipos'
 // Fronteira única (PLANO 3A; REVISOR 2): fora de lib/futuro, tudo se importa daqui. Lista em fase_final/entregas/MOTOR_index.md.
@@ -27,11 +28,19 @@ export { avaliarDesejo, avaliarAntecipacao, taxaImplicitaMensal, type ResultadoD
 export { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
 export { ficaDevendo, cortarPorMes2029, desejosPraAdiar, ajusteSugerido, MESES_MINIMOS_PRA_GUARDAR } from './f9_falta'
 export { avisosFGC, fgcConta, TODOS_OS_BANCOS, LIMITE_FGC, TETO_CPF_FGC } from './f10_fgc'
+export { aluguelLiquidoMes, rentabilidadeAno, aluguelNoMes, analisarImoveis, gatilhosDeRecebimento } from './f11_imoveis'
 
 /** Padrões do ECONOMISTA.md pra quem monta os parâmetros iniciais (todos editáveis pela família).
  *  IR da projeção até 2028: 22,5% (item 4: "o caixa gira, preparar pro pior").
  *  IR do modo renda, 2029 em diante: 15% (exemplo F2 dele, aplicação longa). O motor não usa este objeto: só lê parametros. */
-export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', piso_meses: 6, mes_reajuste: 1 } as const
+export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', aliq_aluguel: '0.15', piso_meses: 6, mes_reajuste: 1 } as const
+// aliq_aluguel: o ECONOMISTA.md não fixa IR de aluguel. 15% editável, [confirmar] com ele (RODADA_PATRIMONIO).
+
+/** IR do aluguel: o do parâmetro; sem ele, 15% marcado [confirmar]. */
+function aliqAluguel(e: FuturoEntrada): { aliq: Taxa; confirmar: boolean } {
+  const a = e.parametros.aliq_aluguel
+  return a === undefined ? { aliq: PADROES_ECONOMISTA.aliq_aluguel, confirmar: true } : { aliq: a, confirmar: false }
+}
 
 function taxasDe(e: FuturoEntrada) {
   const p = e.parametros
@@ -77,7 +86,10 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   try { gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano) } catch { gasto = p.gasto_2029_hoje; falta_taxa = true }
   const patrimonio = patrimonioHoje(e)
   const renda = rendaSustentavel(patrimonio, real)
-  const a_cobrir = gasto - p.renda_certa_2029
+  const al = aliqAluguel(e)
+  const im = analisarImoveis(e.imoveis ?? [], { meses: [], mes_ref: mes, aliq_aluguel: al.aliq, taxa_real_aplicacoes: real })
+  const aluguel = im.aluguel_no_mes_ref
+  const a_cobrir = gasto - p.renda_certa_2029 - aluguel
   const necessario = patrimonioNecessario(a_cobrir, p.margem, real)
   const f = necessario === null ? 0 : patrimonio - necessario
   const perguntas: { recebimento_atrasado: string }[] = []
@@ -85,11 +97,14 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   const rendaDoMes: RendaDoMes = {
     mes, patrimonio, taxa_real_anual: real.toString(), taxa_real_mensal: real.lte(0) ? '0' : taxaRealMensal(real).toString(),
     renda_sustentavel: renda, gasto_do_mes: gasto, folga_do_mes: renda - Math.max(0, a_cobrir), falta_taxa,
+    aluguel_liquido: aluguel, renda_total: renda + aluguel,
   }
   return {
     modo: 'renda', linha: [], patrimonio_necessario: necessario, renda_sustentavel: renda, folga: f,
     ajustes_falta: f < 0 ? { guardar_por_mes: 0, ...partesDoCorte(cortarPorMes2029(-f, real), a_cobrir, renda), desejos_pra_adiar: desejosPraAdiar(e.desejos), sugerido: 'cortar', meses_restantes: 0 } : null,
     renda: rendaDoMes, perguntas, avisos_fgc: avisosFGC(e.aplicacoes),
+    patrimonio_imoveis: im.patrimonio_imoveis, aluguel_liquido_2029: aluguel, renda_total_2029: renda + aluguel,
+    imoveis: im.imoveis, gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)], aliq_aluguel_confirmar: al.confirmar,
   }
 }
 
@@ -148,6 +163,11 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
     somarPorMes(f.retornos.map((x) => ({ ...x, mes: ajusta(x.mes) })).filter((x) => naLinha(x.mes)), retornos)
   }
 
+  // Imóveis: aluguel com contrato mês a mês e venda com contrato como recebimento; o resto vira gatilho.
+  const al = aliqAluguel(e)
+  const im = analisarImoveis(e.imoveis ?? [], { meses: listaMeses(de, ultimo), mes_ref: p.virada, aliq_aluguel: al.aliq, taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real })
+  recs.push(...im.vendas)
+
   const saldo_inicial = e.aplicacoes.reduce((s, a) => s + a.saldo, e.saldo_caixa)
   const linha = projetarLinha({
     saldo_inicial, de, ate: ultimo,
@@ -156,12 +176,13 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
     recebimentos: somarPorMes(recs),
     compromissos: somarPorMes(e.compromissos.filter((c) => naLinha(c.mes))),
     dividas: somarPorMes(e.dividas.filter((c) => naLinha(c.mes))),
-    desvios, retornos,
+    desvios, retornos, alugueis: somarPorMes(im.alugueis),
   })
   const saldo_final = linha.length ? linha[linha.length - 1].saldo_final : saldo_inicial
 
   const gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)
-  const a_cobrir = gasto - p.renda_certa_2029
+  // Aluguel com contrato na virada abate o gasto (ECONOMISTA F3: a_cobrir = gasto − renda certa).
+  const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_no_mes_ref
   const necessario = patrimonioNecessario(a_cobrir, p.margem, p.taxa_real_trabalho)
   const f = necessario === null ? 0 : calcFolga(saldo_final, necessario)
   let ajustes_falta: FuturoSaida['ajustes_falta'] = null
@@ -186,6 +207,12 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
     ajustes_falta,
     perguntas,
     avisos_fgc: avisosFGC(e.aplicacoes),
+    patrimonio_imoveis: im.patrimonio_imoveis,
+    aluguel_liquido_2029: im.aluguel_no_mes_ref,
+    renda_total_2029: rendaSustentavel(saldo_final, p.taxa_real_trabalho) + im.aluguel_no_mes_ref,
+    imoveis: im.imoveis,
+    gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)],
+    aliq_aluguel_confirmar: al.confirmar,
   }
 }
 

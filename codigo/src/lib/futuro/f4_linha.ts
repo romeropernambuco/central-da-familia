@@ -20,6 +20,7 @@ export interface LinhaEntrada {
   dividas?: PorMes
   desvios?: PorMes
   retornos?: PorMes
+  alugueis?: PorMes
 }
 
 /** Soma valores por mês. */
@@ -44,10 +45,10 @@ export function projetarLinha(e: LinhaEntrada): LinhaMes[] {
     const l: LinhaMes = {
       mes: m, saldo_inicial: saldo, rendimento,
       recebimentos: v(e.recebimentos, m), teto: e.teto(m), compromissos: v(e.compromissos, m),
-      dividas: v(e.dividas, m), desvios: v(e.desvios, m), retornos: v(e.retornos, m),
+      dividas: v(e.dividas, m), desvios: v(e.desvios, m), retornos: v(e.retornos, m), alugueis: v(e.alugueis, m),
       saldo_final: 0, piso: e.piso(m), fica_devendo: 0, devendo_ate: null,
     }
-    l.saldo_final = saldo + rendimento + l.recebimentos - l.teto - l.compromissos - l.dividas - l.desvios + l.retornos
+    l.saldo_final = saldo + rendimento + l.recebimentos - l.teto - l.compromissos - l.dividas - l.desvios + l.retornos + (l.alugueis ?? 0)
     if (!Number.isSafeInteger(l.saldo_final)) throw new Error('Saldo fora do limite')
     linha.push(l)
     saldo = l.saldo_final

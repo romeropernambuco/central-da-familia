@@ -484,6 +484,40 @@ begin
       end loop;
     end if;
 
+    -- imóveis (f_15), quando existir: casal lê tudo com o dono, cada um grava só os seus, filha e equipe nada
+    if to_regclass('produto.imovel') is not null then
+      execute format('insert into produto.imovel (id, familia_id, dono_membro, apelido, valor_estimado_centavos, uso, aluguel_centavos,
+          custos_centavos, vacancia, tem_contrato, contrato_ate) values
+        (%L, %L, %L, ''Sala comercial (exemplo)'', 60000000, ''aluga'', 300000, 50000, ''0.08'', true, ''2029-12-31''),
+        (%L, %L, %L, ''Lote (exemplo)'', 20000000, ''vende'', 0, 0, ''0'', false, null)',
+        '40000000-0000-4e0e-8000-00000000fa01', fam, ma, '40000000-0000-4e0e-8000-00000000fb01', fam, mb);
+      execute format('update produto.imovel set venda_valor_centavos = 22000000, venda_mes = ''2028-10-01'' where id = %L', '40000000-0000-4e0e-8000-00000000fb01');
+      for c in select * from (values
+        ('Imovel: A le o imovel de B (com dono)', ua, 'authenticated', format('select count(*) from produto.imovel where dono_membro = %L', mb), 'contar', '1'),
+        ('Imovel: A muda o imovel de B', ua, 'authenticated', 'update produto.imovel set valor_estimado_centavos = 1 where id = ''40000000-0000-4e0e-8000-00000000fb01''', 'linhas', '0'),
+        ('Imovel: A cadastra imovel no nome de B', ua, 'authenticated', format('insert into produto.imovel (familia_id, dono_membro, apelido, valor_estimado_centavos, uso) values (%L, %L, ''x'', 1, ''parado'')', fam, mb), 'linhas', 'bloqueado'),
+        ('CONTROLE Imovel: A muda o proprio imovel', ua, 'authenticated', 'update produto.imovel set aluguel_centavos = 310000 where id = ''40000000-0000-4e0e-8000-00000000fa01''', 'linhas', '1'),
+        ('CONTROLE Imovel: B cadastra o proprio imovel', ub, 'authenticated', format('insert into produto.imovel (familia_id, dono_membro, apelido, valor_estimado_centavos, uso) values (%L, %L, ''Casa onde mora (exemplo)'', 150000000, ''mora'')', fam, mb), 'linhas', '1'),
+        ('Imovel: ninguem apaga linha (DELETE)', ua, 'authenticated', 'delete from produto.imovel where id = ''40000000-0000-4e0e-8000-00000000fa01''', 'linhas', 'bloqueado'),
+        ('Imovel: uso que nao existe', ua, 'authenticated', format('insert into produto.imovel (familia_id, dono_membro, apelido, valor_estimado_centavos, uso) values (%L, %L, ''x'', 1, ''hotel'')', fam, ma), 'linhas', 'bloqueado'),
+        ('Imovel: vacancia acima de 100%', ua, 'authenticated', 'update produto.imovel set vacancia = ''1.5'' where id = ''40000000-0000-4e0e-8000-00000000fa01''', 'linhas', 'bloqueado'),
+        ('Imovel: venda com valor e sem mes', ua, 'authenticated', 'update produto.imovel set venda_valor_centavos = 100 where id = ''40000000-0000-4e0e-8000-00000000fa01''', 'linhas', 'bloqueado'),
+        ('Imovel: a filha le os imoveis', up, 'authenticated', 'select count(*) from produto.imovel', 'contar', '0'),
+        ('Imovel: a equipe le os imoveis', ue, 'authenticated', 'select count(*) from produto.imovel', 'contar', '0'),
+        ('Imovel: a filha cadastra imovel', up, 'authenticated', format('insert into produto.imovel (familia_id, dono_membro, apelido, valor_estimado_centavos, uso) values (%L, %L, ''x'', 1, ''parado'')', fam, mp), 'linhas', 'bloqueado'),
+        ('Imovel: estranho le os imoveis da familia', ux, 'authenticated', format('select count(*) from produto.imovel where familia_id = %L', fam), 'contar', '0'),
+        ('Imovel: sem login le', null, 'anon', 'select count(*) from produto.imovel', 'contar', 'bloqueado'),
+        ('Imovel: dados do futuro trazem os 2 imoveis com contrato, venda e dono', ub, 'authenticated', format('select count(*) from jsonb_array_elements(produto.futuro_entradas(%L)->''imoveis'') x where (x->>''apelido'' like ''Sala%%'' and (x->>''tem_contrato'')::boolean and x->>''vacancia'' = ''0.08'' and x->>''dono_nome'' = ''Adulto A'') or (x->>''venda_mes'' = ''2028-10'' and x->>''venda_valor_centavos'' = ''22000000'' and not (x->>''venda_contrato'')::boolean)', fam), 'contar', '2'),
+        ('Imovel: A baixa a familia com os imoveis e o dono', ua, 'authenticated', format('select count(*) from json_array_elements(produto.exportar_familia(%L)->''imoveis'') x where x->>''dono_nome'' = ''Adulto B''', fam), 'contar', '1'),
+        ('CONTROLE IR do aluguel: A grava aliq_aluguel', ua, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_aluguel": "0.275"}'' where familia_id = %L', fam), 'linhas', '1'),
+        ('IR do aluguel: aliq_aluguel como numero', ua, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_aluguel": 0.275}'' where familia_id = %L', fam), 'linhas', 'bloqueado'),
+        ('IR do aluguel: a filha grava aliq_aluguel', up, 'authenticated', format('update produto.objetivo set parametros = parametros || ''{"aliq_aluguel": "0"}'' where familia_id = %L', fam), 'linhas', '0')
+      ) as v(nome, uid, papel_db, sql, modo, esp) loop
+        r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
+        r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
+      end loop;
+    end if;
+
     -- ===== contas que o banco ainda faz (sem login, como o turno da noite) =====
     -- 1.200 em 6x comprado em 05/11/2026, cartão fecha dia 1 e vence dia 10: faturas de dez a mai, 200 cada
     select string_agg((x->>'mes') || ':' || (x->>'total'), ',' order by x->>'mes') into v
