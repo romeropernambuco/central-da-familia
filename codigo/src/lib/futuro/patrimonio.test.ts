@@ -141,3 +141,21 @@ describe('modo renda (2029) soma aplicações + aluguel com contrato', () => {
     expect(cabeDesejo(e, { id: 'd', dono: 'exemplo', valor: 100_000, mes: '2029-02', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false }).modo).toBe('renda')
   })
 })
+
+describe('nome do recebimento repassado (descricao, como no futuro_entradas da f_08)', () => {
+  it('com descricao: aparece no gatilho e no marco do mês; sem ela: null e a conta não muda', () => {
+    const e = cenario(true)
+    e.recebimentos = e.recebimentos.map((r) => (r.id === 'comissao' ? { ...r, descricao: 'Comissão da venda (exemplo)' } : r.id === 'investimento' ? { ...r, descricao: 'Volta do investimento (exemplo)' } : r))
+    const s = futuro(e)
+    expect(s.gatilhos!.find((g) => g.id === 'comissao')!.descricao).toBe('Comissão da venda (exemplo)')
+    const ago = s.linha.find((l) => l.mes === '2027-08')!.marcos!
+    expect(ago).toContainEqual({ id: 'investimento', tipo: 'recebimento', descricao: 'Volta do investimento (exemplo)', dono: 'exemplo', valor: 12_000_000 })
+    expect(s.linha.find((l) => l.mes === '2027-09')!.marcos!.map((m) => [m.id, m.descricao])).toEqual([['parcela-2027-09', null], ['atrasa', null]])
+    expect(s.linha.find((l) => l.mes === '2028-10')!.marcos!.find((m) => m.tipo === 'venda')).toEqual({ id: 'lote', tipo: 'venda', descricao: 'Lote', dono: 'exemplo', valor: 22_000_000 })
+    // marcos somam o que entra no mês (fora o aluguel, que tem coluna própria)
+    for (const l of s.linha) expect(l.marcos!.reduce((t2, m) => t2 + m.valor, 0)).toBe(l.recebimentos)
+    const semNome = futuro(cenario(true))
+    expect(semNome.linha.map((l) => l.saldo_final)).toEqual(s.linha.map((l) => l.saldo_final))
+    expect(semNome.gatilhos!.find((g) => g.id === 'comissao')!.descricao).toBeNull()
+  })
+})

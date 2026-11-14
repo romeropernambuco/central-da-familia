@@ -706,7 +706,7 @@ export const apiExemplo: Api = {
       cdi_hoje: { pct_ano: g.cdi_usado.pct_ano },
       // f_11: a família de exemplo não anotou dinheiro em conta corrente (soma 0, igual ao banco sem linhas)
       saldo_caixa: 0,
-      recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em })),
+      recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em, descricao: r.descricao })),
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
       config: { casa_folha: db.config.casa_folha as any },
       parcelas_futuras: vivos().filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l)).map(l => { const m1 = faturaDoLanc(l)!; return { parcelas_lista: parcelasDe(l.valor, l.parcelas!).map((v, i) => ({ mes_fatura: mesMais(m1, i), valor_centavos: Math.round(v * 100) })) } })

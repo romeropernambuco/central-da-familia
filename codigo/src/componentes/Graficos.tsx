@@ -143,7 +143,7 @@ export function GraficoCaixa({ linha, renda2029, rendaRotulo }: { linha: LinhaMe
         if (i == null) return <span className="graf-dica">Toque na linha pra ver cada mês</span>
         if (i >= n) return <span>2029: {renda2029 != null ? <>o dinheiro rende <b>{r$(renda2029)}</b> por mês, pra sempre</> : 'o rendimento não repõe a inflação'}</span>
         const l = linha[i]
-        return <span>{curto(l.mes)}: caixa <b>{l.saldo_final < 0 ? 'devendo ' : ''}{r$(l.saldo_final)}</b>, piso {r$(l.piso)}{l.recebimentos > 0 ? <>. Entra {r$(l.recebimentos)}</> : null}{l.fica_devendo > 0 ? '. Abaixo do piso' : ''}</span>
+        return <span>{curto(l.mes)}: caixa <b>{l.saldo_final < 0 ? 'devendo ' : ''}{r$(l.saldo_final)}</b>, piso {r$(l.piso)}{l.recebimentos > 0 ? <>. Entra {l.marcos?.length ? l.marcos.map(m => `${m.descricao ?? `Recebimento de ${m.dono}`} ${r$(m.valor)}`).join(', ') : r$(l.recebimentos)}</> : null}{l.fica_devendo > 0 ? '. Abaixo do piso' : ''}</span>
       }}
       desenho={(w, h, ativo) => {
         const vals = [...linha.map(l => l.saldo_final), ...linha.map(l => l.piso)]

@@ -31,7 +31,7 @@ export interface FuturoBanco {
   cdi_hoje: { pct_ano: string | number | null }
   /** f_11: soma do dinheiro em conta corrente, fora das aplicações (centavos). Ausente = banco antes da f_11. */
   saldo_caixa?: number | string | null
-  recebimentos: { id: string; dono_nome: string | null; valor_centavos: number; mes_previsto: string; mes_novo: string | null; certo: boolean; recebido_em: string | null }[]
+  recebimentos: { id: string; dono_nome: string | null; valor_centavos: number; mes_previsto: string; mes_novo: string | null; certo: boolean; recebido_em: string | null; /** f_08: o nome do recebimento */ descricao?: string | null }[]
   limites_mes: { envelope_id: string; limite_centavos: number }[]
   config: { casa_folha?: { pessoas?: { salario?: number }[] } } | null
   parcelas_futuras: { parcelas_lista: { mes_fatura: string; valor_centavos: number }[] }[]
@@ -133,7 +133,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
     confirmar,
     entrada: {
       hoje, saldo_caixa, aplicacoes,
-      recebimentos: (j.recebimentos || []).map(r => ({ id: String(r.id), dono: r.dono_nome || '', valor: Number(r.valor_centavos) || 0, mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: !!r.certo, recebido: !!r.recebido_em })),
+      recebimentos: (j.recebimentos || []).map(r => ({ id: String(r.id), dono: r.dono_nome || '', valor: Number(r.valor_centavos) || 0, mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: !!r.certo, recebido: !!r.recebido_em, descricao: r.descricao ?? null })),
       compromissos, dividas: [], desvios: [],
       desejos: (j.desejos || []).map(d => ({ id: String(d.id), dono: String(d.dono_membro), valor: Number(d.valor_centavos) || 0, mes: d.mes, volta_de: d.volta_de, volta: Number(d.volta_centavos) || 0, volta_mes: d.volta_mes, antecipado: d.antecipado_centavos == null ? null : Number(d.antecipado_centavos), volta_certa: !!d.volta_certa, ...(d.situacao ? { situacao: d.situacao } : {}) })),
       // revisão E12 (C2): a situação vai junto; o motor ignora "feito" (o dinheiro já saiu do saldo) e "desisti"

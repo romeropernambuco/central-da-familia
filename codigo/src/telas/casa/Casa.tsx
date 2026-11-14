@@ -363,8 +363,7 @@ function CasaEquipe() {
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{c.nome}</b></span></li>)}</ul>
               : <Vazio ico={<ShoppingBasket size={24} />}>Nenhuma compra anotada hoje.</Vazio>}
-            {/* A1: a folha da equipe não tem valor: o que comprou, feira ou casa, e a foto da nota */}
-            <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}><Plus size={20} />Anotar compra</button>
+            {/* C4 (14/11): o "Anotar compra" da equipe é 1 só, o botão grande de baixo (App.tsx); a folha dele não tem valor */}
           </section>
           <section className="card" aria-labelledby="eGas">
             <div className="card-h"><h2 id="eGas"><Flame size={24} aria-hidden="true" />Gás de cozinha</h2></div>

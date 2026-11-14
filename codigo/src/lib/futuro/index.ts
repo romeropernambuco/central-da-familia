@@ -13,7 +13,7 @@ import { tetoProjetado } from './f8_reajuste'
 import { analisarImoveis, gatilhosDeRecebimento } from './f11_imoveis'
 import { ajusteSugerido, cortarPorMes2029, desejosPraAdiar, guardarPorMesNaLinha } from './f9_falta'
 import { fatorLiquido } from './f1_rendimento'
-import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, LinhaMes, Mes, RendaDoMes, Taxa } from './tipos'
+import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, LinhaMes, Marco, Mes, RendaDoMes, Taxa } from './tipos'
 
 export * from './tipos'
 // Fronteira única (PLANO 3A; REVISOR 2): fora de lib/futuro, tudo se importa daqui. Lista em fase_final/entregas/MOTOR_index.md.
@@ -149,10 +149,11 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
 
   const perguntas: { recebimento_atrasado: string }[] = []
   const recs: { mes: Mes; valor: Centavos }[] = []
+  const marcos: (Marco & { mes: Mes })[] = []
   for (const r of e.recebimentos) {
     const x = mesDoRecebimento(r, mes_hoje, ultimo)
     if (x.pergunta) perguntas.push({ recebimento_atrasado: r.id })
-    if (x.mes) recs.push({ mes: x.mes, valor: r.valor })
+    if (x.mes) { recs.push({ mes: x.mes, valor: r.valor }); marcos.push({ mes: x.mes, id: r.id, tipo: 'recebimento', descricao: r.descricao ?? null, dono: r.dono, valor: r.valor }) }
   }
   const desvios = somarPorMes(e.desvios.filter((d) => naLinha(d.mes)))
   const retornos = somarPorMes([])
@@ -167,6 +168,7 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
   const al = aliqAluguel(e)
   const im = analisarImoveis(e.imoveis ?? [], { meses: listaMeses(de, ultimo), mes_ref: p.virada, aliq_aluguel: al.aliq, taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real })
   recs.push(...im.vendas)
+  for (const v of im.vendas) marcos.push({ mes: v.mes, id: v.id, tipo: 'venda', descricao: v.apelido, dono: v.dono, valor: v.valor })
 
   const saldo_inicial = e.aplicacoes.reduce((s, a) => s + a.saldo, e.saldo_caixa)
   const linha = projetarLinha({
@@ -178,6 +180,7 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
     dividas: somarPorMes(e.dividas.filter((c) => naLinha(c.mes))),
     desvios, retornos, alugueis: somarPorMes(im.alugueis),
   })
+  for (const l of linha) l.marcos = marcos.filter((x) => x.mes === l.mes).map(({ mes: _m, ...x }) => x)
   const saldo_final = linha.length ? linha[linha.length - 1].saldo_final : saldo_inicial
 
   const gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)

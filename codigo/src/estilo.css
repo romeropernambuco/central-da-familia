@@ -758,3 +758,5 @@ select.inp{appearance:auto}
 .pode-entrar ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px;line-height:20px;color:var(--ink-2)}
 .aviso-renda-certa{margin:4px 0 8px}
 .graf .g-zero{stroke:var(--control);stroke-width:1}
+/* C4: no computador o botão da equipe continua lá embaixo, ao lado do menu (é o único jeito de anotar) */
+@media (min-width:900px){.tabbar.so1{display:grid;left:var(--rail)}body:has(.tabbar.so1) main{padding-bottom:112px}.tabbar.so1 .plus.anotar{max-width:420px;justify-self:center}}

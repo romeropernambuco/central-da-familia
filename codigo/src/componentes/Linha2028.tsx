@@ -99,7 +99,8 @@ export function frasesGatilho(g: NonNullable<FuturoSaida['gatilhos']>[number]): 
   const quando = g.mes ? (g.por_mes ? ` a partir de ${mesAno(g.mes)}` : ` em ${mesAno(g.mes)}`) : ''
   const valor = `${r$(g.valor)}${g.por_mes ? ' por mês' : ''}`
   const porque = g.motivo === 'sem contrato' ? 'sem contrato' : g.motivo === 'depois do contrato' ? 'depois que o contrato acaba' : g.motivo === 'contrato sem data de fim' ? 'contrato sem data de fim' : g.motivo === 'depois da virada' ? 'depois de 2028' : 'incerto'
-  const nome = g.origem === 'recebimento' ? `Recebimento${g.nome ? ` de ${g.nome}` : ''}` : g.nome
+  // MOTOR: o nome do recebimento vem em descricao; sem ele, "Recebimento de <dono>"
+  const nome = g.origem === 'recebimento' ? g.descricao ?? `Recebimento${g.nome ? ` de ${g.nome}` : ''}` : g.nome
   return `${nome}: ${valor}${quando} (${porque}).`
 }
 export function PodeEntrar({ saida }: { saida: FuturoSaida }) {

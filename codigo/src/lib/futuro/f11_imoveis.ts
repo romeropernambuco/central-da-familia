@@ -42,7 +42,7 @@ export function aluguelNoMes(im: Imovel, m: Mes): boolean {
 
 export interface ImoveisAnalise {
   alugueis: { mes: Mes; valor: Centavos }[] /* por mês da linha, só com contrato */
-  vendas: { mes: Mes; valor: Centavos }[] /* recebimentos da venda com contrato, dentro da linha */
+  vendas: { mes: Mes; valor: Centavos; id: string; apelido: string; dono: string }[] /* recebimentos da venda com contrato, dentro da linha */
   aluguel_no_mes_ref: Centavos /* aluguel com contrato no mês de referência (virada ou mês de hoje no modo renda) */
   patrimonio_imoveis: Centavos /* valor dos imóveis que a família ainda tem no mês de referência; nunca sacado */
   imoveis: ImovelSaida[]
@@ -52,7 +52,7 @@ export interface ImoveisAnalise {
 /** Analisa os imóveis pra uma janela de meses (a linha) e um mês de referência (a virada, ou hoje no modo renda). */
 export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: Mes; aliq_aluguel: Taxa | Dec; taxa_real_aplicacoes: Dec }): ImoveisAnalise {
   const alugueis: { mes: Mes; valor: Centavos }[] = []
-  const vendas: { mes: Mes; valor: Centavos }[] = []
+  const vendas: { mes: Mes; valor: Centavos; id: string; apelido: string; dono: string }[] = []
   const gatilhos: Gatilho[] = []
   const saida: ImovelSaida[] = []
   let aluguel_ref = 0, patrimonio = 0
@@ -77,7 +77,7 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
       centavos(im.venda_valor)
       if (!im.venda_contrato) gatilhos.push({ origem: 'imovel', id: im.id, nome: im.apelido, tipo: 'venda', motivo: 'sem contrato', valor: im.venda_valor, mes: im.venda_mes, por_mes: false })
       else if (compararMes(im.venda_mes, ultimo) > 0) gatilhos.push({ origem: 'imovel', id: im.id, nome: im.apelido, tipo: 'venda', motivo: 'depois da virada', valor: im.venda_valor, mes: im.venda_mes, por_mes: false })
-      else if (o.meses.length && compararMes(im.venda_mes, primeiro) >= 0) vendas.push({ mes: im.venda_mes, valor: im.venda_valor })
+      else if (o.meses.length && compararMes(im.venda_mes, primeiro) >= 0) vendas.push({ mes: im.venda_mes, valor: im.venda_valor, id: im.id, apelido: im.apelido, dono: im.dono })
       // venda com contrato num mês já passado: o dinheiro já está no saldo; o imóvel só sai do patrimônio
     }
     saida.push({
@@ -93,5 +93,5 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
 
 /** Recebimentos incertos e não recebidos: aparecem como gatilho, nunca entram na conta (plano base só conta o certo). */
 export function gatilhosDeRecebimento(recebimentos: Recebimento[]): Gatilho[] {
-  return recebimentos.filter((r) => !r.certo && !r.recebido).map((r) => ({ origem: 'recebimento' as const, id: r.id, nome: r.dono, tipo: 'recebimento' as const, motivo: 'incerto' as const, valor: r.valor, mes: r.mes_novo ?? r.mes_previsto, por_mes: false }))
+  return recebimentos.filter((r) => !r.certo && !r.recebido).map((r) => ({ origem: 'recebimento' as const, id: r.id, nome: r.dono, tipo: 'recebimento' as const, motivo: 'incerto' as const, valor: r.valor, mes: r.mes_novo ?? r.mes_previsto, por_mes: false, descricao: r.descricao ?? null }))
 }

@@ -99,7 +99,8 @@ export function App() {
     <>
       <nav className="rail" aria-label="Telas">
         <div className="brand"><Marca /><span><b>Central da Família</b><small>{familia.nome}</small></span></div>
-        <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Lançar</button>
+        {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
+        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Lançar</button>}
         {permitidas.map(m => (
           <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
         ))}
