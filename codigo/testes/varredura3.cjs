@@ -12,6 +12,7 @@
 //   V10 família de 1 adulto (Autônoma): nada de "Do casal", "O casal", "vocês", "Os 2"
 //   V12 imóveis: o casal vê os 4 imóveis de exemplo no Guardado e o "Pode entrar" com os gatilhos no Planejamento;
 //       a filha e a equipe não veem imóvel, aluguel nem "Pode entrar" em tela nenhuma (o Escritório novo entra na V2 da equipe)
+//   V13 1440 px: na 2ª coluna de Cartões e Lançamentos o que é do outro adulto traz o nome escrito e nenhum botão de mexer
 //   V11 reajuste do teto: casal aprova e espera o outro; família de 1 aprova, o voto vence depois do prazo e "Votar de novo" volta a valer
 // Pessoas: Mãe de 3 (?como=ana), Dono (?como=bruno), Avó (a pessoa da casa, ?como=ana, com o texto a 130%: a página toda
 // ampliada 1,3 vezes), Parcela (?como=ana: mesma tela da Mãe de 3, checada 1 vez só e contada pras 2), Filha (?como=filha),
@@ -517,6 +518,29 @@ async function reajuste(browser) {
   await ctx.close()
 }
 
+// ---------------------------------------------------------------- V13: 1440 px, 2ª coluna de Cartões e Lançamentos (regra A3) ----------------------------------------------------------------
+// No computador largo a 2ª coluna mostra os totais do mês e as próximas faturas: o que é do outro adulto tem que trazer
+// o nome dele ESCRITO no texto (não só no atributo) e nenhum botão de mexer.
+async function segundaColuna(browser) {
+  for (const pe of PESSOAS.filter(x => x.outro && x.zoom === 1)) for (const [dia, hora] of [['2026-11-18', 10], ['2026-11-30', 21]]) {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'pt-BR', timezoneId: 'America/Recife', serviceWorkers: 'block' })
+    let onde = ''
+    const p = await novaPagina(ctx, pe, () => onde)
+    for (const r of ['lancamentos', 'cartoes']) {
+      onde = `1440px ${dia} ${hora}h #/${r}`
+      await carregar(p, url(pe, dia, hora, r))
+      await p.waitForSelector('[data-do-outro]', { timeout: 8000 }).catch(() => {})
+      await checarEstado(p, pe, onde, dia)
+      const itens = await p.$$eval('[data-do-outro]', els => els.filter(e => e.getClientRects().length).map(e => ({ dono: e.getAttribute('data-do-outro'), txt: e.innerText.replace(/\s+/g, ' ') })))
+      const doOutro = itens.filter(x => x.dono === pe.outro)
+      marca(pe.chave, 'V13', doOutro.length > 0, `${onde}: nada de ${pe.outro} aparece com o dono`, { print: () => printa(p, `falha_${pe.nome}_1440_${r}_${dia}`) })
+      for (const it of doOutro) marca(pe.chave, 'V13', new RegExp(pe.outro, 'i').test(it.txt), `${onde}: item de ${pe.outro} sem o nome escrito: "${it.txt.slice(0, 80)}"`, { print: () => printa(p, `falha_${pe.nome}_1440_${r}_${dia}_sem_nome`) })
+      if (dia === '2026-11-18') await printa(p, `${pe.nome}_1440_${r}`)
+    }
+    await ctx.close()
+  }
+}
+
 ;(async () => {
   let srv = null
   if (!BASE) {
@@ -534,6 +558,7 @@ async function reajuste(browser) {
     let feitas = 0
     const trabalhador = async () => { while (fila.length) { const [pe, l, d] = fila.shift(); toques += await varrer(browser, pe, l, d).catch(e => { erros.push(`${pe.nome} ${l[0]} ${d[0]}: a varredura parou: ${e.message.split('\n')[0]}`); marca(pe.chave, 'V1', false, `${l[0]}px ${d[0]}: a varredura parou: ${e.message.split('\n')[0]}`); return 0 }); feitas++; if (feitas % 6 === 0) console.log(`  ${feitas} de ${VARRIDAS.length * LARGURAS.length * DIAS.length} (pessoa, largura, dia) varridos, ${Math.round((Date.now() - t0) / 1000)} s`) } }
     await Promise.all(Array.from({ length: TRABALHOS }, trabalhador))
+    await segundaColuna(browser).catch(e => { erros.push(`2ª coluna: ${e.message.split('\n')[0]}`); marca('ana', 'V13', false, `a checagem da 2ª coluna parou: ${e.message.split('\n')[0]}`) })
     await reajuste(browser).catch(e => { erros.push(`reajuste: ${e.message.split('\n')[0]}`); marca('autonoma', 'V11', false, `a checagem do reajuste parou: ${e.message.split('\n')[0]}`) })
   }
   if (PARTE === 'tarefas' || PARTE === 'tudo') {
