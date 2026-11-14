@@ -1,3 +1,6 @@
 banco/teste_local/dados/
 banco/teste_local/log/
 banco/teste_local/sock/
+
+# cópias do banco real ficam fora do repositório (ficam em scratchpad/privado)
+banco/antes_*.sql
