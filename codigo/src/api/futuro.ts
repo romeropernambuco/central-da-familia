@@ -2,7 +2,7 @@
 // devolve. O modo exemplo monta o MESMO formato do banco e passa por aqui também: as 2 pontas saem iguais.
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
-import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
+import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from '../lib/futuro'
 import type { FocusAno, ParametrosObjetivo } from './tipos'
 
 /** O BANCO aceita a chave aliq_renda (IR de 2029 em diante, texto decimal, opcional) nos parâmetros do objetivo desde a f_13.
@@ -36,6 +36,32 @@ export interface FuturoBanco {
   desejos: { id: string; dono_membro: string; valor_centavos: number; mes: string; volta_de: 'nada' | 'contrato' | 'investimento' | 'venda'; volta_centavos: number | null; volta_mes: string | null; antecipado_centavos: number | null; volta_certa: boolean; situacao?: 'pensando' | 'combinado' | 'feito' | 'desisti' }[]
   parametros: ParametrosObjetivo | null
   focus: FocusAno[]
+  /** f_15: os imóveis da família (só o dado; a conta é do motor). Ausente = banco antes da f_15 */
+  imoveis?: ImovelBanco[]
+}
+
+/** Formato de cada imóvel em produto.futuro_entradas (f_15). Aceita também as chaves do tipo Imovel do motor (valor, aluguel_bruto,
+ *  custos_mes), caso o BANCO passe a mandar com esses nomes. Só troca de formato. */
+export interface ImovelBanco {
+  id: string; dono_membro?: string; dono_nome?: string | null; apelido: string; uso: Imovel['uso']
+  valor_estimado_centavos?: number | string; valor?: number | string
+  aluguel_centavos?: number | string; aluguel_bruto?: number | string
+  custos_centavos?: number | string; custos_mes?: number | string
+  vacancia: string | number; tem_contrato: boolean; contrato_ate: string | null
+  venda_valor_centavos?: number | string | null; venda_valor?: number | string | null
+  venda_mes: string | null; venda_contrato: boolean
+}
+
+/** O imóvel do banco no formato do motor (centavos, mês 'AAAA-MM'). */
+export function imovelDoBanco(i: ImovelBanco): Imovel {
+  const n = (...v: unknown[]) => { for (const x of v) if (x != null && x !== '') return Number(x) || 0; return 0 }
+  const venda = i.venda_valor_centavos ?? i.venda_valor
+  return {
+    id: String(i.id), dono: i.dono_nome || String(i.dono_membro || ''), apelido: i.apelido, uso: i.uso,
+    valor: n(i.valor_estimado_centavos, i.valor), aluguel_bruto: n(i.aluguel_centavos, i.aluguel_bruto), custos_mes: n(i.custos_centavos, i.custos_mes),
+    vacancia: String(i.vacancia ?? '0'), tem_contrato: !!i.tem_contrato, contrato_ate: i.contrato_ate ? String(i.contrato_ate).slice(0, 7) : null,
+    venda_valor: venda == null ? null : Number(venda) || null, venda_mes: i.venda_mes ? String(i.venda_mes).slice(0, 7) : null, venda_contrato: !!i.venda_contrato,
+  }
 }
 
 /** Poupança: 0,5% ao mês (regra atual), sem imposto: perto de 6,17% ao ano. */
@@ -73,11 +99,14 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   if (p.gasto_2029_hoje == null) confirmar.push('gasto por mês em 2029 (a conta usa o teto do mês de hoje)')
   if (depoisDaVirada && (!taxa_bruta_ano[anoHoje] || !ipca_ano[anoHoje])) confirmar.push(`Selic e IPCA de ${anoHoje} (a conta usa o rendimento acima da inflação do objetivo)`)
   if (p.piso_meses == null) confirmar.push('piso do caixa (a conta usa 6 meses de teto)')
+  if ((j.imoveis || []).some(i => i.uso !== 'mora') && !p.aliq_aluguel) confirmar.push(`imposto do aluguel (a conta usa ${textoDaTaxa(PADROES_ECONOMISTA.aliq_aluguel)}%)`)
   const parametros: Parametros = {
     mes_base: m0, virada: VIRADA, gasto_2029_hoje: p.gasto_2029_hoje ?? teto_mes, renda_certa_2029: p.renda_certa_2029 || 0,
     margem: p.margem, taxa_real_trabalho: p.taxa_real_trabalho, taxa_bruta_ano, ipca_ano, aliq_proj: p.aliq_proj,
     // os 2 impostos: até 2028 (aliq_proj) e de 2029 em diante (aliq_renda); vazio = padrão do ECONOMISTA
     aliq_renda: p.aliq_renda || PADROES_ECONOMISTA.aliq_renda,
+    // f_15: IR do aluguel. Sem ele, o motor usa 27,5% e avisa (aliq_aluguel_confirmar)
+    ...(p.aliq_aluguel ? { aliq_aluguel: p.aliq_aluguel } : {}),
     piso_meses: p.piso_meses ?? 6, teto_mes, mes_reajuste: p.mes_reajuste || 1,
   }
 
@@ -107,6 +136,8 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       desejos: (j.desejos || []).map(d => ({ id: String(d.id), dono: String(d.dono_membro), valor: Number(d.valor_centavos) || 0, mes: d.mes, volta_de: d.volta_de, volta: Number(d.volta_centavos) || 0, volta_mes: d.volta_mes, antecipado: d.antecipado_centavos == null ? null : Number(d.antecipado_centavos), volta_certa: !!d.volta_certa, ...(d.situacao ? { situacao: d.situacao } : {}) })),
       // revisão E12 (C2): a situação vai junto; o motor ignora "feito" (o dinheiro já saiu do saldo) e "desisti"
       parametros,
+      // RODADA_PATRIMONIO: o aluguel com contrato entra pelos imóveis (nunca em renda_certa_2029, senão conta 2 vezes)
+      imoveis: (j.imoveis || []).map(imovelDoBanco),
     },
   }
 }

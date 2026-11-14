@@ -16,26 +16,26 @@ end $$;
 do $$ begin
   if position($a$    -- f_15: imóveis, só o dado; a conta (aluguel líquido, vacância, IR, contrato, venda) é do motor
     'imoveis', (select coalesce(jsonb_agg(jsonb_build_object(
-        'id', i.id, 'dono_membro', i.dono_membro, 'dono_nome', o.nome, 'apelido', i.apelido,
-        'valor_estimado_centavos', i.valor_estimado_centavos, 'uso', i.uso,
-        'aluguel_centavos', i.aluguel_centavos, 'custos_centavos', i.custos_centavos, 'vacancia', i.vacancia,
-        'tem_contrato', i.tem_contrato, 'contrato_ate', to_char(i.contrato_ate, 'YYYY-MM-DD'),
-        'venda_valor_centavos', i.venda_valor_centavos, 'venda_mes', to_char(i.venda_mes, 'YYYY-MM'),
+        -- chaves EXATAS do tipo Imovel do motor (codigo/src/lib/futuro/tipos.ts); centavos e Mes 'AAAA-MM'
+        'id', i.id, 'dono', i.dono_membro, 'apelido', i.apelido, 'valor', i.valor_estimado_centavos, 'uso', i.uso,
+        'aluguel_bruto', i.aluguel_centavos, 'custos_mes', i.custos_centavos, 'vacancia', i.vacancia,
+        'tem_contrato', i.tem_contrato, 'contrato_ate', to_char(i.contrato_ate, 'YYYY-MM'),
+        'venda_valor', i.venda_valor_centavos, 'venda_mes', to_char(i.venda_mes, 'YYYY-MM'),
         'venda_contrato', i.venda_contrato) order by i.criado_em, i.id), '[]'::jsonb)
-        from produto.imovel i left join produto.membros o on o.familia_id = i.familia_id and o.id = i.dono_membro
+        from produto.imovel i
         where i.familia_id = f and i.apagado_em is null),
     'parametros', (select o.parametros from produto.objetivo o where o.familia_id = f),$a$ in (select prosrc from pg_proc where oid = 'produto.futuro_entradas(uuid)'::regprocedure)) = 0 then
     raise exception 'desfazer f_15: trecho nao achado em produto.futuro_entradas(uuid)';
   end if;
   execute replace(pg_get_functiondef('produto.futuro_entradas(uuid)'::regprocedure), $a$    -- f_15: imóveis, só o dado; a conta (aluguel líquido, vacância, IR, contrato, venda) é do motor
     'imoveis', (select coalesce(jsonb_agg(jsonb_build_object(
-        'id', i.id, 'dono_membro', i.dono_membro, 'dono_nome', o.nome, 'apelido', i.apelido,
-        'valor_estimado_centavos', i.valor_estimado_centavos, 'uso', i.uso,
-        'aluguel_centavos', i.aluguel_centavos, 'custos_centavos', i.custos_centavos, 'vacancia', i.vacancia,
-        'tem_contrato', i.tem_contrato, 'contrato_ate', to_char(i.contrato_ate, 'YYYY-MM-DD'),
-        'venda_valor_centavos', i.venda_valor_centavos, 'venda_mes', to_char(i.venda_mes, 'YYYY-MM'),
+        -- chaves EXATAS do tipo Imovel do motor (codigo/src/lib/futuro/tipos.ts); centavos e Mes 'AAAA-MM'
+        'id', i.id, 'dono', i.dono_membro, 'apelido', i.apelido, 'valor', i.valor_estimado_centavos, 'uso', i.uso,
+        'aluguel_bruto', i.aluguel_centavos, 'custos_mes', i.custos_centavos, 'vacancia', i.vacancia,
+        'tem_contrato', i.tem_contrato, 'contrato_ate', to_char(i.contrato_ate, 'YYYY-MM'),
+        'venda_valor', i.venda_valor_centavos, 'venda_mes', to_char(i.venda_mes, 'YYYY-MM'),
         'venda_contrato', i.venda_contrato) order by i.criado_em, i.id), '[]'::jsonb)
-        from produto.imovel i left join produto.membros o on o.familia_id = i.familia_id and o.id = i.dono_membro
+        from produto.imovel i
         where i.familia_id = f and i.apagado_em is null),
     'parametros', (select o.parametros from produto.objetivo o where o.familia_id = f),$a$, $b$    'parametros', (select o.parametros from produto.objetivo o where o.familia_id = f),$b$);
 end $$;

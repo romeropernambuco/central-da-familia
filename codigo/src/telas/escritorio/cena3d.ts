@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Cena, OpcoesCena, EstadoCena } from './cenaBase'
+import { POR_ID } from './equipe'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
   caixa: { nome: 'Caixa', rot: [-6.1, 2.45, -2.5], cx: -3, cz: -2.5, d: 5, piso: 0xDCC9AA, tapete: 0xB9A98C },
@@ -13,15 +14,7 @@ const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: n
   patrimonio: { nome: 'Patrimônio', rot: [4.7, -0.1, 5.6], cx: 3, cz: 2.5, d: 5, piso: 0xDFCFB4, tapete: 0xC2A98A },
   recepcao: { nome: 'Recepção', rot: [0, -0.1, 9.5], cx: 0, cz: 7.15, d: 4, piso: 0xE1D3BC, tapete: 0xB4A89A },
 }
-const ROUPA: Record<string, any> = {
-  contador: { camisa: 0x3F5873, calca: 0x2E3440, pele: 0xE8B796, cabelo: 0x3A2A1E, estilo: 'curto', oculos: true },
-  colchao: { camisa: 0x6B6F58, calca: 0x3A3A3A, pele: 0xD9A27E, cabelo: 0x9A9A98, estilo: 'curto', oculos: true },
-  cartao: { camisa: 0x7A5C8A, calca: 0x34343C, pele: 0xF0C4A4, cabelo: 0x8A5A32, estilo: 'longo' },
-  folha: { camisa: 0x9A5B4A, calca: 0x3A3A3A, pele: 0xEBC0A0, cabelo: 0x5A3320, estilo: 'coque' },
-  comprador: { camisa: 0xB08A3E, calca: 0x4A4038, pele: 0xC99673, cabelo: 0x2A1F18, estilo: 'curto' },
-  guardado: { camisa: 0x2F4A5E, calca: 0x26282E, pele: 0xE3B08C, cabelo: 0x4A3526, estilo: 'curto' },
-  secretaria: { camisa: 0x4F7A78, calca: 0x2E3440, pele: 0xB98562, cabelo: 0x231A14, estilo: 'longo' },
-}
+// a roupa, a sala e a mesa de cada um vêm da lista única da equipe (equipe.ts)
 const RESERVA = [
   { camisa: 0x8C6A4A, calca: 0x2E3440, pele: 0xD6A27C, cabelo: 0x6A6A68, estilo: 'coque' },
   { camisa: 0x5E7C5A, calca: 0x34343C, pele: 0x9C6B4C, cabelo: 0x1B1410, estilo: 'longo' },
@@ -40,10 +33,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const scene = new T.Scene()
 
   /* luz */
-  const hemi = new T.HemisphereLight(0xffffff, 0xb8a88c, 1.5); scene.add(hemi)
-  const sol = new T.DirectionalLight(0xfff2dd, 2.6); sol.castShadow = true
+  /* B2 (pacote 4): céu mais fraco e sol mais forte, pra sombra aparecer; recorte da sombra mais justo (mais nítida) */
+  const hemi = new T.HemisphereLight(0xFFF8EE, 0xBFAE92, 0.85); scene.add(hemi)
+  const sol = new T.DirectionalLight(0xFFF2DD, 3.0); sol.castShadow = true
   sol.shadow.mapSize.set(MOBILE() ? 1024 : 2048, MOBILE() ? 1024 : 2048)
-  const sc = sol.shadow.camera; sc.left = -12; sc.right = 12; sc.top = 12; sc.bottom = -12; sc.near = 1; sc.far = 60; sol.shadow.bias = -0.0006; sol.shadow.normalBias = 0.03
+  const sc = sol.shadow.camera; sc.left = -10; sc.right = 10; sc.top = 10; sc.bottom = -10; sc.near = 1; sc.far = 60; sol.shadow.bias = -0.0006; sol.shadow.normalBias = 0.03
   scene.add(sol); scene.add(sol.target)
   const lampadas: { m: any; l: any }[] = []
 
@@ -52,6 +46,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const mat = (c: number) => MATS[c] || (MATS[c] = new T.MeshLambertMaterial({ color: c }))
   const BASE = GEO.toNonIndexed(), BP = BASE.attributes.position.array, BN = BASE.attributes.normal.array, corTmp = new T.Color()
   const VC = new T.MeshLambertMaterial({ vertexColors: true })
+  /* B2: mancha de sombra fixa sob cada mesa e cada pessoa (fica mesmo quando o modo leve desliga a sombra de verdade) */
+  const MANCHA = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
+  const GEO_M = new T.CircleGeometry(1, 24); descartar.push(GEO_M)
+  function mancha(r: number, x: number, y: number, z: number, pai: any) { const m = new T.Mesh(GEO_M, MANCHA); m.scale.set(r, r, 1); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.renderOrder = 1; pai.add(m); return m }
   /* junta muitas caixas numa peça só (1 desenho por peça em vez de 1 por caixa) */
   function mesclar(lista: number[][]) {
     const n = lista.length, pos = new Float32Array(n * 108), nor = new Float32Array(n * 108), col = new Float32Array(n * 108)
@@ -100,9 +98,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   })
   /* decoração que diz o que cada sala cuida */
   ;(() => { const g = salaG.caixa /* cofre e pilhas de moedas */
-    cx(0.9, 1.0, 0.7, 0x6C727A, 2.2, 0.5, -1.95, g); cx(0.5, 0.6, 0.04, 0x8A9098, 2.2, 0.52, -1.58, g, true); cx(0.12, 0.12, 0.06, 0xD8C27A, 2.36, 0.52, -1.55, g, true)
-    const ouro = new T.MeshLambertMaterial({ color: 0xD9B95A }); [[1.35, 0.3], [1.6, 0.42], [1.47, 0.18]].forEach((p, i) => { const gc = new T.CylinderGeometry(0.11, 0.11, p[1], 12); descartar.push(gc); const c = new T.Mesh(gc, ouro); c.position.set(p[0] + (i === 2 ? 0.02 : 0), p[1] / 2 + 0.04, -1.5 + (i === 2 ? 0.26 : 0)); c.castShadow = true; g.add(c) })
-    planta(-2.6, 2.1, g); luminaria(2.7, -0.9, g) })()
+    /* C2: o cofre e as moedas foram pra frente da sala: a 3ª mesa (Tesoureiro de Receitas) fica no fundo */
+    cx(0.9, 1.0, 0.7, 0x6C727A, 2.3, 0.5, 1.95, g); cx(0.5, 0.6, 0.04, 0x8A9098, 2.3, 0.52, 2.32, g, true); cx(0.12, 0.12, 0.06, 0xD8C27A, 2.46, 0.52, 2.35, g, true)
+    const ouro = new T.MeshLambertMaterial({ color: 0xD9B95A }); descartar.push(ouro); [[1.35, 0.3], [1.6, 0.42], [1.47, 0.18]].forEach((p, i) => { const gc = new T.CylinderGeometry(0.11, 0.11, p[1], 12); descartar.push(gc); const c = new T.Mesh(gc, ouro); c.position.set(p[0] + (i === 2 ? 0.02 : 0), p[1] / 2 + 0.04, 1.8 + (i === 2 ? 0.26 : 0)); c.castShadow = true; g.add(c) })
+    planta(-2.6, 2.1, g); luminaria(2.75, -2.25, g) })()
   ;(() => { const g = salaG.casa /* cesta da feira */
     cx(0.7, 0.36, 0.5, 0xC49A62, 2.45, 0.22, 2.05, g); cx(0.2, 0.2, 0.2, 0xC0563F, 2.3, 0.46, 2.0, g, true); cx(0.2, 0.22, 0.2, 0x6E9A58, 2.56, 0.47, 2.1, g, true); cx(0.16, 0.16, 0.16, 0xE0B040, 2.42, 0.46, 2.2, g, true)
     planta(-2.6, 2.1, g); luminaria(2.75, -2.25, g) })()
@@ -127,7 +126,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     const head = grupo(hips, 0, 0.5, 0); p.head = head
     cx(0.14, 0.08, 0.14, c.pele, 0, 0.03, 0, head)
     cx(0.44, 0.4, 0.4, c.pele, 0, 0.26, 0, head)
-    cx(0.06, 0.09, 0.02, 0x2A211B, -0.1, 0.25, 0.205, head); cx(0.06, 0.09, 0.02, 0x2A211B, 0.1, 0.25, 0.205, head)
+    /* olho com branco e pupila */
+    ;[-0.1, 0.1].forEach(x => { cx(0.08, 0.06, 0.02, 0xF7F3EC, x, 0.25, 0.204, head); cx(0.04, 0.05, 0.02, 0x2A211B, x, 0.248, 0.212, head) })
     cx(0.1, 0.025, 0.02, c.cabelo, -0.1, 0.335, 0.205, head); cx(0.1, 0.025, 0.02, c.cabelo, 0.1, 0.335, 0.205, head)
     cx(0.06, 0.07, 0.05, c.pele, 0, 0.2, 0.22, head)
     cx(0.12, 0.025, 0.02, 0x9A5A4C, 0, 0.12, 0.205, head)
@@ -143,25 +143,32 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   }
   const HIP_PE = 0.555, HIP_SENTADO = 0.325
 
-  const chars: any[] = [], vagas: Record<string, number> = {}
+  const chars: any[] = [], usadas: Record<string, number[]> = {}
+  const monitores: any[] = []
+  /* tela acesa pelo estado (B6): trabalhando acesa, precisa de você meia luz, o resto quase apagada */
+  const luzTela = (st: EstadoCena) => (st === 'trabalhando' ? 0.9 : st === 'precisa' ? 0.5 : 0.12)
   o.funcionarios.forEach((e, i) => {
     const sala = SALAS[e.sala] ? e.sala : 'recepcao'
     const s = SALAS[sala], g = salaG[sala]
-    const n = vagas[sala] || 0; vagas[sala] = n + 1
-    const xs = [-2, 0, 2][n % 3]
+    // C2: a mesa vem da lista única; se a dela já estiver ocupada (ou o funcionário for novo), a 1ª livre
+    const u = usadas[sala] || (usadas[sala] = []), quer = POR_ID[e.id]?.sala === sala ? POR_ID[e.id].mesa : null
+    const xs = quer != null && !u.includes(quer) ? quer : ([-2, 0, 2].find(x => !u.includes(x)) ?? [-2, 0, 2][u.length % 3]); u.push(xs)
     /* mesa, notebook, cadeira */
     cx(1.1, 0.06, 0.6, MADEIRA, xs, 0.6, -1.0, g); [[-0.48, -0.24], [0.48, -0.24], [-0.48, 0.24], [0.48, 0.24]].forEach(q => { cx(0.06, 0.57, 0.06, MADEIRA_E, xs + q[0], 0.285, -1.0 + q[1], g) })
     cx(0.42, 0.02, 0.28, 0x8E949C, xs, 0.64, -1.06, g, true)
-    const monitor = cx(0.42, 0.27, 0.02, mat(0x5B6169), xs, 0.775, -0.9, g); monitor.rotation.x = 0.18
+    const telaMat = new T.MeshLambertMaterial({ color: 0x22272E, emissive: 0xD7EADF, emissiveIntensity: luzTela(e.estado) }); monitores.push(telaMat)
+    const monitor = cx(0.42, 0.27, 0.02, telaMat, xs, 0.775, -0.9, g); monitor.rotation.x = 0.18
+    mancha(0.62, xs, 0.045, -1.25, g)
     cx(0.1, 0.12, 0.1, 0xF1EADF, xs + 0.4, 0.69, -0.84, g, true)
     const pilha = grupo(g, xs - 0.36, 0.63, -0.86); cx(0.3, 0.03, 0.22, PAPEL, 0, 0.015, 0, pilha); cx(0.3, 0.03, 0.22, 0xDDD3C2, 0.02, 0.045, 0.01, pilha); cx(0.3, 0.03, 0.22, PAPEL, -0.01, 0.075, 0, pilha); fecha(pilha); pilha.visible = false
     cx(0.44, 0.06, 0.44, CADEIRA, xs, 0.21, -1.72, g); cx(0.44, 0.5, 0.06, CADEIRA, xs, 0.5, -1.94, g); cx(0.07, 0.18, 0.07, 0x33373D, xs, 0.09, -1.72, g); cx(0.4, 0.03, 0.4, 0x33373D, xs, 0.015, -1.72, g, true)
-    const b = boneco(ROUPA[e.id] || RESERVA[i % RESERVA.length])
+    const b = boneco(POR_ID[e.id]?.roupa || RESERVA[i % RESERVA.length])
+    mancha(0.3, 0, 0.07, 0, b.r)
     b.r.traverse((x: any) => { x.userData.id = e.id })
     scene.add(b.r)
     const xg = xs + (xs >= 2 ? -1 : 1), zf = s.d === 5 ? 1.45 : 1.2
     const W = (x: number, z: number) => new T.Vector3(s.cx + x, 0, s.cz + z)
-    const ch: any = { id: e.id, sala, st: e.estado, b, pilha, S: W(xs, -1.72), G1: W(xg, -1.72), G2: W(xg, zf - 0.5), F: W(xs * 0.85 - 0.3, zf), loc: 'sentado', path: null, fase: i * 1.7, festa: 0, anim: true, pose: {} }
+    const ch: any = { id: e.id, sala, st: e.estado, b, pilha, tela: telaMat, S: W(xs, -1.72), G1: W(xg, -1.72), G2: W(xg, zf - 0.5), F: W(xs, zf - 0.5), loc: 'sentado', path: null, fase: i * 1.7, festa: 0, anim: true, pose: {} }
     if (e.estado === 'precisa') { ch.loc = 'frente'; b.r.position.copy(ch.F); b.r.rotation.y = Math.PI / 4 } else { b.r.position.copy(ch.S) }
     chars.push(ch)
   })
@@ -173,10 +180,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld()
   const Rt = new T.Vector3(), Up = new T.Vector3(), Fw = new T.Vector3(); cam.matrixWorld.extractBasis(Rt, Up, Fw)
   function vistaDe(x0: number, x1: number, y1: number, z0: number, z1: number) { const a = [1e9, -1e9, 1e9, -1e9], v = new T.Vector3(); [x0, x1].forEach(x => { [0, y1].forEach(y => { [z0, z1].forEach(z => { v.set(x, y, z).sub(cam.position); const cxx = v.dot(Rt), cy = v.dot(Up); a[0] = Math.min(a[0], cxx); a[1] = Math.max(a[1], cxx); a[2] = Math.min(a[2], cy); a[3] = Math.max(a[3], cy) }) }) }); return { cx: (a[0] + a[1]) / 2, cy: (a[2] + a[3]) / 2, hw: (a[1] - a[0]) / 2, hh: (a[3] - a[2]) / 2 } }
-  const VISTAS: Record<string, any> = { tudo: vistaDe(-6.4, 6.4, 2.9, -5.3, 9.5) }
-  Object.keys(SALAS).forEach(k => { const s = SALAS[k]; VISTAS[k] = vistaDe(s.cx - 3.1, s.cx + 3.1, 2.7, s.cz - s.d / 2 - 0.1, s.cz + s.d / 2 + 0.5) })
+  /* B3 e B4 (pacote 4): enquadramento mais justo; cada sala só com ela mesma */
+  const VISTAS: Record<string, any> = { tudo: vistaDe(-6.2, 6.2, 2.2, -5.2, 9.3) }
+  Object.keys(SALAS).forEach(k => { const s = SALAS[k]; VISTAS[k] = vistaDe(s.cx - 3, s.cx + 3, 1.9, s.cz - s.d / 2, s.cz + s.d / 2) })
   let vAtual = { ...VISTAS.tudo }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = 'tudo'
-  function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = 1.06, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
+  function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
   function tamanho() { const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return; renderer.setSize(W, H, false); aplicaVista(vAtual) }
   window.addEventListener('resize', tamanho); tamanho()
@@ -196,7 +204,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       if (ch.tk !== chave || !ch.tw) { ch.tk = chave; ch.tw = t.offsetWidth; ch.th = t.offsetHeight }
       const hy = ch.b.hips.position.y + 1.12, p = naTela(ch.b.r.position.x, hy, ch.b.r.position.z)
       const x0 = Math.round(p.x - ch.tw / 2), y0 = Math.round(p.y - ch.th - 4)
-      const fora = p.y < 0 || p.y > H + 20 || p.x < -10 || p.x > W + 10
+      const fora = p.y < 0 || p.y > H + 20 || p.x < -10 || p.x > W + 10 || (camNome !== 'tudo' && ch.sala !== camNome && ch.id !== selecionado)
       let x = x0, y = y0, bate = false
       const tent = [[0, 0], [0, -ch.th - 4], [ch.tw * 0.55, -ch.th * 0.5], [-ch.tw * 0.55, -ch.th * 0.5], [ch.tw * 0.7, -ch.th - 4], [-ch.tw * 0.7, -ch.th - 4], [0, -2 * ch.th - 8], [ch.tw, 0], [-ch.tw, 0], [0, ch.th + 40]]
       for (let k = 0; k < tent.length; k++) {
@@ -237,10 +245,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     sol.position.set(x, 7 + 9 * k, dia ? 10 - 6 * f : 6); sol.target.position.set(0, 0, 2)
     const quente = dia ? Math.min(1, k * 2.2) : 0
     sol.color.setRGB(1, 0.80 + 0.16 * quente, 0.62 + 0.26 * quente)
-    sol.intensity = (dia ? 0.9 + 2.0 * Math.min(1, k * 1.6) : 0.35) * te
+    sol.intensity = (dia ? 1.0 + 2.0 * Math.min(1, k * 1.6) : 0.35) * te
     if (!dia) sol.color.setHex(0x9FB2D6)
     /* à noite a cena fica mais quente e mais baixa, mas nunca escura a ponto de não dar pra ler quem é quem */
-    hemi.intensity = (dia ? 0.9 + 0.75 * Math.min(1, k * 1.6) : 0.7) * te
+    hemi.intensity = (dia ? 0.55 + 0.3 * Math.min(1, k * 1.6) : 0.6) * te
     const noite = dia ? Math.max(0, 1 - k * 4) : 1
     lampadas.forEach(L => { L.l.intensity = noite * 14; L.m.emissiveIntensity = noite * 1.4 })
     vidro.emissiveIntensity = dia ? 0.25 + 0.3 * k : 0.02; vidro.color.setHex(dia ? 0xBFD8E6 : 0x2B3A4E)
@@ -260,6 +268,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   function atualizaChar(ch: any, t: number, dt: number) {
     const st: EstadoCena = ch.st, b = ch.b, a = ch.anim && !o.parado ? 1 : 0, ph = t + ch.fase
     ch.pilha.visible = st === 'entregue' || st === 'precisa'
+    if (ch.telaSt !== st) { ch.telaSt = st; ch.tela.emissiveIntensity = luzTela(st) }
     /* decide pra onde ir: quem precisa de você levanta e vai pra frente da sala; resolveu, volta pra mesa */
     if (!ch.path) {
       if (st === 'precisa' && ch.loc === 'sentado') { ch.path = [ch.G1, ch.G2, ch.F]; ch.dest = 'frente' }
@@ -306,9 +315,9 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     atualizaTags()
     jsMs = jsMs * 0.95 + (performance.now() - agora0) * 0.05
     /* fluidez: mede 1 vez por segundo e alivia em 3 degraus se ficar abaixo de 24 imagens por segundo */
-    fpsN++; fpsT += dt; if (fpsT >= 1) {
+    fpsN++; fpsT += dt; if (tAcum < 3) { fpsN = 0; fpsT = 0 } else if (fpsT >= 1) {
       fps = Math.round(fpsN / fpsT); fpsN = 0; fpsT = 0; fpsHist.push(fps); if (fpsHist.length > 60) fpsHist.shift()
-      if (fps < 24) { baixo++; if (baixo >= 2 && degrau < 3) { degrau++; baixo = 0; if (degrau === 1) { renderer.setPixelRatio(1); tamanho() } if (degrau === 2) { renderer.shadowMap.enabled = false; sol.castShadow = false; scene.traverse((x: any) => { if (x.material) x.material.needsUpdate = true }) } } } else baixo = 0
+      if (fps < 24) { baixo++; if (baixo >= 4 && degrau < 3) { degrau++; baixo = 0; if (degrau === 1) { renderer.setPixelRatio(1); tamanho() } if (degrau === 2) { renderer.shadowMap.enabled = false; sol.castShadow = false; scene.traverse((x: any) => { if (x.material) x.material.needsUpdate = true }) } } } else baixo = 0
       o.aoMedir?.(fps, degrau)
     }
   }
@@ -326,7 +335,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       vivo = false; cancelAnimationFrame(raf)
       window.removeEventListener('resize', tamanho); ro?.disconnect(); io?.disconnect()
       tela3d.removeEventListener('pointerdown', aoDescer); tela3d.removeEventListener('pointerup', aoSubir)
-      descartar.forEach(g => g.dispose()); Object.values(MATS).forEach(m => m.dispose()); VC.dispose(); baseMat.dispose(); vidro.dispose()
+      descartar.forEach(g => g.dispose()); Object.values(MATS).forEach(m => m.dispose()); monitores.forEach(m => m.dispose()); MANCHA.dispose(); VC.dispose(); baseMat.dispose(); vidro.dispose()
       renderer.dispose(); try { renderer.forceContextLoss() } catch { /* contexto já perdido */ }
       tela3d.remove()
     },

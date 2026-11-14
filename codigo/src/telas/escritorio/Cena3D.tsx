@@ -4,6 +4,7 @@ import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { FUSO } from '../../lib/formato'
 import { SALAS_NOME as SALAS, temWebGL, type Cena, type EstadoCena, type FuncCena } from './cenaBase'
+import { nomeCurto } from './equipe'
 
 const ESTADO: Record<EstadoFuncionario, EstadoCena> = { vai_comecar: 'fila', trabalhando: 'trabalhando', entregue: 'entregue', precisa_de_voce: 'precisa' }
 export const ROTULO_ESTADO: Record<EstadoFuncionario, string> = { vai_comecar: 'ainda vai começar', trabalhando: 'trabalhando', entregue: 'entregue', precisa_de_voce: 'precisa de você' }
@@ -12,8 +13,8 @@ export function IcoEstado({ e, size = 14 }: { e: EstadoFuncionario; size?: numbe
 }
 /** Sala que vem do banco ("Cartões", "Patrimônio") vira a chave da cena ("cartoes", "patrimonio"). Sala desconhecida fica na Recepção. */
 export const salaDe = (s: string) => { const k = chaveSimples(s); return SALAS[k] ? k : 'recepcao' }
-const NOME_CURTO: Record<string, string> = { contador: 'Contador', colchao: 'Reserva', cartao: 'Cartão', folha: 'Folha', comprador: 'Comprador', guardado: 'Guardado', secretaria: 'Secretária' }
-const curto = (f: FuncionarioEsc) => NOME_CURTO[f.id] || f.nome.split(' ')[0]
+// C2: o nome curto da etiqueta vem da lista única da equipe
+const curto = (f: FuncionarioEsc) => nomeCurto(f.id, f.nome)
 const horaRecife = () => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: FUSO, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()); return (Number(p[0].value) % 24) + Number(p[2].value) / 60 }
 const escuroAgora = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches }
 const celular = () => window.innerWidth < 900
@@ -72,7 +73,6 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
   useEffect(() => { cena.current?.selecionar(selecionado); if (selecionado && celular()) { const f = atuais.current.find(x => x.id === selecionado); if (f) setVista(salaDe(f.sala)) } }, [selecionado, modo])
   const ir = (v: string) => { setVista(v); cena.current?.irPara(v) }
   const salasUsadas = Object.keys(SALAS).filter(k => funcionarios.some(f => salaDe(f.sala) === k))
-  const curta = vista === 'tudo'
 
   return (
     <div className="cena3d-bloco">
@@ -83,11 +83,12 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
           {Object.keys(SALAS).map(k => <span key={k} className="placa" ref={el => { placas.current[k] = el }}>{SALAS[k]}</span>)}
           {funcionarios.map(f => {
             const precisa = f.estado === 'precisa_de_voce', sel = f.id === selecionado
-            const soIcone = curta && !precisa && !sel
+            // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
+            const soIcone = false
             return (
               <button key={f.id} type="button" ref={el => { tags.current[f.id] = el }} data-k={`${f.estado}|${sel}|${soIcone}`} data-func={f.id}
                 className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
-                aria-label={`${f.nome}: ${ROTULO_ESTADO[f.estado]}. Abrir.`} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
+                aria-label={`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
                 <IcoEstado e={f.estado} /><span>{curto(f)}</span>
               </button>
             )

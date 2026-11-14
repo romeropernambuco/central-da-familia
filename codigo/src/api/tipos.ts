@@ -199,7 +199,7 @@ export interface PerguntaEsc {
   /** as partes da fala, uma a uma (o exemplo manda; serve pra conferência das falas) */
   partes?: { vi: string; importa: string; sugiro: string }
 }
-export interface FuncionarioEsc { id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[] }
+export interface FuncionarioEsc { id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[]; /** C2: funcionário que ainda não tem dado no banco (o card diz o que ele vai fazer, sem número) */ semDado?: boolean }
 export interface EntregaEsc { funcionario: string; resumo: string; numero?: number | null }
 export interface EscritorioHoje { precisa_de_voce: PerguntaEsc[]; /** E3 (conserto 9): quantas são no total (a tela mostra até 3) */ precisa_total?: number; trabalhando: { funcionario: string; resumo?: string }[]; entregue: EntregaEsc[]; funcionarios: FuncionarioEsc[] }
 export type Repetir = 'nunca' | 'dia' | 'semana' | 'mes' | 'ano'
@@ -230,6 +230,8 @@ export interface ParametrosObjetivo {
   renda_certa_2029: number; margem: string; taxa_real_trabalho: string; aliq_proj: string
   /** IR de 2029 em diante (aplicação longa); sem o campo vale o padrão do ECONOMISTA (15%). aliq_proj é o de até 2028 */
   aliq_renda?: string
+  /** RODADA_PATRIMONIO (f_15): IR do aluguel, texto decimal; sem o campo vale o padrão do motor (27,5%, a confirmar) */
+  aliq_aluguel?: string
   taxa_bruta_ano: Record<string, string>; ipca_ano: Record<string, string>
   /** null = [confirmar] (a conta usa 6) */ piso_meses: number | null
   mes_reajuste: number; travado_focus: boolean
@@ -270,6 +272,23 @@ export interface NovoDesejo {
   volta_certa: boolean
 }
 export interface DesejoTela extends NovoDesejo { id: string; dono_membro: string; dono_nome: string | null; situacao: SituacaoDesejo; /** quem olha é o dono (só ele muda) */ meu: boolean }
+
+/* ---------- RODADA_PATRIMONIO: imóveis (produto.imovel, f_15). Ver: só o casal, com o dono. Mexer: só o dono. Filha e equipe nada ---------- */
+export type UsoImovel = 'mora' | 'aluga' | 'parado' | 'vende'
+export interface NovoImovel {
+  apelido: string
+  /** valor estimado, em reais (a tela); o banco guarda em centavos */ valor: number
+  uso: UsoImovel
+  /** aluguel MÉDIO por mês, em reais (temporada: o que recebe no ano ÷ 12) */ aluguel: number
+  /** IPTU, condomínio e manutenção por mês, em reais */ custos: number
+  /** fração dos meses vazios, texto decimal ("0.08" = 8%) */ vacancia: string
+  tem_contrato: boolean
+  /** 'AAAA-MM' (último mês do contrato) */ contrato_ate: string | null
+  venda_valor: number | null
+  venda_mes: string | null
+  venda_contrato: boolean
+}
+export interface ImovelTela extends NovoImovel { id: string; dono_membro: string; dono_nome: string | null; /** quem olha é o dono (só ele muda) */ meu: boolean }
 
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
 export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto'
@@ -395,6 +414,10 @@ export interface Api {
   desejos?(familia: string): Promise<DesejoTela[]>
   desejoCriar?(familia: string, d: NovoDesejo): Promise<void>
   desejoMudar?(familia: string, id: string, m: { situacao?: SituacaoDesejo; apagar?: boolean }): Promise<void>
+  /* RODADA_PATRIMONIO: imóveis. Só o casal lê (com o dono); só o dono grava e tira da lista (ninguém apaga linha: fica marcada) */
+  imoveis?(familia: string): Promise<ImovelTela[]>
+  imovelSalvar?(familia: string, id: string | null, d: NovoImovel): Promise<void>
+  imovelTirar?(familia: string, id: string): Promise<void>
   /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
   exportarMeu?(familia: string): Promise<unknown>
   apagarFamilia(familia: string, confirmacao: string): Promise<void>
