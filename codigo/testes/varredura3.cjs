@@ -10,6 +10,7 @@
 //   V6 0 "-R$"                     V7 0 travessão                                        V8 0 palavra em inglês (lista INGLES abaixo)
 //   V9 a linha até 2028 e os Desejos abrem e mostram número; no dia 02/01/2029 a tela de 2029 aparece sem quebrar
 //   V10 família de 1 adulto (Autônoma): nada de "Do casal", "O casal", "vocês", "Os 2"
+//   V11 reajuste do teto: casal aprova e espera o outro; família de 1 aprova, o voto vence depois do prazo e "Votar de novo" volta a valer
 // Pessoas: Mãe de 3 (?como=ana), Dono (?como=bruno), Avó (a pessoa da casa, ?como=ana, com o texto a 130%: a página toda
 // ampliada 1,3 vezes), Parcela (?como=ana: mesma tela da Mãe de 3, checada 1 vez só e contada pras 2), Filha (?como=filha),
 // Equipe (?como=equipe), Autônoma (?como=autonoma, família de 1 adulto), Casal jovem (os 2 adultos: ?como=ana e ?como=bruno).
@@ -431,6 +432,66 @@ async function tarefasEquipe(browser) {
   await s3.ctx.close()
 }
 
+// ---------------------------------------------------------------- V11: reajuste do teto (f_12 e f_14) ----------------------------------------------------------------
+// Casal: em 05/01/2027 a Mãe de 3 aprova e lê "Falta Bruno"; o Dono lê a sugestão sem o voto dela valendo sozinho.
+// Família de 1 adulto (Autônoma): aprova em 05/01/2027 (vale em fevereiro), o relógio da página pula pra 01/03/2027,
+// o voto VENCE ("O prazo pra aplicar acabou em 28/02", botão "Votar de novo"), vota de novo com os mesmos números e volta a "Aprovado".
+async function reajuste(browser) {
+  const tx = async p => ((await p.innerText('main').catch(() => '')) || '').replace(/ /g, ' ').replace(/\s+/g, ' ')
+  const bloco = async p => ((await tx(p)).match(/Reajuste do teto de \d{4}[^]*?(?=Rendas)/) || [''])[0]
+  const pular = (p, iso) => p.evaluate(alvoIso => {
+    const R = Date, d = R.parse(alvoIso) - R.now()
+    class X extends R { constructor(...a) { if (a.length === 0) super(R.now() + d); else super(...a) } static now() { return R.now() + d } }
+    globalThis.Date = X
+  }, iso)
+  const rede = async (p, hash) => { await p.evaluate(h => { location.hash = '#/inicio'; setTimeout(() => { location.hash = h }, 300) }, hash); await p.waitForTimeout(1300) }
+  for (const [pe, como] of [[PESSOAS[0], 'ana'], [PESSOAS[1], 'bruno']]) {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
+    let onde = 'reajuste 05/01/2027'
+    const p = await novaPagina(ctx, pe, () => onde)
+    await carregar(p, url(pe, '2027-01-05', 10, 'planejamento'))
+    await p.waitForSelector('button:has-text("Aprovo o reajuste")', { timeout: 8000 }).catch(() => {})
+    let b = await bloco(p)
+    marca(pe.chave, 'V11', /Reajuste do teto de 2027/.test(b) && /R\$ [\d.]+/.test(b) && /Só vale com os 2 aprovando/.test(b), `${onde}: o reajuste não aparece com o valor e a regra dos 2 ("${b.slice(0, 160)}")`, { print: () => printa(p, `falha_${pe.nome}_reajuste`) })
+    await p.click('button:has-text("Aprovo o reajuste")').catch(() => {}); await p.waitForTimeout(800)
+    b = await bloco(p)
+    const outro = pe.outro
+    marca(pe.chave, 'V11', new RegExp(`aprovou em 05/01\\. Falta ${outro}\\.`).test(b) && !/Aprovado/.test(b), `${onde}: depois do "aprovo" tinha que dizer "Falta ${outro}" e não "Aprovado" ("${b.slice(0, 200)}")`, { print: () => printa(p, `falha_${pe.nome}_reajuste_voto`) })
+    await checarEstado(p, pe, onde, '2027-01-05')
+    await printa(p, `${pe.nome}_reajuste_2027-01-05`)
+    await ctx.close()
+  }
+  const pe = PESSOAS.find(x => x.chave === 'autonoma'), k = pe.chave
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
+  let onde = 'reajuste vencido'
+  const p = await novaPagina(ctx, pe, () => onde)
+  await carregar(p, url(pe, '2027-01-05', 10, 'planejamento'))
+  await p.waitForSelector('button:has-text("Aprovo o reajuste")', { timeout: 8000 }).catch(() => {})
+  await p.click('button:has-text("Aprovo o reajuste")').catch(() => {}); await p.waitForTimeout(800)
+  let b = await bloco(p)
+  marca(k, 'V11', /Aprovado\. Vale a partir de fevereiro/.test(b), `${onde}: família de 1 adulto, 05/01: o "aprovo" tinha que aprovar pra fevereiro ("${b.slice(0, 200)}")`)
+  await pular(p, '2027-03-01T10:00:00-03:00'); await rede(p, '#/planejamento')
+  b = await bloco(p)
+  marca(k, 'V11', /O prazo pra aplicar acabou em 28\/02\./.test(b) && !/Aprovado/.test(b), `${onde}: em 01/03/2027 o voto tinha que vencer ("O prazo pra aplicar acabou em 28/02.") ("${b.slice(0, 200)}")`, { print: () => printa(p, `falha_${pe.nome}_reajuste_vencido`) })
+  const v = p.locator('main button:has-text("Votar de novo")')
+  marca(k, 'V11', (await v.count()) === 1, `${onde}: sem o botão "Votar de novo"`)
+  await checarEstado(p, pe, onde, '2027-03-01')
+  await printa(p, `${pe.nome}_reajuste_vencido_2027-03-01`)
+  if (await v.count()) {
+    onde = 'reajuste votar de novo'
+    await v.click(); await p.waitForTimeout(500)
+    b = await bloco(p)
+    marca(k, 'V11', /Vale a partir de abril/.test(b) && /3\.344/.test((await p.$$eval('main input', l => l.map(x => x.value).join(' '))) + ' ' + b), `${onde}: "Votar de novo" tinha que abrir com o teto do voto vencido e valer em abril ("${b.slice(0, 220)}")`, { print: () => printa(p, `falha_${pe.nome}_reajuste_revoto`) })
+    await checarEstado(p, pe, onde, '2027-03-01')
+    await p.click('main button:has-text("Aprovo com estes números")').catch(() => {}); await p.waitForTimeout(900)
+    b = await bloco(p)
+    marca(k, 'V11', /Aprovado/.test(b) && /abril/.test(b) && !/O prazo pra aplicar acabou/.test(b), `${onde}: depois de votar de novo tinha que ficar "Aprovado", valendo em abril ("${b.slice(0, 220)}")`, { print: () => printa(p, `falha_${pe.nome}_reajuste_revotado`) })
+    await checarEstado(p, pe, onde, '2027-03-01')
+    await printa(p, `${pe.nome}_reajuste_revotado_2027-03-01`)
+  }
+  await ctx.close()
+}
+
 ;(async () => {
   let srv = null
   if (!BASE) {
@@ -448,6 +509,7 @@ async function tarefasEquipe(browser) {
     let feitas = 0
     const trabalhador = async () => { while (fila.length) { const [pe, l, d] = fila.shift(); toques += await varrer(browser, pe, l, d).catch(e => { erros.push(`${pe.nome} ${l[0]} ${d[0]}: a varredura parou: ${e.message.split('\n')[0]}`); marca(pe.chave, 'V1', false, `${l[0]}px ${d[0]}: a varredura parou: ${e.message.split('\n')[0]}`); return 0 }); feitas++; if (feitas % 6 === 0) console.log(`  ${feitas} de ${VARRIDAS.length * LARGURAS.length * DIAS.length} (pessoa, largura, dia) varridos, ${Math.round((Date.now() - t0) / 1000)} s`) } }
     await Promise.all(Array.from({ length: TRABALHOS }, trabalhador))
+    await reajuste(browser).catch(e => { erros.push(`reajuste: ${e.message.split('\n')[0]}`); marca('autonoma', 'V11', false, `a checagem do reajuste parou: ${e.message.split('\n')[0]}`) })
   }
   if (PARTE === 'tarefas' || PARTE === 'tudo') {
     await Promise.all([
