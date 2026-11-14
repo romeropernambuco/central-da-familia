@@ -40,7 +40,7 @@ const POUPANCA_ANO = '0.0617'
 export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   const confirmar: string[] = []
   const p0 = j.parametros
-  if (!p0) confirmar.push('parâmetros do objetivo (valem as premissas do TIME.md até a família gravar os dela)')
+  if (!p0) confirmar.push('parâmetros do objetivo (valem os números de exemplo até a família gravar os dela)')
   const p = p0 || PARAMETROS_INICIAIS
   const hoje = String(j.hoje).slice(0, 10), m0 = j.mes_base || hoje.slice(0, 7)
   // modo renda (QA E11, erros 1 e 2): depois da virada o motor não precisa dos anos até 2028; vale a taxa do ano de hoje

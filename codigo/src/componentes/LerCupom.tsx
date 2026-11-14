@@ -63,7 +63,7 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
           <p className="sub">A foto é reduzida no celular antes de sair. Se o cupom tiver CPF, a IA não devolve o CPF.</p>
           <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) ler(f) }} />
           <input ref={galeria} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) ler(f) }} />
-          <button className="btn primary full" type="button" disabled={etapa === 'lendo'} onClick={() => camera.current?.click()}><Camera size={20} />{etapa === 'lendo' ? 'Lendo o cupom...' : 'Tirar foto'}</button>
+          <button className="btn primary full" type="button" disabled={etapa === 'lendo'} onClick={() => camera.current?.click()}><Camera size={20} />{etapa === 'lendo' ? 'Lendo o cupom…' : 'Tirar foto'}</button>
           <button className="btn line full" type="button" disabled={etapa === 'lendo'} onClick={() => galeria.current?.click()}><ImageUp size={20} />Escolher da galeria</button>
           {api.modo === 'exemplo' && <button className="btn ghost full" type="button" disabled={etapa === 'lendo'} onClick={() => ler(null)}><Receipt size={20} />Ver com um cupom de exemplo</button>}
           {erro && <p className="erro" role="alert">{erro}</p>}
