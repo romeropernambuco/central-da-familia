@@ -2,7 +2,7 @@
 // devolve. O modo exemplo monta o MESMO formato do banco e passa por aqui também: as 2 pontas saem iguais.
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
-import { Dec, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
+import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
 import type { FocusAno, ParametrosObjetivo } from './tipos'
 
 /** A virada: a partir de jan/2029 a família vive de rendimento (BRIEF). */
@@ -11,7 +11,7 @@ export const VIRADA = '2029-01'
 /** Parâmetros que a tela começa a mostrar enquanto a família não gravou os dela: as premissas do TIME.md.
  *  Nenhum valor real: gasto e piso ficam [confirmar]; taxas são as recomendadas (margem 10%, 4% real, IR 15%). */
 export const PARAMETROS_INICIAIS: ParametrosObjetivo = {
-  gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1000', taxa_real_trabalho: '0.0400', aliq_proj: '0.1500',
+  gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1000', taxa_real_trabalho: '0.0400', aliq_proj: PADROES_ECONOMISTA.aliq_proj /* revisão E12: 22,5% até 2028 (ECONOMISTA), editável no Objetivo */,
   taxa_bruta_ano: {}, ipca_ano: {}, piso_meses: null, mes_reajuste: 1, travado_focus: false,
 }
 
@@ -29,7 +29,7 @@ export interface FuturoBanco {
   limites_mes: { envelope_id: string; limite_centavos: number }[]
   config: { casa_folha?: { pessoas?: { salario?: number }[] } } | null
   parcelas_futuras: { parcelas_lista: { mes_fatura: string; valor_centavos: number }[] }[]
-  desejos: { id: string; dono_membro: string; valor_centavos: number; mes: string; volta_de: 'nada' | 'contrato' | 'investimento' | 'venda'; volta_centavos: number | null; volta_mes: string | null; antecipado_centavos: number | null; volta_certa: boolean }[]
+  desejos: { id: string; dono_membro: string; valor_centavos: number; mes: string; volta_de: 'nada' | 'contrato' | 'investimento' | 'venda'; volta_centavos: number | null; volta_mes: string | null; antecipado_centavos: number | null; volta_certa: boolean; situacao?: 'pensando' | 'combinado' | 'feito' | 'desisti' }[]
   parametros: ParametrosObjetivo | null
   focus: FocusAno[]
 }
@@ -98,7 +98,8 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       hoje, saldo_caixa, aplicacoes,
       recebimentos: (j.recebimentos || []).map(r => ({ id: String(r.id), dono: r.dono_nome || '', valor: Number(r.valor_centavos) || 0, mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: !!r.certo, recebido: !!r.recebido_em })),
       compromissos, dividas: [], desvios: [],
-      desejos: (j.desejos || []).map(d => ({ id: String(d.id), dono: String(d.dono_membro), valor: Number(d.valor_centavos) || 0, mes: d.mes, volta_de: d.volta_de, volta: Number(d.volta_centavos) || 0, volta_mes: d.volta_mes, antecipado: d.antecipado_centavos == null ? null : Number(d.antecipado_centavos), volta_certa: !!d.volta_certa })),
+      desejos: (j.desejos || []).map(d => ({ id: String(d.id), dono: String(d.dono_membro), valor: Number(d.valor_centavos) || 0, mes: d.mes, volta_de: d.volta_de, volta: Number(d.volta_centavos) || 0, volta_mes: d.volta_mes, antecipado: d.antecipado_centavos == null ? null : Number(d.antecipado_centavos), volta_certa: !!d.volta_certa, ...(d.situacao ? { situacao: d.situacao } : {}) })),
+      // revisão E12 (C2): a situação vai junto; o motor ignora "feito" (o dinheiro já saiu do saldo) e "desisti"
       parametros,
     },
   }

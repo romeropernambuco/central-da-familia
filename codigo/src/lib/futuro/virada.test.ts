@@ -157,3 +157,26 @@ describe('desejo feito não sai 2 vezes (REVISOR E12, C2)', () => {
     expect(a).toEqual(b)
   })
 })
+
+describe('IR do modo renda separado do IR da projeção (ECONOMISTA: 15% depois da virada, 22,5% até 2028)', () => {
+  const tb = { ...PAR.taxa_bruta_ano, 2029: '0.1025' }
+  it('modo renda usa aliq_renda: Focus 2029 com 15% dá 4,5313% real (F2-FOCUS2029), mesmo com aliq_proj 22,5%', () => {
+    const r = futuro(ent('2029-01-02', {}, { taxa_bruta_ano: tb, aliq_proj: '0.225', aliq_renda: '0.15' } as any)).renda!
+    expect(r.falta_taxa).toBe(false)
+    expect(pct(new Dec(r.taxa_real_anual))).toBe('4.5313')
+  })
+  it('mudar aliq_renda muda a renda; a projeção antes da virada não muda', () => {
+    const a = futuro(ent('2029-01-02', {}, { taxa_bruta_ano: tb, aliq_renda: '0.15' } as any)).renda!.renda_sustentavel
+    const b = futuro(ent('2029-01-02', {}, { taxa_bruta_ano: tb, aliq_renda: '0.225' } as any)).renda!.renda_sustentavel
+    expect(a).toBeGreaterThan(b)
+    expect(futuro(ent('2026-11-18', {}, { aliq_renda: '0.15' } as any))).toEqual(futuro(ent('2026-11-18')))
+  })
+  it('sem aliq_renda, o modo renda usa aliq_proj (entrada antiga continua funcionando)', () => {
+    const r = futuro(ent('2029-01-02', {}, { taxa_bruta_ano: tb, aliq_proj: '0.15' })).renda!
+    expect(pct(new Dec(r.taxa_real_anual))).toBe('4.5313')
+  })
+  it('PADROES_ECONOMISTA traz os 2', async () => {
+    const { PADROES_ECONOMISTA } = await import('./index')
+    expect(PADROES_ECONOMISTA).toMatchObject({ aliq_proj: '0.225', aliq_renda: '0.15' })
+  })
+})

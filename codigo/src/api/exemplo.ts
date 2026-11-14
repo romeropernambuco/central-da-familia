@@ -688,7 +688,8 @@ export const apiExemplo: Api = {
       parcelas_futuras: vivos().filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l)).map(l => { const m1 = faturaDoLanc(l)!; return { parcelas_lista: parcelasDe(l.valor, l.parcelas!).map((v, i) => ({ mes_fatura: mesMais(m1, i), valor_centavos: Math.round(v * 100) })) } })
         .filter(l => l.parcelas_lista[l.parcelas_lista.length - 1].mes_fatura >= m0),
       // E8: igual ao f_08: os desejos vivos, menos os de quem desistiu
-      desejos: db.desejos.filter(d => !d.apagado && d.situacao !== 'desisti').map(d => ({ id: d.id, dono_membro: d.dono_membro, valor_centavos: Math.round(d.valor * 100), mes: d.mes, volta_de: d.volta_de, volta_centavos: Math.round(d.volta * 100), volta_mes: d.volta_mes, antecipado_centavos: d.antecipado == null ? null : Math.round(d.antecipado * 100), volta_certa: d.volta_certa })),
+      // revisão E12 (C2): manda todos os vivos com a situação, como o f_08 (o motor pula "feito" e "desisti")
+      desejos: db.desejos.filter(d => !d.apagado).map(d => ({ id: d.id, dono_membro: d.dono_membro, valor_centavos: Math.round(d.valor * 100), mes: d.mes, volta_de: d.volta_de, volta_centavos: Math.round(d.volta * 100), volta_mes: d.volta_mes, antecipado_centavos: d.antecipado == null ? null : Math.round(d.antecipado * 100), volta_certa: d.volta_certa, situacao: d.situacao })),
       parametros: db.objetivo.parametros, focus: FOCUS_EXEMPLO,
     }
     return entradaDoBanco(j)

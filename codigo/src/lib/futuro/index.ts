@@ -28,9 +28,10 @@ export { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
 export { ficaDevendo, cortarPorMes2029, desejosPraAdiar, ajusteSugerido, MESES_MINIMOS_PRA_GUARDAR } from './f9_falta'
 export { avisosFGC, fgcConta, TODOS_OS_BANCOS, LIMITE_FGC, TETO_CPF_FGC } from './f10_fgc'
 
-/** Padrões do ECONOMISTA.md item 4 pra quem monta os parâmetros iniciais (todos editáveis pela família).
- *  IR da projeção até 2028: 22,5% ("o caixa gira, preparar pro pior"). O motor não usa este objeto: só lê parametros. */
-export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', piso_meses: 6, mes_reajuste: 1 } as const
+/** Padrões do ECONOMISTA.md pra quem monta os parâmetros iniciais (todos editáveis pela família).
+ *  IR da projeção até 2028: 22,5% (item 4: "o caixa gira, preparar pro pior").
+ *  IR do modo renda, 2029 em diante: 15% (exemplo F2 dele, aplicação longa). O motor não usa este objeto: só lê parametros. */
+export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', piso_meses: 6, mes_reajuste: 1 } as const
 
 function taxasDe(e: FuturoEntrada) {
   const p = e.parametros
@@ -45,11 +46,12 @@ export function desejoPendente(d: Desejo): boolean { return d.situacao !== 'feit
 export function emModoRenda(e: FuturoEntrada): boolean { return compararMes(mesDaData(e.hoje), e.parametros.virada) >= 0 }
 
 /** Taxa real do ano corrente: Fisher com a Selic e o IPCA do ano (líquida do IR da projeção).
- *  Sem os 2 nos parâmetros: a taxa real de trabalho, marcando falta_taxa. */
+ *  Sem os 2 nos parâmetros: a taxa real de trabalho, marcando falta_taxa. Só o modo renda usa (com aliq_renda). */
 function taxaRealDoAno(e: FuturoEntrada, ano: number): { real: Dec; falta_taxa: boolean } {
   const p = e.parametros
   const tb = p.taxa_bruta_ano[ano], ip = p.ipca_ano[ano]
-  if (tb !== undefined && ip !== undefined) return { real: taxaRealAnual(tb, p.aliq_proj, ip), falta_taxa: false }
+  // IR do modo renda: aliq_renda (ECONOMISTA F2: aplicação longa, 15%); sem o campo, o da projeção.
+  if (tb !== undefined && ip !== undefined) return { real: taxaRealAnual(tb, p.aliq_renda ?? p.aliq_proj, ip), falta_taxa: false }
   return { real: taxa(p.taxa_real_trabalho), falta_taxa: true }
 }
 

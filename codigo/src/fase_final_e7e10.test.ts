@@ -230,7 +230,8 @@ describe('E8: tranca dos desejos no exemplo (igual a f_06)', () => {
     // "Desisti" sai da conta, como no f_08
     const meu = (await apiExemplo.desejos!('fam-silva')).find(d => d.nome === 'Viagem (exemplo)')!
     await apiExemplo.desejoMudar!('fam-silva', meu.id, { situacao: 'desisti' })
-    expect((await apiExemplo.futuroEntradas!('fam-silva')).entrada!.desejos.some(d => d.id === meu.id)).toBe(false)
+    // mudado na revisão E12 (C2): o desejo vai com a situação e o MOTOR pula "desisti" (antes a tela nem mandava)
+    expect((await apiExemplo.futuroEntradas!('fam-silva')).entrada!.desejos.find(d => d.id === meu.id)?.situacao).toBe('desisti')
   })
   it('rota desejos: a filha abre; a equipe volta pra Casa', () => {
     expect(rotaDoHash('#/desejos')).toBe('desejos')
@@ -411,5 +412,22 @@ describe('Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo 
     expect(normalizaReajuste({ ...s, aplicar_ate: '2027-02' }).aplicar_ate).toBe('2027-02')
     em('2027-03-02')
     await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')).rejects.toThrow(/prazo pra aplicar o reajuste acabou em 02\/2027/)
+  })
+})
+
+describe('Revisão E12 (C2): desejo "feito" não conta 2 vezes', () => {
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('1 feito, 1 pendente e 1 desisti dão a mesma linha de só o pendente', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-18T10:00:00-03:00')); reiniciarExemplo()
+    const base = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!
+    const d = (id: string, situacao: 'feito' | 'pensando' | 'desisti') => ({ id, dono: 'm-ana', valor: 1_000_000, mes: '2027-03', volta_de: 'nada' as const, volta: 0, volta_mes: null, antecipado: null, volta_certa: false, situacao })
+    const tres = futuro({ ...base, desejos: [d('a', 'feito'), d('b', 'pensando'), d('c', 'desisti')] })
+    const so = futuro({ ...base, desejos: [d('b', 'pensando')] })
+    expect(tres.linha.map(l => l.saldo_final)).toEqual(so.linha.map(l => l.saldo_final))
+    expect(tres.folga).toBe(so.folga)
+  })
+  it('IR padrão da projeção é o do ECONOMISTA (22,5%), editável', async () => {
+    const { PARAMETROS_INICIAIS } = await import('./api/futuro')
+    expect(PARAMETROS_INICIAIS.aliq_proj).toBe('0.225')
   })
 })

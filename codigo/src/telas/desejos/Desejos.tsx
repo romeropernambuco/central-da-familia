@@ -228,7 +228,7 @@ export function Desejos() {
               })}
             </ul>
           )}
-          {casal && <p className="sub" style={{ marginTop: 8 }}>Combinado, pensando ou feito: todos entram na conta de 2029. Desisti sai da conta.</p>}
+          {casal && <p className="sub" style={{ marginTop: 8 }}>Pensando e combinado entram na conta de 2029. Feito já saiu do dinheiro guardado e desisti não sai: os 2 ficam fora da conta.</p>}
         </section>
       </div>
     </div>
