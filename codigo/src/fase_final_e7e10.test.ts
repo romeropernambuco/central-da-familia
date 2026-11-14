@@ -78,58 +78,70 @@ describe('E7: linha até dez/2028 (F4, F9, F5)', () => {
 
 describe('E7: reajuste do teto (F8) votado no banco (f_12)', () => {
   // o formato que produto.reajuste_situacao devolve (exemplo)
-  const doBanco = (votos: [string, string, number][], faltam: [string, string][], aprovado: boolean) => normalizaReajuste({
-    mes_vigencia: '2027-02', aprovado, teto_aprovado_centavos: aprovado ? votos[0][2] : null,
-    votos: votos.map(([membro_id, nome, teto_centavos]) => ({ membro_id, nome, teto_centavos, votou_em: '2027-01-05T10:00:00-03:00' })),
+  const doBanco = (votos: [string, string, number][], faltam: [string, string][], aprovado: boolean, ja_vale = false) => normalizaReajuste({
+    mes_vigencia: '2027-02', aprovado, teto_aprovado_centavos: aprovado ? votos[0][2] : null, ipca_aprovado: aprovado ? '0.0450' : null,
+    vale_a_partir: aprovado ? '2027-02' : null, ja_vale,
+    votos: votos.map(([membro_id, nome, teto_centavos]) => ({ membro_id, nome, teto_centavos, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' })),
     faltam: faltam.map(([membro_id, nome]) => ({ membro_id, nome })),
   })
   it('F8-TETO: R$ 30.000 com IPCA de 5,22% sugere R$ 31.566 (conta do motor)', () => { expect(reajustarTeto(3_000_000, '0.0522')).toBe(3_156_600) })
-  it('normaliza o formato do banco (mês AAAA-MM, centavos, votos e quem falta)', () => {
+  it('normaliza o formato do banco (mês AAAA-MM, centavos, IPCA, vale_a_partir, votos e quem falta)', () => {
     const s = doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false)
-    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
+    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
   })
   it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente; tetos diferentes não aprovam', () => {
-    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false), '2027-01-20')).toBe('sugestao pendente')
-    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_100_000]], [], false), '2027-01-20')).toBe('tetos diferentes')
-    expect(situacaoReajuste(null, '2027-01-20')).toBe('sem sugestao')
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false))).toBe('sugestao pendente')
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_100_000]], [], false))).toBe('tetos diferentes')
+    expect(situacaoReajuste(null)).toBe('sem sugestao')
   })
-  it('os 2 aprovaram: vale só a partir do mês de vigência', () => {
-    const s = doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_156_600]], [], true)
-    expect(situacaoReajuste(s, '2027-01-20')).toBe('aprovado, vale no mes seguinte')
-    expect(situacaoReajuste(s, '2027-02-01')).toBe('aprovado')
+  it('os 2 aprovaram: "já vale" é o que o banco diz (ja_vale), a tela não calcula a vigência', () => {
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_156_600]], [], true, false))).toBe('aprovado, vale no mes seguinte')
+    expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600], ['m-b', 'Bruno', 3_156_600]], [], true, true))).toBe('aprovado')
   })
 })
 
-describe('E7: o exemplo imita as regras da f_12', () => {
-  const mm = (dia: string) => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`)); reiniciarExemplo() }
+describe('E7: o exemplo imita as regras da f_12 (com a R1)', () => {
+  const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
+  const mm = (dia: string) => { vi.useFakeTimers({ toFake: ['Date'] }); em(dia); reiniciarExemplo() }
   afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
-  it('1 voto por adulto (votar de novo troca só o seu), aprovado só com os 2 no mesmo teto, aplicar só no mês certo e nunca no limite do outro', async () => {
+  it('1 voto por adulto (votar de novo troca só o seu), aprovado só com os 2 no mesmo teto e IPCA, aplicar só quando vale e nunca no limite do outro', async () => {
     mm('2027-01-05')
-    let s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000)
+    // R1: vigência no mês de hoje (ou antes) é recusada
+    await expect(apiExemplo.reajusteVotar!('fam-silva', '2027-01', 1_000_000, '0.0450')).rejects.toThrow(/ainda não começou/)
+    let s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.0450')
     expect(s.faltam.map(x => x.nome)).toEqual(['Bruno'])
-    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000)
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000, '0.0450')
     expect(s.votos.length).toBe(1)
-    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02', 5800)).rejects.toThrow(/ainda não foi aprovado/)
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02')).rejects.toThrow(/ainda não foi aprovado/)
     exemploComo('bruno')
-    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000)
-    expect(s.aprovado).toBe(false) // tetos diferentes
-    // o exemplo começa de novo ao trocar de pessoa? não: mesma família, os votos ficam
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000, '0.0400')
+    expect(s.aprovado).toBe(false) // IPCA diferente
     expect(s.votos.map(v => v.nome).sort()).toEqual(['Ana', 'Bruno'])
-    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000)
-    expect(s.aprovado).toBe(true)
-    expect(s.teto_aprovado).toBe(1_050_000)
-    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02', 4200)).rejects.toThrow(/vale a partir de 02\/2027/)
-    vi.setSystemTime(new Date('2027-02-02T10:00:00-03:00'))
-    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02', 5800)).rejects.toThrow(/O limite de Ana só Ana ajusta/)
-    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02', 4200)
-    await apiExemplo.reajusteAplicar!('fam-silva', 'env-casa', '2027-02', 2600)
+    s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_050_000, '0.0450')
+    expect(s).toMatchObject({ aprovado: true, teto_aprovado: 1_050_000, ipca_aprovado: '0.0450', vale_a_partir: '2027-02', ja_vale: false })
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')).rejects.toThrow(/vale a partir de 02\/2027/)
+    em('2027-02-02')
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', '2027-02')).rejects.toThrow(/O limite de Ana só Ana ajusta/)
+    // o exemplo calcula o valor (4.000 × 1,045 = 4.180) e aplicar de novo não acumula
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
+    const r = await apiExemplo.resumoHoje('fam-silva')
+    const b = r.envelopes.find(e => e.id === 'env-bruno')!
+    expect(b.limite_base ?? b.limite_mes).toBe(4180)
     exemploComo('filha')
-    await expect(apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1)).rejects.toThrow(/Só os adultos/)
+    await expect(apiExemplo.reajusteVotar!('fam-silva', '2027-03', 1, '0.0450')).rejects.toThrow(/Só os adultos/)
     await expect(apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).rejects.toThrow(/Só o casal/)
+  })
+  it('R1: aprovação atrasada vale no mês seguinte ao último voto, não na hora', async () => {
+    mm('2027-01-05')
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-03', 1_000_000, '0.0450')
+    exemploComo('bruno'); em('2027-02-20')
+    const s = await apiExemplo.reajusteVotar!('fam-silva', '2027-03', 1_000_000, '0.0450')
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-03', ja_vale: false })
   })
   it('família de 1 adulto: 1 voto basta', async () => {
     mm('2027-01-05'); exemploComo('autonoma')
-    expect((await apiExemplo.reajusteVotar!('fam-souza', '2027-02', 500_000)).aprovado).toBe(true)
+    expect((await apiExemplo.reajusteVotar!('fam-souza', '2027-02', 500_000, '0.0450')).aprovado).toBe(true)
   })
 })
 

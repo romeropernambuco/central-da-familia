@@ -82,8 +82,10 @@ function criarDados() {
     { id: 'ds3', dono_membro: 'm-bia', nome: 'Fone de ouvido (exemplo)', valor: 250, mes: mm(1), volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false, situacao: 'pensando', apagado: false },
   ]
   // E7 (F8) com a f_12: votos do reajuste do teto (1 por adulto por mês de vigência)
-  const reajusteVotos: { mes: string; membro_id: string; teto: number; votou_em: string }[] = []
-  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos, reajusteVotos }
+  const reajusteVotos: { mes: string; membro_id: string; teto: number; ipca: string; votou_em: string }[] = []
+  /** limite de antes do reajuste, por mês de vigência e envelope (aplicar de novo dá o mesmo número, como no banco) */
+  const reajusteBase: Record<string, number> = {}
+  return { envs, cartoes, lanc, config, hoje, ajustes, convites, comprasEquipe, imprevistos, recebimentos, objetivo, desejos, reajusteVotos, reajusteBase }
 }
 
 /** Focus de EXEMPLO (número inventado, não é o boletim do Banco Central): Selic do fim do ano e IPCA. */
@@ -99,11 +101,15 @@ function situacaoReajusteEx(mes: string) {
   const adultos = membrosTeste().filter(x => x.papel === 'casal')
   const votos = db.reajusteVotos.filter(v => v.mes === mes).sort((a, b) => a.votou_em.localeCompare(b.votou_em))
   const faltam = adultos.filter(a => !votos.some(v => v.membro_id === a.id))
-  const tetos = new Set(votos.filter(v => adultos.some(a => a.id === v.membro_id)).map(v => v.teto))
-  const aprovado = faltam.length === 0 && tetos.size === 1
+  const dosAdultos = votos.filter(v => adultos.some(a => a.id === v.membro_id))
+  const aprovado = faltam.length === 0 && new Set(dosAdultos.map(v => v.teto)).size === 1 && new Set(dosAdultos.map(v => v.ipca)).size === 1
+  // R1 (igual a f_12): vale no mais tarde entre o mês de vigência e o mês seguinte ao último voto (fuso de Recife)
+  const ultimo = dosAdultos.map(v => hojeRecife(new Date(v.votou_em)).slice(0, 7)).sort().pop()
+  const vale = aprovado && ultimo ? [mes, mesMais(ultimo, 1)].sort().pop()! : null
   return {
-    mes_vigencia: mes, aprovado, teto_aprovado: aprovado ? [...tetos][0] : null,
-    votos: votos.map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(x => x.id === v.membro_id)?.nome || '', teto: v.teto, votou_em: v.votou_em })),
+    mes_vigencia: mes, aprovado, teto_aprovado: aprovado ? dosAdultos[0].teto : null, ipca_aprovado: aprovado ? dosAdultos[0].ipca : null,
+    vale_a_partir: vale, ja_vale: !!vale && hojeRecife().slice(0, 7) >= vale,
+    votos: votos.map(v => ({ membro_id: v.membro_id, nome: membrosTeste().find(x => x.id === v.membro_id)?.nome || '', teto: v.teto, ipca: v.ipca, votou_em: v.votou_em })),
     faltam: faltam.map(a => ({ membro_id: a.id, nome: a.nome })),
   }
 }
@@ -544,11 +550,13 @@ export const apiExemplo: Api = {
   async entrouAMais(_f, mes) {
     await espera(20)
     const eu = membroLogado()
+    // QA E11 (erro 5): a regra do salário é da FAMÍLIA, 1 número só pros 2 (igual à rodada 2). A pessoa da família (filha) vê só o dela
+    const familia = papelLogado() === 'casal'
     const itens: { de: string; valor: number; destino: string }[] = []
-    // o que foi guardado pelo "Entrou dinheiro" (aporte com nota) nas aplicações de quem olha
-    for (const a of ex2.guardadoHojeEx(eu.id).aplicacoes) for (const m of ex2.movimentosEx(a.id)) if (m.tipo === 'aporte' && m.nota && m.data.startsWith(mes)) itens.push({ de: m.nota, valor: m.valor, destino: 'reserva' })
+    // o que foi guardado pelo "Entrou dinheiro" (aporte com nota) nas aplicações da família
+    for (const a of ex2.guardadoHojeEx(eu.id, familia).aplicacoes) for (const m of ex2.movimentosEx(a.id)) if (m.tipo === 'aporte' && m.nota && m.data.startsWith(mes)) itens.push({ de: m.nota, valor: m.valor, destino: 'reserva' })
     // o que já foi guardado aparece pelo movimento da aplicação (não conta 2 vezes)
-    for (const x of ((db.config.entradas as any[]) || [])) if (x.destino !== 'reserva' && x.data?.startsWith(mes) && (!x.dono || x.dono === eu.nome)) itens.push({ de: x.de, valor: x.valor, destino: x.destino === 'reserva' ? 'reserva' : x.destino })
+    for (const x of ((db.config.entradas as any[]) || [])) if (x.destino !== 'reserva' && x.data?.startsWith(mes) && (familia || !x.dono || x.dono === eu.nome)) itens.push({ de: x.de, valor: x.valor, destino: x.destino === 'reserva' ? 'reserva' : x.destino })
     const entrou = centavos(itens.filter(i => i.destino !== 'renda').reduce((t, i) => t + i.valor, 0))
     return { entrou, guardado: centavos(itens.filter(i => i.destino === 'reserva').reduce((t, i) => t + i.valor, 0)), itens }
   },
@@ -685,25 +693,34 @@ export const apiExemplo: Api = {
   },
   // ---------- E7 (F8): o reajuste do teto, com as mesmas regras da f_12 ----------
   async reajusteSituacao(_f, mes) { await espera(20); return situacaoReajusteEx(mes) },
-  async reajusteVotar(_f, mes, teto) {
+  async reajusteVotar(_f, mes, teto, ipca) {
     await espera(30)
     if (papelLogado() !== 'casal') throw new Error('Só os adultos do casal votam o reajuste.')
     if (!(Number.isSafeInteger(teto) && teto > 0)) throw new Error('O teto tem que ser maior que zero.')
-    // 1 voto por adulto: votar de novo troca só o próprio teto; ninguém mexe no voto do outro
+    if (!/^-?0\.[0-9]{1,8}$/.test(ipca || '')) throw new Error('O IPCA vem em texto decimal, ex.: 0.0450.')
+    // R1 (igual a f_12): o voto é pra um mês que ainda não começou
+    if (mes <= hojeRecife().slice(0, 7)) throw new Error('O reajuste vale a partir de um mês que ainda não começou.')
+    // 1 voto por adulto: votar de novo troca só o próprio teto e IPCA; ninguém mexe no voto do outro
     const eu = membroLogado().id
     const v = db.reajusteVotos.find(x => x.mes === mes && x.membro_id === eu)
-    if (v) { v.teto = teto; v.votou_em = new Date().toISOString() } else db.reajusteVotos.push({ mes, membro_id: eu, teto, votou_em: new Date().toISOString() })
+    if (v) { v.teto = teto; v.ipca = ipca } else db.reajusteVotos.push({ mes, membro_id: eu, teto, ipca, votou_em: new Date().toISOString() })
     return situacaoReajusteEx(mes)
   },
-  async reajusteAplicar(_f, envelope, mes, valor) {
+  async reajusteAplicar(_f, envelope, mes) {
     await espera(30)
     if (papelLogado() !== 'casal') throw new Error('Só o casal aplica o reajuste.')
-    if (!situacaoReajusteEx(mes).aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto.')
-    if (hojeRecife().slice(0, 7) < mes) throw new Error(`O reajuste vale a partir de ${mes.slice(5)}/${mes.slice(0, 4)}.`)
+    const s = situacaoReajusteEx(mes)
+    if (!s.aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto e IPCA.')
+    if (!s.ja_vale) throw new Error(`O reajuste vale a partir de ${s.vale_a_partir!.slice(5)}/${s.vale_a_partir!.slice(0, 4)}.`)
     // o limite do outro adulto continua com ele (mesma regra do banco)
     const dono = membrosTeste().find(x => x.envelope === envelope)
     if (dono && dono.papel === 'casal' && dono.id !== membroLogado().id) throw new Error(`O limite de ${dono.nome} só ${dono.nome} ajusta.`)
-    await apiExemplo.definirLimite(_f, envelope, valor)
+    const e = db.envs.find(x => x.id === envelope)
+    if (!e) throw new Error('Esse limite não existe mais.')
+    // o exemplo calcula como o banco: limite de antes × (1 + IPCA votado), no centavo; aplicar de novo não acumula
+    const chave = `${mes}|${envelope}`
+    if (db.reajusteBase[chave] == null) db.reajusteBase[chave] = e.limite_mes
+    await apiExemplo.definirLimite(_f, envelope, Math.round(db.reajusteBase[chave] * (1 + Number(s.ipca_aprovado)) * 100) / 100)
   },
   // ---------- E8: desejos (igual a f_06): o casal vê todos; a pessoa só os dela; só o dono cria e muda ----------
   async desejos() {

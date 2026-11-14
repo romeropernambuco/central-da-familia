@@ -256,6 +256,14 @@ function Lembretes() {
 export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   const { e, estado, responder } = useEscritorio()
   const { familia } = useApp()
+  // QA E11 (erro 6): depois de responder (ex.: a nota da feira), a confirmação fica no próprio cartão, ao lado da contagem nova
+  // (o aviso de baixo some em 4 s; aqui fica até a próxima resposta)
+  const [feito, setFeito] = useState('')
+  const responderComAviso: typeof responder = async (pergunta, opcao, dados) => {
+    const r = await responder(pergunta, opcao, dados)
+    if (r && typeof r === 'object' && r.aviso) setFeito(r.aviso)
+    return r
+  }
   // A2: a pessoa da família (filha) só vê o cartão quando é sobre ela, e não tem a tela do Escritório
   const pessoa = familia?.papel === 'pessoa'
   if (estado === 'desligado' || !e) return null
@@ -272,11 +280,12 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
       </div>
       {p ? (
         <>
-          <PerguntaCard key={p.id} p={p} quem={nomeDoDono(p, e.funcionarios)} responder={responder} posicao={total > 1 ? `1 de ${total}` : undefined} />
+          {feito && <p className="todo ok precisa-feito" role="status" style={{ marginBottom: 10 }}><span>{feito}</span></p>}
+          <PerguntaCard key={p.id} p={p} quem={nomeDoDono(p, e.funcionarios)} responder={responderComAviso} posicao={total > 1 ? `1 de ${total}` : undefined} />
           {fila.length > 1 && !equipe && <p className="sub" style={{ marginTop: 10 }}>Depois desta: {(() => { const nomes = [...new Set(fila.slice(1).map(x => nomeDoDono(x, e.funcionarios)))]; return nomes.slice(0, 2).join(' e ') + (nomes.length > 2 ? ` e mais ${nomes.length - 2}` : '') })()}.</p>}
         </>
       ) : (
-        <p className="sub">Tudo em ordem. Os {e.funcionarios.length} funcionários do Escritório conferiram os números da família. Quando um deles precisar de uma resposta sua, a pergunta aparece aqui.</p>
+        <>{feito && <p className="todo ok precisa-feito" role="status" style={{ marginBottom: 10 }}><span>{feito}</span></p>}<p className="sub">Tudo em ordem. Os {e.funcionarios.length} funcionários do Escritório conferiram os números da família. Quando um deles precisar de uma resposta sua, a pergunta aparece aqui.</p></>
       )}
     </section>
   )

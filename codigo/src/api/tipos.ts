@@ -241,7 +241,10 @@ export interface ReajusteSituacao {
   /** 'AAAA-MM': o mês a partir do qual o teto novo vale */ mes_vigencia: string
   /** todos os adultos do casal votaram e no mesmo teto (o banco decide) */ aprovado: boolean
   /** em centavos; null enquanto não aprovou */ teto_aprovado: number | null
-  votos: { membro_id: string; nome: string; teto: number; votou_em: string }[]
+  /** IPCA aprovado, em texto decimal ("0.0450"); null enquanto não aprovou */ ipca_aprovado: string | null
+  /** R1: 'AAAA-MM' de quando vale de verdade (o banco decide: o mês de vigência ou o seguinte ao último voto); null sem aprovação */ vale_a_partir: string | null
+  /** o mês de hoje já chegou em vale_a_partir (o banco decide) */ ja_vale: boolean
+  votos: { membro_id: string; nome: string; teto: number; ipca: string | null; votou_em: string }[]
   faltam: { membro_id: string; nome: string }[]
 }
 
@@ -376,9 +379,10 @@ export interface Api {
   /* E7 (F8, f_12): o reajuste do teto. 1 voto por adulto (só o próprio); aplicar só com todos no mesmo teto, a partir do
      mês de vigência, e só nos limites que a pessoa ajusta (nunca no do outro adulto). mes_vigencia 'AAAA-MM'. */
   reajusteSituacao?(familia: string, mes_vigencia: string): Promise<ReajusteSituacao>
-  reajusteVotar?(familia: string, mes_vigencia: string, teto_centavos: number): Promise<ReajusteSituacao>
-  /** valor em reais, como no definirLimite */
-  reajusteAplicar?(familia: string, envelope: string, mes_vigencia: string, valor: number): Promise<void>
+  /** o voto leva o teto e o IPCA (texto decimal); vigência no mês de hoje ou antes é recusada */
+  reajusteVotar?(familia: string, mes_vigencia: string, teto_centavos: number, ipca: string): Promise<ReajusteSituacao>
+  /** o banco calcula o limite novo (limite de antes × (1 + IPCA votado)); a tela não manda valor */
+  reajusteAplicar?(familia: string, envelope: string, mes_vigencia: string): Promise<void>
   /* E8: desejos. O casal vê todos; a pessoa (filha) só os dela; só o dono cria e muda (ninguém apaga linha: fica marcada) */
   desejos?(familia: string): Promise<DesejoTela[]>
   desejoCriar?(familia: string, d: NovoDesejo): Promise<void>

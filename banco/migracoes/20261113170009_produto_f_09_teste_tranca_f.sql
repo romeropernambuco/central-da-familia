@@ -191,7 +191,7 @@ begin
       -- B2: limite e envelope do outro adulto, pelas 3 portas
       ('A muda o limite de B (envelopes)', ua, 'authenticated', format('update produto.envelopes set limite_mes = 1 where id = %L', env_b), 'linhas', '0'),
       ('A muda o limite de B (definir_limite)', ua, 'authenticated', format('select 1 from produto.definir_limite(%L, %L, 1)', fam, env_b), 'contar', 'bloqueado'),
-      ('A grava limites_mes de B', ua, 'authenticated', format('insert into produto.limites_mes (familia_id, envelope_id, mes, valor) values (%L, %L, to_char(current_date + 40, ''YYYY-MM''), 1)', fam, env_b), 'linhas', 'bloqueado'),
+      ('A grava limites_mes de B', ua, 'authenticated', format('insert into produto.limites_mes (familia_id, envelope_id, mes, valor) values (%L, %L, to_char(produto._hoje() + 40, ''YYYY-MM''), 1)', fam, env_b), 'linhas', 'bloqueado'),
       ('A apaga o envelope de B', ua, 'authenticated', format('delete from produto.envelopes where id = %L', env_b), 'linhas', '0'),
       ('A marca o envelope de B como Casa', ua, 'authenticated', format('update produto.envelopes set casa = true where id = %L', env_b), 'linhas', 'bloqueado'),
       ('CONTROLE A muda o proprio limite (definir_limite)', ua, 'authenticated', format('select case when produto.definir_limite(%L, %L, 2500) is not null then 1 else 0 end', fam, env_a), 'contar', '1'),
@@ -199,12 +199,12 @@ begin
       ('CONTROLE B tambem muda o limite da filha', ub, 'authenticated', format('select case when produto.definir_limite(%L, %L, 360) is not null then 1 else 0 end', fam, env_p), 'contar', '1'),
       ('Filha muda o proprio limite (definir_limite)', up, 'authenticated', format('select 1 from produto.definir_limite(%L, %L, 9999)', fam, env_p), 'contar', 'bloqueado'),
       ('Filha muda o proprio limite (envelopes)', up, 'authenticated', format('update produto.envelopes set limite_mes = 9999 where id = %L', env_p), 'linhas', '0'),
-      ('Filha grava limites_mes dela', up, 'authenticated', format('insert into produto.limites_mes (familia_id, envelope_id, mes, valor) values (%L, %L, to_char(current_date + 40, ''YYYY-MM''), 9999)', fam, env_p), 'linhas', 'bloqueado'),
+      ('Filha grava limites_mes dela', up, 'authenticated', format('insert into produto.limites_mes (familia_id, envelope_id, mes, valor) values (%L, %L, to_char(produto._hoje() + 40, ''YYYY-MM''), 9999)', fam, env_p), 'linhas', 'bloqueado'),
       -- B3: cartão, fatura e custo do outro
-      ('A marca a fatura do cartao de B como paga', ua, 'authenticated', format('select 1 from produto.fatura_informar(%L, %L, to_char(current_date, ''YYYY-MM''), 100, current_date)', fam, cart_b), 'contar', 'bloqueado'),
+      ('A marca a fatura do cartao de B como paga', ua, 'authenticated', format('select 1 from produto.fatura_informar(%L, %L, to_char(produto._hoje(), ''YYYY-MM''), 100, produto._hoje())', fam, cart_b), 'contar', 'bloqueado'),
       ('A cria cartao no nome de B', ua, 'authenticated', format('insert into produto.cartoes (familia_id, nome, titular_membro) values (%L, ''x'', %L)', fam, mb), 'linhas', 'bloqueado'),
       ('A grava custo do cartao de B', ua, 'authenticated', format('insert into produto.cartao_custos (familia_id, cartao_id, limite) values (%L, %L, 1)', fam, cart_b), 'linhas', 'bloqueado'),
-      ('CONTROLE A marca a fatura do proprio cartao', ua, 'authenticated', format('select case when produto.fatura_informar(%L, %L, to_char(current_date, ''YYYY-MM''), 100, current_date) is not null then 1 else 0 end', fam, cart_a), 'contar', '1'),
+      ('CONTROLE A marca a fatura do proprio cartao', ua, 'authenticated', format('select case when produto.fatura_informar(%L, %L, to_char(produto._hoje(), ''YYYY-MM''), 100, produto._hoje()) is not null then 1 else 0 end', fam, cart_a), 'contar', '1'),
       -- B4: lançamento no cartão de outra pessoa
       ('Filha lanca no cartao de B', up, 'authenticated', format('select 1 from produto.lancar(%L, %L, 10, null, null, %L)', fam, env_p, cart_b), 'contar', 'bloqueado'),
       ('A lanca no proprio limite com o cartao de B', ua, 'authenticated', format('select 1 from produto.lancar(%L, %L, 10, null, null, %L)', fam, env_a, cart_b), 'contar', 'bloqueado'),
@@ -367,40 +367,50 @@ begin
     end if;
 
     -- reajuste do teto com voto de cada adulto (f_12), quando existir
-    if to_regprocedure('produto.reajuste_votar(uuid,date,bigint)') is not null then
+    if to_regprocedure('produto.reajuste_votar(uuid,date,bigint,text)') is not null
+       or to_regprocedure('produto.reajuste_votar(uuid,date,bigint)') is not null then
       declare
         m_cur constant date := date_trunc('month', produto._hoje())::date;
         m_ant constant date := (date_trunc('month', produto._hoje()) - interval '1 month')::date;
         m_dif constant date := (date_trunc('month', produto._hoje()) - interval '2 months')::date;
+        m_ok  constant date := (date_trunc('month', produto._hoje()) - interval '3 months')::date;
+        m_prox constant date := (date_trunc('month', produto._hoje()) + interval '1 month')::date;
+        antes constant timestamptz := now() - interval '3 months';
       begin
-        perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
-        perform produto.reajuste_votar(fam::uuid, m_ant, 300000);   -- só A votou
-        perform produto.reajuste_votar(fam::uuid, m_cur, 310000);   -- A e B, mesmo teto
-        perform produto.reajuste_votar(fam::uuid, m_dif, 300000);   -- A e B, tetos diferentes
-        perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
-        perform produto.reajuste_votar(fam::uuid, m_cur, 310000);
-        perform produto.reajuste_votar(fam::uuid, m_dif, 310000);
-        perform set_config('request.jwt.claims', json_build_object('sub', ux, 'role', 'authenticated')::text, true);
-        perform produto.reajuste_votar(fam2::uuid, m_cur, 100000);   -- família de 1 adulto
-        perform set_config('request.jwt.claims', '', true);
+        -- histórico de votos montado direto (como se tivesse sido votado meses atrás; a função só aceita mês futuro)
+        insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos, ipca, votou_em) values
+          (fam::uuid, m_ok,  ma::uuid, 315000, '0.0500', antes),            -- A e B, mesmo teto e IPCA, há 3 meses
+          (fam::uuid, m_ok,  mb::uuid, 315000, '0.0500', antes),
+          (fam::uuid, m_ant, ma::uuid, 315000, '0.0500', antes),            -- vigência mês passado, mas B votou HOJE (atrasado)
+          (fam::uuid, m_ant, mb::uuid, 315000, '0.0500', now()),
+          (fam::uuid, m_dif, ma::uuid, 315000, '0.0500', antes),            -- IPCA diferente
+          (fam::uuid, m_dif, mb::uuid, 315000, '0.0600', antes),
+          (fam2::uuid, m_ok, mx::uuid, 105000, '0.0500', antes),            -- família de 1 adulto
+          (fam::uuid, m_prox, ma::uuid, 315000, '0.0500', now());            -- mês que vem: só A votou
         for c in select * from (values
-          ('Reajuste: A grava o voto de B direto na tabela', ua, 'authenticated', format('insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos) values (%L, %L, %L, 1)', fam, m_ant, mb), 'linhas', 'bloqueado'),
+          ('Reajuste: A grava o voto de B direto na tabela', ua, 'authenticated', format('insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos, ipca) values (%L, %L, %L, 1, ''0.01'')', fam, m_prox, mb), 'linhas', 'bloqueado'),
           ('Reajuste: A muda o voto de B', ua, 'authenticated', format('update produto.reajuste_votos set teto_centavos = 1 where membro_id = %L', mb), 'linhas', '0'),
           ('Reajuste: A apaga o voto de B', ua, 'authenticated', format('delete from produto.reajuste_votos where membro_id = %L', mb), 'linhas', 'bloqueado'),
-          ('Reajuste: os 2 votos juntos ficam os 2 (nenhum apaga o outro)', ua, 'authenticated', format('select count(*) from produto.reajuste_votos where familia_id = %L and mes_vigencia = %L', fam, m_cur), 'contar', '2'),
-          ('Reajuste: com os 2 no mesmo teto esta aprovado', ub, 'authenticated', format('select case when (produto.reajuste_situacao(%L, %L)->>''aprovado'')::boolean then 1 else 0 end', fam, m_cur), 'contar', '1'),
-          ('Reajuste: so A votou, falta B', ua, 'authenticated', format('select jsonb_array_length(produto.reajuste_situacao(%L, %L)->''faltam'')', fam, m_ant), 'contar', '1'),
-          ('Reajuste: aplicar com 1 voto so', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, m_ant), 'contar', 'bloqueado'),
-          ('Reajuste: aplicar com tetos diferentes', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, m_dif), 'contar', 'bloqueado'),
-          ('CONTROLE Reajuste: aplicar com os 2 no mesmo teto', ua, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L, 3100) is not null then 1 else 0 end', fam, env_a, m_cur), 'contar', '1'),
-          ('Reajuste: aprovado nao abre o limite de B pra A', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_b, m_cur), 'contar', 'bloqueado'),
-          ('CONTROLE Reajuste: na familia de 1 adulto, 1 voto basta', ux, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L, 1000) is not null then 1 else 0 end', fam2, env_x, m_cur), 'contar', '1'),
-          ('Reajuste: a filha vota', up, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1)', fam, m_cur), 'contar', 'bloqueado'),
-          ('Reajuste: a equipe vota', ue, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1)', fam, m_cur), 'contar', 'bloqueado'),
+          ('Reajuste: A escolhe a hora do proprio voto', ua, 'authenticated', format('insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos, ipca, votou_em) values (%L, %L, %L, 1, ''0.01'', ''2001-01-01'')', fam, m_prox, ma), 'linhas', 'bloqueado'),
+          ('CONTROLE Reajuste: A vota pro mes que vem', ua, 'authenticated', format('select case when produto.reajuste_votar(%L, %L, 315000, ''0.0500'') is not null then 1 else 0 end', fam, m_prox), 'contar', '1'),
+          ('Reajuste: votar com vigencia no mes de hoje', ua, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 315000, ''0.0500'')', fam, m_cur), 'contar', 'erro: o reajuste vale a partir de um mes que ainda nao comecou'),
+          ('Reajuste: votar com vigencia no passado (2001)', ua, 'authenticated', format('select 1 from produto.reajuste_votar(%L, ''2001-01-01'', 100, ''0.0500'')', fam), 'contar', 'erro: o reajuste vale a partir de um mes que ainda nao comecou'),
+          ('Reajuste: os 2 votos juntos ficam os 2 (nenhum apaga o outro)', ua, 'authenticated', format('select count(*) from produto.reajuste_votos where familia_id = %L and mes_vigencia = %L', fam, m_ok), 'contar', '2'),
+          ('Reajuste: aprovado com os 2 no mesmo teto e IPCA', ub, 'authenticated', format('select case when (produto.reajuste_situacao(%L, %L)->>''aprovado'')::boolean then 1 else 0 end', fam, m_ok), 'contar', '1'),
+          ('Reajuste: so A votou, falta B', ua, 'authenticated', format('select jsonb_array_length(produto.reajuste_situacao(%L, %L)->''faltam'')', fam, m_prox), 'contar', '1'),
+          ('Reajuste: aprovacao atrasada vale so no mes seguinte (vale_a_partir)', ua, 'authenticated', format('select case when produto.reajuste_situacao(%L, %L)->>''vale_a_partir'' = %L then 1 else 0 end', fam, m_ant, to_char(m_prox, 'YYYY-MM')), 'contar', '1'),
+          ('Reajuste: aplicar no mesmo mes da aprovacao atrasada', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_a, m_ant), 'contar', 'erro: o reajuste vale a partir de ' || to_char(m_prox, 'MM/YYYY')),
+          ('Reajuste: aplicar com 1 voto so', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_a, m_prox), 'contar', 'bloqueado'),
+          ('Reajuste: aplicar com IPCA diferente', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_a, m_dif), 'contar', 'bloqueado'),
+          ('Reajuste: o banco calcula o limite novo (3.000 x 1,05 = 3.150), sem valor da tela', ua, 'authenticated', format('select ((produto.reajuste_aplicar(%L, %L, %L)->>''limite'')::numeric * 100)::bigint', fam, env_a, m_ok), 'contar', '315000'),
+          ('Reajuste: aplicar 2 vezes nao acumula', ua, 'authenticated', format('select count(*) from (values (1), (2)) v(n) cross join lateral (select (produto.reajuste_aplicar(%L, %L, %L::date + 0 * v.n)->>''limite'')::numeric l) x where x.l = 3150', fam, env_a, m_ok), 'contar', '2'),
+          ('Reajuste: aprovado nao abre o limite de B pra A', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_b, m_ok), 'contar', 'bloqueado'),
+          ('CONTROLE Reajuste: na familia de 1 adulto, 1 voto basta', ux, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L) is not null then 1 else 0 end', fam2, env_x, m_ok), 'contar', '1'),
+          ('Reajuste: a filha vota', up, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1, ''0.01'')', fam, m_prox), 'contar', 'bloqueado'),
+          ('Reajuste: a equipe vota', ue, 'authenticated', format('select 1 from produto.reajuste_votar(%L, %L, 1, ''0.01'')', fam, m_prox), 'contar', 'bloqueado'),
           ('Reajuste: a filha le os votos', up, 'authenticated', 'select count(*) from produto.reajuste_votos', 'contar', '0'),
-          ('Reajuste: a equipe le o teto aprovado', ue, 'authenticated', format('select count(produto._reajuste_aprovado(%L, %L))', fam, m_cur), 'contar', '0'),
-          ('Reajuste: o estranho le o teto aprovado', ux, 'authenticated', format('select count(produto._reajuste_aprovado(%L, %L))', fam, m_cur), 'contar', '0'),
-          ('Reajuste: vale so a partir do mes de vigencia', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L, 3100)', fam, env_a, (m_cur + interval '1 month')::date), 'contar', 'bloqueado'),
+          ('Reajuste: a equipe le o teto aprovado', ue, 'authenticated', format('select count(*) from produto._reajuste_aprovado(%L, %L)', fam, m_ok), 'contar', '0'),
+          ('Reajuste: o estranho le o teto aprovado', ux, 'authenticated', format('select count(*) from produto._reajuste_aprovado(%L, %L)', fam, m_ok), 'contar', '0'),
           -- B5: objetivo salvo 2 vezes (como os 2 salvando juntos) não dá erro nem deixa linha fantasma no histórico
           ('Objetivo: 1o salvar pela funcao na familia sem objetivo', ux, 'authenticated', format('select case when produto.objetivo_salvar(%L, %L::jsonb) is not null then 1 else 0 end', fam2, obj), 'contar', '1'),
           ('Objetivo: salvar quando o outro ja criou vira mudanca, sem erro', ub, 'authenticated', format('select case when produto.objetivo_salvar(%L, jsonb_set(%L::jsonb, ''{margem}'', ''"0.15"'')) is not null then 1 else 0 end', fam, obj), 'contar', '1')
@@ -489,6 +499,24 @@ begin
       r_esp := r_esp || '0 diferencas'::text;
       r_obt := r_obt || (difere || ' diferencas');
     end loop;
+
+    -- relógio (pedido do QA): o dia é sempre o de Recife, nunca o do relógio da sessão. Aqui a sessão vai pra um fuso
+    -- em que JÁ É OUTRO DIA (como o servidor em UTC às 22h de Recife) e a fatura paga "hoje" tem que continuar valendo.
+    declare tz_antes text := current_setting('timezone'); tz_torto text;
+    begin
+      tz_torto := case when extract(hour from now() at time zone 'America/Recife') >= 7 then 'Etc/GMT-14' else 'Etc/GMT+12' end;
+      perform set_config('timezone', tz_torto, true);
+      r_caso := r_caso || 'Relogio: a sessao esta em outro dia que Recife (simula 22h em Recife)'::text;
+      r_esp := r_esp || 'outro dia'::text;
+      r_obt := r_obt || (case when current_date <> produto._hoje() then 'outro dia' else 'mesmo dia' end);
+      r_caso := r_caso || 'Relogio: fatura paga hoje (dia de Recife) vale com a sessao em outro dia'::text;
+      r_esp := r_esp || '1'::text;
+      r_obt := r_obt || produto._tentativa(ua, 'authenticated', format('select case when produto.fatura_informar(%L, %L, to_char(produto._hoje(), ''YYYY-MM''), 100, produto._hoje()) is not null then 1 else 0 end', fam, cart_a), 'contar');
+      r_caso := r_caso || 'Relogio: limite do mes de Recife grava com a sessao em outro dia'::text;
+      r_esp := r_esp || '1'::text;
+      r_obt := r_obt || produto._tentativa(ua, 'authenticated', format('select case when produto.definir_limite(%L, %L, 2700) is not null then 1 else 0 end', fam, env_a), 'contar');
+      perform set_config('timezone', tz_antes, true);
+    end;
 
     -- vigia noturno (sem login) nunca recebe os dados do futuro
     r_caso := r_caso || 'Turno da noite (sem login) pede os dados do futuro'::text;

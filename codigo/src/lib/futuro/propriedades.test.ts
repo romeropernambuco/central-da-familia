@@ -66,7 +66,8 @@ describe('desvio e renda de 2029', () => {
     }
   })
   it('impacto2029 usa os parâmetros da família e bate com F6-HOJE', () => {
-    expect(impacto2029(base(), { mes: '2026-12', valor: 5_000_000 })).toEqual({ valor_na_virada: 5_953_252, perda_renda_mensal: 19_489 })
+    // Mudado pra incluir o campo novo modo (QA E11); valores iguais.
+    expect(impacto2029(base(), { mes: '2026-12', valor: 5_000_000 })).toEqual({ valor_na_virada: 5_953_252, perda_renda_mensal: 19_489, modo: 'projecao' })
   })
 })
 

@@ -43,6 +43,14 @@ export function guardarPorMesNaLinha(falta: Centavos, fatores: Dec[]): Centavos 
   return arred(F.div(S))
 }
 
+/** Abaixo disso, guardar por mês não serve (a falta inteira cairia em poucos meses: QA E11, erro 3) e o ajuste
+ *  sugerido vira cortar o gasto de 2029. Regra do produto, a confirmar com o ECONOMISTA. */
+export const MESES_MINIMOS_PRA_GUARDAR = 6
+
+export function ajusteSugerido(meses_restantes: number): 'guardar' | 'cortar' {
+  return meses_restantes >= MESES_MINIMOS_PRA_GUARDAR ? 'guardar' : 'cortar'
+}
+
 /** (b) reduzir o gasto de 2029 em F × taxa_real_mensal. */
 export function cortarPorMes2029(falta: Centavos, taxa_real_anual: Taxa | Dec): Centavos {
   if (falta <= 0 || taxa(taxa_real_anual).lte(0)) { centavos(falta); return 0 }

@@ -13,6 +13,7 @@
     "portoes": "node scripts/portoes.mjs",
     "teste:falha": "vite build && node testes/falha.cjs",
     "e2e": "node testes/e2e.mjs",
+    "teste:final": "vite build --mode exemplo && node testes/varredura3.cjs",
     "zip": "node scripts/zip.mjs"
   },
   "dependencies": {

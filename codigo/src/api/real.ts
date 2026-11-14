@@ -371,8 +371,9 @@ export const apiReal: Api = {
   },
   // ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco ----------
   async reajusteSituacao(familia, mes) { return normalizaReajuste(await rpc('reajuste_situacao', { familia, mes_vigencia: `${mes}-01` })) },
-  async reajusteVotar(familia, mes, teto) { return normalizaReajuste(await rpc('reajuste_votar', { familia, mes_vigencia: `${mes}-01`, teto_centavos: teto })) },
-  async reajusteAplicar(familia, envelope, mes, valor) { await rpc('reajuste_aplicar', { familia, envelope, mes_vigencia: `${mes}-01`, valor }) },
+  async reajusteVotar(familia, mes, teto, ipca) { return normalizaReajuste(await rpc('reajuste_votar', { familia, mes_vigencia: `${mes}-01`, teto_centavos: teto, ipca })) },
+  // R1: o banco calcula o limite novo pelo IPCA votado; a tela não manda valor
+  async reajusteAplicar(familia, envelope, mes) { await rpc('reajuste_aplicar', { familia, envelope, mes_vigencia: `${mes}-01` }) },
 
   async futuroEntradas(familia) { return entradaDoBanco(await rpc<FuturoBanco>('futuro_entradas', { familia })) },
   // ---------- E8: desejos (produto.desejos, f_06). A tranca do banco: o casal lê todos, a pessoa só os dela; só o dono muda ----------

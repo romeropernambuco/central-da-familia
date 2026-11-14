@@ -14,4 +14,22 @@ export interface Parametros { mes_base: Mes; virada: Mes /* '2029-01' */; gasto_
 export interface FuturoEntrada { hoje: string; saldo_caixa: Centavos; aplicacoes: Aplicacao[]; recebimentos: Recebimento[]; compromissos: { mes: Mes; valor: Centavos; tipo: 'conta_grande' | 'folha_13' | 'parcela' }[]; dividas: { mes: Mes; valor: Centavos }[]; desvios: { mes: Mes; valor: Centavos; origem: string }[]; desejos: Desejo[]; parametros: Parametros }
 // piso: acrescentado a pedido do REVISOR 2 (B3): a tela desenha o piso que o motor usou, sem refazer a conta.
 export interface LinhaMes { mes: Mes; saldo_inicial: Centavos; rendimento: Centavos; recebimentos: Centavos; teto: Centavos; compromissos: Centavos; dividas: Centavos; desvios: Centavos; retornos: Centavos; saldo_final: Centavos; piso: Centavos; fica_devendo: Centavos; devendo_ate: Mes | null }
-export interface FuturoSaida { linha: LinhaMes[]; patrimonio_necessario: Centavos | null /* null = taxa real <= 0 */; renda_sustentavel: Centavos; folga: Centavos /* negativo = falta, a tela nunca mostra sinal */; ajustes_falta: { guardar_por_mes: Centavos; cortar_por_mes_2029: Centavos; desejos_pra_adiar: string[] } | null; perguntas: { recebimento_atrasado: string }[]; avisos_fgc: { banco: string; titular: string | null; fora: Centavos }[] }
+// QA E11 (erros 1 a 4): campos novos opcionais no tipo pra não quebrar quem já monta FuturoSaida à mão; futuro() sempre preenche.
+export interface RendaDoMes { mes: Mes; patrimonio: Centavos; taxa_real_anual: Taxa; taxa_real_mensal: Taxa; renda_sustentavel: Centavos; gasto_do_mes: Centavos; folga_do_mes: Centavos /* negativo = a renda não cobre o mês */; falta_taxa: boolean /* true = sem Selic e IPCA do ano nos parâmetros: usou a taxa real de trabalho */ }
+export interface FuturoSaida {
+  modo?: 'projecao' | 'renda' /* renda = hoje já é a virada ou depois: sem linha, vale o bloco renda */
+  linha: LinhaMes[]
+  patrimonio_necessario: Centavos | null /* null = taxa real <= 0 */
+  renda_sustentavel: Centavos
+  folga: Centavos /* negativo = falta, a tela nunca mostra sinal */
+  ajustes_falta: {
+    guardar_por_mes: Centavos /* 0 quando sugerido = 'cortar' (faltam poucos meses: não serve) */
+    cortar_por_mes_2029: Centavos
+    desejos_pra_adiar: string[]
+    sugerido?: 'guardar' | 'cortar'
+    meses_restantes?: number
+  } | null
+  renda?: RendaDoMes | null
+  perguntas: { recebimento_atrasado: string }[]
+  avisos_fgc: { banco: string; titular: string | null; fora: Centavos }[]
+}

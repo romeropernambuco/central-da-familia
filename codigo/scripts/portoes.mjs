@@ -1,9 +1,11 @@
 // Portões de qualidade da Central da Família (PLANO_TECNICO item 4). Rodar: npm run portoes
-// Nada vai pro ar sem passar em todos. Este script cobre os portões 1, 2, 6 e 7 e mostra o 3 (casos do motor 2029).
+// Nada vai pro ar sem passar em todos. Este script cobre os portões 1, 2, 4, 6 e 7 e mostra o 3 (casos do motor 2029).
 //   1. tsc sem erro
 //   2. npm test (Vitest): todos os testes do app passam (os casos do motor ficam no portão 3)
 //   3. casos do ECONOMISTA (src/lib/futuro/casos.test.ts): mostra quantos de 39 passam.
 //      Só reprova o conjunto com --exigir-3 (vira obrigatório quando o MOTOR entregar a E1b).
+//   4. Playwright (testes/varredura3.cjs, E11): as 8 pessoas em 390 e 1280 px, nos dias 18/11, 30/11 21h, 01/12, 31/12/2028 e
+//      02/01/2029, cada tela e cada botão de 1º nível, mais as tarefas T1 a T14. Roda no build de exemplo (demora uns 40 minutos).
 //   6. build de produção sem nenhum dado de exemplo; build de exemplo continua saindo com o exemplo
 //   6b. nenhum nome real da família no código-fonte (só a impressão digital dos nomes fica aqui)
 //   7. nenhuma chave secreta no build nem no código (só a publicável pode existir)
@@ -106,6 +108,24 @@ if (roda(2) || roda(3)) {
         : `${ids.length - faltam.length} de ${ids.length} casos passam (${casos.ok} de ${casos.total} testes do arquivo${casos.pulado ? `, ${casos.pulado} pulado(s) (proibido)` : ''}).${ids.length !== 39 ? ' casos_teste.json tem que ter 39.' : ''}${faltam.length ? ` Faltam: ${faltam.join(', ')}.` : ''}${casos.falha.length ? ` Falharam:\n  ${casos.falha.slice(0, 20).join('\n  ')}` : ''}${exigir3 ? '' : ' Obrigatório só a partir da entrega do MOTOR (use --exigir-3).'}`
       anota(3, 'os 39 casos do ECONOMISTA', ok, det, exigir3)
     }
+  }
+}
+
+// ---------- 4. varredura das 8 pessoas (E11) ----------
+if (roda(4)) {
+  const b = rodar('npx', ['vite', 'build', '--mode', 'exemplo'])
+  if (b.status !== 0) anota(4, 'varredura das 8 pessoas', false, `o build de exemplo quebrou:\n${(b.stdout + b.stderr).slice(-1500)}`)
+  else {
+    const pasta = mkdtempSync(join(tmpdir(), 'portao4-'))
+    const json = join(pasta, 'varredura3.json')
+    const v = rodar('node', ['testes/varredura3.cjs'], { env: { ...process.env, SAIDA: json }, timeout: 3 * 60 * 60 * 1000 })
+    let r = null
+    try { r = JSON.parse(readFileSync(json, 'utf8')) } catch { /* sem placar: a varredura nem terminou */ }
+    rmSync(pasta, { recursive: true, force: true })
+    const resumo = ((v.stdout || '').match(/Varredura 3 \(E11\):[^\n]*/) || [`a varredura não terminou (saída ${v.status}). ${(v.stderr || '').slice(-600)}`])[0]
+    const tarefas = r ? Object.entries(r.tarefas).map(([p, l]) => `${p} ${l.filter(x => x.ok).length}/${l.length}`).join(', ') : ''
+    const falhas = r ? [...r.falhas.slice(0, 15), ...r.erros.slice(0, 5), ...Object.entries(r.tarefas).flatMap(([p, l]) => l.filter(x => !x.ok).map(x => `tarefa ${p} ${x.t}: ${x.resposta}`)).slice(0, 10)] : []
+    anota(4, 'varredura das 8 pessoas', v.status === 0 && !!r, `${resumo}${tarefas ? ` Tarefas: ${tarefas}.` : ''}${falhas.length ? `\n  ${falhas.join('\n  ')}` : ''}`)
   }
 }
 

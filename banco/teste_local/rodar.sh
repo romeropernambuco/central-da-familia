@@ -127,6 +127,12 @@ furo=$( { echo "begin;"; cat "$DESF/f_02.sql"; echo "select 'FUROS=' || count(*)
 if [ "${furo:-0}" -gt 0 ]; then echo "5. sem a tranca da f_02, o teste_tranca_f acusa $furo furo(s) (e volta tudo: era só uma transação de prova)"
 else echo "5. FALHOU: tirando a f_02 o teste_tranca_f não acusou nada"; exit 1; fi
 
+# ---------- 5b. relógio torto: a sessão num fuso em que já é outro dia (como UTC às 22h de Recife) ----------
+TZT=$(pgv -c "select case when extract(hour from now() at time zone 'America/Recife') >= 7 then 'Etc/GMT-14' else 'Etc/GMT+12' end")
+torto=$(PGTZ=$TZT pgv -c "select count(*) filter (where not ok) || '|' || count(*) || '|' || (current_date <> produto._hoje()) from produto.teste_tranca_f()")
+echo "5b. com a sessão em $TZT (outro dia que Recife: $(echo "$torto" | cut -d'|' -f3)), teste_tranca_f: $(echo "$torto" | cut -d'|' -f1) falha(s) em $(echo "$torto" | cut -d'|' -f2)"
+[ "$(echo "$torto" | cut -d'|' -f1)" = 0 ] || { echo "FALHOU no relógio torto"; exit 1; }
+
 # ---------- 6. desfazer tudo ----------
 for f in $(echo "$FS" | sort -r); do
   nn=$(basename "$f" | sed -E 's/.*_produto_f_([0-9]+)_.*/\1/')

@@ -78,14 +78,16 @@ describe('D2 e f_12: salvar o objetivo é 1 chamada a objetivo_salvar (sem escre
 
 describe('f_12: o reajuste do teto vai pelas 3 funções do banco', () => {
   it('situação, voto e aplicar mandam o mês de vigência como data (AAAA-MM-01) e leem o formato do banco', async () => {
-    respostas['rpc:reajuste_situacao'] = { data: { mes_vigencia: '2027-02', aprovado: false, teto_aprovado_centavos: null, votos: [{ membro_id: 'm1', nome: 'Exemplo', teto_centavos: 1000, votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm2', nome: 'Outro' }] }, error: null }
+    respostas['rpc:reajuste_situacao'] = { data: { mes_vigencia: '2027-02', aprovado: false, teto_aprovado_centavos: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, votos: [{ membro_id: 'm1', nome: 'Exemplo', teto_centavos: 1000, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm2', nome: 'Outro' }] }, error: null }
     const s = await api.reajusteSituacao!('fam-exemplo', '2027-02')
     expect(chamadas.find(c => c.tabela === 'rpc:reajuste_situacao')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', mes_vigencia: '2027-02-01' })
     expect(s.faltam[0].nome).toBe('Outro'); expect(s.votos[0].teto).toBe(1000)
-    await api.reajusteVotar!('fam-exemplo', '2027-02', 1000)
-    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_votar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', mes_vigencia: '2027-02-01', teto_centavos: 1000 })
-    await api.reajusteAplicar!('fam-exemplo', 'env-1', '2027-02', 12.5)
-    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_aplicar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', envelope: 'env-1', mes_vigencia: '2027-02-01', valor: 12.5 })
+    expect(s.votos[0].ipca).toBe('0.0450'); expect(s.vale_a_partir).toBeNull()
+    await api.reajusteVotar!('fam-exemplo', '2027-02', 1000, '0.0450')
+    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_votar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', mes_vigencia: '2027-02-01', teto_centavos: 1000, ipca: '0.0450' })
+    // R1: o banco calcula o limite novo; a tela não manda valor
+    await api.reajusteAplicar!('fam-exemplo', 'env-1', '2027-02')
+    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_aplicar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', envelope: 'env-1', mes_vigencia: '2027-02-01' })
     expect(chamadas.filter(c => c.tabela === 'config_familia')).toEqual([])
   })
 })
