@@ -367,8 +367,8 @@ export const apiReal: Api = {
   async objetivoSalvar(familia, p) {
     // f_12: 1 função no banco (objetivo_salvar). Antes (D2): select e depois update só de parametros ou insert; os 2
     // salvando juntos pela 1ª vez davam chave repetida. O banco grava o histórico (quem, quando, antes e depois).
-    // aliq_renda (IR de 2029 em diante) ainda não é uma chave aceita pela f_07 (o banco confere as chaves exatas):
-    // até o BANCO passar o nome, não vai pro banco e vale o padrão (15%). A tela avisa no campo.
+    // aliq_renda (IR de 2029 em diante): chave opcional aceita pela f_13 ao lado de aliq_proj; sem a f_13, pôr
+    // BANCO_GUARDA_ALIQ_RENDA = false (api/futuro.ts) e ela não vai, valendo o padrão (15%).
     const { aliq_renda: _r, ...semRenda } = p
     await rpc('objetivo_salvar', { familia, parametros: BANCO_GUARDA_ALIQ_RENDA ? p : semRenda })
   },

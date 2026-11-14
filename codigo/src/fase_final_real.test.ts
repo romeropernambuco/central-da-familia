@@ -105,3 +105,13 @@ describe('f_11: o dinheiro em conta corrente entra no motor', () => {
     expect(sem.confirmar.join(' ')).toMatch(/dinheiro parado na conta/)
   })
 })
+
+describe('f_13: o IR de 2029 em diante vai junto no objetivo_salvar', () => {
+  it('parametros.aliq_renda vai como texto decimal, ao lado de aliq_proj', async () => {
+    const p = { gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', taxa_bruta_ano: {}, ipca_ano: {}, piso_meses: null, mes_reajuste: 1, travado_focus: false }
+    await api.objetivoSalvar!('fam-exemplo', p)
+    const enviado = chamadas.find(c => c.tabela === 'rpc:objetivo_salvar')!.passos[0][1][0] as any
+    expect(enviado.parametros.aliq_renda).toBe('0.15')
+    expect(enviado.parametros.aliq_proj).toBe('0.225')
+  })
+})

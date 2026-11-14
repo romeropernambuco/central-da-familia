@@ -5,8 +5,9 @@
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Parametros, type Taxa } from '../lib/futuro'
 import type { FocusAno, ParametrosObjetivo } from './tipos'
 
-/** Vira true quando o BANCO aceitar a chave aliq_renda (IR de 2029 em diante) nos parâmetros do objetivo (f_07 confere as chaves). */
-export const BANCO_GUARDA_ALIQ_RENDA = false
+/** O BANCO aceita a chave aliq_renda (IR de 2029 em diante, texto decimal, opcional) nos parâmetros do objetivo desde a f_13.
+ *  Se um dia precisar voltar a não mandar (banco sem a f_13), basta pôr false: o campo fica travado no padrão de 15%. */
+export const BANCO_GUARDA_ALIQ_RENDA = true
 
 /** A virada: a partir de jan/2029 a família vive de rendimento (BRIEF). */
 export const VIRADA = '2029-01'
