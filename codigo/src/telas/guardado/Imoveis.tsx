@@ -27,10 +27,17 @@ const mesAno = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
 /** "0.032770" vira "3,3%". Só troca de formato. */
 export const pctAno = (t: string | number) => `${(Number(t) * 100).toFixed(1).replace('.', ',')}%`
 
-/** O selo de cada imóvel: diz se o aluguel (ou a venda) entra na conta do plano. */
-export function seloImovel(i: Pick<ImovelTela, 'uso' | 'tem_contrato' | 'contrato_ate' | 'aluguel' | 'venda_valor' | 'venda_contrato'>): { texto: string; entra: boolean } | null {
+/** O selo de cada imóvel. Revisão E14 (M2): se o aluguel entra na conta, quem diz é o motor (imoveis[i].entra_na_conta);
+ *  a tela só escreve. Com contrato que não entra (vencido ou curto), "Contrato acaba em MM/AAAA: renove pra contar".
+ *  `entra` undefined = o motor ainda não fez a conta (imóvel novo na folha): não promete nada. */
+export function seloImovel(i: Pick<ImovelTela, 'uso' | 'tem_contrato' | 'contrato_ate' | 'aluguel' | 'venda_valor' | 'venda_contrato'>, entra?: boolean): { texto: string; entra: boolean | null } | null {
   if (i.uso === 'mora') return { texto: 'onde mora: não rende', entra: false }
-  if (i.uso === 'aluga' || i.aluguel > 0) return i.tem_contrato && i.contrato_ate ? { texto: `com contrato até ${mesAno(i.contrato_ate)}`, entra: true } : { texto: i.tem_contrato ? 'contrato sem data de fim: não entra na conta' : 'sem contrato: não entra na conta', entra: false }
+  if (i.uso === 'aluga' || i.aluguel > 0) {
+    if (!i.tem_contrato) return { texto: 'sem contrato: não entra na conta', entra: false }
+    if (!i.contrato_ate) return { texto: 'contrato sem data de fim: não entra na conta', entra: false }
+    if (entra === undefined) return { texto: `contrato até ${mesAno(i.contrato_ate)}: a conta confere ao salvar`, entra: null }
+    return entra ? { texto: `com contrato até ${mesAno(i.contrato_ate)}`, entra: true } : { texto: `Contrato acaba em ${mesAno(i.contrato_ate)}: renove pra contar`, entra: false }
+  }
   if (i.venda_valor != null) return i.venda_contrato ? { texto: 'venda com contrato', entra: true } : { texto: 'venda sem contrato: não entra na conta', entra: false }
   return null
 }
@@ -79,7 +86,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         <ul className="list">
           {imoveis.map(i => {
             const m: ImovelSaida | undefined = doMotor.get(i.id)
-            const selo = seloImovel(i)
+            const selo = seloImovel(i, m?.entra_na_conta)
             const dono = i.meu ? 'seu' : `de ${i.dono_nome || 'outra pessoa'}`
             return (
               <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': i.dono_nome || 'outra pessoa' })}>
@@ -99,7 +106,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         </ul>
       )}
       {taxaAplic && imoveis.some(i => i.uso !== 'mora') && <p className="sub" style={{ marginTop: 8 }}>A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e imposto. O dinheiro aplicado rende {pctAno(taxaAplic)} ao ano acima da inflação.</p>}
-      {folha && <FolhaImovel inicial={folha === 'novo' ? null : folha} fechar={() => setFolha(null)} salvar={salvar} tirar={tirar} />}
+      {folha && <FolhaImovel inicial={folha === 'novo' ? null : folha} entraHoje={folha === 'novo' ? undefined : doMotor.get(folha.id)?.entra_na_conta} fechar={() => setFolha(null)} salvar={salvar} tirar={tirar} />}
     </section>
   )
 }
@@ -107,7 +114,8 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
 const meses = (de: string, n: number) => Array.from({ length: n }, (_, i) => mesMais(de, i))
 
 /** A folha de adicionar e editar. Cada campo com "?" dizendo o que é. O do outro adulto abre só pra ler. */
-export function FolhaImovel({ inicial, fechar, salvar, tirar }: { inicial: ImovelTela | null; fechar: () => void; salvar: (id: string | null, d: NovoImovel) => Promise<boolean>; tirar: (i: ImovelTela) => void }) {
+export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje }: { inicial: ImovelTela | null; fechar: () => void; salvar: (id: string | null, d: NovoImovel) => Promise<boolean>; tirar: (i: ImovelTela) => void
+  /** o que o motor disse do imóvel como está salvo (só vale se o contrato não mudou na folha) */ entraHoje?: boolean }) {
   const so = !!inicial && !inicial.meu
   const m0 = hojeRecife().slice(0, 7)
   const [f, setF] = useState(() => ({
@@ -172,7 +180,11 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar }: { inicial: Imove
             </div>
           </div>
         </>}
-        {(() => { const s = seloImovel(d); return s ? <p className={'todo ' + (s.entra ? 'ok' : 'warn')}><span>{s.entra ? 'Entra na conta de 2029' : 'Fica fora da conta'}: {s.texto}.</span></p> : null })()}
+        {(() => {
+          const igual = !!inicial && inicial.tem_contrato === d.tem_contrato && inicial.contrato_ate === d.contrato_ate && inicial.uso === d.uso
+          const s = seloImovel(d, igual ? entraHoje : undefined)
+          return s ? <p className={'todo ' + (s.entra ? 'ok' : s.entra === false ? 'warn' : '')}><span>{s.entra ? `Entra na conta de 2029: ${s.texto}.` : s.entra === false ? `Fica fora da conta: ${s.texto}.` : `${s.texto[0].toUpperCase()}${s.texto.slice(1)}.`}</span></p> : null
+        })()}
       </fieldset>
       {!so && <>
         {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{falta}</p> : null}

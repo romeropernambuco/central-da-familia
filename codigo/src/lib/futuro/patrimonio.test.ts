@@ -159,3 +159,34 @@ describe('nome do recebimento repassado (descricao, como no futuro_entradas da f
     expect(semNome.gatilhos!.find((g) => g.id === 'comissao')!.descricao).toBeNull()
   })
 })
+
+describe('contrato curto não abate o gasto pra sempre (revisão E14, M1)', () => {
+  const com = (ate: string) => { const e = cenario(false); e.imoveis = [{ ...SALA, contrato_ate: ate }, PRAIA, CASA, LOTE(false)]; return e }
+  it('contrato até 12/2029: abate o perpétuo, entra_na_conta e soma na renda de 2029 (números do VERIFICADOR iguais)', () => {
+    const s = futuro(com('2029-12'))
+    expect(s.imoveis!.find((i) => i.id === 'sala')!.entra_na_conta).toBe(true)
+    expect(t(s.aluguel_liquido_2029!)).toBe('1638.50'); expect(t(s.renda_total_2029!)).toBe('5685.93')
+    expect(s.gatilhos!.some((g) => g.motivo === 'renova o contrato')).toBe(false)
+  })
+  it('contrato até 03/2029: o aluguel entra na linha até 12/2028, mas não abate o perpétuo; vira gatilho "renova até 12/2029"', () => {
+    const curto = futuro(com('2029-03')), longo = futuro(com('2029-12'))
+    expect(curto.linha.map((l) => l.saldo_final)).toEqual(longo.linha.map((l) => l.saldo_final)) // a linha até 2028 é a mesma
+    const sala = curto.imoveis!.find((i) => i.id === 'sala')!
+    expect(sala.entra_na_conta).toBe(false); expect(sala.aluguel_liquido_mes).toBe(163_850)
+    expect(curto.aluguel_liquido_2029).toBe(0); expect(curto.renda_total_2029).toBe(curto.renda_sustentavel)
+    expect(curto.gatilhos!.find((g) => g.id === 'sala')).toMatchObject({ motivo: 'renova o contrato', mes: '2029-12', valor: 163_850, por_mes: true })
+    // o necessário sobe exatamente o que o aluguel abatia: (gasto − 1.638,50) × 1,1 ÷ taxa contra gasto × 1,1 ÷ taxa
+    expect(curto.patrimonio_necessario!).toBeGreaterThan(longo.patrimonio_necessario!)
+  })
+  it('modo renda em 02/01/2029 com contrato até 03/2029: o aluguel entra no mês, não no perpétuo; em 04/2029 já não entra', () => {
+    const e = { ...com('2029-03'), hoje: '2029-01-02' }
+    const r = futuro(e)
+    expect(r.renda!.aluguel_liquido).toBe(163_850); expect(r.renda!.renda_total).toBe(r.renda!.renda_sustentavel + 163_850)
+    expect(r.aluguel_liquido_2029).toBe(0)
+    expect(r.imoveis!.find((i) => i.id === 'sala')!.entra_na_conta).toBe(false)
+    expect(r.gatilhos!.find((g) => g.id === 'sala')!.motivo).toBe('renova o contrato')
+    const longo = futuro({ ...com('2029-12'), hoje: '2029-01-02' })
+    expect(r.renda!.folga_do_mes).toBe(longo.renda!.folga_do_mes) // no mês, os 2 recebem o aluguel
+    expect(futuro({ ...com('2029-03'), hoje: '2029-04-02' }).renda!.aluguel_liquido).toBe(0)
+  })
+})

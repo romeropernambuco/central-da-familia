@@ -60,7 +60,9 @@ describe('Imóveis: formato do banco (f_15) para o motor', () => {
   })
   it('o selo: com contrato entra; sem contrato não entra; onde mora não rende', () => {
     const b = { aluguel: 3000, venda_valor: null, venda_contrato: false }
-    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' })).toEqual({ texto: 'com contrato até 12/2029', entra: true })
+    // revisão E14 (M2): o selo lê entra_na_conta do motor; sem o motor, não promete
+    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' }, true)).toEqual({ texto: 'com contrato até 12/2029', entra: true })
+    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' })!.entra).toBeNull()
     expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: false, contrato_ate: null })).toEqual({ texto: 'sem contrato: não entra na conta', entra: false })
     expect(seloImovel({ ...b, aluguel: 0, uso: 'mora', tem_contrato: false, contrato_ate: null })!.entra).toBe(false)
     expect(pctAno('0.032770')).toBe('3,3%')
@@ -118,5 +120,28 @@ describe('Aviso do VERIFICADOR: aluguel lançado também em "Renda certa em 2029
     expect(avisoRendaCerta(166429, imo)).toBeNull()
     expect(avisoRendaCerta(0, imo)).toBeNull()
     expect(avisoRendaCerta(300000, [imo[1]])).toBeNull()
+  })
+})
+
+describe('Revisão E14 (M2): o selo do imóvel segue o motor', () => {
+  afterEach(() => reiniciarExemplo())
+  async function conta(contrato_ate: string) {
+    reiniciarExemplo()
+    exemploComo('bruno')
+    const sala = (await apiExemplo.imoveis!('fam-silva')).find(i => i.apelido.startsWith('Sala'))!
+    await apiExemplo.imovelSalvar!('fam-silva', sala.id, { ...sala, contrato_ate })
+    const s = futuro((await apiExemplo.futuroEntradas!('fam-silva')).entrada!)
+    const m = s.imoveis!.find(i => i.id === sala.id)!
+    return { m, selo: seloImovel({ ...sala, contrato_ate }, m.entra_na_conta) }
+  }
+  it('contrato vencido: o motor diz que não entra e o selo pede pra renovar', async () => {
+    const { m, selo } = await conta('2026-06')
+    expect(m.entra_na_conta).toBe(false)
+    expect(selo).toEqual({ texto: 'Contrato acaba em 06/2026: renove pra contar', entra: false })
+  })
+  it('contrato até 03/2029: o selo diz o mesmo que o motor', async () => {
+    const { m, selo } = await conta('2029-03')
+    expect(selo!.entra).toBe(m.entra_na_conta)
+    expect(selo!.texto).toBe(m.entra_na_conta ? 'com contrato até 03/2029' : 'Contrato acaba em 03/2029: renove pra contar')
   })
 })

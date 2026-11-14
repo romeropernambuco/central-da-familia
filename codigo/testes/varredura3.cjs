@@ -10,6 +10,8 @@
 //   V6 0 "-R$"                     V7 0 travessão                                        V8 0 palavra em inglês (lista INGLES abaixo)
 //   V9 a linha até 2028 e os Desejos abrem e mostram número; no dia 02/01/2029 a tela de 2029 aparece sem quebrar
 //   V10 família de 1 adulto (Autônoma): nada de "Do casal", "O casal", "vocês", "Os 2"
+//   V12 imóveis: o casal vê os 4 imóveis de exemplo no Guardado e o "Pode entrar" com os gatilhos no Planejamento;
+//       a filha e a equipe não veem imóvel, aluguel nem "Pode entrar" em tela nenhuma (o Escritório novo entra na V2 da equipe)
 //   V11 reajuste do teto: casal aprova e espera o outro; família de 1 aprova, o voto vence depois do prazo e "Votar de novo" volta a valer
 // Pessoas: Mãe de 3 (?como=ana), Dono (?como=bruno), Avó (a pessoa da casa, ?como=ana, com o texto a 130%: a página toda
 // ampliada 1,3 vezes), Parcela (?como=ana: mesma tela da Mãe de 3, checada 1 vez só e contada pras 2), Filha (?como=filha),
@@ -123,6 +125,11 @@ async function checarEstado(p, pessoa, onde, dia) {
     const m = t.match(/Do casal|O casal|[Vv]ocês|Os 2 |os 2 adultos|Juntos/)
     marca(k, 'V10', !m, `${onde}: fala com casal numa família de 1 adulto: ${m ? (t.match(new RegExp(`.{0,40}${m[0]}.{0,30}`)) || [''])[0] : ''}`, { print: pr })
   }
+  if (k === 'filha' || k === 'equipe') {
+    // V12: imóveis e "Pode entrar" são só do casal
+    const m = t.match(/[Ii]móve(l|is)|Sala comercial|Apartamento de praia|Casa onde moramos|Lote \(exemplo\)|Pode entrar|Patrimônio total|[Aa]luguel/)
+    marca(k, 'V12', !m, `${onde}: aparece imóvel ou "pode entrar" pra ${pessoa.nome}: ${m ? (t.match(new RegExp(`.{0,40}${m[0].replace(/[()]/g, '\\$&')}.{0,30}`)) || [''])[0] : ''}`, { print: pr })
+  }
   if (pessoa.outro) {
     const itens = await p.$$eval('[data-do-outro]', (els, re) => els.filter(e => e.offsetParent !== null || e.getClientRects().length).map(e => ({
       dono: e.getAttribute('data-do-outro'), txt: e.innerText.slice(0, 60).replace(/\s+/g, ' '),
@@ -216,6 +223,24 @@ async function varrer(browser, pessoa, [larg, alt], [dia, hora]) {
       marca(k, 'V9', /2029/.test(tObj), `${onde}: em ${dia} o card não fala de 2029`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
       marca(k, 'V9', /R\$ ?[\d.]+/.test(tObj), `${onde}: em ${dia} a tela de 2029 aparece sem nenhum número (diz: "${tObj.replace(/\s+/g, ' ').slice(0, 160)}")`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}_sem_numero`) })
       if (larg === 390) await printa(p, `${pessoa.nome}_tela2029_${dia}_${larg}`)
+    }
+    if (pessoa.outro) {
+      // V12: o casal vê os 4 imóveis de exemplo no Guardado (os do outro com o nome) e o "Pode entrar" com os gatilhos
+      onde = `${tag} #/guardado imóveis`
+      await carregar(p, url(pessoa, dia, hora, 'guardado'))
+      await p.waitForSelector('section.imoveis li', { timeout: 8000 }).catch(() => {})
+      const imo = await p.$$eval('section.imoveis li', l => l.map(x => ({ t: x.innerText.replace(/\u00a0/g, ' '), outro: x.getAttribute('data-do-outro') })))
+      marca(k, 'V12', imo.length === 4 && imo.every(x => /\(exemplo\)/.test(x.t)), `${onde}: o casal tinha que ver os 4 imóveis de exemplo (viu ${imo.length})`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
+      marca(k, 'V12', imo.some(x => x.outro === pessoa.outro), `${onde}: o imóvel de ${pessoa.outro} não aparece com o nome`)
+      const tg = ((await p.textContent('section.imoveis').catch(() => '')) || '').replace(/\u00a0/g, ' ')
+      marca(k, 'V12', /Patrimônio total/.test(tg) && /R\$ ?[\d.]+/.test(tg), `${onde}: sem "Patrimônio total" com número`)
+      if (larg === 390 && dia === '2026-11-18') await printa(p, `${pessoa.nome}_imoveis_${larg}`)
+      onde = `${tag} #/planejamento pode entrar`
+      await carregar(p, url(pessoa, dia, hora, 'planejamento'))
+      await p.waitForSelector('.pode-entrar li', { timeout: 8000 }).catch(() => {})
+      const pe2 = ((await p.textContent('.pode-entrar').catch(() => '')) || '').replace(/\u00a0/g, ' ')
+      marca(k, 'V12', /Pode entrar/.test(pe2) && /Apartamento de praia \(exemplo\): R\$ [\d.,]+ por mês[^.]*\(sem contrato\)/.test(pe2), `${onde}: o "Pode entrar" tinha que trazer o aluguel do apartamento de praia sem contrato ("${pe2.slice(0, 220)}")`, { print: () => printa(p, `falha_${pessoa.nome}_${onde}`) })
+      if (larg === 390 && (dia === '2026-11-18' || depois)) await printa(p, `${pessoa.nome}_pode_entrar_${dia}_${larg}`)
     }
     onde = `${tag} #/desejos calculadora`
     await carregar(p, url(pessoa, dia, hora, 'desejos'))

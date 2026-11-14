@@ -15,7 +15,7 @@ export interface FuturoEntrada { hoje: string; saldo_caixa: Centavos; aplicacoes
 // piso: acrescentado a pedido do REVISOR 2 (B3): a tela desenha o piso que o motor usou, sem refazer a conta.
 export interface LinhaMes { mes: Mes; saldo_inicial: Centavos; rendimento: Centavos; recebimentos: Centavos; teto: Centavos; compromissos: Centavos; dividas: Centavos; desvios: Centavos; retornos: Centavos; alugueis?: Centavos /* aluguel líquido com contrato (RODADA_PATRIMONIO); futuro() sempre preenche */; marcos?: Marco[] /* o que entra no mês, item por item (recebimentos e vendas com contrato); futuro() sempre preenche */; saldo_final: Centavos; piso: Centavos; fica_devendo: Centavos; devendo_ate: Mes | null }
 // QA E11 (erros 1 a 4): campos novos opcionais no tipo pra não quebrar quem já monta FuturoSaida à mão; futuro() sempre preenche.
-export interface RendaDoMes { mes: Mes; patrimonio: Centavos; taxa_real_anual: Taxa; taxa_real_mensal: Taxa; renda_sustentavel: Centavos; gasto_do_mes: Centavos; folga_do_mes: Centavos /* negativo = a renda não cobre o mês */; falta_taxa: boolean /* true = sem Selic e IPCA do ano nos parâmetros: usou a taxa real de trabalho */; aluguel_liquido?: Centavos /* aluguel com contrato válido neste mês */; renda_total?: Centavos /* renda_sustentavel + aluguel_liquido */ }
+export interface RendaDoMes { mes: Mes; patrimonio: Centavos; taxa_real_anual: Taxa; taxa_real_mensal: Taxa; renda_sustentavel: Centavos; gasto_do_mes: Centavos; folga_do_mes: Centavos /* negativo = a renda não cobre o mês */; falta_taxa: boolean /* true = sem Selic e IPCA do ano nos parâmetros: usou a taxa real de trabalho */; aluguel_liquido?: Centavos /* aluguel com contrato válido neste mês (entra mês a mês até contrato_ate) */; renda_total?: Centavos /* renda_sustentavel + aluguel_liquido */ }
 export interface FuturoSaida {
   modo?: 'projecao' | 'renda' /* renda = hoje já é a virada ou depois: sem linha, vale o bloco renda */
   linha: LinhaMes[]
@@ -34,7 +34,7 @@ export interface FuturoSaida {
   renda?: RendaDoMes | null
   // RODADA_PATRIMONIO (imóveis). futuro() sempre preenche.
   patrimonio_imoveis?: Centavos /* valor dos imóveis na virada (ou hoje, no modo renda); à parte, nunca sacado */
-  aluguel_liquido_2029?: Centavos /* aluguel com contrato válido no mês da virada (ou no mês de hoje, no modo renda) */
+  aluguel_liquido_2029?: Centavos /* aluguel que abate o gasto pra sempre: contrato até 12/2029 ou depois (no modo renda, 12 meses a partir de hoje) */
   renda_total_2029?: Centavos /* renda_sustentavel (aplicações) + aluguel_liquido_2029 */
   imoveis?: ImovelSaida[]
   gatilhos?: Gatilho[] /* o que aparece mas não entra na conta: aluguel sem contrato ou depois dele, venda sem contrato, recebimento incerto */
@@ -60,14 +60,14 @@ export interface ImovelSaida {
   rentabilidade_ano: Taxa /* aluguel líquido × 12 ÷ valor */
   taxa_real_aplicacoes: Taxa /* a do dinheiro aplicado, pra comparar */
   rende_mais_que_aplicacao: boolean
-  entra_na_conta: boolean /* aluguel com contrato no mês de referência */
+  entra_na_conta: boolean /* aluguel abate o gasto perpétuo: contrato até 12 meses depois da referência (12/2029 na virada) ou mais */
   contrato_ate: Mes | null
   vendido: boolean /* venda com contrato até o mês de referência: saiu do patrimônio */
 }
 export interface Gatilho {
   origem: 'imovel' | 'recebimento'; id: string; nome: string
   tipo: 'aluguel' | 'venda' | 'recebimento'
-  motivo: 'sem contrato' | 'depois do contrato' | 'contrato sem data de fim' | 'depois da virada' | 'incerto'
+  motivo: 'sem contrato' | 'depois do contrato' | 'contrato sem data de fim' | 'depois da virada' | 'incerto' | 'renova o contrato' /* contrato acaba antes de mes: só abate o gasto perpétuo se for renovado até mes */
   valor: Centavos; mes: Mes | null /* a partir de quando (aluguel) ou quando (venda e recebimento) */
   por_mes: boolean /* true = valor por mês (aluguel) */
   descricao?: string | null /* nome do recebimento quando a entrada traz; imóvel: null (o nome está em nome) */

@@ -88,22 +88,24 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   const renda = rendaSustentavel(patrimonio, real)
   const al = aliqAluguel(e)
   const im = analisarImoveis(e.imoveis ?? [], { meses: [], mes_ref: mes, aliq_aluguel: al.aliq, taxa_real_aplicacoes: real })
-  const aluguel = im.aluguel_no_mes_ref
-  const a_cobrir = gasto - p.renda_certa_2029 - aluguel
+  const aluguel = im.aluguel_no_mes_ref // entra no mês, até contrato_ate
+  // Conta perpétua: só o aluguel com contrato de pelo menos 12 meses à frente abate (revisão E14, M1).
+  const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_perpetuo
+  const a_cobrir_mes = gasto - p.renda_certa_2029 - aluguel
   const necessario = patrimonioNecessario(a_cobrir, p.margem, real)
   const f = necessario === null ? 0 : patrimonio - necessario
   const perguntas: { recebimento_atrasado: string }[] = []
   for (const r of e.recebimentos) if (mesDoRecebimento(r, mes, mesAnterior(p.virada)).pergunta) perguntas.push({ recebimento_atrasado: r.id })
   const rendaDoMes: RendaDoMes = {
     mes, patrimonio, taxa_real_anual: real.toString(), taxa_real_mensal: real.lte(0) ? '0' : taxaRealMensal(real).toString(),
-    renda_sustentavel: renda, gasto_do_mes: gasto, folga_do_mes: renda - Math.max(0, a_cobrir), falta_taxa,
+    renda_sustentavel: renda, gasto_do_mes: gasto, folga_do_mes: renda - Math.max(0, a_cobrir_mes), falta_taxa,
     aluguel_liquido: aluguel, renda_total: renda + aluguel,
   }
   return {
     modo: 'renda', linha: [], patrimonio_necessario: necessario, renda_sustentavel: renda, folga: f,
     ajustes_falta: f < 0 ? { guardar_por_mes: 0, ...partesDoCorte(cortarPorMes2029(-f, real), a_cobrir, renda), desejos_pra_adiar: desejosPraAdiar(e.desejos), sugerido: 'cortar', meses_restantes: 0 } : null,
     renda: rendaDoMes, perguntas, avisos_fgc: avisosFGC(e.aplicacoes),
-    patrimonio_imoveis: im.patrimonio_imoveis, aluguel_liquido_2029: aluguel, renda_total_2029: renda + aluguel,
+    patrimonio_imoveis: im.patrimonio_imoveis, aluguel_liquido_2029: im.aluguel_perpetuo, renda_total_2029: renda + im.aluguel_perpetuo,
     imoveis: im.imoveis, gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)], aliq_aluguel_confirmar: al.confirmar,
   }
 }
@@ -185,7 +187,7 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
 
   const gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)
   // Aluguel com contrato na virada abate o gasto (ECONOMISTA F3: a_cobrir = gasto − renda certa).
-  const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_no_mes_ref
+  const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_perpetuo // só contrato até 12/2029 ou depois (revisão E14, M1)
   const necessario = patrimonioNecessario(a_cobrir, p.margem, p.taxa_real_trabalho)
   const f = necessario === null ? 0 : calcFolga(saldo_final, necessario)
   let ajustes_falta: FuturoSaida['ajustes_falta'] = null
@@ -211,8 +213,8 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
     perguntas,
     avisos_fgc: avisosFGC(e.aplicacoes),
     patrimonio_imoveis: im.patrimonio_imoveis,
-    aluguel_liquido_2029: im.aluguel_no_mes_ref,
-    renda_total_2029: rendaSustentavel(saldo_final, p.taxa_real_trabalho) + im.aluguel_no_mes_ref,
+    aluguel_liquido_2029: im.aluguel_perpetuo,
+    renda_total_2029: rendaSustentavel(saldo_final, p.taxa_real_trabalho) + im.aluguel_perpetuo,
     imoveis: im.imoveis,
     gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)],
     aliq_aluguel_confirmar: al.confirmar,

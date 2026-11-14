@@ -44,13 +44,20 @@ export interface ImoveisAnalise {
   alugueis: { mes: Mes; valor: Centavos }[] /* por mês da linha, só com contrato */
   vendas: { mes: Mes; valor: Centavos; id: string; apelido: string; dono: string }[] /* recebimentos da venda com contrato, dentro da linha */
   aluguel_no_mes_ref: Centavos /* aluguel com contrato no mês de referência (virada ou mês de hoje no modo renda) */
+  aluguel_perpetuo: Centavos /* parte que abate o gasto na conta perpétua: contrato vai até mes_ref + 11 meses ou depois (revisão E14, M1) */
   patrimonio_imoveis: Centavos /* valor dos imóveis que a família ainda tem no mês de referência; nunca sacado */
   imoveis: ImovelSaida[]
   gatilhos: Gatilho[]
 }
 
 /** Analisa os imóveis pra uma janela de meses (a linha) e um mês de referência (a virada, ou hoje no modo renda). */
+/** Até quando o contrato tem que ir pra o aluguel abater o gasto na conta perpétua: 12 meses a partir da referência
+ *  (virada 01/2029 → 12/2029). Regra do dono: só dinheiro certo (revisão E14, M1). */
+export function contratoMinimoPerpetuo(mes_ref: Mes): Mes { let m = mes_ref; for (let i = 0; i < 11; i++) m = proximoMes(m); return m }
+
 export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: Mes; aliq_aluguel: Taxa | Dec; taxa_real_aplicacoes: Dec }): ImoveisAnalise {
+  const minimo = contratoMinimoPerpetuo(o.mes_ref)
+  let aluguel_perp = 0
   const alugueis: { mes: Mes; valor: Centavos }[] = []
   const vendas: { mes: Mes; valor: Centavos; id: string; apelido: string; dono: string }[] = []
   const gatilhos: Gatilho[] = []
@@ -65,6 +72,9 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
     for (const m of o.meses) if (liq > 0 && aluguelNoMes(im, m)) alugueis.push({ mes: m, valor: liq })
     const noRef = liq > 0 && aluguelNoMes(im, o.mes_ref)
     if (noRef) aluguel_ref += liq
+    const perpetuo = noRef && im.contrato_ate !== null && compararMes(im.contrato_ate, minimo) >= 0
+    if (perpetuo) aluguel_perp += liq
+    else if (noRef) gatilhos.push({ origem: 'imovel', id: im.id, nome: im.apelido, tipo: 'aluguel', motivo: 'renova o contrato', valor: liq, mes: minimo, por_mes: true, descricao: null })
     if (!vendidoAte(im, o.mes_ref)) patrimonio += im.valor
     // gatilhos do aluguel
     if (liq > 0) {
@@ -83,11 +93,11 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
     saida.push({
       id: im.id, dono: im.dono, apelido: im.apelido, uso: im.uso, valor: im.valor,
       aluguel_liquido_mes: liq, rentabilidade_ano: rent.toString(), taxa_real_aplicacoes: o.taxa_real_aplicacoes.toString(),
-      rende_mais_que_aplicacao: liq > 0 && rent.gt(o.taxa_real_aplicacoes), entra_na_conta: noRef,
+      rende_mais_que_aplicacao: liq > 0 && rent.gt(o.taxa_real_aplicacoes), entra_na_conta: perpetuo,
       contrato_ate: im.contrato_ate, vendido: vendidoAte(im, o.mes_ref),
     })
   }
-  return { alugueis, vendas, aluguel_no_mes_ref: aluguel_ref, patrimonio_imoveis: patrimonio, imoveis: saida, gatilhos }
+  return { alugueis, vendas, aluguel_no_mes_ref: aluguel_ref, aluguel_perpetuo: aluguel_perp, patrimonio_imoveis: patrimonio, imoveis: saida, gatilhos }
 }
 
 
