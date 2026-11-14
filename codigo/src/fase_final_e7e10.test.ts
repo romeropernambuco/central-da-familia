@@ -1,6 +1,8 @@
 // E7 a E10 (TELAS 2, 13/11). Todo número é de exemplo (casos do ECONOMISTA ou família de exemplo).
 // A tela nunca calcula 2029: estes testes conferem que as frases saem do que o motor devolve, com os números dos casos.
 import { afterEach, describe, expect, it, vi } from 'vitest'
+// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node
+import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
 import { situacaoReajuste } from './telas/planejamento/Reajuste'
@@ -361,5 +363,16 @@ describe('Conserto do corte: falta_por_mes na frase principal, margem_por_mes em
     if (a.falta_por_mes! > 0) expect(limpa(c.principal)).toBe(`Fecha cortando ${limpa(reaisDe(a.falta_por_mes!))} por mês.`)
     if (s.modo === 'renda') expect(a.falta_por_mes).toBe(Math.max(0, -s.renda!.folga_do_mes))
     if ((a.margem_por_mes ?? 0) > 0) expect(limpa(c.principal) + ' ' + limpa(c.margem)).not.toContain(limpa(reaisDe(a.cortar_por_mes_2029)) + ' por mês')
+  })
+})
+
+describe('PACOTE 1 do design: o âmbar de texto passa 4,5:1 nos 3 fundos claros', () => {
+  it('--warn e --warn-ink contra o fundo, a faixa e o branco', () => {
+    const css: string = readFileSync('src/estilo.css', 'utf8')
+    const claro = css.slice(css.indexOf(':root{'), css.indexOf('@media (prefers-color-scheme:dark)'))
+    const tk = (n: string) => new RegExp(`--${n}:(#[0-9A-Fa-f]{6})`).exec(claro)![1]
+    const lum = (h: string) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] }
+    const cr = (a: string, b: string) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
+    for (const cor of ['warn', 'warn-ink']) for (const fundo of ['ground', 'raised', 'surface', 'warn-soft']) expect(cr(tk(cor), tk(fundo))).toBeGreaterThanOrEqual(4.5)
   })
 })
