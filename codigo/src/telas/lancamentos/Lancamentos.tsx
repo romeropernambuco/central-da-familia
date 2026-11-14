@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, ListChecks, History, Pencil } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
-import { donoDo, mexeNoLancamento, rotuloDono } from '../../app/dono'
+import { cartaoMeu, donoDo, mexeNoLancamento, rotuloDono } from '../../app/dono'
 import { Din, Vazio } from '../../componentes/base'
-import type { Cartao, Fatura, Lancamento } from '../../api/tipos'
+import type { Cartao, Envelope, FamiliaMinha, Fatura, Lancamento } from '../../api/tipos'
 import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reais, somaDias } from '../../lib/formato'
 
 /** Lançamentos do mês com lixeira: apagar não some de vez, dá pra trazer de volta. */
@@ -120,7 +120,7 @@ export function Lancamentos() {
           </div>
         )}
       </section>
-      {casal && <TotaisDoMes envelopes={resumo?.envelopes || []} faturas={faturas} hoje={hoje} />}
+      {casal && <TotaisDoMes envelopes={resumo?.envelopes || []} faturas={faturas} cartoes={cartoes} familia={familia} hoje={hoje} />}
       </div>
     </div>
   )
@@ -131,7 +131,9 @@ export function Lancamentos() {
  * quanto cada limite já gastou no mês (o resumo do banco) e a próxima fatura de cada cartão (a soma do banco).
  * Nenhuma conta nova aqui: só mostra. No celular fica escondida (a lista ocupa a tela).
  */
-function TotaisDoMes({ envelopes, faturas, hoje }: { envelopes: { id: string; nome: string; gasto_mes: number; limite_mes: number }[]; faturas: Fatura[]; hoje: string }) {
+function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes: Envelope[]; faturas: Fatura[]; cartoes: Cartao[]; familia: FamiliaMinha | null; hoje: string }) {
+  // regra do dono (E2): o casal lê tudo, com o nome do dono escrito no que é do outro adulto
+  const doOutroCartao = (id: string) => { const c = cartoes.find(x => x.id === id); return c && !cartaoMeu(c, familia) ? (c.titular || 'outra pessoa') : null }
   // a 1ª fatura com valor que ainda vai vencer, de cada cartão
   const proxPorCartao: Fatura[] = []
   for (const f of faturas.filter(x => x.vencimento >= hoje && x.total > 0).sort((a, b) => a.vencimento.localeCompare(b.vencimento))) if (!proxPorCartao.some(x => x.cartao_id === f.cartao_id)) proxPorCartao.push(f)
@@ -142,7 +144,7 @@ function TotaisDoMes({ envelopes, faturas, hoje }: { envelopes: { id: string; no
         <p className="sub">Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.</p>
         <ul className="list">
           {envelopes.map(e => (
-            <li key={e.id} className="li"><span className="tile">{e.nome.charAt(0)}</span><span className="m"><b>{e.nome}</b><small>de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
+            <li key={e.id} className="li" {...(rotuloDono(e, familia) ? { 'data-do-outro': donoDo(e) || 'família' } : {})}><span className="tile">{e.nome.charAt(0)}</span><span className="m"><b>{e.nome}</b><small>{rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : ''}de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
           ))}
         </ul>
       </section>
@@ -151,7 +153,7 @@ function TotaisDoMes({ envelopes, faturas, hoje }: { envelopes: { id: string; no
         {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
           <ul className="list">
             {proxPorCartao.map(f => (
-              <li key={f.cartao_id + f.mes} className="li"><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{f.cartao}</b><small>vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
+              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': doOutroCartao(f.cartao_id)! } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{f.cartao}</b><small>{doOutroCartao(f.cartao_id) ? `De ${doOutroCartao(f.cartao_id)} · ` : ''}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
             ))}
           </ul>
         )}
