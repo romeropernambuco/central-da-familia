@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
-import { mesmoIpca, prazoPassou, situacaoReajuste, vigenciaAtiva, vigenciaDoRevoto } from './telas/planejamento/Reajuste'
+import { achaVigencia, mesmoIpca, prazoPassou, situacaoReajuste, vigenciaAtiva, vigenciaDoRevoto } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
 import { desejoDoMotor, fraseDaFilha, frasesDesejo } from './telas/desejos/Desejos'
@@ -92,7 +92,9 @@ describe('E7: reajuste do teto (F8) votado no banco (f_12)', () => {
   it('F8-TETO: R$ 30.000 com IPCA de 5,22% sugere R$ 31.566 (conta do motor)', () => { expect(reajustarTeto(3_000_000, '0.0522')).toBe(3_156_600) })
   it('normaliza o formato do banco (mês AAAA-MM, centavos, IPCA, vale_a_partir, votos e quem falta)', () => {
     const s = doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false)
-    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, vencido: false, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }] })
+    expect(s).toEqual({ mes_vigencia: '2027-02', aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, vencido: false, votos: [{ membro_id: 'm-a', nome: 'Ana', teto: 3_156_600, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm-b', nome: 'Bruno' }], voto_aberto: null })
+    // f_14: voto_aberto no formato do banco (teto_centavos, mês AAAA-MM)
+    expect(normalizaReajuste({ ...s, voto_aberto: { mes_vigencia: '2027-04', teto_centavos: 1_020_000, ipca: 0.05, votou: [{ membro_id: 'm-b', nome: 'Bruno' }] } }).voto_aberto).toEqual({ mes_vigencia: '2027-04', teto: 1_020_000, ipca: '0.05', votou: [{ membro_id: 'm-b', nome: 'Bruno' }] })
   })
   it('F8-SEM-APROVACAO: 1 aprovou e o outro não: sugestão pendente; tetos diferentes não aprovam', () => {
     expect(situacaoReajuste(doBanco([['m-a', 'Ana', 3_156_600]], [['m-b', 'Bruno']], false))).toBe('sugestao pendente')
@@ -523,5 +525,51 @@ describe('Decisão: voto vencido, "Votar de novo" com a vigência no mês que ve
     await apiExemplo.reajusteAplicar!('fam-silva', 'env-ana', nova)
     const a = (await apiExemplo.resumoHoje('fam-silva')).envelopes.find(e => e.id === 'env-ana')!
     expect(a.limite_base ?? a.limite_mes).toBe(5775) // 5.500 × 1,05
+  })
+})
+
+describe('f_14: voto_aberto é a fonte principal pra achar o voto refeito (a config fica de apoio)', () => {
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('votar de novo sem a config gravada: o outro adulto acha pelo voto_aberto e aprova', async () => {
+    const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
+    vi.useFakeTimers({ toFake: ['Date'] }); em('2027-01-05'); reiniciarExemplo()
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045'); exemploComo('bruno')
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
+    em('2027-03-05')
+    // sem voto refeito ainda: vencido e nada em aberto
+    expect((await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).voto_aberto).toBeNull()
+    // Bruno vota de novo pra 2027-04 e NÃO grava a config (só o banco sabe)
+    await apiExemplo.reajusteVotar!('fam-silva', '2027-04', 1_020_000, '0.05')
+    exemploComo('ana')
+    const ler = (f: string, m: string) => apiExemplo.reajusteSituacao!(f, m)
+    // o mês pedido vencido (ajuste do BANCO) e um mês sem voto (f_14 de hoje): os 2 apontam o voto refeito
+    expect((await ler('fam-silva', '2027-02')).voto_aberto).toMatchObject({ mes_vigencia: '2027-04', teto: 1_020_000, ipca: '0.05', votou: [{ membro_id: 'm-bruno' }] })
+    expect((await ler('fam-silva', '2027-06')).voto_aberto?.mes_vigencia).toBe('2027-04')
+    // em votação: null
+    expect((await ler('fam-silva', '2027-04')).voto_aberto).toBeNull()
+    // a tela de Ana, com a config vazia (vigência pedida 2027-02), acha 2027-04
+    const [v, sit] = await achaVigencia(ler, 'fam-silva', vigenciaAtiva({}, '2027-02'), '2027-03-05')
+    expect(v).toBe('2027-04')
+    expect(situacaoReajuste(sit, '2027-03-05')).toBe('sugestao pendente')
+    expect(sit.faltam.map(a => a.membro_id)).toEqual(['m-ana'])
+    // e aprova os mesmos números (o que a tela manda: teto e IPCA do 1º voto)
+    const s = await apiExemplo.reajusteVotar!('fam-silva', v, sit.votos[0].teto, sit.votos[0].ipca!)
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-04', aplicar_ate: '2027-04-30', voto_aberto: null })
+  })
+  it('banco antes do ajuste (voto_aberto só pra mês sem voto): a tela pergunta pelo mês seguinte e acha do mesmo jeito', async () => {
+    const base = { aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, vencido: false, faltam: [] }
+    const voto = { membro_id: 'm-b', nome: 'B', teto: 1, ipca: '0.05', votou_em: '2027-03-05' }
+    const pedidos: string[] = []
+    const ler = async (_f: string, m: string) => {
+      pedidos.push(m)
+      if (m === '2027-02') return { ...base, mes_vigencia: m, aprovado: true, vencido: true, votos: [voto], voto_aberto: null }
+      if (m === '2027-04') return { ...base, mes_vigencia: m, votos: [{ ...voto }], faltam: [{ membro_id: 'm-a', nome: 'A' }], voto_aberto: null }
+      return { ...base, mes_vigencia: m, votos: [], voto_aberto: null }
+    }
+    expect((await achaVigencia(ler, 'f', '2027-02', '2027-03-05'))[0]).toBe('2027-04')
+    expect(pedidos).toEqual(['2027-02', '2027-04'])
+    // sem nada refeito: fica na vencida (aparece "Votar de novo")
+    const nada = async (_f: string, m: string) => (m === '2027-02' ? { ...base, mes_vigencia: m, aprovado: true, vencido: true, votos: [voto], voto_aberto: null } : { ...base, mes_vigencia: m, votos: [], voto_aberto: null })
+    expect((await achaVigencia(nada, 'f', '2027-02', '2027-03-05'))[0]).toBe('2027-02')
   })
 })

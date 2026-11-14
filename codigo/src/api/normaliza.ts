@@ -96,5 +96,11 @@ export function normalizaReajuste(r: any): import('./tipos').ReajusteSituacao {
     vencido: !!r?.vencido,
     votos: (r?.votos || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? ''), teto: Number(v.teto_centavos) || 0, ipca: v.ipca == null ? null : String(v.ipca), votou_em: String(v.votou_em ?? '') })),
     faltam: (r?.faltam || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
+    voto_aberto: r?.voto_aberto?.mes_vigencia ? {
+      mes_vigencia: String(r.voto_aberto.mes_vigencia).slice(0, 7),
+      teto: Number(r.voto_aberto.teto_centavos) || 0,
+      ipca: r.voto_aberto.ipca == null ? null : String(r.voto_aberto.ipca),
+      votou: (r.voto_aberto.votou || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
+    } : null,
   }
 }

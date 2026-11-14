@@ -251,6 +251,9 @@ export interface ReajusteSituacao {
   /** f_14: o prazo de aplicar passou (o voto venceu; precisa votar de novo). Sem o campo (antes da f_14): false */ vencido: boolean
   votos: { membro_id: string; nome: string; teto: number; ipca: string | null; votou_em: string }[]
   faltam: { membro_id: string; nome: string }[]
+  /** f_14: o voto refeito ainda em aberto (mês que não começou, sem aprovação), pra o outro adulto achar sem a config.
+   *  Vem quando o mês pedido não tem voto (e, com o ajuste do BANCO, também quando está vencido). Sem o campo: null */
+  voto_aberto?: { mes_vigencia: string; teto: number; ipca: string | null; votou: { membro_id: string; nome: string }[] } | null
 }
 
 /* ---------- E8: desejos (produto.desejos, f_06). Ver: o casal todos, a pessoa (filha) só os dela. Mexer: só o dono ---------- */

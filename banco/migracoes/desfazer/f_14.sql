@@ -15,15 +15,22 @@ do $$ begin
   if position($a$    'ja_vale', a.vale_a_partir is not null and produto._reajuste_dentro_do_prazo(produto._hoje(), a.vale_a_partir),
     'aplicar_ate', produto._reajuste_aplicar_ate(a.vale_a_partir),
     'vencido', a.vale_a_partir is not null and produto._hoje() > produto._reajuste_aplicar_ate(a.vale_a_partir),
-    -- (revisão E13) se o mês pedido não tem voto, o voto aberto mais recente da família (vigência futura, ainda não
-    -- aprovado por todos), pro outro adulto achar o voto refeito sem depender da config da tela
-    'voto_aberto', case when exists (select 1 from produto.reajuste_votos v0 where v0.familia_id = f and v0.mes_vigencia = m) then null else
+    -- (revisão E13) quando o mês pedido NÃO está vivo (sem voto, com votos vencidos ou com votos não aprovados de vigência
+    -- que já passou), vem o voto aberto mais recente da família em outro mês (vigência futura, ainda não aprovado por
+    -- todos): o outro adulto acha o voto refeito sem depender da config da tela. Nulo só com o mês pedido em votação
+    -- (vigência futura com voto, ainda não aprovado) ou aprovado dentro do prazo.
+    'voto_aberto', case
+      when (a.vale_a_partir is null and m > date_trunc('month', produto._hoje())::date
+            and exists (select 1 from produto.reajuste_votos v0 where v0.familia_id = f and v0.mes_vigencia = m))
+        or (a.vale_a_partir is not null and produto._hoje() <= produto._reajuste_aplicar_ate(a.vale_a_partir))
+      then null else
       (select jsonb_build_object('mes_vigencia', to_char(x.mes_vigencia, 'YYYY-MM'), 'teto_centavos', x.teto_centavos, 'ipca', x.ipca,
               'votou', (select jsonb_agg(jsonb_build_object('membro_id', v.membro_id, 'nome', o.nome) order by v.votou_em)
                           from produto.reajuste_votos v join produto.membros o on o.familia_id = v.familia_id and o.id = v.membro_id
                          where v.familia_id = f and v.mes_vigencia = x.mes_vigencia))
          from produto.reajuste_votos x
         where x.familia_id = f and x.mes_vigencia > date_trunc('month', produto._hoje())::date
+          and x.mes_vigencia <> m
           and not exists (select 1 from produto._reajuste_aprovado(f, x.mes_vigencia))
         order by x.votou_em desc limit 1) end,$a$ in (select prosrc from pg_proc where oid = 'produto.reajuste_situacao(uuid,date)'::regprocedure)) = 0 then
     raise exception 'desfazer f_14: trecho nao achado em produto.reajuste_situacao(uuid,date)';
@@ -31,15 +38,22 @@ do $$ begin
   execute replace(pg_get_functiondef('produto.reajuste_situacao(uuid,date)'::regprocedure), $a$    'ja_vale', a.vale_a_partir is not null and produto._reajuste_dentro_do_prazo(produto._hoje(), a.vale_a_partir),
     'aplicar_ate', produto._reajuste_aplicar_ate(a.vale_a_partir),
     'vencido', a.vale_a_partir is not null and produto._hoje() > produto._reajuste_aplicar_ate(a.vale_a_partir),
-    -- (revisão E13) se o mês pedido não tem voto, o voto aberto mais recente da família (vigência futura, ainda não
-    -- aprovado por todos), pro outro adulto achar o voto refeito sem depender da config da tela
-    'voto_aberto', case when exists (select 1 from produto.reajuste_votos v0 where v0.familia_id = f and v0.mes_vigencia = m) then null else
+    -- (revisão E13) quando o mês pedido NÃO está vivo (sem voto, com votos vencidos ou com votos não aprovados de vigência
+    -- que já passou), vem o voto aberto mais recente da família em outro mês (vigência futura, ainda não aprovado por
+    -- todos): o outro adulto acha o voto refeito sem depender da config da tela. Nulo só com o mês pedido em votação
+    -- (vigência futura com voto, ainda não aprovado) ou aprovado dentro do prazo.
+    'voto_aberto', case
+      when (a.vale_a_partir is null and m > date_trunc('month', produto._hoje())::date
+            and exists (select 1 from produto.reajuste_votos v0 where v0.familia_id = f and v0.mes_vigencia = m))
+        or (a.vale_a_partir is not null and produto._hoje() <= produto._reajuste_aplicar_ate(a.vale_a_partir))
+      then null else
       (select jsonb_build_object('mes_vigencia', to_char(x.mes_vigencia, 'YYYY-MM'), 'teto_centavos', x.teto_centavos, 'ipca', x.ipca,
               'votou', (select jsonb_agg(jsonb_build_object('membro_id', v.membro_id, 'nome', o.nome) order by v.votou_em)
                           from produto.reajuste_votos v join produto.membros o on o.familia_id = v.familia_id and o.id = v.membro_id
                          where v.familia_id = f and v.mes_vigencia = x.mes_vigencia))
          from produto.reajuste_votos x
         where x.familia_id = f and x.mes_vigencia > date_trunc('month', produto._hoje())::date
+          and x.mes_vigencia <> m
           and not exists (select 1 from produto._reajuste_aprovado(f, x.mes_vigencia))
         order by x.votou_em desc limit 1) end,$a$, $b$    'ja_vale', a.vale_a_partir is not null and date_trunc('month', produto._hoje())::date >= a.vale_a_partir,$b$);
 end $$;
