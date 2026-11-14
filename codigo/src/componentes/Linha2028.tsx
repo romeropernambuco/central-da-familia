@@ -13,7 +13,7 @@ const curto = (m: string) => mesCurto(m + '-01')
 const r$ = (c: number) => reais(Math.abs(c) / 100)
 
 /** Até 2 frases, só com o que o motor devolveu (nunca sinal de menos, nunca vermelho). */
-export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | null; virada: string; ajuste: string | null } {
+export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | null; virada: string; ajuste: string | null; margem?: string | null } {
   const ult = s.linha[s.linha.length - 1]
   const caixa = !ult ? 'Dezembro de 2028 é o último mês antes da virada: a partir de janeiro, vale o que o dinheiro rende.'
     : ult.saldo_final >= 0 ? `Com estes números, a família chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}.`
@@ -24,16 +24,28 @@ export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | 
   const devendo = !d ? null : jaDevendo
     ? `Em ${mesAno(d.mes)} o caixa fica ${r$(d.fica_devendo)} abaixo do piso e ${d.devendo_ate ? `volta pra cima dele em ${mesAno(d.devendo_ate)}` : 'não volta pra cima dele até 12/2028'}.`
     : `Em ${mesAno(d.mes)} o caixa fica abaixo do piso: fica devendo ${r$(d.fica_devendo)} pro caixa ${d.devendo_ate ? `até ${mesAno(d.devendo_ate)}` : 'até depois de 12/2028'}.`
-  if (s.patrimonio_necessario === null) return { caixa, devendo, virada: 'Nesse cenário o rendimento não repõe a inflação.', ajuste: null }
+  if (s.patrimonio_necessario === null) return { caixa, devendo, virada: 'Nesse cenário o rendimento não repõe a inflação.', ajuste: null, margem: null }
   const virada = s.folga >= 0
     ? `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, pra sempre, e sobram ${r$(s.folga)} além do necessário.`
     : `Pra viver do rendimento em 2029 faltam ${r$(s.folga)}.`
   const a = s.ajustes_falta
-  // QA E11 (erro 3): com poucos meses até a virada o motor sugere cortar (sugerido 'cortar', guardar_por_mes 0): nunca "guardando R$ 0"
-  const ajuste = s.folga < 0 && a ? (a.sugerido === 'cortar' || !a.guardar_por_mes
-    ? `Fecha cortando ${r$(a.cortar_por_mes_2029)} por mês em 2029.`
-    : `Fecha guardando ${r$(a.guardar_por_mes)} por mês até 12/2028 ou gastando ${r$(a.cortar_por_mes_2029)} a menos por mês em 2029.`) : null
-  return { caixa, devendo, virada, ajuste }
+  // QA E11 (erro 3): com poucos meses até a virada o motor sugere cortar (sugerido 'cortar', guardar_por_mes 0): nunca "guardando R$ 0".
+  // MOTOR_index: o corte vem separado em falta_por_mes (frase principal) e margem_por_mes (a folga de segurança, menor embaixo)
+  const c = s.folga < 0 && a ? frasesCorte(a) : null
+  const ajuste = s.folga < 0 && a && c ? (a.sugerido === 'cortar' || !a.guardar_por_mes
+    ? c.principal.replace(/\.$/, ' em 2029.')
+    : `Fecha guardando ${r$(a.guardar_por_mes)} por mês até 12/2028 ou cortando ${r$(c.falta)} por mês em 2029.`) : null
+  const margem = c?.margem ?? null
+  return { caixa, devendo, virada, ajuste, margem }
+}
+
+/** O corte, em 2 partes do motor: o que falta no mês (frase principal) e a folga de segurança (menor, "se der").
+ *  Sem os campos novos (motor antigo): o total vai na frase principal. Nunca 2 números de falta brigando. */
+export function frasesCorte(a: NonNullable<FuturoSaida['ajustes_falta']>): { falta: number; principal: string; margem: string | null } {
+  const falta = a.falta_por_mes ?? a.cortar_por_mes_2029
+  const m = a.falta_por_mes != null ? a.margem_por_mes ?? 0 : 0
+  if (falta <= 0) return { falta: 0, principal: `A renda cobre o mês. Falta só a folga de segurança: ${r$(m)}.`, margem: null }
+  return { falta, principal: `Fecha cortando ${r$(falta)} por mês.`, margem: m > 0 ? `Mais ${r$(m)} de folga de segurança, se der.` : null }
 }
 
 /** O desenho: saldo de cada mês (linha verde), piso tracejado e um ponto âmbar nos meses abaixo do piso. */
@@ -73,6 +85,7 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
       <div className="leg"><span><i className="q" />o caixa no fim de cada mês</span><span><i className="q piso" />piso: {pisoMeses} {pisoMeses === 1 ? 'mês' : 'meses'} de teto que não se mexe</span>{l.some(x => x.fica_devendo > 0) && <span><i className="q abaixo" />mês abaixo do piso</span>}</div>
       <p className={'todo ' + (saida.folga >= 0 && !f.devendo && saida.patrimonio_necessario !== null ? 'ok' : 'warn')} style={{ marginTop: 10 }}><span>{f.caixa} {f.devendo}</span></p>
       <p className="sub linha-virada">{f.virada}{f.ajuste ? ` ${f.ajuste}` : ''}</p>
+      {f.margem && <p className="sub linha-margem">{f.margem}</p>}
       {l.length > 0 && (
         <details className="mes-a-mes">
           <summary>Ver mês a mês</summary>
@@ -110,7 +123,10 @@ export function Renda2029({ saida }: { saida: FuturoSaida }) {
   return (
     <div className="renda-2029">
       <p className={'todo ' + (r.folga_do_mes >= 0 ? 'ok' : 'warn')}><span>{f.rende} <b>{f.folga}</b></span></p>
-      {r.folga_do_mes < 0 && a && a.cortar_por_mes_2029 > 0 && <p className="sub" style={{ marginTop: 8 }}>Fecha cortando {r$(a.cortar_por_mes_2029)} por mês no gasto.</p>}
+      {a && a.cortar_por_mes_2029 > 0 && (() => { const c = frasesCorte(a); return <>
+        <p className="sub" style={{ marginTop: 8 }}><b>{c.principal}</b></p>
+        {c.margem && <p className="sub linha-margem">{c.margem}</p>}
+      </> })()}
       {f.taxa && <p className="sub" style={{ marginTop: 8 }}>{f.taxa}</p>}
     </div>
   )

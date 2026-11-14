@@ -2,7 +2,7 @@
 // A tela nunca calcula 2029: estes testes conferem que as frases saem do que o motor devolve, com os números dos casos.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
-import { frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
+import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
 import { situacaoReajuste } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
@@ -12,6 +12,8 @@ import { marcaDaSemana } from './componentes/RitmoMes'
 import { cabeDesejo, futuro, type FuturoEntrada, type FuturoSaida } from './lib/futuro'
 import { reajustarTeto, avaliarAntecipacao } from './lib/futuro'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
+import { reais } from './lib/formato'
+const reaisDe = (c: number) => reais(c / 100)
 import { rotaDoHash, rotaPermitida } from './app/rotas'
 
 const NB = /[\s ]/
@@ -65,7 +67,8 @@ describe('E7: linha até dez/2028 (F4, F9, F5)', () => {
     const f = frasesLinha(s)
     expect(limpa(f.caixa)).toBe('Com estes números, a família fica devendo R$ 1.000 em dez/28.')
     expect(limpa(f.virada)).toBe('Pra viver do rendimento em 2029 faltam R$ 1.220.143,16.')
-    expect(limpa(f.ajuste)).toBe('Fecha guardando R$ 46.953,36 por mês até 12/2028 ou gastando R$ 3.994,43 a menos por mês em 2029.')
+    // mudado no conserto do corte (MOTOR_index, falta_por_mes e margem_por_mes): "cortando" no lugar de "gastando ... a menos"
+    expect(limpa(f.ajuste)).toBe('Fecha guardando R$ 46.953,36 por mês até 12/2028 ou cortando R$ 3.994,43 por mês em 2029.')
   })
   it('a frase da linha sai de futuro() de verdade (família de exemplo do caso, nada calculado na tela)', () => {
     const e = entrada({}, 6); e.parametros.teto_mes = 3_000_000; e.parametros.gasto_2029_hoje = 2_000_000
@@ -331,5 +334,32 @@ describe('QA E11: a virada (31/12/2028, 01/01 e 02/01/2029) e os erros de tela',
   it('E10: a frase da filha diz pra guardar o limite daquele mês (sem "deixar pra ele")', () => {
     expect(fraseDaFilha(250, 200, 300, true)).not.toMatch(/deixar pra ele/)
     expect(fraseDaFilha(250, 200, 300, true)).toMatch(/se você guardar o limite daquele mês pra isso/)
+  })
+})
+
+describe('Conserto do corte: falta_por_mes na frase principal, margem_por_mes embaixo', () => {
+  const base = { guardar_por_mes: 0, desejos_pra_adiar: [], sugerido: 'cortar' as const }
+  it('falta e margem: 1 número de falta só, a margem "se der"', () => {
+    const c = frasesCorte({ ...base, cortar_por_mes_2029: 1_563_324, falta_por_mes: 1_420_324, margem_por_mes: 143_000 })
+    expect(limpa(c.principal)).toBe('Fecha cortando R$ 14.203,24 por mês.')
+    expect(limpa(c.margem)).toBe('Mais R$ 1.430 de folga de segurança, se der.')
+  })
+  it('falta 0: a renda cobre o mês, falta só a folga', () => {
+    const c = frasesCorte({ ...base, cortar_por_mes_2029: 143_000, falta_por_mes: 0, margem_por_mes: 143_000 })
+    expect(limpa(c.principal)).toBe('A renda cobre o mês. Falta só a folga de segurança: R$ 1.430.')
+    expect(c.margem).toBeNull()
+  })
+  const em = (dia: string) => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`)); reiniciarExemplo() }
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  for (const dia of ['2028-12-31', '2029-01-01', '2029-01-02']) it(`${dia}: a frase do corte usa falta_por_mes do motor e a soma bate`, async () => {
+    em(dia)
+    const s = futuro((await apiExemplo.futuroEntradas!('fam-silva')).entrada!)
+    const a = s.ajustes_falta
+    if (!a) return
+    expect((a.falta_por_mes ?? 0) + (a.margem_por_mes ?? 0)).toBe(a.cortar_por_mes_2029)
+    const c = frasesCorte(a)
+    if (a.falta_por_mes! > 0) expect(limpa(c.principal)).toBe(`Fecha cortando ${limpa(reaisDe(a.falta_por_mes!))} por mês.`)
+    if (s.modo === 'renda') expect(a.falta_por_mes).toBe(Math.max(0, -s.renda!.folga_do_mes))
+    if ((a.margem_por_mes ?? 0) > 0) expect(limpa(c.principal) + ' ' + limpa(c.margem)).not.toContain(limpa(reaisDe(a.cortar_por_mes_2029)) + ' por mês')
   })
 })
