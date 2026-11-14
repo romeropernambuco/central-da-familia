@@ -403,15 +403,20 @@ describe('Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo 
   })
   const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
   afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
-  it('exemplo: votos "0.045" e "0.0450" aprovam; aplicar_ate vem na situação e depois dele é recusado', async () => {
+  it('exemplo: votos "0.045" e "0.0450" aprovam; sem prazo final (igual ao banco: aplicar_ate null) e aplicar de novo não acumula', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); em('2027-01-05'); reiniciarExemplo()
     await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.045')
     exemploComo('bruno')
     const s = await apiExemplo.reajusteVotar!('fam-silva', '2027-02', 1_000_000, '0.0450')
-    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-02', aplicar_ate: '2027-02' })
-    expect(normalizaReajuste({ ...s, aplicar_ate: '2027-02' }).aplicar_ate).toBe('2027-02')
-    em('2027-03-02')
-    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')).rejects.toThrow(/prazo pra aplicar o reajuste acabou em 02\/2027/)
+    expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-02', aplicar_ate: null })
+    // o banco ainda não manda o campo: a tela lê null (sem prazo); se um dia mandar, a tela lê o mês
+    expect(normalizaReajuste({ mes_vigencia: '2027-02' }).aplicar_ate).toBeNull()
+    expect(normalizaReajuste({ mes_vigencia: '2027-02', aplicar_ate: '2027-12' }).aplicar_ate).toBe('2027-12')
+    em('2027-06-02')
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
+    await apiExemplo.reajusteAplicar!('fam-silva', 'env-bruno', '2027-02')
+    const b = (await apiExemplo.resumoHoje('fam-silva')).envelopes.find(e => e.id === 'env-bruno')!
+    expect(b.limite_base ?? b.limite_mes).toBe(4180)
   })
 })
 

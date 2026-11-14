@@ -372,14 +372,18 @@ begin
       declare
         m_cur constant date := date_trunc('month', produto._hoje())::date;
         m_ant constant date := (date_trunc('month', produto._hoje()) - interval '1 month')::date;
-        m_dif constant date := (date_trunc('month', produto._hoje()) - interval '2 months')::date;
-        m_ok  constant date := (date_trunc('month', produto._hoje()) - interval '3 months')::date;
+        m_dif constant date := (date_trunc('month', produto._hoje()) - interval '3 months')::date;
+        m_ok  constant date := (date_trunc('month', produto._hoje()) - interval '2 months')::date;
+        m_venc constant date := (date_trunc('month', produto._hoje()) - interval '5 months')::date;
         m_prox constant date := (date_trunc('month', produto._hoje()) + interval '1 month')::date;
-        antes constant timestamptz := now() - interval '3 months';
+        antes constant timestamptz := now() - interval '1 month';     -- votos do mês passado: valem neste mês
+        bem_antes constant timestamptz := now() - interval '4 months';  -- votos que já venceram
       begin
         -- histórico de votos montado direto (como se tivesse sido votado meses atrás; a função só aceita mês futuro)
         insert into produto.reajuste_votos (familia_id, mes_vigencia, membro_id, teto_centavos, ipca, votou_em) values
-          (fam::uuid, m_ok,  ma::uuid, 315000, '0.0500', antes),            -- A e B, mesmo teto e IPCA, há 3 meses
+          (fam::uuid, m_venc, ma::uuid, 315000, '0.0500', bem_antes),       -- aprovado há 4 meses: já venceu
+          (fam::uuid, m_venc, mb::uuid, 315000, '0.0500', bem_antes),
+          (fam::uuid, m_ok,  ma::uuid, 315000, '0.0500', antes),            -- A e B, mesmo teto e IPCA, no mês passado
           (fam::uuid, m_ok,  mb::uuid, 315000, '0.0500', antes),
           (fam::uuid, m_ant, ma::uuid, 315000, '0.0500', antes),            -- vigência mês passado, mas B votou HOJE (atrasado)
           (fam::uuid, m_ant, mb::uuid, 315000, '0.0500', now()),
@@ -411,6 +415,7 @@ begin
           ('Reajuste: a filha le os votos', up, 'authenticated', 'select count(*) from produto.reajuste_votos', 'contar', '0'),
           ('Reajuste: a equipe le o teto aprovado', ue, 'authenticated', format('select count(*) from produto._reajuste_aprovado(%L, %L)', fam, m_ok), 'contar', '0'),
           ('Reajuste: o estranho le o teto aprovado', ux, 'authenticated', format('select count(*) from produto._reajuste_aprovado(%L, %L)', fam, m_ok), 'contar', '0'),
+          -- prazo do reajuste (f_14), testado aqui mesmo antes da f_14 existir só pelo que já valia
           -- B5: objetivo salvo 2 vezes (como os 2 salvando juntos) não dá erro nem deixa linha fantasma no histórico
           ('Objetivo: 1o salvar pela funcao na familia sem objetivo', ux, 'authenticated', format('select case when produto.objetivo_salvar(%L, %L::jsonb) is not null then 1 else 0 end', fam2, obj), 'contar', '1'),
           ('Objetivo: salvar quando o outro ja criou vira mudanca, sem erro', ub, 'authenticated', format('select case when produto.objetivo_salvar(%L, jsonb_set(%L::jsonb, ''{margem}'', ''"0.15"'')) is not null then 1 else 0 end', fam, obj), 'contar', '1')
@@ -418,6 +423,35 @@ begin
           r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
           r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
         end loop;
+        -- prazo do reajuste (f_14), quando existir
+        if to_regprocedure('produto._reajuste_dentro_do_prazo(date,date)') is not null then
+          for c in select * from (values
+            ('Prazo: aplicar no ultimo dia do mes de vale_a_partir passa', ua, 'authenticated', 'select case when produto._reajuste_dentro_do_prazo(''2027-02-28'', ''2027-02-01'') then 1 else 0 end', 'contar', '1'),
+            ('Prazo: no dia seguinte ao ultimo dia e recusado', ua, 'authenticated', 'select case when produto._reajuste_dentro_do_prazo(''2027-03-01'', ''2027-02-01'') then 1 else 0 end', 'contar', '0'),
+            ('Prazo: antes do mes de vale_a_partir tambem nao', ua, 'authenticated', 'select case when produto._reajuste_dentro_do_prazo(''2027-01-31'', ''2027-02-01'') then 1 else 0 end', 'contar', '0'),
+            ('Prazo: a situacao devolve aplicar_ate (ultimo dia do mes que vale)', ua, 'authenticated', format('select case when produto.reajuste_situacao(%L, %L)->>''aplicar_ate'' = %L then 1 else 0 end', fam, m_ok, to_char((m_cur + interval '1 month' - interval '1 day')::date, 'YYYY-MM-DD')), 'contar', '1'),
+            ('Prazo: aplicar depois do prazo e recusado (voto vencido)', ua, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_a, m_venc), 'contar', 'erro: o reajuste aprovado vencia em ' || to_char((m_venc + interval '3 months' - interval '1 day')::date, 'DD/MM/YYYY') || '; votem de novo'),
+            ('Prazo: o voto vencido aparece como vencido', ub, 'authenticated', format('select case when (produto.reajuste_situacao(%L, %L)->>''vencido'')::boolean and not (produto.reajuste_situacao(%L, %L)->>''ja_vale'')::boolean then 1 else 0 end', fam, m_venc, fam, m_venc), 'contar', '1'),
+            ('CONTROLE Prazo: votar de novo depois do vencimento (B completa o voto do mes que vem)', ub, 'authenticated', format('select case when (produto.reajuste_votar(%L, %L, 315000, ''0.0500'')->>''aprovado'')::boolean then 1 else 0 end', fam, m_prox), 'contar', '1'),
+            ('CONTROLE Prazo: dentro do prazo continua aplicando', ua, 'authenticated', format('select case when produto.reajuste_aplicar(%L, %L, %L) is not null then 1 else 0 end', fam, env_a, m_ok), 'contar', '1'),
+            ('Prazo: a filha ve a situacao', up, 'authenticated', format('select 1 from produto.reajuste_situacao(%L, %L)', fam, m_ok), 'contar', 'bloqueado'),
+            ('Prazo: a equipe ve a situacao', ue, 'authenticated', format('select 1 from produto.reajuste_situacao(%L, %L)', fam, m_ok), 'contar', 'bloqueado'),
+            ('Prazo: a equipe aplica', ue, 'authenticated', format('select 1 from produto.reajuste_aplicar(%L, %L, %L)', fam, env_casa, m_ok), 'contar', 'bloqueado')
+          ) as v(nome, uid, papel_db, sql, modo, esp) loop
+            r_caso := r_caso || c.nome; r_esp := r_esp || c.esp;
+            r_obt := r_obt || produto._tentativa(c.uid, c.papel_db, c.sql, c.modo);
+          end loop;
+          -- sessão num fuso em que já é outro dia: o prazo continua sendo o dia de Recife
+          declare tz_antes text := current_setting('timezone');
+          begin
+            perform set_config('timezone', case when extract(hour from now() at time zone 'America/Recife') >= 7 then 'Etc/GMT-14' else 'Etc/GMT+12' end, true);
+            r_caso := r_caso || 'Prazo: com a sessao em outro dia, aplicar_ate e o aplicar seguem o dia de Recife'::text;
+            r_esp := r_esp || '1'::text;
+            r_obt := r_obt || produto._tentativa(ua, 'authenticated', format('select case when produto.reajuste_situacao(%L, %L)->>''aplicar_ate'' = %L and produto.reajuste_aplicar(%L, %L, %L) is not null then 1 else 0 end', fam, m_ok, to_char((m_cur + interval '1 month' - interval '1 day')::date, 'YYYY-MM-DD'), fam, env_a, m_ok), 'contar');
+            perform set_config('timezone', tz_antes, true);
+          end;
+        end if;
+
         -- o mesmo salvar de B, de verdade: 1 linha no objetivo e só 1 linha nova no histórico
         perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
         perform produto.objetivo_salvar(fam::uuid, jsonb_set(obj::jsonb, '{margem}', '"0.15"'));
