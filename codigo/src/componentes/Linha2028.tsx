@@ -104,12 +104,15 @@ export function frasesGatilho(g: NonNullable<FuturoSaida['gatilhos']>[number]): 
   const nome = g.origem === 'recebimento' ? g.descricao ?? `Recebimento${g.nome ? ` de ${g.nome}` : ''}` : g.nome
   return `${nome}: ${valor}${quando} (${porque}).`
 }
+/** "O aluguel para em MM/AAAA. Renove até MM/AAAA pra ele contar em 2029." (aluguel_para_em e mes do gatilho do motor) */
+export function fraseRenova(g: { aluguel_para_em?: string | null; mes: string | null }): string {
+  return `${g.aluguel_para_em ? `O aluguel para em ${mesAno(g.aluguel_para_em)}. ` : ''}Renove até ${g.mes ? mesAno(g.mes) : 'a virada'} pra ele contar em 2029.`
+}
 /** MOTOR (contrato curto): a falta de 2029 inclui o aluguel que não abate porque o contrato acaba antes de 12 meses.
  *  1 frase por imóvel, embaixo da linha da falta, pra nunca ficar 2 números de falta sem explicação. Só escreve. */
 export function frasesRenova(s: FuturoSaida): string[] {
   return (s.gatilhos || []).filter(g => g.motivo === 'renova o contrato').map(g => {
-    const ate = s.imoveis?.find(i => i.id === g.id)?.contrato_ate
-    return `Inclui ${r$(g.valor)} do aluguel de ${g.nome}, que acaba em ${ate ? mesAno(ate) : 'breve'}. Renove o contrato pra ele contar.`
+    return `Inclui ${r$(g.valor)} do aluguel de ${g.nome}. ${fraseRenova(g)}`
   })
 }
 export function PodeEntrar({ saida }: { saida: FuturoSaida }) {
