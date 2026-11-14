@@ -3,11 +3,16 @@
 import { describe, expect, it } from 'vitest'
 // @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node (a pasta de trabalho é codigo/)
 import { readFileSync } from 'node:fs'
+// @ts-ignore: idem
+import { createHash } from 'node:crypto'
 import { EQUIPE, POR_ID } from './telas/escritorio/equipe'
 import { completarEquipe } from './telas/escritorio/useEquipe'
 import { FAZ } from './telas/escritorio/Ficha'
 import type { FuncionarioEsc } from './api/tipos'
 
+// impressão digital (sha256, 16 letras) de cada nome em minúsculas e sem acento: a mesma lista do portão 6b
+const NOMES_REAIS = new Set(['ea796cd69664e39e', 'f3d8f6ef539025ac', 'bbe47010dd7d075f'])
+const impressao = (nome: string): string => createHash('sha256').update(nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()).digest('hex').slice(0, 16)
 const pagina = readFileSync('../paineis/escritorio3d/index.html', 'utf8')
 const bloco = pagina.slice(pagina.indexOf('var EQUIPE=['), pagina.indexOf('var POR_ID={};'))
 const daPagina = [...bloco.matchAll(/\{id:'([a-z]+)',nome:'([^']+)',curto:'([^']+)',ini:'[A-Z]+',sala:'([a-z]+)',slot:(-?\d)/g)].map(m => ({ id: m[1], nome: m[2], curto: m[3], sala: m[4], mesa: Number(m[5]) }))
@@ -34,7 +39,9 @@ describe('C2: lista única da equipe', () => {
   it('nada de nome real de pessoa no código: o assistente é "de quem cuida da casa"', () => {
     expect(POR_ID.assistente.nome).toBe('Assistente de quem cuida da casa')
     const tudo = JSON.stringify(EQUIPE) + bloco
-    expect(tudo).not.toMatch(/Andreza|Romero|Albuquerque/)
+    // E14 (P1): nenhum nome real em texto aqui também; compara pela impressão digital, igual ao portão 6b (scripts/portoes.mjs)
+    const achados = (tudo.match(/[A-Za-zÀ-ÿ]+/g) || []).filter(p => NOMES_REAIS.has(impressao(p)))
+    expect(achados).toHaveLength(0)
   })
   it('a página publicada usa a mesma lista (id, nome, nome curto, sala e mesa)', () => {
     expect(daPagina.map(x => x.id)).toEqual(EQUIPE.map(m => m.id))
