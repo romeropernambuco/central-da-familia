@@ -4,7 +4,7 @@
 import { ChevronRight, Target } from 'lucide-react'
 import { useFuturo } from '../app/useDados2'
 import { useApp } from '../app/contexto'
-import type { FuturoEntrada, FuturoSaida, LinhaMes } from '../lib/futuro'
+import type { FuturoEntrada, FuturoSaida, LinhaMes, RendaDoMes } from '../lib/futuro'
 import { mesCurto, reais } from '../lib/formato'
 
 /** '2027-03' vira '03/2027'. */
@@ -15,7 +15,7 @@ const r$ = (c: number) => reais(Math.abs(c) / 100)
 /** Até 2 frases, só com o que o motor devolveu (nunca sinal de menos, nunca vermelho). */
 export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | null; virada: string; ajuste: string | null } {
   const ult = s.linha[s.linha.length - 1]
-  const caixa = !ult ? 'Ainda não tem mês pra projetar até dezembro de 2028.'
+  const caixa = !ult ? 'Dezembro de 2028 é o último mês antes da virada: a partir de janeiro, vale o que o dinheiro rende.'
     : ult.saldo_final >= 0 ? `Com estes números, a família chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}.`
     : `Com estes números, a família fica devendo ${r$(ult.saldo_final)} em ${curto(ult.mes)}.`
   const d = s.linha.find(l => l.fica_devendo > 0)
@@ -29,7 +29,10 @@ export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | 
     ? `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, pra sempre, e sobram ${r$(s.folga)} além do necessário.`
     : `Pra viver do rendimento em 2029 faltam ${r$(s.folga)}.`
   const a = s.ajustes_falta
-  const ajuste = s.folga < 0 && a ? `Fecha guardando ${r$(a.guardar_por_mes)} por mês até 12/2028 ou gastando ${r$(a.cortar_por_mes_2029)} a menos por mês em 2029.` : null
+  // QA E11 (erro 3): com poucos meses até a virada o motor sugere cortar (sugerido 'cortar', guardar_por_mes 0): nunca "guardando R$ 0"
+  const ajuste = s.folga < 0 && a ? (a.sugerido === 'cortar' || !a.guardar_por_mes
+    ? `Fecha cortando ${r$(a.cortar_por_mes_2029)} por mês em 2029.`
+    : `Fecha guardando ${r$(a.guardar_por_mes)} por mês até 12/2028 ou gastando ${r$(a.cortar_por_mes_2029)} a menos por mês em 2029.`) : null
   return { caixa, devendo, virada, ajuste }
 }
 
@@ -88,11 +91,58 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
   )
 }
 
+/** Modo renda (depois da virada, QA E11): o que o dinheiro rende no mês, o gasto do mês e a folga ou a falta. Sem conta aqui. */
+export function frasesRenda(r: RendaDoMes): { rende: string; folga: string; taxa: string | null } {
+  const mes = mesCurto(r.mes + '-01')
+  return {
+    rende: `Em ${mes}, o dinheiro guardado (${r$(r.patrimonio)}) rende ${r$(r.renda_sustentavel)} por mês acima da inflação, pra sempre. O mês gasta ${r$(r.gasto_do_mes)}.`,
+    folga: r.folga_do_mes >= 0 ? `Sobram ${r$(r.folga_do_mes)} por mês.` : `Faltam ${r$(r.folga_do_mes)} por mês: a renda ainda não cobre o gasto.`,
+    taxa: r.falta_taxa ? `Falta a Selic e o IPCA de ${r.mes.slice(0, 4)}: a conta usou o rendimento acima da inflação do objetivo. Digite os 2 aqui embaixo.` : null,
+  }
+}
+
+/** Planejamento depois da virada: o bloco renda no lugar da linha até 2028. */
+export function Renda2029({ saida }: { saida: FuturoSaida }) {
+  const r = saida.renda
+  if (!r) return null
+  const f = frasesRenda(r)
+  const a = saida.ajustes_falta
+  return (
+    <div className="renda-2029">
+      <p className={'todo ' + (r.folga_do_mes >= 0 ? 'ok' : 'warn')}><span>{f.rende} <b>{f.folga}</b></span></p>
+      {r.folga_do_mes < 0 && a && a.cortar_por_mes_2029 > 0 && <p className="sub" style={{ marginTop: 8 }}>Fecha cortando {r$(a.cortar_por_mes_2029)} por mês no gasto.</p>}
+      {f.taxa && <p className="sub" style={{ marginTop: 8 }}>{f.taxa}</p>}
+    </div>
+  )
+}
+
 /** Início: 1 linha que leva ao Planejamento. Só o casal (a filha não vê 2029). */
 export function Linha2028Resumo() {
   const { familia } = useApp()
   const { saida } = useFuturo()
-  if (familia?.papel !== 'casal' || !saida || !saida.linha.length) return null
+  if (familia?.papel !== 'casal' || !saida) return null
+  // modo renda (depois da virada): 1 linha com a renda do mês
+  if (saida.modo === 'renda' && saida.renda) {
+    const f = frasesRenda(saida.renda)
+    const t = `Rende ${r$(saida.renda.renda_sustentavel)} por mês, pra sempre. ${f.folga}`
+    return (
+      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={`Renda do dinheiro guardado: ${t} Abrir o Planejamento.`}>
+        <span className="tile"><Target size={20} /></span>
+        <span className="m"><b>Renda do dinheiro guardado</b><small>{t}</small></span>
+        <ChevronRight size={20} className="muted" aria-hidden="true" />
+      </a>
+    )
+  }
+  if (!saida.linha.length) {
+    const t = frasesLinha(saida).virada
+    return (
+      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={`Janeiro de 2029: ${t} Abrir o Planejamento.`}>
+        <span className="tile"><Target size={20} /></span>
+        <span className="m"><b>Janeiro de 2029</b><small>{t}</small></span>
+        <ChevronRight size={20} className="muted" aria-hidden="true" />
+      </a>
+    )
+  }
   const ult = saida.linha[saida.linha.length - 1]
   const d = saida.linha.find(x => x.fica_devendo > 0)
   const texto = d ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso. Toque pra ver.`

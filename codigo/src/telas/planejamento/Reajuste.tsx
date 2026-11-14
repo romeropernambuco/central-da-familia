@@ -103,7 +103,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     if (Object.keys(feitos).length) await salvar({ ...cfg, [vigencia]: { ...(mostra || { ipca, teto }), aplicado: { ...(mostra?.aplicado || {}), ...feitos } } })
     await recarregar()
     setGravando(false)
-    if (ok) toast(`Reajuste aplicado em ${meus.map(e => e.nome).join(', ')}. O limite da outra pessoa do casal, só ela aplica.`)
+    if (ok) toast(`Reajuste aplicado em ${meus.map(e => e.nome).join(', ')}.${adultos > 1 ? ' O limite da outra pessoa do casal, só ela aplica.' : ''}`)
   }
 
   return (

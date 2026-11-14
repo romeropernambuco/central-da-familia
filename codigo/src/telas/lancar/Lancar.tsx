@@ -218,7 +218,8 @@ export function Lancar() {
             </div>
           )}
           {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
-          {casal && !corr && gastoGrande && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
+          {/* QA E11 (E8): parcelado que não conta neste mês não mostra o aviso como se fosse gasto de hoje */}
+          {casal && !corr && gastoGrande && sim.length <= 1 && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
           <p className="lbl salvar-dica">{corr ? 'Toque no nome pra salvar a correção' : valor > 0 ? 'Toque no seu nome pra salvar' : 'Digite o valor e toque no seu nome pra salvar'}</p>
           <div className="envbtns">
             {ordem.map(e => {

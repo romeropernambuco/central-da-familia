@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus, Sparkles } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useFuturo } from '../../app/useDados2'
+import { useAdultos } from '../../app/useMembros'
 import { CampoValor, Din, Vazio } from '../../componentes/base'
 import { mesAno } from '../../componentes/Linha2028'
 import { avaliarAntecipacao, cabeDesejo, type Desejo, type FuturoEntrada } from '../../lib/futuro'
@@ -42,12 +43,19 @@ export function desejoDoMotor(d: NovoDesejo, id = 'novo', dono = ''): Desejo {
 export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, antecipa?: ReturnType<typeof avaliarAntecipacao> | null): { titulo: string; ok: boolean; linhas: string[] } {
   const linhas: string[] = []
   let titulo: string, ok: boolean
-  if (c.situacao === 'cabe') { titulo = 'Cabe.'; ok = true; linhas.push('Nenhum mês até 12/2028 fica abaixo do piso e 2029 continua coberto.') }
-  else if (c.situacao === 'cabe, mas tira') { titulo = 'Cabe, mas tira de 2029.'; ok = false; linhas.push('Nenhum mês fica abaixo do piso, mas a conta de 2029 fica mais curta.') }
-  else if (c.situacao === 'ainda nao cabe') { titulo = 'Ainda não cabe.'; ok = false; linhas.push(`Em ${mesAno(c.primeiro_mes_abaixo!)} o caixa fica abaixo do piso.`, c.caberia_em ? `Cabe a partir de ${mesAno(c.caberia_em)}.` : 'Até 12/2028 não cabe: só com mais dinheiro entrando.'); if (c.apertado_sem_desejo) linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo)} o caixa já fica abaixo do piso.`) }
-  else { titulo = 'O caixa já está apertado.'; ok = false; linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo!)} o caixa fica abaixo do piso.`) }
+  // modo renda (depois da virada, QA E11): sem linha até 2028; compara o dinheiro guardado de hoje com o piso
+  const renda = c.modo === 'renda'
+  const de = renda ? 'da renda' : 'da renda de 2029'
+  if (c.situacao === 'cabe') { titulo = 'Cabe.'; ok = true; linhas.push(renda ? 'O dinheiro guardado continua acima do piso e a renda cobre o mês.' : 'Nenhum mês até 12/2028 fica abaixo do piso e 2029 continua coberto.') }
+  else if (c.situacao === 'cabe, mas tira') { titulo = renda ? 'Cabe, mas tira da renda.' : 'Cabe, mas tira de 2029.'; ok = false; linhas.push(renda ? 'O dinheiro guardado continua acima do piso, mas a renda passa a não cobrir o mês.' : 'Nenhum mês fica abaixo do piso, mas a conta de 2029 fica mais curta.') }
+  else if (c.situacao === 'ainda nao cabe') {
+    titulo = 'Ainda não cabe.'; ok = false
+    if (renda) linhas.push('Com ele, o dinheiro guardado fica abaixo do piso.')
+    else { linhas.push(`Em ${mesAno(c.primeiro_mes_abaixo!)} o caixa fica abaixo do piso.`, c.caberia_em ? `Cabe a partir de ${mesAno(c.caberia_em)}.` : 'Até 12/2028 não cabe: só com mais dinheiro entrando.'); if (c.apertado_sem_desejo) linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo)} o caixa já fica abaixo do piso.`) }
+  }
+  else { titulo = 'O caixa já está apertado.'; ok = false; linhas.push(renda ? 'Mesmo sem este desejo, o dinheiro guardado já está abaixo do piso.' : `Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo!)} o caixa fica abaixo do piso.`) }
   const t = c.tira_por_mes_2029
-  linhas.push(t === null ? 'Nesse cenário o rendimento não repõe a inflação.' : t > 0 ? `Tira ${r$(t)} por mês da renda de 2029, pra sempre.` : t < 0 ? `Volta mais do que sai: soma ${r$(t)} por mês na renda de 2029.` : 'Não muda a renda de 2029.')
+  linhas.push(t === null ? 'Nesse cenário o rendimento não repõe a inflação.' : t > 0 ? `Tira ${r$(t)} por mês ${de}, pra sempre.` : t < 0 ? `Volta mais do que sai: soma ${r$(t)} por mês na ${de.slice(3)}.` : `Não muda a ${de.slice(3)}.`)
   if (d.volta_de !== 'nada' && d.volta_de !== 'contrato' && !d.volta_certa) linhas.push('A volta é incerta: fica fora da conta, só entra se vier.')
   // M3: a antecipação mostra quanto se perde (valor em 2029 e por mês, do motor), nunca com sinal
   if (antecipa) {
@@ -75,7 +83,7 @@ function avaliar(entrada: FuturoEntrada, d: Desejo, semEste = false) {
 /** Filha: sem 2029. Só "dá pra comprar com o seu": neste mês, o que sobra; num mês que vem, o limite dela daquele mês. */
 export function fraseDaFilha(valor: number, livre: number, limite: number, mesQueVem = false): string {
   if (!mesQueVem && valor <= Math.max(0, livre) + 0.005) return `Dá pra comprar com o seu: sobram ${reais(centavos(livre - valor))} no seu mês.`
-  if (mesQueVem && valor <= limite + 0.005) return `Dá pra comprar com o seu: cabe no seu limite daquele mês (${reais(limite)}), se você deixar pra ele.`
+  if (mesQueVem && valor <= limite + 0.005) return `Dá pra comprar com o seu: cabe no seu limite daquele mês (${reais(limite)}), se você guardar o limite daquele mês pra isso.`
   if (limite <= 0) return 'Passa do que sobra no seu mês. Converse com os pais.'
   const n = Math.ceil(valor / limite)
   return `Passa do ${mesQueVem ? 'seu limite do mês' : `que sobra no seu mês (${reais(Math.max(0, livre))})`}. Com o seu limite de ${reais(limite)}, são ${plural(n, 'mês', 'meses')} juntando tudo. Converse com os pais.`
@@ -85,8 +93,9 @@ const VAZIO = { nome: '', valor: '', mes: '', volta_de: 'nada' as VoltaDe, volta
 
 export function Desejos() {
   const { api, familia, resumo, versao, tentar, toast } = useApp()
-  const { ent } = useFuturo()
+  const { ent, saida: saidaF, estado: estFuturo, motivo: motivoFuturo } = useFuturo()
   const casal = familia?.papel === 'casal'
+  const adultos = useAdultos()
   const [lista, setLista] = useState<DesejoTela[] | null>(null)
   const [n, setN] = useState(0)
   const [f, setF] = useState(VAZIO)
@@ -113,6 +122,13 @@ export function Desejos() {
   useEffect(() => { const t = setTimeout(() => setChaveFeita(chaveNovo), 300); return () => clearTimeout(t) }, [chaveNovo])
   const resultado = useMemo(() => (chaveFeita && ent?.entrada ? avaliar(ent.entrada, desejoDoMotor(JSON.parse(chaveFeita) as NovoDesejo)) : null), [chaveFeita, ent])
   const resultadoPronto = !!chaveNovo && chaveFeita === chaveNovo
+  // tempo limite: se em 5 s a conta não saiu, a tela diz (nunca fica parada em "Fazendo a conta…")
+  const [demorou, setDemorou] = useState(false)
+  useEffect(() => { setDemorou(false); if (!chaveNovo) return; const t = setTimeout(() => setDemorou(true), 5000); return () => clearTimeout(t) }, [chaveNovo])
+  // sem dados pra conta (banco sem a função, ou o motor não conseguiu): a mensagem no lugar do "Fazendo a conta…"
+  const semConta = estFuturo === 'erro' ? `Não deu pra buscar os números de 2029: ${motivoFuturo}`
+    : ent && !ent.entrada ? ent.motivo || 'Faltam números pra conta: confira o Objetivo de 2029 no Planejamento.'
+    : resultadoPronto && !resultado && ent?.entrada ? 'Não deu pra fazer a conta com esses números. Confira o valor e os meses.' : ''
   const daLista = useMemo(() => {
     const m = new Map<string, ReturnType<typeof avaliar>>()
     if (casal && ent?.entrada) for (const d of lista || []) if (d.situacao !== 'feito' && d.situacao !== 'desisti') m.set(d.id, avaliar(ent.entrada, desejoDoMotor(d, d.id, d.dono_membro), true))
@@ -124,12 +140,19 @@ export function Desejos() {
 
   const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId)
 
+  // o resultado: casal, do motor (cabeDesejo); filha, só o mês dela. QA E11 (E1): nunca fica parado em "Fazendo a conta…"
+  const resposta = falta || !(novo.valor > 0) ? null : casal
+    ? resultado && resultadoPronto ? <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
+      : semConta ? <p className="todo warn desejo-res" role="status"><span>{semConta}</span></p>
+      : <p className="sub desejo-res">{demorou ? 'A conta está demorando. Espere um pouco ou mude um número pra tentar de novo.' : 'Fazendo a conta…'}</p>
+    : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))}</span></p> : null
+
   async function guardar() {
     if (!familia || falta || gravando) return
     setGravando(true)
     const ok = await tentar(() => api.desejoCriar!(familia.id, novo))
     setGravando(false)
-    if (ok) { setF(VAZIO); setN(x => x + 1); toast(`${novo.nome} guardado nos desejos.${casal ? ' A outra pessoa do casal vê, com o seu nome.' : ''}`) }
+    if (ok) { setF(VAZIO); setN(x => x + 1); toast(`${novo.nome} guardado nos desejos.${casal && adultos !== 1 ? ' A outra pessoa do casal vê, com o seu nome.' : ''}`) }
   }
   async function mudar(d: DesejoTela, m: { situacao?: SituacaoDesejo; apagar?: boolean }) {
     if (!familia) return
@@ -142,13 +165,15 @@ export function Desejos() {
       <div className="col">
         <section className="card" aria-labelledby="dCalc">
           <div className="card-h"><h2 id="dCalc"><Sparkles size={24} aria-hidden="true" />Quero…</h2></div>
-          <p className="sub" style={{ marginBottom: 10 }}>{casal ? 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.' : 'Escreva o que quer e quanto custa. O app diz se dá pra comprar com o seu.'}</p>
+          <p className="sub" style={{ marginBottom: 10 }}>{casal ? (saidaF?.modo === 'renda' ? 'Escreva o que quer e quando. O app diz se cabe no dinheiro guardado e quanto tira da renda.' : 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.') : 'Escreva o que quer e quanto custa. O app diz se dá pra comprar com o seu.'}</p>
           <div className="desejo-form">
           <label className="campo"><span>O que é</span><input className="inp" maxLength={80} placeholder={casal ? 'Ex.: viagem de férias' : 'Ex.: bicicleta'} value={f.nome} onChange={e => setF({ ...f, nome: e.target.value })} /></label>
           <div className="campo"><span>Quanto custa</span><CampoValor valor={f.valor} mudar={campo('valor')} rotulo="Quanto custa" /></div>
           <label className="campo"><span>Quando</span>
             <select className="inp" value={mes} onChange={e => setF({ ...f, mes: e.target.value })}>{meses.map(m => <option key={m} value={m}>{mesCurto(m + '-01')}</option>)}</select>
           </label>
+          {/* QA E11 (E9): a resposta vem logo depois de "Quando", antes da pergunta da volta (a 130% fica acima da dobra) */}
+          {resposta}
           {casal && <>
             <div className="campo"><span id="dVolta">O dinheiro volta?</span>
               <div className="pills" role="group" aria-labelledby="dVolta">{VOLTA.map(v => <button key={v.v} type="button" className="pill" aria-pressed={f.volta_de === v.v} onClick={() => setF({ ...f, volta_de: v.v })}>{v.nome}</button>)}</div>
@@ -170,11 +195,6 @@ export function Desejos() {
           </>}
           </div>
 
-          {/* o resultado: casal, do motor (cabeDesejo); filha, só o mês dela */}
-          {!falta && novo.valor > 0 && (casal
-            ? resultado && resultadoPronto ? <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
-              : <p className="sub">Fazendo a conta…</p>
-            : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))}</span></p> : null)}
           {falta && (f.nome || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{falta}</p> : null}
           <button className="btn primary" type="button" disabled={!!falta || gravando} onClick={guardar} style={{ marginTop: 12 }}><Plus size={20} />Guardar na lista</button>
         </section>
@@ -193,7 +213,7 @@ export function Desejos() {
                   <li key={d.id} className="li desejo" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': d.dono_nome || 'outra pessoa' })}>
                     <span className="m"><b className="quebra">{d.nome}</b>
                       <small>{casal ? `${dono} · ` : ''}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
-                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{r.titulo}</b> {[...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /renda de 2029|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' ')}</small>}
+                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{r.titulo}</b> {[...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' ')}</small>}
                       {!casal && meuEnv && d.situacao === 'pensando' && <small>{fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7))}</small>}
                       {d.meu ? (
                         <span className="pills desejo-sit" role="group" aria-label={`Como está: ${d.nome}`}>

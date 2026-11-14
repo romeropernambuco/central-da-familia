@@ -114,13 +114,15 @@ describe('A3 (E2): o casal lê os 2 cartões com o dono; o Analista de Cartão f
   })
   it('regra do salário: o Bruno tem R$ 300 na conta; o Gestor pergunta, ele guarda e a regra fica cumprida', async () => {
     em('2026-11-18'); exemploComo('bruno')
-    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 300, guardado: 0 })
+    // mudado no QA E11 (erro 5): a regra do salário é da FAMÍLIA, 1 número só pros 2 (igual à rodada 2):
+    // R$ 500 da Ana (já guardados) + R$ 300 do Bruno (na conta) = R$ 800, guardado R$ 500. Antes cada um via só o seu.
+    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 800, guardado: 500 })
     const p = (await apiExemplo.escritorioHoje(F)).precisa_de_voce.find(x => x.id.startsWith('entrou_extra:'))!
     const r = await apiExemplo.escritorioResponder(F, p.id, 'guardar_entrada')
     expect(r && r.aviso).toMatch(/Regra do salário cumprida/)
-    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 300, guardado: 300 })
+    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 800, guardado: 800 })
     exemploComo('ana')
-    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 500, guardado: 500 })
+    expect(await apiExemplo.entrouAMais!(F, '2026-11')).toMatchObject({ entrou: 800, guardado: 800 })
   })
 })
 

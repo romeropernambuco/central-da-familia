@@ -7,6 +7,7 @@ import { Din } from './base'
 import { Qm } from './Qm'
 import { donoDo, escreveNo } from '../app/dono'
 import { Impacto2029 } from './Impacto2029'
+import { useAdultos } from '../app/useMembros'
 
 const REGRA = { diario: 'por dia', semanal: 'por semana', mensal: 'no mês' }
 
@@ -90,6 +91,7 @@ export function fraseEstouro(e: Envelope, n: ReturnType<typeof numeroEnvelope>):
 export function CobrirEstouro({ e, valor }: { e: Envelope; valor: number }) {
   const { api, familia, tentar, toast, recarregar } = useApp()
   const [ok, setOk] = useState(false)
+  const adultos = useAdultos()
   const prox = primeiroDoMesQueVem()
   // E7 (F6): o estouro diz quanto tira da renda de 2029 (conta do motor, impacto2029)
   const impacto = <Impacto2029 valor={valor} />
@@ -111,7 +113,7 @@ export function CobrirEstouro({ e, valor }: { e: Envelope; valor: number }) {
         <button className="btn sm line" type="button" onClick={() => tentar(async () => {
           const desfazer = await api.cobrirComCasa!(familia.id, e.id, valor)
           await recarregar()
-          toast(`${reais(valor)} cobertos com a sobra da Casa neste mês. A outra pessoa do casal vê que a Casa ficou menor.`, async () => { await desfazer(); await recarregar() })
+          toast(`${reais(valor)} cobertos com a sobra da Casa neste mês.${adultos === 1 ? '' : ' A outra pessoa do casal vê que a Casa ficou menor.'}`, async () => { await desfazer(); await recarregar() })
         })}>Cobrir com a sobra da Casa</button>
       )}
     </div>

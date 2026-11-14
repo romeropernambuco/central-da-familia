@@ -7,7 +7,8 @@ import { useApp } from '../../app/contexto'
 import { CampoValor } from '../../componentes/base'
 import { PARAMETROS_INICIAIS, VIRADA, taxaDoTexto, textoDaTaxa } from '../../api/futuro'
 import { useFuturo } from '../../app/useDados2'
-import { Linha2028 } from '../../componentes/Linha2028'
+import { useAdultos } from '../../app/useMembros'
+import { Linha2028, Renda2029 } from '../../componentes/Linha2028'
 import type { Objetivo, ParametrosObjetivo } from '../../api/tipos'
 import { dataCurta, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 
@@ -39,7 +40,7 @@ export function Parametros() {
   const [travado, setTravado] = useState(false)
   const [n, setN] = useState(0)
   const [gravando, setGravando] = useState(false)
-  const anos = useMemo(() => { const a0 = Number(hojeRecife().slice(0, 4)), a1 = Number(VIRADA.slice(0, 4)) - 1; return Array.from({ length: Math.max(0, a1 - a0 + 1) }, (_, i) => String(a0 + i)) }, [])
+  const anos = useMemo(() => { const a0 = Number(hojeRecife().slice(0, 4)), a1 = Math.max(a0, Number(VIRADA.slice(0, 4)) - 1); /* depois da virada: o ano de hoje (modo renda) */ return Array.from({ length: Math.max(0, a1 - a0 + 1) }, (_, i) => String(a0 + i)) }, [])
   useEffect(() => {
     if (!familia || familia.papel !== 'casal' || !api.objetivo) return
     api.objetivo(familia.id).then(o => {
@@ -53,6 +54,8 @@ export function Parametros() {
   }, [api, familia?.id, versao, n])
   // E7: a única conta de 2029 é a do motor (useFuturo chama futuro()); a tela só desenha
   const { ent, saida, estado: estFuturo, motivo: motivoFuturo, atualizar } = useFuturo()
+  // QA E11 (erro 7): família de 1 adulto lê "você", nunca "os 2" nem "vocês"
+  const sozinho = useAdultos() === 1
   if (!familia || familia.papel !== 'casal' || !api.objetivo) return null
   if (!obj) return <section className="card"><p className="sub">Buscando o objetivo de 2029…</p></section>
   const focus = new Map(obj.focus.map(x => [String(x.ano), x]))
@@ -81,10 +84,11 @@ export function Parametros() {
   return (
     <section className="card" aria-labelledby="pObj">
       <div className="card-h"><h2 id="pObj"><Target size={24} aria-hidden="true" />Objetivo de 2029</h2></div>
-      <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. Os 2 mudam; o que era antes fica no histórico.</p>
+      <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.</p>
 
       {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
-      {saida && ent?.entrada ? <Linha2028 saida={saida} entrada={ent.entrada} />
+      {saida && saida.modo === 'renda' ? <Renda2029 saida={saida} />
+        : saida && ent?.entrada ? <Linha2028 saida={saida} entrada={ent.entrada} />
         : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{ent.motivo}</span></p>
         : estFuturo === 'erro' ? <p className="todo warn" style={{ marginBottom: 12 }}><span>Não deu pra fazer a conta de 2029 agora: {motivoFuturo}</span></p> : null}
       {ent && ent.confirmar.length > 0 && <p className="sub" style={{ margin: '10px 0 12px' }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
@@ -102,9 +106,9 @@ export function Parametros() {
       <h3 className="dayh" style={{ marginTop: 12 }}>Selic e IPCA de cada ano (%)</h3>
       <div className="pills" role="group" aria-label="De onde vem a taxa" style={{ margin: '6px 0 8px' }}>
         <button type="button" className="pill" aria-pressed={!travado} onClick={() => setTravado(false)}>Usar o Focus</button>
-        <button type="button" className="pill" aria-pressed={travado} onClick={() => setTravado(true)}>Travar as nossas</button>
+        <button type="button" className="pill" aria-pressed={travado} onClick={() => setTravado(true)}>{sozinho ? 'Travar as minhas' : 'Travar as nossas'}</button>
       </div>
-      <p className="sub" style={{ marginBottom: 6 }}>{travado ? 'Vale o que vocês digitarem; o Focus fica ao lado só pra comparar.' : 'Vale o Focus do Banco Central; o que vocês digitarem só entra no ano que o Focus não tiver.'}</p>
+      <p className="sub" style={{ marginBottom: 6 }}>{travado ? `Vale o que ${sozinho ? 'você digitar' : 'vocês digitarem'}; o Focus fica ao lado só pra comparar.` : `Vale o Focus do Banco Central; o que ${sozinho ? 'você digitar' : 'vocês digitarem'} só entra no ano que o Focus não tiver.`}</p>
       {anos.map(a => (
         <div key={a} className="linha-campo">
           <span className="n">{a}<small>Focus: {focus.get(a) ? `Selic ${textoDaTaxa(focus.get(a)!.selic_fim)}%, IPCA ${textoDaTaxa(focus.get(a)!.ipca)}% (${dataCurta(focus.get(a)!.divulgado_em)})` : 'sem número ainda'}</small></span>
@@ -119,7 +123,7 @@ export function Parametros() {
 
       <h3 className="dayh" style={{ marginTop: 16 }}><History size={16} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Quem mudou</h3>
       {obj.historico.length ? <ul className="list">{obj.historico.slice(0, 6).map((h, i) => (
-        <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{h.quem || 'Alguém do casal'}, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
+        <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{h.quem || (sozinho ? 'Você' : 'Alguém do casal')}, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
       ))}</ul> : <p className="sub">Ninguém mudou ainda. Valem as premissas: margem 10%, 4% acima da inflação, piso de 6 meses.</p>}
       {saida && saida.perguntas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>{saida.perguntas.length === 1 ? '1 recebimento atrasado espera' : `${saida.perguntas.length} recebimentos atrasados esperam`} a resposta do dono, em Recebimentos com data.</p>}
     </section>

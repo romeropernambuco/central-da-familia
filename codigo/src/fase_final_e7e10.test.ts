@@ -2,7 +2,7 @@
 // A tela nunca calcula 2029: estes testes conferem que as frases saem do que o motor devolve, com os números dos casos.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
-import { frasesLinha, mesAno } from './componentes/Linha2028'
+import { frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
 import { situacaoReajuste } from './telas/planejamento/Reajuste'
 import { normalizaReajuste } from './api/normaliza'
 import { frasesFGC } from './telas/guardado/Guardado'
@@ -286,3 +286,50 @@ describe('E10: a marca de onde a semana deveria estar hoje', () => {
   })
 })
 void NB; void vi
+
+describe('QA E11: a virada (31/12/2028, 01/01 e 02/01/2029) e os erros de tela', () => {
+  const em = (dia: string) => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`)); reiniciarExemplo() }
+  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  it('31/12/2028: projeção sem mês pela frente, frase clara e ajuste "cortar" (nunca "guardando R$ 0")', async () => {
+    em('2028-12-31')
+    const ent = await apiExemplo.futuroEntradas!('fam-silva')
+    expect(ent.entrada).not.toBeNull()
+    const s = futuro(ent.entrada!)
+    const f = frasesLinha(s)
+    expect(f.caixa).toMatch(/último mês antes da virada/)
+    if (f.ajuste) expect(f.ajuste).not.toMatch(/guardando R\$ 0/)
+    if (s.ajustes_falta?.sugerido === 'cortar') expect(f.ajuste).toMatch(/^Fecha cortando R\$/)
+  })
+  for (const dia of ['2029-01-01', '2029-01-02']) it(`${dia}: a entrada sai mesmo sem ano até 2028 e o motor responde em modo renda`, async () => {
+    em(dia)
+    const ent = await apiExemplo.futuroEntradas!('fam-silva')
+    expect(ent.entrada).not.toBeNull()
+    const s = futuro(ent.entrada!)
+    expect(s.modo).toBe('renda')
+    const r = frasesRenda(s.renda!)
+    expect(limpa(r.rende)).toMatch(/^Em jan\/29, o dinheiro guardado \(R\$ [\d.,]+\) rende R\$ [\d.,]+ por mês acima da inflação, pra sempre\. O mês gasta R\$ [\d.,]+\.$/)
+    expect(limpa(r.folga)).toMatch(/^(Sobram|Faltam) R\$ [\d.,]+ por mês/)
+    expect(r.taxa).toMatch(/Falta a Selic e o IPCA de 2029/) // o Focus de exemplo vai só até 2028
+    // o Desejo responde (nunca fica em "Fazendo a conta…") e fala da renda, sem "2029"
+    const d = desejoDoMotor({ nome: 'Viagem (exemplo)', valor: 50000, mes: '2029-02', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false })
+    const c = cabeDesejo(ent.entrada!, d)
+    expect(c.modo).toBe('renda')
+    const fd = frasesDesejo(c, d)
+    expect(fd.linhas.join(' ')).toMatch(/por mês da renda, pra sempre\./)
+    expect(fd.linhas.join(' ')).not.toMatch(/2029|12\/2028/)
+    // o impacto do Lançar e do estouro: "da renda", sem "de 2029"
+    const p = perdaPorMes(ent.entrada!, 2000, dia.slice(0, 7))
+    expect(limpa(fraseImpacto(p!, '', 'renda'))).toMatch(/^Isso tira R\$ [\d.,]+ por mês da renda, pra sempre\.$/)
+  })
+  it('erro 5: a regra do salário é da família, o mesmo número pros 2', async () => {
+    em('2026-11-18')
+    const ana = await apiExemplo.entrouAMais!('fam-silva', '2026-11')
+    exemploComo('bruno')
+    expect(await apiExemplo.entrouAMais!('fam-silva', '2026-11')).toEqual(ana)
+    expect(ana).toMatchObject({ entrou: 800, guardado: 500 })
+  })
+  it('E10: a frase da filha diz pra guardar o limite daquele mês (sem "deixar pra ele")', () => {
+    expect(fraseDaFilha(250, 200, 300, true)).not.toMatch(/deixar pra ele/)
+    expect(fraseDaFilha(250, 200, 300, true)).toMatch(/se você guardar o limite daquele mês pra isso/)
+  })
+})

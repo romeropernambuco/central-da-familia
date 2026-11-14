@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
 import { useApp } from '../../app/contexto'
+import { useAdultos } from '../../app/useMembros'
 import { Sheet } from '../../componentes/base'
 import { hojeRecife } from '../../lib/formato'
 
 /** Privacidade: termo em 1 tela, baixar os dados da família e apagar a família inteira. */
 export function Privacidade() {
   const { api, familia, trocarSessao, toast } = useApp()
+  // QA E11 (erro 7): família de 1 adulto lê "você", nunca "vocês dois"
+  const sozinho = useAdultos() === 1
   const [apagar, setApagar] = useState(false)
   const [conf, setConf] = useState('')
   const [erro, setErro] = useState('')
@@ -38,7 +41,7 @@ export function Privacidade() {
         <h3>O que guardamos</h3>
         <p>Nome da família, quem participa, limites, cartões (só nome e dias), lançamentos e o que a família anota da casa. Não guardamos senha de banco nem número de cartão.</p>
         <h3>Quem vê</h3>
-        <p>Só a sua família. Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2. Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. A equipe da casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
+        <p>Só a sua família. {sozinho ? 'Você vê tudo da família e é quem mexe. Se outro adulto entrar, cada um mexe só no seu, e tudo aparece com o nome de quem é.' : 'Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2.'} Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. A equipe da casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
         <h3>Inteligência artificial</h3>
         <p>A IA só lê a foto do cupom quando você manda e mostra pra você conferir antes de salvar. A conta de dinheiro é sempre do banco, nunca da IA. Cupom pode ter CPF: o app avisa antes de enviar.</p>
         <h3>Seus direitos (LGPD)</h3>

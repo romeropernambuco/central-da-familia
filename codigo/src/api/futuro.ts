@@ -43,7 +43,10 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   if (!p0) confirmar.push('parâmetros do objetivo (valem as premissas do TIME.md até a família gravar os dela)')
   const p = p0 || PARAMETROS_INICIAIS
   const hoje = String(j.hoje).slice(0, 10), m0 = j.mes_base || hoje.slice(0, 7)
-  const anoHoje = Number(m0.slice(0, 4)), ultimoAno = Number(VIRADA.slice(0, 4)) - 1
+  // modo renda (QA E11, erros 1 e 2): depois da virada o motor não precisa dos anos até 2028; vale a taxa do ano de hoje
+  // (se tiver) e, sem ela, o motor usa a taxa de trabalho e avisa (falta_taxa). A entrada sai mesmo sem nenhum ano.
+  const depoisDaVirada = m0 >= VIRADA
+  const anoHoje = Number(m0.slice(0, 4)), ultimoAno = depoisDaVirada ? anoHoje : Number(VIRADA.slice(0, 4)) - 1
 
   // taxa do ano: a da família se ela travou; senão a do Focus mais novo do ano; senão a da família; senão o ano mais perto que tiver
   const focus = new Map((j.focus || []).map(f => [f.ano, f]))
@@ -54,16 +57,17 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       if (v != null) out[a] = String(v)
     }
     const tem = Object.keys(out).map(Number).sort()
-    if (!tem.length) return out
+    if (!tem.length || depoisDaVirada) return out
     for (let a = anoHoje; a <= ultimoAno; a++) if (out[a] == null) { const perto = tem.reduce((x, y) => (Math.abs(y - a) < Math.abs(x - a) ? y : x)); out[a] = out[perto]; confirmar.push(`${nome} de ${a} (usei a de ${perto})`) }
     return out
   }
   const taxa_bruta_ano = doAno('selic_fim', p.taxa_bruta_ano || {}, 'Selic')
   const ipca_ano = doAno('ipca', p.ipca_ano || {}, 'IPCA')
-  if (!Object.keys(taxa_bruta_ano).length || !Object.keys(ipca_ano).length) return { entrada: null, confirmar, motivo: 'Falta a Selic e o IPCA de cada ano até 2028 (do Focus ou digitados aqui).' }
+  if (!depoisDaVirada && (!Object.keys(taxa_bruta_ano).length || !Object.keys(ipca_ano).length)) return { entrada: null, confirmar, motivo: 'Falta a Selic e o IPCA de cada ano até 2028 (do Focus ou digitados aqui).' }
 
   const teto_mes = (j.limites_mes || []).reduce((s, l) => s + (Number(l.limite_centavos) || 0), 0)
   if (p.gasto_2029_hoje == null) confirmar.push('gasto por mês em 2029 (a conta usa o teto do mês de hoje)')
+  if (depoisDaVirada && (!taxa_bruta_ano[anoHoje] || !ipca_ano[anoHoje])) confirmar.push(`Selic e IPCA de ${anoHoje} (a conta usa o rendimento acima da inflação do objetivo)`)
   if (p.piso_meses == null) confirmar.push('piso do caixa (a conta usa 6 meses de teto)')
   const parametros: Parametros = {
     mes_base: m0, virada: VIRADA, gasto_2029_hoje: p.gasto_2029_hoje ?? teto_mes, renda_certa_2029: p.renda_certa_2029 || 0,
