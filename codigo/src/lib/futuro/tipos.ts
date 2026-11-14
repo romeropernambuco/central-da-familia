@@ -71,5 +71,6 @@ export interface Gatilho {
   valor: Centavos; mes: Mes | null /* a partir de quando (aluguel) ou quando (venda e recebimento) */
   por_mes: boolean /* true = valor por mês (aluguel) */
   descricao?: string | null /* nome do recebimento quando a entrada traz; imóvel: null (o nome está em nome) */
+  aluguel_para_em?: Mes /* só no 'renova o contrato': 1º mês sem aluguel (mês seguinte ao contrato_ate); mes = até quando renovar pra contar */
 }
 export interface Marco { id: string; tipo: 'recebimento' | 'venda'; descricao: string | null; dono: string; valor: Centavos }

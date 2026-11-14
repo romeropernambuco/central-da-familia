@@ -3,7 +3,7 @@
 // conferem o desenho e as frases a partir do que o motor (futuro) devolve.
 import { afterEach, describe, expect, it } from 'vitest'
 import { acumuladoDoMes, mesMaisApertado } from './componentes/Graficos'
-import { frasesGatilho } from './componentes/Linha2028'
+import { frasesGatilho, frasesRenova } from './componentes/Linha2028'
 import { seloDesejo } from './telas/desejos/Desejos'
 import { seloImovel, pctAno } from './telas/guardado/Imoveis'
 import { avisoRendaCerta } from './telas/planejamento/Parametros'
@@ -143,5 +143,26 @@ describe('Revisão E14 (M2): o selo do imóvel segue o motor', () => {
     const { m, selo } = await conta('2029-03')
     expect(selo!.entra).toBe(m.entra_na_conta)
     expect(selo!.texto).toBe(m.entra_na_conta ? 'com contrato até 03/2029' : 'Contrato acaba em 03/2029: renove pra contar')
+  })
+})
+
+describe('MOTOR (contrato curto): a falta de 2029 explica o aluguel que não abate', () => {
+  afterEach(() => reiniciarExemplo())
+  it('contrato até 03/2029: frase "Inclui R$ X do aluguel de ..., que acaba em 03/2029. Renove o contrato pra ele contar."', async () => {
+    reiniciarExemplo()
+    exemploComo('bruno')
+    const sala = (await apiExemplo.imoveis!('fam-silva')).find(i => i.apelido.startsWith('Sala'))!
+    await apiExemplo.imovelSalvar!('fam-silva', sala.id, { ...sala, contrato_ate: '2029-03' })
+    const s = futuro((await apiExemplo.futuroEntradas!('fam-silva')).entrada!)
+    const g = s.gatilhos!.find(x => x.motivo === 'renova o contrato')!
+    expect(g).toBeTruthy()
+    const f = frasesRenova(s).map(limpa)
+    expect(f).toEqual([`Inclui ${limpa(frasesGatilho(g)).match(/R\$ [\d.,]+/)![0]} do aluguel de Sala comercial (exemplo), que acaba em 03/2029. Renove o contrato pra ele contar.`])
+    expect(limpa(frasesGatilho(g))).toMatch(/contrato curto: renove até \d\d\/\d{4} pra contar/)
+  })
+  it('contrato até 12/2029 (o do exemplo): nenhuma frase de renovar', async () => {
+    reiniciarExemplo()
+    const s = futuro((await apiExemplo.futuroEntradas!('fam-silva')).entrada!)
+    expect(frasesRenova(s)).toEqual([])
   })
 })

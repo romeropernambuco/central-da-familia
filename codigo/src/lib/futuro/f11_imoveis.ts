@@ -74,7 +74,7 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
     if (noRef) aluguel_ref += liq
     const perpetuo = noRef && im.contrato_ate !== null && compararMes(im.contrato_ate, minimo) >= 0
     if (perpetuo) aluguel_perp += liq
-    else if (noRef) gatilhos.push({ origem: 'imovel', id: im.id, nome: im.apelido, tipo: 'aluguel', motivo: 'renova o contrato', valor: liq, mes: minimo, por_mes: true, descricao: null })
+    else if (noRef) gatilhos.push({ origem: 'imovel', id: im.id, nome: im.apelido, tipo: 'aluguel', motivo: 'renova o contrato', valor: liq, mes: minimo, por_mes: true, descricao: null, aluguel_para_em: proximoMes(im.contrato_ate as Mes) })
     if (!vendidoAte(im, o.mes_ref)) patrimonio += im.valor
     // gatilhos do aluguel
     if (liq > 0) {

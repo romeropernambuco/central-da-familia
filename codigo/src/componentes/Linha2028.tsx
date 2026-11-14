@@ -75,6 +75,7 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
       <p className={'todo ' + (saida.folga >= 0 && !f.devendo && saida.patrimonio_necessario !== null ? 'ok' : 'warn')} style={{ marginTop: 10 }}><span>{f.caixa} {f.devendo}</span></p>
       <p className="sub linha-virada">{f.virada}{f.ajuste ? ` ${f.ajuste}` : ''}</p>
       {f.margem && <p className="sub linha-margem">{f.margem}</p>}
+      {saida.folga < 0 && frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{t}</p>)}
       <PodeEntrar saida={saida} />
       {l.length > 0 && (
         <details className="mes-a-mes">
@@ -96,12 +97,20 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
 
 /** O que "pode entrar": aparece, mas não entra na conta (aluguel e venda sem contrato, recebimento incerto). Vem do motor (gatilhos). */
 export function frasesGatilho(g: NonNullable<FuturoSaida['gatilhos']>[number]): string {
-  const quando = g.mes ? (g.por_mes ? ` a partir de ${mesAno(g.mes)}` : ` em ${mesAno(g.mes)}`) : ''
+  const quando = g.motivo === 'renova o contrato' ? '' : g.mes ? (g.por_mes ? ` a partir de ${mesAno(g.mes)}` : ` em ${mesAno(g.mes)}`) : ''
   const valor = `${r$(g.valor)}${g.por_mes ? ' por mês' : ''}`
-  const porque = g.motivo === 'sem contrato' ? 'sem contrato' : g.motivo === 'depois do contrato' ? 'depois que o contrato acaba' : g.motivo === 'contrato sem data de fim' ? 'contrato sem data de fim' : g.motivo === 'depois da virada' ? 'depois de 2028' : 'incerto'
+  const porque = g.motivo === 'renova o contrato' ? `contrato curto: renove até ${g.mes ? mesAno(g.mes) : 'a virada'} pra contar` : g.motivo === 'sem contrato' ? 'sem contrato' : g.motivo === 'depois do contrato' ? 'depois que o contrato acaba' : g.motivo === 'contrato sem data de fim' ? 'contrato sem data de fim' : g.motivo === 'depois da virada' ? 'depois de 2028' : 'incerto'
   // MOTOR: o nome do recebimento vem em descricao; sem ele, "Recebimento de <dono>"
   const nome = g.origem === 'recebimento' ? g.descricao ?? `Recebimento${g.nome ? ` de ${g.nome}` : ''}` : g.nome
   return `${nome}: ${valor}${quando} (${porque}).`
+}
+/** MOTOR (contrato curto): a falta de 2029 inclui o aluguel que não abate porque o contrato acaba antes de 12 meses.
+ *  1 frase por imóvel, embaixo da linha da falta, pra nunca ficar 2 números de falta sem explicação. Só escreve. */
+export function frasesRenova(s: FuturoSaida): string[] {
+  return (s.gatilhos || []).filter(g => g.motivo === 'renova o contrato').map(g => {
+    const ate = s.imoveis?.find(i => i.id === g.id)?.contrato_ate
+    return `Inclui ${r$(g.valor)} do aluguel de ${g.nome}, que acaba em ${ate ? mesAno(ate) : 'breve'}. Renove o contrato pra ele contar.`
+  })
 }
 export function PodeEntrar({ saida }: { saida: FuturoSaida }) {
   const gs = saida.gatilhos || []
@@ -137,6 +146,7 @@ export function Renda2029({ saida }: { saida: FuturoSaida }) {
       <PodeEntrar saida={saida} />
       {a && a.cortar_por_mes_2029 > 0 && (() => { const c = frasesCorte(a); return <>
         <p className="sub" style={{ marginTop: 8 }}><b>{c.principal}</b></p>
+        {frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{t}</p>)}
         {c.margem && <p className="sub linha-margem">{c.margem}</p>}
       </> })()}
       {f.taxa && <p className="sub" style={{ marginTop: 8 }}>{f.taxa}</p>}

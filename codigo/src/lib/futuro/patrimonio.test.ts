@@ -174,7 +174,7 @@ describe('contrato curto não abate o gasto pra sempre (revisão E14, M1)', () =
     const sala = curto.imoveis!.find((i) => i.id === 'sala')!
     expect(sala.entra_na_conta).toBe(false); expect(sala.aluguel_liquido_mes).toBe(163_850)
     expect(curto.aluguel_liquido_2029).toBe(0); expect(curto.renda_total_2029).toBe(curto.renda_sustentavel)
-    expect(curto.gatilhos!.find((g) => g.id === 'sala')).toMatchObject({ motivo: 'renova o contrato', mes: '2029-12', valor: 163_850, por_mes: true })
+    expect(curto.gatilhos!.find((g) => g.id === 'sala')).toMatchObject({ motivo: 'renova o contrato', mes: '2029-12', aluguel_para_em: '2029-04', valor: 163_850, por_mes: true }) // VERIFICADOR: o aluguel para em 04/2029; 12/2029 é o prazo pra renovar
     // o necessário sobe exatamente o que o aluguel abatia: (gasto − 1.638,50) × 1,1 ÷ taxa contra gasto × 1,1 ÷ taxa
     expect(curto.patrimonio_necessario!).toBeGreaterThan(longo.patrimonio_necessario!)
   })
