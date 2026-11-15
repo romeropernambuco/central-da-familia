@@ -1,8 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
+import { act, createContext, createElement, useContext, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { useApp, type Ctx } from '../../app/contexto'
+import { esconderValores } from '../../lib/formato'
+import { NumerosAba } from './NumerosAba'
+import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 import type { Api, FamiliaMinha } from '../../api/tipos'
 import { rotaDoHash, rotaPermitida, type Rota } from '../../app/rotas'
 import { EQUIPE } from './equipe'
 import { numerosDaAba, numerosExemplo } from './numeros'
+
+vi.mock('../../app/contexto', () => ({ useApp: vi.fn() }))
+vi.mock('../../app/App', () => ({ ir: vi.fn() }))
 
 const familia: FamiliaMinha = { id: 'exemplo', nome: 'Exemplo', papel: 'casal', membroNome: 'Exemplo', envelopeId: 'pessoal' }
 
@@ -64,23 +73,76 @@ describe('funcionários das abas', () => {
 })
 
 describe('privacidade dos indicadores carregados', () => {
-  it.each([false, true])('carrega com oculto=%s e alterna nos dois sentidos', async inicial => {
-    const { esconderValores } = await import('../../lib/formato')
-    const { Din } = await import('../../componentes/base')
-    const { createElement } = await import('react')
-    const { renderToStaticMarkup } = await import('react-dom/server')
+  it.each([false, true])('monta NumerosAba com oculto=%s e alterna sem remontar nos dois sentidos', async inicial => {
+    const documento = new DocumentoTeste()
+    vi.stubGlobal('document', documento)
+    vi.stubGlobal('window', { document: documento, HTMLElement: NoTeste, HTMLIFrameElement: class {} })
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    const container = documento.createElement('div')
+    documento.body.appendChild(container)
+    const root = createRoot(container as unknown as HTMLElement)
+    const resumoHoje = vi.fn().mockResolvedValue({ envelopes: [
+      { id: 'pessoal', limite_mes: 123.45, gasto_mes: -123.45, livre: 0 },
+    ] })
+    const contexto = createContext<Ctx>(null!)
+    vi.mocked(useApp).mockImplementation(() => useContext(contexto))
+    const api = { resumoHoje } as unknown as Api
+    const tentar = vi.fn()
+    const fechar = vi.fn()
+    // A mesma instância de elemento depende da atualização do contexto.
+    const ficha = createElement(NumerosAba, { id: 'assistente', fechar })
+    function Tela() {
+      const [oculto, setOculto] = useState(inicial)
+      const alternarOculto = () => {
+        esconderValores(!oculto)
+        setOculto(!oculto)
+      }
+      return createElement(contexto.Provider, {
+        value: { api, familia, sessao: null, versao: 0, tentar, oculto, alternarOculto } as unknown as Ctx,
+      },
+      createElement('button', {
+        onClick: alternarOculto,
+        'aria-label': oculto ? 'Mostrar os valores' : 'Esconder os valores',
+        'aria-pressed': oculto,
+      }),
+      ficha)
+    }
     try {
       esconderValores(inicial)
-      const numeros = await numerosDaAba({ resumoHoje: async () => ({ pode_gastar_hoje: 123.45, livre_mes: 123.45 }) } as unknown as Api, familia, 'inicio')
-      expect(numeros.map(n => n.valor)).toEqual([123.45, 123.45])
-      for (const oculto of [inicial, !inicial, inicial]) {
-        esconderValores(oculto)
-        for (const n of numeros) {
-          const html = renderToStaticMarkup(createElement(Din, { v: n.valor! }))
-          expect(html.includes('valor escondido')).toBe(oculto)
-          expect(html.includes(',45')).toBe(!oculto)
-        }
+      await act(async () => { root.render(createElement(Tela)) })
+      const secao = container.buscar(n => n.tagName === 'SECTION')[0]
+      const indicadores = container.buscar(n => n.tagName === 'DD')
+      expect(indicadores).toHaveLength(3)
+      const conferir = (oculto: boolean) => {
+        expect(container.buscar(n => n.tagName === 'SECTION')[0]).toBe(secao)
+        const atuais = container.buscar(n => n.tagName === 'DD')
+        expect(atuais).toHaveLength(3)
+        atuais.forEach((no, i) => {
+          expect(no).toBe(indicadores[i])
+          const dinheiro = no.buscar(n => n.getAttribute('aria-label') !== null)
+          expect(dinheiro).toHaveLength(1)
+          expect(no.textContent).toBe(oculto ? 'R$•••' : ['R$123,45', 'passou R$123,45', 'R$0'][i])
+          expect(dinheiro[0].getAttribute('aria-label')).toBe(oculto
+            ? 'valor escondido'
+            : ['R$\u00a0123,45', 'passou R$\u00a0123,45', 'R$\u00a00'][i])
+        })
+        expect(resumoHoje).toHaveBeenCalledTimes(1)
+        expect(resumoHoje).toHaveBeenCalledWith('exemplo')
+        expect(tentar).not.toHaveBeenCalled()
       }
-    } finally { esconderValores(false) }
+      conferir(inicial)
+      for (const oculto of [!inicial, inicial]) {
+        const botao = container.buscar(n => n.tagName === 'BUTTON')[0]
+        expect(botao.getAttribute('aria-label')).toBe(oculto ? 'Esconder os valores' : 'Mostrar os valores')
+        await act(async () => { botao.click() })
+        expect(botao.getAttribute('aria-pressed')).toBe(String(oculto))
+        conferir(oculto)
+      }
+    } finally {
+      await act(async () => { root.unmount() })
+      esconderValores(false)
+      vi.mocked(useApp).mockReset()
+      vi.unstubAllGlobals()
+    }
   })
 })
