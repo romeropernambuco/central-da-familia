@@ -1,8 +1,8 @@
 import type { Api, FamiliaMinha } from '../../api/tipos'
 import type { Rota } from '../../app/rotas'
-import { hojeRecife, reais } from '../../lib/formato'
+import { hojeRecife } from '../../lib/formato'
 
-export type Indicador = { nome: string; texto: string }
+export type Indicador = { nome: string; texto: string; valor?: never } | { nome: string; valor: number; texto?: never }
 const quantidade = (nome: string, valor: number): Indicador => ({ nome, texto: String(valor) })
 
 /** Mesmas leituras das abas, sem escrita e sem manter uma segunda conta financeira. */
@@ -11,21 +11,21 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
   switch (rota) {
     case 'inicio': {
       const r = await api.resumoHoje(id)
-      return [{ nome: 'Pode gastar hoje', texto: reais(r.pode_gastar_hoje) }, { nome: 'Livre no mês', texto: reais(r.livre_mes) }]
+      return [{ nome: 'Pode gastar hoje', valor: r.pode_gastar_hoje }, { nome: 'Livre no mês', valor: r.livre_mes }]
     }
     case 'orcamento': {
       const r = await api.resumoHoje(id)
       const e = r.envelopes.find(e => e.id === familia.envelopeId)
       if (!e) throw new Error('Orçamento pessoal indisponível')
-      return [{ nome: 'Limite do mês', texto: reais(e.limite_mes) }, { nome: 'Gasto no mês', texto: reais(e.gasto_mes) }, { nome: 'Livre', texto: reais(e.livre) }]
+      return [{ nome: 'Limite do mês', valor: e.limite_mes }, { nome: 'Gasto no mês', valor: e.gasto_mes }, { nome: 'Livre', valor: e.livre }]
     }
     case 'lancamentos': {
       const linhas = (await api.lancamentos(id, hojeRecife().slice(0, 7))).filter(l => !l.apagado_em)
-      return [quantidade('Lançamentos ativos no mês', linhas.length), { nome: 'Total anotado no mês', texto: reais(linhas.reduce((s, l) => s + l.valor, 0)) }]
+      return [quantidade('Lançamentos ativos no mês', linhas.length), { nome: 'Total anotado no mês', valor: linhas.reduce((s, l) => s + l.valor, 0) }]
     }
     case 'cartoes': {
       const [cartoes, faturas] = await Promise.all([api.cartoes(id), api.faturas(id, 1)])
-      return [quantidade('Cartões cadastrados', cartoes.length), { nome: 'Faturas consultadas (1 mês)', texto: reais(faturas.reduce((s, f) => s + f.total, 0)) }]
+      return [quantidade('Cartões cadastrados', cartoes.length), { nome: 'Faturas consultadas (1 mês)', valor: faturas.reduce((s, f) => s + f.total, 0) }]
     }
     case 'casa': {
       const e = await api.estoque(id)
@@ -33,12 +33,12 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
     }
     case 'guardado': {
       const g = await api.guardadoHoje(id)
-      return [{ nome: 'Total guardado', texto: reais(g.total) }, { nome: 'Rendimento líquido hoje', texto: reais(g.rendeu_hoje_liquido) }]
+      return [{ nome: 'Total guardado', valor: g.total }, { nome: 'Rendimento líquido hoje', valor: g.rendeu_hoje_liquido }]
     }
     case 'planejamento': {
       if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')
       const abertos = (await api.recebimentos(id)).filter(r => !r.recebido_em)
-      return [quantidade('Recebimentos previstos em aberto', abertos.length), { nome: 'Total previsto (todos os meses)', texto: reais(abertos.reduce((s, r) => s + r.valor, 0)) }]
+      return [quantidade('Recebimentos previstos em aberto', abertos.length), { nome: 'Total previsto (todos os meses)', valor: abertos.reduce((s, r) => s + r.valor, 0) }]
     }
     case 'desejos': {
       if (!api.desejos) throw new Error('Desejos indisponíveis')
