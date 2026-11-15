@@ -125,7 +125,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   if (j.saldo_caixa == null) confirmar.push('dinheiro parado na conta, fora das aplicações (a conta usa R$ 0)')
 
   const compromissos: FuturoEntrada['compromissos'] = []
-  for (const l of j.parcelas_futuras || []) for (const x of l.parcelas_lista || []) compromissos.push({ mes: x.mes_fatura, valor: Number(x.valor_centavos) || 0, tipo: 'parcela' })
+  // Parcelas já estão no teto do envelope; como compromissos seriam descontadas duas vezes.
   // 13º só nos pagamentos (decisão do dono): 1 salário de cada pessoa da folha em dezembro de cada ano até a virada
   compromissos.push(...folha13(((j.config?.casa_folha?.pessoas) || []).map(x => Math.round((Number(x.salario) || 0) * 100)), m0, VIRADA))
 
