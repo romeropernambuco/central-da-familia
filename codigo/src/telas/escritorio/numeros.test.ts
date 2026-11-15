@@ -27,8 +27,8 @@ describe('funcionários das abas', () => {
       { id: 'pessoal', limite_mes: 100, gasto_mes: 20, livre: 80 },
     ] }) } as unknown as Api
     const numeros = await numerosDaAba(api, familia, 'orcamento')
-    expect(numeros[1].texto).toContain('20')
-    expect(numeros[2].texto).toContain('80')
+    expect(numeros[1].valor).toBe(20)
+    expect(numeros[2].valor).toBe(80)
     expect(api.resumoHoje).toHaveBeenCalledWith('exemplo')
     await expect(numerosDaAba(api, { ...familia, envelopeId: 'ausente' }, 'orcamento')).rejects.toThrow('indisponível')
   })
@@ -38,7 +38,7 @@ describe('funcionários das abas', () => {
     const api = { lancamentos } as unknown as Api
     const numeros = await numerosDaAba(api, familia, 'lancamentos')
     expect(numeros[0].texto).toBe('1')
-    expect(numeros[1].texto).toContain('20')
+    expect(numeros[1].valor).toBe(20)
     lancamentos.mockRejectedValue(new Error('Sem leitura'))
     await expect(numerosDaAba(api, familia, 'lancamentos')).rejects.toThrow('Sem leitura')
   })
@@ -57,8 +57,30 @@ describe('funcionários das abas', () => {
       expect(numeros.length, rota).toBeGreaterThan(0)
       for (const n of numeros) {
         expect(n.nome.length, rota).toBeGreaterThan(0)
-        expect(n.texto, rota).not.toMatch(/NaN|undefined|Infinity/)
+        expect(String(n.valor ?? n.texto), rota).not.toMatch(/NaN|undefined|Infinity/)
       }
     }
+  })
+})
+
+describe('privacidade dos indicadores carregados', () => {
+  it.each([false, true])('carrega com oculto=%s e alterna nos dois sentidos', async inicial => {
+    const { esconderValores } = await import('../../lib/formato')
+    const { Din } = await import('../../componentes/base')
+    const { createElement } = await import('react')
+    const { renderToStaticMarkup } = await import('react-dom/server')
+    try {
+      esconderValores(inicial)
+      const numeros = await numerosDaAba({ resumoHoje: async () => ({ pode_gastar_hoje: 123.45, livre_mes: 123.45 }) } as unknown as Api, familia, 'inicio')
+      expect(numeros.map(n => n.valor)).toEqual([123.45, 123.45])
+      for (const oculto of [inicial, !inicial, inicial]) {
+        esconderValores(oculto)
+        for (const n of numeros) {
+          const html = renderToStaticMarkup(createElement(Din, { v: n.valor! }))
+          expect(html.includes('valor escondido')).toBe(oculto)
+          expect(html.includes(',45')).toBe(!oculto)
+        }
+      }
+    } finally { esconderValores(false) }
   })
 })
