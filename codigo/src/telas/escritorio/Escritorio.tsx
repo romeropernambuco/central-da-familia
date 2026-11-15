@@ -9,7 +9,8 @@ import { FichaFuncionario, donoDaPergunta } from './Ficha'
 import { chaveSimples } from '../../api/normaliza2'
 import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/formato'
 import { demoraTexto, fraseDoDia } from '../../lib/guardado'
-import { Cena3D, IcoEstado, ROTULO_ESTADO, salaDe } from './Cena3D'
+// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
+import { Cena3D, IcoEstado, ROTULO_ESTADO, salaDe } from './Cena3D.tsx'
 import { SALAS_NOME } from './cenaBase'
 import { useEquipeCompleta } from './useEquipe'
 import { umaPorVez } from '../../lib/seguro'
@@ -79,7 +80,7 @@ function Hoje() {
           ))}
         </section>
       </div>
-      {aberto && <FichaFuncionario f={aberto} e={e} responder={responder} fechar={() => setSel(null)} />}
+      {aberto && <FichaFuncionario key={aberto.id} f={aberto} e={e} responder={responder} fechar={() => setSel(null)} />}
     </>
   )
 }

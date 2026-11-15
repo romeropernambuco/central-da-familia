@@ -24,8 +24,8 @@ const DO_BANCO: FuncionarioEsc[] = [
 ]
 
 describe('C2: lista única da equipe', () => {
-  it('13 funcionários, com os 5 que faltavam, cada um com papel, dado, 3 linhas do que faz e mesa', () => {
-    expect(EQUIPE).toHaveLength(13)
+  it('18 funcionários, preservando os originais e cobrindo as abas, com papel, dado e mesa', () => {
+    expect(EQUIPE).toHaveLength(18)
     for (const id of ['auditor', 'assistente', 'tesoureiro', 'usina', 'presenca']) expect(POR_ID[id], id).toBeTruthy()
     expect(POR_ID.auditor.nome).toBe('Auditor de Estoque'); expect(POR_ID.tesoureiro.nome).toBe('Tesoureiro de Receitas')
     expect(POR_ID.usina.nome).toBe('Gerente da Usina'); expect(POR_ID.presenca.nome).toBe('Controlador de Presença')
@@ -43,8 +43,9 @@ describe('C2: lista única da equipe', () => {
     const achados = (tudo.match(/[A-Za-zÀ-ÿ]+/g) || []).filter(p => NOMES_REAIS.has(impressao(p)))
     expect(achados).toHaveLength(0)
   })
-  it('a página publicada usa a mesma lista (id, nome, nome curto, sala e mesa)', () => {
-    expect(daPagina.map(x => x.id)).toEqual(EQUIPE.map(m => m.id))
+  it('preserva os 13 personagens do protótipo publicado sem exigir publicação dos novos', () => {
+    expect(daPagina).toHaveLength(13)
+    expect(daPagina.map(x => x.id)).toEqual(EQUIPE.slice(0, 13).map(m => m.id))
     for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome, p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
   })
   it('na página, quem não tem dado no banco não tem número (semDado, sem num)', () => {
@@ -54,7 +55,7 @@ describe('C2: lista única da equipe', () => {
     const r = completarEquipe(DO_BANCO, { rec: null, est: null, avisos: [], pres: {} }, '2026-11-18')
     expect(r.map(f => f.id)).toEqual(EQUIPE.map(m => m.id))
     const sem = r.filter(f => f.semDado).map(f => f.id).sort()
-    expect(sem).toEqual(['assistente', 'auditor', 'tesoureiro', 'usina']) // sem leitura do banco: só a presença tem dado (ninguém veio)
+    expect(sem).toEqual(['analista', 'anfitriao', 'assistente', 'auditor', 'protetora', 'sonhadora', 'tesoureiro', 'usina', 'zelador'])
     for (const f of r.filter(f => f.semDado)) { expect(f.frase).toMatch(/^Ainda sem dado\./); expect(f.frase).not.toMatch(/R\$|\d/) }
     expect(r.find(f => f.id === 'fiscal')!.estado).toBe('precisa_de_voce') // o que veio do banco fica como veio
   })
@@ -69,6 +70,6 @@ describe('C2: lista única da equipe', () => {
     expect(f('tesoureiro').frase.replace(/\u00a0/g, ' ')).toBe('1 recebimento com data pra entrar. O próximo: Contrato (exemplo), R$ 50.000 em 03/2027.')
     expect(f('auditor').frase).toBe('Última contagem do estoque: 10/11. 1 item acabou, 1 com pouco.')
     expect(f('presenca').frase).toBe('Hoje marcou presença: Carla.')
-    expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['assistente', 'usina'])
+    expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['analista', 'anfitriao', 'assistente', 'protetora', 'sonhadora', 'usina', 'zelador'])
   })
 })

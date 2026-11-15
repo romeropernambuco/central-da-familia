@@ -24,8 +24,8 @@ export interface Cena {
   destruir(): void
 }
 
-/** As 5 salas, na ordem dos botões. A geometria de cada uma está em cena3d.ts. */
-export const SALAS_NOME: Record<string, string> = { caixa: 'Caixa', casa: 'Casa', cartoes: 'Cartões', patrimonio: 'Patrimônio', recepcao: 'Recepção' }
+/** Salas na ordem dos botões. A geometria de cada uma está em cena3d.ts. */
+export const SALAS_NOME: Record<string, string> = { caixa: 'Caixa', casa: 'Casa', cartoes: 'Cartões', patrimonio: 'Patrimônio', recepcao: 'Recepção', gestao: 'Gestão', apoio: 'Apoio' }
 
 export function temWebGL(): boolean {
   try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))) } catch { return false }

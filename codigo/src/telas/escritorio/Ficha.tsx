@@ -13,7 +13,9 @@ import { reduzirFoto } from '../../lib/foto'
 import { dataCurta, diaSemana, FUSO, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 import { rendeQuanto } from '../../lib/guardado'
 import type { Folha } from './ajudantes'
-import { IcoEstado, ROTULO_ESTADO } from './Cena3D'
+// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
+import { IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
+import { NumerosAba } from './NumerosAba'
 import { EQUIPE } from './equipe'
 
 /** O que cada funcionário faz e quando cobra: 3 linhas, sempre na 1ª pessoa. */
@@ -50,6 +52,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
   return (
     <Sheet titulo={f.nome} fechar={fechar} lado rotulo={`Ficha: ${f.nome}`}>
       <div className="ficha" data-ficha={f.id}>
+        <NumerosAba key={f.id} id={f.id} fechar={fechar} />
         <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></p>
 
         <section aria-labelledby="fAgora" data-parte="agora" ref={topo}>
