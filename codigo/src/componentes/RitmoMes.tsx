@@ -1,3 +1,4 @@
+import { textoPrivado } from './privacidade'
 import type { Envelope } from '../api/tipos'
 import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
 import { GraficoMes } from './Graficos'
@@ -25,7 +26,7 @@ export function marcaDaSemana(hoje: string): number {
 function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo: string }) {
   const f = Math.max(0, Math.min(1, feito)), m = Math.max(0, Math.min(1, marca))
   return (
-    <div className="meter ritmo-meter" role="img" aria-label={rotulo}>
+    <div className="meter ritmo-meter" role="img" aria-label={textoPrivado(rotulo)}>
       <i style={{ width: Math.max(f > 0 ? 2 : 0, f * 100) + '%' }} className={feito > marca + 0.0001 ? 'acima' : ''} />
       <span className="risco" style={{ left: m * 100 + '%' }} />
     </div>

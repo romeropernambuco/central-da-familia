@@ -5,7 +5,7 @@ import { Explicacao, Sheet } from '../componentes/base'
 import { ErroRede, ErroSessao } from '../api/erros'
 import { comIntervalo, resumoSemDinheiro } from '../lib/seguro'
 import { esconderValores, hojeRecife } from '../lib/formato'
-import { mascaraDoOlho } from './mascara'
+import { textoPrivado } from '../lib/formato'
 
 export interface PreLancar { envelope?: string; valor?: number; descricao?: string; quando?: 'hoje' | 'ontem'; /** R12: corrigir este lançamento */ corrigir?: import('../api/tipos').Lancamento; /** R11: abre direto em "Entrou dinheiro" */ entrou?: boolean; /** E9: veio do Atalho do iPhone (nunca salva sozinho) */ atalho?: { cartao?: string; erro?: string } }
 interface Toast { msg: string; desfazer?: () => void | Promise<void>; id: number }
@@ -51,7 +51,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const alternarOculto = useCallback(() => setOculto(o => { const n = !o; esconderValores(n); try { localStorage.setItem('esconder_valores', n ? '1' : '0') } catch { /* sem armazenamento */ } return n }), [])
 
   // olho fechado: além do <Din>, esconde todo "R$ 1.234" que vem pronto em frase (Escritório, avisos, fichas)
-  useEffect(() => { mascaraDoOlho(oculto); return () => mascaraDoOlho(false) }, [oculto])
+  esconderValores(oculto)
 
   const equipe = familia?.papel === 'equipe'
   const [semRede, setSemRede] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false)
@@ -157,13 +157,13 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       {children}
       {exp && (
         <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
-          <p className="corpo"><b>{exp.titulo}</b></p>
+          <p className="corpo"><b>{textoPrivado(exp.titulo, oculto)}</b></p>
           <Explicacao linhas={exp.linhas} nota={exp.nota} />
         </Sheet>
       )}
       {toastE && (
         <div className="toast" role="status" key={toastE.id}>
-          <span>{toastE.msg}</span>
+          <span>{textoPrivado(toastE.msg, oculto)}</span>
           {toastE.desfazer && <button type="button" onClick={() => { const d = toastE.desfazer!; setToast(null); tentar(async () => { await d() }) }}>Desfazer</button>}
         </div>
       )}

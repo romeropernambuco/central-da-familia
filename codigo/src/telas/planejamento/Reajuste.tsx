@@ -1,3 +1,4 @@
+import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
 // E7 (F8): o reajuste do teto, sugerido no mês do reajuste (padrão janeiro) pela inflação do ano anterior. Vale só com
 // os 2 do casal aprovando no mesmo teto, a partir do mês de vigência; aí cada um aplica no que ajusta. Com a f_12 quem
 // decide é o banco: reajuste_situacao, reajuste_votar (1 voto por adulto, só o próprio) e reajuste_aplicar (recusa sem
@@ -184,19 +185,19 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
           : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
           : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
           : `Só vale com ${adultos === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir de ${quando}.`}
-        {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. ')}{sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.'}</small>}
+        {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{textoPrivado(sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. '))}{textoPrivado(sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.')}</small>}
         {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo pra aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
         {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || !mesmoIpca(meuVoto.ipca, ipcaVoto)) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
         {pe === 'vencido' && !refazer && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" onClick={() => setRefazer({ teto: valorParaTexto((sit?.teto_aprovado ?? sugerido) / 100), ipca: textoDaTaxa(sit?.ipca_aprovado ?? ipcaVoto) })}>Votar de novo</button></span>}
         {pe === 'vencido' && refazer && (
           <span className="reajuste-refazer" style={{ display: 'grid', gap: 10, marginTop: 10 }}>
             <span className="campo"><span>Teto da família por mês</span><CampoValor valor={refazer.teto} mudar={v => setRefazer({ ...refazer, teto: v })} rotulo="Teto da família por mês" /></span>
-            <label className="campo"><span>IPCA (%)</span><input className="inp" inputMode="decimal" value={refazer.ipca} onChange={e => setRefazer({ ...refazer, ipca: e.target.value.replace(/[^\d,.]/g, '') })} /></label>
+            <label className="campo"><span>IPCA (%)</span><CampoDecimal className="inp" inputMode="decimal" value={refazer.ipca} onChange={e => setRefazer({ ...refazer, ipca: e.target.value.replace(/[^\d,.]/g, '') })} /></label>
             <small>Vale a partir de {mesLongo(vigenciaDoRevoto(hoje) + '-01')}, {adultos === 1 ? 'com o seu voto' : 'se os 2 aprovarem os mesmos números'}.</small>
             <span className="row-btns"><button className="btn sm primary" type="button" disabled={gravando} onClick={votarDeNovo}><Check size={18} />Aprovo com estes números</button><button className="btn sm line" type="button" onClick={() => setRefazer(null)}>Deixar como está</button></span>
           </span>
         )}
-        {pe === 'aprovado' && meus.length > 0 && !passouAplicar && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {meus.map(e => e.nome).join(', ')}</button></span>}
+        {pe === 'aprovado' && meus.length > 0 && !passouAplicar && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aplicar}>Aplicar em {textoPrivado(meus.map(e => e.nome).join(', '))}</button></span>}
       </span>
     </div>
   )

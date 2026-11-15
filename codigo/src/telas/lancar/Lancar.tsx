@@ -1,3 +1,4 @@
+import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
@@ -171,10 +172,10 @@ export function Lancar() {
         {oculto && valor > 0 && <small className="sub">Valores escondidos. Toque no olho, lá em cima, pra ver o que digitou.</small>}
       </div>
       {/* B10: o "O que foi?" fica à vista, logo abaixo do valor */}
-      {modo === 'gasto' && <input className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />}
+      {modo === 'gasto' && <CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
-          <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
+          <button key={t} type="button" onClick={() => digitar(t)} aria-label={textoPrivado(t === 'apagar' ? 'Apagar' : t)}>
             {t === 'apagar' ? <Delete size={26} /> : t}
           </button>
         ))}
@@ -191,7 +192,7 @@ export function Lancar() {
         </div>
       )}
       {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
-      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome pra salvar.'}{cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : ''}</span></p>}
+      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{textoPrivado(atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome pra salvar.')}{textoPrivado(cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : '')}</span></p>}
       {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} /> : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
@@ -203,7 +204,7 @@ export function Lancar() {
           {!equipe && cartoes.length > 0 && (
             <div className="atrow"><span className="atl">Pagou</span>
               <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => { setCartao(null); setParcelas(1) }}>Pix ou dinheiro</button>
-              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}>{x.nome}</button>)}
+              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}>{textoPrivado(x.nome)}</button>)}
             </div>
           )}
           {c && (
@@ -212,7 +213,7 @@ export function Lancar() {
               <div className="pills parc" role="group" aria-label="Em quantas vezes">
                 {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} disabled={p > 1 && !temDias} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
               </div>
-              {!temDias && <p className="sub">O {c.nome} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
+              {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
               {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
               {sim.length > 1 && <p className="sub parc-fatura"><b>{parcelas}x de {reais(sim[sim.length - 1].valor)}</b> nas faturas de {dataCurta(venceEm(sim[0].mes))} a {dataBr(venceEm(sim[sim.length - 1].mes)).replace(/^(\d\d\/\d\d)\/\d\d(\d\d)$/, '$1/$2')}. Cada parcela sai do seu limite no dia 1 do mês da fatura: {mesLongo(sim[0].mes + '-01')} a {mesLongo(sim[sim.length - 1].mes + '-01')}. {contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.'}</p>}
             </div>
@@ -232,15 +233,15 @@ export function Lancar() {
               const depois = centavos(agora - conta)
               const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
               return (
-                <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${e.nome}`}>
-                  <b>{e.nome}</b>
+                <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={textoPrivado(`${corr ? 'Salvar correção' : 'Salvar'} em ${e.nome}`)}>
+                  <b>{textoPrivado(e.nome)}</b>
                   <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
                 </button>
               )
             })}
           </div>
           {confirmar && (
-            <div className="todo warn confirmar-valor" role="alert"><span><b>{reais(valor)} é mais que o mês todo de {confirmar.nome} ({reais(confirmar.mes)}).</b> Está certo?</span>
+            <div className="todo warn confirmar-valor" role="alert"><span><b>{reais(valor)} é mais que o mês todo de {textoPrivado(confirmar.nome)} ({reais(confirmar.mes)}).</b> Está certo?</span>
               <span className="row-btns" style={{ marginTop: 8 }}>
                 <button className="btn sm primary" type="button" disabled={salvando} onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}>Sim, salvar {reais(valor)}</button>
                 <button className="btn sm line" type="button" onClick={() => { setConfirmar(null); setTxt(''); setSelecionado(false) }}>Corrigir o valor</button>
@@ -252,7 +253,7 @@ export function Lancar() {
           {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Trash2 size={20} />Apagar este lançamento</button>}
         </>
       )}
-      {erro && <p className="erro" role="alert">{erro}</p>}
+      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
     </Sheet>
   )
 }
@@ -302,10 +303,10 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
       </div>
       <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta pra 2029) e <b>não aumenta</b> o que dá pra gastar.</>}</p>
       {visor}
-      <input className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
+      <CampoPrivado className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
       {!trabalho && <div className="campo"><span id="eDest">Pra onde vai</span>
         <div className="pills" role="group" aria-labelledby="eDest">
-          {apps.map(a => <button key={a.id} type="button" className="pill" aria-pressed={alvo === a.id} onClick={() => setDestino(a.id)}>{a.nome}<small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small></button>)}
+          {apps.map(a => <button key={a.id} type="button" className="pill" aria-pressed={alvo === a.id} onClick={() => setDestino(a.id)}>{textoPrivado(a.nome)}<small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small></button>)}
           <button type="button" className="pill" aria-pressed={alvo === 'combinado'} onClick={() => setDestino('combinado')}>É pra um gasto combinado</button>
         </div>
         {!apps.length && <small>Você ainda não tem nada no Guardado. Dá pra anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
@@ -344,7 +345,7 @@ function AnotarCompra() {
   const pegarFoto = async (arq: File | null) => { if (!arq) return; try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') } }
   return (
     <Sheet titulo="Anotar compra" fechar={fecharLancar} rotulo="Anotar compra">
-      <label className="campo"><span>O que você comprou?</span><input className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
+      <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
         <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">
           <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}>Feira da semana</button>
@@ -357,7 +358,7 @@ function AnotarCompra() {
         {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
       </div>
       <p className="sub">O casal confere o valor pela foto. Você não precisa digitar nenhum valor.</p>
-      {erro && <p className="erro" role="alert">{erro}</p>}
+      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
       <button type="button" className="btn primary full" disabled={gravando} onClick={anotar}><Check size={20} />Anotar a compra</button>
     </Sheet>
   )

@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Plus, Save, Target, Wallet, Shield, Banknote, CircleCheck } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -104,8 +105,8 @@ export function Planejamento() {
           <p className="sub" style={{ marginBottom: 12 }}>Quanto cada um pode gastar por mês. Mudou aqui, muda o número de hoje.</p>
           <div>
             {resumo.envelopes.map(e => (
-              <label className="linha-campo" key={e.id} {...(mudaLimite(e) ? {} : { 'data-do-outro': donoDo(e) || 'família' })}>
-                <span className="n">{e.nome}<small>{!mudaLimite(e) && casal ? `de ${donoDo(e)}: só ${donoDo(e)} muda` : e.regra === 'diario' ? 'vira valor por dia' : e.regra === 'semanal' ? 'vira teto por semana' : 'vale pro mês'}</small></span>
+              <label className="linha-campo" key={e.id} {...(mudaLimite(e) ? {} : { 'data-do-outro': textoPrivado(donoDo(e) || 'família') })}>
+                <span className="n">{textoPrivado(e.nome)}<small>{textoPrivado(!mudaLimite(e) && casal ? `de ${donoDo(e)}: só ${donoDo(e)} muda` : e.regra === 'diario' ? 'vira valor por dia' : e.regra === 'semanal' ? 'vira teto por semana' : 'vale pro mês')}</small></span>
                 <CampoValor valor={lim[e.id] || ''} desligado={!mudaLimite(e)} mudar={v => setLim({ ...lim, [e.id]: v })} />
               </label>
             ))}
@@ -131,7 +132,7 @@ export function Planejamento() {
               { linha: 'Sobra se o combinado for gasto todo', valor: sobra }]} nota="Previsão: considera que cada limite gasta tudo o que foi combinado. Dinheiro que entra a mais não entra aqui: vai pro guardado e conta pra 2029." />
           </div>
           {sobra < 0 && <p className="todo warn" style={{ marginBottom: 12 }}>Os limites passam {reais(-sobra)} da renda do mês. Baixe um limite ou anote uma renda que falta.</p>}
-          <ul className="list">{rendas.map(r => <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.dono && r.dono !== familia.membroNome ? { 'data-do-outro': r.dono } : {})}><span className="m"><b>{r.nome}</b><small>{r.dono && !sozinho ? (r.dono === familia.membroNome ? 'sua · ' : `de ${r.dono} · `) : ''}{r.tipo === 'extra' ? 'entrou a mais: vai pro guardado' : r.tipo === 'variavel' ? `muda todo mês: de ${reais(r.fraco || r.valor)} a ${reais(r.bom || r.valor)}. A conta usa o mês fraco.` : 'salário'}</small></span><span className="v"><Din v={r.tipo === 'variavel' ? r.fraco || r.valor : r.valor} /></span></li>)}</ul>
+          <ul className="list">{rendas.map(r => <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.dono && r.dono !== familia.membroNome ? { 'data-do-outro': textoPrivado(r.dono) } : {})}><span className="m"><b>{textoPrivado(r.nome)}</b><small>{textoPrivado(r.dono && !sozinho ? (r.dono === familia.membroNome ? 'sua · ' : `de ${r.dono} · `) : '')}{r.tipo === 'extra' ? 'entrou a mais: vai pro guardado' : r.tipo === 'variavel' ? `muda todo mês: de ${reais(r.fraco || r.valor)} a ${reais(r.bom || r.valor)}. A conta usa o mês fraco.` : 'salário'}</small></span><span className="v"><Din v={r.tipo === 'variavel' ? r.fraco || r.valor : r.valor} /></span></li>)}</ul>
           {doTrabalho > 0 && <p className="sub" style={{ marginTop: 8 }}>Este mês já entrou do seu trabalho: <b>{reais(doTrabalho)}</b>.</p>}
           {/* E3 (conserto 8): renda que muda. O combinado sai do mês fraco; no mês bom, o que passa do fraco vai pro guardado */}
           {(() => {
@@ -159,7 +160,7 @@ export function Planejamento() {
           <div className="card-h"><h2 id="pMet"><Target size={24} aria-hidden="true" />Metas</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('meta')}><Plus size={16} />Meta</button>}</div>
           {metas.map(m => (
             <div key={m.id} style={{ padding: '8px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{m.nome}</b><span className="sub"><Din v={m.guardado} /> de {reais(m.valor)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{textoPrivado(m.nome)}</b><span className="sub"><Din v={m.guardado} /> de {reais(m.valor)}</span></div>
               <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true"><i style={{ width: Math.min(100, (m.guardado / (m.valor || 1)) * 100) + '%' }} /></div>
             </div>
           ))}
@@ -204,7 +205,7 @@ function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: 
   const f = textoParaValor(fraco), b = textoParaValor(bom)
   return (
     <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (!nome) return; if (tipo === 'renda' && muda) { if (f > 0) salvar(nome, f, { fraco: f, bom: Math.max(b, f) }) } else if (v) salvar(nome, textoParaValor(v)) }}>
-      <label className="campo"><span>Nome</span><input className="inp" placeholder={tipo === 'renda' ? 'Ex.: Salário, meu trabalho' : 'Ex.: Viagem de julho'} value={nome} onChange={e => setNome(e.target.value)} /></label>
+      <label className="campo"><span>Nome</span><CampoPrivado className="inp" placeholder={tipo === 'renda' ? 'Ex.: Salário, meu trabalho' : 'Ex.: Viagem de julho'} value={nome} onChange={e => setNome(e.target.value)} /></label>
       {tipo === 'renda' && (
         <div className="pills" role="group" aria-label="Como é essa renda">
           <button type="button" className="pill" aria-pressed={!muda} onClick={() => setMuda(false)}>Valor fixo</button>
@@ -218,7 +219,7 @@ function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: 
           {f > 0 && <p className="todo ok"><span>Seu combinado sugerido: <b>{reais(f)}</b> (o mês fraco). O que vier a mais vai pro guardado{b > f ? `: até ${reais(centavos(b - f))} no mês bom` : ''}.</span></p>}
         </>
       ) : (
-        <label className="campo"><span>{tipo === 'renda' ? 'Valor por mês' : 'Quanto precisa juntar'}</span><input className="inp" inputMode="decimal" value={v} onChange={e => setV(e.target.value.replace(/[^\d,]/g, ''))} /></label>
+        <label className="campo"><span>{tipo === 'renda' ? 'Valor por mês' : 'Quanto precisa juntar'}</span><CampoValor valor={v} mudar={v => setV(v.replace(/[^\d,]/g, ''))}  /></label>
       )}
       <button className="btn primary full" type="submit">Salvar</button>
     </form>

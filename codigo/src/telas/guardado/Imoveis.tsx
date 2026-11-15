@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 // RODADA_PATRIMONIO (ordem do dono, 14/11): o bloco "Imóveis" dentro do Guardado (não é tela nova).
 // Lista com apelido, dono, valor, aluguel líquido por mês, rentabilidade ao ano comparada com a das aplicações e o selo
 // "com contrato" ou "sem contrato: não entra na conta"; folha de adicionar e editar com "?" em cada campo.
@@ -94,14 +95,14 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
             const selo = seloImovel(i, m?.entra_na_conta, renovaDe(i.id))
             const dono = i.meu ? 'seu' : `de ${i.dono_nome || 'outra pessoa'}`
             return (
-              <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': i.dono_nome || 'outra pessoa' })}>
-                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={`${i.apelido}, ${dono}, vale ${reais(i.valor)}${selo ? `, ${selo.texto}` : ''}. ${i.meu ? 'Abrir pra mudar.' : 'Abrir pra ver.'}`}>
+              <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': textoPrivado(i.dono_nome || 'outra pessoa') })}>
+                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={textoPrivado(`${i.apelido}, ${dono}, vale ${reais(i.valor)}${selo ? `, ${selo.texto}` : ''}. ${i.meu ? 'Abrir pra mudar.' : 'Abrir pra ver.'}`)}>
                   <span className="tile"><Building2 size={20} /></span>
-                  <span className="m"><b className="quebra">{i.apelido}</b>
-                    <small>{adultos !== 1 ? `${dono} · ` : ''}{nomeUso(i.uso)}</small>
+                  <span className="m"><b className="quebra">{textoPrivado(i.apelido)}</b>
+                    <small>{textoPrivado(adultos !== 1 ? `${dono} · ` : '')}{textoPrivado(nomeUso(i.uso))}</small>
                     {m && i.uso !== 'mora' && m.aluguel_liquido_mes > 0 && <small className="imo-renda">Aluguel líquido <strong>{reais(m.aluguel_liquido_mes / 100)}</strong> por mês · rende <strong>{pctAno(m.rentabilidade_ano)}</strong> ao ano{m.taxa_real_aplicacoes ? `; o aplicado rende ${pctAno(m.taxa_real_aplicacoes)}` : ''}</small>}
                     {i.venda_valor != null && i.venda_mes && <small>Venda planejada: {reais(i.venda_valor)} em {mesCurto(i.venda_mes + '-01')}</small>}
-                    {selo && <small className={'imo-selo ' + (selo.entra ? 'ok' : 'warn')}>{selo.texto}</small>}
+                    {selo && <small className={'imo-selo ' + (selo.entra ? 'ok' : 'warn')}>{textoPrivado(selo.texto)}</small>}
                   </span>
                   <span className="v"><Din v={i.valor} /></span>
                 </button>
@@ -146,12 +147,12 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
     : f.vende && (!f.venda_valor || !valorDigitadoValido(f.venda_valor)) ? 'Digite por quanto pensa vender.'
     : imovelInvalido(d)
   const ver = (k: keyof typeof f) => (v: string) => setF({ ...f, [k]: v })
-  const q = (titulo: string, nota: string) => <Qm titulo={titulo} linhas={[]} nota={nota} />
+  const q = (titulo: string, nota: string) => <Qm titulo={textoPrivado(titulo)} linhas={[]} nota={nota} />
   return (
-    <Sheet titulo={inicial ? (so ? inicial.apelido : 'Mudar imóvel') : 'Novo imóvel'} fechar={fechar}>
-      {so && <p className="todo"><span>Este imóvel é de {inicial!.dono_nome || 'outra pessoa'}: só {inicial!.dono_nome || 'quem anotou'} muda.</span></p>}
+    <Sheet titulo={textoPrivado(inicial ? (so ? inicial.apelido : 'Mudar imóvel') : 'Novo imóvel')} fechar={fechar}>
+      {so && <p className="todo"><span>Este imóvel é de {textoPrivado(inicial!.dono_nome || 'outra pessoa')}: só {textoPrivado(inicial!.dono_nome || 'quem anotou')} muda.</span></p>}
       <fieldset className="imo-form" disabled={so}>
-        <label className="campo"><span>Apelido {q('Apelido', 'Um nome curto pra família reconhecer: "sala do centro", "casa da praia". Não precisa de endereço.')}</span><input className="inp" maxLength={60} placeholder="Ex.: sala do centro" value={f.apelido} onChange={e => setF({ ...f, apelido: e.target.value })} /></label>
+        <label className="campo"><span>Apelido {textoPrivado(q('Apelido', 'Um nome curto pra família reconhecer: "sala do centro", "casa da praia". Não precisa de endereço.'))}</span><CampoPrivado className="inp" maxLength={60} placeholder="Ex.: sala do centro" value={f.apelido} onChange={e => setF({ ...f, apelido: e.target.value })} /></label>
         <div className="campo"><span>Quanto vale hoje {q('Quanto vale hoje', 'O valor estimado de venda hoje (pode ser o da avaliação ou o de imóveis parecidos na mesma rua). Só aparece no patrimônio; o plano nunca vende o imóvel.')}</span><CampoValor valor={f.valor} mudar={ver('valor')} rotulo="Quanto vale hoje" /></div>
         <div className="campo"><span id="imoUso">Pra que serve {q('Pra que serve', 'Mora: não rende nada. Aluga: o aluguel pode entrar na conta (só com contrato assinado). Parado: só aparece no patrimônio. Vai vender: diga a venda planejada.')}</span>
           <div className="pills" role="group" aria-labelledby="imoUso">{USO.map(u => <button key={u.v} type="button" className="pill" aria-pressed={f.uso === u.v} onClick={() => setF({ ...f, uso: u.v, vende: u.v === 'vende' ? true : f.vende })}>{u.nome}</button>)}</div>
@@ -160,7 +161,7 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
         {aluga && <>
           <div className="campo"><span>Aluguel médio por mês {q('Aluguel médio por mês', 'O que o inquilino paga por mês, antes dos custos. Se aluga por temporada, some o que recebe no ano e divida por 12.')}</span><CampoValor valor={f.aluguel} mudar={ver('aluguel')} rotulo="Aluguel médio por mês" /></div>
           <div className="campo"><span>Custos por mês {q('Custos por mês', 'O que sai do seu bolso todo mês com o imóvel: IPTU dividido por 12, condomínio e manutenção. Sai do aluguel.')}</span><CampoValor valor={f.custos} mudar={ver('custos')} rotulo="Custos por mês" /></div>
-          <label className="campo"><span>Meses vazios (%) {q('Meses vazios', 'A parte do ano em que o imóvel fica sem inquilino. Ex.: 1 mês vazio por ano é perto de 8%. Sai do aluguel.')}</span><input className="inp" inputMode="decimal" value={f.vacancia} onChange={e => setF({ ...f, vacancia: e.target.value.replace(/[^\d,]/g, '') })} /></label>
+          <label className="campo"><span>Meses vazios (%) {q('Meses vazios', 'A parte do ano em que o imóvel fica sem inquilino. Ex.: 1 mês vazio por ano é perto de 8%. Sai do aluguel.')}</span><CampoDecimal className="inp" inputMode="decimal" value={f.vacancia} onChange={e => setF({ ...f, vacancia: e.target.value.replace(/[^\d,]/g, '') })} /></label>
           <div className="campo"><span id="imoCont">Tem contrato assinado? {q('Contrato assinado', 'Com contrato, o aluguel líquido entra na conta de 2029 até o mês em que o contrato acaba. Sem contrato, aparece como "pode entrar" e fica fora da conta.')}</span>
             <div className="pills" role="group" aria-labelledby="imoCont">
               <button type="button" className="pill" aria-pressed={f.contrato} onClick={() => setF({ ...f, contrato: true })}>Sim</button>
@@ -189,11 +190,11 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
         {(() => {
           const igual = !!inicial && inicial.tem_contrato === d.tem_contrato && inicial.contrato_ate === d.contrato_ate && inicial.uso === d.uso
           const s = seloImovel(d, igual ? entraHoje : undefined, igual ? renovaHoje : null)
-          return s ? <p className={'todo ' + (s.entra ? 'ok' : s.entra === false ? 'warn' : '')}><span>{s.entra ? `Entra na conta de 2029: ${s.texto}.` : s.entra === false ? `Fica fora da conta: ${s.texto}.` : `${s.texto[0].toUpperCase()}${s.texto.slice(1)}.`}</span></p> : null
+          return s ? <p className={'todo ' + (s.entra ? 'ok' : s.entra === false ? 'warn' : '')}><span>{textoPrivado(s.entra ? `Entra na conta de 2029: ${s.texto}.` : s.entra === false ? `Fica fora da conta: ${s.texto}.` : `${s.texto[0].toUpperCase()}${s.texto.slice(1)}.`)}</span></p> : null
         })()}
       </fieldset>
       {!so && <>
-        {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{falta}</p> : null}
+        {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
         <button className="btn primary full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) fechar() }}>Salvar</button>
         {inicial && <button className="btn line full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}>Tirar da lista</button>}
       </>}

@@ -265,7 +265,7 @@ export function mensagemConvite(tipo: 'pessoa' | 'amiga' | 'equipe', o: { famili
 }
 
 export function linkWhatsApp(texto: string): string {
-  return 'https://wa.me/?text=' + encodeURIComponent(texto)
+  return 'https://wa.me/?text=' + encodeURIComponent(valoresOcultos() ? 'Conte�do oculto.' : texto)
 }
 
 /* ---------- tempo de lançar ---------- */
@@ -304,4 +304,17 @@ export function agruparFaturas<F extends { mes: string; total: number }>(fs: F[]
     else out.push({ tipo: 'zeros', de: f.mes, ate: f.mes })
   }
   return out
+}
+
+/** Texto privado também em atributos. Nunca altera o dado de origem. */
+export function textoPrivado<T>(texto: T, oculto = valoresOcultos()): T {
+  return (oculto && typeof texto === 'string' && texto !== '' ? '•••' : texto) as T
+}
+
+
+/** Único acesso ao clipboard; sem versão segura explícita, bloqueia com aviso. */
+export async function copiarProtegido(texto: string, protegido?: string, avisar: (s: string) => void = s => { if (typeof window !== 'undefined') window.alert?.(s) }, oculto = valoresOcultos()): Promise<boolean> {
+  if (oculto && protegido === undefined) { avisar('Abra o olho para copiar este conteúdo privado.'); return false }
+  try { await navigator.clipboard.writeText(oculto ? protegido! : texto); return true }
+  catch { avisar('Não deu para copiar. Tente novamente.'); return false }
 }

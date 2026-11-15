@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { CircleCheck, TriangleAlert, Lock } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -13,13 +14,13 @@ export function Painel() {
   return (
     <div className="view">
       <p className="sub">Os 4 números que dizem se o app está funcionando, olhados toda segunda. Cada card explica de onde vem.</p>
-      {erro && <p className="todo warn">{erro}</p>}
+      {erro && <p className="todo warn">{textoPrivado(erro)}</p>}
       <div className="nums">
         {(nums || []).map(n => (
-          <section className="card" key={n.chave} aria-label={n.nome}>
-            <div className="card-h"><h2>{n.nome}</h2><span className={'chip ' + (n.ok ? 'ok' : 'warn')}>{n.ok ? <CircleCheck size={14} /> : <TriangleAlert size={14} />}{n.meta}</span></div>
-            <p className="din big">{n.texto}</p>
-            <p className="sub" style={{ marginTop: 6 }}><b>De onde veio esse número?</b> {n.explicacao}</p>
+          <section className="card" key={n.chave} aria-label={textoPrivado(n.nome)}>
+            <div className="card-h"><h2>{textoPrivado(n.nome)}</h2><span className={'chip ' + (n.ok ? 'ok' : 'warn')}>{n.ok ? <CircleCheck size={14} /> : <TriangleAlert size={14} />}{n.meta}</span></div>
+            <p className="din big">{textoPrivado(n.texto)}</p>
+            <p className="sub" style={{ marginTop: 6 }}><b>De onde veio esse número?</b> {textoPrivado(n.explicacao)}</p>
           </section>
         ))}
       </div>

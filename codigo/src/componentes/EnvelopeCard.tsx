@@ -1,3 +1,4 @@
+import { textoPrivado } from './privacidade'
 import { useState } from 'react'
 import type { Envelope, LinhaExplicacao } from '../api/tipos'
 import { useApp } from '../app/contexto'
@@ -128,24 +129,24 @@ export function EnvelopeCard({ e, diasRestantes, onClick, meu }: { e: Envelope; 
   const pct = Math.max(2, Math.min(100, n.usado * 100))
   const frase = fraseEstouro(e, n)
   return (
-    <div className="card env" {...(doOutro ? { 'data-do-outro': dono || 'família' } : {})}>
+    <div className="card env" {...(doOutro ? { 'data-do-outro': textoPrivado(dono || 'família') } : {})}>
       <div className="env-h">
-        <b>{e.nome}{doOutro && dono && !dono.endsWith(e.nome) ? ` · de ${dono}` : ''}</b>
+        <b>{textoPrivado(e.nome)}{textoPrivado(doOutro && dono && !dono.endsWith(e.nome) ? ` · de ${dono}` : '')}</b>
         {/* quem passou do mês não vê "por dia R$ 217": vê "fica devendo" */}
         <span className="regra">{n.estado === 'devendo' ? (e.regra === 'semanal' ? 'passou nesta semana' : 'fica devendo') : REGRA[e.regra]}</span>
       </div>
       <div className="numrow">
         {n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="mid" /></span> : <Din v={n.valor} tam="mid" />}
-        <Qm titulo={`${e.nome}: ${n.rotulo}`} linhas={n.linhas} />
+        <Qm titulo={textoPrivado(`${e.nome}: ${n.rotulo}`)} linhas={n.linhas} />
       </div>
-      <p className="sub">{n.rotulo}</p>
-      {frase && <p className="todo warn frase-estouro">{frase}</p>}
+      <p className="sub">{textoPrivado(n.rotulo)}</p>
+      {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
       <div className={'meter ' + (n.usado > 1 ? 'warn' : 'ok')} aria-hidden="true"><i style={{ width: pct + '%' }} /></div>
       <p className="sub">Gasto no mês <b>{reais(e.gasto_mes)}</b> de {reais(tetoDoMes(e))}{e.regra === 'diario' && e.falta_mes_anterior ? ` (${reais(e.limite_base ?? e.limite_mes)} menos ${reais(e.falta_mes_anterior)} do mês passado)` : ''}</p>
       {/* C3 (revisão E2/E3): o limite da filha os pais combinam (e mudam no Planejamento); quem lança é ela */}
-      {doOutro && <p className="sub dono-linha">{!dono ? 'Da família: só pra ver.' : e.dono_papel === 'pessoa' ? `Só ${dono} lança aqui. O limite é combinado com os pais.` : `Limite de ${dono}: só ${dono} lança e mexe aqui.`}</p>}
+      {doOutro && <p className="sub dono-linha">{textoPrivado(!dono ? 'Da família: só pra ver.' : e.dono_papel === 'pessoa' ? `Só ${dono} lança aqui. O limite é combinado com os pais.` : `Limite de ${dono}: só ${dono} lança e mexe aqui.`)}</p>}
       {meu && !doOutro && n.estado === 'devendo' && e.regra !== 'semanal' && <CobrirEstouro e={e} valor={n.devendo} />}
-      {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {e.nome}</button>}
+      {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {textoPrivado(e.nome)}</button>}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E8: aba Desejos, a calculadora pra todos. "Quero R$ 50.000 pra viajar": cabe? de onde volta (contrato antecipado,
 // investimento, venda)? quanto tira de 2029? Os dados vão pra tabela desejos (f_06): o casal vê todos com o nome do dono,
 // a filha vê só os dela (sem 2029: só "dá pra comprar com o seu"), e só o dono mexe.
@@ -161,7 +162,7 @@ export function Desejos() {
     ? resultado && resultadoPronto ? <div className="desejo-resp">
         {/* C3: a resposta em 1 palavra antes de qualquer conta (o leitor de tela lê a frase inteira logo abaixo) */}
         <p className={'desejo-selo ' + (resultado.ok ? 'ok' : 'warn')} aria-hidden="true">{resultado.selo}</p>
-        <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{resultado.titulo}</b> {resultado.linhas.join(' ')}</span></div>
+        <div className={'todo ' + (resultado.ok ? 'ok' : 'warn') + ' desejo-res'} role="status"><span><b>{textoPrivado(resultado.titulo)}</b> {textoPrivado(resultado.linhas.join(' '))}</span></div>
         {linhasC && <GraficoDesejo {...linhasC} />}
       </div>
       : semConta ? <p className="todo warn desejo-res" role="status"><span>{semConta}</span></p>
@@ -188,7 +189,7 @@ export function Desejos() {
           <div className="card-h"><h2 id="dCalc"><Sparkles size={24} aria-hidden="true" />Quero…</h2></div>
           <p className="sub" style={{ marginBottom: 10 }}>{casal ? (saidaF?.modo === 'renda' ? 'Escreva o que quer e quando. O app diz se cabe no dinheiro guardado e quanto tira da renda.' : 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.') : 'Escreva o que quer e quanto custa. O app diz se dá pra comprar com o seu.'}</p>
           <div className="desejo-form">
-          <label className="campo"><span>O que é</span><input className="inp" maxLength={80} placeholder={casal ? 'Ex.: viagem de férias' : 'Ex.: bicicleta'} value={f.nome} onChange={e => setF({ ...f, nome: e.target.value })} /></label>
+          <label className="campo"><span>O que é</span><CampoPrivado className="inp" maxLength={80} placeholder={casal ? 'Ex.: viagem de férias' : 'Ex.: bicicleta'} value={f.nome} onChange={e => setF({ ...f, nome: e.target.value })} /></label>
           <div className="campo"><span>Quanto custa</span><CampoValor valor={f.valor} mudar={campo('valor')} rotulo="Quanto custa" /></div>
           <label className="campo"><span>Quando</span>
             <select className="inp" value={mes} onChange={e => setF({ ...f, mes: e.target.value })}>{meses.map(m => <option key={m} value={m}>{mesCurto(m + '-01')}</option>)}</select>
@@ -216,7 +217,7 @@ export function Desejos() {
           </>}
           </div>
 
-          {falta && (f.nome || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{falta}</p> : null}
+          {falta && (f.nome || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
           <button className="btn primary" type="button" disabled={!!falta || gravando} onClick={guardar} style={{ marginTop: 12 }}><Plus size={20} />Guardar na lista</button>
         </section>
       </div>
@@ -231,17 +232,17 @@ export function Desejos() {
                 const dono = d.meu ? 'seu' : `de ${d.dono_nome || 'outra pessoa'}`
                 const volta = d.volta_de === 'nada' ? '' : d.volta_de === 'contrato' ? ` · contrato adiantado: entra ${reais(d.antecipado || 0)} no lugar de ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}` : ` · volta ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}${d.volta_certa ? '' : ', se vier'}`
                 return (
-                  <li key={d.id} className="li desejo" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': d.dono_nome || 'outra pessoa' })}>
-                    <span className="m"><b className="quebra">{d.nome}</b>
-                      <small>{casal ? `${dono} · ` : ''}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
-                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{r.titulo}</b> {[...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' ')}</small>}
+                  <li key={d.id} className="li desejo" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': textoPrivado(d.dono_nome || 'outra pessoa') })}>
+                    <span className="m"><b className="quebra">{textoPrivado(d.nome)}</b>
+                      <small>{textoPrivado(casal ? `${dono} · ` : '')}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
+                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{textoPrivado(r.titulo)}</b> {textoPrivado([...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' '))}</small>}
                       {!casal && meuEnv && d.situacao === 'pensando' && <small>{fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7))}</small>}
                       {d.meu ? (
-                        <span className="pills desejo-sit" role="group" aria-label={`Como está: ${d.nome}`}>
+                        <span className="pills desejo-sit" role="group" aria-label={textoPrivado(`Como está: ${d.nome}`)}>
                           {SITUACAO.map(s => <button key={s.v} type="button" className="pill" aria-pressed={d.situacao === s.v} onClick={() => d.situacao !== s.v && mudar(d, { situacao: s.v })}>{s.nome}</button>)}
                           <button type="button" className="pill" onClick={() => mudar(d, { apagar: true })}>Tirar da lista</button>
                         </span>
-                      ) : <small className="dono-linha">Só {d.dono_nome || 'quem anotou'} muda este desejo.</small>}
+                      ) : <small className="dono-linha">Só {textoPrivado(d.dono_nome || 'quem anotou')} muda este desejo.</small>}
                     </span>
                     <span className="v"><Din v={d.valor} /></span>
                   </li>

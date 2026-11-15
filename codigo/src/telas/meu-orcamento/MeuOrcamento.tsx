@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -67,7 +68,7 @@ export function MeuOrcamento() {
     <div className="view">
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
-          {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{e.nome}{escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}</button>)}
+          {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{textoPrivado(e.nome)}{escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}</button>)}
         </div>
       )}
       <nav className="segbar" aria-label="Ir para">
@@ -80,12 +81,12 @@ export function MeuOrcamento() {
 
       <div className="tela-larga">
         <div className="col">
-          <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': dono })}>
-            <h2 id="oHojeT">{env.nome}, hoje</h2>
-            {!meu && <p className="sub dono-linha">Orçamento de {dono}: aqui é só pra ver. Quem lança e mexe é {dono}.</p>}
+          <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}>
+            <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
+            {!meu && <p className="sub dono-linha">Orçamento de {textoPrivado(dono)}: aqui é só pra ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
             <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o livre do mês ÷ os dias que faltam)'}</p>
-            <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={`${env.nome}: ${n.rotulo}`} linhas={n.linhas} /></div>
-            {frase && <p className="todo warn frase-estouro">{frase}</p>}
+            <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
+            {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
             {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />}
@@ -100,7 +101,7 @@ export function MeuOrcamento() {
               </div>
             )}
             {meu && <div className="row-btns" style={{ marginTop: 14 }}>
-              <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Lançar em {env.nome}</button>
+              <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Lançar em {textoPrivado(env.nome)}</button>
               {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
               <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá pra comprar?</button>
             </div>}
@@ -114,10 +115,10 @@ export function MeuOrcamento() {
                 { linha: `Nos ${plural(dados.fechados.filter(d => dados.anot.has(d)).length, 'dia anotado', 'dias anotados')} até ontem: o que sobrou menos o que passou`, valor: dados.cof },
               ]} nota="A mesma base do número de hoje: o que sobra do dia de base fica no cofrinho e volta dividido pelos dias que faltam. Dia que passou do valor come a sobra dos outros dias. Dia sem anotação não conta. Hoje só entra amanhã." />
             </div>
-            <p className="sub">{env.livre < 0 ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
+            <p className="sub">{textoPrivado(env.livre < 0 ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
               : dados.cof <= 0 ? `Ainda vazio. Ele enche nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que ${reais(dados.base)}, o dia de base. Livre no mês: ${reais(Math.max(0, env.livre))}.`
               // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o dia de base mais o cofrinho dividido pelos dias que faltam
-              : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do dia de base de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`}</p>
+              : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do dia de base de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`)}</p>
             {(() => {
               const m = metas?.[env.id]
               if (!m) return meu ? <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button> : null
@@ -126,7 +127,7 @@ export function MeuOrcamento() {
               const quando = falta <= 0 ? 'já dá pra comprar' : env.livre >= m.valor ? `compra em ${dataCurta(fimDoMes(hoje))} se gastar até ${reais(centavos((env.livre - m.valor) / diasRestantes(hoje)))} por dia` : 'não cabe no livre deste mês'
               return (
                 <div className="meta-cofre">
-                  <p className="corpo"><b>Quero juntar pra: {m.nome} {reais(m.valor)}</b> · faltam {reais(falta)} · {quando}</p>
+                  <p className="corpo"><b>Quero juntar pra: {textoPrivado(m.nome)} {reais(m.valor)}</b> · faltam {reais(falta)} · {quando}</p>
                   <div className="meter ok" aria-hidden="true"><i style={{ width: Math.min(100, (tem / m.valor) * 100) + '%' }} /></div>
                   {meu && <button className="btn sm ghost" type="button" style={{ justifySelf: 'start' }} onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>}
                 </div>
@@ -142,7 +143,7 @@ export function MeuOrcamento() {
               {conquistas.map(c => (
                 <li key={c.nome} className="li">
                   <span className="tile" style={c.ok ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : {}}>{c.ok ? <Trophy size={20} /> : <Lock size={18} />}</span>
-                  <span className="m"><b>{c.nome}</b><small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small></span><span />
+                  <span className="m"><b>{textoPrivado(c.nome)}</b><small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small></span><span />
                 </li>
               ))}
             </ul>
@@ -173,7 +174,7 @@ function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: strin
   return (
     <Sheet titulo="Quero juntar pra…" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0) salvar(nome.trim(), textoParaValor(v)) }}>
-        <label className="campo"><span>O que você quer comprar?</span><input className="inp" placeholder="Ex.: Fone" value={nome} onChange={e => setNome(e.target.value)} /></label>
+        <label className="campo"><span>O que você quer comprar?</span><CampoPrivado className="inp" placeholder="Ex.: Fone" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Quanto custa?</span><CampoValor valor={v} mudar={setV} rotulo="Quanto custa" /></div>
         <button className="btn primary full" type="submit">Guardar a meta</button>
       </form>

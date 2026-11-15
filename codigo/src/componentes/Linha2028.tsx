@@ -1,3 +1,4 @@
+import { textoPrivado } from './privacidade'
 // E7: a linha do caixa mês a mês até dez/2028 (F4), o "fica devendo até MM/AAAA" (F9) e a folga de 2029 (F5).
 // No Início: 1 linha. No Planejamento: a linha desenhada, mês a mês, com o piso tracejado.
 // A tela NUNCA calcula 2029: recebe a saída de futuro() (lib/futuro) e só escreve e desenha.
@@ -75,7 +76,7 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
       <p className={'todo ' + (saida.folga >= 0 && !f.devendo && saida.patrimonio_necessario !== null ? 'ok' : 'warn')} style={{ marginTop: 10 }}><span>{f.caixa} {f.devendo}</span></p>
       <p className="sub linha-virada">{f.virada}{f.ajuste ? ` ${f.ajuste}` : ''}</p>
       {f.margem && <p className="sub linha-margem">{f.margem}</p>}
-      {saida.folga < 0 && frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{t}</p>)}
+      {saida.folga < 0 && frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{textoPrivado(t)}</p>)}
       <PodeEntrar saida={saida} />
       {l.length > 0 && (
         <details className="mes-a-mes">
@@ -149,7 +150,7 @@ export function Renda2029({ saida }: { saida: FuturoSaida }) {
       <PodeEntrar saida={saida} />
       {a && a.cortar_por_mes_2029 > 0 && (() => { const c = frasesCorte(a); return <>
         <p className="sub" style={{ marginTop: 8 }}><b>{c.principal}</b></p>
-        {frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{t}</p>)}
+        {frasesRenova(saida).map(t => <p key={t} className="sub linha-renova">{textoPrivado(t)}</p>)}
         {c.margem && <p className="sub linha-margem">{c.margem}</p>}
       </> })()}
       {f.taxa && <p className="sub" style={{ marginTop: 8 }}>{f.taxa}</p>}
@@ -167,9 +168,9 @@ export function Linha2028Resumo() {
     const f = frasesRenda(saida.renda)
     const t = `Rende ${r$(saida.renda.renda_total ?? saida.renda.renda_sustentavel)} por mês, pra sempre. ${f.folga}`
     return (
-      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={`Renda do dinheiro guardado: ${t} Abrir o Planejamento.`}>
+      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Renda do dinheiro guardado: ${t} Abrir o Planejamento.`)}>
         <span className="tile"><Target size={20} /></span>
-        <span className="m"><b>Renda do dinheiro guardado</b><small>{t}</small></span>
+        <span className="m"><b>Renda do dinheiro guardado</b><small>{textoPrivado(t)}</small></span>
         <ChevronRight size={20} className="muted" aria-hidden="true" />
       </a>
     )
@@ -177,9 +178,9 @@ export function Linha2028Resumo() {
   if (!saida.linha.length) {
     const t = frasesLinha(saida).virada
     return (
-      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={`Janeiro de 2029: ${t} Abrir o Planejamento.`}>
+      <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Janeiro de 2029: ${t} Abrir o Planejamento.`)}>
         <span className="tile"><Target size={20} /></span>
-        <span className="m"><b>Janeiro de 2029</b><small>{t}</small></span>
+        <span className="m"><b>Janeiro de 2029</b><small>{textoPrivado(t)}</small></span>
         <ChevronRight size={20} className="muted" aria-hidden="true" />
       </a>
     )
@@ -191,9 +192,9 @@ export function Linha2028Resumo() {
     : saida.folga >= 0 ? `Chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}: rende ${r$(saida.renda_total_2029 ?? saida.renda_sustentavel)} por mês em 2029.`
     : `Pra viver do rendimento em 2029 faltam ${r$(saida.folga)}. Toque pra ver como fechar.`
   return (
-    <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={`Até dezembro de 2028: ${texto} Abrir o Planejamento.`}>
+    <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Até dezembro de 2028: ${texto} Abrir o Planejamento.`)}>
       <span className="tile"><Target size={20} /></span>
-      <span className="m"><b>Até dezembro de 2028</b><small>{texto}</small></span>
+      <span className="m"><b>Até dezembro de 2028</b><small>{textoPrivado(texto)}</small></span>
       <ChevronRight size={20} className="muted" aria-hidden="true" />
     </a>
   )

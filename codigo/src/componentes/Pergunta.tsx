@@ -1,3 +1,5 @@
+import { copiarProtegido } from './privacidade'
+import { textoPrivado, CampoPrivado } from './privacidade'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BellRing, Calculator, Camera, Check, ClipboardCheck, Coins, Copy, CreditCard, FileText, HeartHandshake, PackageSearch, ShieldCheck, ShoppingBasket, Sun, UserCheck, UserRound, Landmark } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
@@ -29,7 +31,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
   const [marca, setMarca] = useState<Record<string, EstadoItem>>({})
   const [erro, setErro] = useState('')
   useEffect(() => { if (familia) api.estoque(familia.id).then(x => setItens(x.itens.filter(i => i.ativo))).catch((x: Error) => setErro(x.message)) }, [api, familia?.id])
-  if (erro) return <p className="aviso-erro" role="alert">Não deu pra buscar os itens: {erro}</p>
+  if (erro) return <p className="aviso-erro" role="alert">Não deu pra buscar os itens: {textoPrivado(erro)}</p>
   if (!itens) return <p className="sub">Buscando os itens da casa…</p>
   if (!itens.length) return <p className="sub">Ainda não tem item cadastrado. O casal cadastra na ficha do Fiscal da Feira, em "O que eu cuido".</p>
   return (
@@ -37,8 +39,8 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
       <ul className="list">
         {itens.map(i => (
           <li key={i.id} className="cont-l">
-            <span className="n"><b>{i.nome}</b><small>{i.categoria}</small></span>
-            <span className="seg tres" role="group" aria-label={`${i.nome}: como está`}>
+            <span className="n"><b>{textoPrivado(i.nome)}</b><small>{textoPrivado(i.categoria)}</small></span>
+            <span className="seg tres" role="group" aria-label={textoPrivado(`${i.nome}: como está`)}>
               {ESTADOS.map(([e, r]) => <button key={e} type="button" aria-pressed={(marca[i.id] || 'tem') === e} onClick={() => setMarca({ ...marca, [i.id]: e })}>{r}</button>)}
             </span>
           </li>
@@ -80,7 +82,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
       const r = await responder(p.id, o.id, extra)
       setGravando(false)
       const texto = (typeof r === 'object' && r.mensagem) || p.mensagem || ''
-      if (texto) { try { await navigator.clipboard.writeText(texto) } catch { /* sem permissão: o texto aparece logo abaixo pra copiar à mão */ } setCopiado(texto) }
+      if (texto) { try { await copiarProtegido(texto, 'Conteúdo oculto.') } catch { /* sem permissão: o texto aparece logo abaixo pra copiar à mão */ } setCopiado(texto) }
       return
     }
     if (o.pede || o.abre === 'nota' || o.abre === 'contagem') { setAberta(aberta?.id === o.id ? null : o); setCampos({ data: hojeRecife() }); return }
@@ -114,17 +116,17 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
 
   return (
     <div className="perg" data-pergunta={p.id}>
-      {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{quem}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
-      <p className="perg-t">{p.pergunta}</p>
-      {p.contexto && <p className="perg-c">{p.contexto}</p>}
+      {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{textoPrivado(quem)}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
+      <p className="perg-t">{textoPrivado(p.pergunta)}</p>
+      {p.contexto && <p className="perg-c">{textoPrivado(p.contexto)}</p>}
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => (
           <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Copy size={18} />}{o.abre === 'nota' && <Camera size={18} />}{o.rotulo}
+            {/^copiar/.test(o.id) && <Copy size={18} />}{o.abre === 'nota' && <Camera size={18} />}{textoPrivado(o.rotulo)}
           </button>
         ))}
       </div>
-      {copiado && <p className="perg-msg" role="status"><Check size={18} aria-hidden="true" /><span>Copiado. Cole no WhatsApp: "{copiado}"</span></p>}
+      {copiado && <p className="perg-msg" role="status"><Check size={18} aria-hidden="true" /><span>Copiado. Cole no WhatsApp: "{textoPrivado(copiado)}"</span></p>}
       {aberta?.abre === 'nota' && (
         <div className="perg-campo col">
           <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) foto(f) }} />
@@ -140,13 +142,13 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
             const opc = t !== aberta.pede ? ' (se quiser)' : ''
             return t === 'data' ? <label className="campo" key={t}><span>Em que dia?{opc}</span><input className="inp" type="date" value={campos.data || ''} onChange={ev => setCampos({ ...campos, data: ev.target.value })} /></label>
               : t === 'valor' ? <div className="campo" key={t}><span>{/feira/.test(p.id) ? 'Quanto deu?' : 'Qual é o valor?'}{opc}</span><CampoValor valor={campos.valor || ''} mudar={v => setCampos({ ...campos, valor: v })} rotulo="Valor" /></div>
-                : <label className="campo" key={t}><span>{rotuloTexto}{opc}</span><input className="inp" value={campos.texto || ''} maxLength={140} onChange={ev => setCampos({ ...campos, texto: ev.target.value })} /></label>
+                : <label className="campo" key={t}><span>{rotuloTexto}{opc}</span><CampoPrivado className="inp" value={campos.texto || ''} maxLength={140} onChange={ev => setCampos({ ...campos, texto: ev.target.value })} /></label>
           })}
           {!tipos.length && <p className="sub">É só confirmar.</p>}
           <button type="button" className="btn primary" disabled={gravando} onClick={salvar}>Salvar resposta</button>
         </div>
       )}
-      {erro && <p className="erro" role="alert">{erro}</p>}
+      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
     </div>
   )
 }

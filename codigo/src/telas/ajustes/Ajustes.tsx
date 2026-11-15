@@ -1,3 +1,5 @@
+import { copiarProtegido } from '../../componentes/privacidade'
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
 import { MessageCircle, Sun, Moon, Smartphone, LogOut, ShieldCheck, Gauge, ChevronRight, UserPlus, Share, Copy, Zap } from 'lucide-react'
@@ -33,15 +35,15 @@ export function Ajustes() {
     <div className="tela-larga">
       <div className="col">
         <section className="card" aria-labelledby="aFam">
-          <h2 id="aFam">{familia?.nome}</h2>
-          <p className="sub" style={{ margin: '4px 0 12px' }}>Você entrou como {familia?.membroNome}{sessao?.email ? ` (${sessao.email})` : ''}.</p>
+          <h2 id="aFam">{textoPrivado(familia?.nome)}</h2>
+          <p className="sub" style={{ margin: '4px 0 12px' }}>Você entrou como {textoPrivado(familia?.membroNome)}{textoPrivado(sessao?.email ? ` (${sessao.email})` : '')}.</p>
           {/* A2: a pessoa da família (filha) não convida ninguém */}
           {!casal && <p className="sub">Quem convida e cuida da família é o casal. Aqui você muda a aparência e vê a privacidade.</p>}
           {casal && <>
           {/* E3 (conserto 10): o campo ganha o rótulo "Nome" (antes só tinha a dica dentro do campo, que some ao digitar) */}
           <p className="lbl">{casalCompleto ? 'Convidar alguém da família (filho, avó, quem mora com vocês)' : 'Convidar a 2ª pessoa do casal'}</p>
-          <label className="campo" style={{ marginTop: 8 }}><span>Nome</span><input className="inp" placeholder="Ex.: Helena" value={nome2} onChange={e => setNome2(e.target.value)} /></label>
-          <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><input className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
+          <label className="campo" style={{ marginTop: 8 }}><span>Nome</span><CampoPrivado className="inp" placeholder="Ex.: Helena" value={nome2} onChange={e => setNome2(e.target.value)} /></label>
+          <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
             {convidado && convidado.email === email2.trim().toLowerCase()
               ? <a className="btn primary" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))}><MessageCircle size={20} />Abrir o WhatsApp com o convite</a>
@@ -101,8 +103,8 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
       <ul className="list" style={{ marginTop: 8 }}>
         {lista.map(c => (
           <li key={c.id} className="li quem">
-            <span className="tile">{c.nome.charAt(0)}</span>
-            <span className="m"><b>{c.nome}{c.nome === familia.membroNome ? ' (você)' : ''}</b><small>{c.email || 'sem e-mail'} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
+            <span className="tile">{textoPrivado(c.nome.charAt(0))}</span>
+            <span className="m"><b>{textoPrivado(c.nome)}{c.nome === familia.membroNome ? ' (você)' : ''}</b><small>{textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
               {c.situacao === 'entrou'
                 ? <span className="chip ok" style={{ marginTop: 6 }}>entrou{c.entrou_em ? ` em ${dataCurta(c.entrou_em)}` : ''}</span>
                 : <span className="chip warn" style={{ marginTop: 6, whiteSpace: 'normal', height: 'auto' }}>esperando entrar{c.enviado_em ? ` desde ${dataCurta(c.enviado_em)}, vale até ${dataCurta(somaDias(c.enviado_em, 14))}` : ''}</span>}
@@ -119,8 +121,8 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
       </ul>
       <p className="sub" style={{ marginTop: 8 }}>A pessoa entra com o mesmo e-mail do convite. Se ela usar outro e-mail, cancele e convide de novo.</p>
       {cancelar && (
-        <Sheet titulo={`Cancelar o convite de ${cancelar.nome}?`} fechar={() => setCancelar(null)}>
-          <p className="corpo">O link que {cancelar.nome} recebeu para de funcionar. Dá pra convidar de novo depois, com o e-mail certo.</p>
+        <Sheet titulo={textoPrivado(`Cancelar o convite de ${cancelar.nome}?`)} fechar={() => setCancelar(null)}>
+          <p className="corpo">O link que {textoPrivado(cancelar.nome)} recebeu para de funcionar. Dá pra convidar de novo depois, com o e-mail certo.</p>
           <button className="btn primary full" type="button" onClick={async () => { const c = cancelar; setCancelar(null); if (await tentar(() => api.cancelarConvite!(familia.id, c.id))) { setN(x => x + 1); toast(`Convite de ${c.nome} cancelado.`) } }}>Sim, cancelar o convite</button>
           <button className="btn ghost full" type="button" onClick={() => setCancelar(null)}>Não, deixar como está</button>
         </Sheet>
@@ -145,7 +147,7 @@ function AtalhoIphone() {
   const { toast } = useApp()
   const base = location.origin + location.pathname
   const endereco = enderecoDoAtalho(base)
-  const copiar = async () => { try { await navigator.clipboard.writeText(endereco); toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não deu pra copiar. Segure o dedo no endereço e escolha Copiar.') } }
+  const copiar = async () => { try { if (await copiarProtegido(endereco, undefined, toast)) toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não deu pra copiar. Segure o dedo no endereço e escolha Copiar.') } }
   return (
     <section className="card" aria-labelledby="aAtalho">
       <h2 id="aAtalho"><Zap size={22} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>

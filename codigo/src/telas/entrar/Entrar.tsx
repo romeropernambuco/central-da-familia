@@ -1,3 +1,4 @@
+import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Link2, Mail, Users } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -39,10 +40,10 @@ export function Entrar() {
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!emailValido(email)) throw new Error('Confira o e-mail: falta o @ ou o final, tipo .com'); await api.enviarCodigo(email); setPasso('codigo') }) }}>
           <h2>Entrar</h2>
           <label className="campo"><span>Seu e-mail</span>
-            <input className="inp" type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+            <CampoPrivado className="inp" type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" value={email} onChange={e => setEmail(e.target.value)} />
             <small>A gente manda um código de 6 números pra esse e-mail. Não tem senha pra lembrar.</small>
           </label>
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn primary full" disabled={ocupado} type="submit"><Mail size={20} />Receber o código</button>
           <button className="lnk equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={18} />Trabalha na casa (cozinheira, motorista)? Entre por aqui</button>
         </form>
@@ -52,10 +53,10 @@ export function Entrar() {
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(r.aviso) }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => setPasso('email')}><ArrowLeft size={18} />Trocar e-mail</button>
           <h2>Digite o código</h2>
-          <p className="sub">Mandamos 6 números para <b>{email}</b>. Pode levar 1 minuto. Olhe também a caixa de spam.</p>
-          <input className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="Código de 6 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))} />
+          <p className="sub">Mandamos 6 números para <b>{textoPrivado(email)}</b>. Pode levar 1 minuto. Olhe também a caixa de spam.</p>
+          <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="Código de 6 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))} />
           {ex && <p className="sub">No exemplo, o código é 123456.</p>}
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn primary full" disabled={ocupado || codigo.length !== 6} type="submit">Entrar</button>
         </form>
       )}
@@ -67,9 +68,9 @@ export function Entrar() {
           {convite ? (
             <>
               <p className="sub">Digite os 4 números que vieram junto com este link. O código vale por 24 horas e só funciona neste link. Você vai ver só a tela da Casa, pra anotar as compras.</p>
-              <input className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
+              <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
               {ex && <p className="sub">No exemplo, o código é 2468.</p>}
-              {erro && <p className="erro" role="alert">{erro}</p>}
+              {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
               <button className="btn primary full" disabled={ocupado || codigo.length !== 4} type="submit">Entrar na Casa</button>
             </>
           ) : (

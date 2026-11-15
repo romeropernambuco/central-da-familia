@@ -1,3 +1,4 @@
+import { textoPrivado } from './privacidade'
 // C3 e pacote 2 do design (REFERENCIAS.md, padrões A, B e C): 3 gráficos em SVG feito à mão, sem biblioteca.
 // A: o gasto do mês acumulado, pontilhado até o fim do mês, combinado tracejado, âmbar só se passar (Início e Meu orçamento).
 // B: o caixa mês a mês até 12/2028 com a faixa do piso, bolinhas nos recebimentos e o degrau de 2029 (Planejamento).
@@ -50,7 +51,7 @@ function Quadro({ rotulo, altura, n, leitura, desenho, classe, indice }: {
   }
   return (
     <figure className={'graf ' + classe}>
-      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={`${rotulo} Use as setas pra ver cada ponto.`} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
+      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={textoPrivado(`${rotulo} Use as setas pra ver cada ponto.`)} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" onPointerMove={mover} onPointerDown={mover} onPointerLeave={e => { if (e.pointerType === 'mouse') setAtivo(null) }}>
           {desenho(w, h, ativo, xDe)}
         </svg>
@@ -143,7 +144,7 @@ export function GraficoCaixa({ linha, renda2029, rendaRotulo }: { linha: LinhaMe
         if (i == null) return <span className="graf-dica">Toque na linha pra ver cada mês</span>
         if (i >= n) return <span>2029: {renda2029 != null ? <>o dinheiro rende <b>{r$(renda2029)}</b> por mês, pra sempre</> : 'o rendimento não repõe a inflação'}</span>
         const l = linha[i]
-        return <span>{curto(l.mes)}: caixa <b>{l.saldo_final < 0 ? 'devendo ' : ''}{r$(l.saldo_final)}</b>, piso {r$(l.piso)}{l.recebimentos > 0 ? <>. Entra {l.marcos?.length ? l.marcos.map(m => `${m.descricao ?? `Recebimento de ${m.dono}`} ${r$(m.valor)}`).join(', ') : r$(l.recebimentos)}</> : null}{l.fica_devendo > 0 ? '. Abaixo do piso' : ''}</span>
+        return <span>{curto(l.mes)}: caixa <b>{l.saldo_final < 0 ? 'devendo ' : ''}{r$(l.saldo_final)}</b>, piso {r$(l.piso)}{l.recebimentos > 0 ? <>. Entra {textoPrivado(l.marcos?.length ? l.marcos.map(m => `${m.descricao ?? `Recebimento de ${m.dono}`} ${r$(m.valor)}`).join(', ') : r$(l.recebimentos))}</> : null}{l.fica_devendo > 0 ? '. Abaixo do piso' : ''}</span>
       }}
       desenho={(w, h, ativo) => {
         const vals = [...linha.map(l => l.saldo_final), ...linha.map(l => l.piso)]

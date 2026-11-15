@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState } from 'react'
 import { Check, Clock, Hand, Info, Keyboard, Maximize2 } from 'lucide-react'
 import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'
@@ -89,7 +90,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
             return (
               <button key={f.id} type="button" ref={el => { tags.current[f.id] = el }} data-k={`${f.estado}|${sel}|${soIcone}`} data-func={f.id}
                 className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
-                aria-label={`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
+                aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`)} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
                 <IcoEstado e={f.estado} /><span>{curto(f)}</span>
               </button>
             )

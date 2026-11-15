@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { copiarProtegido } from '../../componentes/privacidade'
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { useEffect, useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useAdultos } from '../../app/useMembros'
@@ -7,7 +9,7 @@ import { hojeRecife } from '../../lib/formato'
 
 /** Privacidade: termo em 1 tela, baixar os dados da família e apagar a família inteira. */
 export function Privacidade() {
-  const { api, familia, trocarSessao, toast } = useApp()
+  const { api, familia, trocarSessao, toast, oculto } = useApp()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "vocês dois"
   const sozinho = useAdultos() === 1
   const [apagar, setApagar] = useState(false)
@@ -16,15 +18,18 @@ export function Privacidade() {
   const casal = familia?.papel === 'casal'
   const [json, setJson] = useState<string | null>(null)
 
+  useEffect(() => { if (oculto) setJson(null) }, [oculto])
+
   // E2 (conserto 1): o casal baixa a família inteira, com o nome do dono em cada linha; a filha baixa só o dela
   const soOMeu = !casal
   async function baixar() {
     if (!familia) return
+    if (oculto && !window.confirm('Os valores aparecerão no arquivo, mesmo com o olho fechado. Deseja baixar os seus dados?')) return
     if (soOMeu && !api.exportarMeu) { toast('Baixar só os seus dados ainda está sendo ligado no banco da família.'); return }
     let dados: unknown
     try { dados = soOMeu ? await api.exportarMeu!(familia.id) : await api.exportarFamilia(familia.id) } catch (e) { toast((e as Error).message); return }
     // modo exemplo: o visualizador do demo não deixa baixar arquivo, então mostra o conteúdo na tela pra copiar
-    if (api.modo === 'exemplo') { setJson(JSON.stringify(dados, null, 2)); return }
+    if (api.modo === 'exemplo' && !oculto) { setJson(JSON.stringify(dados, null, 2)); return }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -60,21 +65,21 @@ export function Privacidade() {
           <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Trash2 size={20} />Apagar a família</button>
         </section>}
       </div>
-      {json != null && (
+      {json != null && !oculto && (
         <Sheet titulo={casal ? 'Dados da família' : 'Seus dados'} fechar={() => setJson(null)}>
           <p className="sub">No exemplo o arquivo não é baixado: o conteúdo aparece aqui. Toque em Copiar e cole onde quiser guardar.</p>
           <textarea className="inp" readOnly value={json} aria-label="Dados da família em texto" style={{ minHeight: 260, fontFamily: 'ui-monospace, monospace', fontSize: 12, whiteSpace: 'pre', overflow: 'auto' }} onFocus={e => e.currentTarget.select()} />
           <button className="btn primary full" type="button" onClick={async () => {
-            try { await navigator.clipboard.writeText(json); toast('Dados copiados.') }
+            try { if (await copiarProtegido(json, undefined, toast)) toast('Dados copiados.') }
             catch { const t = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Dados da família em texto"]'); t?.select(); toast('Selecionado. Use Copiar do aparelho.') }
           }}><Copy size={20} />Copiar</button>
         </Sheet>
       )}
       {apagar && familia && (
         <Sheet titulo="Apagar a família?" fechar={() => setApagar(false)}>
-          <p className="corpo">Pra confirmar, digite o nome da família igualzinho: <b>{familia.nome}</b></p>
-          <input className="inp" value={conf} onChange={e => setConf(e.target.value)} aria-label="Nome da família" />
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          <p className="corpo">Pra confirmar, digite o nome da família igualzinho: <b>{textoPrivado(familia.nome)}</b></p>
+          <CampoPrivado className="inp" value={conf} onChange={e => setConf(e.target.value)} aria-label="Nome da família" />
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn danger on full" type="button" disabled={conf.trim() !== familia.nome} onClick={async () => {
             try { await api.apagarFamilia(familia.id, conf); setApagar(false); await trocarSessao() } catch (e) { setErro((e as Error).message) }
           }}><Trash2 size={20} />Apagar tudo de vez</button>

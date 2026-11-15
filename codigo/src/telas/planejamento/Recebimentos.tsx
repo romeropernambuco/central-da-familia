@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E5 (fase final): recebimentos com data, um bloco dentro do Planejamento (sem tela nova).
 // Regra do dono (13/11): até dez/2028 entram recebimentos com data que o dono marca como certos; o plano conta só esses.
 // Casal LÊ todos, com o nome do dono; só o dono lança e mexe. Atrasado nunca some: vai pro mês seguinte e vira pergunta ao
@@ -43,14 +44,14 @@ export function Recebimentos() {
         {abertos.map(r => {
           const s = situacaoRecebimento(r, hoje)
           return (
-            <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.meu ? {} : { 'data-do-outro': r.dono_nome || 'outra pessoa' })}>
-              <span className="m"><b>{r.descricao}</b>
-                <small>{r.meu ? 'seu' : `de ${r.dono_nome || 'outra pessoa'}`} · {TIPO[r.tipo]} · {r.certo ? 'certo' : 'ainda incerto: fora da conta'}</small>
+            <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.meu ? {} : { 'data-do-outro': textoPrivado(r.dono_nome || 'outra pessoa') })}>
+              <span className="m"><b>{textoPrivado(r.descricao)}</b>
+                <small>{textoPrivado(r.meu ? 'seu' : `de ${r.dono_nome || 'outra pessoa'}`)} · {TIPO[r.tipo]} · {r.certo ? 'certo' : 'ainda incerto: fora da conta'}</small>
                 <small>{s.conta_em ? `Entra em ${mesCurto(s.conta_em)}${r.mes_novo ? ` (era ${mesCurto(r.mes_previsto)})` : ''}` : r.certo ? 'Depois de dezembro de 2028' : `Previsto pra ${mesCurto(r.mes_previsto)}`}</small>
                 {/* atrasado: nunca some; o dono responde quando chega */}
                 {s.atrasado && r.certo && (r.meu
                   ? <span className="todo warn" style={{ marginTop: 8 }}><span>Era pra {mesCurto(r.mes_previsto)} e ainda não chegou. Na conta, foi pra {mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.{s.pergunta ? ' Chegou?' : ''}</span></span>
-                  : <span className="sub" style={{ marginTop: 6 }}>Era pra {mesCurto(r.mes_previsto)} e ainda não chegou. Na conta, foi pra {mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.{s.pergunta ? ` ${r.dono_nome || 'O dono'} ainda não disse quando chega.` : ''}</span>)}
+                  : <span className="sub" style={{ marginTop: 6 }}>Era pra {mesCurto(r.mes_previsto)} e ainda não chegou. Na conta, foi pra {mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.{textoPrivado(s.pergunta ? ` ${r.dono_nome || 'O dono'} ainda não disse quando chega.` : '')}</span>)}
                 {r.meu && <span className="row-btns" style={{ marginTop: 8 }}>
                   <button className="btn sm line" type="button" onClick={() => mexer(r.id, { recebido_em: hoje, valor_recebido: r.valor }, `Anotado: ${r.descricao} chegou, ${reais(r.valor)}.`)}><Check size={16} />Chegou</button>
                   <button className="btn sm ghost" type="button" onClick={() => setMudar(r)}>Mudar o mês ou tirar</button>
@@ -61,7 +62,7 @@ export function Recebimentos() {
           )
         })}
       </ul>
-      {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; ')}.</p>}
+      {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {textoPrivado(chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; '))}.</p>}
       {novo && <NovoReceb fechar={() => setNovo(false)} salvar={async r => { if (await tentar(() => api.recebimentoCriar!(familia.id, r))) { setNovo(false); setN(x => x + 1); toast(`${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) } }} />}
       {mudar && <MudarReceb r={mudar} fechar={() => setMudar(null)} mexer={async (m, aviso) => { if (await mexer(mudar.id, m, aviso)) setMudar(null) }} />}
     </section>
@@ -80,7 +81,7 @@ function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRec
         if (!/^\d{4}-\d{2}$/.test(mes)) { setErro('Escolha o mês em que entra.'); return }
         salvar({ descricao: desc.trim(), valor: textoParaValor(v), mes_previsto: mes, tipo, certo })
       }}>
-        <label className="campo"><span>O que é</span><input className="inp" value={desc} maxLength={120} placeholder="Ex.: contrato de consultoria" onChange={e => setDesc(e.target.value)} /></label>
+        <label className="campo"><span>O que é</span><CampoPrivado className="inp" value={desc} maxLength={120} placeholder="Ex.: contrato de consultoria" onChange={e => setDesc(e.target.value)} /></label>
         <div className="campo"><span>Quanto entra</span><CampoValor valor={v} mudar={setV} rotulo="Quanto entra" /></div>
         <label className="campo"><span>Mês em que entra</span><input className="inp" type="month" value={mes} min={hojeRecife().slice(0, 7)} onChange={e => setMes(e.target.value)} /></label>
         <div className="campo"><span id="rTipo">Que tipo é</span>
@@ -94,7 +95,7 @@ function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRec
           </div>
           <small>Incerto fica anotado, mas fora da conta de 2029 até virar certo.</small>
         </div>
-        {erro && <p className="erro" role="alert">{erro}</p>}
+        {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
         <button className="btn primary full" type="submit">Anotar</button>
       </form>
     </Sheet>
@@ -107,7 +108,7 @@ function MudarReceb({ r, fechar, mexer }: { r: RecebimentoTela; fechar: () => vo
   const [mes, setMes] = useState(r.mes_novo || min)
   const [certeza, setCerteza] = useState(false)
   return (
-    <Sheet titulo={r.descricao} fechar={fechar}>
+    <Sheet titulo={textoPrivado(r.descricao)} fechar={fechar}>
       <p className="sub">Previsto pra {mesCurto(r.mes_previsto)}, {reais(r.valor)}.</p>
       <label className="campo"><span>Vai chegar em</span><input className="inp" type="month" value={mes} min={min} onChange={e => setMes(e.target.value)} /><small>O mês novo tem que ser depois do previsto. Ele entra na conta nesse mês.</small></label>
       <button className="btn primary full" type="button" disabled={!/^\d{4}-\d{2}$/.test(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar pra {/^\d{4}-\d{2}$/.test(mes) ? mesCurto(mes) : 'o mês novo'}</button>

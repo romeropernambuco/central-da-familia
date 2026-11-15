@@ -1,3 +1,5 @@
+import { copiarProtegido } from '../../componentes/privacidade'
+import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { novoUuid } from '../../lib/seguro'
 import { useConfig } from '../../app/useConfig'
@@ -35,7 +37,7 @@ export function Casa() {
   ]
   return (
     <div className="view">
-      {equipe && <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {familia?.membroNome}! Aqui você anota o que comprou pra casa e marca a lista. Toque no botão verde pra lançar uma compra.</span></p>}
+      {equipe && <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você anota o que comprou pra casa e marca a lista. Toque no botão verde pra lançar uma compra.</span></p>}
       <div className="segbar"><div className="seg compacta" role="group" aria-label="Parte da casa">
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
       </div></div>
@@ -90,9 +92,9 @@ function Feira() {
             <div>
               <p className="lbl">Quem veio</p>
               {nomes.length ? (
-                <div className="pills" style={{ marginTop: 8 }}>{nomes.map(n => <button key={n} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Check size={16} />}{n}</button>)}</div>
+                <div className="pills" style={{ marginTop: 8 }}>{nomes.map(n => <button key={textoPrivado(n)} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Check size={16} />}{textoPrivado(n)}</button>)}</div>
               ) : <p className="sub" style={{ marginTop: 6 }}>Equipe ainda não cadastrada. Cadastre na aba Folha.</p>}
-              {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={n} className="sub" style={{ marginTop: 6 }}>{n}: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
+              {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={textoPrivado(n)} className="sub" style={{ marginTop: 6 }}>{textoPrivado(n)}: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
             </div>
             <div>
               <p className="lbl">O que saiu</p>
@@ -106,16 +108,16 @@ function Feira() {
           <section className="card" aria-labelledby="fSem">
             <div className="card-h"><h2 id="fSem">Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
             {/* B8: nunca "livre" e "passou" na mesma tela */}
-            <p className="lbl">{feira.nome}: {livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
+            <p className="lbl">{textoPrivado(feira.nome)}: {livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
             <div className="numrow">{livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}
-              <Qm titulo={`${feira.nome}: livre nesta semana`} linhas={feira.teto_semana != null ? [
+              <Qm titulo={textoPrivado(`${feira.nome}: livre nesta semana`)} linhas={feira.teto_semana != null ? [
                 { linha: 'Teto da semana', valor: feira.teto_semana }, { linha: 'Já gasto desde segunda', valor: -(feira.gasto_semana || 0) }, { linha: 'Livre nesta semana', valor: livreSem! },
               ] : [{ linha: 'Combinado do mês', valor: feira.limite_mes }, { linha: 'Já gasto', valor: -feira.gasto_mes }, { linha: 'Livre', valor: feira.livre }]} />
             </div>
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
-            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v]) => `${nomeDe(id) || 'alguém'} pôs ${reais(v)}`).join(', ')}.</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {textoPrivado(Object.entries(porQuem).map(([id, v]) => `${nomeDe(id) || 'alguém'} pôs ${reais(v)}`).join(', '))}.</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}
@@ -127,14 +129,14 @@ function Feira() {
           <ul className="list">
             {lista.map(i => (
               <li key={i.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
-                <label className="check" style={{ gridColumn: '1 / 3' }}><input type="checkbox" checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{i.nome}</span></label>
-                <button className="iconbtn quieto" type="button" aria-label={`Tirar ${i.nome} da lista`} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Trash2 size={20} /></button>
+                <label className="check" style={{ gridColumn: '1 / 3' }}><input type="checkbox" checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
+                <button className="iconbtn quieto" type="button" aria-label={textoPrivado(`Tirar ${i.nome} da lista`)} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Trash2 size={20} /></button>
               </li>
             ))}
           </ul>
           {!lista.length && !falhaLista && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Escreva abaixo o que falta em casa.</Vazio>}
           <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={e => { e.preventDefault(); if (novo.trim()) { setLista([...lista, { id: novoId(), nome: novo.trim(), ok: false }]); setNovo('') } }}>
-            <input className="inp" placeholder="Acrescentar item" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Novo item da lista" />
+            <CampoPrivado className="inp" placeholder="Acrescentar item" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Novo item da lista" />
             <button className="btn line" type="submit" aria-label="Acrescentar"><Plus size={20} /></button>
           </form>
         </section>
@@ -145,7 +147,7 @@ function Feira() {
             <p className="sub" style={{ marginBottom: 10 }}>Quem trabalha na casa entra por um link que você manda, mais um código de 4 números. Sem e-mail. Vê só a tela da Casa, nunca o dinheiro do casal.</p>
             {folha.pessoas.length ? folha.pessoas.map(p => (
               <div key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b>{p.nome}</b><small>{p.funcao}</small></span>
+                <span className="m"><b>{textoPrivado(p.nome)}</b><small>{textoPrivado(p.funcao)}</small></span>
                 <button className="btn sm line" type="button" disabled={gerando} onClick={async () => {
                   setGerando(true)
                   await tentar(async () => {
@@ -163,13 +165,13 @@ function Feira() {
       </div>
       {cupom && <LerCupom fechar={() => setCupom(false)} envelopePadrao={feira?.id} />}
       {cod && (
-        <Sheet titulo={`Convite de ${cod.nome}`} fechar={() => setCod(null)}>
+        <Sheet titulo={textoPrivado(`Convite de ${cod.nome}`)} fechar={() => setCod(null)}>
           <p className="lbl" style={{ justifyContent: 'center' }}>Código de 4 números</p>
           <p className="din big" style={{ letterSpacing: '.2em', textAlign: 'center' }} aria-label={'Código ' + cod.codigo.split('').join(' ')}>{cod.codigo}</p>
-          <p className="sub" style={{ textAlign: 'center' }}>{cod.nome} precisa das 2 coisas: abrir o link abaixo e digitar o código. Vale por 24 horas. Depois de 5 erros, gere outro.</p>
+          <p className="sub" style={{ textAlign: 'center' }}>{textoPrivado(cod.nome)} precisa das 2 coisas: abrir o link abaixo e digitar o código. Vale por 24 horas. Depois de 5 erros, gere outro.</p>
           <p className="linkbox" aria-label="Link do convite">{cod.link}</p>
           <a className="btn primary full" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('equipe', { familia: familia!.nome, quem: cod.nome, link: cod.link, codigo: cod.codigo }))}><MessageCircle size={20} />Abrir o WhatsApp com a mensagem</a>
-          <button className="btn line full" type="button" onClick={() => tentar(async () => { await navigator.clipboard.writeText(cod.link); toast('Link copiado. O código vai separado: ' + cod.codigo) })}><Copy size={20} />Copiar só o link</button>
+          <button className="btn line full" type="button" onClick={() => tentar(async () => { if (await copiarProtegido(cod.link, undefined, toast)) toast('Link copiado. O código vai separado: ' + cod.codigo) })}><Copy size={20} />Copiar só o link</button>
           <p className="sub">O app só abre o WhatsApp com o texto pronto. Quem escolhe a conversa e envia é você.</p>
         </Sheet>
       )}
@@ -200,8 +202,8 @@ function Prestadores() {
           const ehHoje = prox === hoje
           const msg = `Oi, ${p.nome}! Confirmando ${ehHoje ? 'hoje' : amanhã(prox, hoje)} aqui em casa. Tudo certo?`
           return (
-            <section className="card env" key={p.id} aria-label={p.servico + ' ' + p.nome}>
-              <div className="env-h"><b>{p.servico}: {p.nome}</b><span className="regra">{todoDia(p.dia)}</span></div>
+            <section className="card env" key={p.id} aria-label={textoPrivado(p.servico + ' ' + p.nome)}>
+              <div className="env-h"><b>{textoPrivado(p.servico)}: {textoPrivado(p.nome)}</b><span className="regra">{todoDia(p.dia)}</span></div>
               <div className="numrow"><Din v={p.valor} tam="mid" /><span className="sub">por visita</span></div>
               <p className="sub">Próxima visita <b>{ehHoje ? 'hoje' : dataCurta(prox)}</b>{p.ultimaVez ? ` · veio por último ${dataCurta(p.ultimaVez)}` : ''}</p>
               {(amanha || ehHoje) && <p className="todo warn">{ehHoje ? 'É hoje.' : 'É amanhã.'} Mande a confirmação.</p>}
@@ -225,10 +227,10 @@ function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Pre
   return (
     <Sheet titulo="Novo serviço da casa" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && serv) salvar({ id: novoId(), nome, servico: serv, dia, valor: textoParaValor(valor) }) }}>
-        <label className="campo"><span>Serviço</span><input className="inp" placeholder="Ex.: Jardineiro" value={serv} onChange={e => setServ(e.target.value)} /></label>
-        <label className="campo"><span>Nome da pessoa</span><input className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
+        <label className="campo"><span>Serviço</span><CampoPrivado className="inp" placeholder="Ex.: Jardineiro" value={serv} onChange={e => setServ(e.target.value)} /></label>
+        <label className="campo"><span>Nome da pessoa</span><CampoPrivado className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Dia que vem</span><div className="pills">{DIAS.map((d, i) => <button key={d} type="button" className="pill" aria-pressed={dia === i} onClick={() => setDia(i)}>{d.slice(0, 3)}</button>)}</div></div>
-        <label className="campo"><span>Valor por visita</span><input className="inp" inputMode="decimal" value={valor} onChange={e => setValor(e.target.value.replace(/[^\d,]/g, ''))} /></label>
+        <label className="campo"><span>Valor por visita</span><CampoValor valor={valor} mudar={v => setValor(v.replace(/[^\d,]/g, ''))}  /></label>
         <button className="btn primary full" type="submit">Salvar</button>
       </form>
     </Sheet>
@@ -296,10 +298,10 @@ function FolhaCasa() {
             const r = reservaFolha(p.salario)
             return (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
-                <span className="tile">{p.nome.charAt(0)}</span>
-                <span className="m"><b>{p.nome}</b><small>{p.funcao} · salário {reais(p.salario)}</small></span>
+                <span className="tile">{textoPrivado(p.nome.charAt(0))}</span>
+                <span className="m"><b>{textoPrivado(p.nome)}</b><small>{textoPrivado(p.funcao)} · salário {reais(p.salario)}</small></span>
                 <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span><Din v={r.total} /><small className="sub" style={{ display: 'block' }}>guardar/mês</small></span>
-                  <Qm titulo={`Férias e 13º de ${p.nome}`} linhas={[{ linha: '13º: 1 salário dividido por 12', valor: r.decimo }, { linha: 'Férias: 1 salário mais 1/3, dividido por 12', valor: r.ferias }, { linha: 'Guardar por mês', valor: r.total }]} nota="Estimativa simples. Os encargos do governo (aposentadoria e fundo de garantia) já vêm na guia mensal." />
+                  <Qm titulo={textoPrivado(`Férias e 13º de ${p.nome}`)} linhas={[{ linha: '13º: 1 salário dividido por 12', valor: r.decimo }, { linha: 'Férias: 1 salário mais 1/3, dividido por 12', valor: r.ferias }, { linha: 'Guardar por mês', valor: r.total }]} nota="Estimativa simples. Os encargos do governo (aposentadoria e fundo de garantia) já vêm na guia mensal." />
                 </span>
               </li>
             )
@@ -319,9 +321,9 @@ function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: Pessoa
   return (
     <Sheet titulo="Quem trabalha na casa" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && sal) salvar({ id: novoId(), nome, funcao: funcao || 'Equipe da casa', salario: textoParaValor(sal) }) }}>
-        <label className="campo"><span>Nome</span><input className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
-        <label className="campo"><span>Função</span><input className="inp" placeholder="Ex.: Cozinheira, babá, motorista" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
-        <label className="campo"><span>Salário na carteira</span><input className="inp" inputMode="decimal" value={sal} onChange={e => setSal(e.target.value.replace(/[^\d,]/g, ''))} /><small>Fica só com o casal. A equipe nunca vê valor de dinheiro.</small></label>
+        <label className="campo"><span>Nome</span><CampoPrivado className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
+        <label className="campo"><span>Função</span><CampoPrivado className="inp" placeholder="Ex.: Cozinheira, babá, motorista" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
+        <label className="campo"><span>Salário na carteira</span><CampoValor valor={sal} mudar={v => setSal(v.replace(/[^\d,]/g, ''))}  /><small>Fica só com o casal. A equipe nunca vê valor de dinheiro.</small></label>
         <button className="btn primary full" type="submit">Salvar</button>
       </form>
     </Sheet>
@@ -344,13 +346,13 @@ function CasaEquipe() {
     // E3 (conserto 9): depois de marcar, o "precisa de você" se refaz na hora (o piscineiro que veio sai da conta)
     try { setCasa(await api.casaMarcar(familia.id, tipo, dados)); if (aviso) toast(aviso); await recarregar() } catch (e) { toast((e as Error).message) } finally { setOcupado(false) }
   }
-  if (!casa) return <div className="view">{erro ? <p className="erro" role="alert">{erro}</p> : <p className="sub">Abrindo a Casa...</p>}</div>
+  if (!casa) return <div className="view">{erro ? <p className="erro" role="alert">{textoPrivado(erro)}</p> : <p className="sub">Abrindo a Casa...</p>}</div>
   const ponto = casa.presenca.meu_ponto
   const compradoHoje = casa.comprado.filter(c => c.data === hoje)
   const g = casa.gas
   return (
     <div className="view">
-      <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {familia?.membroNome}! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
+      <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
       <PrecisaDeVoce equipe />
       <div className="tela-larga">
         <div className="col">
@@ -361,7 +363,7 @@ function CasaEquipe() {
               <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado} onClick={() => marcar('sai', undefined, 'Saída avisada pro casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
             </div>
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
-            {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{c.nome}</b></span></li>)}</ul>
+            {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(c.nome)}</b></span></li>)}</ul>
               : <Vazio ico={<ShoppingBasket size={24} />}>Nenhuma compra anotada hoje.</Vazio>}
             {/* C4 (14/11): o "Anotar compra" da equipe é 1 só, o botão grande de baixo (App.tsx); a folha dele não tem valor */}
           </section>
@@ -376,7 +378,7 @@ function CasaEquipe() {
             <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem pra casa</h2></div>
             {casa.prestadores.length ? <ul className="list">{casa.prestadores.map(p => (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b>{p.servico}: {p.nome}</b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
+                <span className="m"><b>{textoPrivado(p.servico)}: {textoPrivado(p.nome)}</b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
                 <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado} onClick={() => marcar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
             ))}</ul> : <Vazio ico={<Wrench size={24} />}>O casal ainda não cadastrou serviços.</Vazio>}
@@ -389,13 +391,13 @@ function CasaEquipe() {
             <ul className="list">
               {casa.lista.map(i => (
                 <li key={i.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
-                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado} onChange={() => marcar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{i.nome}</span></label>
+                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado} onChange={() => marcar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
                 </li>
               ))}
             </ul>
             {!casa.lista.length && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Acabou alguma coisa? Escreva abaixo.</Vazio>}
             <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={e => { e.preventDefault(); if (novo.trim()) { marcar('acabou', { nome: novo.trim() }, 'Item posto na lista.'); setNovo('') } }}>
-              <input className="inp" placeholder="Acabou alguma coisa?" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
+              <CampoPrivado className="inp" placeholder="Acabou alguma coisa?" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
               <button className="btn line" type="submit" aria-label="Pôr na lista"><Plus size={20} /></button>
             </form>
           </section>

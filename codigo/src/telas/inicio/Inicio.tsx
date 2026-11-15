@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ChevronRight, ListChecks } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -60,7 +61,7 @@ export function Inicio() {
     <div className="view">
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, {familia?.membroNome}</p>
+          <p className="sub">{saudacao()}, {textoPrivado(familia?.membroNome)}</p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>{n.estado === 'devendo' ? 'Seu mês passou do combinado' : 'Hoje você pode gastar'}</h2>
           <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="hero" /></span>
             : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque pra ver o que mexeu no número de hoje"><Din v={meu.hoje ?? n.valor} tam="hero" /></button>
@@ -73,7 +74,7 @@ export function Inicio() {
           {fraseEstouro(meu, n) && <p className="todo warn frase-estouro">{fraseEstouro(meu, n)}</p>}
           {n.estado !== 'devendo' && <RitmoMes e={meu} porDia={porDiaDe(doMes, meu.id, hoje)} />}
           {n.estado !== 'devendo' && <p className="apoio">{meu.livre < 0 ? <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, passou <b>{reais(-meu.livre)}</b>.</> : <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, sobram <b>{reais(meu.livre)}</b> até {dataCurta(fimDoMes(hoje))}.</>}</p>}
-          {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null}</p>}
+          {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>}
           <div className="row-btns">
             <Qm texto titulo={n.estado === 'devendo' ? 'Seu mês' : 'Hoje você pode gastar'} linhas={n.linhas} nota={`A mesma conta do banco da família.${meu.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`} />
             {porQue && <button type="button" className="explica-l" onClick={porQue}>Por que mudou?</button>}
@@ -81,10 +82,10 @@ export function Inicio() {
         </section>
       ) : (
         <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, {familia?.membroNome}</p>
+          <p className="sub">{saudacao()}, {textoPrivado(familia?.membroNome)}</p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>Hoje você pode gastar</h2>
           <div className="numrow"><Din v={resumo.pode_gastar_hoje} tam="hero" /></div>
-          <p className="apoio">Sobram <b>{reais(sobra)}</b> até {dataCurta(fimDoMes(hoje))}, em {plural(resumo.dias_restantes, 'dia', 'dias')}.{resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null}</p>
+          <p className="apoio">Sobram <b>{reais(sobra)}</b> até {dataCurta(fimDoMes(hoje))}, em {textoPrivado(plural(resumo.dias_restantes, 'dia', 'dias'))}.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>
           <Qm texto titulo="Hoje você pode gastar" linhas={resumo.explicacao} nota="A conta é feita pelo banco da família, igual pra todo mundo da casa. Muda a cada gasto lançado." />
         </section>
       )}
@@ -111,8 +112,8 @@ export function Inicio() {
           <ul className="list">
             {ult.map(l => (
               <li key={l.id} className="li">
-                <span className="tile">{(nomeEnv(l.envelope_id) || '?').charAt(0)}</span>
-                <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{nomeEnv(l.envelope_id)}{rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : ''}{env(l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''} · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
+                <span className="tile">{textoPrivado((nomeEnv(l.envelope_id) || '?').charAt(0))}</span>
+                <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(nomeEnv(l.envelope_id))}{textoPrivado(rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : '')}{textoPrivado(env(l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : '')} · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
                 <span className="v"><Din v={l.valor} /></span>
               </li>
             ))}
@@ -172,8 +173,8 @@ function Placar({ r }: { r: ResumoHoje }) {
   return (
     <section className={'card placar ' + (passam.length ? 'warn' : 'ok')} aria-labelledby="hPlacar">
       <h2 id="hPlacar" style={{ fontSize: 16 }}>O casal, se continuar assim</h2>
-      <p>{passam.length ? <>{passam.length === p.length ? 'Os 2 passam do combinado neste mês.' : `${passam[0].eu ? 'Você passa' : `${passam[0].nome} passa`} do combinado neste mês.`} O que passa sai de {prox}.</> : <>Juntos, sobram <b>{reais(sobra)}</b> no fim do mês.</>}</p>
-      <p className="pes">{p.map(x => <span key={x.nome} className={passa(x) ? 'placar-passa' : ''}>{linha(x)}</span>)}</p>
+      <p>{passam.length ? <>{textoPrivado(passam.length === p.length ? 'Os 2 passam do combinado neste mês.' : `${passam[0].eu ? 'Você passa' : `${passam[0].nome} passa`} do combinado neste mês.`)} O que passa sai de {prox}.</> : <>Juntos, sobram <b>{reais(sobra)}</b> no fim do mês.</>}</p>
+      <p className="pes">{p.map(x => <span key={x.nome} className={passa(x) ? 'placar-passa' : ''}>{textoPrivado(linha(x))}</span>)}</p>
       <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês. Os gastos de cada um estão em Lançamentos, com o nome de quem gastou.</p>
     </section>
   )

@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, ShieldAlert, X } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -58,14 +59,14 @@ export function Guardado() {
         <h2 id="gHoje" className="lbl">Rendeu hoje</h2>
         <div className="numrow"><Din v={g.rendeu_hoje_liquido} tam="hero" /></div>
         {g.motivo_zero
-          ? <p className="guard-motivo">{g.motivo_zero}</p>
+          ? <p className="guard-motivo">{textoPrivado(g.motivo_zero)}</p>
           : <p className="apoio">Já sem o imposto. É o que entrou a mais no seu dinheiro guardado hoje.</p>}
         <dl className="guard-3">
           <div><dt>Neste mês</dt><dd><Din v={g.rendeu_mes_liquido} /></dd></div>
           <div><dt>Desde o início</dt><dd><Din v={g.rendeu_desde_inicio_liquido} /></dd></div>
           <div className="tot"><dt>{doOutro.size ? 'A família tem guardado' : 'Você tem guardado'}</dt><dd><Din v={g.total} /></dd></div>
         </dl>
-        {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={n}>No nome de {n} <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
+        {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={textoPrivado(n)}>No nome de {textoPrivado(n)} <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
         {meses > 0 && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}
         <button type="button" className="explica-l" onClick={abrirConta}><HelpCircle size={18} aria-hidden="true" /> De onde veio esse número?</button>
       </section>
@@ -104,10 +105,10 @@ export function Guardado() {
             </div>
             <ul className="list">
               {g.aplicacoes.map(a => (
-                <li key={a.id} {...(aplicacaoMinha(a, familia) ? {} : { 'data-do-outro': a.titular_nome || 'outra pessoa' })}>
-                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={`${a.nome}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${a.titular_nome || 'outra pessoa'}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`}>
+                <li key={a.id} {...(aplicacaoMinha(a, familia) ? {} : { 'data-do-outro': textoPrivado(a.titular_nome || 'outra pessoa') })}>
+                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={textoPrivado(`${a.nome}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${a.titular_nome || 'outra pessoa'}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`)}>
                     <span className="tile"><Landmark size={20} /></span>
-                    <span className="m"><b>{a.nome}</b>{a.titular !== undefined && <small className="dono">{a.titular_nome ? `no nome de ${a.titular_nome}` : 'do casal'}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
+                    <span className="m"><b>{textoPrivado(a.nome)}</b>{a.titular !== undefined && <small className="dono">{textoPrivado(a.titular_nome ? `no nome de ${a.titular_nome}` : 'do casal')}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
                     <span className="v guard-v"><small>rendeu hoje</small><Din v={a.rendeu_hoje_liquido} /></span>
                   </button>
                 </li>
@@ -190,25 +191,25 @@ function NovaAplicacao({ fechar }: { fechar: () => void }) {
   })
   return (
     <Sheet titulo="Nova aplicação" fechar={fechar}>
-      {sozinho ? <p className="sub">Fica no seu nome ({familia?.membroNome}). A garantia do fundo dos bancos (até R$ 250 mil) conta por pessoa.</p> : (
+      {sozinho ? <p className="sub">Fica no seu nome ({textoPrivado(familia?.membroNome)}). A garantia do fundo dos bancos (até R$ 250 mil) conta por pessoa.</p> : (
       <div className="campo"><span id="gDono">No nome de quem</span>
         <div className="pills" role="group" aria-labelledby="gDono">
-          <button type="button" className="pill" aria-pressed={titular === 'eu'} onClick={() => setTitular('eu')}>No meu nome ({familia?.membroNome})</button>
+          <button type="button" className="pill" aria-pressed={titular === 'eu'} onClick={() => setTitular('eu')}>No meu nome ({textoPrivado(familia?.membroNome)})</button>
           <button type="button" className="pill" aria-pressed={titular === 'casal'} onClick={() => setTitular('casal')}>Do casal</button>
         </div>
         <small>É de quem é o CPF da aplicação. A garantia do fundo dos bancos (até R$ 250 mil) conta por pessoa. No nome do outro, só ele cadastra.</small>
       </div>)}
-      <label className="campo"><span>Onde o dinheiro está</span><input className="inp" value={banco} maxLength={40} placeholder="Ex.: Inter, Itaú, Banco do Brasil" onChange={e => setBanco(e.target.value)} /></label>
+      <label className="campo"><span>Onde o dinheiro está</span><CampoPrivado className="inp" value={banco} maxLength={40} placeholder="Ex.: Inter, Itaú, Banco do Brasil" onChange={e => setBanco(e.target.value)} /></label>
       <div className="campo"><span id="gTipo">Que tipo é</span>
         <div className="pills" role="group" aria-labelledby="gTipo">
           {TIPOS.map(t => <button key={t} type="button" className="pill" aria-pressed={tipo === t} onClick={() => setTipo(t)}>{ROTULO_TIPO[t]}</button>)}
         </div>
         <small>{tipo === 'caixinha' ? 'Caixinha, cofrinho ou conta que rende: tira quando quiser.' : tipo === 'cdb' ? 'CDB: você empresta pro banco e ele paga um percentual da taxa dos bancos. Tem imposto de renda, que diminui com o tempo.' : tipo === 'lci_lca' ? 'LCI ou LCA: não paga imposto de renda.' : tipo === 'tesouro_selic' ? 'Tesouro Selic: você empresta pro governo. Rende perto de 100% da taxa dos bancos.' : 'Poupança: rende 0,5% ao mês (regra atual), sem imposto. O app mostra como estimativa.'}</small>
       </div>
-      {tipo !== 'poupanca' && <label className="campo"><span>Quanto rende, em % do CDI (a taxa que os bancos usam)</span><input className="inp" inputMode="decimal" value={rende} onChange={e => setRende(e.target.value.replace(/[^\d,.]/g, ''))} /><small>Está no app do banco, do lado do nome: "100% do CDI", "110% do CDI". Não sabe? Deixe 100.</small></label>}
+      {tipo !== 'poupanca' && <label className="campo"><span>Quanto rende, em % do CDI (a taxa que os bancos usam)</span><CampoDecimal className="inp" inputMode="decimal" value={rende} onChange={e => setRende(e.target.value.replace(/[^\d,.]/g, ''))} /><small>Está no app do banco, do lado do nome: "100% do CDI", "110% do CDI". Não sabe? Deixe 100.</small></label>}
       <div className="campo"><span>Quanto tem lá hoje</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto tem lá hoje" /></div>
       {comPrazo && <label className="campo"><span>Vence em (se tiver data)</span><input className="inp" type="date" value={vence} min={hojeRecife()} onChange={e => setVence(e.target.value)} /><small>15 dias antes, o Escritório pergunta se você quer renovar ou resgatar.</small></label>}
-      {erro && <p className="erro" role="alert">{erro}</p>}
+      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
       <button className="btn primary full" type="button" disabled={gravando} onClick={salvar}>Guardar</button>
     </Sheet>
   )
@@ -247,11 +248,11 @@ function Movimentar({ g, tipo, inicial, fechar }: { g: GuardadoHoje; tipo: 'apor
       <p className="sub">{tipo === 'aporte' ? 'Fez a transferência no app do banco? Anote aqui pra o rendimento contar certo.' : 'Tirou no app do banco? Anote aqui pra o saldo bater.'}</p>
       {g.aplicacoes.length > 1 && (
         <div className="campo"><span id="gOnde">{tipo === 'aporte' ? 'Onde guardou' : 'De onde tirou'}</span>
-          <div className="pills" role="group" aria-labelledby="gOnde">{g.aplicacoes.map(a => <button key={a.id} type="button" className="pill" aria-pressed={a.id === appId} onClick={() => setAppId(a.id)}>{a.nome}</button>)}</div>
+          <div className="pills" role="group" aria-labelledby="gOnde">{g.aplicacoes.map(a => <button key={a.id} type="button" className="pill" aria-pressed={a.id === appId} onClick={() => setAppId(a.id)}>{textoPrivado(a.nome)}</button>)}</div>
         </div>
       )}
-      <div className="campo"><span>Quanto</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto" />{app && <small>Hoje tem {reais(app.saldo)} em {app.nome}.</small>}</div>
-      {erro && <p className="erro" role="alert">{erro}</p>}
+      <div className="campo"><span>Quanto</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto" />{app && <small>Hoje tem {reais(app.saldo)} em {textoPrivado(app.nome)}.</small>}</div>
+      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
       <button className="btn primary full" type="button" disabled={gravando || !app} onClick={salvar}>{tipo === 'aporte' ? 'Anotar o que guardei' : 'Anotar o que tirei'}</button>
     </Sheet>
   )
@@ -267,15 +268,15 @@ function Aplicacao({ a, fechar, mover }: { a: GuardadoAplicacao; fechar: () => v
     if (ok) { fechar(); toast(`${a.nome} encerrada. O histórico continua guardado.`); await recarregar() }
   }
   return (
-    <Sheet titulo={a.nome} fechar={fechar}>
+    <Sheet titulo={textoPrivado(a.nome)} fechar={fechar}>
       <ul className="exp">
         <li><span>Tem guardado</span><Din v={a.saldo} /></li>
         <li><span>Rendeu hoje, já sem o imposto</span><Din v={a.rendeu_hoje_liquido} /></li>
         <li><span>Rendeu neste mês</span><Din v={a.rendeu_mes_liquido} /></li>
       </ul>
-      <p className="sub"><b>{ROTULO_TIPO[a.tipo]}</b> no {a.banco}, {rendeQuanto(a)}. {a.ir_faixa > 0 ? `Imposto de renda de ${pct(a.ir_faixa, 1).replace(',0%', '%')} sobre o rendimento (cai quanto mais tempo fica guardado).` : 'Não paga imposto de renda.'} {a.liquidez === 'diaria' ? 'Pode tirar quando quiser.' : a.vence_em ? `Vence em ${dataBr(a.vence_em)}.` : 'Só sai no vencimento.'} {a.fgc_ok ? (a.tipo === 'tesouro_selic' ? 'Garantido pelo governo federal.' : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.') : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}</p>
+      <p className="sub"><b>{ROTULO_TIPO[a.tipo]}</b> no {textoPrivado(a.banco)}, {rendeQuanto(a)}. {a.ir_faixa > 0 ? `Imposto de renda de ${pct(a.ir_faixa, 1).replace(',0%', '%')} sobre o rendimento (cai quanto mais tempo fica guardado).` : 'Não paga imposto de renda.'} {a.liquidez === 'diaria' ? 'Pode tirar quando quiser.' : a.vence_em ? `Vence em ${dataBr(a.vence_em)}.` : 'Só sai no vencimento.'} {a.fgc_ok ? (a.tipo === 'tesouro_selic' ? 'Garantido pelo governo federal.' : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.') : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}</p>
       {/* E2: no nome do outro é só pra ler (o banco também tranca) */}
-      {!minha ? <p className="todo" data-do-outro={a.titular_nome || 'outra pessoa'}><span>Está no nome de <b>{a.titular_nome || 'outra pessoa'}</b>. Guardar, tirar e encerrar aqui é só com {a.titular_nome || 'quem é o titular'}.</span></p> : <>
+      {!minha ? <p className="todo" data-do-outro={textoPrivado(a.titular_nome || 'outra pessoa')}><span>Está no nome de <b>{textoPrivado(a.titular_nome || 'outra pessoa')}</b>. Guardar, tirar e encerrar aqui é só com {textoPrivado(a.titular_nome || 'quem é o titular')}.</span></p> : <>
       <div className="row-btns">
         <button className="btn primary" type="button" onClick={() => mover('aporte')}><ArrowDownToLine size={20} />Guardar mais</button>
         <button className="btn line" type="button" onClick={() => mover('resgate')}><ArrowUpFromLine size={20} />Tirar</button>
@@ -301,7 +302,7 @@ export function CartaoGuardado() {
         <span className="m">
           <span className="guard-l"><span>Guardado</span><Din v={g.total} /></span>
           <span className="guard-l dest"><span>Rendeu hoje</span><Din v={g.rendeu_hoje_liquido} /></span>
-          {g.motivo_zero && <small>{g.motivo_zero}</small>}
+          {g.motivo_zero && <small>{textoPrivado(g.motivo_zero)}</small>}
         </span>
       )}
       <ChevronRight size={20} className="muted" aria-hidden="true" />
@@ -347,7 +348,7 @@ function AvisoFGC({ avisos }: { avisos: FuturoSaida['avisos_fgc'] }) {
     <section className="todo warn aviso-fgc" aria-labelledby="gFgc" style={{ marginBottom: 12 }}>
       <ShieldAlert size={20} aria-hidden="true" />
       <span><b id="gFgc">Aviso do fundo que protege quem guarda dinheiro (FGC).</b> Se um banco quebrar, ele devolve até R$ 250 mil por pessoa em cada banco.
-        <ul className="fgc-lista">{f.map((x, i) => <li key={i}>{x}</li>)}</ul>
+        <ul className="fgc-lista">{f.map((x, i) => <li key={i}>{textoPrivado(x)}</li>)}</ul>
         É só um aviso: o dinheiro continua onde está. Repartir entre bancos deixa tudo dentro da garantia.</span>
     </section>
   )

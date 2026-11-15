@@ -1,3 +1,4 @@
+import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
 // E6 (fase final, parte de tela): os parâmetros do objetivo 2029 dentro do Planejamento. Os 2 do casal mudam; o banco
 // guarda quem mudou, quando, antes e depois; o Focus aparece ao lado de cada taxa. A tela NUNCA calcula 2029: só chama
 // futuro() de lib/futuro com a entrada que api.futuroEntradas() montou e escreve o resultado.
@@ -98,7 +99,7 @@ export function Parametros() {
       {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
       {saida && saida.modo === 'renda' ? <Renda2029 saida={saida} />
         : saida && ent?.entrada ? <Linha2028 saida={saida} entrada={ent.entrada} />
-        : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{ent.motivo}</span></p>
+        : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{textoPrivado(ent.motivo)}</span></p>
         : estFuturo === 'erro' ? <p className="todo warn" style={{ marginBottom: 12 }}><span>Não deu pra fazer a conta de 2029 agora: {motivoFuturo}</span></p> : null}
       {ent && ent.confirmar.length > 0 && <p className="sub" style={{ margin: '10px 0 12px' }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
 
@@ -109,12 +110,12 @@ export function Parametros() {
         <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => setF({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>
         <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto. Não inclua aluguel de imóvel cadastrado: ele já entra sozinho.</small></span><CampoValor valor={f.renda || ''} mudar={v => setF({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
         {(() => { const a = avisoRendaCerta(f.renda && valorDigitadoValido(f.renda) ? centDe(f.renda) : 0, saida?.imoveis); return a ? <p className="todo warn aviso-renda-certa" role="status"><span>{a}</span></p> : null })()}
-        <label className="linha-campo"><span className="n">Margem de segurança (%)<small>a mais, pra imprevisto</small></span><input className="inp" inputMode="decimal" {...campo('margem')} /></label>
-        <label className="linha-campo"><span className="n">Rendimento acima da inflação (%)<small>por ano, a taxa que a conta usa pra 2029</small></span><input className="inp" inputMode="decimal" {...campo('real')} /></label>
+        <label className="linha-campo"><span className="n">Margem de segurança (%)<small>a mais, pra imprevisto</small></span><CampoDecimal className="inp" inputMode="decimal" {...campo('margem')} /></label>
+        <label className="linha-campo"><span className="n">Rendimento acima da inflação (%)<small>por ano, a taxa que a conta usa pra 2029</small></span><CampoDecimal className="inp" inputMode="decimal" {...campo('real')} /></label>
         {/* revisão E12: 2 impostos. Até 2028 o dinheiro gira (pior caso, 22,5%); de 2029 em diante fica aplicado mais de 2 anos (15%) */}
-        <div className="linha-campo"><span className="n"><label htmlFor="pIr">Imposto até 2028 (%)</label><small>o que o banco desconta do que rende até dezembro de 2028 <Qm titulo="Imposto até 2028" linhas={[]} nota="Até 2028 o dinheiro entra e sai do caixa, então a conta usa o imposto mais alto do rendimento (22,5%), pra não contar com dinheiro que não vem." /></small></span><input id="pIr" className="inp" inputMode="decimal" {...campo('ir')} /></div>
-        <div className="linha-campo"><span className="n"><label htmlFor="pIr2">Imposto depois de 2029 (%)</label><small>{api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA ? `por enquanto vale ${textoDaTaxa(PADROES_ECONOMISTA.aliq_renda)}%: o banco ainda não guarda este número ` : 'o que o banco desconta do que rende a partir de janeiro de 2029 '}<Qm titulo="Imposto depois de 2029" linhas={[]} nota="A partir de 2029 o dinheiro fica aplicado por mais de 2 anos, e aí o imposto do rendimento cai pra 15%. É com ele que a conta diz quanto rende por mês, pra sempre." /></small></span><input id="pIr2" className="inp" inputMode="decimal" disabled={api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA} {...campo('ir2')} /></div>
-        <div className="linha-campo"><span className="n"><label htmlFor="pIr3">Imposto do aluguel (%)</label><small>o que sai do aluguel pro imposto de renda <Qm titulo="Imposto do aluguel" linhas={[]} nota="O aluguel paga imposto de renda todo mês (carnê-leão). A conta começa com 27,5%, o mais alto, pra não contar com dinheiro que não vem. Se o contador disser outro número, troque aqui." /></small></span><input id="pIr3" className="inp" inputMode="decimal" {...campo('ir3')} /></div>
+        <div className="linha-campo"><span className="n"><label htmlFor="pIr">Imposto até 2028 (%)</label><small>o que o banco desconta do que rende até dezembro de 2028 <Qm titulo="Imposto até 2028" linhas={[]} nota="Até 2028 o dinheiro entra e sai do caixa, então a conta usa o imposto mais alto do rendimento (22,5%), pra não contar com dinheiro que não vem." /></small></span><CampoDecimal id="pIr" className="inp" inputMode="decimal" {...campo('ir')} /></div>
+        <div className="linha-campo"><span className="n"><label htmlFor="pIr2">Imposto depois de 2029 (%)</label><small>{textoPrivado(api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA ? `por enquanto vale ${textoDaTaxa(PADROES_ECONOMISTA.aliq_renda)}%: o banco ainda não guarda este número ` : 'o que o banco desconta do que rende a partir de janeiro de 2029 ')}<Qm titulo="Imposto depois de 2029" linhas={[]} nota="A partir de 2029 o dinheiro fica aplicado por mais de 2 anos, e aí o imposto do rendimento cai pra 15%. É com ele que a conta diz quanto rende por mês, pra sempre." /></small></span><CampoDecimal id="pIr2" className="inp" inputMode="decimal" disabled={api.modo === 'real' && !BANCO_GUARDA_ALIQ_RENDA} {...campo('ir2')} /></div>
+        <div className="linha-campo"><span className="n"><label htmlFor="pIr3">Imposto do aluguel (%)</label><small>o que sai do aluguel pro imposto de renda <Qm titulo="Imposto do aluguel" linhas={[]} nota="O aluguel paga imposto de renda todo mês (carnê-leão). A conta começa com 27,5%, o mais alto, pra não contar com dinheiro que não vem. Se o contador disser outro número, troque aqui." /></small></span><CampoDecimal id="pIr3" className="inp" inputMode="decimal" {...campo('ir3')} /></div>
         <label className="linha-campo"><span className="n">Piso do caixa (meses)<small>meses de teto que nunca vão pra desejo. Vazio = a confirmar (usa 6)</small></span><input className="inp" inputMode="numeric" {...campo('piso')} /></label>
         <label className="linha-campo"><span className="n">Mês do reajuste do teto<small>o teto sobe pela inflação nesse mês ({MESES[(Number(f.reajuste) || 1) - 1]})</small></span><input className="inp" inputMode="numeric" {...campo('reajuste')} /></label>
       </div>
@@ -129,8 +130,8 @@ export function Parametros() {
         <div key={a} className="linha-campo">
           <span className="n">{a}<small>Focus: {focus.get(a) ? `Selic ${textoDaTaxa(focus.get(a)!.selic_fim)}%, IPCA ${textoDaTaxa(focus.get(a)!.ipca)}% (${dataCurta(focus.get(a)!.divulgado_em)})` : 'sem número ainda'}</small></span>
           <span style={{ display: 'flex', gap: 6 }}>
-            <input className="inp" inputMode="decimal" aria-label={`Selic de ${a}`} placeholder="Selic" style={{ width: 80 }} {...campo('selic' + a)} />
-            <input className="inp" inputMode="decimal" aria-label={`IPCA de ${a}`} placeholder="IPCA" style={{ width: 80 }} {...campo('ipca' + a)} />
+            <CampoDecimal className="inp" inputMode="decimal" aria-label={`Selic de ${a}`} placeholder="Selic" style={{ width: 80 }} {...campo('selic' + a)} />
+            <CampoDecimal className="inp" inputMode="decimal" aria-label={`IPCA de ${a}`} placeholder="IPCA" style={{ width: 80 }} {...campo('ipca' + a)} />
           </span>
         </div>
       ))}
@@ -139,7 +140,7 @@ export function Parametros() {
 
       <h3 className="dayh" style={{ marginTop: 16 }}><History size={16} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Quem mudou</h3>
       {obj.historico.length ? <ul className="list">{obj.historico.slice(0, 6).map((h, i) => (
-        <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{h.quem || (sozinho ? 'Você' : 'Alguém do casal')}, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
+        <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(h.quem || (sozinho ? 'Você' : 'Alguém do casal'))}, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
       ))}</ul> : <p className="sub">Ninguém mudou ainda. Valem as premissas: margem 10%, 4% acima da inflação, piso de 6 meses.</p>}
       </details>
       {saida && saida.perguntas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>{saida.perguntas.length === 1 ? '1 recebimento atrasado espera' : `${saida.perguntas.length} recebimentos atrasados esperam`} a resposta do dono, em Recebimentos com data.</p>}

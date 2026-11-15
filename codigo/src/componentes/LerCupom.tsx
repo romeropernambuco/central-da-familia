@@ -1,3 +1,4 @@
+import { textoPrivado } from './privacidade'
 import { useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../lib/seguro'
 import { Camera, ImageUp, Receipt, Check, TriangleAlert } from 'lucide-react'
@@ -66,28 +67,28 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
           <button className="btn primary full" type="button" disabled={etapa === 'lendo'} onClick={() => camera.current?.click()}><Camera size={20} />{etapa === 'lendo' ? 'Lendo o cupom…' : 'Tirar foto'}</button>
           <button className="btn line full" type="button" disabled={etapa === 'lendo'} onClick={() => galeria.current?.click()}><ImageUp size={20} />Escolher da galeria</button>
           {api.modo === 'exemplo' && <button className="btn ghost full" type="button" disabled={etapa === 'lendo'} onClick={() => ler(null)}><Receipt size={20} />Ver com um cupom de exemplo</button>}
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
         </>
       )}
       {etapa === 'conferir' && lido && (
         <>
           <p className="todo"><Check size={20} aria-hidden="true" /><span>Confira os itens. Nada foi lançado ainda.</span></p>
           {lido.total_confere === false && lido.total > 0 && <p className="todo warn"><TriangleAlert size={20} aria-hidden="true" /><span>A soma dos itens lidos ({reais(lido.soma_dos_itens ?? total)}) não bate com o total impresso no cupom ({reais(lido.total)}). Pode ter faltado item ou desconto: confira antes de lançar.</span></p>}
-          <p className="sub">{lido.loja || 'Loja sem nome no cupom'} · {dataCurta(data)}{lido.data && lido.data !== data ? ' (data do cupom fora do prazo, ficou hoje)' : ''}</p>
+          <p className="sub">{textoPrivado(lido.loja || 'Loja sem nome no cupom')} · {dataCurta(data)}{lido.data && lido.data !== data ? ' (data do cupom fora do prazo, ficou hoje)' : ''}</p>
           <ul className="list" aria-label="Itens lidos do cupom">
             {lido.itens.map((it, i) => (
               <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <label className="check"><input type="checkbox" checked={!!marcados[i]} onChange={() => setMarcados(marcados.map((m, j) => j === i ? !m : m))} /><span>{it.nome}</span></label>
+                <label className="check"><input type="checkbox" checked={!!marcados[i]} onChange={() => setMarcados(marcados.map((m, j) => j === i ? !m : m))} /><span>{textoPrivado(it.nome)}</span></label>
                 <span className="v">{reais(it.valor)}</span>
               </li>
             ))}
           </ul>
           <p className="lbl">Total marcado: <b>{reais(total)}</b>{lido.total && Math.abs(lido.total - total) > 0.009 && marcados.every(Boolean) ? ` (o cupom diz ${reais(lido.total)})` : ''}</p>
           <div className="atrow"><span className="atl">Entra em</span>
-            {envs.map(e => <button key={e.id} type="button" className="pill" aria-pressed={env === e.id} onClick={() => setEnv(e.id)}>{e.nome}</button>)}
+            {envs.map(e => <button key={e.id} type="button" className="pill" aria-pressed={env === e.id} onClick={() => setEnv(e.id)}>{textoPrivado(e.nome)}</button>)}
           </div>
-          {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Check size={20} />Lançar {reais(total)}{nomeEnv ? ` em ${nomeEnv}` : ''}</button>
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Check size={20} />Lançar {reais(total)}{textoPrivado(nomeEnv ? ` em ${nomeEnv}` : '')}</button>
           <button className="btn ghost full" type="button" onClick={() => { setLido(null); setEtapa('foto') }}>Ler outra foto</button>
         </>
       )}

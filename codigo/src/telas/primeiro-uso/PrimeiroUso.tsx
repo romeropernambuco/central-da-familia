@@ -1,3 +1,4 @@
+import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useState } from 'react'
 import { ArrowRight, MessageCircle, Check, Clock } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -67,7 +68,7 @@ export function PrimeiroUso() {
       {passo === 1 && !jaPerguntou && (
         <div className="card" style={{ display: 'grid', gap: 14 }}>
           <h2>Alguém da sua casa já te convidou?</h2>
-          <p className="sub">Se quem mora com você já usa a Central, essa pessoa te mandou um convite no e-mail{sessao?.email ? '' : ''}. {sessao?.email ? <>Você entrou com <b>{sessao.email}</b>.</> : null} O convite só funciona com o mesmo e-mail que ela usou.</p>
+          <p className="sub">Se quem mora com você já usa a Central, essa pessoa te mandou um convite no e-mail{sessao?.email ? '' : ''}. {sessao?.email ? <>Você entrou com <b>{textoPrivado(sessao.email)}</b>.</> : null} O convite só funciona com o mesmo e-mail que ela usou.</p>
           <button className="btn primary full" type="button" onClick={async () => { await sair() }}>Sim: entrar com o e-mail do convite</button>
           <button className="btn line full" type="button" onClick={() => setJaPerguntou(true)}>Não: vou criar a família<ArrowRight size={20} /></button>
           <p className="sub">Não sabe qual e-mail? Pergunte pra quem convidou ou peça pra reenviar o convite em Família e ajustes.</p>
@@ -77,9 +78,9 @@ export function PrimeiroUso() {
       {passo === 1 && jaPerguntou && (
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); passo1() }}>
           <h2>Quem é a família?</h2>
-          <label className="campo"><span>Nome da família</span><input className="inp" placeholder="Ex.: Família Oliveira" value={nomeFam} onChange={e => setNomeFam(e.target.value)} /><small>Aparece no topo do app e no convite.</small></label>
-          <label className="campo"><span>Seu nome</span><input className="inp" placeholder="Ex.: Helena" value={nome} onChange={e => setNome(e.target.value)} /><small>{sessao?.email ? `Você entrou com ${sessao.email}.` : 'Você entra como quem cuida da família.'}</small></label>
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          <label className="campo"><span>Nome da família</span><CampoPrivado className="inp" placeholder="Ex.: Família Oliveira" value={nomeFam} onChange={e => setNomeFam(e.target.value)} /><small>Aparece no topo do app e no convite.</small></label>
+          <label className="campo"><span>Seu nome</span><CampoPrivado className="inp" placeholder="Ex.: Helena" value={nome} onChange={e => setNome(e.target.value)} /><small>{textoPrivado(sessao?.email ? `Você entrou com ${sessao.email}.` : 'Você entra como quem cuida da família.')}</small></label>
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn primary full" disabled={ocupado} type="submit">Criar a família<ArrowRight size={20} /></button>
         </form>
       )}
@@ -89,16 +90,16 @@ export function PrimeiroUso() {
           <h2>Quanto cada um pode gastar no mês?</h2>
           <p className="sub">Cada caixinha é um limite: o app desconta dela cada gasto. Pode mudar depois em Planejamento.</p>
           {envs.map(e => (
-            <label className="campo" key={e.id}><span>{e.nome}</span>
-              <input className="inp" inputMode="decimal" placeholder="R$ por mês" value={lim[e.id] || ''} onChange={x => setLim({ ...lim, [e.id]: x.target.value.replace(/[^\d,]/g, '') })} />
+            <label className="campo" key={e.id}><span>{textoPrivado(e.nome)}</span>
+              <CampoValor valor={lim[e.id] || ''} mudar={v => setLim({ ...lim, [e.id]: v.replace(/[^\d,]/g, '') })}  />
               <small>{e.regra === 'diario' ? 'Vira um valor por dia.' : e.regra === 'semanal' ? 'Vira um teto por semana.' : 'Vale pro mês inteiro.'}</small>
             </label>
           ))}
           <label className="campo"><span>Reserva</span>
-            <input className="inp" inputMode="decimal" value={colchao} onChange={e => setColchao(e.target.value.replace(/[^\d,]/g, ''))} />
+            <CampoValor valor={colchao} mudar={v => setColchao(v.replace(/[^\d,]/g, ''))}  />
             <small>Dinheiro que nunca entra no "pode gastar". A conta da casa nunca desce dele.</small>
           </label>
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn primary full" disabled={ocupado} type="submit">Ver o número de hoje<ArrowRight size={20} /></button>
         </form>
       )}
@@ -111,8 +112,8 @@ export function PrimeiroUso() {
           <button className="btn primary full" type="button" onClick={() => setPasso(4)}>Aqui é só eu (com meus filhos)<ArrowRight size={20} /></button>
           <h2>Mais alguém divide as contas com você?</h2>
           <p className="sub">Se sim, chame essa pessoa: quando os 2 lançam, o número fica certo. A mensagem já vai pronta pro WhatsApp.</p>
-          <label className="campo"><span>Nome dela ou dele</span><input className="inp" placeholder="Ex.: Caio" value={segunda} onChange={e => setSegunda(e.target.value)} /></label>
-          <label className="campo"><span>E-mail dela ou dele</span><input className="inp" type="email" inputMode="email" placeholder="bruno@email.com" value={email2} onChange={e => { setEmail2(e.target.value); setConvidado(false) }} /><small>É com esse e-mail que a pessoa entra. O convite fica guardado nele.</small></label>
+          <label className="campo"><span>Nome dela ou dele</span><CampoPrivado className="inp" placeholder="Ex.: Caio" value={segunda} onChange={e => setSegunda(e.target.value)} /></label>
+          <label className="campo"><span>E-mail dela ou dele</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="bruno@email.com" value={email2} onChange={e => { setEmail2(e.target.value); setConvidado(false) }} /><small>É com esse e-mail que a pessoa entra. O convite fica guardado nele.</small></label>
           {convidado
             ? <a className="btn primary full" href={linkWhatsApp(msgPessoa)} target="_blank" rel="noreferrer"><MessageCircle size={20} />Abrir o WhatsApp com o convite</a>
             : <button className="btn primary full" type="button" disabled={ocupado} onClick={() => faz(async () => {
@@ -123,7 +124,7 @@ export function PrimeiroUso() {
               setConvidado(true)
             })}><MessageCircle size={20} />Convidar</button>}
           {convidado && <p className="sub">Convite guardado no e-mail {email2.trim()}. A mensagem não leva nenhum valor em dinheiro.</p>}
-          {erro && <p className="erro" role="alert">{erro}</p>}
+          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn ghost full" type="button" onClick={() => setPasso(4)}>Convido depois<ArrowRight size={20} /></button>
         </div>
       )}

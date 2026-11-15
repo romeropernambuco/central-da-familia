@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Din } from '../../componentes/base'
 import { useApp } from '../../app/contexto'
@@ -40,7 +41,7 @@ export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
       <p className="sub">{resultado?.exemplo ? 'Modo exemplo — estes números não são da sua família.' : 'Números da aba, nas mesmas leituras usadas pelo app.'}</p>
       {!resultado && !erro && <p role="status">Consultando os números…</p>}
       {erro && <p role="status">Não foi possível carregar os números nem o exemplo.</p>}
-      {resultado && <dl className="rel-ind">{resultado.numeros.map(n => <div key={n.nome}><dt>{n.nome}</dt><dd className="txt">{n.valor !== undefined ? <Din v={n.valor} /> : n.texto}</dd></div>)}</dl>}
+      {resultado && <dl className="rel-ind">{resultado.numeros.map(n => <div key={n.nome}><dt>{textoPrivado(n.nome)}</dt><dd className="txt">{n.valor !== undefined ? <Din v={n.valor} /> : textoPrivado(n.texto)}</dd></div>)}</dl>}
       <a className="btn line" href={'#/' + membro.rota} onClick={ev => { ev.preventDefault(); fechar(); ir(membro.rota) }}>Abrir aba</a>
     </>}
   </section>

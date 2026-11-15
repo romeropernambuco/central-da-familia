@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, ListChecks, History, Pencil } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -95,16 +96,16 @@ export function Lancamentos() {
                   // E2: o casal lê o gasto do outro com o nome dele, sem lápis nem lixeira
                   const mexe = mexeNoLancamento(l, envDe(l.envelope_id), familia), dono = rotuloDono(envDe(l.envelope_id), familia)
                   return (
-                  <li key={l.id} className="li" {...(dono ? { 'data-do-outro': (envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família' } : {})}>
-                    <span className="tile">{nomeEnv(l.envelope_id).charAt(0)}</span>
-                    <span className="m"><b>{l.descricao || 'Sem nome'}</b><small>{dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id)}{resumo?.envelopes.find(e => e.id === l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : ''}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {nomeCartao(l.cartao_id)}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
+                  <li key={l.id} className="li" {...(dono ? { 'data-do-outro': textoPrivado((envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família') } : {})}>
+                    <span className="tile">{textoPrivado(nomeEnv(l.envelope_id).charAt(0))}</span>
+                    <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))}{textoPrivado(resumo?.envelopes.find(e => e.id === l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : '')}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
                       {l.parcela || !mexe ? null : lixeira
-                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={`Trazer de volta ${l.descricao || 'gasto'} de ${reais(l.valor)}`} title="Trazer de volta"><Undo2 size={20} /></button>
+                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={textoPrivado(`Trazer de volta ${l.descricao || 'gasto'} de ${reais(l.valor)}`)} title="Trazer de volta"><Undo2 size={20} /></button>
                         // B14: só o lápis na linha; a lixeira fica dentro do Corrigir (sem o risco de apagar por engano)
-                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={`Corrigir ou apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`} title="Corrigir"><Pencil size={19} /></button>
-                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={`Apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`}><Trash2 size={20} /></button>}
+                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={textoPrivado(`Corrigir ou apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`)} title="Corrigir"><Pencil size={19} /></button>
+                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={textoPrivado(`Apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`)}><Trash2 size={20} /></button>}
                     </span>
                   </li>
                   )
@@ -144,7 +145,7 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
         <p className="sub">Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.</p>
         <ul className="list">
           {envelopes.map(e => (
-            <li key={e.id} className="li" {...(rotuloDono(e, familia) ? { 'data-do-outro': donoDo(e) || 'família' } : {})}><span className="tile">{e.nome.charAt(0)}</span><span className="m"><b>{e.nome}</b><small>{rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : ''}de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
+            <li key={e.id} className="li" {...(rotuloDono(e, familia) ? { 'data-do-outro': textoPrivado(donoDo(e) || 'família') } : {})}><span className="tile">{textoPrivado(e.nome.charAt(0))}</span><span className="m"><b>{textoPrivado(e.nome)}</b><small>{textoPrivado(rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : '')}de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
           ))}
         </ul>
       </section>
@@ -153,7 +154,7 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
         {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
           <ul className="list">
             {proxPorCartao.map(f => (
-              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': doOutroCartao(f.cartao_id)! } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{f.cartao}</b><small>{doOutroCartao(f.cartao_id) ? `De ${doOutroCartao(f.cartao_id)} · ` : ''}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
+              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{textoPrivado(doOutroCartao(f.cartao_id) ? `De ${doOutroCartao(f.cartao_id)} · ` : '')}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
             ))}
           </ul>
         )}

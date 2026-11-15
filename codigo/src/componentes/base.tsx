@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/formato'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../app/contexto'
 import { X } from 'lucide-react'
@@ -6,7 +7,7 @@ import type { LinhaExplicacao } from '../api/tipos'
 
 /** Dinheiro: número em Bricolage, "R$" em Figtree cinza, ",00" some. */
 export function Din({ v, tam, className = '', menos }: { v: number; tam?: 'hero' | 'big' | 'mid'; className?: string; /** linha que tira da conta: "menos R$ 970" (nunca o sinal de menos) */ menos?: boolean }) {
-  if (valoresOcultos()) return <span className={`din ${tam || ''} ${className}`} aria-label="valor escondido"><span className="cur">R$</span>•••</span>
+  if (useApp()?.oculto ?? valoresOcultos()) return <span className={`din ${tam || ''} ${className}`} aria-label="valor escondido"><span className="cur">R$</span>•••</span>
   const p = partesDinheiro(v)
   // nada aparece negativo: o que passou vira "passou R$ X" em âmbar (o vermelho não existe)
   const passou = !!p.sinal && !menos
@@ -70,13 +71,13 @@ export function Explicacao({ linhas, nota }: { linhas: LinhaExplicacao[]; nota?:
       <ul className="exp">
         {linhas.map((l, i) => (
           <li key={i} className={i === linhas.length - 1 ? 'tot' : ''}>
-            <span>{l.linha}</span>
+            <span>{textoPrivado(l.linha)}</span>
             {/* linha do meio que tira da conta: "menos R$ 970"; a última, se passou, "passou R$ 382" */}
             <Din v={l.valor} menos={l.valor < 0 && i < linhas.length - 1} />
           </li>
         ))}
       </ul>
-      {nota && <p className="sub">{nota}</p>}
+      {nota && <p className="sub">{textoPrivado(nota)}</p>}
     </>
   )
 }
@@ -97,7 +98,8 @@ export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: str
   // Ocultar somente a apresentação: o estado original continua disponível ao salvar e ao abrir o olho.
   const oculto = useApp()?.oculto ?? false
   const [digitandoOculto, setDigitandoOculto] = useState(false)
-  useEffect(() => { setDigitandoOculto(false) }, [oculto])
+  const [olhoAnterior, setOlhoAnterior] = useState(oculto)
+  if (olhoAnterior !== oculto) { setOlhoAnterior(oculto); setDigitandoOculto(false) }
   const mascarado = oculto && valor !== '' && !digitandoOculto
   return (
     <span className={'inp-rs' + (desligado ? ' off' : '')}>
