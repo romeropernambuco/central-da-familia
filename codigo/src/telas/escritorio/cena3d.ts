@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Cena, OpcoesCena, EstadoCena } from './cenaBase'
+import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
@@ -24,12 +25,25 @@ const RESERVA = [
 ]
 
 export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
+  const limpezas: (() => void)[] = [], recursos = new Set<any>()
+  let destruida = false
+  const guardar = <V extends { dispose(): void }>(v: V): V => { recursos.add(v); return v }
+  const destruir = () => {
+    if (destruida) return
+    destruida = true
+    for (const limpar of limpezas.reverse()) { try { limpar() } catch { /* continuar */ } }
+    for (const r of recursos) { try { r.dispose() } catch { /* continuar */ } }
+    recursos.clear()
+  }
+  try {
   const MOBILE = o.celular
   const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+  limpezas.push(() => { renderer.dispose(); try { renderer.forceContextLoss() } catch { /* perdido */ } })
   const prMax = MOBILE() ? 1.5 : 2, pr = Math.min(window.devicePixelRatio || 1, prMax)
   renderer.setPixelRatio(pr)
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap
   const tela3d: HTMLCanvasElement = renderer.domElement
+  limpezas.push(() => tela3d.remove())
   tela3d.setAttribute('aria-hidden', 'true')
   el.insertBefore(tela3d, el.firstChild)
   const scene = new T.Scene()
@@ -38,26 +52,26 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   /* B2 (pacote 4): céu mais fraco e sol mais forte, pra sombra aparecer; recorte da sombra mais justo (mais nítida) */
   const hemi = new T.HemisphereLight(0xFFF8EE, 0xBFAE92, 0.85); scene.add(hemi)
   const sol = new T.DirectionalLight(0xFFF2DD, 3.0); sol.castShadow = true
+  limpezas.push(() => sol.shadow.dispose())
   sol.shadow.mapSize.set(MOBILE() ? 1024 : 2048, MOBILE() ? 1024 : 2048)
   const sc = sol.shadow.camera; sc.left = -10; sc.right = 10; sc.top = 10; sc.bottom = -10; sc.near = 1; sc.far = 60; sol.shadow.bias = -0.0006; sol.shadow.normalBias = 0.03
   scene.add(sol); scene.add(sol.target)
   const lampadas: { m: any; l: any }[] = []
 
   /* peças */
-  const GEO = new T.BoxGeometry(1, 1, 1), MATS: Record<number, any> = {}, descartar: any[] = [GEO]
-  const mat = (c: number) => MATS[c] || (MATS[c] = new T.MeshLambertMaterial({ color: c }))
-  const BASE = GEO.toNonIndexed(), BP = BASE.attributes.position.array, BN = BASE.attributes.normal.array, corTmp = new T.Color()
-  const VC = new T.MeshLambertMaterial({ vertexColors: true })
+  const GEO = guardar(new T.BoxGeometry(1, 1, 1)), MATS: Record<number, any> = {}
+  const mat = (c: number) => MATS[c] || (MATS[c] = guardar(new T.MeshLambertMaterial({ color: c })))
+  const BASE = guardar(GEO.toNonIndexed()), BP = BASE.attributes.position.array, BN = BASE.attributes.normal.array, corTmp = new T.Color()
+  const VC = guardar(new T.MeshLambertMaterial({ vertexColors: true }))
   /* B2: mancha de sombra fixa sob cada mesa e cada pessoa (fica mesmo quando o modo leve desliga a sombra de verdade) */
-  const MANCHA = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
-  const GEO_M = new T.CircleGeometry(1, 24); descartar.push(GEO_M)
+  const MANCHA = guardar(new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false }))
+  const GEO_M = guardar(new T.CircleGeometry(1, 24))
   function mancha(r: number, x: number, y: number, z: number, pai: any) { const m = new T.Mesh(GEO_M, MANCHA); m.scale.set(r, r, 1); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.renderOrder = 1; pai.add(m); return m }
   /* junta muitas caixas numa peça só (1 desenho por peça em vez de 1 por caixa) */
   function mesclar(lista: number[][]) {
     const n = lista.length, pos = new Float32Array(n * 108), nor = new Float32Array(n * 108), col = new Float32Array(n * 108)
     for (let i = 0; i < n; i++) { const b = lista[i]; corTmp.setHex(b[3]); for (let v = 0; v < 36; v++) { const k = i * 108 + v * 3; pos[k] = BP[v * 3] * b[0] + b[4]; pos[k + 1] = BP[v * 3 + 1] * b[1] + b[5]; pos[k + 2] = BP[v * 3 + 2] * b[2] + b[6]; nor[k] = BN[v * 3]; nor[k + 1] = BN[v * 3 + 1]; nor[k + 2] = BN[v * 3 + 2]; col[k] = corTmp.r; col[k + 1] = corTmp.g; col[k + 2] = corTmp.b } }
-    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3))
-    descartar.push(g)
+    const g = guardar(new T.BufferGeometry()); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3))
     const m = new T.Mesh(g, VC); m.receiveShadow = true; return m
   }
   const FIXO: number[][][] = [[], []]
@@ -71,7 +85,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   function grupo(pai?: any, x = 0, y = 0, z = 0) { const g = new T.Group(); g.position.set(x, y, z); g.userData.lista = []; if (pai) pai.add(g); return g }
 
   /* prédio: 12 x 10 com 4 salas de 6 x 5, e a Recepção de 6 x 4 na frente */
-  const baseMat = new T.MeshLambertMaterial({ color: 0xE2DACC })
+  const baseMat = guardar(new T.MeshLambertMaterial({ color: 0xE2DACC }))
   cx(19, 0.3, 11, baseMat, 3, -0.15, 0, scene, true)
   cx(7, 0.3, 4.4, baseMat, 0, -0.15, 7.3, scene, true)
   const PAREDE = 0xF1EADF, RODA = 0xD9CFBF, MEIA = 0xE6DCCD
@@ -84,13 +98,13 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   cx(3.0, 0.12, 0.12, MEIA, -4.6, 0.06, 5.0, scene, true); cx(3.0, 0.12, 0.12, MEIA, 4.6, 0.06, 5.0, scene, true); cx(0.12, 0.12, 10.2, MEIA, 6.0, 0.06, 0, scene, true)
   cx(0.12, 0.5, 4.0, MEIA, -3.0, 0.25, 7.15); cx(0.12, 0.12, 4.0, MEIA, 3.0, 0.06, 7.15, scene, true); cx(6.1, 0.12, 0.12, MEIA, 0, 0.06, 9.15, scene, true)
   /* janelas nas 2 paredes altas */
-  const vidro = new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: 0.35 })
+  const vidro = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: 0.35 }))
   ;[-4.6, -1.4, 1.4, 4.6].forEach(x => { cx(1.3, 0.8, 0.06, vidro, x, 1.45, -4.98, scene, true) })
   ;[-3.2, 3.2].forEach(z => { cx(0.06, 0.8, 1.3, vidro, -5.98, 1.45, z, scene, true) })
 
   const MADEIRA = 0xB88D62, MADEIRA_E = 0x8A6645, CADEIRA = 0x4C525B, PAPEL = 0xFBF8F1, PLANTA = 0x5E8A62, VASO = 0xC9B8A0
   function planta(x: number, z: number, pai: any) { cx(0.34, 0.3, 0.34, VASO, x, 0.15, z, pai); cx(0.5, 0.34, 0.5, PLANTA, x, 0.52, z, pai); cx(0.34, 0.3, 0.34, PLANTA, x + 0.04, 0.8, z - 0.03, pai) }
-  function luminaria(x: number, z: number, pai: any) { cx(0.2, 0.04, 0.2, 0x55504A, x, 0.02, z, pai); cx(0.05, 1.3, 0.05, 0x55504A, x, 0.65, z, pai); const m = new T.MeshLambertMaterial({ color: 0xF6E7C6, emissive: 0xFFD58A, emissiveIntensity: 0 }); cx(0.36, 0.3, 0.36, m, x, 1.42, z, pai, true); const l = new T.PointLight(0xFFD9A0, 0, 8, 1.6); l.position.set(x, 1.5, z); pai.add(l); lampadas.push({ m, l }) }
+  function luminaria(x: number, z: number, pai: any) { cx(0.2, 0.04, 0.2, 0x55504A, x, 0.02, z, pai); cx(0.05, 1.3, 0.05, 0x55504A, x, 0.65, z, pai); const m = guardar(new T.MeshLambertMaterial({ color: 0xF6E7C6, emissive: 0xFFD58A, emissiveIntensity: 0 })); cx(0.36, 0.3, 0.36, m, x, 1.42, z, pai, true); const l = new T.PointLight(0xFFD9A0, 0, 8, 1.6); l.position.set(x, 1.5, z); pai.add(l); lampadas.push({ m, l }) }
 
   const salaG: Record<string, any> = {}
   Object.keys(SALAS).forEach(k => {
@@ -102,7 +116,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   ;(() => { const g = salaG.caixa /* cofre e pilhas de moedas */
     /* C2: o cofre e as moedas foram pra frente da sala: a 3ª mesa (Tesoureiro de Receitas) fica no fundo */
     cx(0.9, 1.0, 0.7, 0x6C727A, 2.3, 0.5, 1.95, g); cx(0.5, 0.6, 0.04, 0x8A9098, 2.3, 0.52, 2.32, g, true); cx(0.12, 0.12, 0.06, 0xD8C27A, 2.46, 0.52, 2.35, g, true)
-    const ouro = new T.MeshLambertMaterial({ color: 0xD9B95A }); descartar.push(ouro); [[1.35, 0.3], [1.6, 0.42], [1.47, 0.18]].forEach((p, i) => { const gc = new T.CylinderGeometry(0.11, 0.11, p[1], 12); descartar.push(gc); const c = new T.Mesh(gc, ouro); c.position.set(p[0] + (i === 2 ? 0.02 : 0), p[1] / 2 + 0.04, 1.8 + (i === 2 ? 0.26 : 0)); c.castShadow = true; g.add(c) })
+    const ouro = guardar(new T.MeshLambertMaterial({ color: 0xD9B95A })); [[1.35, 0.3], [1.6, 0.42], [1.47, 0.18]].forEach((p, i) => { const gc = guardar(new T.CylinderGeometry(0.11, 0.11, p[1], 12)); const c = new T.Mesh(gc, ouro); c.position.set(p[0] + (i === 2 ? 0.02 : 0), p[1] / 2 + 0.04, 1.8 + (i === 2 ? 0.26 : 0)); c.castShadow = true; g.add(c) })
     planta(-2.6, 2.1, g); luminaria(2.75, -2.25, g) })()
   ;(() => { const g = salaG.casa /* cesta da feira */
     cx(0.7, 0.36, 0.5, 0xC49A62, 2.45, 0.22, 2.05, g); cx(0.2, 0.2, 0.2, 0xC0563F, 2.3, 0.46, 2.0, g, true); cx(0.2, 0.22, 0.2, 0x6E9A58, 2.56, 0.47, 2.1, g, true); cx(0.16, 0.16, 0.16, 0xE0B040, 2.42, 0.46, 2.2, g, true)
@@ -146,7 +160,6 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const HIP_PE = 0.555, HIP_SENTADO = 0.325
 
   const chars: any[] = [], usadas: Record<string, number[]> = {}
-  const monitores: any[] = []
   /* tela acesa pelo estado (B6): trabalhando acesa, precisa de você meia luz, o resto quase apagada */
   const luzTela = (st: EstadoCena) => (st === 'trabalhando' ? 0.9 : st === 'precisa' ? 0.5 : 0.12)
   o.funcionarios.forEach((e, i) => {
@@ -158,7 +171,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     /* mesa, notebook, cadeira */
     cx(1.1, 0.06, 0.6, MADEIRA, xs, 0.6, -1.0, g); [[-0.48, -0.24], [0.48, -0.24], [-0.48, 0.24], [0.48, 0.24]].forEach(q => { cx(0.06, 0.57, 0.06, MADEIRA_E, xs + q[0], 0.285, -1.0 + q[1], g) })
     cx(0.42, 0.02, 0.28, 0x8E949C, xs, 0.64, -1.06, g, true)
-    const telaMat = new T.MeshLambertMaterial({ color: 0x22272E, emissive: 0xD7EADF, emissiveIntensity: luzTela(e.estado) }); monitores.push(telaMat)
+    const telaMat = guardar(new T.MeshLambertMaterial({ color: 0x22272E, emissive: 0xD7EADF, emissiveIntensity: luzTela(e.estado) }))
     const monitor = cx(0.42, 0.27, 0.02, telaMat, xs, 0.775, -0.9, g); monitor.rotation.x = 0.18
     mancha(0.62, xs, 0.045, -1.25, g)
     cx(0.1, 0.12, 0.1, 0xF1EADF, xs + 0.4, 0.69, -0.84, g, true)
@@ -202,9 +215,19 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   let vAtual = { ...VISTAS.tudo }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = 'tudo'
   function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
-  function tamanho() { const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return; renderer.setSize(W, H, false); aplicaVista(vAtual) }
-  window.addEventListener('resize', tamanho); tamanho()
-  const ro = 'ResizeObserver' in window ? new ResizeObserver(tamanho) : null
+  let largura = 0, altura = 0, dpr = pr
+  function tamanho() {
+    const W = el.clientWidth, H = el.clientHeight
+    if (!W || !H) return
+    const novo = Math.min(window.devicePixelRatio || 1, degrau > 0 ? 1 : MOBILE() ? 1.5 : 2)
+    if (novo !== dpr) { dpr = novo; renderer.setPixelRatio(dpr) }
+    if (W !== largura || H !== altura) { largura = W; altura = H; renderer.setSize(W, H, false); aplicaVista(vAtual) }
+  }
+  const redimensionar = () => { tamanho(); solicitar() }
+  window.addEventListener('resize', redimensionar)
+  limpezas.push(() => window.removeEventListener('resize', redimensionar))
+  const ro = 'ResizeObserver' in window ? new ResizeObserver(redimensionar) : null
+  limpezas.push(() => ro?.disconnect())
   ro?.observe(el)
 
   /* etiquetas em HTML presas à cabeça de cada boneco e nome da sala no piso */
@@ -252,6 +275,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (hit.length) o.aoTocar(hit[0].object.userData.id)
   }
   tela3d.addEventListener('pointerdown', aoDescer); tela3d.addEventListener('pointerup', aoSubir)
+  limpezas.push(() => { tela3d.removeEventListener('pointerdown', aoDescer); tela3d.removeEventListener('pointerup', aoSubir) })
 
   /* sol, céu e lâmpadas pela hora */
   let escuro = o.escuro
@@ -313,47 +337,73 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   }
 
   /* laço */
-  let visivel = true, ult = performance.now(), tAcum = 0, fpsN = 0, fpsT = 0, fps = 0, baixo = 0, degrau = 0, segAnim = 0, segLuz = 0, jsMs = 0, raf = 0, vivo = true
+  let visivel = true, ult = 0, tAcum = 0, fps = 0, baixo = 0, degrau = 0, segAnim = 0, segLuz = 0, jsMs = 0, raf = 0, vivo = true
   const fpsHist: number[] = []
-  const io = 'IntersectionObserver' in window ? new IntersectionObserver(en => { visivel = en[0].isIntersecting }) : null
+  let perdido = false
+  let recuperacao: ReturnType<typeof setTimeout> | undefined
+  const medidor = new MedidorFPS()
+  function pausar() { cancelAnimationFrame(raf); raf = 0; ult = 0; medidor.pausar(); baixo = 0 }
+  function solicitar() { if (vivo && !destruida && !perdido && visivel && !document.hidden && !raf) raf = requestAnimationFrame(quadro) }
+  const visibilidade = () => { pausar(); solicitar() }
+  document.addEventListener('visibilitychange', visibilidade)
+  const perdeu = (ev: Event) => {
+    ev.preventDefault(); perdido = true; pausar(); o.aoContexto?.('perdido'); clearTimeout(recuperacao)
+    recuperacao = setTimeout(() => { if (perdido && vivo) { o.aoContexto?.('falhou'); destruir() } }, 8000)
+  }
+  const restaurou = () => { if (!vivo || destruida) return; clearTimeout(recuperacao); perdido = false; o.aoContexto?.('restaurado'); tamanho(); solicitar() }
+  tela3d.addEventListener('webglcontextlost', perdeu); tela3d.addEventListener('webglcontextrestored', restaurou)
+  limpezas.push(() => { vivo = false; pausar(); clearTimeout(recuperacao); document.removeEventListener('visibilitychange', visibilidade); tela3d.removeEventListener('webglcontextlost', perdeu); tela3d.removeEventListener('webglcontextrestored', restaurou) })
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(en => { visivel = en[0].isIntersecting; visibilidade() }) : null
+  limpezas.push(() => io?.disconnect())
   io?.observe(el)
   function quadro(agora: number) {
-    if (!vivo) return
-    raf = requestAnimationFrame(quadro); const agora0 = performance.now()
-    if (!visivel || document.hidden) { ult = agora; return }
-    const dt = Math.min(0.05, (agora - ult) / 1000); ult = agora; tAcum += dt
+    raf = 0
+    if (!vivo || destruida || perdido || !visivel || document.hidden) { pausar(); return }
+    const agora0 = performance.now()
+    const dt = ult ? Math.min(0.05, (agora - ult) / 1000) : 0; ult = agora; tAcum += dt
+    tamanho()
     segLuz -= dt; if (segLuz <= 0) { segLuz = 30; luzDaHora(o.hora()) }
     /* no celular, no máximo 8 bonecos animados ao mesmo tempo; no modo mais leve, 4 */
     segAnim -= dt; if (segAnim <= 0) { segAnim = 1; let lim = MOBILE() ? 8 : 99; if (degrau >= 3) lim = 4; const pr2 = (c: any) => (c.path ? 0 : c.st === 'precisa' ? 1 : c.id === selecionado ? 2 : c.st === 'trabalhando' ? 3 : 4); chars.slice().sort((a, b) => pr2(a) - pr2(b)).forEach((c, i) => { c.anim = i < lim || !!c.path }) }
-    for (let i = 0; i < chars.length; i++) atualizaChar(chars[i], tAcum, dt)
-    if (vPara) { const k = Math.min(1, (agora - vT0) / (o.parado ? 1 : 1200)), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; ['cx', 'cy', 'hw', 'hh'].forEach(n => { vAtual[n] = lerp(vDe[n], vPara[n], e) }); aplicaVista(vAtual); if (k >= 1) vPara = null }
-    renderer.render(scene, cam)
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i]
+      if (o.parado) { ch.path = null; ch.loc = ch.st === 'precisa' ? 'frente' : 'sentado'; ch.b.r.position.copy(ch.loc === 'frente' ? ch.F : ch.S); ch.b.r.rotation.y = ch.loc === 'frente' ? Math.PI / 4 : 0 }
+      atualizaChar(ch, tAcum, o.parado ? 1 : dt)
+    }
+    if (vPara) { const k = Math.min(1, (agora - vT0) / (o.parado ? 0.001 : 1200)), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; ['cx', 'cy', 'hw', 'hh'].forEach(n => { vAtual[n] = lerp(vDe[n], vPara[n], e) }); aplicaVista(vAtual); if (k >= 1) vPara = null }
+    try { renderer.render(scene, cam) } catch { o.aoContexto?.('falhou'); destruir(); return }
     atualizaTags()
     jsMs = jsMs * 0.95 + (performance.now() - agora0) * 0.05
     /* fluidez: mede 1 vez por segundo e alivia em 3 degraus se ficar abaixo de 24 imagens por segundo */
-    fpsN++; fpsT += dt; if (tAcum < 3) { fpsN = 0; fpsT = 0 } else if (fpsT >= 1) {
-      fps = Math.round(fpsN / fpsT); fpsN = 0; fpsT = 0; fpsHist.push(fps); if (fpsHist.length > 60) fpsHist.shift()
-      if (fps < 24) { baixo++; if (baixo >= 4 && degrau < 3) { degrau++; baixo = 0; if (degrau === 1) { renderer.setPixelRatio(1); tamanho() } if (degrau === 2) { renderer.shadowMap.enabled = false; sol.castShadow = false; scene.traverse((x: any) => { if (x.material) x.material.needsUpdate = true }) } } } else baixo = 0
+    const amostra = o.parado ? null : medidor.quadro(agora)
+    if (amostra !== null) {
+      fps = amostra; fpsHist.push(fps); if (fpsHist.length > 60) fpsHist.shift()
+      if (fps < 24) { baixo++; if (baixo >= 4 && degrau < 3) { degrau++; baixo = 0; if (degrau === 1) { tamanho() } if (degrau === 2) { renderer.shadowMap.enabled = false; sol.castShadow = false; sol.shadow.dispose(); sol.shadow.map = null; sol.shadow.mapPass = null; scene.traverse((x: any) => { if (x.material) x.material.needsUpdate = true }) } } } else baixo = 0
       o.aoMedir?.(fps, degrau)
     }
+    if (!o.parado) solicitar()
   }
-  raf = requestAnimationFrame(quadro)
+  let consultaDpr: MediaQueryList | undefined
+  const mudouDpr = () => { observarDpr(); redimensionar() }
+  function observarDpr() {
+    consultaDpr?.removeEventListener('change', mudouDpr)
+    consultaDpr = window.matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)')
+    consultaDpr.addEventListener('change', mudouDpr)
+  }
+  limpezas.push(() => consultaDpr?.removeEventListener('change', mudouDpr))
+  observarDpr()
+  tamanho(); solicitar()
 
   return {
     atualizar(f) {
+      solicitar()
       f.forEach(n => { const ch = chars.find(c => c.id === n.id); if (!ch || ch.st === n.estado) return; if (n.estado === 'entregue' && ch.st === 'precisa') ch.festa = 0; if (n.estado === 'entregue' && ch.st === 'trabalhando') ch.festa = 1.6; ch.st = n.estado })
     },
-    selecionar(id) { selecionado = id; if (id && MOBILE()) { const ch = chars.find(c => c.id === id); if (ch) irPara(ch.sala) } chars.forEach(c => { c.tk = '' }) },
-    irPara,
-    tema: setTema,
+    selecionar(id) { solicitar(); selecionado = id; if (id && MOBILE()) { const ch = chars.find(c => c.id === id); if (ch) irPara(ch.sala) } chars.forEach(c => { c.tk = '' }) },
+    irPara(v) { irPara(v); solicitar() },
+    tema(d) { setTema(d); solicitar() },
     medir: () => ({ fps, degrau, hist: fpsHist.slice(), ms: +jsMs.toFixed(2), desenhos: renderer.info.render.calls, triangulos: renderer.info.render.triangles }),
-    destruir() {
-      vivo = false; cancelAnimationFrame(raf)
-      window.removeEventListener('resize', tamanho); ro?.disconnect(); io?.disconnect()
-      tela3d.removeEventListener('pointerdown', aoDescer); tela3d.removeEventListener('pointerup', aoSubir)
-      descartar.forEach(g => g.dispose()); Object.values(MATS).forEach(m => m.dispose()); monitores.forEach(m => m.dispose()); MANCHA.dispose(); VC.dispose(); baseMat.dispose(); vidro.dispose()
-      renderer.dispose(); try { renderer.forceContextLoss() } catch { /* contexto já perdido */ }
-      tela3d.remove()
-    },
+    destruir,
   }
+  } catch (erro) { destruir(); throw erro }
 }

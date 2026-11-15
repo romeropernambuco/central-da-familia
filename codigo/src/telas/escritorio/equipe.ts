@@ -114,3 +114,6 @@ export const APELIDO_BANCO: Record<string, string> = {
   tesoureiro_receitas: 'tesoureiro', assistente_casa: 'assistente', gerente_usina: 'usina', controlador_presenca: 'presenca', auditor_estoque: 'auditor',
 }
 export const nomeCurto = (id: string, nome: string) => POR_ID[id]?.curto || nome.split(' ')[0]
+
+/** Destino da a??o da Secret?ria, mantendo a rota base para autoriza??o e leituras. */
+export const DESTINO_SECRETARIA = '#/escritorio?aba=lembretes'

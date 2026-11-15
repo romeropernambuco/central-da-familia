@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../../app/contexto'
-import { useConfig } from '../../app/useConfig'
 import type { Estoque, FuncionarioEsc, RecebimentoTela } from '../../api/tipos'
 import { dataCurta, hojeRecife, reais } from '../../lib/formato'
 import { SALAS_NOME } from './cenaBase'
@@ -16,20 +15,24 @@ const n = (v: number, um: string, mais: string) => (v === 1 ? `1 ${um}` : `${v} 
  */
 export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): FuncionarioEsc[] {
   const { api, familia, versao } = useApp()
-  const [rec, setRec] = useState<RecebimentoTela[] | null>(null)
-  const [est, setEst] = useState<Estoque | null>(null)
-  const [avisos, setAvisos] = useState<{ tipo: string; data: string; nome: string }[]>([])
-  const [pres] = useConfig<Record<string, string[]>>('casa_presenca', {})
+  type Dados = { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[]; pres: Record<string, string[]> }
+  const [resultado, setResultado] = useState<{ familia: string; versao: number; dados: Dados } | null>(null)
   useEffect(() => {
+    setResultado(null)
     if (!familia) return
     let vivo = true
-    if (api.recebimentos) api.recebimentos(familia.id).then(r => { if (vivo) setRec(r) }).catch(() => { if (vivo) setRec(null) })
-    api.estoque(familia.id).then(r => { if (vivo) setEst(r) }).catch(() => { if (vivo) setEst(null) })
-    api.avisosCasa(familia.id).then(r => { if (vivo) setAvisos(r) }).catch(() => {})
+    const fid = familia.id
+    Promise.all([
+      api.recebimentos ? api.recebimentos(fid).catch(() => null) : Promise.resolve(null),
+      api.estoque(fid).catch(() => null),
+      api.avisosCasa(fid).catch(() => []),
+      api.config<Record<string, string[]>>(fid, 'casa_presenca', {}).catch(() => ({})),
+    ]).then(([rec, est, avisos, pres]) => { if (vivo) setResultado({ familia: fid, versao, dados: { rec, est, avisos, pres } }) })
     return () => { vivo = false }
   }, [api, familia?.id, versao])
+  const dados = resultado?.familia === familia?.id && resultado?.versao === versao ? resultado.dados : null
+  return useMemo(() => completarEquipe(doBanco, dados || { rec: null, est: null, avisos: [], pres: {} }, hojeRecife()), [doBanco, dados])
 
-  return useMemo(() => completarEquipe(doBanco, { rec, est, avisos, pres }, hojeRecife()), [doBanco, rec, est, avisos, pres])
 }
 
 /** A conta da lista (sem React, pra dar pra testar): os do banco + os que faltam da lista única, na ordem dela. */
