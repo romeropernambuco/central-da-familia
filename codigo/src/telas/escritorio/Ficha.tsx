@@ -114,12 +114,12 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 }
 
 /* ---------- cadastro genérico: lista com "Novo" e editar em cada linha ---------- */
-interface Campo { k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
+interface Campo { privado?: boolean; k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
 type Form = Record<string, string>
 interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?: boolean | ((t: T) => boolean); extra?: (t: T) => ReactNode }
 
 function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, salvar, novo, vazio, semEditar, extra }: PropsLista<T>) {
-  const { tentar, recarregar, toast } = useApp()
+  const { tentar, recarregar, toast, oculto } = useApp()
   const [aberto, setAberto] = useState<string | null>(null) // chave do item em edição, ou '+' pra novo
   const [form, setForm] = useState<Form>({})
   const [erro, setErro] = useState('')
@@ -140,7 +140,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
           <span id={`cf-${nome}-${c.k}`}>{c.rotulo}</span>
           {c.tipo === 'valor' ? <CampoValor valor={form[c.k] || ''} mudar={v => setForm({ ...form, [c.k]: v })} rotulo={c.rotulo} />
             : c.tipo === 'opcao' ? <div className="pills" role="group" aria-labelledby={`cf-${nome}-${c.k}`}>{c.opcoes!.map(([v, r]) => <button key={v} type="button" className="pill" aria-pressed={(form[c.k] || '') === v} onClick={() => setForm({ ...form, [c.k]: v })}>{r}</button>)}</div>
-              : <input className="inp" aria-labelledby={`cf-${nome}-${c.k}`} placeholder={c.ph} type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} inputMode={c.tipo === 'num' ? 'numeric' : undefined} value={form[c.k] || ''} onChange={ev => setForm({ ...form, [c.k]: c.tipo === 'num' ? ev.target.value.replace(/\D/g, '') : ev.target.value })} />}
+              : <input className="inp" aria-labelledby={`cf-${nome}-${c.k}`} readOnly={oculto && c.privado} placeholder={oculto && c.privado ? '•••' : c.ph} type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} inputMode={c.tipo === 'num' ? 'numeric' : undefined} value={oculto && c.privado ? '' : form[c.k] || ''} onChange={ev => !(oculto && c.privado) && setForm({ ...form, [c.k]: c.tipo === 'num' ? ev.target.value.replace(/\D/g, '') : ev.target.value })} />}
           {c.dica && <small>{c.dica}</small>}
         </div>
       ))}
@@ -220,7 +220,7 @@ function CadCartao() {
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
         sub={c => <>{c.titular ? `de ${c.titular} · ` : ''}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
+          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
           { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
@@ -406,7 +406,7 @@ function CadContador() {
   const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string, outros: Renda[] = []) => (
     <Lista<Renda> nome={nome} novo={novo} itens={[...itens, ...outros]} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'} semEditar={r => outros.includes(r)}
       titulo={r => r.nome} sub={r => `${outros.includes(r) ? `de ${r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
-      campos={[{ k: 'nome', rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
+      campos={[{ k: 'nome', privado: true, rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
       paraForm={r => ({ nome: r?.nome || '', valor: vt(r?.valor), dia: r?.dia ? String(r.dia) : '' })}
       salvar={async (f, r) => {
         if (!f.nome.trim()) return 'Escreva o nome.'

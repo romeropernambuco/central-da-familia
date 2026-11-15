@@ -105,7 +105,7 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
 
 /** Relatório: o diário de tudo que foi perguntado e respondido, com a conta de quanto demorou. */
 function Relatorio() {
-  const { api, familia, versao, sessao } = useApp()
+  const { api, familia, versao, sessao, oculto } = useApp()
   // R15: "demora pra responder" soa como bronca: só o dono do produto vê
   const dono = !!sessao?.dono
   const [dias, setDias] = useState(7)
@@ -161,7 +161,7 @@ function Relatorio() {
       </section>
       <section className="card" aria-labelledby="rDia">
         <div className="card-h"><h2 id="rDia">Diário</h2>{r.diario.length > 0 && <button className="lnk" type="button" onClick={copiar}><Copy size={16} />Copiar relatório</button>}</div>
-        {copiado && <div className="campo"><span>Relatório copiado. Se não colar, copie daqui:</span><textarea className="inp area" readOnly rows={6} value={texto} aria-label="Texto do relatório" /></div>}
+        {copiado && <div className="campo"><span>Relatório copiado. Se não colar, copie daqui:</span><textarea className="inp area" readOnly rows={6} value={oculto ? '\u2022\u2022\u2022' : texto} aria-label="Texto do relatório" /></div>}
         {!r.diario.length ? <Vazio ico={<ClipboardList size={24} />}>Nenhuma resposta anotada nesse período. Quando você responder uma pergunta do Escritório, ela aparece aqui.</Vazio> : (
           Object.keys(porDia).sort().reverse().map(dia => (
             <div key={dia}>

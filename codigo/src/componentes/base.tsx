@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useApp } from '../app/contexto'
 import { X } from 'lucide-react'
 import { milhar, partesDinheiro, reais, valoresOcultos } from '../lib/formato'
 import type { LinhaExplicacao } from '../api/tipos'
@@ -93,10 +94,18 @@ export function Vazio({ ico, children, acao }: { ico: ReactNode; children: React
 
 /** Campo de dinheiro: "R$" cinza dentro do campo e ponto de milhar ("3.000"). O valor guardado continua sem ponto ("3000"). */
 export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: string; mudar: (v: string) => void; desligado?: boolean; rotulo?: string; id?: string }) {
+  // Ocultar somente a apresentação: o estado original continua disponível ao salvar e ao abrir o olho.
+  const oculto = useApp()?.oculto ?? false
+  const [editado, setEditado] = useState(false)
+  const mascarado = oculto && valor !== '' && !editado
   return (
     <span className={'inp-rs' + (desligado ? ' off' : '')}>
       <span aria-hidden="true">R$</span>
-      <input id={id} inputMode="decimal" disabled={desligado} aria-label={rotulo} value={milhar(valor)} onChange={e => mudar(e.target.value.replace(/[^\d,]/g, ''))} />
+      <input id={id} inputMode="decimal" disabled={desligado} aria-label={rotulo} readOnly={mascarado} placeholder={mascarado ? '•••' : undefined} value={mascarado ? '' : milhar(valor)} onChange={e => {
+        if (mascarado) return
+        setEditado(true)
+        mudar(e.target.value.replace(/[^\d,]/g, ''))
+      }} />
     </span>
   )
 }

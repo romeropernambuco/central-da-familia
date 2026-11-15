@@ -35,8 +35,8 @@ export interface Ctx {
   alternarOculto: () => void
 }
 
-const C = createContext<Ctx | null>(null)
-export const useApp = () => useContext(C)!
+export const ContextoApp = createContext<Ctx | null>(null)
+export const useApp = () => useContext(ContextoApp)!
 
 export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const [sessao, setSessao] = useState<Sessao | null>(null)
@@ -153,7 +153,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     explicar: setExp, oculto, alternarOculto,
   }
   return (
-    <C.Provider value={v}>
+    <ContextoApp.Provider value={v}>
       {children}
       {exp && (
         <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
@@ -167,6 +167,6 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
           {toastE.desfazer && <button type="button" onClick={() => { const d = toastE.desfazer!; setToast(null); tentar(async () => { await d() }) }}>Desfazer</button>}
         </div>
       )}
-    </C.Provider>
+    </ContextoApp.Provider>
   )
 }
