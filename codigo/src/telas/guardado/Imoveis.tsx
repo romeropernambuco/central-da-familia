@@ -82,6 +82,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
     <section className="card imoveis" aria-labelledby="gImo">
       <div className="card-h"><h2 id="gImo"><Building2 size={24} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Plus size={16} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
+      <p>{textoPrivado('Gestor do Guardado: quer cadastrar um imóvel?')}</p><button type="button" className="btn line" onClick={() => setFolha('novo')}>Cadastrar imóvel</button>
       <dl className="imo-total">
         <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
@@ -126,7 +127,7 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
   const so = !!inicial && !inicial.meu
   const m0 = hojeRecife().slice(0, 7)
   const [f, setF] = useState(() => ({
-    apelido: inicial?.apelido || '', valor: inicial ? valorParaTexto(inicial.valor) : '', uso: (inicial?.uso || 'aluga') as UsoImovel,
+    apelido: inicial?.apelido || '', valor: inicial ? valorParaTexto(inicial.valor) : '', uso: (inicial?.uso || 'parado') as UsoImovel,
     aluguel: inicial ? valorParaTexto(inicial.aluguel) : '', custos: inicial ? valorParaTexto(inicial.custos) : '', vacancia: inicial ? textoDaTaxa(inicial.vacancia) : '0',
     contrato: inicial?.tem_contrato ?? false, contrato_ate: inicial?.contrato_ate || mesMais(m0, 12),
     vende: inicial?.venda_valor != null, venda_valor: inicial?.venda_valor != null ? valorParaTexto(inicial.venda_valor) : '', venda_mes: inicial?.venda_mes || mesMais(m0, 12), venda_contrato: inicial?.venda_contrato ?? false,
@@ -140,8 +141,8 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
     tem_contrato: aluga && f.contrato, contrato_ate: aluga && f.contrato ? f.contrato_ate : null,
     venda_valor: f.vende ? textoParaValor(f.venda_valor) : null, venda_mes: f.vende ? f.venda_mes : null, venda_contrato: f.vende && f.venda_contrato,
   }
-  const falta = !f.valor || !valorDigitadoValido(f.valor) ? 'Digite quanto vale o imóvel.'
-    : aluga && (!f.aluguel || !valorDigitadoValido(f.aluguel)) ? 'Digite o aluguel médio por mês.'
+  const falta = !f.valor || !valorDigitadoValido(f.valor) || d.valor <= 0 ? 'Digite quanto vale o imóvel.'
+    : aluga && f.aluguel && !valorDigitadoValido(f.aluguel) ? 'Digite o aluguel médio por mês.'
     : aluga && f.custos && !valorDigitadoValido(f.custos) ? 'Confira os custos por mês.'
     : aluga && (vac == null || Number(vac) < 0 || Number(vac) > 1) ? 'Os meses vazios vão de 0 a 100.'
     : f.vende && (!f.venda_valor || !valorDigitadoValido(f.venda_valor)) ? 'Digite por quanto pensa vender.'

@@ -1,5 +1,5 @@
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, ShieldAlert, X } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useFuturo, useGuardado } from '../../app/useDados2'
@@ -26,6 +26,11 @@ export function Guardado() {
   const [marcoVisto, setMarcoVisto] = useState(() => { try { return localStorage.getItem('marco_visto') || '' } catch { return '' } })
   const [folha, setFolha] = useState<Folha>(() => (/[?&]nova=1/.test(location.hash) ? { tipo: 'nova' } : /[?&]guardar=1/.test(location.hash) ? { tipo: 'aporte' } : /[?&]tirar=1/.test(location.hash) ? { tipo: 'resgate' } : null))
 
+  useEffect(() => {
+    const abrir = () => { if (/[?&]nova=1/.test(location.hash)) setFolha({ tipo: 'nova' }); else if (/[?&]guardar=1/.test(location.hash)) setFolha({ tipo: 'aporte' }); else if (/[?&]tirar=1/.test(location.hash)) setFolha({ tipo: 'resgate' }) }
+    window.addEventListener('hashchange', abrir)
+    return () => window.removeEventListener('hashchange', abrir)
+  }, [])
   if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado mostra o dinheiro da família. Só o casal vê esta tela.</Vazio></div>
   if (estado === 'desligado') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje.</Vazio></div>
   if (estado === 'erro' && !g) return <div className="card"><p className="aviso-erro" role="alert">Não deu pra buscar o Guardado: {motivo} Seu dinheiro não mudou; é só a tela que não carregou.</p></div>
@@ -33,7 +38,7 @@ export function Guardado() {
 
   const abrirConta = () => explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g)} ${TORNEIRA}` })
 
-  if (!g.aplicacoes.length) return <><GuardadoVazio g={g} comecar={() => setFolha({ tipo: 'nova' })} />{folha?.tipo === 'nova' && <NovaAplicacao fechar={() => setFolha(null)} />}</>
+  if (!g.aplicacoes.length) return <><GuardadoVazio g={g} comecar={() => setFolha({ tipo: 'nova' })} /><Imoveis aplicado={0} />{folha?.tipo === 'nova' && <NovaAplicacao fechar={() => setFolha(null)} />}</>
 
   const barras = barras30(g.por_dia_30)
   const temFolga = barras.some(b => !b.util)

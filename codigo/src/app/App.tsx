@@ -1,3 +1,4 @@
+import { AgenteDaAba } from '../componentes/AgenteDaAba'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useApp } from './contexto'
@@ -119,6 +120,7 @@ export function App() {
         )}
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
+        <AgenteDaAba key={r} rota={r} />
         {r === 'inicio' && <Inicio />}
         {r === 'lancamentos' && <Lancamentos />}
         {r === 'orcamento' && <MeuOrcamento />}

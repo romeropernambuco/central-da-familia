@@ -1,3 +1,4 @@
+import { AgenteDaAba, AGENTE_POR_ABA } from './componentes/AgenteDaAba'
 ﻿import { act, createElement, useState, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
@@ -16,6 +17,7 @@ const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<
 const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
+const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
 const padrao = /NomeSentinelaPrivado|9876|9\.876|876,54/
 function semear(v: unknown, k = ''): any {
   if (typeof v === 'string' && /^(nome|membroNome|titular|dono|dono_nome|apelido|descricao|pergunta|contexto|frase|assunto|resposta|respondido_por|banco|email|titular_nome|funcao|servico|categoria)$/.test(k)) return segredo + String(v)
@@ -46,7 +48,7 @@ function ambiente() {
 describe('regra do olho em cada tela real', () => {
   it('cada tela: HTML completo, fechado → aberto → fechado sem remontar', async () => {
    expect(Object.entries(modulos).filter(([, m]) => !telas.some(nome => m[nome])).map(([arquivo]) => arquivo)).toEqual([])
-   for (const nome of telas) {
+   for (const nome of [...telas, ...rotasAgentes.map(r => 'Agente:' + r)]) {
     const doc = ambiente()
     const container = doc.createElement('div'); doc.body.appendChild(container)
     const root = createRoot(container as unknown as HTMLElement)
@@ -56,8 +58,8 @@ describe('regra do olho em cada tela real', () => {
     const resumo = semear(await apiExemplo.resumoHoje(familia.id))
     const escritorio = semear(await apiExemplo.escritorioHoje!(familia.id))
     const imoveis = semear(await apiExemplo.imoveis!(familia.id))
-    const Tela = Object.values(modulos).find(m => m[nome])![nome]
-    const props = nome === 'Cena3D' ? { funcionarios: escritorio.funcionarios, selecionado: null, aoTocar() {} } : nome === 'FichaFuncionario' ? { f: escritorio.funcionarios[0], e: escritorio, responder: async () => true, fechar() {} }
+    const Tela = nome.startsWith('Agente:') ? AgenteDaAba : Object.values(modulos).find(m => m[nome])![nome]
+    const props = nome.startsWith('Agente:') ? { rota: nome.slice(7) } : nome === 'Cena3D' ? { funcionarios: escritorio.funcionarios, selecionado: null, aoTocar() {} } : nome === 'FichaFuncionario' ? { f: escritorio.funcionarios[0], e: escritorio, responder: async () => true, fechar() {} }
       : nome === 'FolhaImovel' ? { inicial: imoveis[0], fechar() {}, salvar: async () => true, tirar() {} }
       : nome === 'Reajuste' ? { envelopes: resumo.envelopes, mudaLimite: () => true }
       : nome === 'NumerosAba' ? { id: 'analista', fechar() {} } : { aplicado: dinheiro }
@@ -68,12 +70,17 @@ describe('regra do olho em cada tela real', () => {
       alternar = () => setOculto(o => !o)
       const ctx = { api, sessao, familia, resumo, versao: 0, oculto, alternarOculto: alternar, lancarAberto: { corrigir: { id: 'l', descricao: segredo, valor: dinheiro, data: '2026-11-15', envelope_id: resumo.envelopes[0].id } },
         toast() {}, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, recarregar: async () => {}, trocarSessao: async () => {}, sair: async () => {}, explicar() {}, abrirLancar() {}, fecharLancar() {}, semRede: false, erro: null } as unknown as Ctx
-      return createElement(ContextoApp.Provider, { value: ctx }, createElement(Tela, props))
+      return createElement(ContextoApp.Provider, { value: ctx }, createElement(Tela as ComponentType<any>, props))
     }
     try {
       await act(async () => root.render(createElement(App)))
       await act(async () => { await new Promise(r => setTimeout(r, 700)) })
       expect(vazamentos(container), nome).toEqual([])
+      if (nome.startsWith('Agente:')) {
+        await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Conversar e abrir tarefas')[0].click())
+        await act(async () => { await new Promise(r => setTimeout(r, 400)) })
+        expect(vazamentos(container), nome + ' tarefas abertas').toEqual([])
+      }
       if (nome === 'Guardado') {
         const aplicacoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'li')
         expect(aplicacoes.length).toBeGreaterThan(0)
@@ -88,8 +95,9 @@ describe('regra do olho em cada tela real', () => {
       }
       await act(async () => alternar())
       const aberto = html(container)
+      if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-agente') === AGENTE_POR_ABA[nome.slice(7)]).length).toBe(1); expect(aberto).toContain('Em lista') }
       // Algumas telas iniciais são formulários vazios e não apresentam dados privados.
-      if (!['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
+      if (!nome.startsWith('Agente:') && !['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
       await act(async () => alternar())
       expect(html(container).match(padrao), nome).toBeNull()
     } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }

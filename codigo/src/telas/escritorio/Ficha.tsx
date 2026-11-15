@@ -1,3 +1,4 @@
+import { Recebimentos } from '../planejamento/Recebimentos'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Check, ChevronRight, Pencil, Plus } from 'lucide-react'
@@ -179,7 +180,8 @@ const MESES: [string, string][] = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'ju
 const DIAS: [string, string][] = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map((d, i) => [String(i), d])
 const DIAS_L = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
-function Cadastro({ id }: { id: string }) {
+export function Cadastro({ id }: { id: string }) {
+  if (id === 'tesoureiro') return <Recebimentos />
   if (id === 'cartao') return <CadCartao />
   if (id === 'fiscal') return <CadFiscal />
   if (id === 'folha') return <CadFolha />
@@ -254,6 +256,7 @@ function CadCartao() {
 /* Fiscal da Feira: feiras (com a nota), contagens do estoque e itens da casa */
 function CadFiscal() {
   const { api, familia, tentar, recarregar, toast } = useApp()
+  const equipe = familia?.papel === 'equipe'
   const feiras = useBusca<Feira[]>(f => api.feiras(f))
   const est = useBusca<Estoque>(f => api.estoque(f))
   const [contando, setContando] = useState(false)
@@ -271,14 +274,14 @@ function CadFiscal() {
       <Lista<Feira> nome="Feiras" novo="Nova feira" itens={feiras || []} chave={f => f.id} vazio={feiras ? 'Nenhuma feira registrada. Toque em "Nova feira".' : 'Buscando as feiras…'}
         titulo={f => `Feira de ${dataCurta(f.data)}${f.loja ? ` · ${f.loja}` : ''}`}
         sub={f => <>{textoPrivado(f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? `sem nota: ${f.sem_nota_motivo}` : 'falta a nota')}{textoPrivado(f.feita_por ? ` · quem fez: ${f.feita_por}` : '')}</>}
-        lado={f => (f.valor != null ? <Din v={f.valor} /> : null)}
+        lado={f => (!equipe && f.valor != null ? <Din v={f.valor} /> : null)}
         extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Camera size={16} />Anexar a nota</button> : null)}
-        campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, { k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' }, { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
+        campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []), { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
         paraForm={f => ({ data: f?.data || hojeRecife(), valor: vt(f?.valor), loja: f?.loja || '', motivo: f?.sem_nota_motivo || '' })}
         salvar={async (fm, f) => {
           if (f) { if (!fm.motivo.trim()) return 'Feira já registrada: aqui dá pra dizer por que não teve nota, ou anexar a nota pelo botão.'; await api.feiraSemNota(familia!.id, f.id, fm.motivo.trim()); return }
-          if (!fm.valor || !val(fm.valor)) return 'Digite quanto deu a feira.'
-          await api.feiraRegistrar(familia!.id, { data: fm.data, valor: val(fm.valor)!, loja: fm.loja.trim() })
+          if (!equipe && (!fm.valor || !val(fm.valor))) return 'Digite quanto deu a feira.'
+          await api.feiraRegistrar(familia!.id, { data: fm.data, ...(equipe ? {} : { valor: val(fm.valor)! }), loja: fm.loja.trim() })
         }} />
       <div className="cad" data-cad="Contagens">
         <div className="cad-h"><b>Contagens do estoque</b><button type="button" className="btn line sm" aria-expanded={contando} onClick={() => setContando(!contando)}><Plus size={16} />Contar agora</button></div>

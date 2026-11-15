@@ -104,7 +104,10 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }, [api, familia?.id, equipe, sessaoCaiu])
 
   useEffect(() => { trocarSessao() }, [trocarSessao])
-  useEffect(() => { setResumo(null); recarregar() }, [recarregar])
+  useEffect(() => {
+    setResumo(null); recarregar()
+    return () => { pedido.current++ }
+  }, [recarregar])
   // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
   useEffect(() => api.aoSairSessao?.(() => {
     if (saindo.current) return

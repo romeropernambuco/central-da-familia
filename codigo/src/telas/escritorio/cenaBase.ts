@@ -2,6 +2,7 @@
 export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
 export interface FuncCena { id: string; sala: string; estado: EstadoCena }
 export interface OpcoesCena {
+  mini?: boolean
   funcionarios: FuncCena[]
   /** etiqueta (botão em HTML) de cada funcionário e nome de cada sala: a cena só posiciona */
   etiqueta: (id: string) => HTMLElement | null

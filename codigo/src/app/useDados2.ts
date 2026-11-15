@@ -30,6 +30,7 @@ function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, limpar:
       if (e instanceof ErroSessao) { tentar(async () => { throw e }); return }
       setMotivo(e.message); setEstado(semFuncao(e.message) ? 'desligado' : 'erro')
     })
+    return () => { if (pedido.current === meu) pedido.current++ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [familia?.id, versao, n, !!buscar])
   return { dado, estado, motivo, atualizar: useCallback(() => setN(x => x + 1), []) }
@@ -49,7 +50,7 @@ export function useEscritorio() {
   const equipe = familia?.papel === 'equipe'
   // segurança dupla: mesmo que o banco mande, valor e entregas (que têm R$) não ficam na memória do aparelho da equipe
   // rodada 2 (regras de silêncio): na tela, no máximo 3 coisas por vez. E3 (conserto 9): o total continua contado (precisa_total)
-  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_total: v.precisa_de_voce.length, precisa_de_voce: v.precisa_de_voce.slice(0, 3) }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
+  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_total: v.precisa_de_voce.length, precisa_de_voce: v.precisa_de_voce }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
   const atualizar = r.atualizar
   const responder = useCallback(async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
     if (!familia) return false
@@ -63,7 +64,7 @@ export function useEscritorio() {
     return ok ? volta || true : false
   }, [api, familia?.id, tentar, recarregar, atualizar, toast, equipe])
   for (const p of r.dado?.precisa_de_voce || []) perguntasVistas.set(p.id, p)
-  return { e: r.dado, estado: r.estado, motivo: r.motivo, atualizar, responder }
+  return { perguntas: r.dado?.precisa_de_voce || [], e: r.dado ? { ...r.dado, precisa_de_voce: r.dado.precisa_de_voce.slice(0, 3) } : null, estado: r.estado, motivo: r.motivo, atualizar, responder }
 }
 
 /** E7: os dados de 2029 (produto.futuro_entradas) e a saída do motor. Só o casal: a filha e a equipe nem perguntam ao banco.

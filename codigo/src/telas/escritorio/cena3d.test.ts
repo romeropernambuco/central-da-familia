@@ -47,6 +47,19 @@ describe('FPS real', () => {
 })
 
 describe('ciclo da cena sem WebGL', () => {
+  it('mini reutiliza o personagem, reduz a cena e libera o contexto', () => {
+    const a = ambiente(true)
+    const inteira = a.montar(); a.frame(100)
+    const objetos = a.renderer.render.mock.calls[0][0].children.length
+    inteira.destruir()
+    a.renderer.render.mockClear()
+    a.o.mini = true
+    const mini = a.montar(); a.frame(200)
+    expect(a.renderer.render.mock.calls[0][0].children.length).toBeLessThan(objetos)
+    mini.destruir()
+    expect(a.renderer.forceContextLoss).toHaveBeenCalledTimes(2)
+    expect(a.frames.size).toBe(0)
+  })
   it('interrompe RAF escondido e retoma sem medir a pausa', () => {
     const a = ambiente(), c = a.montar(); a.frame(100)
     expect(a.frames.size).toBe(1)

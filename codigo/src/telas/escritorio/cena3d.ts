@@ -86,6 +86,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
 
   /* prédio: 12 x 10 com 4 salas de 6 x 5, e a Recepção de 6 x 4 na frente */
   const baseMat = guardar(new T.MeshLambertMaterial({ color: 0xE2DACC }))
+  const vidro = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: 0.35 }))
+  if (!o.mini) {
   cx(19, 0.3, 11, baseMat, 3, -0.15, 0, scene, true)
   cx(7, 0.3, 4.4, baseMat, 0, -0.15, 7.3, scene, true)
   const PAREDE = 0xF1EADF, RODA = 0xD9CFBF, MEIA = 0xE6DCCD
@@ -98,10 +100,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   cx(3.0, 0.12, 0.12, MEIA, -4.6, 0.06, 5.0, scene, true); cx(3.0, 0.12, 0.12, MEIA, 4.6, 0.06, 5.0, scene, true); cx(0.12, 0.12, 10.2, MEIA, 6.0, 0.06, 0, scene, true)
   cx(0.12, 0.5, 4.0, MEIA, -3.0, 0.25, 7.15); cx(0.12, 0.12, 4.0, MEIA, 3.0, 0.06, 7.15, scene, true); cx(6.1, 0.12, 0.12, MEIA, 0, 0.06, 9.15, scene, true)
   /* janelas nas 2 paredes altas */
-  const vidro = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: 0.35 }))
   ;[-4.6, -1.4, 1.4, 4.6].forEach(x => { cx(1.3, 0.8, 0.06, vidro, x, 1.45, -4.98, scene, true) })
   ;[-3.2, 3.2].forEach(z => { cx(0.06, 0.8, 1.3, vidro, -5.98, 1.45, z, scene, true) })
 
+  }
   const MADEIRA = 0xB88D62, MADEIRA_E = 0x8A6645, CADEIRA = 0x4C525B, PAPEL = 0xFBF8F1, PLANTA = 0x5E8A62, VASO = 0xC9B8A0
   function planta(x: number, z: number, pai: any) { cx(0.34, 0.3, 0.34, VASO, x, 0.15, z, pai); cx(0.5, 0.34, 0.5, PLANTA, x, 0.52, z, pai); cx(0.34, 0.3, 0.34, PLANTA, x + 0.04, 0.8, z - 0.03, pai) }
   function luminaria(x: number, z: number, pai: any) { cx(0.2, 0.04, 0.2, 0x55504A, x, 0.02, z, pai); cx(0.05, 1.3, 0.05, 0x55504A, x, 0.65, z, pai); const m = guardar(new T.MeshLambertMaterial({ color: 0xF6E7C6, emissive: 0xFFD58A, emissiveIntensity: 0 })); cx(0.36, 0.3, 0.36, m, x, 1.42, z, pai, true); const l = new T.PointLight(0xFFD9A0, 0, 8, 1.6); l.position.set(x, 1.5, z); pai.add(l); lampadas.push({ m, l }) }
@@ -109,10 +111,12 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const salaG: Record<string, any> = {}
   Object.keys(SALAS).forEach(k => {
     const s = SALAS[k], g = new T.Group(); g.position.set(s.cx, 0, s.cz); g.userData.fixo = true; scene.add(g); salaG[k] = g
+    if (o.mini && !o.funcionarios.some(f => f.sala === k)) return
     cx(5.9, 0.04, s.d - 0.1, s.piso, 0, 0.02, 0, g, true)
     cx(5.2, 0.02, s.d === 5 ? 1.25 : 1.0, s.tapete, -0.3, 0.05, s.d === 5 ? 1.45 : 1.2, g, true)
   })
   /* decoração que diz o que cada sala cuida */
+  if (!o.mini) {
   ;(() => { const g = salaG.caixa /* cofre e pilhas de moedas */
     /* C2: o cofre e as moedas foram pra frente da sala: a 3ª mesa (Tesoureiro de Receitas) fica no fundo */
     cx(0.9, 1.0, 0.7, 0x6C727A, 2.3, 0.5, 1.95, g); cx(0.5, 0.6, 0.04, 0x8A9098, 2.3, 0.52, 2.32, g, true); cx(0.12, 0.12, 0.06, 0xD8C27A, 2.46, 0.52, 2.35, g, true)
@@ -134,6 +138,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     cx(1.5, 0.3, 0.6, 0x7C8A93, 1.9, 0.2, 1.3, g); cx(1.5, 0.5, 0.14, 0x6B7881, 1.9, 0.45, 1.62, g); cx(0.14, 0.42, 0.6, 0x6B7881, 1.2, 0.3, 1.3, g); cx(0.14, 0.42, 0.6, 0x6B7881, 2.6, 0.3, 1.3, g)
     planta(-2.5, 1.5, g); luminaria(2.6, -1.5, g) })()
 
+  }
   /* boneco low poly feito por código */
   function boneco(c: any) {
     const r = new T.Group(), hips = grupo(r); const p: any = { r, hips }
@@ -212,7 +217,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   /* B3 e B4 (pacote 4): enquadramento mais justo; cada sala só com ela mesma */
   const VISTAS: Record<string, any> = { tudo: vistaDe(-6.2, 12.2, 2.2, -5.2, 9.3) }
   Object.keys(SALAS).forEach(k => { const s = SALAS[k]; VISTAS[k] = vistaDe(s.cx - 3, s.cx + 3, 1.9, s.cz - s.d / 2, s.cz + s.d / 2) })
-  let vAtual = { ...VISTAS.tudo }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = 'tudo'
+  if (o.mini && chars[0]) {
+    const ch = chars[0]
+    VISTAS[ch.sala] = vistaDe(ch.S.x - 1.1, ch.S.x + 1.1, 1.9, ch.S.z - 0.6, ch.S.z + 1.7)
+  }
+  let vAtual = { ...VISTAS[o.mini ? o.funcionarios[0].sala : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? o.funcionarios[0].sala : 'tudo'
   function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
   let largura = 0, altura = 0, dpr = pr

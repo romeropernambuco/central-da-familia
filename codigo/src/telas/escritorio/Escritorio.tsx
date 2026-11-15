@@ -52,6 +52,7 @@ export function Escritorio() {
 }
 
 function Hoje() {
+  const [mostrarCena, setMostrarCena] = useState(false)
   const { familia, oculto } = useApp()
   const { e, estado, motivo, responder } = useEscritorio()
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
@@ -75,7 +76,7 @@ function Hoje() {
       </div>
       <div className="esc-grade">
         <section className="card esc-cena-card" aria-label="O escritório da família em 3D">
-          <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />
+          <button type="button" className="btn line" onClick={() => { window.dispatchEvent(new Event('escritorio3d-abrir')); setMostrarCena(true) }}>Ver o escritório completo em 3D</button>{mostrarCena && <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />}
         </section>
         <section className="card" aria-labelledby="eEq">
           <div className="card-h"><h2 id="eEq">A equipe, sala por sala</h2></div>
