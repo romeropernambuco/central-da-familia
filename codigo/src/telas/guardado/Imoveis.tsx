@@ -82,7 +82,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
     <section className="card imoveis" aria-labelledby="gImo">
       <div className="card-h"><h2 id="gImo"><Building2 size={24} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Plus size={16} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
-      <p>{textoPrivado('Gestor do Guardado: quer cadastrar um imóvel?')}</p><button type="button" className="btn line" onClick={() => setFolha('novo')}>Cadastrar imóvel</button>
+      <p>Gestor do Guardado: quer cadastrar um imóvel?</p><button type="button" className="btn line" onClick={() => setFolha('novo')}>Cadastrar imóvel</button>
       <dl className="imo-total">
         <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
@@ -97,7 +97,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
             const dono = i.meu ? 'seu' : `de ${i.dono_nome || 'outra pessoa'}`
             return (
               <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': textoPrivado(i.dono_nome || 'outra pessoa') })}>
-                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={textoPrivado(`${i.apelido}, ${dono}, vale ${reais(i.valor)}${selo ? `, ${selo.texto}` : ''}. ${i.meu ? 'Abrir pra mudar.' : 'Abrir pra ver.'}`)}>
+                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={`${textoPrivado(i.apelido)}, ${i.meu ? dono : textoPrivado(dono)}, vale ${reais(i.valor)}${selo ? `, ${textoPrivado(selo.texto)}` : ''}. ${i.meu ? 'Abrir pra mudar.' : 'Abrir pra ver.'}`}>
                   <span className="tile"><Building2 size={20} /></span>
                   <span className="m"><b className="quebra">{textoPrivado(i.apelido)}</b>
                     <small>{textoPrivado(adultos !== 1 ? `${dono} · ` : '')}{textoPrivado(nomeUso(i.uso))}</small>

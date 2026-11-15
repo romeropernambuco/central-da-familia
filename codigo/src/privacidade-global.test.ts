@@ -12,6 +12,7 @@ import { Privacidade } from './telas/privacidade/Privacidade'
 import { copiarProtegido } from './componentes/privacidade'
 import { App as AppReal } from './app/App'
 import { Provedor } from './app/contexto'
+import { Cadastro, FichaFuncionario } from './telas/escritorio/Ficha'
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
 const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
@@ -19,11 +20,111 @@ const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
 const padrao = /NomeSentinelaPrivado|9876|9\.876|876,54/
+
+for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
+ for (const inicial of [true, false]) {
+  it(`respostas legíveis e privadas em ${alvo}, olho inicial ${inicial}`, async () => {
+    const doc = ambiente()
+    const container = doc.createElement('div'); doc.body.appendChild(container)
+    const root = createRoot(container as unknown as HTMLElement)
+    const sessao = (await apiExemplo.sessao())!
+    const familia = { ...sessao.familias[0], membroNome: segredo }
+    const e = await apiExemplo.escritorioHoje(familia.id)
+    const p = { id: 'privacidade-opcoes', funcionario: 'guardado',
+      pergunta: segredo + ', o CDB AplicacaoSentinela vence dia 27/11, daqui a 12 dias. Tem R$ 9.876,54.',
+      contexto: 'Pode renovar para ' + segredo + ' por R$ 9.876,54.',
+      trechosPrivados: [segredo, 'AplicacaoSentinela'],
+      opcoes: [{ id: 'renovar', rotulo: 'Vou renovar' }, { id: 'tirar', rotulo: 'Vou tirar o dinheiro' }, { id: 'depois', rotulo: 'Decido depois' },
+        { id: 'valor', rotulo: 'Renovar por R$ 9.876,54' }, { id: 'nome', rotulo: 'Conversar com ' + segredo },
+        { id: 'privada1', rotulo: segredo }, { id: 'privada2', rotulo: 'AplicacaoSentinela' }] }
+    const escritorio = { ...e, precisa_de_voce: [p] }
+    const api = { ...apiExemplo, escritorioHoje: async () => escritorio }
+    let alternar = () => {}
+    function App() {
+      const [oculto, mudar] = useState(inicial)
+      alternar = () => mudar(v => !v); esconderValores(oculto)
+      const ctx = { api, sessao, familia, versao: 0, oculto, resumo: null, abrirLancar() {}, toast() {},
+        tentar: async (f: () => Promise<unknown>) => { await f(); return true }, recarregar: async () => {} } as unknown as Ctx
+      const f = { ...escritorio.funcionarios.find(f => f.id === 'guardado')!, ultimas_respostas: [{
+        id: 'diario-privacidade', funcionario: 'guardado', assunto: 'Renovação', pergunta: p.pergunta,
+        resposta: 'Renovar por R$ 9.876,54 para ' + segredo, respondido_por: segredo,
+        quando: '2026-11-15T12:00:00-03:00', adiado_ate: null, trechosPrivados: p.trechosPrivados,
+      }] }
+      const componente = alvo === 'PerguntaCard' ? createElement(PerguntaCard, { p, quem: 'Gestor do Guardado', responder: async () => true })
+        : alvo === 'AgenteDaAba' ? createElement(AgenteDaAba, { rota: 'guardado' })
+        : createElement(FichaFuncionario, { f, e: escritorio, responder: async () => true, fechar() {} })
+      return createElement(ContextoApp.Provider, { value: ctx }, componente)
+    }
+    try {
+      await act(async () => root.render(createElement(App)))
+      await act(async () => { await new Promise(r => setTimeout(r, 100)) })
+      const grupo = () => container.buscar(n => n.getAttribute('class') === 'perg-ops')[0]
+      const original = grupo()
+      expect(original).toBeDefined()
+      for (const fechado of [inicial, !inicial, inicial]) {
+        const botoes = grupo().buscar(n => n.tagName === 'BUTTON')
+        const esperados = fechado ? ['Vou renovar', 'Vou tirar o dinheiro', 'Decido depois', 'Renovar por R$ •••', 'Conversar com •••', 'Opção 6', 'Opção 7'] : p.opcoes.map(o => o.rotulo)
+        expect(botoes.map(n => n.textContent)).toEqual(esperados)
+        expect(botoes.map(n => n.getAttribute('aria-label'))).toEqual(esperados)
+        expect(new Set(botoes.map(n => n.getAttribute('aria-label'))).size).toBe(7)
+        expect(grupo()).toBe(original)
+        const fala = container.buscar(n => n.getAttribute('class') === 'perg-t')[0]
+        const contexto = container.buscar(n => n.getAttribute('class') === 'perg-c')[0]
+        expect(fala.textContent).toBe(fechado ? '•••, o CDB ••• vence dia 27/11, daqui a 12 dias. Tem R$ •••.' : p.pergunta)
+        expect(contexto.textContent).toBe(fechado ? 'Pode renovar para ••• por R$ •••.' : p.contexto)
+        if (fechado) expect(html(grupo()) + html(fala) + html(contexto)).not.toMatch(/NomeSentinelaPrivado|AplicacaoSentinela|9[.]876|876,54/)
+        if (alvo === 'FichaFuncionario') {
+          const diario = container.buscar(n => n.tagName === 'LI' && n.getAttribute('data-resposta') !== null)[0]
+          expect(diario.getAttribute('data-resposta')).toBe(fechado ? 'Renovar por R$ ••• para •••' : 'Renovar por R$ 9.876,54 para ' + segredo)
+          expect(diario.textContent).toContain('Renovar por R$')
+          if (fechado) expect(html(diario)).not.toMatch(/NomeSentinelaPrivado|9[.]876|876,54/)
+        }
+        await act(async () => alternar())
+      }
+    } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
+  })
+ }
+}
+
+it('cadastro real mantém opções fixas, nome privado e ações ao alternar o olho', async () => {
+  const doc = ambiente()
+  const container = doc.createElement('div'); doc.body.appendChild(container)
+  const root = createRoot(container as unknown as HTMLElement)
+  const sessao = (await apiExemplo.sessao())!
+  const familia = { ...sessao.familias[0], membroNome: segredo }
+  const api = { ...apiExemplo, membros: async () => [{ id: familia.membroId, nome: segredo }] }
+  let alternar = () => {}
+  function App() {
+    const [oculto, mudar] = useState(true)
+    alternar = () => mudar(v => !v); esconderValores(oculto)
+    return createElement(ContextoApp.Provider, { value: { api, familia, sessao, versao: 0, oculto, toast() {}, tentar: async () => true, recarregar: async () => {} } as unknown as Ctx },
+      createElement(Cadastro, { id: 'cartao' }))
+  }
+  try {
+    await act(async () => root.render(createElement(App)))
+    await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Novo cartão')[0].click())
+    for (const fechado of [true, false, true]) {
+      const botoes = container.buscar(n => n.tagName === 'BUTTON')
+      for (const nome of ['Da família', 'Todo mês', '1 vez por ano', 'Uso', 'Não uso mais']) {
+        const botao = botoes.find(n => n.textContent === nome)
+        expect(botao, nome).toBeDefined(); expect(botao!.getAttribute('aria-label')).toBe(nome)
+      }
+      expect(html(container)).toContain(fechado ? 'Meu (•••)' : 'Meu (' + segredo + ')')
+      if (fechado) expect(vazamentos(container)).toEqual([])
+      await act(async () => alternar())
+    }
+  } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
+})
 function semear(v: unknown, k = ''): any {
-  if (typeof v === 'string' && /^(nome|membroNome|titular|dono|dono_nome|apelido|descricao|pergunta|contexto|frase|assunto|resposta|respondido_por|banco|email|titular_nome|funcao|servico|categoria)$/.test(k)) return segredo + String(v)
+  if (typeof v === 'string' && /^(nome|membroNome|titular|dono|dono_nome|apelido|descricao|pergunta|contexto|frase|assunto|resposta|respondido_por|banco|email|titular_nome|funcao|servico|categoria)$/.test(k)) return segredo + ' ' + String(v)
   if (typeof v === 'number' && /valor|saldo|total|limite|salario|colchao|livre|rendeu/.test(k)) return dinheiro
   if (Array.isArray(v)) return v.map(x => semear(x))
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([ch, x]) => [ch, semear(x, ch)]))
+  if (v && typeof v === 'object') {
+    const resultado = Object.fromEntries(Object.entries(v).map(([ch, x]) => [ch, semear(x, ch)]))
+    // Ao injetar texto privado, atualiza tamb?m os fragmentos que descrevem essa fala.
+    if ('trechosPrivados' in resultado) resultado.trechosPrivados = [segredo, ...resultado.trechosPrivados]
+    return resultado
+  }
   return v
 }
 function html(n: NoTeste): string { return [n.textContent, ...[...n.atributos].flat(), (n as any).value || '', ...n.childNodes.map(html)].join(' ') }
@@ -84,8 +185,10 @@ describe('regra do olho em cada tela real', () => {
       if (nome === 'Guardado') {
         const aplicacoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'li')
         expect(aplicacoes.length).toBeGreaterThan(0)
+        for (const botao of aplicacoes) expect(botao.getAttribute('aria-label')).toContain('Abrir.')
         for (const botao of aplicacoes) { await act(async () => botao.click()); expect(vazamentos(container), 'Ficha da aplicação').toEqual([]) }
       }
+      if (nome === 'Lancamentos') expect(container.buscar(n => n.tagName === 'BUTTON' && (n.getAttribute('aria-label') || '').startsWith('Corrigir ou apagar ')).length).toBeGreaterThan(0)
       if (nome === 'Casa') {
         for (const aba of ['Serviços', 'Folha', 'Gás', 'Feira']) {
           await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.textContent === aba)[0].click())

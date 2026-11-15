@@ -102,10 +102,10 @@ export function Lancamentos() {
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
                       {l.parcela || !mexe ? null : lixeira
-                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={textoPrivado(`Trazer de volta ${l.descricao || 'gasto'} de ${reais(l.valor)}`)} title="Trazer de volta"><Undo2 size={20} /></button>
+                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={`Trazer de volta ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Trazer de volta"><Undo2 size={20} /></button>
                         // B14: só o lápis na linha; a lixeira fica dentro do Corrigir (sem o risco de apagar por engano)
-                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={textoPrivado(`Corrigir ou apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`)} title="Corrigir"><Pencil size={19} /></button>
-                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={textoPrivado(`Apagar ${l.descricao || 'gasto'} de ${reais(l.valor)}`)}><Trash2 size={20} /></button>}
+                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={`Corrigir ou apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Corrigir"><Pencil size={19} /></button>
+                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={`Apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`}><Trash2 size={20} /></button>}
                     </span>
                   </li>
                   )

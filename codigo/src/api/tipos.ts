@@ -185,6 +185,8 @@ export type Pede = 'data' | 'valor' | 'texto'
 export type Abre = 'lancar' | 'guardado' | 'cartao' | 'nota' | 'contagem' | 'orcamento'
 export interface OpcaoPergunta { id: string; rotulo: string; pede?: Pede; pede2?: Pede; abre?: Abre }
 export interface PerguntaEsc {
+  /** Fragmentos privados da fala e das opções. Moedas são detectadas separadamente. */
+  trechosPrivados?: string[]
   id: string; funcionario: string; pergunta: string; contexto: string
   /** em R$; a equipe nunca recebe */
   valor?: number
@@ -199,13 +201,13 @@ export interface PerguntaEsc {
   /** as partes da fala, uma a uma (o exemplo manda; serve pra conferência das falas) */
   partes?: { vi: string; importa: string; sugiro: string }
 }
-export interface FuncionarioEsc { id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[]; /** C2: funcionário que ainda não tem dado no banco (o card diz o que ele vai fazer, sem número) */ semDado?: boolean }
+export interface FuncionarioEsc { trechosPrivados?: string[]; id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[]; /** C2: funcionário que ainda não tem dado no banco (o card diz o que ele vai fazer, sem número) */ semDado?: boolean }
 export interface EntregaEsc { funcionario: string; resumo: string; numero?: number | null }
 export interface EscritorioHoje { precisa_de_voce: PerguntaEsc[]; /** E3 (conserto 9): quantas são no total (a tela mostra até 3) */ precisa_total?: number; trabalhando: { funcionario: string; resumo?: string }[]; entregue: EntregaEsc[]; funcionarios: FuncionarioEsc[] }
 export type Repetir = 'nunca' | 'dia' | 'semana' | 'mes' | 'ano'
 export interface Lembrete { id: string; titulo: string; detalhe: string | null; quando: string; repetir: Repetir; para: string; funcionario?: string | null; feito_em: string | null }
 export interface NovoLembrete { titulo: string; quando: string; repetir: Repetir; detalhe?: string; para?: string }
-export interface LinhaDiario { /** id da pergunta respondida */ ref?: string; /** "anotado às 10:05" ou "12/11, 10:05", quando o banco manda o texto pronto */ quando_txt?: string; id: string; funcionario: string; assunto: string; pergunta: string; resposta: string; quando: string; adiado_ate: string | null; respondido_por?: string | null }
+export interface LinhaDiario { trechosPrivados?: string[]; /** id da pergunta respondida */ ref?: string; /** "anotado às 10:05" ou "12/11, 10:05", quando o banco manda o texto pronto */ quando_txt?: string; id: string; funcionario: string; assunto: string; pergunta: string; resposta: string; quando: string; adiado_ate: string | null; respondido_por?: string | null }
 export interface RelatorioFuncionario { funcionario: string; perguntas: number; respondidas: number; pendentes: number; /** minutos entre a pergunta e a resposta; null = ainda sem resposta */ tempo_medio_min: number | null }
 export interface RelatorioEsc { funcionarios: RelatorioFuncionario[]; diario: LinhaDiario[] }
 

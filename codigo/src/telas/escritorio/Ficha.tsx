@@ -1,3 +1,4 @@
+import { rotuloDeOpcao, textoDeAgente } from '../../lib/textoAgente'
 import { abrirAtalhoGuardado } from '../guardado/atalhos'
 import { Recebimentos } from '../planejamento/Recebimentos'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -34,6 +35,8 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
 export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void }) {
   const { api, familia, versao, oculto } = useApp()
   const mostrar = textoPrivado
+  const fala = (texto: string) => f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
+  const nomePublico = EQUIPE.find(m => m.id === f.id)?.nome === f.nome
   const cad = useRef<HTMLElement>(null)
   const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
@@ -57,7 +60,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
   const topo = useRef<HTMLElement>(null)
 
   return (
-    <Sheet titulo={textoPrivado(f.nome)} fechar={fechar} lado rotulo={textoPrivado(`Ficha: ${f.nome}`)}>
+    <Sheet titulo={nomePublico ? f.nome : textoPrivado(f.nome)} fechar={fechar} lado rotulo={`Ficha: ${nomePublico ? f.nome : textoPrivado(f.nome)}`}>
       <div className="ficha" data-ficha={f.id}>
         <NumerosAba key={f.id} id={f.id} fechar={fechar} />
         <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></p>
@@ -73,12 +76,12 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
           ) : minhas.length ? (
             <>
               <PerguntaCard key={minhas[0].id} p={minhas[0]} quem={f.nome} responder={responder} semQuem abrirCadastro={() => cad.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />
-              {minhas.length > 1 && <p className="sub" style={{ marginTop: 8 }}>Depois desta eu tenho mais {textoPrivado(minhas.length - 1 === 1 ? '1 pergunta' : `${minhas.length - 1} perguntas`)}. Uma de cada vez.</p>}
+              {minhas.length > 1 && <p className="sub" style={{ marginTop: 8 }}>Depois desta eu tenho mais {minhas.length - 1 === 1 ? '1 pergunta' : `${minhas.length - 1} perguntas`}. Uma de cada vez.</p>}
             </>
           ) : (
             <>
               <p className="perg-t">{f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}</p>
-              <p className="perg-c">{textoPrivado(oculto ? mostrar('') : f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)}</p>
+              <p className="perg-c">{fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)}</p>
             </>
           )}
         </section>
@@ -95,9 +98,10 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
               {respostas.map((d, i) => {
                 // id da pergunta: vem na linha (exemplo) ou foi guardado quando a resposta saiu deste aparelho. Sem id, não tem Corrigir.
                 const ref = d.ref || perguntaDaLinha.get(d.id)
+                const texto = (s: string) => d.trechosPrivados ? textoDeAgente(s, d.trechosPrivados, oculto) : textoPrivado(s, oculto)
                 return (
-                <li key={d.id} data-resposta={textoPrivado(mostrar(d.resposta))}>
-                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{textoPrivado(d.respondido_por ? ` · ${mostrar(d.respondido_por)}` : '')}</small><span>{textoPrivado(mostrar(d.assunto || d.pergunta))}</span><b>{textoPrivado(mostrar(d.resposta))}</b></span>
+                <li key={d.id} data-resposta={texto(d.resposta)}>
+                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{d.respondido_por ? ` · ${textoPrivado(d.respondido_por, oculto)}` : ''}</small><span>{texto(d.assunto || d.pergunta)}</span><b>{texto(d.resposta)}</b></span>
                   {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}>Corrigir</button>}
                 </li>
                 )
@@ -110,7 +114,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 
         <section aria-labelledby="fFaz" data-parte="faz">
           <h3 id="fFaz">O que eu faço e quando</h3>
-          <ul className="faz-l">{(f.faz?.length ? f.faz : FAZ[f.id] || [f.frase, 'Eu pergunto quando precisar de uma resposta sua.', 'Tudo que você responde fica anotado aqui.']).map(l => <li key={l}>{mostrar(l)}</li>)}</ul>
+          <ul className="faz-l">{(f.faz?.length ? f.faz.map(l => mostrar(l, oculto)) : FAZ[f.id] || [fala(f.frase), 'Eu pergunto quando precisar de uma resposta sua.', 'Tudo que você responde fica anotado aqui.']).map((l, i) => <li key={i}>{l}</li>)}</ul>
         </section>
       </div>
     </Sheet>
@@ -118,7 +122,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 }
 
 /* ---------- cadastro genérico: lista com "Novo" e editar em cada linha ---------- */
-interface Campo { privado?: boolean; k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
+interface Campo { privado?: boolean; trechosPrivados?: string[]; k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
 type Form = Record<string, string>
 interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?: boolean | ((t: T) => boolean); extra?: (t: T) => ReactNode }
 
@@ -143,7 +147,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
         <div className="campo" key={c.k}>
           <span id={`cf-${nome}-${c.k}`}>{c.rotulo}</span>
           {c.tipo === 'valor' ? <CampoValor valor={form[c.k] || ''} mudar={v => setForm({ ...form, [c.k]: v })} rotulo={c.rotulo} />
-            : c.tipo === 'opcao' ? <div className="pills" role="group" aria-labelledby={`cf-${nome}-${c.k}`}>{c.opcoes!.map(([v, r]) => <button key={v} type="button" className="pill" aria-pressed={(form[c.k] || '') === v} onClick={() => setForm({ ...form, [c.k]: v })}>{textoPrivado(r)}</button>)}</div>
+            : c.tipo === 'opcao' ? <div className="pills" role="group" aria-labelledby={`cf-${nome}-${c.k}`}>{c.opcoes!.map(([v, r], i) => <button key={v} type="button" className="pill" aria-label={rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)} aria-pressed={(form[c.k] || '') === v} onClick={() => setForm({ ...form, [c.k]: v })}>{rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)}</button>)}</div>
               : <CampoPrivado className="inp" aria-labelledby={`cf-${nome}-${c.k}`} privado={c.tipo !== 'num' && c.tipo !== 'data' && c.tipo !== 'datahora'} placeholder={c.ph} type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} inputMode={c.tipo === 'num' ? 'numeric' : undefined} value={form[c.k] || ''} onChange={ev => setForm({ ...form, [c.k]: c.tipo === 'num' ? ev.target.value.replace(/\D/g, '') : ev.target.value })} />}
           {c.dica && <small>{c.dica}</small>}
         </div>
@@ -153,8 +157,8 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
     </div>
   )
   return (
-    <div className="cad" data-cad={textoPrivado(nome)}>
-      <div className="cad-h"><b>{textoPrivado(nome)}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Plus size={16} />{novo}</button>}</div>
+    <div className="cad" data-cad={nome}>
+      <div className="cad-h"><b>{nome}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Plus size={16} />{novo}</button>}</div>
       {aberto === '+' && formulario(null)}
       {!itens.length && aberto !== '+' && <p className="sub">{vazio}</p>}
       <ul className="list">
@@ -225,7 +229,7 @@ function CadCartao() {
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
         sub={c => <>{textoPrivado(c.titular ? `de ${c.titular} · ` : '')}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
+          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', trechosPrivados: (membros || []).map(m => m.nome), opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
           { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
@@ -245,7 +249,7 @@ function CadCartao() {
       <Lista<Fatura> nome="Faturas" itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))} chave={f => f.cartao_id + f.mes} semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))} vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
         titulo={f => { if (oculto) return '\u2022\u2022\u2022'; const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
         sub={f => { const b = doBanco(f); const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
-          return <>eu somei {reais(f.total)}{textoPrivado(b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco')}{textoPrivado(Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : '')} · vence {dataCurta(f.vencimento)}</> }}
+          return <>eu somei {reais(f.total)}{b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco'}{Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : ''} · vence {dataCurta(f.vencimento)}</> }}
         lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Check size={14} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
         campos={[{ k: 'valor_banco', rotulo: 'Valor que veio no banco', tipo: 'valor', dica: 'Olhe no app do banco. Se for diferente da minha soma, eu mostro a diferença.' }, { k: 'paga_em', rotulo: 'Paga em (deixe vazio se ainda não pagou)', tipo: 'data' }]}
         paraForm={f => { const b = f ? doBanco(f) : null; return { valor_banco: vt(b?.valor_banco), paga_em: b?.paga_em || '' } }}
@@ -274,7 +278,7 @@ function CadFiscal() {
       <input ref={arq} type="file" accept="image/*,application/pdf" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) anexar(f) }} />
       <Lista<Feira> nome="Feiras" novo="Nova feira" itens={feiras || []} chave={f => f.id} vazio={feiras ? 'Nenhuma feira registrada. Toque em "Nova feira".' : 'Buscando as feiras…'}
         titulo={f => `Feira de ${dataCurta(f.data)}${f.loja ? ` · ${f.loja}` : ''}`}
-        sub={f => <>{textoPrivado(f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? `sem nota: ${f.sem_nota_motivo}` : 'falta a nota')}{textoPrivado(f.feita_por ? ` · quem fez: ${f.feita_por}` : '')}</>}
+        sub={f => <>{f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? <>sem nota: {textoPrivado(f.sem_nota_motivo)}</> : 'falta a nota'}{textoPrivado(f.feita_por ? ` · quem fez: ${f.feita_por}` : '')}</>}
         lado={f => (!equipe && f.valor != null ? <Din v={f.valor} /> : null)}
         extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Camera size={16} />Anexar a nota</button> : null)}
         campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []), { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
@@ -318,7 +322,7 @@ function CadFolha() {
           if (!(await salvar({ ...folha, pessoas: p ? folha.pessoas.map(x => (x.id === p.id ? nova : x)) : [...folha.pessoas, nova] }))) throw new Error('Não deu pra salvar. Tente de novo.')
         }} />
       <div className="cad"><div className="cad-h"><b>Guia mensal do governo</b><button type="button" className="btn line sm" onClick={() => salvar({ ...folha, daePaga: { ...folha.daePaga, [mes]: !paga } })}>{paga ? 'Desmarcar' : 'Marcar como paga'}</button></div>
-        <p className="sub">{textoPrivado(paga ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.` : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de quem trabalha na casa e vence todo dia 07.`)}</p></div>
+        <p className="sub">{paga ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.` : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de quem trabalha na casa e vence todo dia 07.`}</p></div>
     </>
   )
 }

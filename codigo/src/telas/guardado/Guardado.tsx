@@ -123,7 +123,7 @@ export function Guardado() {
             <ul className="list">
               {g.aplicacoes.map(a => (
                 <li key={a.id} {...(aplicacaoMinha(a, familia) ? {} : { 'data-do-outro': textoPrivado(a.titular_nome || 'outra pessoa') })}>
-                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={textoPrivado(`${a.nome}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${a.titular_nome || 'outra pessoa'}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`)}>
+                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={`${textoPrivado(a.nome)}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${textoPrivado(a.titular_nome || 'outra pessoa')}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`}>
                     <span className="tile"><Landmark size={20} /></span>
                     <span className="m"><b>{textoPrivado(a.nome)}</b>{a.titular !== undefined && <small className="dono">{textoPrivado(a.titular_nome ? `no nome de ${a.titular_nome}` : 'do casal')}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
                     <span className="v guard-v"><small>rendeu hoje</small><Din v={a.rendeu_hoje_liquido} /></span>

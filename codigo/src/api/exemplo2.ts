@@ -1,3 +1,4 @@
+import { privadosNoTexto } from '../lib/textoAgente'
 // Modo exemplo do CONTRATO2 e do CONTRATO3: Guardado, Escritório que fala como gente, Lembretes, cartões e Fiscal da Feira
 // da Família Silva. Imita as funções do banco em memória. Todo número aqui é de exemplo e nada sai do aparelho.
 import type { Cartao, Contagem, CustoDoGasto, EntregaEsc, EscritorioHoje, EstadoFuncionario, EstadoItem, Estoque, Fatura, FaturaBanco, Feira, GuardadoHoje, ItemEstoque, Lembrete, LinhaDiario, NovaAplicacao, NovoLembrete, OpcaoPergunta, PerguntaEsc, RelatorioEsc, ResumoHoje } from './tipos'
@@ -181,6 +182,7 @@ function perguntar(m: Mundo, hoje: string, p: { id: string; funcionario: string;
   // E7: na 3ª cobrança do mesmo assunto (2 adiamentos ou 3 dias esperando) aparece "isso já é decidido"
   const terceira = !m.equipe() && (adiamentos(p.id) >= 2 || espera >= 3)
   return {
+    trechosPrivados: privadosNoTexto([vi, f.importa, f.sugiro, ...p.opcoes.map(o => o.rotulo)], [m.config(), m.cartoes(), m.resumo(), e], [nome, ...(u?.trechosPrivados || [])]),
     id: p.id, funcionario: p.funcionario, assunto: p.assunto, pergunta: vi, contexto: `${f.importa} ${f.sugiro}`, partes: { vi, importa: f.importa, sugiro: f.sugiro },
     opcoes: terceira ? [...p.opcoes, { id: 'decidido', rotulo: 'Isso já é decidido: não me pergunte mais' }] : p.opcoes, espera_dias: espera, vence_em: p.vence_em ?? null, atrasado_dias: p.atrasado_dias ?? 0,
     ...(p.valor != null && !m.equipe() ? { valor: p.valor } : {}), ...(p.mensagem ? { mensagem: p.mensagem } : {}),
@@ -464,7 +466,7 @@ export function escritorioHojeEx(m: Mundo, agora = new Date()): EscritorioHoje {
     const minha = abertas.find(p => p.funcionario === f.id)
     const estado: EstadoFuncionario = minha ? 'precisa_de_voce' : hora < f.turno ? 'vai_comecar' : hora < f.turno + 1 ? 'trabalhando' : 'entregue'
     const frase = minha ? minha.pergunta : estado === 'vai_comecar' ? `Começo às ${f.turno}h.` : estado === 'trabalhando' ? 'Estou conferindo os números agora.' : ent.find(x => x.funcionario === f.id)?.resumo || 'Hoje não preciso de nada seu.'
-    return { id: f.id, nome: f.nome, sala: f.sala, estado, frase, cadastro_resumo: eq ? undefined : resumoCadastro(m, f.id), ultimas_respostas: eq ? [] : diarioEx(m, f.id, 10) }
+    return { trechosPrivados: privadosNoTexto([frase, ent.find(x => x.funcionario === f.id)?.resumo || ''], [m.config(), m.cartoes(), m.resumo(), e], [m.quem()]), id: f.id, nome: f.nome, sala: f.sala, estado, frase, cadastro_resumo: eq ? undefined : resumoCadastro(m, f.id), ultimas_respostas: eq ? [] : diarioEx(m, f.id, 10) }
   })
   return {
     precisa_de_voce: abertas,
@@ -476,7 +478,9 @@ export function escritorioHojeEx(m: Mundo, agora = new Date()): EscritorioHoje {
 
 export function diarioEx(m: Mundo, funcionario: string, limite: number, antes?: string): LinhaDiario[] {
   if (m.equipe()) return []
-  return maisNovoPrimeiro(e.diario.filter(d => d.funcionario === funcionario && (!antes || d.quando < antes))).slice(0, limite).map(limpa)
+  return maisNovoPrimeiro(e.diario.filter(d => d.funcionario === funcionario && (!antes || d.quando < antes))).slice(0, limite).map(d => ({
+    ...limpa(d), trechosPrivados: privadosNoTexto([d.assunto, d.pergunta, d.resposta], [m.config(), m.cartoes(), e], [d.respondido_por || '', ...(d.trechosPrivados || [])]),
+  }))
 }
 
 export function escritorioResponderEx(m: Mundo, perguntaId: string, opcao: string, dados: Record<string, unknown> = {}, agora = new Date()) {
@@ -561,7 +565,7 @@ export function escritorioResponderEx(m: Mundo, perguntaId: string, opcao: strin
   const mensagem = opcao === 'copiar_mensagem' ? p.mensagem : undefined
   const idLinha = 'd' + ++e.n + Date.now()
   const resposta = (opcao === 'anexar_nota' ? 'Anexei a nota' : opcao === 'contar' ? 'Contei o estoque' : op.rotulo) + extra
-  e.diario.push({ id: idLinha, ref: perguntaId, funcionario: p.funcionario, assunto: p.assunto || tipo, pergunta: p.pergunta, resposta, quando: agora.toISOString(), perguntado_em: emRecife(e.desde[perguntaId] || hoje, 6), adiado_ate: adiado, respondido_por: m.quem() })
+  e.diario.push({ trechosPrivados: [...(p.trechosPrivados || []), ...(velha?.trechosPrivados || []), ...(quer('texto') ? [String(dados.texto).trim().slice(0, 140)] : [])], id: idLinha, ref: perguntaId, funcionario: p.funcionario, assunto: p.assunto || tipo, pergunta: p.pergunta, resposta, quando: agora.toISOString(), perguntado_em: emRecife(e.desde[perguntaId] || hoje, 6), adiado_ate: adiado, respondido_por: m.quem() })
   if (!aviso && opcao === 'foi_feita') aviso = 'Anotei a feira desta semana.'
   if (!aviso && !adiado && /^(veio|troquei|paguei|feito|ja_)/.test(opcao)) aviso = 'Anotado.'
   // quanto ainda falta depois desta resposta (a equipe vê "Falta 1 coisa")

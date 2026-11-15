@@ -130,7 +130,7 @@ function Feira() {
             {lista.map(i => (
               <li key={i.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
                 <label className="check" style={{ gridColumn: '1 / 3' }}><input type="checkbox" checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
-                <button className="iconbtn quieto" type="button" aria-label={textoPrivado(`Tirar ${i.nome} da lista`)} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Trash2 size={20} /></button>
+                <button className="iconbtn quieto" type="button" aria-label={`Tirar ${textoPrivado(i.nome)} da lista`} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Trash2 size={20} /></button>
               </li>
             ))}
           </ul>

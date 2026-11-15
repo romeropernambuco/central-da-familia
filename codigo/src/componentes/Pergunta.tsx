@@ -1,3 +1,5 @@
+import { EQUIPE } from '../telas/escritorio/equipe'
+import { nomesPrivados, textoDeAgente, rotuloDeOpcao } from '../lib/textoAgente'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import { copiarProtegido } from './privacidade'
 import { textoPrivado, CampoPrivado } from './privacidade'
@@ -57,7 +59,9 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
  * resposta simples grava com 1 toque; resposta que pede dia, valor, texto, foto ou contagem abre só esse passo.
  */
 export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; corrige?: boolean; aoResponder?: () => void }) {
-  const { abrirLancar, familia, api, tentar } = useApp()
+  const { abrirLancar, familia, api, tentar, oculto, sessao, resumo } = useApp()
+  const privados = [...(p.trechosPrivados || []), ...nomesPrivados([familia, sessao, resumo])]
+  const fala = (texto: string) => p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)
   const loja = lojaEscritorio(api, familia?.id || '')
   useSyncExternalStore(loja.assinar, loja.snapshot)
   const instancia = useRef({})
@@ -133,13 +137,13 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
   </div>
   return (
     <div className="perg" data-pergunta={p.id}>
-      {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{textoPrivado(quem)}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
-      <p className="perg-t">{textoPrivado(p.pergunta)}</p>
-      {p.contexto && <p className="perg-c">{textoPrivado(p.contexto)}</p>}
+      {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{EQUIPE.some(m => m.nome === quem) ? quem : textoPrivado(quem)}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
+      <p className="perg-t">{fala(p.pergunta)}</p>
+      {p.contexto && <p className="perg-c">{fala(p.contexto)}</p>}
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => (
-          <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Copy size={18} />}{o.abre === 'nota' && <Camera size={18} />}{textoPrivado(o.rotulo)}
+          <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
+            {/^copiar/.test(o.id) && <Copy size={18} />}{o.abre === 'nota' && <Camera size={18} />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
           </button>
         ))}
       </div>

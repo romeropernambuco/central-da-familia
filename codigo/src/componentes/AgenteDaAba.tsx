@@ -1,3 +1,4 @@
+import { textoDeAgente } from '../lib/textoAgente'
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../app/contexto'
 import { useEscritorio } from '../app/useDados2'
@@ -30,6 +31,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const [aberto, setAberto] = useState(false)
  const m = EQUIPE.find(m => m.id === AGENTE_POR_ABA[rota])!
  const f = e?.funcionarios.find(f => f.id === m.id)
+ const fala = (texto: string) => f?.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
  const pendente = perguntas.find(p => p.funcionario === m.id || donoDaPergunta(p, e?.funcionarios || [])?.id === m.id)
  const p = familia?.papel === 'equipe' && pendente ? {
    ...pendente, valor: undefined, contexto: '',
@@ -38,9 +40,9 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
      rotulo: /R\$|\d/.test(o.rotulo) ? 'Responder' : o.rotulo })),
  } : pendente
  return <section className="card" data-agente={m.id} aria-label="Funcionário desta aba">
- <MiniAgente id={m.id} sala={m.sala} /><b>{textoPrivado(m.nome, oculto)}</b>
+ <MiniAgente id={m.id} sala={m.sala} /><b>{m.nome}</b>
  {api.modo === 'exemplo' && <small> · Exemplo: nada é gravado na família real</small>}
- {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={responder} semQuem /> : <div className="perg"><p>{textoPrivado(CONVITE[m.id] || f?.frase || m.papel, oculto)}</p>{f && familia?.papel !== 'equipe' && CONVITE[m.id] && <p className="sub">{textoPrivado(f.frase, oculto)}</p>}</div>}
+ {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={responder} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (f?.frase ? fala(f.frase) : m.papel)}</p>{f && familia?.papel !== 'equipe' && CONVITE[m.id] && <p className="sub">{fala(f.frase)}</p>}</div>}
  <button type="button" className="btn line" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>Conversar e abrir tarefas</button>
  {aberto && (['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</section>
 }
