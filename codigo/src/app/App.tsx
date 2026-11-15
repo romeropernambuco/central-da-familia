@@ -3,6 +3,7 @@ import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBask
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
+import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
 import { PrimeiroUso } from '../telas/primeiro-uso/PrimeiroUso'
 import { Inicio } from '../telas/inicio/Inicio'
@@ -92,13 +93,13 @@ export function App() {
   if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <PrimeiroUso />
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const permitidas = MENU.filter(m => podeVerNoMenu(m.r, familia.papel))
-  const [subt, titulo] = r === 'inicio' ? [familia.nome, cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
+  const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
   const navAtivo = r === 'privacidade' || r === 'painel' ? 'ajustes' : r
 
   return (
     <>
       <nav className="rail" aria-label="Telas">
-        <div className="brand"><Marca /><span><b>Central da Família</b><small>{familia.nome}</small></span></div>
+        <div className="brand"><Marca /><span><b>Central da Família</b><small>{textoPrivado(familia.nome, oculto)}</small></span></div>
         {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
         {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Lançar</button>}
         {permitidas.map(m => (
@@ -114,7 +115,7 @@ export function App() {
           {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Settings2 size={22} /></button>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
-          <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {familia.membroNome}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
+          <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
         )}
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}

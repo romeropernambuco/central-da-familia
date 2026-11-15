@@ -51,7 +51,7 @@ function Quadro({ rotulo, altura, n, leitura, desenho, classe, indice }: {
   }
   return (
     <figure className={'graf ' + classe}>
-      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={textoPrivado(`${rotulo} Use as setas pra ver cada ponto.`)} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
+      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={`${textoPrivado(rotulo)} Use as setas pra ver cada ponto.`} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" onPointerMove={mover} onPointerDown={mover} onPointerLeave={e => { if (e.pointerType === 'mouse') setAtivo(null) }}>
           {desenho(w, h, ativo, xDe)}
         </svg>

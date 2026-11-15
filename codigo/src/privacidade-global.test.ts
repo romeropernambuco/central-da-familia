@@ -9,6 +9,8 @@ import { DocumentoTeste, NoTeste } from './telas/escritorio/numeros.dom-teste'
 import { PerguntaCard } from './componentes/Pergunta'
 import { Privacidade } from './telas/privacidade/Privacidade'
 import { copiarProtegido } from './componentes/privacidade'
+import { App as AppReal } from './app/App'
+import { Provedor } from './app/contexto'
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
 const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
@@ -129,11 +131,12 @@ it('clipboard fechado usa versão segura e bloqueia sem ela; aberto devolve orig
 })
 
 it('guarda estática: decimal e number só nas primitivas; nenhum clipboard direto nas telas', () => {
-  const fontes = import.meta.glob(['./telas/**/*.tsx', './componentes/**/*.tsx'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
+  const fontes = import.meta.glob(['./telas/**/*.tsx', './app/**/*.tsx', './componentes/**/*.tsx'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>
   for (const [arquivo, fonte] of Object.entries(fontes)) {
     if (/componentes\/(base|privacidade)\.tsx$/.test(arquivo)) continue
     expect.soft(fonte, arquivo).not.toMatch(/<input\b[^>]*(?:inputMode\s*=\s*["']decimal["']|type\s*=\s*["']number["'])/)
     expect(fonte, arquivo).not.toMatch(/navigator\.clipboard\.writeText/)
+    expect(fonte, arquivo).not.toMatch(/>\s*\{familia\.(nome|membroNome)\}/)
   }
 })
 
@@ -172,3 +175,47 @@ it('exportação exige confirmação fechada, permite arquivo integral e retira 
     expect(container.buscar(n => n.tagName === 'TEXTAREA')).toHaveLength(0)
   } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
 })
+
+for (const inicial of [true, false]) {
+  it(`estrutura real: nomes e teclado com olho inicial ${inicial}`, async () => {
+    const doc = ambiente()
+    vi.stubGlobal('location', { hash: '#/inicio', search: '', pathname: '/' })
+    vi.stubGlobal('localStorage', { getItem: (k: string) => k === 'esconder_valores' && inicial ? '1' : null, setItem() {} })
+    Object.assign(doc.body, { classList: { toggle() {}, remove() {} } })
+    const container = doc.createElement('div'); doc.body.appendChild(container)
+    const root = createRoot(container as unknown as HTMLElement)
+    const sessao = (await apiExemplo.sessao())!
+    const api = { ...apiExemplo, sessao: async () => ({ ...sessao, familias: [{ ...sessao.familias[0], nome: segredo, membroNome: segredo }] }) }
+    const classe = (c: string) => container.buscar(n => n.getAttribute('class') === c)[0]
+    const olho = () => classe('iconbtn olho')
+    try {
+      await act(async () => root.render(createElement(Provedor, { api, children: createElement(AppReal) })))
+      const marca = classe('brand')
+      for (const fechado of [inicial, !inicial, inicial]) {
+        expect(olho().getAttribute('aria-pressed')).toBe(String(fechado))
+        for (const c of ['brand', 'tt', 'exemplo-faixa']) {
+          expect(classe(c)).toBeDefined()
+          if (fechado) expect(html(classe(c))).not.toContain(segredo)
+          else expect(html(classe(c))).toContain(segredo)
+        }
+        expect(classe('brand')).toBe(marca)
+        await act(async () => olho().click())
+      }
+      if (olho().getAttribute('aria-pressed') !== 'true') await act(async () => olho().click())
+      await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Lançar gasto')[0].click())
+      const teclas = classe('keys').buscar(n => n.tagName === 'BUTTON')
+      const nomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'Apagar']
+      expect(teclas.map(n => n.getAttribute('aria-label'))).toEqual(nomes)
+      for (const i of [0, 1, 9, 2, 3]) await act(async () => teclas[i].click())
+      const visor = () => container.buscar(n => n.tagName === 'OUTPUT')[0]
+      expect(visor().getAttribute('aria-label')).toBe('Valor escondido')
+      expect(visor().textContent).toContain('•••')
+      expect(html(visor())).not.toContain('12,34')
+      await act(async () => olho().click())
+      expect(visor().textContent).toContain('12,34')
+      await act(async () => olho().click())
+      expect(visor().textContent).toContain('•••')
+      expect(teclas.map(n => n.getAttribute('aria-label'))).toEqual(nomes)
+    } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
+  })
+}

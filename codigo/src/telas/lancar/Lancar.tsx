@@ -175,7 +175,7 @@ export function Lancar() {
       {modo === 'gasto' && <CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
-          <button key={t} type="button" onClick={() => digitar(t)} aria-label={textoPrivado(t === 'apagar' ? 'Apagar' : t)}>
+          <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
             {t === 'apagar' ? <Delete size={26} /> : t}
           </button>
         ))}
