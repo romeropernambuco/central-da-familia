@@ -1,4 +1,4 @@
-import { act, createElement, Fragment, type ReactElement } from 'react'
+import { act, createElement, Fragment, useState, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../app/contexto'
@@ -226,4 +226,91 @@ it('agente da aba e ficha real nao duplicam a pergunta acionavel da Secretaria',
   const a = await montar(createElement(Fragment, null, createElement(AgenteDaAba, { rota: 'escritorio' }), createElement(Ficha)), { escritorioHoje: async () => e })
   try { expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Feito na ficha')).toHaveLength(1) }
   finally { await a.fechar() }
+})
+
+async function secretariaComFicha(falha = false) {
+  const p = { id: 'lembrete:prioridade', funcionario: 'secretaria', pergunta: 'Ligar pela ficha aberta', contexto: '', opcoes: [{ id: 'feito', rotulo: 'Concluir pela ficha' }, { id: 'adiar_para', rotulo: 'Adiar pela ficha', pede: 'data' as const }] }
+  const f = { id: 'secretaria', nome: 'Secretaria', estado: 'precisa_de_voce', frase: 'Ligar', ultimas_respostas: [] } as any
+  const e = { funcionarios: [f], entregue: [], trabalhando: [], precisa_de_voce: [p] }
+  let enviada = false
+  let confirmar = () => {}
+  const escritorioResponder = vi.fn(async () => { await new Promise<void>(resolve => { confirmar = resolve }); enviada = true })
+  const escritorioHoje = vi.fn(async () => {
+    if (enviada && falha) throw new Error('Releitura indisponivel')
+    return enviada ? { ...e, precisa_de_voce: [] } : e
+  })
+  function Ficha() {
+    const dados = useEscritorio()
+    const [aberta, setAberta] = useState(false)
+    return createElement(Fragment, null,
+      createElement('button', { onClick: () => setAberta(true) }, 'Abrir ficha de teste'),
+      aberta && dados.e ? createElement(FichaFuncionario, { f, e: dados.e, responder: dados.responder, fechar: () => setAberta(false) }) : null)
+  }
+  const a = await montar(createElement(Fragment, null, createElement(AgenteDaAba, { rota: 'escritorio' }), createElement(Ficha)), { escritorioHoje, escritorioResponder })
+  await a.clicar('Abrir ficha de teste')
+  const dialogo = () => a.container.buscar(n => n.getAttribute('role') === 'dialog')[0]
+  const perguntaNoDialogo = () => {
+    const perguntas = a.container.buscar(n => n.getAttribute('data-pergunta') === p.id)
+    expect(perguntas).toHaveLength(1)
+    expect(dialogo().buscar(n => n === perguntas[0])).toHaveLength(1)
+    return perguntas[0]
+  }
+  return { ...a, dialogo, perguntaNoDialogo, escritorioResponder, escritorioHoje, confirmar: async () => { await act(async () => confirmar()) } }
+}
+
+it('ficha aberta tem a pergunta e todos os botoes dentro do dialogo, sem resposta fora', async () => {
+  const a = await secretariaComFicha()
+  try {
+    a.perguntaNoDialogo()
+    await a.clicar('Adiar pela ficha')
+    const pergunta = a.perguntaNoDialogo()
+    const botoes = pergunta.buscar(n => n.tagName === 'BUTTON')
+    expect(botoes.map(n => n.textContent)).toEqual(['Concluir pela ficha', 'Adiar pela ficha', 'Salvar resposta'])
+    for (const botao of botoes) expect(a.dialogo().buscar(n => n === botao)).toHaveLength(1)
+    expect(a.container.buscar(n => n.getAttribute('data-agente') !== null).flatMap(n => n.buscar(b => b.tagName === 'BUTTON' && botoes.some(x => x.textContent === b.textContent)))).toHaveLength(0)
+  } finally { await a.fechar() }
+})
+
+it('duplo clique dentro da ficha envia exatamente uma resposta compartilhada', async () => {
+  const a = await secretariaComFicha()
+  try {
+    const botao = a.dialogo().buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Concluir pela ficha')[0]
+    expect(botao).toBeDefined()
+    await act(async () => { botao.click(); botao.click() })
+    expect(a.escritorioResponder).toHaveBeenCalledTimes(1)
+    await a.confirmar()
+    expect(a.escritorioResponder).toHaveBeenCalledTimes(1)
+  } finally { await a.confirmar(); await a.fechar() }
+})
+
+it('fechar ficha devolve ao agente a propriedade exclusiva da pergunta', async () => {
+  const a = await secretariaComFicha()
+  try {
+    a.perguntaNoDialogo()
+    await a.clicar('Fechar')
+    expect(a.dialogo()).toBeUndefined()
+    const agentes = a.container.buscar(n => n.getAttribute('data-agente') !== null)
+    expect(agentes.flatMap(n => n.buscar(b => b.tagName === 'BUTTON' && b.textContent === 'Concluir pela ficha'))).toHaveLength(1)
+    expect(a.container.buscar(n => n.getAttribute('data-pergunta') === 'lembrete:prioridade')).toHaveLength(1)
+  } finally { await a.fechar() }
+})
+
+it('falha na releitura da ficha conserva a trava inclusive ao devolver ao agente', async () => {
+  const a = await secretariaComFicha(true)
+  try {
+    const botao = a.dialogo().buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Concluir pela ficha')[0]
+    expect(botao).toBeDefined()
+    await act(async () => { botao.click(); botao.click() })
+    await a.confirmar()
+    expect(a.perguntaNoDialogo().textContent).toContain('Respondida, atualizando')
+    await a.clicar('Recarregar')
+    expect(a.perguntaNoDialogo().textContent).toContain('Respondida, atualizando')
+    await a.clicar('Fechar')
+    expect(a.container.textContent).toContain('Respondida, atualizando')
+    expect(a.container.buscar(n => n.tagName === 'BUTTON' && /Concluir pela ficha|Adiar pela ficha/.test(n.textContent))).toHaveLength(0)
+    await a.clicar('Recarregar')
+    expect(a.escritorioResponder).toHaveBeenCalledTimes(1)
+    expect(a.container.textContent).toContain('Respondida, atualizando')
+    expect(a.container.buscar(n => n.tagName === 'BUTTON' && /Concluir pela ficha|Adiar pela ficha/.test(n.textContent))).toHaveLength(0)
+  } finally { await a.confirmar(); await a.fechar() }
 })

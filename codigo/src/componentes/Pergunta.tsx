@@ -3,11 +3,11 @@ import { nomesPrivados, textoDeAgente, rotuloDeOpcao } from '../lib/textoAgente'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import { copiarProtegido } from './privacidade'
 import { textoPrivado, CampoPrivado } from './privacidade'
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { BellRing, Calculator, Camera, Check, ClipboardCheck, Coins, Copy, CreditCard, FileText, HeartHandshake, PackageSearch, ShieldCheck, ShoppingBasket, Sun, UserCheck, UserRound, Landmark } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
 import { useApp } from '../app/contexto'
-import { CampoValor } from './base'
+import { CampoValor, ContextoDialogo, superficieDialogo } from './base'
 import { umaPorVez } from '../lib/seguro'
 import { reduzirFoto } from '../lib/foto'
 import { hojeRecife, textoParaValor, valorDigitadoValido } from '../lib/formato'
@@ -64,14 +64,16 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
   const fala = (texto: string) => p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)
   const loja = lojaEscritorio(api, familia?.id || '')
   useSyncExternalStore(loja.assinar, loja.snapshot)
-  const instancia = useRef({})
+  const dialogo = useContext(ContextoDialogo)
+  const dialogoAtivo = useSyncExternalStore(superficieDialogo.assinar, superficieDialogo.snapshot, () => null)
+  const instancia = useRef({ dialogo })
   useEffect(() => {
     const donos = loja.donos.get(p.id) || new Set<object>()
     loja.donos.set(p.id, donos); donos.add(instancia.current); loja.emitir()
     const dono = instancia.current
     return () => { donos.delete(dono); loja.emitir() }
   }, [loja, p.id])
-  const dono = loja.donos.get(p.id)?.values().next().value
+  const dono = [...(loja.donos.get(p.id) || [])].find(candidato => (candidato as { dialogo: object | null }).dialogo === dialogoAtivo)
   const bloqueio = loja.travas.get(p.id)
   const equipe = familia?.papel === 'equipe'
   const [aberta, setAberta] = useState<OpcaoPergunta | null>(null)

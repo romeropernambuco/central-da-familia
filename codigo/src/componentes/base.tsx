@@ -1,5 +1,5 @@
 import { textoPrivado } from '../lib/formato'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../app/contexto'
 import { X } from 'lucide-react'
 import { milhar, partesDinheiro, reais, valoresOcultos } from '../lib/formato'
@@ -19,11 +19,27 @@ export function Din({ v, tam, className = '', menos }: { v: number; tam?: 'hero'
   )
 }
 
+// Apenas a superficie do ultimo dialogo aberto pode oferecer perguntas.
+export const ContextoDialogo = createContext<object | null>(null)
+const dialogos = new Set<object>()
+const ouvintesDialogo = new Set<() => void>()
+export const superficieDialogo = {
+  assinar: (ouvir: () => void) => { ouvintesDialogo.add(ouvir); return () => { ouvintesDialogo.delete(ouvir) } },
+  snapshot: () => Array.from(dialogos).slice(-1)[0] ?? null,
+}
+function emitirDialogo() { ouvintesDialogo.forEach(ouvir => ouvir()) }
+
 const FOCAVEL = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
 /** `lado`: no computador vira painel lateral (no celular continua subindo de baixo). */
 export function Sheet({ titulo, fechar, children, rotulo, lado }: { titulo: string; fechar: () => void; children: ReactNode; rotulo?: string; lado?: boolean }) {
+  const dialogo = useRef({})
   const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const id = dialogo.current
+    dialogos.add(id); emitirDialogo()
+    return () => { dialogos.delete(id); emitirDialogo() }
+  }, [])
   // `fechar` costuma ser uma função nova a cada desenho da tela de trás. Guardada em ref, ela não refaz o efeito:
   // antes, cada letra digitada num campo da folha jogava o foco pra fora do campo (não dava pra digitar o nome da família).
   const fecharRef = useRef(fechar)
@@ -58,7 +74,7 @@ export function Sheet({ titulo, fechar, children, rotulo, lado }: { titulo: stri
           <h2>{titulo}</h2>
           <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><X size={22} /></button>
         </div>
-        <div className="sheet-body">{children}</div>
+        <div className="sheet-body"><ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>
       </div>
     </>
   )
