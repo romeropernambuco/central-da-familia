@@ -29,7 +29,8 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
  * No celular sobe de baixo; no computador é um painel do lado direito.
  */
 export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void }) {
-  const { api, familia, versao } = useApp()
+  const { api, familia, versao, oculto } = useApp()
+  const mostrar = (s: string) => oculto ? '\u2022\u2022\u2022' : s
   const cad = useRef<HTMLElement>(null)
   const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
@@ -74,7 +75,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
           ) : (
             <>
               <p className="perg-t">{f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}</p>
-              <p className="perg-c">{f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase}</p>
+              <p className="perg-c">{oculto ? mostrar('') : f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase}</p>
             </>
           )}
         </section>
@@ -92,8 +93,8 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
                 // id da pergunta: vem na linha (exemplo) ou foi guardado quando a resposta saiu deste aparelho. Sem id, não tem Corrigir.
                 const ref = d.ref || perguntaDaLinha.get(d.id)
                 return (
-                <li key={d.id} data-resposta={d.resposta}>
-                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{d.respondido_por ? ` · ${d.respondido_por}` : ''}</small><span>{d.assunto || d.pergunta}</span><b>{d.resposta}</b></span>
+                <li key={d.id} data-resposta={mostrar(d.resposta)}>
+                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{d.respondido_por ? ` · ${mostrar(d.respondido_por)}` : ''}</small><span>{mostrar(d.assunto || d.pergunta)}</span><b>{mostrar(d.resposta)}</b></span>
                   {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}>Corrigir</button>}
                 </li>
                 )
@@ -106,7 +107,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 
         <section aria-labelledby="fFaz" data-parte="faz">
           <h3 id="fFaz">O que eu faço e quando</h3>
-          <ul className="faz-l">{(f.faz?.length ? f.faz : FAZ[f.id] || [f.frase, 'Eu pergunto quando precisar de uma resposta sua.', 'Tudo que você responde fica anotado aqui.']).map(l => <li key={l}>{l}</li>)}</ul>
+          <ul className="faz-l">{(f.faz?.length ? f.faz : FAZ[f.id] || [f.frase, 'Eu pergunto quando precisar de uma resposta sua.', 'Tudo que você responde fica anotado aqui.']).map(l => <li key={l}>{mostrar(l)}</li>)}</ul>
         </section>
       </div>
     </Sheet>
@@ -157,7 +158,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
         {itens.map(t => (
           <li key={chave(t)}>
             <div className="cad-l">
-              <span className="m"><b>{titulo(t)}</b><small>{sub(t)}</small></span>
+              <span className="m"><b>{oculto && campos.some(c => c.privado) ? '\u2022\u2022\u2022' : titulo(t)}</b><small>{sub(t)}</small></span>
               {lado && <span className="v">{lado(t)}</span>}
               {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Pencil size={18} /></button>}
             </div>
@@ -205,7 +206,7 @@ function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
 
 /* Analista de Cartão: cartões (com mensalidade ou anuidade) e a fatura do mês como veio no banco */
 function CadCartao() {
-  const { api, familia } = useApp()
+  const { api, familia, oculto } = useApp()
   // E2: o casal vê os cartões de todos, com o nome do dono; edita e informa fatura só do seu (e dos sem dono)
   const doOutro = (c?: Cartao) => !!c && !cartaoMeu(c, familia)
   const cartoes = useBusca<Cartao[]>(f => api.cartoes(f))
@@ -238,7 +239,7 @@ function CadCartao() {
           await api.cartaoSalvar(familia!.id, { id: c?.id, nome: f.nome.trim(), banco: f.banco.trim() || null, titular_id: f.titular || null, dia_fechamento: num(f.dia_fechamento), dia_vencimento: num(f.dia_vencimento), limite: val(f.limite), taxa_valor: val(f.taxa_valor), taxa_periodo: f.taxa_periodo === 'mes' ? 'mes' : 'ano', taxa_mes: num(f.taxa_mes), taxa_isenta_acima: val(f.taxa_isenta_acima), final4: f.final4 || null, ativo: f.ativo !== 'nao' })
         }} />
       <Lista<Fatura> nome="Faturas" itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))} chave={f => f.cartao_id + f.mes} semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))} vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
-        titulo={f => { const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
+        titulo={f => { if (oculto) return '\u2022\u2022\u2022'; const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
         sub={f => { const b = doBanco(f); const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
           return <>eu somei {reais(f.total)}{b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco'}{Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : ''} · vence {dataCurta(f.vencimento)}</> }}
         lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Check size={14} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
@@ -362,7 +363,7 @@ function CadSecretaria() {
   return (
     <Lista<Lembrete> nome="Lembretes" novo="Novo lembrete" itens={lista || []} chave={l => l.id} vazio={lista ? 'Nenhum lembrete guardado. Toque em "Novo lembrete".' : 'Buscando…'}
       titulo={l => l.titulo} sub={l => `${dataCurta(diaDe(l.quando))} às ${hhmm(l.quando)} · ${REPETE.find(r => r[0] === l.repetir)?.[1].toLowerCase()} · pra ${l.para === 'casal' ? 'o casal' : l.para === 'eu' ? 'mim' : l.para}`}
-      campos={[{ k: 'titulo', rotulo: 'O quê', ph: 'Ex.: Ligar pro contador' }, { k: 'quando', rotulo: 'Quando', tipo: 'datahora' }, { k: 'repetir', rotulo: 'Repetir', tipo: 'opcao', opcoes: REPETE }, { k: 'para', rotulo: 'Pra quem', tipo: 'opcao', opcoes: [['eu', 'Só eu'], ['casal', 'O casal']] }]}
+      campos={[{ k: 'titulo', privado: true, rotulo: 'O quê', ph: 'Ex.: Ligar pro contador' }, { k: 'quando', rotulo: 'Quando', tipo: 'datahora' }, { k: 'repetir', rotulo: 'Repetir', tipo: 'opcao', opcoes: REPETE }, { k: 'para', rotulo: 'Pra quem', tipo: 'opcao', opcoes: [['eu', 'Só eu'], ['casal', 'O casal']] }]}
       paraForm={l => ({ titulo: l?.titulo || '', quando: l ? localDeRecife(l.quando) : `${hojeRecife()}T18:00`, repetir: l?.repetir || 'nunca', para: l?.para || 'eu' })}
       salvar={async (f, l) => {
         if (!f.titulo.trim()) return 'Escreva o que é pra lembrar.'
@@ -396,7 +397,7 @@ function CadReserva() {
 
 interface Renda { id: string; nome: string; valor: number; dia?: number; dono?: string }
 function CadContador() {
-  const { familia } = useApp()
+  const { familia, oculto } = useApp()
   const [todas, salvarTodas, , lidoR] = useConfig<Renda[]>('rendas', [])
   // E2 (regra nova, 13/11): o casal vê a renda de cada um, com o nome; cada um mexe só na sua (a do outro continua guardada)
   const rendas = todas.filter(r => !r.dono || r.dono === familia?.membroNome)
@@ -405,7 +406,7 @@ function CadContador() {
   const [fixas, salvarF, , lidoF] = useConfig<Renda[]>('contas_fixas', [])
   const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string, outros: Renda[] = []) => (
     <Lista<Renda> nome={nome} novo={novo} itens={[...itens, ...outros]} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'} semEditar={r => outros.includes(r)}
-      titulo={r => r.nome} sub={r => `${outros.includes(r) ? `de ${r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
+      titulo={r => r.nome} sub={r => `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
       campos={[{ k: 'nome', privado: true, rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
       paraForm={r => ({ nome: r?.nome || '', valor: vt(r?.valor), dia: r?.dia ? String(r.dia) : '' })}
       salvar={async (f, r) => {

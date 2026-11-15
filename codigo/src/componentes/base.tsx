@@ -96,14 +96,15 @@ export function Vazio({ ico, children, acao }: { ico: ReactNode; children: React
 export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: string; mudar: (v: string) => void; desligado?: boolean; rotulo?: string; id?: string }) {
   // Ocultar somente a apresentação: o estado original continua disponível ao salvar e ao abrir o olho.
   const oculto = useApp()?.oculto ?? false
-  const [editado, setEditado] = useState(false)
-  const mascarado = oculto && valor !== '' && !editado
+  const [digitandoOculto, setDigitandoOculto] = useState(false)
+  useEffect(() => { setDigitandoOculto(false) }, [oculto])
+  const mascarado = oculto && valor !== '' && !digitandoOculto
   return (
     <span className={'inp-rs' + (desligado ? ' off' : '')}>
       <span aria-hidden="true">R$</span>
       <input id={id} inputMode="decimal" disabled={desligado} aria-label={rotulo} readOnly={mascarado} placeholder={mascarado ? '•••' : undefined} value={mascarado ? '' : milhar(valor)} onChange={e => {
         if (mascarado) return
-        setEditado(true)
+        setDigitandoOculto(oculto)
         mudar(e.target.value.replace(/[^\d,]/g, ''))
       }} />
     </span>

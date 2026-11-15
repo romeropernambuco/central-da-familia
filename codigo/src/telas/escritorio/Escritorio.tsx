@@ -50,7 +50,7 @@ export function Escritorio() {
 }
 
 function Hoje() {
-  const { familia } = useApp()
+  const { familia, oculto } = useApp()
   const { e, estado, motivo, responder } = useEscritorio()
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
   // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
@@ -85,7 +85,7 @@ function Hoje() {
                   <li key={f.id}>
                     <button className="li" type="button" data-func={f.id} onClick={() => setSel(f.id)} aria-label={`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir a ficha.`}>
                       <FuncIco id={f.id} precisa={f.estado === 'precisa_de_voce'} />
-                      <span className="m"><b className="quebra">{f.nome}</b><small style={{ whiteSpace: 'normal' }}>{f.frase}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></span>
+                      <span className="m"><b className="quebra">{f.nome}</b><small style={{ whiteSpace: 'normal' }}>{oculto ? '\u2022\u2022\u2022' : f.frase}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></span>
                       <ChevronRight size={20} className="muted" aria-hidden="true" />
                     </button>
                   </li>
@@ -128,7 +128,9 @@ function Relatorio() {
   const tot = r.funcionarios.reduce((s, f) => ({ p: s.p + f.perguntas, r: s.r + f.respondidas, pe: s.pe + f.pendentes }), { p: 0, r: 0, pe: 0 })
   const comTempo = r.funcionarios.filter(f => f.tempo_medio_min != null && f.respondidas > 0)
   const demora = comTempo.length ? comTempo.reduce((s, f) => s + (f.tempo_medio_min || 0) * f.respondidas, 0) / comTempo.reduce((s, f) => s + f.respondidas, 0) : null
-  const texto = [`Relatório do Escritório, últimos ${dias} dias`, `Perguntas: ${tot.p} · Respondidas: ${tot.r} · Esperando você: ${tot.pe} · Demora pra responder: ${demoraTexto(demora)}`, '', ...r.diario.map(d => `${dataCurta(diaDe(d.quando))} ${hhmm(d.quando)} · ${nome(d.funcionario)}: ${d.assunto || d.pergunta}. Resposta: ${d.resposta}${d.respondido_por ? ` (${d.respondido_por})` : ''}`)].join('\n')
+  const mostrar = (s: string) => oculto ? '\u2022\u2022\u2022' : s
+  const textoIntegral = [`Relatório do Escritório, últimos ${dias} dias`, `Perguntas: ${tot.p} · Respondidas: ${tot.r} · Esperando você: ${tot.pe} · Demora pra responder: ${demoraTexto(demora)}`, '', ...r.diario.map(d => `${dataCurta(diaDe(d.quando))} ${hhmm(d.quando)} · ${nome(d.funcionario)}: ${d.assunto || d.pergunta}. Resposta: ${d.resposta}${d.respondido_por ? ` (${mostrar(d.respondido_por)})` : ''}`)].join('\n')
+  const texto = oculto ? 'Relatorio: conteudo oculto.' : textoIntegral
   const copiar = async () => { try { await navigator.clipboard.writeText(texto) } catch { /* sem permissão: o texto aparece na caixa pra copiar à mão */ } setCopiado(true) }
   const porDia: Record<string, typeof r.diario> = {}
   for (const d of r.diario) (porDia[diaDe(d.quando)] ||= []).push(d)
@@ -161,7 +163,7 @@ function Relatorio() {
       </section>
       <section className="card" aria-labelledby="rDia">
         <div className="card-h"><h2 id="rDia">Diário</h2>{r.diario.length > 0 && <button className="lnk" type="button" onClick={copiar}><Copy size={16} />Copiar relatório</button>}</div>
-        {copiado && <div className="campo"><span>Relatório copiado. Se não colar, copie daqui:</span><textarea className="inp area" readOnly rows={6} value={oculto ? '\u2022\u2022\u2022' : texto} aria-label="Texto do relatório" /></div>}
+        {copiado && <div className="campo"><span>Relatório copiado. Se não colar, copie daqui:</span><textarea className="inp area" readOnly rows={6} value={texto} aria-label="Texto do relatório" /></div>}
         {!r.diario.length ? <Vazio ico={<ClipboardList size={24} />}>Nenhuma resposta anotada nesse período. Quando você responder uma pergunta do Escritório, ela aparece aqui.</Vazio> : (
           Object.keys(porDia).sort().reverse().map(dia => (
             <div key={dia}>
@@ -170,7 +172,7 @@ function Relatorio() {
                 {porDia[dia].map(d => (
                   <li key={d.id} className="li">
                     <FuncIco id={idDe(d.funcionario)} size={36} />
-                    <span className="m"><small>{hhmm(d.quando)} · {nome(d.funcionario)}{d.respondido_por ? ` · respondeu ${d.respondido_por}` : ''}</small><span className="perg-d">{d.assunto || d.pergunta}</span><b className="quebra">{d.resposta}</b></span>
+                    <span className="m"><small>{hhmm(d.quando)} · {nome(d.funcionario)}{d.respondido_por ? ` · respondeu ${mostrar(d.respondido_por)}` : ''}</small><span className="perg-d">{mostrar(d.assunto || d.pergunta)}</span><b className="quebra">{mostrar(d.resposta)}</b></span>
                     <span />
                   </li>
                 ))}
@@ -190,7 +192,8 @@ const localDeRecife = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZo
 
 /** Lembretes: 3 campos (o quê, quando, repetir). A Secretária cobra na hora marcada, todo dia, até você responder. */
 function Lembretes() {
-  const { api, familia, versao, tentar, recarregar, toast } = useApp()
+  const { api, familia, versao, tentar, recarregar, toast, oculto } = useApp()
+  const mostrar = (s: string) => oculto ? '\u2022\u2022\u2022' : s
   const [lista, setLista] = useState<Lembrete[] | null>(null)
   const [erro, setErro] = useState('')
   const [titulo, setTitulo] = useState('')
@@ -225,7 +228,7 @@ function Lembretes() {
         <section className="card" aria-labelledby="lNovo">
           <div className="card-h"><h2 id="lNovo">Novo lembrete</h2></div>
           <div className="form-l">
-            <label className="campo"><span>O quê</span><input className="inp" value={titulo} maxLength={120} placeholder="Ex.: Renovar o seguro do carro" onChange={ev => setTitulo(ev.target.value)} /></label>
+            <label className="campo"><span>O quê</span><input className="inp" value={oculto ? '' : titulo} readOnly={oculto} maxLength={120} placeholder="Ex.: Renovar o seguro do carro" onChange={ev => setTitulo(ev.target.value)} /></label>
             <label className="campo"><span>Quando</span><input className="inp" type="datetime-local" value={quando} onChange={ev => setQuando(ev.target.value)} /></label>
             <div className="campo"><span id="lRep">Repetir</span>
               <div className="pills" role="group" aria-labelledby="lRep">{REPETE.map(([r, n]) => <button key={r} type="button" className="pill" aria-pressed={repetir === r} onClick={() => setRepetir(r)}>{n}</button>)}</div>
@@ -247,15 +250,15 @@ function Lembretes() {
                 const venceu = new Date(l.quando).getTime() <= agora
                 const dia = diaDe(l.quando)
                 return (
-                  <li key={l.id} data-lembrete={l.titulo}>
+                  <li key={l.id} data-lembrete={mostrar(l.titulo)}>
                     <div className="lemb-t">
-                      <b>{l.titulo}</b>
+                      <b>{mostrar(l.titulo)}</b>
                       <small>{dia === hojeRecife() ? 'hoje' : `${diaSemana(dia)}, ${dataCurta(dia)}`} às {hhmm(l.quando)} · {REPETE.find(x => x[0] === l.repetir)?.[1].toLowerCase()}{venceu ? ' · a Secretária está cobrando' : ''}</small>
                     </div>
                     <div className="lemb-b">
                       <button className="btn sm primary" type="button" onClick={() => agir(() => api.lembreteConcluir(familia!.id, l.id), l.repetir === 'nunca' ? 'Feito. Lembrete encerrado.' : 'Feito. Volta na próxima data.')}>Já fiz</button>
                       <button className="btn sm line" type="button" onClick={() => agir(() => api.lembreteAdiar(familia!.id, l.id, quandoDeRecife(`${somaDias(venceu ? hojeRecife() : dia, 1)}T${localDeRecife(l.quando).slice(11, 16)}`)), 'Adiado 1 dia.')}>Adiar 1 dia</button>
-                      <button className="iconbtn" type="button" aria-label={`Apagar o lembrete ${l.titulo}`} onClick={() => agir(() => api.lembreteApagar(familia!.id, l.id), 'Lembrete apagado.')}><Trash2 size={20} /></button>
+                      <button className="iconbtn" type="button" aria-label={`Apagar o lembrete ${mostrar(l.titulo)}`} onClick={() => agir(() => api.lembreteApagar(familia!.id, l.id), 'Lembrete apagado.')}><Trash2 size={20} /></button>
                     </div>
                   </li>
                 )
