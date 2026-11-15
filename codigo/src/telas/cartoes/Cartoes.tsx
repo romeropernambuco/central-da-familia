@@ -1,3 +1,4 @@
+import { compromissoNesteMes, mesesDaSimulacao } from './simulacao'
 import { useEffect, useState } from 'react'
 import { CreditCard, Plus, ShoppingBag, CircleCheck, TriangleAlert } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -9,6 +10,8 @@ import type { Cartao, Fatura } from '../../api/tipos'
 import { agruparFaturas, centavos, dataCurta, hojeRecife, mesCurto, reais, simularCompra, textoParaValor } from '../../lib/formato'
 
 const MESES = 6
+// Até 12 parcelas, começando até dois meses após a compra (inclui o mês atual).
+const MESES_SIMULACAO = 14
 
 /** Cartões: faturas dos próximos 6 meses e "E se eu comprar?" ligado ao colchão. */
 export function Cartoes() {
@@ -24,7 +27,7 @@ export function Cartoes() {
     if (!familia) return
     // E2 (regra nova, 13/11): o casal vê todos os cartões da família, com o nome do dono; o seu vem 1º
     api.cartoes(familia.id).then(cs => setCartoes([...cs].sort((a, b) => Number(!cartaoMeu(a, familia)) - Number(!cartaoMeu(b, familia))))).catch(() => {})
-    api.faturas(familia.id, MESES).then(setFaturas).catch(() => {})
+    api.faturas(familia.id, MESES_SIMULACAO).then(setFaturas).catch(() => {})
   }, [api, familia?.id, versao, n])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
@@ -41,7 +44,7 @@ export function Cartoes() {
       {!cartoes.length && <div className="card"><Vazio ico={<CreditCard size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Cadastrar cartão</button> : undefined}>Nenhum cartão cadastrado. Com o dia que a fatura fecha e o dia que vence, a compra cai na fatura certa sozinha.</Vazio></div>}
       <div className="envs">
         {cartoes.map(c => {
-          const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes))
+          const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes)).slice(0, MESES)
           const atual = fs.find(f => f.vencimento >= hoje) || fs[0]
           const max = Math.max(1, ...fs.map(f => f.total))
           const meu = cartaoMeu(c, familia)
@@ -100,11 +103,11 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
   const hoje = hojeRecife()
   const ps = valor > 0 && c ? simularCompra(valor, parc, hoje, c.dia_fechamento || 1, c.dia_vencimento || 10) : []
   const fs = faturas.filter(f => f.cartao_id === c?.id).sort((a, b) => a.mes.localeCompare(b.mes))
-  const meses = [...new Set([...fs.map(f => f.mes), ...ps.map(p => p.mes)])].sort().slice(0, 8)
+  const meses = mesesDaSimulacao(fs, ps)
   const linha = meses.map(m => ({ mes: m, antes: fs.find(f => f.mes === m)?.total || 0, mais: ps.find(p => p.mes === m)?.valor || 0 }))
   const max = Math.max(1, ...linha.map(l => l.antes + l.mais))
   // conta no mês só a 1ª parcela (as outras saem dos meses delas)
-  const noMes = ps.length ? ps[0].valor : valor
+  const noMes = compromissoNesteMes(valor, parc, hoje, ps)
   const depois = centavos(livre - noMes)
   const cabe = depois >= colchao
   return (
@@ -119,7 +122,7 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
             <span>{dono ? (cabe ? <><b>Cabe no seu combinado.</b> O seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
           <ul className="exp">
             <li><span>{dono ? `Livre no mês (${dono})` : 'Livre no mês hoje'}</span><Din v={livre} /></li>
-            <li><span>{parc > 1 ? `1ª parcela (as outras saem dos meses seguintes)` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
+            <li><span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
             {!dono && <li><span>Reserva: o dinheiro que a família combinou nunca gastar</span><Din v={-colchao} menos /></li>}
             <li className="tot"><span>{depois - colchao >= 0 ? 'Sobra depois da compra' : 'Depois da compra, passa'}</span><Din v={Math.abs(centavos(depois - colchao))} /></li>
           </ul>
