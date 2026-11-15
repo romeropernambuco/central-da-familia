@@ -11,8 +11,9 @@ import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/form
 import { demoraTexto, fraseDoDia } from '../../lib/guardado'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { Cena3D, IcoEstado, ROTULO_ESTADO, salaDe } from './Cena3D.tsx'
-import { SALAS_NOME } from './cenaBase'
+import { abaDoHash, SALAS_NOME } from './cenaBase'
 import { useEquipeCompleta } from './useEquipe'
+import { DESTINO_SECRETARIA } from './equipe'
 import { umaPorVez } from '../../lib/seguro'
 
 type Aba = 'hoje' | 'relatorio' | 'lembretes'
@@ -20,9 +21,22 @@ export const nomeDoDono = (p: PerguntaEsc, fs: FuncionarioEsc[]) => donoDaPergun
 
 /** Escritório: a equipe em 3D, o que cada um precisa de você (1 pergunta por vez), o Relatório e os Lembretes. */
 export function Escritorio() {
-  const [aba, setAba] = useState<Aba>(() => (/[?&]aba=lembretes/.test(location.hash) ? 'lembretes' : /[?&]aba=relatorio/.test(location.hash) ? 'relatorio' : 'hoje'))
+  const [aba, setAba] = useState<Aba>(() => abaDoHash(location.hash))
+  useEffect(() => {
+    const navegar = () => setAba(abaDoHash(location.hash))
+    window.addEventListener('hashchange', navegar)
+    return () => window.removeEventListener('hashchange', navegar)
+  }, [])
   return (
-    <div className="view">
+    <div className="view" onClickCapture={ev => {
+      // O bot?o compartilhado pertence ? outra frente; resolvemos aqui a subaba da Secret?ria.
+      const alvo = ev.target instanceof Element ? ev.target.closest('a[href="#/escritorio"]') : null
+      if (alvo?.closest('[data-ficha="secretaria"]')) {
+        ev.preventDefault(); ev.stopPropagation()
+        location.hash = DESTINO_SECRETARIA
+        setAba('lembretes')
+      }
+    }}>
       <nav className="segbar" aria-label="Partes do Escritório">
         <div className="seg">
           {([['hoje', 'Hoje'], ['relatorio', 'Relatório'], ['lembretes', 'Lembretes']] as [Aba, string][]).map(([a, n]) => <button key={a} type="button" aria-pressed={aba === a} onClick={() => setAba(a)}>{n}</button>)}
@@ -36,6 +50,7 @@ export function Escritorio() {
 }
 
 function Hoje() {
+  const { familia } = useApp()
   const { e, estado, motivo, responder } = useEscritorio()
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
   // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
@@ -80,7 +95,7 @@ function Hoje() {
           ))}
         </section>
       </div>
-      {aberto && <FichaFuncionario key={aberto.id} f={aberto} e={e} responder={responder} fechar={() => setSel(null)} />}
+      {aberto && <FichaFuncionario key={familia?.id + ':' + aberto.id} f={aberto} e={e} responder={responder} fechar={() => setSel(null)} />}
     </>
   )
 }

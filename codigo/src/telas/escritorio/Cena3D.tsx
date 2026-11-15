@@ -3,7 +3,7 @@ import { Check, Clock, Hand, Info, Keyboard, Maximize2 } from 'lucide-react'
 import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { FUSO } from '../../lib/formato'
-import { SALAS_NOME as SALAS, temWebGL, type Cena, type EstadoCena, type FuncCena } from './cenaBase'
+import { SALAS_NOME as SALAS, temWebGL, tentarCarregarCena, type Cena, type EstadoCena, type FuncCena } from './cenaBase'
 import { nomeCurto } from './equipe'
 
 const ESTADO: Record<EstadoFuncionario, EstadoCena> = { vai_comecar: 'fila', trabalhando: 'trabalhando', entregue: 'entregue', precisa_de_voce: 'precisa' }
@@ -43,29 +43,30 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
     if (!el || !ids) return
     const sem3d = new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash)
     if (sem3d || !temWebGL()) { setModo('lista'); return }
+    setModo('abrindo'); setLeve(null)
     let vivo = true
     const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const desiste = setTimeout(() => { if (vivo && !cena.current) setModo('lista') }, 8000)
     // o Three.js e o código da cena chegam juntos, só agora: nenhuma outra tela carrega 3D
-    Promise.all([import('./tres'), import('./cena3d')]).then(([T, m]) => {
+    const cancelarCarga = tentarCarregarCena(() => Promise.all([import('./tres'), import('./cena3d')]), ([T, m]) => {
       if (!vivo) return
       try {
         const c = m.montarCena(T, el, {
           funcionarios: paraCena(atuais.current), etiqueta: id => tags.current[id] || null, placa: s => placas.current[s] || null,
           aoTocar: id => tocar.current(id), escuro: escuroAgora(), celular, hora: horaRecife, parado: reduz,
+          aoContexto: estado => { if (vivo) setModo(estado === 'falhou' ? 'lista' : estado === 'perdido' ? 'abrindo' : '3d') },
           aoMedir: (fps, degrau) => setLeve(a => (degrau > 0 ? (a && a.degrau === degrau ? a : { fps, degrau }) : null)),
         })
         cena.current = c
         ;(window as any).__escritorio = c.medir
         setModo('3d')
       } catch (e) { console.warn('Cena 3D não abriu:', e); setModo('lista') }
-    }).catch(() => { if (vivo) setModo('lista') })
+    }, () => { if (vivo) setModo('lista') })
     // tema: claro e escuro trocam a cor do chão da cena
     const mq = matchMedia('(prefers-color-scheme: dark)')
     const tema = () => cena.current?.tema(escuroAgora())
     mq.addEventListener('change', tema)
     const obs = new MutationObserver(tema); obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-    return () => { vivo = false; clearTimeout(desiste); mq.removeEventListener('change', tema); obs.disconnect(); cena.current?.destruir(); cena.current = null; delete (window as any).__escritorio }
+    return () => { vivo = false; cancelarCarga(); mq.removeEventListener('change', tema); obs.disconnect(); cena.current?.destruir(); cena.current = null; delete (window as any).__escritorio }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids])
 

@@ -33,18 +33,21 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
   const cad = useRef<HTMLElement>(null)
   const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
-  const [tudo, setTudo] = useState<LinhaDiario[] | null>(null)
-  const [buscadas, setBuscadas] = useState<LinhaDiario[] | null>(null)
-  // o banco manda as 10 últimas junto com o funcionário; se não mandar, a ficha busca
+  const chaveLeitura = familia?.id + ':' + f.id
+  const [diario, setDiario] = useState<{ chave: string; linhas: LinhaDiario[] } | null>(null)
+  const [expandido, setExpandido] = useState<string | null>(null)
+  const tudo = expandido === chaveLeitura
   useEffect(() => {
-    if (!familia || f.ultimas_respostas) return
+    setDiario(null)
+    if (!familia || (!tudo && f.ultimas_respostas)) return
     let vivo = true
-    api.escritorioDiario(familia.id, f.id, 10).then(x => { if (vivo) setBuscadas(x) }).catch(() => { if (vivo) setBuscadas([]) })
+    api.escritorioDiario(familia.id, f.id, tudo ? 100 : 10)
+      .then(linhas => { if (vivo) setDiario({ chave: chaveLeitura, linhas }) })
+      .catch(() => { if (vivo) setDiario({ chave: chaveLeitura, linhas: [] }) })
     return () => { vivo = false }
-  }, [api, familia?.id, f.id, versao, !!f.ultimas_respostas])
-  const respostas = tudo || f.ultimas_respostas || buscadas
-  const verTudo = async () => { if (familia) setTudo(await api.escritorioDiario(familia.id, f.id, 100).catch(() => f.ultimas_respostas || [])) }
-  useEffect(() => { if (tudo && familia) api.escritorioDiario(familia.id, f.id, 100).then(setTudo).catch(() => {}) }, [versao])
+  }, [api, familia?.id, f.id, versao, tudo, f.ultimas_respostas])
+  const respostas = diario?.chave === chaveLeitura ? diario.linhas : tudo ? null : f.ultimas_respostas || null
+  const verTudo = () => setExpandido(chaveLeitura)
   const hoje = hojeRecife()
   const [corrigindo, setCorrigindo] = useState<PerguntaEsc | null>(null)
   const topo = useRef<HTMLElement>(null)
@@ -188,10 +191,16 @@ function Cadastro({ id }: { id: string }) {
 
 /** Busca que se refaz a cada mudança do app. */
 function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
-  const { familia, versao } = useApp()
-  const [v, setV] = useState<T | null>(null)
-  useEffect(() => { if (!familia) return; let vivo = true; buscar(familia.id).then(x => { if (vivo) setV(x) }).catch(() => {}); return () => { vivo = false } }, [familia?.id, versao])
-  return v
+  const { api, familia, versao } = useApp()
+  const [resultado, setResultado] = useState<{ familia: string; versao: number; valor: T } | null>(null)
+  useEffect(() => {
+    setResultado(null)
+    if (!familia) return
+    let vivo = true
+    buscar(familia.id).then(valor => { if (vivo) setResultado({ familia: familia.id, versao, valor }) }).catch(() => { if (vivo) setResultado(null) })
+    return () => { vivo = false }
+  }, [api, familia?.id, versao])
+  return resultado?.familia === familia?.id && resultado?.versao === versao ? resultado.valor : null
 }
 
 /* Analista de Cartão: cartões (com mensalidade ou anuidade) e a fatura do mês como veio no banco */
