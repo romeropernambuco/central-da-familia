@@ -10,6 +10,8 @@ import type { Cartao, Fatura } from '../../api/tipos'
 import { agruparFaturas, centavos, dataCurta, hojeRecife, mesCurto, reais, simularCompra, textoParaValor } from '../../lib/formato'
 
 const MESES = 6
+// Até 12 parcelas, começando até dois meses após a compra (inclui o mês atual).
+const MESES_SIMULACAO = 14
 
 /** Cartões: faturas dos próximos 6 meses e "E se eu comprar?" ligado ao colchão. */
 export function Cartoes() {
@@ -25,7 +27,7 @@ export function Cartoes() {
     if (!familia) return
     // E2 (regra nova, 13/11): o casal vê todos os cartões da família, com o nome do dono; o seu vem 1º
     api.cartoes(familia.id).then(cs => setCartoes([...cs].sort((a, b) => Number(!cartaoMeu(a, familia)) - Number(!cartaoMeu(b, familia))))).catch(() => {})
-    api.faturas(familia.id, MESES).then(setFaturas).catch(() => {})
+    api.faturas(familia.id, MESES_SIMULACAO).then(setFaturas).catch(() => {})
   }, [api, familia?.id, versao, n])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
@@ -42,7 +44,7 @@ export function Cartoes() {
       {!cartoes.length && <div className="card"><Vazio ico={<CreditCard size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Cadastrar cartão</button> : undefined}>Nenhum cartão cadastrado. Com o dia que a fatura fecha e o dia que vence, a compra cai na fatura certa sozinha.</Vazio></div>}
       <div className="envs">
         {cartoes.map(c => {
-          const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes))
+          const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes)).slice(0, MESES)
           const atual = fs.find(f => f.vencimento >= hoje) || fs[0]
           const max = Math.max(1, ...fs.map(f => f.total))
           const meu = cartaoMeu(c, familia)
