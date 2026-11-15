@@ -76,8 +76,8 @@ describe('E6: objetivo 2029, histórico e Focus', () => {
     const s = futuro(e.entrada!)
     expect(s.linha[0].mes).toBe('2026-12'); expect(s.linha[s.linha.length - 1].mes).toBe('2028-12')
     expect(s.perguntas).toEqual([{ recebimento_atrasado: 'rc1' }])
-    // a parcela do tênis (Nubank) entra como compromisso nos meses das faturas
-    expect(e.entrada!.compromissos.filter(c => c.tipo === 'parcela').map(c => c.mes)).toEqual(['2026-12', '2027-01', '2027-02', '2027-03', '2027-04', '2027-05'])
+    // As parcelas já estão no teto integral do envelope.
+    expect(e.entrada!.compromissos.filter(c => c.tipo === 'parcela').map(c => c.mes)).toEqual([])
     expect(e.entrada!.aplicacoes.every(a => Number.isSafeInteger(a.saldo))).toBe(true)
   })
   it('o mesmo entradaDoBanco serve o banco: um retorno no formato da f_08 sai igual', () => {
@@ -95,7 +95,7 @@ describe('E6: objetivo 2029, histórico e Focus', () => {
     expect(e.entrada!.parametros.taxa_bruta_ano[2027]).toBeDefined()
     expect(e.confirmar.join(' ')).toMatch(/Selic de 2027/)
     expect(e.entrada!.aplicacoes[0]).toMatchObject({ taxa_bruta_anual: '0.1639', titulares: ['X', 'Y'], titular: null })
-    expect(e.entrada!.compromissos).toEqual([{ mes: '2026-12', valor: 20000, tipo: 'parcela' }, { mes: '2026-12', valor: 180000, tipo: 'folha_13' }, { mes: '2027-12', valor: 180000, tipo: 'folha_13' }, { mes: '2028-12', valor: 180000, tipo: 'folha_13' }])
+    expect(e.entrada!.compromissos).toEqual([{ mes: '2026-12', valor: 180000, tipo: 'folha_13' }, { mes: '2027-12', valor: 180000, tipo: 'folha_13' }, { mes: '2028-12', valor: 180000, tipo: 'folha_13' }])
     expect(() => futuro(e.entrada!)).not.toThrow()
     expect(entradaDoBanco({ ...j, focus: [] }).entrada).toBeNull()
   })
