@@ -1,3 +1,4 @@
+import { ouvirAtalhoGuardado } from './atalhos'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, ChevronRight, Droplets, HelpCircle, Plus, Landmark, PartyPopper, ShieldAlert, X } from 'lucide-react'
@@ -24,12 +25,23 @@ export function Guardado() {
   const { saida } = useFuturo()
   const [grafico, setGrafico] = useState<'dia' | 'saldo'>('saldo')
   const [marcoVisto, setMarcoVisto] = useState(() => { try { return localStorage.getItem('marco_visto') || '' } catch { return '' } })
-  const [folha, setFolha] = useState<Folha>(() => (/[?&]nova=1/.test(location.hash) ? { tipo: 'nova' } : /[?&]guardar=1/.test(location.hash) ? { tipo: 'aporte' } : /[?&]tirar=1/.test(location.hash) ? { tipo: 'resgate' } : null))
+  const [folha, setFolha] = useState<Folha>(null)
 
   useEffect(() => {
-    const abrir = () => { if (/[?&]nova=1/.test(location.hash)) setFolha({ tipo: 'nova' }); else if (/[?&]guardar=1/.test(location.hash)) setFolha({ tipo: 'aporte' }); else if (/[?&]tirar=1/.test(location.hash)) setFolha({ tipo: 'resgate' }) }
+    const abrir = () => {
+      const [rota, consulta = ''] = location.hash.split('?')
+      const parametros = new URLSearchParams(consulta)
+      const tipo = parametros.get('nova') === '1' ? 'nova' : parametros.get('guardar') === '1' ? 'aporte' : parametros.get('tirar') === '1' ? 'resgate' : null
+      if (!tipo) return
+      parametros.delete('nova'); parametros.delete('guardar'); parametros.delete('tirar')
+      const resto = parametros.toString()
+      history.replaceState(history.state, '', location.pathname + location.search + rota + (resto ? '?' + resto : ''))
+      setFolha({ tipo })
+    }
+    const parar = ouvirAtalhoGuardado(tipo => setFolha({ tipo }))
+    abrir()
     window.addEventListener('hashchange', abrir)
-    return () => window.removeEventListener('hashchange', abrir)
+    return () => { parar(); window.removeEventListener('hashchange', abrir) }
   }, [])
   if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado mostra o dinheiro da família. Só o casal vê esta tela.</Vazio></div>
   if (estado === 'desligado') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje.</Vazio></div>

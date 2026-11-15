@@ -1,3 +1,4 @@
+import { abrirAtalhoGuardado } from '../guardado/atalhos'
 import { Recebimentos } from '../planejamento/Recebimentos'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -351,10 +352,10 @@ function CadGuardado() {
   const g = useBusca<GuardadoHoje>(f => api.guardadoHoje(f))
   return (
     <div className="cad" data-cad="Aplicações">
-      <div className="cad-h"><b>Onde o dinheiro está guardado</b><a className="btn line sm" href="#/guardado?nova=1"><Plus size={16} />Nova aplicação</a></div>
+      <div className="cad-h"><b>Onde o dinheiro está guardado</b><a className="btn line sm" href="#/guardado?nova=1" onClick={e => abrirAtalhoGuardado(e, 'nova')}><Plus size={16} />Nova aplicação</a></div>
       {g && !g.aplicacoes.length && <p className="sub">Nada guardado ainda. Toque em "Nova aplicação".</p>}
       <ul className="list">{(g?.aplicacoes || []).map(a => <li key={a.id}><div className="cad-l"><span className="m"><b>{textoPrivado(a.nome)}</b><small>{rendeQuanto(a, true)} · rendeu hoje {reais(a.rendeu_hoje_liquido)}</small></span><span className="v"><Din v={a.saldo} /></span></div></li>)}</ul>
-      <div className="row-btns" style={{ marginTop: 8 }}><a className="btn line sm" href="#/guardado?guardar=1">Guardar dinheiro</a><a className="btn line sm" href="#/guardado?tirar=1">Tirar dinheiro</a><a className="btn ghost sm" href="#/guardado">Abrir o Guardado<ChevronRight size={16} /></a></div>
+      <div className="row-btns" style={{ marginTop: 8 }}><a className="btn line sm" href="#/guardado?guardar=1" onClick={e => abrirAtalhoGuardado(e, 'aporte')}>Guardar dinheiro</a><a className="btn line sm" href="#/guardado?tirar=1" onClick={e => abrirAtalhoGuardado(e, 'resgate')}>Tirar dinheiro</a><a className="btn ghost sm" href="#/guardado">Abrir o Guardado<ChevronRight size={16} /></a></div>
     </div>
   )
 }

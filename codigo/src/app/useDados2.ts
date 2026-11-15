@@ -1,5 +1,6 @@
+import { lojaEscritorio } from './escritorioCompartilhado'
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useApp } from './contexto'
 import type { EscritorioHoje, GuardadoHoje } from '../api/tipos'
 import { ErroSessao } from '../api/erros'
@@ -46,25 +47,32 @@ export function useGuardado(): { g: GuardadoHoje | null; estado: Leitura; motivo
 
 /** Quem precisa de você hoje. A equipe recebe só as perguntas da Casa, sem nenhum valor. */
 export function useEscritorio() {
-  const { api, familia, recarregar, tentar, toast } = useApp()
-  const equipe = familia?.papel === 'equipe'
-  // segurança dupla: mesmo que o banco mande, valor e entregas (que têm R$) não ficam na memória do aparelho da equipe
-  // rodada 2 (regras de silêncio): na tela, no máximo 3 coisas por vez. E3 (conserto 9): o total continua contado (precisa_total)
-  const r = useLeitura<EscritorioHoje>(f => api.escritorioHoje(f), v => { const x = { ...v, precisa_total: v.precisa_de_voce.length, precisa_de_voce: v.precisa_de_voce }; return equipe ? { ...x, entregue: [], precisa_de_voce: x.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : x })
-  const atualizar = r.atualizar
+  const { api, familia, versao, recarregar, tentar, toast } = useApp()
+  const loja = lojaEscritorio(api, familia?.id || '')
+  loja.equipe = familia?.papel === 'equipe'
+  loja.aoErro = erro => { if (erro instanceof ErroSessao) void tentar(async () => { throw erro }) }
+  const r = useSyncExternalStore(loja.assinar, loja.snapshot)
+  useEffect(() => { if (familia) void loja.ler(api, familia.id, versao) }, [loja, api, familia?.id, versao])
+  const atualizar = useCallback(() => { if (familia) void loja.ler(api, familia.id) }, [loja, api, familia?.id])
   const responder = useCallback(async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
-    if (!familia) return false
+    if (!familia || loja.travas.has(pergunta)) return false
+    if (!dados?.corrige && !loja.snapshot().dado?.precisa_de_voce.some(p => p.id === pergunta)) return false
+    loja.travas.set(pergunta, 'enviando'); loja.emitir()
     let volta: { mensagem?: string; diario_id?: string; aviso?: string } | undefined
     const ok = await tentar(async () => { volta = (await api.escritorioResponder(familia.id, pergunta, opcao, dados)) || undefined })
-    // deu certo ou não, relê: se a pergunta já tinha sido respondida em outro celular, ela some daqui também
-    atualizar()
-    // rodada 2: a confirmação diz o que foi feito e quanto falta ("Nota da feira de 16/11 guardada. Falta 1 coisa.")
-    if (ok) { toast(volta?.aviso ? (equipe ? volta.aviso + ' O casal fica sabendo.' : volta.aviso) : equipe ? 'Anotado. O casal fica sabendo.' : familia.papel === 'pessoa' ? 'Anotado.' : 'Anotado. Fica guardado no Relatório do Escritório.'); await recarregar() }
-    if (ok && volta?.diario_id) perguntaDaLinha.set(volta.diario_id, pergunta)
-    return ok ? volta || true : false
-  }, [api, familia?.id, tentar, recarregar, atualizar, toast, equipe])
-  for (const p of r.dado?.precisa_de_voce || []) perguntasVistas.set(p.id, p)
-  return { perguntas: r.dado?.precisa_de_voce || [], e: r.dado ? { ...r.dado, precisa_de_voce: r.dado.precisa_de_voce.slice(0, 3) } : null, estado: r.estado, motivo: r.motivo, atualizar, responder }
+    if (!ok) { loja.travas.delete(pergunta); loja.emitir(); return false }
+    loja.travas.set(pergunta, 'respondida'); loja.emitir()
+    if (volta?.diario_id) perguntaDaLinha.set(volta.diario_id, pergunta)
+    const equipe = familia.papel === 'equipe'
+    toast(volta?.aviso ? (equipe ? volta.aviso + ' O casal fica sabendo.' : volta.aviso) : equipe ? 'Anotado. O casal fica sabendo.' : familia.papel === 'pessoa' ? 'Anotado.' : 'Anotado. Fica guardado no Relatório do Escritório.')
+    await loja.ler(api, familia.id)
+    try { await recarregar() } catch { /* A confirmação depende da releitura do Escritório. */ }
+    return volta || true
+  }, [api, familia?.id, tentar, recarregar, toast, loja])
+  const equipe = familia?.papel === 'equipe'
+  const dado = r.dado && (equipe ? { ...r.dado, entregue: [], precisa_de_voce: r.dado.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : r.dado)
+  for (const p of dado?.precisa_de_voce || []) perguntasVistas.set(p.id, p)
+  return { perguntas: dado?.precisa_de_voce || [], e: dado ? { ...dado, precisa_de_voce: dado.precisa_de_voce.slice(0, 3) } : null, estado: r.estado, motivo: r.motivo, atualizar, responder }
 }
 
 /** E7: os dados de 2029 (produto.futuro_entradas) e a saída do motor. Só o casal: a filha e a equipe nem perguntam ao banco.

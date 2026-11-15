@@ -3,11 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../app/contexto'
 import { apiExemplo } from '../api/exemplo'
-import { Cadastro } from '../telas/escritorio/Ficha'
+import { Cadastro, FichaFuncionario } from '../telas/escritorio/Ficha'
 import { Guardado } from '../telas/guardado/Guardado'
 import { Imoveis } from '../telas/guardado/Imoveis'
 import { AgenteDaAba, AGENTE_POR_ABA } from './AgenteDaAba'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
+import { useEscritorio } from '../app/useDados2'
+import { PerguntaCard } from './Pergunta'
 import { hojeRecife, esconderValores, reais } from '../lib/formato'
 import type { Api, ImovelTela } from '../api/tipos'
 import type { Rota } from '../app/rotas'
@@ -21,6 +23,7 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
   vi.stubGlobal('localStorage', { getItem() { return null }, setItem() {} })
   vi.stubGlobal('location', { hash: '#/casa?sem3d', search: '?sem3d' })
+  vi.stubGlobal('history', { state: null, replaceState(_s: unknown, _t: string, url: string) { location.hash = url.slice(url.indexOf('#')) } })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const sessao = (await apiExemplo.sessao())!
   const familia = { ...sessao.familias[0], papel: equipe ? 'equipe' as const : 'casal' as const }
@@ -41,9 +44,9 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   const navegar = async (texto: string) => {
     const link = container.buscar(n => n.tagName === 'A' && n.textContent === texto)[0]
     expect(link, texto).toBeDefined()
-    await act(async () => { location.hash = link.getAttribute('href')!; window.dispatchEvent(new Event('hashchange')) })
+    await act(async () => link.click())
   }
-  return { familia, container, clicar, preencher, navegar, fechar: async () => { await act(async () => root.unmount()) } }
+  return { api, ctx, familia, container, clicar, preencher, navegar, fechar: async () => { await act(async () => root.unmount()) } }
 }
 
 it('equipe só monta agente em Casa e a feira não pede nem envia dinheiro', async () => {
@@ -156,4 +159,71 @@ it.each([false, true])('imóvel novo/edição=%s valida valor inválido e entreg
     expect(salvar).toHaveBeenCalledWith(a.familia.id, editar ? 'i' : null, expect.objectContaining({ apelido: 'Casa nova', valor: 123456.78, aluguel: 0, custos: 0 }))
     expect(a.container.textContent.replace(/\s/g, '')).toContain(reais(123556.78).replace(/\s/g, ''))
   } finally { await a.fechar() }
+})
+
+
+it.each(['Nova aplica\u00e7\u00e3o', 'Guardar dinheiro', 'Tirar dinheiro'])('reabre o mesmo atalho %s depois de fechar, sem hashchange artificial', async atalho => {
+  const a = await montar(createElement(Fragment, null, createElement(Cadastro, { id: 'guardado' }), createElement(Guardado)))
+  try {
+    await a.navegar(atalho)
+    expect(a.container.buscar(n => n.getAttribute('role') === 'dialog')).toHaveLength(1)
+    await a.clicar('Fechar')
+    expect(a.container.buscar(n => n.getAttribute('role') === 'dialog')).toHaveLength(0)
+    await a.navegar(atalho)
+    expect(a.container.buscar(n => n.getAttribute('role') === 'dialog')).toHaveLength(1)
+  } finally { await a.fechar() }
+})
+
+it.each([false, true])('duas instancias reais compartilham leitura e trava do lembrete recorrente; falha na releitura=%s', async falha => {
+  const confirmacoes: (() => void)[] = []
+  let enviada = false
+  let ocorrencia = 1
+  const pergunta = { id: 'lembrete:recorrente', funcionario: 'secretaria', pergunta: 'Lembrete diario', contexto: '', opcoes: [{ id: 'feito', rotulo: 'Feito recorrente' }] }
+  const escritorioResponder = vi.fn(async () => { await new Promise<void>(r => { confirmacoes.push(r) }); enviada = true; ocorrencia++ })
+  const escritorioHoje = vi.fn(async () => {
+    if (enviada && falha) throw new Error('Sem rede na releitura')
+    return { funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: enviada ? [] : [pergunta] }
+  })
+  const respostas: ReturnType<typeof useEscritorio>['responder'][] = []
+  function Instancia({ indice }: { indice: number }) {
+    const dados = useEscritorio()
+    respostas[indice] = dados.responder
+    const p = dados.perguntas[0]
+    return p ? createElement(PerguntaCard, { p, quem: 'Secretaria', responder: dados.responder }) : null
+  }
+  const a = await montar(createElement(Fragment, null, createElement(Instancia, { indice: 0 }), createElement(Instancia, { indice: 1 })), { escritorioResponder, escritorioHoje })
+  try {
+    const botao = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Feito recorrente')[0]
+    let concorrente!: Promise<unknown>
+    await act(async () => { botao.click(); botao.click(); concorrente = respostas[1](pergunta.id, 'feito') })
+    expect(escritorioResponder).toHaveBeenCalledTimes(1)
+    await act(async () => { confirmacoes.forEach(confirmar => confirmar()); await concorrente })
+    if (falha) {
+      expect(a.container.textContent).toContain('Respondida, atualizando')
+      expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Feito recorrente')).toHaveLength(0)
+      await act(async () => { await respostas[0](pergunta.id, 'feito') })
+      await a.clicar('Recarregar')
+      expect(a.container.textContent).toContain('Respondida, atualizando')
+    } else {
+      expect(a.container.textContent).not.toContain('Lembrete diario')
+      await act(async () => { await respostas[0](pergunta.id, 'feito') })
+    }
+    expect(ocorrencia).toBe(2)
+    expect(escritorioHoje).toHaveBeenCalledTimes(falha ? 3 : 2)
+    expect(escritorioResponder).toHaveBeenCalledTimes(1)
+  } finally { await act(async () => { confirmacoes.forEach(confirmar => confirmar()) }); await a.fechar() }
+})
+
+
+it('agente da aba e ficha real nao duplicam a pergunta acionavel da Secretaria', async () => {
+  const p = { id: 'lembrete:ficha', funcionario: 'secretaria', pergunta: 'Ligar hoje', contexto: '', opcoes: [{ id: 'feito', rotulo: 'Feito na ficha' }] }
+  const f = { id: 'secretaria', nome: 'Secretaria', estado: 'precisa_de_voce', frase: 'Ligar', ultimas_respostas: [] } as any
+  const e = { funcionarios: [f], entregue: [], trabalhando: [], precisa_de_voce: [p] }
+  function Ficha() {
+    const dados = useEscritorio()
+    return dados.e ? createElement(FichaFuncionario, { f, e: dados.e, responder: dados.responder, fechar() {} }) : null
+  }
+  const a = await montar(createElement(Fragment, null, createElement(AgenteDaAba, { rota: 'escritorio' }), createElement(Ficha)), { escritorioHoje: async () => e })
+  try { expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Feito na ficha')).toHaveLength(1) }
+  finally { await a.fechar() }
 })

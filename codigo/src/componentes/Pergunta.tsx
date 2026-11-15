@@ -1,6 +1,7 @@
+import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import { copiarProtegido } from './privacidade'
 import { textoPrivado, CampoPrivado } from './privacidade'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { BellRing, Calculator, Camera, Check, ClipboardCheck, Coins, Copy, CreditCard, FileText, HeartHandshake, PackageSearch, ShieldCheck, ShoppingBasket, Sun, UserCheck, UserRound, Landmark } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
 import { useApp } from '../app/contexto'
@@ -57,6 +58,17 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
  */
 export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; corrige?: boolean; aoResponder?: () => void }) {
   const { abrirLancar, familia, api, tentar } = useApp()
+  const loja = lojaEscritorio(api, familia?.id || '')
+  useSyncExternalStore(loja.assinar, loja.snapshot)
+  const instancia = useRef({})
+  useEffect(() => {
+    const donos = loja.donos.get(p.id) || new Set<object>()
+    loja.donos.set(p.id, donos); donos.add(instancia.current); loja.emitir()
+    const dono = instancia.current
+    return () => { donos.delete(dono); loja.emitir() }
+  }, [loja, p.id])
+  const dono = loja.donos.get(p.id)?.values().next().value
+  const bloqueio = loja.travas.get(p.id)
   const equipe = familia?.papel === 'equipe'
   const [aberta, setAberta] = useState<OpcaoPergunta | null>(null)
   const [campos, setCampos] = useState<Record<string, string>>({})
@@ -114,6 +126,11 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
   }
   const rotuloTexto = /nota/.test(aberta?.id || '') ? 'Por que não teve nota? (feira livre, açougue)' : 'Escreva aqui'
 
+  if (dono !== instancia.current) return null
+  if (bloqueio) return <div className="perg" data-pergunta={p.id} role="status">
+    {bloqueio === 'enviando' ? 'Enviando resposta...' : 'Respondida, atualizando...'}
+    {bloqueio === 'respondida' && <><p role="alert">Resposta enviada. Recarregue para confirmar.</p><button type="button" onClick={() => { if (familia) void loja.ler(api, familia.id) }}>Recarregar</button></>}
+  </div>
   return (
     <div className="perg" data-pergunta={p.id}>
       {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{textoPrivado(quem)}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
