@@ -36,8 +36,8 @@ describe('C2: lista única da equipe', () => {
     for (const m of EQUIPE) (por[m.sala] ||= []).push(m.mesa)
     for (const [s, ms] of Object.entries(por)) { expect(new Set(ms).size, s).toBe(ms.length); expect(ms.length, s).toBeLessThanOrEqual(3) }
   })
-  it('nada de nome real de pessoa no código: o assistente é "de quem cuida da casa"', () => {
-    expect(POR_ID.assistente.nome).toBe('Assistente de quem cuida da casa')
+  it('nada de nome real de pessoa no código: Assistente do Orçamento', () => {
+    expect(POR_ID.assistente.nome).toBe('Assistente do Orçamento')
     const tudo = JSON.stringify(EQUIPE) + bloco
     // E14 (P1): nenhum nome real em texto aqui também; compara pela impressão digital, igual ao portão 6b (scripts/portoes.mjs)
     const achados = (tudo.match(/[A-Za-zÀ-ÿ]+/g) || []).filter(p => NOMES_REAIS.has(impressao(p)))
@@ -46,7 +46,7 @@ describe('C2: lista única da equipe', () => {
   it('preserva os 13 personagens do protótipo publicado sem exigir publicação dos novos', () => {
     expect(daPagina).toHaveLength(13)
     expect(daPagina.map(x => x.id)).toEqual(EQUIPE.slice(0, 13).map(m => m.id))
-    for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome.replace('Fiscal da Feira', 'Ajudante da Feira').replace('Controlador de Presença', 'Ajudante de Presença').replace('Auditor de Estoque', 'Ajudante de Estoque'), p.curto === 'Fiscal' ? 'Ajudante' : p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
+    for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome.replace('Fiscal da Feira', 'Ajudante da Feira').replace('Controlador de Presença', 'Ajudante de Presença').replace('Auditor de Estoque', 'Ajudante de Estoque').replace('Assistente de quem cuida da casa', 'Assistente do Orçamento'), p.curto === 'Fiscal' ? 'Ajudante' : p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
   })
   it('na página, quem não tem dado no banco não tem número (semDado, sem num)', () => {
     for (const id of ['assistente', 'usina']) { const linha = bloco.slice(bloco.indexOf(`{id:'${id}'`), bloco.indexOf('cor:', bloco.indexOf(`{id:'${id}'`))); expect(linha).toContain('semDado:true'); expect(linha).not.toMatch(/num:/) }

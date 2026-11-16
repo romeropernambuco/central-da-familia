@@ -7,7 +7,8 @@ import { useInsightsDaAba } from '../app/useInsightsDaAba'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import type { Rota } from '../app/rotas'
 import { rotaPermitida } from '../app/rotas'
-import { EQUIPE } from '../telas/escritorio/equipe'
+import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
+import { APELIDO_BANCO, EQUIPE } from '../telas/escritorio/equipe'
 import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../telas/escritorio/cenaBase'
 import { Cadastro, donoDaPergunta } from '../telas/escritorio/Ficha'
 import { NumerosAba } from '../telas/escritorio/NumerosAba'
@@ -15,8 +16,7 @@ import { PerguntaCard, respostasConfirmadas } from './Pergunta'
 import { textoPrivado } from './privacidade'
 import { Sheet } from './base'
 import { reduzirFoto } from '../lib/foto'
-export const AGENTE_POR_ABA: Record<string, string> = Object.fromEntries(EQUIPE.map(m => [m.rota, m.id]))
-Object.assign(AGENTE_POR_ABA, { casa: 'fiscal', planejamento: 'tesoureiro', guardado: 'guardado' })
+export const AGENTE_POR_ABA = PRINCIPAL_POR_ABA
 const CONVITE: Record<string, string> = {
  cartao: 'Quer conferir a fatura?',
  fiscal: 'Já fez a feira?',
@@ -26,16 +26,23 @@ const CONVITE: Record<string, string> = {
 }
 export type ModoFuncionario = 'completo' | 'compacto' | 'desligado'
 const CHAVE_MODO = 'funcionarios:modo'
+const CHAVE_ESQUEMA = 'funcionarios:modo:esquema'
+export function migrarModoFuncionario(valor: string | null, esquema: string | null): ModoFuncionario {
+ return esquema === '2' && (valor === 'completo' || valor === 'compacto' || valor === 'desligado') ? valor : 'completo'
+}
 const ouvintesModo = new Set<() => void>()
 let modoMemoria: ModoFuncionario | undefined
 function lerModo(): ModoFuncionario {
- try { const v = localStorage.getItem(CHAVE_MODO); if (v === 'completo' || v === 'desligado') return v } catch { /* sem storage */ }
- return 'compacto'
+ try {
+  const modo = migrarModoFuncionario(localStorage.getItem(CHAVE_MODO), localStorage.getItem(CHAVE_ESQUEMA))
+  localStorage.setItem(CHAVE_MODO, modo); localStorage.setItem(CHAVE_ESQUEMA, '2')
+  return modo
+ } catch { return 'completo' }
 }
 function snapshotModo() { return modoMemoria ?? lerModo() }
 export function definirModoFuncionario(modo: ModoFuncionario) {
  modoMemoria = modo
- try { localStorage.setItem(CHAVE_MODO, modo) } catch { /* mantém na sessão */ }
+ try { localStorage.setItem(CHAVE_MODO, modo); localStorage.setItem(CHAVE_ESQUEMA, '2') } catch { /* mantém na sessão */ }
  ouvintesModo.forEach(f => f())
 }
 function assinarModo(f: () => void) {
@@ -44,10 +51,10 @@ function assinarModo(f: () => void) {
  window.addEventListener('storage', atualizar)
  return () => { ouvintesModo.delete(f); window.removeEventListener('storage', atualizar) }
 }
-export function useModoFuncionario() { return useSyncExternalStore(assinarModo, snapshotModo, () => 'compacto' as const) }
+export function useModoFuncionario() { return useSyncExternalStore(assinarModo, snapshotModo, () => 'completo' as const) }
 export function ControleFuncionarios() {
  const modo = useModoFuncionario()
- return <div role="group" aria-label="Funcionários" className="seg compacta"><span>Funcionários:</span>{(['completo', 'compacto', 'desligado'] as const).map(v => <button key={v} type="button" aria-pressed={modo === v} onClick={() => definirModoFuncionario(v)}>{v === 'completo' ? 'Completo' : v === 'compacto' ? 'Compacto' : 'Desligado'}</button>)}</div>
+ return <div role="group" aria-label="Funcionários" className="seg compacta"><span>Funcionários:</span>{(['completo', 'compacto', 'desligado'] as const).map(v => <button key={v} type="button" aria-pressed={modo === v} onClick={() => definirModoFuncionario(v)}>{v === 'completo' ? 'Completo' : v === 'compacto' ? 'Só texto' : 'Desligado'}</button>)}</div>
 }
 const SOBRE: Record<string, string> = {
  inicio: 'Aqui você acompanha os números e avisos da família.', lancamentos: 'Aqui estão os gastos e entradas que vocês anotaram.',
@@ -74,7 +81,17 @@ export function AgenteDaAba({ rota }: { rota: Rota }) {
  return <AgenteAutorizado key={[familia.id, rota, api.modo, familia.papel, familia.membroId, sessao?.userId].join(':')} rota={rota} />
 }
 function AgenteAutorizado({ rota }: { rota: Rota }) {
- const { familia, api, oculto } = useApp()
+ const { familia, api, oculto, sessao } = useApp()
+ const [subaba, setSubaba] = useState<string>()
+ useEffect(() => {
+  if (rota !== 'casa') return
+  const acompanhar = (ev: MouseEvent) => {
+   const alvo = typeof Element !== 'undefined' && ev.target instanceof Element ? ev.target.closest('button') : null
+   if (alvo?.closest('[aria-label="Parte da casa"]')) setSubaba(alvo.textContent || undefined)
+  }
+  document.addEventListener('click', acompanhar)
+  return () => document.removeEventListener('click', acompanhar)
+ }, [rota])
  const { e, perguntas, responder } = useEscritorio()
  const insights = useInsightsDaAba(rota)
  const loja = lojaEscritorio(api, familia!.id)
@@ -85,18 +102,25 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  useEffect(() => setExpansao(null), [modo])
  const [aberto, setAberto] = useState(false)
  const [celebrando, setCelebrando] = useState<{ funcionario: string } | null>(null)
+ const elencoBase = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba })
+ const idCanonico = (id: string) => APELIDO_BANCO[id] || id
  const pendente = perguntas.find(p => {
-   const id = donoDaPergunta(p, e?.funcionarios || [])?.id || p.funcionario
-   return familia?.papel === 'equipe' ? id === 'fiscal' : id === AGENTE_POR_ABA[rota] || EQUIPE.some(m => m.id === id && m.rota === rota)
+   const id = idCanonico(donoDaPergunta(p, e?.funcionarios || [])?.id || p.funcionario)
+   if (celebrando && (rota === 'inicio' || rota === 'casa') && id !== celebrando.funcionario) return false
+   return funcionarioAutorizado(id, familia!.papel, !!sessao?.dono) && (rota === 'inicio' || (rota === 'casa' ? EQUIPE.some(m => m.id === id && m.rota === rota) : [elencoBase.principal, ...elencoBase.secundarios].includes(id)))
  })
- const proposta = !pendente && e ? insights.pergunta : null
- const id = pendente ? donoDaPergunta(pendente, e?.funcionarios || [])?.id || pendente.funcionario : proposta?.funcionario || celebrando?.funcionario || AGENTE_POR_ABA[rota]
+ const proposta = !pendente && e && !(celebrando && (rota === 'inicio' || rota === 'casa')) ? insights.pergunta : null
+ const elenco = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba,
+  perguntaPendente: pendente || proposta || (celebrando ? { funcionario: celebrando.funcionario } : null),
+  filaGeral: [...(celebrando ? [{ funcionario: celebrando.funcionario }] : []), ...perguntas.map(p => ({ funcionario: idCanonico(donoDaPergunta(p, e?.funcionarios || [])?.id || p.funcionario) }))] })
+ const ids = [elenco.principal, ...elenco.secundarios]
+ const id = pendente ? idCanonico(donoDaPergunta(pendente, e?.funcionarios || [])?.id || pendente.funcionario) : proposta?.funcionario || celebrando?.funcionario || elenco.principal
  const m = EQUIPE.find(m => m.id === id) || EQUIPE.find(m => m.id === AGENTE_POR_ABA[rota])!
  const f = e?.funcionarios.find(f => f.id === m.id)
  const fala = (texto: string) => f?.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
- const p = familia?.papel === 'equipe' && pendente ? {
+ const p = familia?.papel !== 'casal' && rota === 'casa' && pendente ? {
    ...pendente, valor: undefined, contexto: '',
-   pergunta: /nota/.test(pendente.id) ? 'Pode guardar a nota da feira?' : /contagem|estoque/.test(pendente.id) ? 'Pode contar o estoque?' : 'Já fez a feira?',
+   pergunta: m.id === 'comprador' ? 'Pode conferir a tarefa da casa?' : /nota/.test(pendente.id) ? 'Pode guardar a nota da feira?' : /contagem|estoque/.test(pendente.id) ? 'Pode contar o estoque?' : 'Já fez a feira?',
    opcoes: pendente.opcoes.filter(o => o.pede !== 'valor').map(o => ({ ...o, pede2: o.pede2 === 'valor' ? undefined : o.pede2,
      rotulo: /R\$|\d/.test(o.rotulo) ? 'Responder' : o.rotulo })),
  } : pendente || proposta
@@ -139,40 +163,51 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
    finally { fotoTrava.current = false; setGuardandoFoto(false) }
  }
  const expandido = expansao?.modo === modo && expansao.pergunta === p?.id ? expansao.valor : null
- const completo = modo !== 'desligado' && (expandido ?? (modo === 'completo' || precisa))
- return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} aria-label="Funcionário desta aba">
- {completo && <MiniAgente id={m.id} sala={m.sala} estado={estado} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b>
- {completo && api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
- {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (f?.frase ? fala(f.frase) : m.papel)}</p></div>}
- {modo !== 'desligado' && <button type="button" className="btn line" onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !completo })}>{completo ? 'Recolher' : 'Expandir'}</button>}
+ const completo = modo === 'completo'
+ const conversa = expandido ?? true
+ const funcionarios = ids.map(id => ({ id, estado: (id === m.id ? estado : celebrando?.funcionario === id ? 'resolvido' : e?.funcionarios.find(f => f.id === id)?.estado === 'trabalhando' || e?.trabalhando?.some(t => t.funcionario === id) ? 'trabalhando' : 'parado') as EstadoAgente }))
+ const descricao = 'Escritório ilustrativo com ' + ids.map(id => EQUIPE.find(m => m.id === id)!.nome).join(' e ') + '. Objetos sem dados pessoais.'
+ const restrito = familia!.papel !== 'casal'
+ const papel = restrito && rota === 'casa' ? (m.id === 'presenca' ? 'Acompanha seu próprio ponto.' : 'Acompanha as tarefas da casa, sem valores em dinheiro.') : m.papel
+ return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
+ {completo && <MiniAgente id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
+ {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
+ {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
+ {conversa && (p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
+ {modo !== 'desligado' && <button type="button" className="btn line" onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
  <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>
- <div id={painel} hidden={!aberto}>{aberto && (['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
+ <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>
    {guardandoFoto && <p role="status">Guardando a nota…</p>}{fotoErro && <p role="alert">{fotoErro}</p>}
  </Sheet>}
  </section>
 }
-export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando' }: { id: string; sala: string; estado?: EstadoAgente }) {
+export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando', funcionarios }: { id: string; sala: string; estado?: EstadoAgente; funcionarios?: { id: string; estado: EstadoAgente }[] }) {
  const caixa = useRef<HTMLDivElement>(null)
  const cenaAtual = useRef<Cena>()
- const estadoAtual = useRef(estado); estadoAtual.current = estado
+ const pessoas = funcionarios || [{ id, estado }]
+ const chave = pessoas.map(p => p.id).join(':')
+ const estados = JSON.stringify(pessoas)
+ const estadoAtual = useRef(pessoas); estadoAtual.current = pessoas
  const [lista, setLista] = useState(false)
- useEffect(() => { cenaAtual.current?.definirEstado(id, estado) }, [id, estado])
+ useEffect(() => { estadoAtual.current.forEach(p => cenaAtual.current?.definirEstado(p.id, p.estado)) }, [estados])
  useEffect(() => {
  const el = caixa.current
  if (!el) return
  if (new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash) || !temWebGL()) { setLista(true); return }
  const escuroAgora = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches }
  let cena: Cena | undefined
+ const falhar = () => { cena?.destruir(); cena = undefined; cenaAtual.current = undefined; setLista(true) }
  setLista(false)
  liberarRenderer?.()
  const cancelar = tentarCarregarCena(() => Promise.all([import('../telas/escritorio/tres'), import('../telas/escritorio/cena3d')]), ([T, modulo]) => {
- cena = modulo.montarCena(T, el, { mini: true, funcionarios: [{ id, sala, estado: 'trabalhando' }], etiqueta: () => null, placa: () => null, aoTocar() {}, escuro: escuroAgora(), celular: () => true, hora: () => 12, parado: matchMedia('(prefers-reduced-motion: reduce)').matches, aoContexto: estado => { if (estado === 'falhou') setLista(true) } })
+ const opcoes = { mini: true, sala, funcionarios: estadoAtual.current.map(p => ({ id: p.id, sala, estado: 'trabalhando' as const })), etiqueta: () => null, placa: () => null, aoTocar() {}, escuro: escuroAgora(), celular: () => true, hora: () => 12, parado: matchMedia('(prefers-reduced-motion: reduce)').matches, aoContexto: (estado: 'perdido' | 'restaurado' | 'falhou') => { if (estado === 'falhou') falhar() } }
+ cena = modulo.montarCena(T, el, opcoes)
  cena.irPara(sala)
  cenaAtual.current = cena
- cena.definirEstado(id, estadoAtual.current)
- }, () => setLista(true))
+ estadoAtual.current.forEach(p => cena!.definirEstado(p.id, p.estado))
+ }, falhar)
  const mq = matchMedia('(prefers-color-scheme: dark)')
  const tema = () => cena?.tema(escuroAgora())
  mq.addEventListener('change', tema)
@@ -182,6 +217,6 @@ export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalh
  window.addEventListener('escritorio3d-abrir', abrirEscritorio)
  liberarRenderer = destruir
  return () => { window.removeEventListener('escritorio3d-abrir', abrirEscritorio); destruir(); if (liberarRenderer === destruir) liberarRenderer = undefined }
- }, [id, sala])
+ }, [chave, sala])
  return lista ? <span className="sub">Em lista · {({ chamando: 'Precisa de você', resolvido: 'Respondido', parado: 'Sem pendências', trabalhando: 'Trabalhando' })[estado]}</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true" />
 })

@@ -7,7 +7,8 @@ import type { Rota } from '../app/rotas'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { CASOS_LIGACAO, contextoLigacao } from '../lib/insights/ligacao.dom-teste'
 import { chaveArmazenamento, lerMemoria } from '../lib/insights/memoria'
-import { AgenteDaAba, MiniAgente, ControleFuncionarios } from './AgenteDaAba'
+import { AgenteDaAba, MiniAgente, ControleFuncionarios, migrarModoFuncionario } from './AgenteDaAba'
+import { elencoDaAba, SALA_POR_ABA } from '../telas/escritorio/elencoPorAba'
 import { Sheet } from './base'
 import { FichaFuncionario } from '../telas/escritorio/Ficha'
 import { useEscritorio } from '../app/useDados2'
@@ -17,7 +18,7 @@ vi.mock('../telas/escritorio/tres', () => ({}))
 vi.mock('../telas/escritorio/cena3d', () => ({ montarCena: cena.montar }))
 
 function ambiente(webgl = false) {
-  const doc = new DocumentoTeste(), eventos = new EventTarget(), storage = new Map<string, string>([['funcionarios:modo', 'completo']])
+  const doc = new DocumentoTeste(), eventos = new EventTarget(), storage = new Map<string, string>([['funcionarios:modo', 'completo'], ['funcionarios:modo:esquema', '2']])
   Object.assign(doc.documentElement, { dataset: {} })
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] }, getContext() { return webgl ? {} : null } })
   vi.stubGlobal('document', doc)
@@ -264,32 +265,25 @@ it('ligação: sucesso do insight leva mini de chamando a resolvido e parado sem
   } finally { await a.limpar() }
 })
 
-it('UX: compacto não monta WebGL, expandir monta e recolher destrói', async () => {
- const a = ambiente(true), ctx = contextoLigacao('cobranca_cartao')
- a.storage.set('funcionarios:modo', 'compacto')
- ctx.api.escritorioHoje = vi.fn().mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] })
- ctx.api.faturas = vi.fn().mockResolvedValue([])
+it('UX: Recolher conserva a cena; escolhas explícitas dispensam WebGL', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
  try {
-  await a.render(ctx, 'cartoes')
-  expect(cena.montar).not.toHaveBeenCalled()
-  await act(async () => botao(a.container, 'Expandir').click())
-  expect(cena.montar).toHaveBeenCalledTimes(1)
-  await act(async () => botao(a.container, 'Recolher').click())
-  expect(cena.destruir).toHaveBeenCalledTimes(1)
-  expect(a.container.textContent).toContain('Expandir')
   const filhos = createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' }))
   await a.render(ctx, 'cartoes', filhos)
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  await act(async () => botao(a.container, 'Recolher').click())
+  expect(cena.destruir).not.toHaveBeenCalled()
+  await act(async () => botao(a.container, 'Expandir').click())
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  await act(async () => botao(a.container, 'Só texto').click())
+  expect(cena.destruir).toHaveBeenCalledTimes(1)
+  expect(a.storage.get('funcionarios:modo')).toBe('compacto')
   await act(async () => botao(a.container, 'Desligado').click())
   expect(a.storage.get('funcionarios:modo')).toBe('desligado')
-  await a.render(contextoLigacao('fatura_vencendo'), 'cartoes', filhos)
-  expect(perguntas(a.container)).toHaveLength(1)
   expect(cena.montar).toHaveBeenCalledTimes(1)
   await act(async () => botao(a.container, 'Completo').click())
   expect(cena.montar).toHaveBeenCalledTimes(2)
-  await act(async () => botao(a.container, 'Compacto').click())
-  // A pergunta continua visível e mantém o modo completo automático.
-  expect(perguntas(a.container)).toHaveLength(1)
- } finally { await act(async () => a.eventos.dispatchEvent(new Event('storage'))); await a.limpar() }
+ } finally { await a.limpar() }
 })
 
 // Apenas a fronteira WebGL é substituída; componentes, preferência e hooks são reais.
@@ -297,25 +291,25 @@ it.each(['completo', 'compacto', 'desligado'] as const)('cobertura modos: %s per
  const a = ambiente(true), ctx = contextoLigacao('nenhum')
  try {
   await a.render(ctx, 'cartoes', createElement(ControleFuncionarios))
-  await act(async () => botao(a.container, modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Compacto' : 'Desligado').click())
+  await act(async () => botao(a.container, modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Só texto' : 'Desligado').click())
   expect(a.storage.get('funcionarios:modo')).toBe(modo)
   // Invalida enquanto ainda há assinante; depois desmonta, forçando leitura do storage.
   await act(async () => a.eventos.dispatchEvent(new Event('storage')))
   await act(async () => a.root.render(null))
   await a.render(ctx, 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
-  expect(a.container.buscar(n => n.getAttribute('aria-pressed') === 'true').map(n => n.textContent)).toEqual([modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Compacto' : 'Desligado'])
+  expect(a.container.buscar(n => n.getAttribute('aria-pressed') === 'true').map(n => n.textContent)).toEqual([modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Só texto' : 'Desligado'])
   expect(cena.montar.mock.calls.length).toBe(modo === 'completo' ? 1 : 0)
  } finally { await a.limpar() }
 })
-it.each(['invalido', 'throw'])('cobertura modos: storage %s usa compacto e permite mudar na sessão', async tipo => {
+it.each(['invalido', 'throw'])('cobertura modos: storage %s usa completo e permite mudar na sessão', async tipo => {
  const a = ambiente(true), ctx = contextoLigacao('nenhum')
  try {
   a.storage.set('funcionarios:modo', 'estranho')
   if (tipo === 'throw') vi.stubGlobal('localStorage', { getItem() { throw Error('indisponível') }, setItem() { throw Error('cheio') } })
   a.eventos.dispatchEvent(new Event('storage'))
   await a.render(ctx, 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
-  expect(botao(a.container, 'Compacto').getAttribute('aria-pressed')).toBe('true')
-  expect(cena.montar).not.toHaveBeenCalled()
+  expect(botao(a.container, 'Completo').getAttribute('aria-pressed')).toBe('true')
+  expect(cena.montar).toHaveBeenCalledTimes(1)
   await act(async () => botao(a.container, 'Completo').click())
   expect(botao(a.container, 'Completo').getAttribute('aria-pressed')).toBe('true')
   expect(cena.montar).toHaveBeenCalledTimes(1)
@@ -328,7 +322,7 @@ it.each(['compacto', 'desligado'])('cobertura modos: pergunta pendente no %s apa
   await a.render(contextoLigacao('fatura_vencendo'), 'cartoes')
   expect(perguntas(a.container)).toHaveLength(1)
   expect(a.container.textContent).toContain('Já pagou a fatura que vence em breve?')
-  expect(cena.montar.mock.calls.length).toBe(modo === 'desligado' ? 0 : 1)
+  expect(cena.montar.mock.calls.length).toBe(0)
   if (modo === 'compacto') expect(botao(a.container, 'Recolher')).toBeDefined()
  } finally { await a.limpar() }
 })
@@ -345,14 +339,14 @@ it('cobertura modos: vinte alternâncias descartam cada renderer e não prendem 
   for (let i = 0; i < 20; i++) {
    await act(async () => botao(a.container, 'Completo').click())
    expect(vivos.size).toBe(1); expect(botao(a.container, 'Recolher')).toBeDefined()
-   await act(async () => botao(a.container, 'Compacto').click())
-   expect(vivos.size).toBe(0); expect(botao(a.container, 'Expandir')).toBeDefined()
+   await act(async () => botao(a.container, 'Só texto').click())
+   expect(vivos.size).toBe(0); expect(botao(a.container, 'Recolher')).toBeDefined()
    expect(a.container.buscar(n => n.getAttribute('data-agente') === 'cartao')[0]).toBe(agente)
   }
   // Também cobre mudanças no mesmo turno, antes de os imports assíncronos concluírem.
-  await act(async () => { for (let i = 0; i < 20; i++) { botao(a.container, 'Completo').click(); botao(a.container, 'Compacto').click() } })
+  await act(async () => { for (let i = 0; i < 20; i++) { botao(a.container, 'Completo').click(); botao(a.container, 'Só texto').click() } })
   expect(vivos.size).toBe(0)
-  expect(botao(a.container, 'Expandir')).toBeDefined()
+  expect(botao(a.container, 'Recolher')).toBeDefined()
   expect(cena.montar).toHaveBeenCalledTimes(20)
   for (const dispose of disposes) expect(dispose).toHaveBeenCalledTimes(1)
   await act(async () => botao(a.container, 'Completo').click())
@@ -372,5 +366,94 @@ it.each(['query', 'hash', 'sem-webgl'])('cobertura modos: fallback %s mantém pe
   expect(cena.montar).not.toHaveBeenCalled()
   expect(perguntas(a.container)).toHaveLength(1)
   expect(a.container.textContent).toContain('Já pagou a fatura que vence em breve?')
+ } finally { await a.limpar() }
+})
+
+it.each(['automatico', 'compacto', 'desligado', 'completo', 'invalido', null])('migra preferência antiga %s uma única vez', async antigo => {
+ expect(migrarModoFuncionario(antigo, null)).toBe('completo')
+ const a = ambiente(true)
+ try {
+  a.storage.delete('funcionarios:modo:esquema')
+  if (antigo) a.storage.set('funcionarios:modo', antigo); else a.storage.delete('funcionarios:modo')
+  a.eventos.dispatchEvent(new Event('storage'))
+  await a.render(contextoLigacao('nenhum'), 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  expect(a.storage.get('funcionarios:modo:esquema')).toBe('2')
+  await act(async () => botao(a.container, 'Só texto').click())
+  expect(migrarModoFuncionario(a.storage.get('funcionarios:modo')!, '2')).toBe('compacto')
+ } finally { await a.limpar() }
+})
+
+it.each(Object.keys(SALA_POR_ABA) as Rota[])('3D por padrão em %s com elenco e sala do contrato', async rota => {
+ const a = ambiente(true), base = contextoLigacao('nenhum'), ctx = { ...base, sessao: { ...base.sessao!, dono: true } }
+ a.storage.clear(); a.eventos.dispatchEvent(new Event('storage'))
+ try {
+  await a.render(ctx, rota)
+  const elenco = elencoDaAba({ rota, papel: 'casal', ehDono: true })
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  const opcoes = cena.montar.mock.calls[0][2]
+  expect(opcoes.sala).toBe(elenco.sala)
+  expect(opcoes.funcionarios.map((f: { id: string }) => f.id)).toEqual([elenco.principal, ...elenco.secundarios])
+  expect(a.container.buscar(n => n.getAttribute('aria-label')?.startsWith('Escritório ilustrativo com ') === true)).toHaveLength(1)
+ } finally { await a.limpar() }
+})
+
+it('pergunta da Reserva mantém Tesoureiro principal e só celebra o dono, sem remontar', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('reserva')
+ try {
+  await a.render(ctx, 'planejamento')
+  expect(cena.montar.mock.calls[0][2].funcionarios.map((f: { id: string }) => f.id)).toEqual(['tesoureiro', 'colchao'])
+  expect(cena.definir).toHaveBeenCalledWith('tesoureiro', 'parado')
+  expect(cena.definir).toHaveBeenCalledWith('colchao', 'chamando')
+  expect(a.container.textContent).toContain('Guardião da Reserva')
+  expect(a.container.textContent).toContain('Com Tesoureiro de Receitas')
+  await act(async () => botao(a.container, 'Já resolvido').click())
+  expect(cena.definir).toHaveBeenCalledWith('colchao', 'resolvido')
+  expect(cena.definir).not.toHaveBeenCalledWith('tesoureiro', 'resolvido')
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+ } finally { await a.limpar() }
+})
+
+it('trocas rápidas entre todas as abas descartam cada renderer', async () => {
+ const a = ambiente(true), base = contextoLigacao('nenhum'), ctx = { ...base, sessao: { ...base.sessao!, dono: true } }, vivos = new Set<object>()
+ cena.montar.mockImplementation(() => {
+  const renderer = {}; vivos.add(renderer)
+  return { definirEstado() {}, tema() {}, irPara() {}, destruir() { vivos.delete(renderer) } }
+ })
+ try {
+  for (const rota of Object.keys(SALA_POR_ABA) as Rota[]) { await a.render(ctx, rota); expect(vivos.size).toBe(1) }
+ } finally { await a.limpar() }
+ expect(vivos.size).toBe(0)
+})
+
+it('falha ao montar a cena conserva o cartão e suas ações', async () => {
+ const a = ambiente(true)
+ cena.montar.mockImplementation(() => { throw Error('WebGL indisponível') })
+ try {
+  await a.render(contextoLigacao('fatura_vencendo'), 'cartoes')
+  expect(a.container.textContent).toContain('Em lista')
+  expect(perguntas(a.container)).toHaveLength(1)
+  expect(botao(a.container, 'Paguei hoje')).toBeDefined()
+ } finally { await a.limpar() }
+})
+
+it('Mini atualiza estados de cada pessoa sem refazer a composição', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
+ try {
+  await a.render(ctx, 'planejamento', createElement(MiniAgente, { id: 'tesoureiro', sala: 'caixa', funcionarios: [{ id: 'tesoureiro', estado: 'parado' }, { id: 'colchao', estado: 'chamando' }] }))
+  await a.render(ctx, 'planejamento', createElement(MiniAgente, { id: 'tesoureiro', sala: 'caixa', funcionarios: [{ id: 'tesoureiro', estado: 'trabalhando' }, { id: 'colchao', estado: 'resolvido' }] }))
+  expect(cena.definir).toHaveBeenCalledWith('tesoureiro', 'trabalhando')
+  expect(cena.definir).toHaveBeenCalledWith('colchao', 'resolvido')
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+ } finally { await a.limpar() }
+})
+
+it('Guardado não troca o elenco por pergunta de Usina', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
+ ctx.api.escritorioHoje = vi.fn().mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [{ id: 'usina', funcionario: 'usina', pergunta: 'Pergunta fora do elenco', contexto: '', opcoes: [] }] })
+ try {
+  await a.render(ctx, 'guardado')
+  expect(a.container.textContent).not.toContain('Pergunta fora do elenco')
+  expect(cena.montar.mock.calls[0][2].funcionarios.map((f: { id: string }) => f.id)).toEqual(['guardado', 'imoveis'])
  } finally { await a.limpar() }
 })
