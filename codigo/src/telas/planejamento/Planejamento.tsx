@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
@@ -202,8 +203,8 @@ export function Planejamento() {
 
 /** Nova renda (rodada 2, AUTONOMA ideia 1): "Valor fixo" ou "Muda todo mês" (mês fraco e mês bom; o teto sai do mês fraco). */
 function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: string, valor: number, muda?: { fraco: number; bom: number }) => void }) {
-  const [nome, setNome] = useState(''), [v, setV] = useState('')
-  const [muda, setMuda] = useState(false), [fraco, setFraco] = useState(''), [bom, setBom] = useState('')
+  const [nome, setNome] = useRascunho('cadastro:plano:nome', ''), [v, setV] = useRascunho('cadastro:plano:v', '')
+  const [muda, setMuda] = useRascunho('cadastro:plano:muda', false), [fraco, setFraco] = useRascunho('cadastro:plano:fraco', ''), [bom, setBom] = useRascunho('cadastro:plano:bom', '')
   const f = textoParaValor(fraco), b = textoParaValor(bom)
   return (
     <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (!nome) return; if (tipo === 'renda' && muda) { if (f > 0) salvar(nome, f, { fraco: f, bom: Math.max(b, f) }) } else if (v) salvar(nome, textoParaValor(v)) }}>

@@ -631,3 +631,6 @@ export function estoqueItemSalvarEx(item: { id?: string; nome: string; categoria
   if (v) Object.assign(v, { nome: item.nome.trim(), categoria: item.categoria.trim() || 'Despensa', ativo: item.ativo !== false })
   else e.itens.push({ id: 'it' + Date.now(), nome: item.nome.trim(), categoria: item.categoria.trim() || 'Despensa', ativo: true })
 }
+
+export function backupEx2() { return JSON.parse(JSON.stringify({ ...e, chaves: [...e.chaves] })) }
+export function restaurarEx2(d: ReturnType<typeof backupEx2>) { e = { ...d, chaves: new Set(d.chaves) } }

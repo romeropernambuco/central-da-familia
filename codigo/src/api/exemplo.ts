@@ -865,6 +865,30 @@ export const apiExemplo: Api = {
     if (i.dono_membro !== membroLogado().id) { const n = membrosTeste().find(x => x.id === i.dono_membro)?.nome || 'o dono'; throw new Error(`Esse imóvel é de ${n}: só ${n} muda.`) }
     i.apagado = true
   },
+  async backupLer() {
+    soCasal()
+    return JSON.parse(JSON.stringify({ lancamentos: db.lanc, cartoes: db.cartoes, aplicacoes: ex2.backupEx2().apps,
+      imoveis: db.imoveis, receitas: db.recebimentos, desejos: db.desejos, pessoas: membrosTeste(),
+      assessores: (db.config.casa_folha as any)?.pessoas || [], parametros: db.objetivo,
+      config: db.config, estado: db, estado2: ex2.backupEx2(), nomesAvulsos, assessorNome,
+      convitesAssessores: [...convitesAssessores], familiaExemplo: familiaTeste() }))
+  },
+  async backupRestaurar(_f, dados) {
+    soCasal()
+    const d = JSON.parse(JSON.stringify(dados))
+    if (!d.estado || !d.estado2 || !Array.isArray(d.estado2.apps) || !Array.isArray(d.estado2.chaves) || d.familiaExemplo !== familiaTeste()) throw new Error('Cópia de exemplo incompleta ou de outra família.')
+    for (const k of Object.keys(db)) if (!(k in d.estado) || typeof d.estado[k] !== typeof (db as any)[k]) throw new Error('Estado de exemplo inválido.')
+    for (const [k, campo] of [['lancamentos','lanc'], ['cartoes','cartoes'], ['imoveis','imoveis'], ['receitas','recebimentos'], ['desejos','desejos'], ['config','config'], ['parametros','objetivo']] as const)
+      if (JSON.stringify(d[k]) !== JSON.stringify(d.estado[campo])) throw new Error('Cópia inconsistente.')
+    if (JSON.stringify(d.aplicacoes) !== JSON.stringify(d.estado2.apps)) throw new Error('Aplicações inconsistentes.')
+    if (!Array.isArray(d.pessoas) || !d.pessoas.every((p: any) => p && typeof p.id === 'string' && typeof p.nome === 'string') || !Array.isArray(d.nomesAvulsos) || !Array.isArray(d.convitesAssessores) || !d.convitesAssessores.every((p: any) => Array.isArray(p) && p.length === 2 && p.every((x: any) => typeof x === 'string')) || typeof d.assessorNome !== 'string') throw new Error('Identidades inválidas.')
+    const atual2 = ex2.backupEx2()
+    for (const k of Object.keys(atual2)) if (!(k in d.estado2) || Array.isArray(atual2[k]) !== Array.isArray(d.estado2[k]) || typeof atual2[k] !== typeof d.estado2[k]) throw new Error('Estado do Guardado inválido.')
+    db = d.estado; ex2.restaurarEx2(d.estado2); porChave.clear()
+    for (const m of membrosTeste()) { const salvo = d.pessoas.find((p: any) => p.id === m.id); if (salvo) m.nome = salvo.nome }
+    nomesAvulsos.splice(0, nomesAvulsos.length, ...d.nomesAvulsos); assessorNome = d.assessorNome
+    convitesAssessores.clear(); for (const [id,nome] of d.convitesAssessores) convitesAssessores.set(id,nome)
+  },
   async exportarFamilia() {
     if (papelLogado() !== 'casal') throw new Error('Baixar os dados da família é com o casal. Use "Baixar meus dados".')
     const dono = (id: string) => donoDoEnv(id) ?? 'Da família'

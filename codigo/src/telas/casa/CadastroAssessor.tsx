@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { validarNome } from '../../lib/nomePessoa'
 import { useState } from 'react'
 import { useApp } from '../../app/contexto'
@@ -10,7 +11,7 @@ import type { Folha } from '../escritorio/ajudantes'
 export function CadastroAssessor({ fechar }: { fechar: () => void }) {
   const { toast } = useApp()
   const [folha, salvar, falha, lido] = useConfig<Folha>('casa_folha', { pessoas: [], daePaga: {} })
-  const [nome, setNome] = useState(''), [funcao, setFuncao] = useState(''), [celular, setCelular] = useState('')
+  const [nome, setNome] = useRascunho('cadastro:assessor:nome', ''), [funcao, setFuncao] = useRascunho('cadastro:assessor:funcao', ''), [celular, setCelular] = useRascunho('cadastro:assessor:celular', '')
   const [erro, setErro] = useState(''), [ocupado, setOcupado] = useState(false)
   return <Sheet titulo="Cadastrar Assessor da Casa" fechar={fechar}>
     <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {

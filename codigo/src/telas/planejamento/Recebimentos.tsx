@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E5 (fase final): recebimentos com data, um bloco dentro do Planejamento (sem tela nova).
@@ -58,7 +59,8 @@ function MudarReceb({ r, fonte: inicial, pronto, fechar, mexer, salvarFonte }: {
     </form>
     <label className="campo"><span>Vai chegar em</span><CampoPrivado className="inp" type="month" value={mes} min={min} onChange={e => setMes(e.target.value)} /><small>O mês novo tem que ser depois do previsto. Em uma série, muda só a primeira ocorrência.</small></label>
     <button className="btn line full" type="button" disabled={ocupado || !mesReceitaValido(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar para {mesReceitaValido(mes) ? textoPrivado(mesCurto(mes)) : 'o mês novo'}</button>
-    <button className="btn ghost full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Toque de novo para tirar' : 'Não vai mais entrar: tirar da lista'}</button>
+    {certeza && <p role="status">Tirar {textoPrivado(r.descricao)} da lista? Deixa de entrar na previsão. O histórico fica guardado.</p>}
+    <button className="btn ghost full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Confirmar: tirar ' + textoPrivado(r.descricao) : 'Não vai mais entrar: tirar da lista'}</button>
   </Sheet>
 }
 
@@ -126,7 +128,7 @@ function RecebimentosCasal() {
         delete recebidas[mes]
         if (!await fontes.salvarControle(r.id, { ...atual, recebidas })) throw new Error('Não foi possível desfazer. Tente novamente.')
       }) : await tentar(() => api.recebimentoMudar!(familia.id, r.id, { recebido_em: r.recebido_em, valor_recebido: r.valor_recebido }))
-      if (!desfeito) usado = false
+      if (!desfeito) { usado = false; throw new Error('Não foi possível desfazer.') }
       invalidarDados(api, familia.id); setN(x => x + 1)
     })
     return true
@@ -203,9 +205,9 @@ function NovoReceb({ fechar, salvar, salvo }: { fechar: () => void; salvar: (r: 
     } catch { setErro('Aguardando conferência. Não foi possível reler a lista. Tente conferir novamente.') }
     finally { trava.current = false; setOcupado(false) }
   }
-  const [desc, setDesc] = useState(''), [v, setV] = useState(''), [mes, setMes] = useState(proximo(hojeRecife().slice(0, 7)))
-  const [tipo, setTipo] = useState<TipoRecebimento>('contrato'), [erro, setErro] = useState('')
-  const [fonte, setFonte] = useState<FonteReceita | null>(null)
+  const [desc, setDesc] = useRascunho('cadastro:receita:desc', ''), [v, setV] = useRascunho('cadastro:receita:v', ''), [mes, setMes] = useRascunho('cadastro:receita:mes', proximo(hojeRecife().slice(0, 7)))
+  const [tipo, setTipo] = useRascunho<TipoRecebimento>('cadastro:receita:tipo', 'contrato'), [erro, setErro] = useState('')
+  const [fonte, setFonte] = useRascunho<FonteReceita | null>('cadastro:receita:fonte', null)
   return (
     <Sheet titulo="Novo recebimento" fechar={() => { if (!ocupado && !aguardando) fechar() }}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {

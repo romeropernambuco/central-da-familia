@@ -1,3 +1,6 @@
+import { desfazer } from '../../app/desfazer'
+import { BarraDesfazer } from '../../componentes/BarraDesfazer'
+import { Fragment } from 'react'
 import { act, createElement, type ReactElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -7,7 +10,7 @@ import { apiExemplo } from '../../api/exemplo'
 import type { Api } from '../../api/tipos'
 import { Casa } from '../casa/Casa'
 const roots: Root[] = []
-afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
+afterEach(async () => { await act(async () => desfazer.limpar()); for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
 const pendente = <T,>() => { let resolver!: (v: T) => void; let rejeitar!: (e: Error) => void; const promessa = new Promise<T>((r, j) => { resolver = r; rejeitar = j }); return { promessa, resolver, rejeitar } }
 const props = (n: NoTeste) => Object.entries(n).find(([k]) => k.startsWith('__reactProps'))![1] as any
 async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<Ctx> = {}) {
@@ -25,7 +28,7 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
   let ctx = { api: { ...apiExemplo, membros: async () => [], config: async (_f: string, _k: string, p: unknown) => p, escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }), ...api }, familia: { id: 'a', papel: 'casal', nome: 'Teste' }, resumo: null, sessao: null, versao: 0, toast() {}, recarregar: async () => {}, tentar: async (f: () => Promise<unknown>) => { try { await f(); return true } catch { return false } }, ...extra } as Ctx
   const box = doc.createElement('div'); doc.body.appendChild(box)
   const root = createRoot(box as unknown as HTMLElement); roots.push(root)
-  const render = async (c: Partial<Ctx> = {}) => { ctx = { ...ctx, ...c }; await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, el))) }
+  const render = async (c: Partial<Ctx> = {}) => { ctx = { ...ctx, ...c }; await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(Fragment, null, el, createElement(BarraDesfazer))))) }
   await render()
   const find = (tag: string, text: string) => box.buscar(n => n.tagName === tag && (n.textContent === text || n.getAttribute('aria-label') === text))[0]
   const click = async (text: string) => { const b = find('BUTTON', text); expect(b, text).toBeDefined(); await act(async () => b.click()) }

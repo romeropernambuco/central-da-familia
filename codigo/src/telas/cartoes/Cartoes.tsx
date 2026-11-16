@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoValor, CampoPrivado } from '../../componentes/privacidade'
 import { compromissoNesteMes, fraseParcelamento, mesesDaSimulacao } from './simulacao'
@@ -159,9 +160,9 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
 }
 
 function NovoCartao({ fechar, salvar }: { fechar: () => void; salvar: (c: Omit<Cartao, 'id'>) => Promise<void> }) {
-  const [nome, setNome] = useState('')
-  const [fe, setFe] = useState('')
-  const [ve, setVe] = useState('')
+  const [nome, setNome] = useRascunho('cadastro:cartao:nome', '')
+  const [fe, setFe] = useRascunho('cadastro:cartao:fe', '')
+  const [ve, setVe] = useRascunho('cadastro:cartao:ve', '')
   const [erro, setErro] = useState('')
   return (
     <Sheet titulo="Novo cartão" fechar={fechar}>

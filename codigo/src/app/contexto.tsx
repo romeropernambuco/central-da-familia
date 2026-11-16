@@ -1,3 +1,8 @@
+import { FilaPendentes } from '../componentes/FilaPendentes'
+import { pendentes } from './pendentes'
+import { desfazer } from './desfazer'
+import { limparRascunhos } from './rascunhos'
+import { BarraDesfazer } from '../componentes/BarraDesfazer'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Api } from '../api'
 import type { FamiliaMinha, LinhaExplicacao, ResumoHoje, Sessao } from '../api/tipos'
@@ -43,6 +48,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [resumo, setResumo] = useState<ResumoHoje | null>(null)
   const [versao, setVersao] = useState(0)
+  const [revisaoDesfazer, revisarDesfazer] = useState(0)
   const [toastE, setToast] = useState<Toast | null>(null)
   const [lancarAberto, setLancar] = useState<PreLancar | null>(null)
   const [exp, setExp] = useState<Explicar | null>(null)
@@ -70,7 +76,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sessão caiu (token vencido, saiu em outro aparelho): limpa o que está na memória e volta pra tela de entrar. */
   const sessaoCaiu = useCallback(async () => {
-    setResumo(null); setLancar(null); setExp(null)
+    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* já estava fora */ } finally { saindo.current = false }
     setSessao(null); setErro(null)
@@ -79,7 +85,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sair por vontade própria: limpa tudo da memória e volta pra tela de entrar, sem aviso de erro. */
   const sair = useCallback(async () => {
-    setResumo(null); setLancar(null); setExp(null)
+    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* sem rede: sai do aparelho do mesmo jeito */ } finally { saindo.current = false }
     await trocarSessao()
@@ -112,7 +118,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
   useEffect(() => api.aoSairSessao?.(() => {
     if (saindo.current) return
-    setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
+    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
     setToast({ msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() })
   }), [api])
 
@@ -131,9 +137,12 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }, [familia?.id, recarregar])
 
   useEffect(() => { const f = () => setToast(t => (t?.desfazer ? t : null)); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
-  const toast = useCallback((msg: string, desfazer?: () => void | Promise<void>) => setToast({ msg, desfazer, id: Date.now() }), [])
+  const toast = useCallback((msg: string, inverso?: () => void | Promise<void>) => {
+ if (inverso) { desfazer.registrar({ rotulo: 'Última ação', desfazer: async () => { await inverso(); return true } }); setToast(null) }
+ else setToast({ msg, id: Date.now() })
+ }, [])
   // E3 (conserto 6): com o aviso na tela, a página ganha folga embaixo: nada fica escondido atrás dele (Lançar um gasto, Por que mudou?)
-  useEffect(() => { document.body.classList.toggle('com-aviso', !!toastE); return () => document.body.classList.remove('com-aviso') }, [toastE])
+  useEffect(() => { document.body.classList.toggle('com-aviso', !!toastE || !!desfazer.atual); return () => document.body.classList.remove('com-aviso') }, [toastE, revisaoDesfazer])
   useEffect(() => {
     if (!toastE) return
     // com Desfazer o aviso fica 10 s (dá tempo de ler e tocar); sem, 4 s
@@ -150,6 +159,13 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     }
   }, [sessaoCaiu])
 
+  useEffect(() => {
+    let concluidas = desfazer.concluidas
+    return desfazer.ouvir(() => {
+      revisarDesfazer(n => n + 1)
+      if (desfazer.concluidas !== concluidas) { concluidas = desfazer.concluidas; void trocarSessao(); void recarregar() }
+    })
+  }, [recarregar, trocarSessao])
   const v: Ctx = {
     api, sessao, familia, resumo, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
     // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
@@ -159,6 +175,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   return (
     <ContextoApp.Provider value={v}>
       {children}
+      <BarraDesfazer />
+      <FilaPendentes />
       {exp && (
         <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
           <p className="corpo"><b>{textoPrivado(exp.titulo, oculto)}</b></p>
@@ -166,7 +184,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
         </Sheet>
       )}
       {toastE && (
-        <div className="toast" role="status" key={toastE.id}>
+        <div className="toast" style={desfazer.atual ? { bottom: 150 } : undefined} role="status" key={toastE.id}>
           <span>{textoPrivado(toastE.msg, oculto)}</span>
           {toastE.desfazer && <button type="button" onClick={() => { const d = toastE.desfazer!; setToast(null); tentar(async () => { await d() }) }}>Desfazer</button>}
         </div>

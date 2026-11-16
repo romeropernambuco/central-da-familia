@@ -1,3 +1,4 @@
+import { rascunhos } from '../app/rascunhos'
 import { Ajustes } from '../telas/ajustes/Ajustes'
 import { Cartoes } from '../telas/cartoes/Cartoes'
 import { MeuOrcamento } from '../telas/meu-orcamento/MeuOrcamento'
@@ -371,7 +372,7 @@ it('UX: Não gastei não conquista primeiro gasto; lançamento real conquista', 
 it('UX: rascunho recupera valor protegido, oferece olho na folha e descarta', async () => {
  const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
  const chave = 'anotar:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
- const storage = new Map([[chave, JSON.stringify({ txt: '753,21', desc: 'Teste privado', quando: hojeRecife(), cartao: null, envelope: familia.envelopeId, parcelas: 1 })]])
+ rascunhos.clear(); const storage = rascunhos; storage.set(chave, { txt: '753,21', desc: 'Teste privado', quando: hojeRecife(), cartao: null, envelope: familia.envelopeId, parcelas: 1 })
  vi.stubGlobal('sessionStorage', { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) })
  esconderValores(true)
  const a = await montar(createElement(Lancar), {}, false, { resumo: await apiExemplo.resumoHoje(familia.id), lancarAberto: {}, oculto: true })
@@ -386,7 +387,7 @@ it('UX: rascunho recupera valor protegido, oferece olho na folha e descarta', as
 it('UX: compra da equipe recupera só texto e limpa após salvar', async () => {
  const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
  const chave = 'compra-equipe:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
- const storage = new Map<string, string>()
+ rascunhos.clear(); const storage = rascunhos
  vi.stubGlobal('sessionStorage', { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) })
  const api = { anotarCompraEquipe: vi.fn().mockResolvedValue({ aviso: 'Compra anotada.' }) }
  const a = await montar(createElement(Lancar), api, true, { lancarAberto: {}, fecharLancar: vi.fn() })

@@ -1,3 +1,4 @@
+import { rascunhos } from '../app/rascunhos'
 import { act, createElement, Fragment, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -136,13 +137,13 @@ async function dadosRascunho() {
  const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
  const chave = 'anotar:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
  const equipe = 'compra-equipe:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
- const valor = JSON.stringify({ txt: '753,21', desc: 'SEGREDO-RASCUNHO', quando: hojeRecife(), cartao: null, envelope: familia.envelopeId || '', parcelas: 1 })
+ const valor = { txt: '753,21', desc: 'SEGREDO-RASCUNHO', quando: hojeRecife(), cartao: null, envelope: familia.envelopeId || '', parcelas: 1 }
  const resumo = await apiExemplo.resumoHoje(familia.id)
  return { sessao, familia, chave, equipe, valor, resumo }
 }
-function storageFalso(inicial: [string, string][] = []) {
- const mapa = new Map(inicial)
- vi.stubGlobal('sessionStorage', { getItem: (k: string) => mapa.get(k) ?? null, setItem: (k: string, v: string) => mapa.set(k, v), removeItem: (k: string) => mapa.delete(k) })
+function storageFalso(inicial: [string, unknown][] = []) {
+ rascunhos.clear(); const mapa = rascunhos; for(const [k,v] of inicial) mapa.set(k,v)
+ vi.stubGlobal('sessionStorage', { getItem: (k: string) => mapa.get(k) ?? null, setItem: () => { throw new Error('Rascunho não pode ir para disco') }, removeItem: (k: string) => mapa.delete(k) })
  return mapa
 }
 it.each(['cheio', 'indisponível'])('cobertura rascunho: storage %s não impede editar e salvar', async erro => {
@@ -186,7 +187,7 @@ it.each(['salvar', 'descartar'])('cobertura rascunho: %s apaga e não recupera n
   if (acao === 'descartar') await a.clicar('Descartar')
   else {
    const salvar = a.container.buscar(n => !!n.getAttribute('aria-label')?.startsWith('Salvar em '))[0]
-   await act(async () => salvar.click()); expect(lancar).toHaveBeenCalledTimes(1)
+   await act(async () => salvar.click()); expect(a.container.textContent).toContain('bem acima do seu normal'); const confirmar = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent.startsWith('Confirmar '))[0]; expect(confirmar).toBeDefined(); await act(async () => confirmar.click()); expect(lancar).toHaveBeenCalledTimes(1)
   }
   expect(mapa.has(d.chave)).toBe(false)
  } finally { await a.fechar() }

@@ -1,3 +1,5 @@
+import { desfazer, type AcaoDesfazivel } from '../../app/desfazer'
+import { useRascunho } from '../../app/useRascunho'
 import { Conferencia } from '../../componentes/Conferencia'
 import { nomeInformado } from '../../lib/nomePessoa'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -140,7 +142,7 @@ function Feira() {
             ))}
           </ul>
           {!lista.length && !falhaLista && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Escreva abaixo o que falta em casa.</Vazio>}
-          <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={e => { e.preventDefault(); if (novo.trim()) { setLista([...lista, { id: novoId(), nome: novo.trim(), ok: false }]); setNovo('') } }}>
+          <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await setLista([...lista, { id: novoId(), nome: novo.trim(), ok: false }])) setNovo('') }}>
             <CampoPrivado className="inp" placeholder="Acrescentar item" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Novo item da lista" />
             <button className="btn line" type="submit" aria-label="Acrescentar"><Plus size={20} /></button>
           </form>
@@ -224,14 +226,14 @@ function Prestadores() {
         })}
       </div>
       <button className="btn line" type="button" style={{ justifySelf: 'start' }} onClick={() => setNovo(true)}><Plus size={20} />Novo serviço</button>
-      {novo && <NovoPrestador fechar={() => setNovo(false)} salvar={p => { setPs([...ps, p]); setNovo(false) }} />}
+      {novo && <NovoPrestador fechar={() => setNovo(false)} salvar={async p => { if (await setPs([...ps, p])) setNovo(false) }} />}
     </div>
   )
 }
 function amanhã(d: string, hoje: string) { return d === somaDias(hoje, 1) ? 'amanhã' : `${diaSemana(d)}, ${dataCurta(d)}` }
 
-function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Prestador) => void }) {
-  const [nome, setNome] = useState(''), [serv, setServ] = useState(''), [dia, setDia] = useState(6), [valor, setValor] = useState('')
+function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Prestador) => Promise<void> }) {
+  const [nome, setNome] = useRascunho('cadastro:prestador:nome', ''), [serv, setServ] = useRascunho('cadastro:prestador:serv', ''), [dia, setDia] = useRascunho('cadastro:prestador:dia', 6), [valor, setValor] = useRascunho('cadastro:prestador:valor', '')
   return (
     <Sheet titulo="Novo serviço da casa" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && serv) salvar({ id: novoId(), nome, servico: serv, dia, valor: textoParaValor(valor) }) }}>
@@ -319,13 +321,13 @@ function FolhaCasa() {
         {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês para férias e 13º.</p>}
         <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Plus size={20} />Cadastrar pessoa</button>
       </section>
-      {nova && <NovaPessoa fechar={() => setNova(false)} salvar={p => { setFolha({ ...folha, pessoas: [...folha.pessoas, p] }); setNova(false) }} />}
+      {nova && <NovaPessoa fechar={() => setNova(false)} salvar={async p => { if (await setFolha({ ...folha, pessoas: [...folha.pessoas, p] })) setNova(false) }} />}
     </div>
   )
 }
 
 function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: PessoaFolha) => void }) {
-  const [nome, setNome] = useState(''), [funcao, setFuncao] = useState(''), [sal, setSal] = useState('')
+  const [nome, setNome] = useRascunho('cadastro:assessor:nome', ''), [funcao, setFuncao] = useRascunho('cadastro:assessor:funcao', ''), [sal, setSal] = useRascunho('cadastro:assessor:sal', '')
   return (
     <Sheet titulo="Assessores da Casa" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && sal) salvar({ id: novoId(), nome, funcao: funcao || 'Assessor da Casa', salario: textoParaValor(sal) }) }}>
@@ -349,16 +351,19 @@ function CasaEquipe() {
   const [ocupado, setOcupado] = useState(false)
   const [confirmarGas, setConfirmarGas] = useState(false)
   const [pendente, setPendente] = useState<{ tipo: MarcaCasa; dados: { id?: string; nome?: string }; aviso?: string } | null>(null)
+  const acaoAgendada = useRef<AcaoDesfazivel | null>(null)
   const aguardando = useRef(false)
   const agendar = (tipo: MarcaCasa, dados: { id?: string; nome?: string } = {}, aviso?: string) => {
     if (aguardando.current || trava.current) return
     aguardando.current = true
     setPendente({ tipo, dados, aviso })
+    const acao: AcaoDesfazivel = { rotulo: 'Envio agendado', desfazer: async () => { cancelar(); return true } }
+    acaoAgendada.current = acao; desfazer.registrar(acao)
   }
   const cancelar = () => { aguardando.current = false; setPendente(null) }
   useEffect(() => {
     if (!pendente) return
-    const timer = setTimeout(() => { aguardando.current = false; setPendente(null); void marcar(pendente.tipo, pendente.dados, pendente.aviso) }, 6000)
+    const timer = setTimeout(() => { if (desfazer.atual === acaoAgendada.current) desfazer.dispensar(); acaoAgendada.current = null; aguardando.current = false; setPendente(null); void marcar(pendente.tipo, pendente.dados, pendente.aviso) }, 6000)
     return () => clearTimeout(timer)
   }, [pendente, familia?.id])
   const pedido = useRef(0)
@@ -390,7 +395,7 @@ function CasaEquipe() {
       <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
       <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Flame size={24} />O gás acabou</button>
       {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); agendar('acabou', { nome: 'Gás de cozinha' }, 'Gás posto na lista de compras.') }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
-      {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span><button className="btn line" type="button" onClick={cancelar}>Desfazer</button></div>}
+      {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span></div>}
       <PrecisaDeVoce equipe />
       <EstadoEstoqueEquipe />
       <div className="tela-larga">
