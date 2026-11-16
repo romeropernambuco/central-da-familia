@@ -14,7 +14,7 @@ export function Painel() {
   if (!sessao?.dono) return <div className="card"><p className="todo"><Lock size={20} aria-hidden="true" />Esta tela é só do dono do produto.</p></div>
   return (
     <div className="view">
-      <RumoA2029 />
+      <RumoA2029 oficial />
       <p className="sub">Os 4 números que dizem se o app está funcionando, olhados toda segunda. Cada card explica de onde vem.</p>
       {erro && <p className="todo warn">{textoPrivado(erro)}</p>}
       <div className="nums">

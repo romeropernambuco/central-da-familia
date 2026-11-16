@@ -1,4 +1,68 @@
-import { futuro, gastoNaVirada, listaMeses, proximoMes, type FuturoEntrada, type FuturoSaida } from '../lib/futuro'
+import { futuro, rendaSustentavel, gastoNaVirada, listaMeses, proximoMes, type FuturoEntrada, type FuturoSaida } from '../lib/futuro'
+
+/** Valores em centavos; faltas negativas significam sobra. A decisão é a folga do motor, com margem. */
+export function numerosRumo2029(s: FuturoSaida, e: FuturoEntrada) {
+  const gasto_necessario = s.renda?.gasto_do_mes ?? gastoNaVirada(e.parametros.gasto_2029_hoje, e.parametros.mes_base, e.parametros.virada, e.parametros.ipca_ano)
+  const renda = (s.renda_total_2029 ?? s.renda_sustentavel) + e.parametros.renda_certa_2029
+  const falta_sem_margem = gasto_necessario - renda
+  const falta_com_margem = s.patrimonio_necessario === null ? null : s.folga < 0
+    ? s.ajustes_falta!.cortar_por_mes_2029
+    : -rendaSustentavel(s.folga, s.renda?.taxa_real_anual ?? e.parametros.taxa_real_trabalho)
+  const margem = falta_com_margem === null ? null : falta_com_margem - falta_sem_margem
+  const alvo = margem === null ? 0 : gasto_necessario + margem
+  return { gasto_necessario, renda, falta_sem_margem, margem, falta_com_margem,
+    cobre_pct: gasto_necessario > 0 && alvo > 0 ? renda / alvo * 100 : null }
+}
+
+/** Usa a saída do mesmo cenário do seletor; receitas acumuladas já estão nas aplicações. */
+export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown, detalhes = true): RumoCalculado {
+  const n = numerosRumo2029(s, e)
+  const referencia = s.renda?.mes ?? e.parametros.virada
+  const recorrentes = receitasNoMes(e, lerFontes(config), referencia).map(r => ({ ...r, entra: false,
+    nota: 'Fora da renda mensal direta. Entradas até dez/2028 já compõem as aplicações, conforme o cenário.' }))
+  const linha = detalhes && referencia <= '2031-12' ? listaMeses(referencia, '2031-12').map(mes => {
+    const entrada = preparar(e, {}, mes)
+    // Preserva as receitas do adaptador, sem criar uma segunda regra de recorrência.
+    entrada.recebimentos = e.recebimentos
+    entrada.parametros.renda_certa_2029 = e.parametros.renda_certa_2029
+    const m = numerosRumo2029(futuro(entrada), entrada)
+    return { mes, renda: m.renda, gasto: m.gasto_necessario, cobertura: m.cobre_pct }
+  }) : []
+  const alavancas: Alavanca[] = []
+  const efeito = (nova: FuturoEntrada) => Math.round((n.falta_com_margem ?? 0) - (numerosRumo2029(futuro(nova), nova).falta_com_margem ?? 0))
+  if (detalhes && referencia === '2029-01') {
+    const guardar = s.ajustes_falta?.guardar_por_mes ?? 0
+    const meses = listaMeses(proximoMes(e.hoje.slice(0, 7)), '2028-12')
+    if (guardar > 0 && meses.length) alavancas.push({ id: 'guardar', texto: 'Guardar a mais por mês', valor: guardar,
+      efeito: efeito({ ...e, recebimentos: [...e.recebimentos, ...meses.map(m => ({ id: `simular:${m}`, dono: '', valor: guardar, mes_previsto: m, mes_novo: null, certo: true, recebido: false }))] }),
+      premissa: 'Depósitos no fim de cada mês até dez/2028; hipótese independente com margem de segurança.' })
+    const corte = Math.min(e.parametros.gasto_2029_hoje, s.ajustes_falta?.cortar_por_mes_2029 ?? 0)
+    if (corte > 0) alavancas.push({ id: 'cortar', texto: 'Reduzir o gasto mensal (valor de hoje)', valor: corte,
+      efeito: efeito({ ...e, parametros: { ...e.parametros, gasto_2029_hoje: e.parametros.gasto_2029_hoje - corte } }), premissa: 'Hipótese independente, com inflação e margem de segurança do motor.' })
+    for (const i of e.imoveis ?? []) {
+      if (i.uso === 'mora' || i.aluguel_bruto <= 0 || (i.tem_contrato && (i.contrato_ate ?? '') >= '2029-12')) continue
+      alavancas.push({ id: `imovel:${i.id}`, texto: `Se houver contrato até dez/2029: ${i.apelido}`, valor: 0,
+        efeito: efeito({ ...e, imoveis: e.imoveis!.map(x => x.id === i.id ? { ...x, tem_contrato: true, contrato_ate: '2029-12' } : x) }),
+        premissa: 'Hipótese de contrato, com os mesmos custos, vacância e imposto; não é promessa.' })
+    }
+    for (const r of e.recebimentos) {
+      const antecipar = proximoMes(e.hoje.slice(0, 7))
+      if (!r.certo || r.recebido || r.id.includes('@') || (r.mes_novo ?? r.mes_previsto) <= antecipar || antecipar >= '2029-01') continue
+      alavancas.push({ id: `receita:${r.id}`, texto: `Se antecipar: ${r.descricao || 'recebimento'}`, valor: r.valor,
+        efeito: efeito({ ...e, recebimentos: e.recebimentos.map(x => x.id === r.id ? { ...x, mes_novo: antecipar } : x) }),
+        premissa: `Hipótese de recebimento em ${antecipar}, mesmo valor, sem custo de antecipação e sem mudar o cadastro.` })
+    }
+  }
+  return { referencia, saida: s, numeros: n, gasto: n.gasto_necessario, total: n.renda,
+    cobertura: n.cobre_pct, falta: Math.max(0, n.falta_com_margem ?? 0), aplicacoes: s.renda_sustentavel,
+    alugueis: s.aluguel_liquido_2029 ?? 0, rendaCerta: e.parametros.renda_certa_2029, recorrentes, linha,
+    cobreEm: linha.find(m => m.cobertura !== null && m.cobertura >= 100)?.mes ?? null,
+    alavancas: alavancas.filter(a => a.efeito > 0).sort((a, b) => b.efeito - a.efeito).slice(0, 3),
+    premissas: ['A decisão usa a margem de segurança do motor, aplicada ao gasto após descontar renda certa e aluguéis elegíveis.',
+      'Receitas recorrentes não são renda permanente no motor: entradas até dez/2028 compõem o patrimônio das aplicações. Previsto e incerto só entram no cenário escolhido.',
+      'Garantido descreve o cadastro, não uma promessa. Rendimentos são estimativas. Renda certa do Objetivo mantém a origem cadastrada a confirmar.',
+      'Quando cobre simula cada mês com margem de segurança; anos sem taxa repetem a última Selic e o último IPCA. Não garante os meses seguintes.'] }
+}
 
 type Origem = 'empresa' | 'negocio_novo' | 'aluguel' | 'salario' | 'outro'
 type Certeza = 'garantido' | 'provavel' | 'incerto'
@@ -18,6 +82,8 @@ export interface FonteMensal { id: string; nome: string; valor: number; grupo: '
 export interface CoberturaMes { mes: string; renda: number; gasto: number; cobertura: number | null }
 export interface Alavanca { id: string; texto: string; valor: number; efeito: number; premissa: string }
 export interface RumoCalculado {
+  numeros: ReturnType<typeof numerosRumo2029>
+  rendaCerta?: number
   referencia: string
   saida: FuturoSaida; gasto: number; total: number; cobertura: number | null; falta: number
   aplicacoes: number; alugueis: number; recorrentes: FonteMensal[]; linha: CoberturaMes[]
@@ -69,7 +135,7 @@ function medir(e: FuturoEntrada, fontes: FontesReceita, mes: string) {
   const recorrentes = receitasNoMes(e, fontes, mes)
   const aplicacoes = saida.renda_sustentavel, alugueis = saida.aluguel_liquido_2029 ?? 0
   const total = aplicacoes + alugueis + recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0)
-  return { entrada, saida, gasto, aplicacoes, alugueis, recorrentes, total, cobertura: gasto > 0 ? total / gasto * 100 : null, falta: Math.max(0, gasto - total) }
+  return { numeros: numerosRumo2029(saida, entrada), entrada, saida, gasto, aplicacoes, alugueis, recorrentes, total, cobertura: gasto > 0 ? total / gasto * 100 : null, falta: Math.max(0, gasto - total) }
 }
 
 /** Todos os cenários passam pelo mesmo motor; nenhuma previsão é gravada. Ver DEFINICOES-PROVISORIAS.md. */

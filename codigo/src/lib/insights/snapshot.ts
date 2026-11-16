@@ -1,6 +1,7 @@
 import type { Cartao, FamiliaMinha, Fatura, FaturaBanco, Feira, GuardadoHoje, Lancamento, RecebimentoTela, ResumoHoje } from '../../api/tipos'
-import type { FuturoSaida } from '../futuro'
-import { simularCompra } from '../formato'
+import type { FuturoEntrada, FuturoSaida } from '../futuro'
+import { reais, simularCompra } from '../formato'
+import { numerosRumo2029 } from '../../app/rumo2029'
 import { cartaoMeu } from '../../app/dono'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { FaturaInsight, SnapshotInsights } from './tipos'
@@ -15,6 +16,7 @@ export interface LeiturasInsights {
   cartoes?: Cartao[]; faturas?: Fatura[]; banco?: FaturaBanco[]; lancamentos?: Lancamento[]
   resumo?: ResumoHoje | null; recebimentos?: RecebimentoTela[]; guardado?: GuardadoHoje
   feiras?: Feira[]; futuro?: FuturoSaida | null; mesObjetivo?: string
+  entradaObjetivo?: FuturoEntrada
 }
 /** Adapta só leituras concluídas da API selecionada; nunca importa/cria EXEMPLO como fallback. */
 export function montarSnapshot(familia: FamiliaMinha, modo: SnapshotInsights['modo'], d: LeiturasInsights, agora: unknown): SnapshotInsights {
@@ -56,6 +58,13 @@ export function montarSnapshot(familia: FamiliaMinha, modo: SnapshotInsights['mo
     const f = d.futuro
     if (f && f.modo !== 'renda' && f.linha.length && mesValido(d.mesObjetivo)) s.objetivo = {
       mes: d.mesObjetivo, projetado: f.linha[f.linha.length - 1].saldo_final, necessario: f.patrimonio_necessario,
+    }
+    if (s.objetivo && f && d.entradaObjetivo) {
+      const n = numerosRumo2029(f, d.entradaObjetivo)
+      if (n.cobre_pct !== null && n.falta_com_margem !== null) {
+        const saldo = (v: number) => `${v > 0 ? 'faltam' : 'sobram'} ${reais(Math.abs(v) / 100)} por mês`
+        s.objetivo.resumo = `Garantido: ${saldo(n.falta_com_margem)}, com margem de segurança. Sem a margem de segurança: ${saldo(n.falta_sem_margem)}; estimativa, confira as premissas no cartão.`
+      }
     }
   }
   if (familia.papel === 'casal' || familia.papel === 'equipe') s.feiras = d.feiras?.map(f => ({

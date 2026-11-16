@@ -67,7 +67,7 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
     const o = s.objetivo
     if (o && mesValido(o.mes) && o.mes >= t.dia.slice(0, 7) && inteiro(o.projetado) && inteiro(o.necessario) && o.projetado < o.necessario)
       add('objetivo', 'planejamento', 'tesoureiro', ['objetivo', o.mes, t.dia.slice(0, 7)],
-        'O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?', { tipo: 'atalho', destino: '#/planejamento?aba=parametros' }, [op('abrir', 'Revisar aportes ou premissas')])
+        'O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?', { tipo: 'atalho', destino: '#/planejamento?aba=parametros' }, [op('abrir', 'Revisar aportes ou premissas')], o.resumo)
   }
   // A Casa é a única superfície da equipe; nenhum valor/nome de feira entra na proposta.
   if (s.papel === 'casal' || s.papel === 'equipe') for (const f of lista(s.feiras)) {
