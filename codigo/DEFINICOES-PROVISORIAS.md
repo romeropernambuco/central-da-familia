@@ -1,3 +1,9 @@
+# Definições provisórias para o dono confirmar
+
+Cada linha é uma regra que uma frente de melhoria precisou definir sozinha. Nenhuma altera o banco. Confirme, mude ou recuse cada uma.
+
+## Receitas de empresas e novos negócios
+
 PROVISÓRIA — A recorrência mantém o valor nominal e a cadência do mês original; fim inclusivo, limitado a dez/2031; dia do recebimento não é previsto porque o cadastro só tem mês; para evitar reajustes e dias inventados; api/futuro.ts: mesesDaReceita e prepararReceitas.
 PROVISÓRIA — Mudar o mês desloca só a primeira ocorrência, sem mudar a cadência da série; preserva a regra existente de adiamento e evita mover toda a série sem decisão do dono; api/futuro.ts: prepararReceitas, telas/planejamento/Recebimentos.tsx: MudarReceb.
 PROVISÓRIA — A chave receitas_controle guarda por recebimento valor em centavos, atualizado_em e recebidas por mês original com data e valor real; o banco quita só a primeira ocorrência e as confirmações seguintes não criam linhas; mantém o contrato fixo fontes_receita e evita contagem duplicada; api/tipos.ts: ControleReceitas, api/futuro.ts: prepararReceitas, app/useFontesReceita.ts.
@@ -6,3 +12,17 @@ PROVISÓRIA — Sem metadados mantém o comportamento atual; cadastro sem tocar 
 PROVISÓRIA — Receitas até dez/2031 são ocorrências finitas; o motor atual só conta as entradas até dez/2028 e não converte receita de empresa pós-2028 em renda perpétua; não inventa sustentabilidade de renda nem altera o motor; componentes/CenariosReceitas.tsx, app/useCenarioReceitas.ts.
 PROVISÓRIA — Faltam/sobram por mês inclui a margem do Objetivo; quando cobre informa se cobre a meta de jan/2029, sem inventar uma data de independência antecipada; usa corte e rendaSustentavel do motor; componentes/CenariosReceitas.tsx.
 PROVISÓRIA — Última atualização é a data do cadastro/edição da fonte e valor; sem data aparece pedido de conferência, sem prazo automático para vencer; não inventa um intervalo de validade; telas/planejamento/Recebimentos.tsx: concluir e salvarFonte.
+
+## Rumo a 2029
+
+- PROVISÓRIA — Rumo a 2029 exclui `renda_certa_2029` sem origem, salários e verbas; evita depender de salário ou duplicar aluguel, sem alterar o objetivo original; `src/app/rumo2029.ts:preparar`.
+- PROVISÓRIA — Só receitas mensais de empresa/negócio com certeza garantida e `certo=true`, início válido e duração de pelo menos 12 meses compõem a cobertura; sem fim presume continuidade, explicitamente a confirmar; anuais ficam fora da cobertura mensal (pagamentos certos anteriores à data compõem o capital); `src/app/rumo2029.ts:receitasNoMes/preparar`.
+- PROVISÓRIA — Origem aluguel em recebimentos fica fora deste painel para evitar duplicidade com imóveis; sem classificação, recebimentos certos anteriores a 2029 seguem no capital do motor, mas nunca viram renda recorrente; `src/app/rumo2029.ts:preparar`.
+- PROVISÓRIA — Cobertura compara renda com gasto corrigido pelo motor, sem a margem patrimonial; a margem permanece visível e nas sugestões originais do motor; `src/app/rumo2029.ts:medir`.
+- PROVISÓRIA — “Quando cobre” compara cenários de início da vida de rendimentos em cada mês até dez/2031, mantendo teto e fluxos até cada data; não é simulação de retiradas após aposentadoria nem garantia dos meses seguintes; faltas de taxa em anos futuros repetem a última Selic/IPCA informada, sempre declarado; `src/app/rumo2029.ts:preparar/calcularRumo`.
+- PROVISÓRIA — Alavancas são cenários independentes ordenados pela melhora da diferença renda menos gasto em 2029, com até três resultados positivos; guardar/cortar usam o ajuste original do motor sem receitas recorrentes, contrato mantém aluguel/custos/vacância e antecipação presume ausência de custo; `src/app/rumo2029.ts:calcularRumo`.
+- PROVISÓRIA — Frescor mede dias de calendário no fuso da família, verde 0–30, âmbar 31–60 e vermelho acima de 60; data ausente, futura ou inválida é sem conferência e não é chamada de “mais de 60 dias”; `src/app/useNumerosAtualizados.ts:frescor`.
+- PROVISÓRIA — Salvar imóvel existente ou alterar recebimento existente confirma a data após sucesso; aplicação só confirma no movimento `saldo_conferido` (aporte/resgate não conferem saldo); observação local persiste durante a navegação aos formulários, sem alterar resultados da operação; novos itens sem ID retornado dependem de conferência explícita; `src/app/useNumerosAtualizados.ts:acompanharConferencias`.
+- PROVISÓRIA — Modo exemplo guarda conferências somente na memória desta demonstração e não produz aviso de números antigos; `src/app/useNumerosAtualizados.ts:marcarConferencia` e `src/componentes/RumoA2029.tsx`.
+- PROVISÓRIA — A folha reutiliza edição de imóveis e oferece os destinos existentes do Gestor/recebimentos; saldo em conta não tem formulário disponível e recebimentos não permitem editar valor, limitações expostas sem fabricar atalhos; `src/componentes/AtualizarNumeros.tsx`.
+- PROVISÓRIA — Valores de receitas de empresas são os cadastrados, sem modelo de impostos/despesas do negócio; a tela pede confirmar o líquido disponível para a família; após jan/2029 a referência passa a ser o mês atual, sem reconstituir saldo histórico; src/app/rumo2029.ts:calcularRumo e src/componentes/RumoA2029.tsx.

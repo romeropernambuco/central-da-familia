@@ -119,11 +119,14 @@ function ParametrosFamilia() {
       <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.</p>
 
       {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
+      <details><summary>Ver plano de caixa original e renda certa do objetivo</summary>
+      <p className="sub">Este plano mantém a renda certa antiga, sem identificar a origem. A cobertura sem salário está no cartão Rumo a 2029.</p>
       {saida && saida.modo === 'renda' ? <Renda2029 saida={saida} />
         : saida && ent?.entrada ? <Linha2028 saida={saida} entrada={ent.entrada} />
         : ent?.motivo ? <p className="todo warn" style={{ marginBottom: 12 }}><span>{textoPrivado(ent.motivo)}</span></p>
         : estFuturo === 'erro' ? <p className="todo warn" style={{ marginBottom: 12 }}><span>Não deu pra fazer a conta de 2029 agora: {motivoFuturo}</span></p> : null}
       {ent && ent.confirmar.length > 0 && <p className="sub" style={{ margin: '10px 0 12px' }}><b>A confirmar:</b> {ent.confirmar.join('; ')}.</p>}
+      </details>
 
       {/* C3 (sim do dono): as premissas descem pra um bloco recolhido; o gráfico e os 3 números ficam em cima */}
       <details className="numeros-conta">
