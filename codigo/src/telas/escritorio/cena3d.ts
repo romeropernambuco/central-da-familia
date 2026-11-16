@@ -16,7 +16,7 @@ import type { Cena, OpcoesCena, EstadoCena, EstadoAgente } from './cenaBase'
 import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
 import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
-import { caixaReal, montarEscritorioMini, fundirGrupos, enquadrarMini, criarApoioDasMaos } from './escritorioMini'
+import { caixaReal, montarEscritorioMini, fundirGrupos, enquadrarMini, criarApoioDasMaos, ESCALA_FUNCIONARIO_MINI } from './escritorioMini'
 import type { SalaEquipe } from './equipe'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
@@ -431,7 +431,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     const micro = ch.micro, t = ch.tempoTrabalho
     const respira = reduz ? 0 : Math.sin(micro * 2) * .006
     const emPe = !ch.escritorio && !!ATIVIDADES_MINI[ch.id]?.emPe
-    const quadril = ch.escritorio ? ch.escritorio.assento + ch.folgaQuadril : emPe ? HIP_PE : HIP_SENTADO
+    const escalaBoneco = ch.escritorio ? ESCALA_FUNCIONARIO_MINI : 1
+    const quadril = ch.escritorio ? ch.escritorio.assento / escalaBoneco + ch.folgaQuadril : emPe ? HIP_PE : HIP_SENTADO
     const alvo: any = { hy: quadril + (ch.escritorio ? 0 : respira), hx: .06, cx: .12, cy: 0,
       lx: -.7, lz: 0, le: -1.1, rx: -.7, rz: 0, re: -1.1, rez: 0,
       tl: emPe ? -.03 : -1.5, kl: emPe ? .03 : 1.5, tr: emPe ? .03 : -1.5, kr: emPe ? .02 : 1.5 }
@@ -440,7 +441,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (ch.escritorio) {
       // Mãos no teclado/objeto: a atividade continua modulando cotovelo, olhar e punho.
       const base = ch.trabalho.pose(0), ponto = ch.escritorio.teclado
-      const dy = ponto.y - quadril - .44, dz = ponto.z + .08
+      const dy = ponto.y / escalaBoneco - quadril - .44, dz = (ponto.z - .1) / escalaBoneco + .08
       const beta = Math.acos(Math.max(-1, Math.min(1, (dy * dy + dz * dz - .24 ** 2 - .285 ** 2) / (2 * .24 * .285))))
       const alpha = Math.atan2(dz, -dy) - Math.atan2(.285 * Math.sin(beta), .24 + .285 * Math.cos(beta))
       alvo.hx = 0
@@ -462,7 +463,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     }
     const tomandoCafe = st === 'parado' && pausa === 2
     ch.cafe.position.x = lerp(ch.cafe.position.x, tomandoCafe ? -.3 : -.7, k)
-    ch.cafe.position.y = lerp(ch.cafe.position.y, tomandoCafe ? quadril + .56 : ch.escritorio ? ch.escritorio.tampo + .07 : .69, k)
+    ch.cafe.position.y = lerp(ch.cafe.position.y, tomandoCafe ? (quadril + .56) * escalaBoneco : ch.escritorio ? ch.escritorio.tampo + .07 : .69, k)
     ch.cafe.position.z = lerp(ch.cafe.position.z, tomandoCafe ? .28 : .85, k)
     ch.cafe.rotation.x = lerp(ch.cafe.rotation.x, tomandoCafe ? -.2 + (reduz ? 0 : Math.sin(micro) * .035) : 0, k)
     const olhando = (chamar || resolveu) ? Math.atan2(DIR.x, DIR.z) : 0
@@ -471,8 +472,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     pose(ch, alvo, reduz || ch.pose.hy === undefined ? 1 : dt)
     if (ch.escritorio && st === 'trabalhando') {
       const variacao = reduz ? 0 : Math.sin(t * 8) * .007
-      ch.maoL.set(-.08, ch.escritorio.teclado.y - quadril + variacao, ch.escritorio.teclado.z - .1)
-      ch.maoR.set(.31, ch.escritorio.teclado.y - quadril - variacao, ch.escritorio.teclado.z - .1)
+      ch.maoL.set(-.08 / escalaBoneco, ch.escritorio.teclado.y / escalaBoneco - quadril + variacao, (ch.escritorio.teclado.z - .1) / escalaBoneco)
+      ch.maoR.set(.31 / escalaBoneco, ch.escritorio.teclado.y / escalaBoneco - quadril - variacao, (ch.escritorio.teclado.z - .1) / escalaBoneco)
       ch.apoiarMao(b.bL, ch.maoL); ch.apoiarMao(b.bR, ch.maoR)
     }
     b.olhos.scale.y = reduz ? 1 : Math.pow(Math.max(0, Math.sin(micro * 1.07)), 48) > .8 ? .08 : 1
@@ -588,22 +589,23 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         ch.b.r.traverse((m: any) => { m.castShadow = false })
         // Apoia a face inferior da coxa (26 cm × 20 cm), não o centro do quadril.
         ch.folgaQuadril = .26 * Math.cos(1.5) + .1 * Math.sin(1.5)
+        ch.b.r.scale.setScalar(ESCALA_FUNCIONARIO_MINI)
         ch.b.r.position.z = ch.S.z + .1
         ch.apoiarMao = criarApoioDasMaos(); ch.maoL = new T.Vector3(); ch.maoR = new T.Vector3()
         // Sapatos no piso do tapete, com a canela vertical e joelho dobrado.
-        for (const perna of [ch.b.pL, ch.b.pR]) perna.k.scale.y = (escritorio.assento + ch.folgaQuadril - .26 * Math.cos(1.5) - escritorio.piso) / .29
+        for (const perna of [ch.b.pL, ch.b.pR]) perna.k.scale.y = (escritorio.assento / ESCALA_FUNCIONARIO_MINI + ch.folgaQuadril - .26 * Math.cos(1.5) - escritorio.piso / ESCALA_FUNCIONARIO_MINI) / .29
         ch.escritorio = escritorio; ch.pose = {}; ch.rotacao = 0
         atualizaMini(ch, 0)
         DIR.y *= .3; DIR.normalize(); cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
         const limites = caixaReal(escritorio.raiz).union(caixaReal(ch.b.r)).union(caixaReal(ch.palco))
         // A reserva superior cobre aceno/joinha, sem variar zoom a cada gesto.
-        limites.max.y = Math.max(limites.max.y, ch.S.y + escritorio.assento + 1.24)
+        limites.max.y = Math.max(limites.max.y, ch.S.y + escritorio.assento + 1.24 * ESCALA_FUNCIONARIO_MINI)
         ch.limitesMini = limites; vPara = null; aplicaVista(vAtual)
         objetos.forEach(x => { x.visible = false }); solicitar()
       } catch (erro) {
         scene.remove(escritorio.raiz); escritorio.destruir(); ch.escritorio = null
         objeto.position.copy(posicaoAnterior); objeto.scale.copy(escalaAnterior)
-        ch.b.r.position.copy(ch.S); ch.b.pL.k.scale.y = ch.b.pR.k.scale.y = 1; ch.pose = {}
+        ch.b.r.position.copy(ch.S); ch.b.r.scale.setScalar(1); ch.b.pL.k.scale.y = ch.b.pR.k.scale.y = 1; ch.pose = {}
         DIR.set(...(miniCamera?.direcao || [1, .86, 1])).normalize()
         cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
         aplicaVista(vAtual); throw erro
