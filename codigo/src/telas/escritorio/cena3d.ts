@@ -1,12 +1,21 @@
+/** API: const cena = montarCena(T, el, { mini: true, ...opcoes });
+ * cena.definirEstado(id, 'trabalhando' | 'chamando' | 'resolvido' | 'parado').
+ * Não remonta renderer, câmera, personagem nem acessórios. Resolvido faz joinha por
+ * 1,6s de tempo visível e volta ao trabalho; outra chamada interrompe a celebração.
+ * atualizar mantém a API legada: fila→parado, precisa→chamando, entregue→resolvido.
+ * Reduced motion: pose da atividade, render sob demanda, nenhum RAF no mini.
+ * Desempenho e contagens: atividadesMini.md. Three continua no import() tardio.
+ */
 // Cena 3D do Escritório, portada do protótipo aprovado (design2/escritorio3d.html): prédio em corte, 5 salas,
 // bonecos low poly feitos por código, câmera isométrica. A animação é o estado: sentado parado (vai começar),
 // digitando (trabalhando), recostado com pilha de papel (entregue), de pé na frente da sala acenando (precisa de você).
 // Não importa o Three.js: recebe as peças prontas (ver tres.ts), pra o 3D só carregar nesta tela.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Cena, OpcoesCena, EstadoCena } from './cenaBase'
+import type { Cena, OpcoesCena, EstadoCena, EstadoAgente } from './cenaBase'
 import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
+import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
   gestao: { nome: 'Gestão', rot: [9, 2.45, -5.1], cx: 9, cz: -2.5, d: 5, piso: 0xDCC9AA, tapete: 0xB9A98C },
@@ -24,6 +33,9 @@ const RESERVA = [
   { camisa: 0x4F7A78, calca: 0x2E3440, pele: 0xB98562, cabelo: 0x231A14, estilo: 'curto' },
 ]
 
+const estadoMini = (e: EstadoCena): EstadoAgente => e === 'precisa' ? 'chamando' : e === 'entregue' ? 'resolvido' : e === 'fila' ? 'parado' : 'trabalhando'
+const estadoLegado = (e: EstadoAgente): EstadoCena => e === 'chamando' ? 'precisa' : e === 'resolvido' ? 'entregue' : e === 'parado' ? 'fila' : 'trabalhando'
+
 export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const limpezas: (() => void)[] = [], recursos = new Set<any>()
   let destruida = false
@@ -36,6 +48,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     recursos.clear()
   }
   try {
+  const reduz = !!o.parado || !!window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const MOBILE = o.celular
   const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
   limpezas.push(() => { renderer.dispose(); try { renderer.forceContextLoss() } catch { /* perdido */ } })
@@ -147,14 +160,18 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     const head = grupo(hips, 0, 0.5, 0); p.head = head
     cx(0.14, 0.08, 0.14, c.pele, 0, 0.03, 0, head)
     cx(0.44, 0.4, 0.4, c.pele, 0, 0.26, 0, head)
-    /* olho com branco e pupila */
-    ;[-0.1, 0.1].forEach(x => { cx(0.08, 0.06, 0.02, 0xF7F3EC, x, 0.25, 0.204, head); cx(0.04, 0.05, 0.02, 0x2A211B, x, 0.248, 0.212, head) })
+    /* olhos articulados só no mini: piscar não achata a cabeça ou os óculos */
+    const olhos = o.mini ? grupo(head, 0, .25, 0) : head; p.olhos = olhos
+    ;[-0.1, 0.1].forEach(x => { cx(0.08, 0.06, 0.02, 0xF7F3EC, x, o.mini ? 0 : .25, .204, olhos); cx(0.04, 0.05, 0.02, 0x2A211B, x, o.mini ? -.002 : .248, .212, olhos) })
+    if (o.mini) fecha(olhos)
     cx(0.1, 0.025, 0.02, c.cabelo, -0.1, 0.335, 0.205, head); cx(0.1, 0.025, 0.02, c.cabelo, 0.1, 0.335, 0.205, head)
     cx(0.06, 0.07, 0.05, c.pele, 0, 0.2, 0.22, head)
     cx(0.12, 0.025, 0.02, 0x9A5A4C, 0, 0.12, 0.205, head)
-    cx(0.48, 0.13, 0.44, c.cabelo, 0, 0.49, 0, head); cx(0.48, 0.26, 0.1, c.cabelo, 0, 0.36, -0.19, head); cx(0.48, 0.07, 0.08, c.cabelo, 0, 0.43, 0.19, head)
-    if (c.estilo === 'longo') { cx(0.5, 0.5, 0.1, c.cabelo, 0, 0.18, -0.2, head); cx(0.07, 0.42, 0.3, c.cabelo, -0.245, 0.22, -0.05, head); cx(0.07, 0.42, 0.3, c.cabelo, 0.245, 0.22, -0.05, head) }
-    if (c.estilo === 'coque') { cx(0.2, 0.18, 0.2, c.cabelo, 0, 0.63, -0.08, head) }
+    const cabelo = o.mini ? grupo(head, 0, .4, -.08) : head; p.cabelo = cabelo
+    cx(0.48, 0.13, 0.44, c.cabelo, 0, o.mini ? .09 : .49, o.mini ? .08 : 0, cabelo); cx(0.48, 0.26, 0.1, c.cabelo, 0, .36, -.19, head); cx(0.48, 0.07, 0.08, c.cabelo, 0, .43, .19, head)
+    if (c.estilo === 'longo') { cx(0.5, 0.5, 0.1, c.cabelo, 0, o.mini ? -.22 : .18, o.mini ? -.12 : -.2, cabelo); cx(0.07, 0.42, 0.3, c.cabelo, -.245, o.mini ? -.18 : .22, o.mini ? .03 : -.05, cabelo); cx(0.07, 0.42, 0.3, c.cabelo, .245, o.mini ? -.18 : .22, o.mini ? .03 : -.05, cabelo) }
+    if (c.estilo === 'coque') { cx(0.2, 0.18, 0.2, c.cabelo, 0, o.mini ? .23 : .63, o.mini ? 0 : -.08, cabelo) }
+    if (o.mini) fecha(cabelo)
     if (c.oculos) { [-0.1, 0.1].forEach(x => { cx(0.17, 0.02, 0.02, 0x1E1E22, x, 0.315, 0.225, head); cx(0.17, 0.02, 0.02, 0x1E1E22, x, 0.185, 0.225, head); cx(0.02, 0.15, 0.02, 0x1E1E22, x - 0.075, 0.25, 0.225, head); cx(0.02, 0.15, 0.02, 0x1E1E22, x + 0.075, 0.25, 0.225, head) }) }
     function braco(x: number) { const b = grupo(hips, x, 0.44, 0); cx(0.13, 0.24, 0.14, c.camisa, 0, -0.12, 0, b); const e = grupo(b, 0, -0.24, 0); cx(0.115, 0.2, 0.125, c.pele, 0, -0.1, 0, e); cx(0.125, 0.09, 0.135, c.pele, 0, -0.24, 0, e); fecha(b); fecha(e); return { o: b, e } }
     function perna(x: number) { const b = grupo(hips, x, 0, 0); cx(0.18, 0.26, 0.2, c.calca, 0, -0.13, 0, b); const k = grupo(b, 0, -0.26, 0); cx(0.165, 0.22, 0.185, c.calca, 0, -0.11, 0, k); cx(0.175, 0.07, 0.27, 0x2A2623, 0, -0.255, 0.035, k); fecha(b); fecha(k); return { o: b, k } }
@@ -174,14 +191,17 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     const u = usadas[sala] || (usadas[sala] = []), quer = POR_ID[e.id]?.sala === sala ? POR_ID[e.id].mesa : null
     const xs = quer != null && !u.includes(quer) ? quer : ([-2, 0, 2].find(x => !u.includes(x)) ?? [-2, 0, 2][u.length % 3]); u.push(xs)
     /* mesa, notebook, cadeira */
-    cx(1.1, 0.06, 0.6, MADEIRA, xs, 0.6, -1.0, g); [[-0.48, -0.24], [0.48, -0.24], [-0.48, 0.24], [0.48, 0.24]].forEach(q => { cx(0.06, 0.57, 0.06, MADEIRA_E, xs + q[0], 0.285, -1.0 + q[1], g) })
-    cx(0.42, 0.02, 0.28, 0x8E949C, xs, 0.64, -1.06, g, true)
+    cx(o.mini ? 1.65 : 1.1, 0.06, o.mini ? .85 : .6, MADEIRA, xs, 0.6, -1.0, g); [[-0.48, -0.24], [0.48, -0.24], [-0.48, 0.24], [0.48, 0.24]].forEach(q => { cx(0.06, 0.57, 0.06, MADEIRA_E, xs + q[0], 0.285, -1.0 + q[1], g) })
+    if (!o.mini) cx(0.42, 0.02, 0.28, 0x8E949C, xs, 0.64, -1.06, g, true)
     const telaMat = guardar(new T.MeshLambertMaterial({ color: 0x22272E, emissive: 0xD7EADF, emissiveIntensity: luzTela(e.estado) }))
-    const monitor = cx(0.42, 0.27, 0.02, telaMat, xs, 0.775, -0.9, g); monitor.rotation.x = 0.18
+    if (!o.mini) { const monitor = cx(0.42, 0.27, 0.02, telaMat, xs, 0.775, -0.9, g); monitor.rotation.x = 0.18 }
     mancha(0.62, xs, 0.045, -1.25, g)
-    cx(0.1, 0.12, 0.1, 0xF1EADF, xs + 0.4, 0.69, -0.84, g, true)
+    if (!o.mini) cx(0.1, 0.12, 0.1, 0xF1EADF, xs + 0.4, 0.69, -0.84, g, true)
     const pilha = grupo(g, xs - 0.36, 0.63, -0.86); cx(0.3, 0.03, 0.22, PAPEL, 0, 0.015, 0, pilha); cx(0.3, 0.03, 0.22, 0xDDD3C2, 0.02, 0.045, 0.01, pilha); cx(0.3, 0.03, 0.22, PAPEL, -0.01, 0.075, 0, pilha); fecha(pilha); pilha.visible = false
-    cx(0.44, 0.06, 0.44, CADEIRA, xs, 0.21, -1.72, g); cx(0.44, 0.5, 0.06, CADEIRA, xs, 0.5, -1.94, g); cx(0.07, 0.18, 0.07, 0x33373D, xs, 0.09, -1.72, g); cx(0.4, 0.03, 0.4, 0x33373D, xs, 0.015, -1.72, g, true)
+    if (!o.mini || !ATIVIDADES_MINI[e.id]?.emPe) {
+      cx(0.44, 0.06, 0.44, CADEIRA, xs, 0.21, -1.72, g); cx(0.44, 0.5, 0.06, CADEIRA, xs, 0.5, -1.94, g); cx(0.07, 0.18, 0.07, 0x33373D, xs, 0.09, -1.72, g); cx(0.4, 0.03, 0.4, 0x33373D, xs, 0.015, -1.72, g, true)
+    }
+    if (!o.mini) {
     const objeto = POR_ID[e.id]?.objeto || 'pasta'
     const acessorio = grupo(g, xs + 0.34, 0.65, -1.08)
     const cor = POR_ID[e.id]?.roupa.camisa || 0x6474A0
@@ -196,6 +216,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       for (let j = 0; j < linhas; j++) cx(0.14, 0.01, 0.02, PAPEL, 0, 0.035, -0.07 + j * 0.06, acessorio)
     }
     fecha(acessorio)
+    }
     const b = boneco(POR_ID[e.id]?.roupa || RESERVA[i % RESERVA.length])
     mancha(0.3, 0, 0.07, 0, b.r)
     b.r.traverse((x: any) => { x.userData.id = e.id })
@@ -203,14 +224,40 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     const xg = xs + (xs >= 2 ? -1 : 1), zf = s.d === 5 ? 1.45 : 1.2
     const W = (x: number, z: number) => new T.Vector3(s.cx + x, 0, s.cz + z)
     const ch: any = { id: e.id, sala, st: e.estado, b, pilha, tela: telaMat, S: W(xs, -1.72), G1: W(xg, -1.72), G2: W(xg, zf - 0.5), F: W(xs, zf - 0.5), loc: 'sentado', path: null, fase: i * 1.7, festa: 0, anim: true, pose: {} }
-    if (e.estado === 'precisa') { ch.loc = 'frente'; b.r.position.copy(ch.F); b.r.rotation.y = Math.PI / 4 } else { b.r.position.copy(ch.S) }
+    if (o.mini) {
+      ch.fase = faseDoId(e.id)
+      const palco = new T.Group(); palco.position.copy(ch.S); scene.add(palco)
+      ch.trabalho = montarAtividade(e.id, { T, pai: palco, geo: GEO, mat, guardar })
+      ch.estado = estadoMini(e.estado); ch.legadoRecebido = e.estado; ch.tempoEstado = 0; ch.tempoTrabalho = ch.fase; ch.pesoTrabalho = ch.estado === 'trabalhando' ? 1 : 0
+      ch.micro = ch.fase; ch.rotacao = 0
+      // Indicador de pergunta: peça sólida da paleta, sem luz nem transparência animada.
+      const sinal = new T.Group(); palco.add(sinal); sinal.position.set(-.58, 1.48, .1)
+      cx(.055, .16, .055, mat(0xD8C27A), 0, 0, 0, sinal, true); cx(.055, .04, .055, mat(0xD8C27A), 0, -.14, 0, sinal, true)
+      ch.sinal = sinal
+      sinal.name = `chamada:${e.id}`
+      // Caneca, vapor voxel e relógio: microvida compartilhada, nunca competem com a atividade.
+      const cafe = new T.Group(); palco.add(cafe); cafe.position.set(-.7, .69, .85)
+      ch.cafe = cafe
+      cx(.13, .14, .13, mat(0xF1EADF), 0, 0, 0, cafe, true); cx(.07, .07, .035, mat(MADEIRA_E), -.09, 0, 0, cafe, true)
+      ch.vapor = new T.Group(); cafe.add(ch.vapor)
+      for (let j = 0; j < 2; j++) cx(.025, .08, .025, mat(0xDDD3C2), .04 * j, .17 + j * .1, 0, ch.vapor, true)
+      ch.relogio = new T.Group(); b.bL.e.add(ch.relogio); ch.relogio.position.set(0, -.19, .075)
+      cx(.09, .09, .02, mat(PAPEL), 0, 0, 0, ch.relogio, true)
+      ch.ponteiro = cx(.015, .035, .015, mat(MADEIRA_E), 0, .012, .02, ch.relogio, true)
+      ch.joinha = new T.Group(); b.bR.e.add(ch.joinha); ch.joinha.position.set(0, -.26, .04)
+      ch.joinha.name = `joinha:${e.id}`
+      cx(.055, .14, .07, mat(POR_ID[e.id]?.roupa.pele || 0xD9A27E), -.065, 0, 0, ch.joinha, true)
+      b.r.name = `agente:${e.id}`; b.r.userData.estado = ch.estado
+    }
+    if (!o.mini && e.estado === 'precisa') { ch.loc = 'frente'; b.r.position.copy(ch.F); b.r.rotation.y = Math.PI / 4 } else { b.r.position.copy(ch.S) }
     chars.push(ch)
   })
   ;[0, 1].forEach(i => { if (FIXO[i].length) { const m = mesclar(FIXO[i]); m.castShadow = i === 0; scene.add(m) } })
 
   /* câmera isométrica */
   const cam = new T.OrthographicCamera(-10, 10, 10, -10, 0.1, 100)
-  const DIR = new T.Vector3(1, 0.86, 1).normalize()
+  const miniCamera = o.mini && chars[0] ? ATIVIDADES_MINI[chars[0].id]?.camera : null
+  const DIR = new T.Vector3(...(miniCamera?.direcao || [1, .86, 1])).normalize()
   cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld()
   const Rt = new T.Vector3(), Up = new T.Vector3(), Fw = new T.Vector3(); cam.matrixWorld.extractBasis(Rt, Up, Fw)
   function vistaDe(x0: number, x1: number, y1: number, z0: number, z1: number) { const a = [1e9, -1e9, 1e9, -1e9], v = new T.Vector3(); [x0, x1].forEach(x => { [0, y1].forEach(y => { [z0, z1].forEach(z => { v.set(x, y, z).sub(cam.position); const cxx = v.dot(Rt), cy = v.dot(Up); a[0] = Math.min(a[0], cxx); a[1] = Math.max(a[1], cxx); a[2] = Math.min(a[2], cy); a[3] = Math.max(a[3], cy) }) }) }); return { cx: (a[0] + a[1]) / 2, cy: (a[2] + a[3]) / 2, hw: (a[1] - a[0]) / 2, hh: (a[3] - a[2]) / 2 } }
@@ -219,9 +266,9 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   Object.keys(SALAS).forEach(k => { const s = SALAS[k]; VISTAS[k] = vistaDe(s.cx - 3, s.cx + 3, 1.9, s.cz - s.d / 2, s.cz + s.d / 2) })
   if (o.mini && chars[0]) {
     const ch = chars[0]
-    VISTAS[ch.sala] = vistaDe(ch.S.x - 1.1, ch.S.x + 1.1, 1.9, ch.S.z - 0.6, ch.S.z + 1.7)
+    VISTAS[ch.sala] = vistaDe(ch.S.x - (miniCamera?.largura || 1.15), ch.S.x + (miniCamera?.largura || 1.15), ATIVIDADES_MINI[ch.id]?.emPe ? 1.95 : 1.72, ch.S.z - .35, ch.S.z + (miniCamera?.fundo || 1.35))
   }
-  let vAtual = { ...VISTAS[o.mini ? o.funcionarios[0].sala : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? o.funcionarios[0].sala : 'tudo'
+  let vAtual = { ...VISTAS[o.mini ? chars[0]?.sala || 'tudo' : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? chars[0]?.sala || 'tudo' : 'tudo'
   function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
   let largura = 0, altura = 0, dpr = pr
@@ -275,6 +322,18 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
 
   /* toque num boneco */
   const ray = new T.Raycaster(), ndc = new T.Vector2()
+  const ponteiro = { x: 0, y: 0, dentro: false }
+  const acompanhar = (ev: PointerEvent) => {
+    if (!o.mini || reduz) return
+    const r = tela3d.getBoundingClientRect()
+    ponteiro.x = Math.max(-1, Math.min(1, (ev.clientX - r.left) / r.width * 2 - 1))
+    ponteiro.y = Math.max(-1, Math.min(1, (ev.clientY - r.top) / r.height * 2 - 1)); ponteiro.dentro = true
+  }
+  const saiu = () => { ponteiro.dentro = false }
+  if (o.mini) {
+    tela3d.addEventListener('pointermove', acompanhar); tela3d.addEventListener('pointerleave', saiu)
+    limpezas.push(() => { tela3d.removeEventListener('pointermove', acompanhar); tela3d.removeEventListener('pointerleave', saiu) })
+  }
   let down: { x: number; y: number } | null = null
   const aoDescer = (ev: PointerEvent) => { down = { x: ev.clientX, y: ev.clientY } }
   const aoSubir = (ev: PointerEvent) => {
@@ -315,7 +374,9 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     b.pL.o.rotation.x = p.tl; b.pL.k.rotation.x = p.kl; b.pR.o.rotation.x = p.tr; b.pR.k.rotation.x = p.kr
   }
   function atualizaChar(ch: any, t: number, dt: number) {
-    const st: EstadoCena = ch.st, b = ch.b, a = ch.anim && !o.parado ? 1 : 0, ph = t + ch.fase
+    if (o.mini) { atualizaMini(ch, dt); return }
+    if (ch.retornaTrabalho && !reduz) { ch.tempoEstado += dt; if (ch.tempoEstado >= 1.6) { ch.st = 'trabalhando'; ch.retornaTrabalho = false } }
+    const st: EstadoCena = ch.st, b = ch.b, a = ch.anim && !reduz ? 1 : 0, ph = t + ch.fase
     ch.pilha.visible = st === 'entregue' || st === 'precisa'
     if (ch.telaSt !== st) { ch.telaSt = st; ch.tela.emissiveIntensity = luzTela(st) }
     /* decide pra onde ir: quem precisa de você levanta e vai pra frente da sala; resolveu, volta pra mesa */
@@ -345,21 +406,89 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     pose(ch, alvo, ch.pose.hy === undefined ? 1 : dt)
   }
 
+  function mudarMini(ch: any, estado: EstadoAgente) {
+    if (ch.estado === estado) return
+    ch.estado = estado; ch.st = estadoLegado(estado); ch.tempoEstado = 0
+    ch.b.r.userData.estado = estado
+  }
+  function atualizaMini(ch: any, dt: number) {
+    const b = ch.b, k = reduz ? 1 : Math.min(1, dt * 9)
+    ch.tempoEstado += reduz ? 0 : dt
+    if (ch.estado === 'resolvido' && ch.tempoEstado >= 1.6) mudarMini(ch, 'trabalhando')
+    const st: EstadoAgente = ch.estado
+    ch.pesoTrabalho = lerp(ch.pesoTrabalho, st === 'trabalhando' ? 1 : 0, k)
+    if (!reduz) ch.tempoTrabalho += dt * ch.pesoTrabalho
+    // Abaixo de 24fps, só o relógio da atividade avança; microposes ficam congeladas.
+    if (!reduz && degrau === 0 && fps !== 0 && fps < 24) ch.microCongelada = true
+    else if (degrau === 0 && fps >= 24) ch.microCongelada = false
+    if (!reduz && degrau === 0 && !ch.microCongelada) ch.micro += dt
+    const micro = ch.micro, t = ch.tempoTrabalho
+    const respira = reduz ? 0 : Math.sin(micro * 2) * .006
+    const emPe = !!ATIVIDADES_MINI[ch.id]?.emPe
+    const alvo: any = { hy: (emPe ? HIP_PE : HIP_SENTADO) + respira, hx: .06, cx: .12, cy: 0,
+      lx: -.7, lz: 0, le: -1.1, rx: -.7, rz: 0, re: -1.1, rez: 0,
+      tl: emPe ? -.03 : -1.5, kl: emPe ? .03 : 1.5, tr: emPe ? .03 : -1.5, kr: emPe ? .02 : 1.5 }
+    Object.assign(alvo, ch.trabalho.pose(t))
+    ch.trabalho.animar(t)
+    const chamar = st === 'chamando', resolveu = st === 'resolvido'
+    if (chamar) Object.assign(alvo, { hx: 0, cx: -.06, cy: 0, lx: -.3, le: -.4, rx: -.15, rz: 2.45, re: -.2, rez: reduz ? .2 : Math.sin(ch.tempoEstado * 6 + ch.fase) * .25 })
+    if (resolveu) Object.assign(alvo, { hx: -.04, cx: -.08, cy: .1, rx: -1.25, rz: -.18, re: -1.7, rez: 0 })
+    const pausa = Math.floor(ch.fase * 10) % 3
+    if (st === 'parado') {
+      // Três pausas estáveis por id: relógio, alongamento de ombros e café.
+      Object.assign(alvo, pausa === 0 ? { lx: -.95, le: -1.9, rx: -.25, re: -.5, cx: .35, cy: -.25 }
+        : pausa === 1 ? { lx: -2.1, le: -1.4, lz: -.3, rx: -2.1, re: -1.4, rz: .3, cx: -.13 }
+          : { lx: -1, le: -1.8, rx: -.25, re: -.7, hx: 0, cx: .08, cy: -.16 })
+    }
+    const tomandoCafe = st === 'parado' && pausa === 2
+    ch.cafe.position.x = lerp(ch.cafe.position.x, tomandoCafe ? -.3 : -.7, k)
+    ch.cafe.position.y = lerp(ch.cafe.position.y, tomandoCafe ? (emPe ? HIP_PE : HIP_SENTADO) + .56 : .69, k)
+    ch.cafe.position.z = lerp(ch.cafe.position.z, tomandoCafe ? .28 : .85, k)
+    ch.cafe.rotation.x = lerp(ch.cafe.rotation.x, tomandoCafe ? -.2 + (reduz ? 0 : Math.sin(micro) * .035) : 0, k)
+    const olhando = (chamar || resolveu) ? Math.atan2(DIR.x, DIR.z) : 0
+    ch.rotacao = lerp(ch.rotacao, olhando, k); b.r.rotation.y = ch.rotacao
+    if (ponteiro.dentro && st !== 'parado' && !reduz && degrau === 0 && !ch.microCongelada) { alvo.cy += ponteiro.x * .13; alvo.cx += ponteiro.y * .06 }
+    pose(ch, alvo, reduz || ch.pose.hy === undefined ? 1 : dt)
+    b.olhos.scale.y = reduz ? 1 : Math.pow(Math.max(0, Math.sin(micro * 1.07)), 48) > .8 ? .08 : 1
+    b.cabelo.rotation.z = reduz ? 0 : Math.sin(micro * 1.4) * .018
+    ch.vapor.position.y = reduz ? 0 : (1 + Math.sin(micro * 1.2)) * .035
+    ch.vapor.rotation.z = reduz ? 0 : Math.sin(micro * 1.5) * .12
+    ch.ponteiro.rotation.z = -micro * .12
+    ch.sinal.visible = chamar; ch.sinal.scale.setScalar(reduz ? 1 : 1 + Math.sin(ch.tempoEstado * 3) * .09)
+    ch.joinha.visible = resolveu; ch.pilha.visible = false
+  }
+
   /* laço */
   let visivel = true, ult = 0, tAcum = 0, fps = 0, baixo = 0, degrau = 0, segAnim = 0, segLuz = 0, jsMs = 0, raf = 0, vivo = true
   const fpsHist: number[] = []
+  const retornos = new Map<string, { timer?: ReturnType<typeof setTimeout>; restante: number; inicio: number }>()
+  function sincronizarRetornos() {
+    retornos.forEach((r, id) => {
+      const pode = visivel && !document.hidden && !perdido
+      if (!pode && r.timer !== undefined) { clearTimeout(r.timer); r.timer = undefined; r.restante = Math.max(0, r.restante - (performance.now() - r.inicio)) }
+      if (pode && r.timer === undefined) {
+        r.inicio = performance.now()
+        r.timer = setTimeout(() => { retornos.delete(id); definirEstado(id, 'trabalhando') }, r.restante)
+      }
+    })
+  }
+  limpezas.push(() => { retornos.forEach(r => clearTimeout(r.timer)); retornos.clear() })
   let perdido = false
   let recuperacao: ReturnType<typeof setTimeout> | undefined
   const medidor = new MedidorFPS()
   function pausar() { cancelAnimationFrame(raf); raf = 0; ult = 0; medidor.pausar(); baixo = 0 }
-  function solicitar() { if (vivo && !destruida && !perdido && visivel && !document.hidden && !raf) raf = requestAnimationFrame(quadro) }
-  const visibilidade = () => { pausar(); solicitar() }
+  function solicitar() {
+    if (!vivo || destruida || perdido || !visivel || document.hidden || raf) return
+    if (o.mini && reduz) quadro(performance.now())
+    else raf = requestAnimationFrame(quadro)
+  }
+  const visibilidade = () => { pausar(); sincronizarRetornos(); solicitar() }
   document.addEventListener('visibilitychange', visibilidade)
   const perdeu = (ev: Event) => {
-    ev.preventDefault(); perdido = true; pausar(); o.aoContexto?.('perdido'); clearTimeout(recuperacao)
+    ev.preventDefault(); perdido = true; pausar(); sincronizarRetornos(); o.aoContexto?.('perdido'); clearTimeout(recuperacao)
     recuperacao = setTimeout(() => { if (perdido && vivo) { o.aoContexto?.('falhou'); destruir() } }, 8000)
   }
-  const restaurou = () => { if (!vivo || destruida) return; clearTimeout(recuperacao); perdido = false; o.aoContexto?.('restaurado'); tamanho(); solicitar() }
+  const restaurou = () => { if (!vivo || destruida) return; clearTimeout(recuperacao); perdido = false; o.aoContexto?.('restaurado'); tamanho(); sincronizarRetornos(); solicitar() }
   tela3d.addEventListener('webglcontextlost', perdeu); tela3d.addEventListener('webglcontextrestored', restaurou)
   limpezas.push(() => { vivo = false; pausar(); clearTimeout(recuperacao); document.removeEventListener('visibilitychange', visibilidade); tela3d.removeEventListener('webglcontextlost', perdeu); tela3d.removeEventListener('webglcontextrestored', restaurou) })
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(en => { visivel = en[0].isIntersecting; visibilidade() }) : null
@@ -376,21 +505,21 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     segAnim -= dt; if (segAnim <= 0) { segAnim = 1; let lim = MOBILE() ? 8 : 99; if (degrau >= 3) lim = 4; const pr2 = (c: any) => (c.path ? 0 : c.st === 'precisa' ? 1 : c.id === selecionado ? 2 : c.st === 'trabalhando' ? 3 : 4); chars.slice().sort((a, b) => pr2(a) - pr2(b)).forEach((c, i) => { c.anim = i < lim || !!c.path }) }
     for (let i = 0; i < chars.length; i++) {
       const ch = chars[i]
-      if (o.parado) { ch.path = null; ch.loc = ch.st === 'precisa' ? 'frente' : 'sentado'; ch.b.r.position.copy(ch.loc === 'frente' ? ch.F : ch.S); ch.b.r.rotation.y = ch.loc === 'frente' ? Math.PI / 4 : 0 }
-      atualizaChar(ch, tAcum, o.parado ? 1 : dt)
+      if (reduz && !o.mini) { ch.path = null; ch.loc = ch.st === 'precisa' ? 'frente' : 'sentado'; ch.b.r.position.copy(ch.loc === 'frente' ? ch.F : ch.S); ch.b.r.rotation.y = ch.loc === 'frente' ? Math.PI / 4 : 0 }
+      atualizaChar(ch, tAcum, reduz ? 1 : dt)
     }
-    if (vPara) { const k = Math.min(1, (agora - vT0) / (o.parado ? 0.001 : 1200)), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; ['cx', 'cy', 'hw', 'hh'].forEach(n => { vAtual[n] = lerp(vDe[n], vPara[n], e) }); aplicaVista(vAtual); if (k >= 1) vPara = null }
+    if (vPara) { const k = reduz ? 1 : Math.min(1, (agora - vT0) / 1200), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; ['cx', 'cy', 'hw', 'hh'].forEach(n => { vAtual[n] = lerp(vDe[n], vPara[n], e) }); aplicaVista(vAtual); if (k >= 1) vPara = null }
     try { renderer.render(scene, cam) } catch { o.aoContexto?.('falhou'); destruir(); return }
     atualizaTags()
     jsMs = jsMs * 0.95 + (performance.now() - agora0) * 0.05
     /* fluidez: mede 1 vez por segundo e alivia em 3 degraus se ficar abaixo de 24 imagens por segundo */
-    const amostra = o.parado ? null : medidor.quadro(agora)
+    const amostra = reduz ? null : medidor.quadro(agora)
     if (amostra !== null) {
       fps = amostra; fpsHist.push(fps); if (fpsHist.length > 60) fpsHist.shift()
       if (fps < 24) { baixo++; if (baixo >= 4 && degrau < 3) { degrau++; baixo = 0; if (degrau === 1) { tamanho() } if (degrau === 2) { renderer.shadowMap.enabled = false; sol.castShadow = false; sol.shadow.dispose(); sol.shadow.map = null; sol.shadow.mapPass = null; scene.traverse((x: any) => { if (x.material) x.material.needsUpdate = true }) } } } else baixo = 0
       o.aoMedir?.(fps, degrau)
     }
-    if (!o.parado) solicitar()
+    if (!reduz) solicitar()
   }
   let consultaDpr: MediaQueryList | undefined
   const mudouDpr = () => { observarDpr(); redimensionar() }
@@ -403,10 +532,41 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   observarDpr()
   tamanho(); solicitar()
 
+  // Sem loop com movimento reduzido; apenas a celebração tem um retorno pontual.
+  function definirEstado(id: string, estado: EstadoAgente) {
+    if (destruida) return
+    const ch = chars.find(c => c.id === id)
+    if (!ch) return
+    if (o.mini && ch.estado === estado) return
+    clearTimeout(retornos.get(id)?.timer); retornos.delete(id)
+    if (o.mini) mudarMini(ch, estado)
+    else { ch.st = estadoLegado(estado); ch.tempoEstado = 0; ch.retornaTrabalho = estado === 'resolvido'; if (ch.retornaTrabalho) ch.festa = 1.6 }
+    if (reduz && estado === 'resolvido') { retornos.set(id, { restante: 1600, inicio: 0 }); sincronizarRetornos() }
+    solicitar()
+  }
+  // Também cobre a montagem já em entregue.
+  if (o.mini && reduz) chars.filter(ch => ch.estado === 'resolvido').forEach(ch => {
+    retornos.set(ch.id, { restante: 1600, inicio: 0 }); sincronizarRetornos()
+  })
+
   return {
+    definirEstado,
     atualizar(f) {
-      solicitar()
-      f.forEach(n => { const ch = chars.find(c => c.id === n.id); if (!ch || ch.st === n.estado) return; if (n.estado === 'entregue' && ch.st === 'precisa') ch.festa = 0; if (n.estado === 'entregue' && ch.st === 'trabalhando') ch.festa = 1.6; ch.st = n.estado })
+      f.forEach(n => {
+        const ch = chars.find(c => c.id === n.id)
+        if (!ch) return
+        if (o.mini) {
+          // Um snapshot repetido de entregue não reinicia a celebração após seu retorno.
+          if (ch.legadoRecebido !== n.estado) { ch.legadoRecebido = n.estado; definirEstado(n.id, estadoMini(n.estado)) }
+          return
+        }
+        if (ch.st === n.estado) return
+        ch.retornaTrabalho = false; clearTimeout(retornos.get(n.id)?.timer); retornos.delete(n.id)
+        if (n.estado === 'entregue' && ch.st === 'precisa') ch.festa = 0
+        if (n.estado === 'entregue' && ch.st === 'trabalhando') ch.festa = 1.6
+        ch.st = n.estado
+      })
+      if (!o.mini) solicitar()
     },
     selecionar(id) { solicitar(); selecionado = id; if (id && MOBILE()) { const ch = chars.find(c => c.id === id); if (ch) irPara(ch.sala) } chars.forEach(c => { c.tk = '' }) },
     irPara(v) { irPara(v); solicitar() },

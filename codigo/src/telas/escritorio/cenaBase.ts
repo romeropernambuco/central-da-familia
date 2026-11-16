@@ -1,5 +1,7 @@
 // O que a tela do Escritório precisa saber da cena sem carregar nada de 3D: nomes das salas, tipos e o teste de WebGL.
 export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
+/** Estados de interação, independentes dos estados persistidos do escritório. */
+export type EstadoAgente = 'trabalhando' | 'chamando' | 'resolvido' | 'parado'
 export interface FuncCena { id: string; sala: string; estado: EstadoCena }
 export interface OpcoesCena {
   mini?: boolean
@@ -18,6 +20,8 @@ export interface OpcoesCena {
   parado?: boolean
 }
 export interface Cena {
+  /** Transição sem remontagem; resolvido celebra por 1,6s e retorna ao trabalho. Id desconhecido é ignorado. */
+  definirEstado(id: string, estado: EstadoAgente): void
   atualizar(f: FuncCena[]): void
   selecionar(id: string | null): void
   irPara(vista: string): void
