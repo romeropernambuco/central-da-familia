@@ -1,3 +1,4 @@
+import { ControleFuncionarios } from '../../componentes/AgenteDaAba'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useState } from 'react'
@@ -11,7 +12,7 @@ import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from 
 
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
-  const { api, familia, sessao, sair, toast, tentar } = useApp()
+  const { api, familia, sessao, sair, toast, tentar, oculto } = useApp()
   // o convite é gravado ANTES de abrir o WhatsApp: se o banco recusar (e-mail repetido, sem internet), o motivo aparece na hora
   const [convidado, setConvidado] = useState<{ nome: string; email: string } | null>(null)
   const [convidando, setConvidando] = useState(false)
@@ -46,7 +47,7 @@ export function Ajustes() {
           <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
             {convidado && convidado.email === email2.trim().toLowerCase()
-              ? <a className="btn primary" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))}><MessageCircle size={20} />Abrir o WhatsApp com o convite</a>
+              ? <a className="btn primary" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><MessageCircle size={20} />Abrir o WhatsApp com o convite</a>
               : <button className="btn primary" type="button" disabled={convidando} onClick={async () => {
                 if (!nome2.trim() || !emailValido(email2)) { toast('Escreva o nome e o e-mail de quem você está convidando.'); return }
                 if (!familia) return
@@ -73,7 +74,7 @@ export function Ajustes() {
       </div>
       <div className="col">
         <section className="card" aria-labelledby="aTema">
-          <h2 id="aTema">Aparência</h2>
+          <h2 id="aTema">Aparência</h2><ControleFuncionarios />
           <div className="seg compacta" role="group" aria-label="Tema" style={{ marginTop: 12 }}>
             <button type="button" aria-pressed={tema === 'auto'} onClick={() => mudaTema('auto')}><Smartphone size={18} />Automático</button>
             <button type="button" aria-pressed={tema === 'light'} onClick={() => mudaTema('light')}><Sun size={18} />Claro</button>
@@ -96,7 +97,7 @@ export function Ajustes() {
 
 /** R4 + C20: quem está na família e como está cada convite. Reenviar avisa; cancelar pede confirmação. */
 function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () => void }) {
-  const { api, familia, tentar, toast } = useApp()
+  const { api, familia, tentar, toast, oculto } = useApp()
   const setN = (_f: (x: number) => number) => mudou()
   const [cancelar, setCancelar] = useState<ConviteFamilia | null>(null)
   if (!lista || !familia) return null
@@ -114,7 +115,7 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
                 : <span className="chip warn" style={{ marginTop: 6, whiteSpace: 'normal', height: 'auto' }}>esperando entrar{c.enviado_em ? ` desde ${dataCurta(c.enviado_em)}, vale até ${dataCurta(somaDias(c.enviado_em, 14))}` : ''}</span>}
               {c.situacao === 'esperando' && (
                 <span className="row-btns quem-btns">
-                  <a className="btn sm line" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('pessoa', { familia: familia.nome, quem: c.nome, link, email: c.email || undefined }))} onClick={() => { tentar(async () => { await api.reenviarConvite?.(familia.id, c.id); setN(x => x + 1); toast(`Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`) }) }}>Reenviar</a>
+                  <a className="btn sm line" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia.nome, quem: c.nome, link, email: c.email || undefined }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.'); return } tentar(async () => { await api.reenviarConvite?.(familia.id, c.id); setN(x => x + 1); toast(`Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`) }) }}>Reenviar</a>
                   <button className="btn sm ghost" type="button" onClick={() => setCancelar(c)}>Cancelar convite</button>
                 </span>
               )}
@@ -135,7 +136,7 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
   )
 }
 
-/** E9: o Atalho do iPhone. Pagou com Apple Pay, o app abre o Lançar já preenchido (nunca salva sozinho). */
+/** E9: o Atalho do iPhone. Pagou com Apple Pay, o app abre o Anotar já preenchido (nunca salva sozinho). */
 export const PASSOS_ATALHO = [
   'Abra o app Atalhos (o ícone de quadrados coloridos) e toque em "Automação", na parte de baixo.',
   'Toque em "Nova Automação" (ou no "+", em cima) e escolha "Transação". Em alguns iPhones o nome é "Carteira".',
@@ -145,7 +146,7 @@ export const PASSOS_ATALHO = [
   'Logo depois de valor=, toque em "Entrada do Atalho" (aparece em cima do teclado) e escolha "Quantia".',
   'Escreva &loja= e escolha "Entrada do Atalho" de novo, agora "Comerciante". Escreva &cartao= e escolha "Entrada do Atalho", agora "Cartão ou Passe".',
   'Toque em "Adicionar Ação" de novo, escreva Abrir URLs na busca e toque em "Abrir URLs". Toque em "OK" pra terminar.',
-  'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Lançar preenchido: confira e toque no seu nome pra salvar. Nada é salvo sozinho.',
+  'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Anotar preenchido: confira e toque no seu nome pra salvar. Nada é salvo sozinho.',
 ]
 function AtalhoIphone() {
   const { toast } = useApp()
@@ -155,11 +156,11 @@ function AtalhoIphone() {
   return (
     <section className="card" aria-labelledby="aAtalho">
       <h2 id="aAtalho"><Zap size={22} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>
-      <p className="sub" style={{ marginTop: 6 }}>Pagou com Apple Pay, o app abre o Lançar com o valor, a loja e o cartão já preenchidos. Você só confere e toca no seu nome. Monta 1 vez só, em uns 3 minutos:</p>
+      <p className="sub" style={{ marginTop: 6 }}>Pagou com Apple Pay, o app abre o Anotar com o valor, a loja e o cartão já preenchidos. Você só confere e toca no seu nome. Monta 1 vez só, em uns 3 minutos:</p>
       <ol className="passos-atalho">{PASSOS_ATALHO.map((p, i) => <li key={i}>{p}</li>)}</ol>
       <p className="lbl" style={{ marginTop: 10 }}>O endereço pra colar no passo 5</p>
-      <p className="atalho-end"><code>{endereco}</code></p>
-      <p className="sub atalho-montado">Montado, o campo da URL fica assim: {endereco}<b>Quantia</b>&amp;loja=<b>Comerciante</b>&amp;cartao=<b>Cartão ou Passe</b> (as palavras em negrito são as que você escolhe em "Entrada do Atalho").</p>
+      <p className="atalho-end"><code>{textoPrivado(endereco)}</code></p>
+      <p className="sub atalho-montado">Montado, o campo da URL fica assim: {textoPrivado(endereco)}<b>Quantia</b>&amp;loja=<b>Comerciante</b>&amp;cartao=<b>Cartão ou Passe</b> (as palavras em negrito são as que você escolhe em "Entrada do Atalho").</p>
       <button className="btn line" type="button" style={{ marginTop: 10 }} onClick={copiar}><Copy size={20} />Copiar o endereço</button>
       <p className="sub" style={{ marginTop: 10 }}>O iPhone abre o endereço no Safari. Na 1ª vez, entre no app pelo Safari também, com o mesmo e-mail. Os nomes dos botões podem mudar um pouco conforme a versão do iPhone.</p>
     </section>

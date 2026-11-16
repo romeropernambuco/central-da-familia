@@ -129,7 +129,8 @@ it('PerguntaCard real para os oito: DOM e aria-label não mostram nomes/valores 
       await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(PerguntaCard, {
         key: p.id, p, quem: 'Analista de Cartão', responder: async () => true,
       }))))
-      expect(container.textContent).toContain(i.pergunta)
+      const textos: Record<string, string> = {"Sua fatura vence em breve. Já pagou?":"Já pagou a fatura que vence em breve?","A fatura não bate com as compras anotadas. Vamos conferir?":"Quer conferir a diferença entre a fatura e as compras anotadas?","Sua aplicação está vencendo. Quer revisar o destino?":"Quer revisar o destino da aplicação que está vencendo?","O livre ficou abaixo da reserva. Como vamos recompor?":"O dinheiro livre ficou abaixo da reserva. Quer revisar o plano?","O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?":"O plano ainda não alcança seu objetivo. Quer revisar quanto pretende guardar?"}
+      expect(container.textContent).toContain(textos[i.pergunta] || i.pergunta)
       expect(container.textContent).not.toMatch(/NomeSentinelaPrivado|987654|9\.876|876,54/)
       const botoes = container.buscar(n => n.tagName === 'BUTTON')
       expect(botoes.map(n => n.getAttribute('aria-label'))).toEqual(p.opcoes.map(o => o.rotulo))

@@ -39,7 +39,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
   useEffect(() => { if (familia) api.estoque(familia.id).then(x => setItens(x.itens.filter(i => i.ativo))).catch((x: Error) => setErro(x.message)) }, [api, familia?.id])
   if (erro) return <p className="aviso-erro" role="alert">Não deu pra buscar os itens: {textoPrivado(erro)}</p>
   if (!itens) return <p className="sub">Buscando os itens da casa…</p>
-  if (!itens.length) return <p className="sub">Ainda não tem item cadastrado. O casal cadastra na ficha do Fiscal da Feira, em "O que eu cuido".</p>
+  if (!itens.length) return <p className="sub">Ainda não tem item cadastrado. O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".</p>
   return (
     <div className="contagem">
       <ul className="list">

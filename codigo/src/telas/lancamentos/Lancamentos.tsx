@@ -85,7 +85,7 @@ function LancamentosFamilia() {
     <div className="view">
       <div className="segbar">
         <div className="seg" role="group" aria-label="Mostrar">
-          <button type="button" aria-pressed={!lixeira} onClick={() => setLixeira(false)}>Lançamentos</button>
+          <button type="button" aria-pressed={!lixeira} onClick={() => setLixeira(false)}>Gastos e entradas</button>
           <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Trash2 size={18} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
         </div>
       </div>
@@ -97,7 +97,7 @@ function LancamentosFamilia() {
         {!falha && !carregou && <p className="sub">Buscando os lançamentos…</p>}
         {!falha && carregou && !vis.length && (lixeira
           ? <Vazio ico={<Trash2 size={24} />}>A lixeira está vazia{meses.length > 1 ? ' nos meses abertos' : ' neste mês'}.</Vazio>
-          : <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Lançar um gasto</button>}>Nenhum lançamento {meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.</Vazio>)}
+          : <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum lançamento {meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.</Vazio>)}
         {dias.map(d => {
           const doDia = vis.filter(l => l.data === d)
           return (

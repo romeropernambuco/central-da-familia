@@ -39,7 +39,7 @@ export function RitmoMes({ e, quem, porDia }: { e: Envelope; /** E2: no orçamen
   const hoje = hojeRecife()
   // E3 (conserto 10): quando o domingo já é do mês que vem, a conta para no fim do mês e o rótulo diz isso
   const domingo = somaDias(hoje, (7 - new Date(hoje + 'T12:00:00Z').getUTCDay()) % 7)
-  const rotuloSemana = domingo > fimDoMes(hoje) ? 'Até o fim do mês' : 'Até domingo'
+  const rotuloSemana = domingo > fimDoMes(hoje) ? 'Até o fim do mês' : 'Ainda pode gastar até domingo'
   const lim = e.limite_base ?? e.limite_mes
   const dia = Number(hoje.slice(8))
   const pontual = e.pontual_mes || 0

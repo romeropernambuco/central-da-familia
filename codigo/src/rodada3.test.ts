@@ -142,7 +142,7 @@ describe('formato do BANCO2.md (modo real)', () => {
   it('custo do gasto vem em objeto; relatório por id; conta do Guardado sem sigla sozinha', () => {
     expect(normalizaCusto({ tem_guardado: true, ate_fim_do_mes: { dias_uteis: 12, bruto: 2.6, liquido: 2.09 }, em_12_meses: { liquido: 42.77 } })).toEqual({ ate_fim_do_mes: 2.09, em_12_meses: 42.77 })
     expect(normalizaCusto({ tem_guardado: false })).toEqual({ ate_fim_do_mes: 0, em_12_meses: 0 })
-    const r = normalizaRelatorio({ funcionarios: [{ id: 'fiscal_feira', nome: 'Fiscal da Feira', perguntas: 3, respondidas: 2, pendentes: 1, tempo_medio_min: 40 }], linha_do_tempo: [{ id: 'x', funcionario: 'fiscal_feira', quando: '2026-11-12T13:00:00Z', pergunta_curta: 'Nota', resposta: 'Anexei', por: 'Ana' }] })
+    const r = normalizaRelatorio({ funcionarios: [{ id: 'fiscal_feira', nome: 'Ajudante da Feira', perguntas: 3, respondidas: 2, pendentes: 1, tempo_medio_min: 40 }], linha_do_tempo: [{ id: 'x', funcionario: 'fiscal_feira', quando: '2026-11-12T13:00:00Z', pergunta_curta: 'Nota', resposta: 'Anexei', por: 'Ana' }] })
     expect(r.funcionarios[0]).toMatchObject({ funcionario: 'fiscal', pendentes: 1 }); expect(r.diario[0]).toMatchObject({ funcionario: 'fiscal', assunto: 'Nota' })
     const g = normalizaGuardado({ aviso: 'hoje é sábado: rende de novo na segunda', aplicacoes: [{ id: 'a' }], explicacao: [{ linha: 'Caixinha: R$\u00a010.326,07 × taxa do dia × 100% do CDI', valor: 5.24 }, { linha: 'IOF dos primeiros dias', valor: -1 }] })
     expect(g.explicacao.map(x => x.linha)).toEqual(['Caixinha: R$\u00a010.326,07 × taxa do dia × 100% da taxa dos bancos', 'imposto de quem tira antes de 30 dias dos primeiros dias'])
@@ -189,7 +189,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     const e = await apiExemplo.escritorioHoje(F)
     expect(e.funcionarios.map(f => f.id)).toEqual(['contador', 'colchao', 'cartao', 'folha', 'comprador', 'fiscal', 'guardado', 'secretaria'])
     expect(e.funcionarios.find(f => f.id === 'colchao')!.nome).toBe('Guardião da Reserva')
-    expect(e.funcionarios.find(f => f.id === 'fiscal')).toMatchObject({ nome: 'Fiscal da Feira', sala: 'Casa' })
+    expect(e.funcionarios.find(f => f.id === 'fiscal')).toMatchObject({ nome: 'Ajudante da Feira', sala: 'Casa' })
     // mudado em 14/11 (C2, TELAS 3): FAZ agora vem da lista única da equipe, que tem os 8 do banco e mais 5 que ainda não estão no banco;
     // a regra que importa continua: todo funcionário do banco tem o seu "O que eu faço e quando"
     for (const f of e.funcionarios) expect(Object.keys(FAZ)).toContain(f.id)
@@ -255,14 +255,14 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   it('adiar volta na hora certa, com outra frase e lembrando a resposta anterior', async () => {
     em('2026-11-07') // sábado: a fatura do Nubank vence dia 10, faltam 3 dias
     const p1 = (await fila()).find(x => x.id.startsWith('fatura:car-nu'))!
-    expect(p1.pergunta).toMatch(/^Ana, a fatura do Nubank está em R\$\s.* e vence terça, 10\/11\. Faltam 3 dias\. Já pagou\?$/)
+    expect(p1.pergunta).toMatch(/^Ana, a fatura do Nubank está em R\$\s.* e vence terça, 10\/11\.$/)
     await apiExemplo.escritorioResponder(F, p1.id, 'ainda_nao')
     expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-07', 23); expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-09', 8)
     const p2 = (await fila()).find(x => x.id === p1.id)!
-    expect(p2.pergunta).toMatch(/^Ana, Dia 07\/11 você me respondeu "Ainda não paguei"\. a fatura do Nubank .* vence amanhã e você ainda não me disse se pagou\.$/)
-    expect(p2.contexto).toMatch(/juros e multa/)
+    expect(p2.pergunta).toMatch(/^Ana, a fatura do Nubank .* vence amanhã e você ainda não me disse se pagou\.$/)
+    expect(p2.contexto).toBe('Se já pagou, me diz o dia que eu anoto.')
     expect(p2.espera_dias).toBe(2)
     avanca('2026-11-12', 8)
     const p3 = (await fila()).find(x => x.id === p1.id)!
@@ -293,7 +293,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => /ligar pro contador/.test(p.pergunta))).toBe(false)
     avanca('2026-11-13', 10)
     const p = (await fila()).find(x => /ligar pro contador/.test(x.pergunta))!
-    expect(p.pergunta).toBe('Ana, você me pediu pra lembrar hoje: ligar pro contador. Já fez?')
+    expect(p.pergunta).toBe('Ana, você me pediu pra lembrar hoje: ligar pro contador.')
     await apiExemplo.escritorioResponder(F, p.id, 'feito')
     const l = (await apiExemplo.lembretes(F)).find(x => x.titulo === 'Ligar pro contador')!
     expect(l.quando.slice(0, 10)).toBe('2026-12-13')
@@ -315,7 +315,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     const fat = (await apiExemplo.faturas(F, 3)).find(f => f.total > 0)!
     await apiExemplo.faturaInformar(F, fat.cartao_id, fat.mes, { valor_banco: fat.total + 172 })
     const dif = (await fila()).find(p => p.id.startsWith('fatura_dif:'))!
-    expect(dif.contexto).toMatch(/^Tem R\$\s172 que não foi anotado aqui\./)
+    expect(dif.contexto).toBe('Se quiser, anote o gasto que falta.')
     expect(dif.opcoes.map(o => o.rotulo)).toEqual(['Anotar agora', 'É juros ou tarifa do banco', 'Vejo depois'])
     expect((await apiExemplo.faturasBanco(F))[0]).toMatchObject({ valor_banco: centavos(fat.total + 172), paga_em: null })
   })
@@ -324,7 +324,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
     avanca('2026-11-16', 19)
     let f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira desta semana ainda não apareceu aqui. Foi feita?')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira desta semana ainda não apareceu aqui.')
     expect(f[0].opcoes.map(o => o.rotulo)).toEqual(['Foi feita', 'Ainda não foi feita', 'Esta semana não vai ter'])
     const antes = (await apiExemplo.lancamentos(F, '2026-11')).length
     await apiExemplo.escritorioResponder(F, f[0].id, 'foi_feita', { data: '2026-11-16', valor: 1080 })
@@ -338,7 +338,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     await apiExemplo.escritorioResponder(F, f[0].id, 'contar', { itens })
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
     const e = await apiExemplo.escritorioHoje(F)
-    expect(e.entregue.find(x => x.funcionario === 'fiscal')!.resumo).toMatch(/^Feira de 16\/11 feita, R\$\s1\.080 de R\$\s.* da semana\. Nota anexada\. Estoque contado: acabaram 3 itens\./)
+    expect(e.entregue.find(x => x.funcionario === 'fiscal')!.resumo).toMatch(/^Feira de 16\/11 feita, R\$\s1\.080 de R\$\s.* da semana\. Nota anexada; estoque contado: acabaram 3 itens; a semana passou/)
     expect(e.funcionarios.find(x => x.id === 'fiscal')!.ultimas_respostas!.map(d => d.resposta).slice(0, 3)).toEqual(['Contei o estoque: 8 itens, 3 acabaram', 'Anexei a nota', 'Foi feita, dia 16/11, R$\u00a01.080'])
     expect((await apiExemplo.feiras(F))[0]).toMatchObject({ data: '2026-11-16', valor: 1080, tem_nota: true })
   })
@@ -349,7 +349,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect(e.entregue).toEqual([])
     expect(JSON.stringify(e)).not.toMatch(/R\$|"valor"/)
     const p = e.precisa_de_voce.find(x => x.funcionario === 'fiscal')!
-    expect(p.pergunta).toBe('Carla, a feira desta semana ainda não apareceu aqui. Foi feita?')
+    expect(p.pergunta).toBe('Carla, a feira desta semana ainda não apareceu aqui.')
     expect(p.opcoes.map(o => [o.rotulo, o.pede])).toEqual([['Foi feita', 'data'], ['Ainda não foi feita', undefined]])
     await apiExemplo.escritorioResponder(F, p.id, 'foi_feita', { data: '2026-11-16' })
     const depois = await apiExemplo.escritorioHoje(F)
@@ -384,7 +384,7 @@ describe('falas dos funcionários: 4 partes, sem termo difícil, botão com verb
         if (!p.pergunta.startsWith(nome + ', ')) pend.push(`${data} ${p.id}: não chama a pessoa pelo nome`)
         if (!tem4) pend.push(`${data} ${p.id}: faltou parte`)
         if (ruim.length) pend.push(`${data} ${p.id}: ${ruim.join(', ')}`)
-        if (p.pergunta !== `${partes?.vi}` || p.contexto !== `${partes?.importa} ${partes?.sugiro}`) pend.push(`${data} ${p.id}: a fala da tela não é a soma das partes`)
+        if (p.pergunta !== `${partes?.vi}` || p.contexto !== partes?.sugiro) pend.push(`${data} ${p.id}: a fala da tela não é a soma das partes`)
         linhas.push(`| ${e.funcionarios.find(f => f.id === p.funcionario)?.nome} | ${partes?.vi} | ${partes?.importa} | ${partes?.sugiro} | ${bot.join(' / ')} | ${tem4 ? 'sim' : 'NÃO'} | ${ruim.join(', ') || 'nenhum'} |`)
       }
       e.precisa_de_voce.forEach(ver)

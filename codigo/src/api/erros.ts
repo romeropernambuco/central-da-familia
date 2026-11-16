@@ -37,12 +37,12 @@ export const TRADUZ: Record<string, string> = {
   // limite e lançamento
   'so o casal muda o limite': 'Só o casal muda o limite.',
   'o limite tem que ser um valor de zero pra cima': 'O limite tem que ser um valor de zero pra cima.',
-  'envelope nao encontrado': 'Esse limite não existe mais. Feche e abra a tela de novo.',
-  'falta a chave do toque': 'Não deu pra marcar o toque. Feche o Lançar e abra de novo.',
-  'esse lancamento ja foi gravado (mesma chave)': 'Esse lançamento já foi gravado. Confira em Lançamentos.',
+  'limite nao encontrado': 'Esse limite não existe mais. Feche e abra a tela de novo.',
+  'falta a chave do toque': 'Não deu pra marcar o toque. Feche o Anotar e abra de novo.',
+  'esse lancamento ja foi gravado (mesma chave)': 'Esse lançamento já foi gravado. Confira em Gastos e entradas.',
   'o valor passou de 1 milhao; confira os numeros': 'O valor passou de 1 milhão. Confira os números.',
   'a data esta fora do calendario do app': 'A data está fora do calendário do app.',
-  'precisa entrar no app antes de lancar': 'Entre no app antes de lançar.',
+  'precisa entrar no app antes de lancar': 'Entre no app antes de anotar.',
   'sem acesso a esta familia': 'Você não faz parte dessa família.',
   // Esta regra de negócio usa 54000 nas migrações; só esta mensagem é liberada, não o código inteiro.
   'a familia ja tem 30 aplicacoes abertas': 'a familia ja tem 30 aplicacoes abertas',
@@ -63,7 +63,9 @@ const DADO_PRIVADO = /[^\s@]+@[^\s@]+|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 
 export function traduzErro(e: { message?: string; code?: string; status?: number } | null | undefined): Error {
   const m = e?.message || ''
-  if (Object.prototype.hasOwnProperty.call(TRADUZ, m)) return new Error(TRADUZ[m])
+  // Normaliza o termo técnico da API antes de buscar o texto de limite.
+  const chave = m.replace(/^envelope\b/, 'limite')
+  if (Object.prototype.hasOwnProperty.call(TRADUZ, chave)) return new Error(TRADUZ[chave])
   // rede primeiro: Chrome "Failed to fetch", Firefox "NetworkError", Safari e iPhone "Load failed"
   if (/Failed to fetch|NetworkError|Load failed|network request failed|fetch failed|network connection was lost|timed? ?out/i.test(m)) return new ErroRede()
   if (e?.status === 401 || e?.code === 'PGRST301' || /JWT|not authenticated|session.?(not.?found|missing|expired)|refresh token|invalid claim/i.test(m)) return new ErroSessao()
@@ -71,7 +73,7 @@ export function traduzErro(e: { message?: string; code?: string; status?: number
   if (/token has expired or is invalid|otp.*(expired|invalid)|invalid.*otp/i.test(m)) return new Error('Código errado ou vencido. Confira os 6 números ou peça outro código.')
   if (/rate limit|only request this after|too many requests/i.test(m) || e?.status === 429) return new Error('Muitos pedidos seguidos. Espere 1 minuto e tente de novo.')
   if (/signups? not allowed|signup is disabled/i.test(m)) return new Error('A entrada de gente nova está desligada no banco. Fale com quem te convidou.')
-  if (/anonymous sign-?ins are disabled/i.test(m)) return new Error('A entrada da equipe ainda não está ligada no banco. Peça pro casal ligar o "login anônimo" no Supabase.')
+  if (/anonymous sign-?ins are disabled/i.test(m)) return new Error('A entrada da equipe ainda não está disponível. Fale com quem cuida do app.')
   if (m.trim() && CODIGOS_NEGOCIO.has(e?.code || '') && !MARCA_TECNICA.test(m) && !DADO_PRIVADO.test(m)) return new Error(m)
   let id = 2166136261
   for (const c of `${e?.code || ''}:${m}`) id = Math.imul(id ^ c.charCodeAt(0), 16777619)

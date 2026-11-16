@@ -74,7 +74,7 @@ it.each([false, true])('Depois às 21h volta às 7h de Recife e envia uma vez; r
     expect(a.saidas[0].pergunta).toBeNull()
     await a.ate('2026-12-31T07:00:00-03:00')
     expect(a.saidas[0].pergunta?.id).toBe(id)
-    expect(a.container.textContent).toContain('Sua fatura vence em breve. Já pagou?')
+    expect(a.container.textContent).toContain('Já pagou a fatura que vence em breve?')
     expect(a.container.textContent).not.toContain('Respondida, atualizando...')
     expect(a.loja.travas.has(id)).toBe(false)
     // Toca no componente real e tenta enviar pela outra instância durante a escrita.

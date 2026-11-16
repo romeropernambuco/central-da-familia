@@ -1,5 +1,5 @@
-import { AgenteDaAba } from '../componentes/AgenteDaAba'
-import { useEffect, useState, type ReactNode } from 'react'
+import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
@@ -27,7 +27,7 @@ export type { Rota } from './rotas'
 
 const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
   { r: 'inicio', nome: 'Início', ico: <House size={22} /> },
-  { r: 'lancamentos', nome: 'Lançamentos', ico: <ListChecks size={22} /> },
+  { r: 'lancamentos', nome: 'Gastos e entradas', ico: <ListChecks size={22} /> },
   { r: 'orcamento', nome: 'Meu orçamento', ico: <Wallet size={22} /> },
   { r: 'casa', nome: 'Casa', ico: <ShoppingBasket size={22} /> },
   // E8: a calculadora de desejos (a filha também abre: vê só os dela, sem 2029)
@@ -40,14 +40,14 @@ const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
 ]
 
 const TITULO: Record<string, [string, string]> = {
-  lancamentos: ['o que entrou na conta', 'Lançamentos'],
+  lancamentos: ['gastos e entradas que vocês anotaram', 'Gastos e entradas'],
   orcamento: ['hoje, semana e fim do mês', 'Meu orçamento'],
   guardado: ['quanto rendeu hoje', 'Guardado'],
   casa: ['feira, prestadores, gás e folha', 'Casa'],
   cartoes: ['faturas e "E se eu comprar?"', 'Cartões'],
   planejamento: ['limites, reserva, rendas e metas', 'Planejamento'],
   desejos: ['o que quero, quando e se cabe', 'Desejos'],
-  escritorio: ['quem cuida e cobra por você', 'Escritório'],
+  escritorio: ['quem ajuda você a acompanhar', 'Escritório'],
   ajustes: ['quem está na família e aparência', 'Família e ajustes'],
   privacidade: ['termo, baixar e apagar dados', 'Privacidade'],
   painel: ['painel do dono do produto', 'Os 4 números'],
@@ -58,6 +58,7 @@ export function ir(r: Rota) { location.hash = '#/' + r }
 
 export function App() {
   const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto, alternarOculto } = useApp()
+  const tituloRef = useRef<HTMLHeadingElement>(null)
   const [rota, setRota] = useState<Rota>(lerRota())
   const [mais, setMais] = useState(false)
   const [carregou, setCarregou] = useState(false)
@@ -82,11 +83,15 @@ export function App() {
     addEventListener('hashchange', ver)
     return () => removeEventListener('hashchange', ver)
   }, [familia?.id])
+  useEffect(() => {
+    if (lancarAberto || document.activeElement?.closest('input,textarea,select,[role="dialog"]')) return
+    tituloRef.current?.focus?.({ preventScroll: true })
+  }, [rota])
   useEffect(() => { if (sessao) setCarregou(true) }, [sessao])
 
   if (!sessao) {
     if (!carregou) return <div className="entrar"><p className="sub">Abrindo…</p></div>
-    return <Entrar />
+    return <><Entrar /><AjudaDaAba rota="entrar" /></>
   }
   const equipe = familia?.papel === 'equipe'
   // a equipe nunca vê o primeiro uso (tela de criar família e limites em R$), nem digitando o endereço
@@ -102,15 +107,15 @@ export function App() {
       <nav className="rail" aria-label="Telas">
         <div className="brand"><Marca /><span><b>Central da Família</b><small>{textoPrivado(familia.nome, oculto)}</small></span></div>
         {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
-        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Lançar</button>}
+        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Anotar</button>}
         {permitidas.map(m => (
           <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
         ))}
-        <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Salvo no banco da família'}</p>
+        <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Guardado online'}</p>
       </nav>
       <main id="main">
         <header className="top">
-          <div className="tt"><small>{subt}</small><h1>{titulo}</h1></div>
+          <div className="tt"><small>{subt}</small><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1></div>
           <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'sem internet' : 'salvo'}</span>
           {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}
           {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Settings2 size={22} /></button>}
@@ -133,6 +138,7 @@ export function App() {
         {r === 'ajustes' && <Ajustes />}
         {r === 'privacidade' && <Privacidade />}
         {r === 'painel' && <Painel />}
+        <AjudaDaAba rota={r} />
       </main>
       {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
       <nav className={'tabbar' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas'}>
@@ -141,7 +147,7 @@ export function App() {
         ) : (
           <>
             {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
-            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Lançar gasto"><Plus size={28} strokeWidth={2.25} aria-hidden="true" /></button><span>Lançar</span></div>
+            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Plus size={28} strokeWidth={2.25} aria-hidden="true" /></button><span>Anotar</span></div>
             {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
           </>
         )}
@@ -159,7 +165,7 @@ export function App() {
           </ul>
         </Sheet>
       )}
-      {lancarAberto && <Lancar />}
+      {lancarAberto && <Lancar key={JSON.stringify([api.modo, sessao.userId, familia.id])} />}
     </>
   )
 }

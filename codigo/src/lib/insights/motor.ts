@@ -38,13 +38,13 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
       if (f.paga === false && falta >= 0 && falta <= 3) {
         add('fatura_vencendo', 'cartoes', 'cartao', assunto, 'Sua fatura vence em breve. Já pagou?',
           f.podeInformar ? { tipo: 'informar_pagamento', cartaoId: f.cartaoId, mes: f.mes } : composicao,
-          [...(f.podeInformar ? [op('paguei_hoje', 'Paguei hoje'), op('paguei_data', 'Informar outro dia de pagamento', 'data')] : []), op('composicao', 'Abrir composição')],
+          [...(f.podeInformar ? [op('paguei_hoje', 'Paguei hoje'), op('paguei_data', 'Informar outro dia de pagamento', 'data')] : []), op('composicao', 'Ver compras desta fatura')],
           [nome ? `Cartão: ${nome}.` : '', itens.some(i => i.parcela === true) ? 'Há parcelas vencendo nesta fatura' : ''].filter(Boolean).join(' '), [nome], f.vencimento)
         if (itens.some(i => i.parcela === true)) add('parcelas', 'cartoes', 'cartao', assunto,
-          'Há parcelas vencendo nesta fatura', composicao, [op('composicao', 'Abrir composição')], nome ? `Cartão: ${nome}.` : '', [nome], f.vencimento)
+          'Há parcelas vencendo nesta fatura', composicao, [op('composicao', 'Ver compras desta fatura')], nome ? `Cartão: ${nome}.` : '', [nome], f.vencimento)
       }
       if (inteiro(f.banco) && Math.abs(f.banco - f.total) >= 1) add('fatura_divergente', 'cartoes', 'cartao', assunto,
-        'A fatura não bate com as compras anotadas. Vamos conferir?', composicao, [op('composicao', 'Abrir composição')], nome ? `Cartão: ${nome}.` : '', [nome])
+        'A fatura não bate com as compras anotadas. Vamos conferir?', composicao, [op('composicao', 'Ver compras desta fatura')], nome ? `Cartão: ${nome}.` : '', [nome])
     }
     const r = s.reserva
     if (r && r.mes === t.dia.slice(0, 7) && inteiro(r.combinada) && r.combinada > 0 && inteiro(r.livre) && r.livre < r.combinada)

@@ -2,7 +2,7 @@ import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
-import { Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
+import { Eye, EyeOff, Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
@@ -17,6 +17,14 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
+type Rascunho = { txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number }
+function lerRascunho(chave: string): Rascunho | null {
+ try {
+  const d = JSON.parse(sessionStorage.getItem(chave) || 'null')
+  if (d && typeof d.txt === 'string' && typeof d.desc === 'string' && typeof d.quando === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.quando) && (d.cartao === null || typeof d.cartao === 'string') && typeof d.envelope === 'string' && Number.isInteger(d.parcelas) && d.parcelas >= 1 && d.parcelas <= 12) return d
+ } catch { /* sem storage ou rascunho inválido */ }
+ return null
+}
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 /** O que fica pra ela depois do gasto, numa frase (R9: sem segundos, sem "custou de rendimento"). */
@@ -45,31 +53,45 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
 
 /** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
 export function Lancar() {
-  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto } = useApp()
+  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, alternarOculto, sessao } = useApp()
   const corr = lancarAberto?.corrigir
+  const chaveRascunho = sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho && !lancarAberto?.entrou ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
+  const [rascunho] = useState(() => chaveRascunho ? lerRascunho(chaveRascunho) : null)
+  const [recuperado, setRecuperado] = useState(!!rascunho)
+  const concluido = useRef(false)
   const inicio = useRef(performance.now())
   const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : 'gasto')
-  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? (lancarAberto.atalho ? valorComCentavos(lancarAberto.valor) : String(lancarAberto.valor).replace('.', ',')) : '')
+  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? (lancarAberto.atalho ? valorComCentavos(lancarAberto.valor) : String(lancarAberto.valor).replace('.', ',')) : rascunho?.txt || '')
   // B9: ao corrigir, o valor antigo vem selecionado: o 1º número digitado já substitui (sem apagar 4 vezes)
   const [selecionado, setSelecionado] = useState(!!corr)
   const digitar = (t: string) => { setTxt(x => tecla(selecionado ? '' : x, t === 'apagar' && selecionado ? 'apagar' : t)); setSelecionado(false) }
   const hoje = hojeRecife()
-  const [quando, setQuando] = useState<string>(corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : hoje)
-  const [cartao, setCartao] = useState<string | null>(corr ? corr.cartao_id : null)
-  const [parcelas, setParcelas] = useState(corr?.parcelas || 1)
+  const [quando, setQuando] = useState<string>(corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : rascunho?.quando || hoje)
+  const [cartao, setCartao] = useState<string | null>(corr ? corr.cartao_id : rascunho?.cartao || null)
+  const [parcelas, setParcelas] = useState(corr?.parcelas || rascunho?.parcelas || 1)
   const [cartoes, setCartoes] = useState<Cartao[]>([])
-  const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || '')
+  const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || rascunho?.desc || '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const equipe = familia?.papel === 'equipe'
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
 
+  useEffect(() => {
+    if (!chaveRascunho || concluido.current) return
+    try {
+      if (!txt && !desc) { sessionStorage.removeItem(chaveRascunho); return }
+      sessionStorage.setItem(chaveRascunho, JSON.stringify({ txt, desc, quando, cartao, parcelas, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' }))
+    } catch { /* sem storage */ }
+  }, [chaveRascunho, txt, desc, quando, cartao, parcelas])
+  const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) sessionStorage.removeItem(chaveRascunho) } catch { /* sem storage */ } }
+  const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setParcelas(1); setRecuperado(false); concluido.current = false }
   const atalho = !corr ? lancarAberto?.atalho : undefined
   const [cartaoAtalho, setCartaoAtalho] = useState<'achou' | 'nao achou' | null>(null)
   useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => {
     const meus = cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id)
     setCartoes(meus)
+    if (rascunho?.cartao && !meus.some(c => c.id === rascunho.cartao)) { setCartao(null); setParcelas(1) }
     // E9: o cartão que o iPhone mandou, se for um dos seus (o do outro nunca entra)
     if (atalho?.cartao) { const c = acharCartao(meus, atalho.cartao); if (c) setCartao(c.id); setCartaoAtalho(c ? 'achou' : 'nao achou') }
   }).catch(() => {}) }, [api, familia?.id, equipe])
@@ -91,7 +113,7 @@ export function Lancar() {
   // E2: lança só no seu, na Casa e no sem dono; o limite do outro é só pra ler
   const envs = (resumo?.envelopes || []).filter(e => (!equipe || e.casa) && escreveNo(e, familia))
   // o limite de quem lança vem primeiro (G8); se abriu de um envelope, ele vem antes
-  const primeiro = corr?.envelope_id || lancarAberto?.envelope || familia?.envelopeId
+  const primeiro = corr?.envelope_id || lancarAberto?.envelope || (recuperado ? rascunho?.envelope : undefined) || familia?.envelopeId
   const ordem = [...envs].sort((a, b) => (a.id === primeiro ? -1 : b.id === primeiro ? 1 : 0))
   const c = cartoes.find(x => x.id === cartao)
   // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
@@ -125,6 +147,7 @@ export function Lancar() {
       const descricao = desc.trim() || `Gasto de ${diaSemana(quando)} ${dataCurta(quando)}`
       const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p].join('|'))
       const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave })
+      limparRascunho()
       toque.gravou()
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
@@ -169,7 +192,7 @@ export function Lancar() {
           <span className="cur">R$</span><span className="num">{oculto && valor ? '•••' : <>{(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}{dec !== undefined ? ',' + dec : ''}</>}</span>
         </output>
         {selecionado && <small className="sub">Digite o valor certo: o antigo some no 1º número.</small>}
-        {oculto && valor > 0 && <small className="sub">Valores escondidos. Toque no olho, lá em cima, pra ver o que digitou.</small>}
+        {oculto && valor > 0 && <small className="sub">Valores escondidos. Use o olho desta folha para ver o que digitou.</small>}
       </div>
       {/* B10: o "O que foi?" fica à vista, logo abaixo do valor */}
       {modo === 'gasto' && <label className="campo"><span>O que foi?</span><CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" /></label>}
@@ -182,9 +205,10 @@ export function Lancar() {
       </div>
     </>
   )
-  const datas = corr && corr.data !== hoje && corr.data !== somaDias(hoje, -1) ? [corr.data, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
+  const datas = quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
-    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Lançar'} fechar={fecharLancar} rotulo={corr ? 'Corrigir lançamento' : 'Lançar gasto'}>
+    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={fecharLancar} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}>
+      {recuperado && <p role="status">Rascunho recuperado <button type="button" onClick={descartar}>Descartar</button></p>}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
           <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}>Gastei</button>
@@ -260,7 +284,7 @@ export function Lancar() {
 
 /** R11+G12: dinheiro que entrou a mais vai pro guardado (E3, conserto 4: "reserva" é só o dinheiro da Casa que nunca se gasta). Não muda o que dá pra gastar (regra do salário). */
 function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNode }) {
-  const { api, familia, fecharLancar, toast, recarregar, tentar } = useApp()
+  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
   const { g } = useGuardado()
   const { familia: fam } = useApp()
   const [entradas, salvarEntradas] = useConfig<{ id: string; data: string; valor: number; de: string; destino: string }[]>('entradas', [])
@@ -323,8 +347,14 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
  * Ela diz o que comprou, se foi a feira da semana ou coisa da casa, e tira a foto da nota. O casal confere o valor pela foto.
  */
 function AnotarCompra() {
-  const { api, familia, fecharLancar, toast, recarregar, tentar } = useApp()
-  const [nome, setNome] = useState('')
+  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
+  const chave = sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
+  const [rascunho] = useState(() => { try { return chave ? sessionStorage.getItem(chave) || '' : '' } catch { return '' } })
+  const [recuperado, setRecuperado] = useState(!!rascunho)
+  const [nome, setNome] = useState(rascunho)
+  const salvo = useRef(false)
+  const limpar = () => { try { if (chave) sessionStorage.removeItem(chave) } catch { /* sem storage */ } }
+  useEffect(() => { if (!chave || salvo.current) return; try { if (nome) sessionStorage.setItem(chave, nome); else limpar() } catch { /* sem storage */ } }, [chave, nome])
   const [tipo, setTipo] = useState<'feira' | 'casa'>('feira')
   const [foto, setFoto] = useState<string | null>(null)
   const [erro, setErro] = useState('')
@@ -334,17 +364,18 @@ function AnotarCompra() {
   const anotar = () => trava(async () => {
     if (!familia) return
     if (!nome.trim()) { setErro('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.'); return }
-    if (!api.anotarCompraEquipe) { setErro('Essa parte ainda está sendo ligada no banco da família. Avise quem cuida da família.'); return }
+    if (!api.anotarCompraEquipe) { setErro('Essa opção ainda não está disponível. Fale com quem cuida do app.'); return }
     setGravando(true); setErro('')
     let aviso = ''
     const ok = await tentar(async () => { aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso })
     setGravando(false)
     if (!ok) return
-    fecharLancar(); await recarregar(); toast(aviso)
+    salvo.current = true; limpar(); fecharLancar(); await recarregar(); toast(aviso)
   })
   const pegarFoto = async (arq: File | null) => { if (!arq) return; try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') } }
   return (
     <Sheet titulo="Anotar compra" fechar={fecharLancar} rotulo="Anotar compra">
+      {recuperado && <p role="status">Rascunho recuperado <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
       <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
         <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">

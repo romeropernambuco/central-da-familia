@@ -88,7 +88,7 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
             {envs.map(e => <button key={e.id} type="button" className="pill" aria-pressed={env === e.id} onClick={() => setEnv(e.id)}>{textoPrivado(e.nome)}</button>)}
           </div>
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Check size={20} />Lançar {reais(total)}{textoPrivado(nomeEnv ? ` em ${nomeEnv}` : '')}</button>
+          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Check size={20} />Anotar {reais(total)}{textoPrivado(nomeEnv ? ` em ${nomeEnv}` : '')}</button>
           <button className="btn ghost full" type="button" onClick={() => { setLido(null); setEtapa('foto') }}>Ler outra foto</button>
         </>
       )}

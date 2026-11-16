@@ -1,3 +1,7 @@
+import { Ajustes } from '../telas/ajustes/Ajustes'
+import { Cartoes } from '../telas/cartoes/Cartoes'
+import { MeuOrcamento } from '../telas/meu-orcamento/MeuOrcamento'
+import { Lancar } from '../telas/lancar/Lancar'
 import { act, createElement, Fragment, useState, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -15,7 +19,7 @@ import type { Api, ImovelTela } from '../api/tipos'
 import type { Rota } from '../app/rotas'
 
 afterEach(() => { vi.unstubAllGlobals(); esconderValores(false) })
-async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equipe = false) {
+async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equipe = false, extra: Partial<Ctx> = {}) {
   const doc = new DocumentoTeste()
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] } })
   Object.assign(doc.documentElement, { dataset: {} })
@@ -30,7 +34,7 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   const sessao = (await apiExemplo.sessao())!
   const familia = { ...sessao.familias[0], papel: equipe ? 'equipe' as const : 'casal' as const }
   const api = { ...apiExemplo, ...mudancas }
-  const ctx = { api, sessao, familia, versao: 0, oculto: false, toast() {}, recarregar: async () => {}, tentar: async (f: () => Promise<unknown>) => { await f(); return true } } as unknown as Ctx
+  const ctx = { api, sessao, familia, versao: 0, oculto: false, toast() {}, recarregar: async () => {}, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, ...extra } as unknown as Ctx
   const container = doc.createElement('div'); doc.body.appendChild(container)
   const root = createRoot(container as unknown as HTMLElement)
   await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, elemento)))
@@ -59,7 +63,7 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
     expect(link, texto).toBeDefined()
     await act(async () => link.click())
   }
-  return { api, ctx, familia, container, clicar, abrirTarefas, preencher, navegar, fechar: async () => { await act(async () => root.unmount()) } }
+  return { api, ctx, familia, container, clicar, abrirTarefas, preencher, navegar, atualizar: async () => { await act(async () => root.render(createElement(ContextoApp.Provider, { value: { ...ctx } }, elemento))) }, fechar: async () => { await act(async () => root.unmount()) } }
 }
 
 it('equipe só monta agente em Casa e a feira não pede nem envia dinheiro', async () => {
@@ -326,4 +330,83 @@ it('falha na releitura da ficha conserva a trava inclusive ao devolver ao agente
     expect(a.container.textContent).toContain('Respondida, atualizando')
     expect(a.container.buscar(n => n.tagName === 'BUTTON' && /Concluir pela ficha|Adiar pela ficha/.test(n.textContent))).toHaveLength(0)
   } finally { await a.confirmar(); await a.fechar() }
+})
+
+it.each(['imoveis', 'cartoes'] as const)('UX: leitura rejeitada em %s não parece vazio e pode tentar novamente', async tipo => {
+ const buscar = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
+ const a = await montar(createElement(tipo === 'imoveis' ? Imoveis : Cartoes, { aplicado: 0 }), { [tipo]: buscar, ...(tipo === 'cartoes' ? { faturas: vi.fn().mockResolvedValue([]) } : {}) })
+ try {
+  expect(a.container.textContent).toContain('Tentar novamente')
+  expect(a.container.textContent).not.toContain(tipo === 'imoveis' ? 'Nenhum imóvel anotado' : 'Nenhum cartão cadastrado')
+  await a.clicar('Tentar novamente')
+  expect(buscar).toHaveBeenCalledTimes(2)
+  expect(a.container.textContent).toContain(tipo === 'imoveis' ? 'Nenhum imóvel anotado' : 'Nenhum cartão cadastrado')
+  buscar.mockRejectedValueOnce(new Error('offline de novo'))
+  a.ctx.versao++; await a.atualizar()
+  expect(a.container.textContent).toContain('Dados desatualizados.')
+  expect(a.container.textContent).toContain('Tentar novamente')
+ } finally { await a.fechar() }
+})
+it('UX: Não gastei não conquista primeiro gasto; lançamento real conquista', async () => {
+ const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
+ const resumo = await apiExemplo.resumoHoje(familia.id)
+ const env = resumo.envelopes.find(e => e.id === familia.envelopeId) || resumo.envelopes.find(e => !e.casa)!
+ const sem = { ...resumo, envelopes: [env] }
+ for (const real of [false, true]) {
+  const a = await montar(createElement(MeuOrcamento), { lancamentos: vi.fn().mockResolvedValue(real ? [{ id: 'ux-real', envelope_id: env.id, data: hojeRecife(), valor: 10 }] : []), config: vi.fn(async (_f, chave, padrao) => chave === 'dias_sem_gasto' ? [hojeRecife()] : padrao) as Api['config'] }, false, { resumo: sem })
+  try {
+   const conquista = a.container.buscar(n => n.tagName === 'LI' && n.textContent.startsWith('1º gasto anotado'))[0]
+   expect(conquista.textContent).toContain(real ? 'Conseguiu' : 'Ainda não')
+  } finally { await a.fechar() }
+ }
+})
+it('UX: rascunho recupera valor protegido, oferece olho na folha e descarta', async () => {
+ const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
+ const chave = 'anotar:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
+ const storage = new Map([[chave, JSON.stringify({ txt: '753,21', desc: 'Teste privado', quando: hojeRecife(), cartao: null, envelope: familia.envelopeId, parcelas: 1 })]])
+ vi.stubGlobal('sessionStorage', { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) })
+ esconderValores(true)
+ const a = await montar(createElement(Lancar), {}, false, { resumo: await apiExemplo.resumoHoje(familia.id), lancarAberto: {}, oculto: true })
+ try {
+  expect(a.container.textContent).toContain('Rascunho recuperado')
+  expect(a.container.textContent).not.toContain('753')
+  expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Mostrar valores')).toHaveLength(1)
+  await a.clicar('Descartar'); expect(storage.has(chave)).toBe(false)
+ } finally { await a.fechar() }
+})
+
+it('UX: compra da equipe recupera só texto e limpa após salvar', async () => {
+ const sessao = (await apiExemplo.sessao())!, familia = sessao.familias[0]
+ const chave = 'compra-equipe:' + JSON.stringify([apiExemplo.modo, sessao.userId, familia.id])
+ const storage = new Map<string, string>()
+ vi.stubGlobal('sessionStorage', { getItem: (k: string) => storage.get(k) || null, setItem: (k: string, v: string) => storage.set(k, v), removeItem: (k: string) => storage.delete(k) })
+ const api = { anotarCompraEquipe: vi.fn().mockResolvedValue({ aviso: 'Compra anotada.' }) }
+ const a = await montar(createElement(Lancar), api, true, { lancarAberto: {}, fecharLancar: vi.fn() })
+ try {
+  await a.preencher('O que você comprou?', 'Compra de teste')
+  expect(storage.get(chave)).toBe('Compra de teste')
+  await a.clicar('Usar uma nota de exemplo')
+  expect(storage.get(chave)).toBe('Compra de teste')
+ } finally { await a.fechar() }
+ const b = await montar(createElement(Lancar), api, true, { lancarAberto: {}, fecharLancar: vi.fn() })
+ try {
+  expect(b.container.textContent).toContain('Rascunho recuperado')
+  expect(b.container.textContent).not.toContain('Foto da nota pronta')
+  await b.clicar('Anotar a compra')
+  expect(api.anotarCompraEquipe).toHaveBeenCalledWith(familia.id, { tipo: 'feira', nome: 'Compra de teste', foto: null })
+  expect(storage.has(chave)).toBe(false)
+ } finally { await b.fechar() }
+})
+
+it('UX: olho fechado retira link privado de convite e bloqueia compartilhamento', async () => {
+ esconderValores(true)
+ const reenviar = vi.fn(), toast = vi.fn()
+ const a = await montar(createElement(Ajustes), { convites: vi.fn().mockResolvedValue([{ id: 'convite-ux', nome: 'Convidado de teste', email: 'ux-sentinela@example.invalid', papel: 'pessoa', situacao: 'esperando' }]), reenviarConvite: reenviar }, false, { oculto: true, toast })
+ try {
+  const link = a.container.buscar(n => n.tagName === 'A' && n.textContent === 'Reenviar')[0]
+  expect(link).toBeDefined(); expect(link.getAttribute('href')).toBeNull()
+  await act(async () => link.click())
+  expect(reenviar).not.toHaveBeenCalled()
+  expect(toast).toHaveBeenCalledWith('Abra o olho para compartilhar este convite.')
+ } finally { await a.fechar() }
 })

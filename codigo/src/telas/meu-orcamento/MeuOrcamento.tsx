@@ -58,7 +58,7 @@ export function MeuOrcamento() {
   const ir = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const frase = fraseEstouro(env, n)
   const conquistas = [
-    { nome: '1º gasto anotado', ok: dados.anot.size > 0 },
+    { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0 },
     { nome: '7 dias dentro do valor do dia', ok: dentro >= 7 },
     { nome: 'Cofrinho passou de R$ 100', ok: dados.cof >= 100 },
     { nome: '3 dias seguidos anotados', ok: ult3.length === 3 && branco === 0 },
@@ -95,13 +95,13 @@ export function MeuOrcamento() {
                 <span><b>Ontem você não gastou nada?</b> É só pra conta ficar certa.
                   <span className="row-btns" style={{ marginTop: 8 }}>
                     <button className="btn sm line" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}>Não gastei</button>
-                    <button className="btn sm line" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de lançar</button>
+                    <button className="btn sm line" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de anotar</button>
                   </span>
                 </span>
               </div>
             )}
             {meu && <div className="row-btns" style={{ marginTop: 14 }}>
-              <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Lançar em {textoPrivado(env.nome)}</button>
+              <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Anotar em {textoPrivado(env.nome)}</button>
               {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
               <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá pra comprar?</button>
             </div>}
@@ -111,7 +111,7 @@ export function MeuOrcamento() {
             <div className="card-h"><h2 id="oCofT"><PiggyBank size={24} aria-hidden="true" />Cofrinho</h2></div>
             <div className="numrow"><Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
               <Qm titulo="Cofrinho" linhas={[
-                { linha: 'Dia de base (combinado do mês dividido pelos dias do mês)', valor: dados.base },
+                { linha: 'Valor diário usado para calcular sua sobra', valor: dados.base },
                 { linha: `Nos ${plural(dados.fechados.filter(d => dados.anot.has(d)).length, 'dia anotado', 'dias anotados')} até ontem: o que sobrou menos o que passou`, valor: dados.cof },
               ]} nota="A mesma base do número de hoje: o que sobra do dia de base fica no cofrinho e volta dividido pelos dias que faltam. Dia que passou do valor come a sobra dos outros dias. Dia sem anotação não conta. Hoje só entra amanhã." />
             </div>

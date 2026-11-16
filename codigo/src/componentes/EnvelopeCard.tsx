@@ -146,7 +146,7 @@ export function EnvelopeCard({ e, diasRestantes, onClick, meu }: { e: Envelope; 
       {/* C3 (revisão E2/E3): o limite da filha os pais combinam (e mudam no Planejamento); quem lança é ela */}
       {doOutro && <p className="sub dono-linha">{textoPrivado(!dono ? 'Da família: só pra ver.' : e.dono_papel === 'pessoa' ? `Só ${dono} lança aqui. O limite é combinado com os pais.` : `Limite de ${dono}: só ${dono} lança e mexe aqui.`)}</p>}
       {meu && !doOutro && n.estado === 'devendo' && e.regra !== 'semanal' && <CobrirEstouro e={e} valor={n.devendo} />}
-      {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Lançar em {textoPrivado(e.nome)}</button>}
+      {onClick && !doOutro && <button className="btn sm line" type="button" onClick={onClick} style={{ justifySelf: 'start' }}>Anotar em {textoPrivado(e.nome)}</button>}
     </div>
   )
 }

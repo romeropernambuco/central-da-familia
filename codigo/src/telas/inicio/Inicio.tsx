@@ -119,9 +119,9 @@ export function Inicio() {
             ))}
           </ul>
         ) : (
-          <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Lançar um gasto</button>}>Nenhum gasto ainda. É só o valor e 1 toque.</Vazio>
+          <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum gasto ainda. É só o valor e 1 toque.</Vazio>
         )}
-        {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}>Lançar um gasto</button>}
+        {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}>Anotar gasto</button>}
       </section>
     </div>
   )
@@ -175,7 +175,7 @@ function Placar({ r }: { r: ResumoHoje }) {
       <h2 id="hPlacar" style={{ fontSize: 16 }}>O casal, se continuar assim</h2>
       <p>{passam.length ? <>{textoPrivado(passam.length === p.length ? 'Os 2 passam do combinado neste mês.' : `${passam[0].eu ? 'Você passa' : `${passam[0].nome} passa`} do combinado neste mês.`)} O que passa sai de {prox}.</> : <>Juntos, sobram <b>{reais(sobra)}</b> no fim do mês.</>}</p>
       <p className="pes">{p.map(x => <span key={x.nome} className={passa(x) ? 'placar-passa' : ''}>{textoPrivado(linha(x))}</span>)}</p>
-      <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês. Os gastos de cada um estão em Lançamentos, com o nome de quem gastou.</p>
+      <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês. Os gastos de cada um estão em Gastos e entradas, com o nome de quem gastou.</p>
     </section>
   )
 }

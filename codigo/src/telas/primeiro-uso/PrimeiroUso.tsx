@@ -1,3 +1,4 @@
+import { AjudaDaAba } from '../../componentes/AgenteDaAba'
 import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useState } from 'react'
 import { ArrowRight, MessageCircle, Check, Clock } from 'lucide-react'
@@ -61,6 +62,7 @@ export function PrimeiroUso() {
 
   return (
     <div className="entrar">
+      <AjudaDaAba rota="primeiro-uso" />
       <div className="logo"><Marca size={48} /><b>Central da Família</b></div>
       <div className="passos" aria-label={`Passo ${passo} de 4`}>{[1, 2, 3, 4].map(i => <i key={i} className={i <= passo ? 'on' : ''} />)}</div>
       <p className="sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={16} aria-hidden="true" />Passo {passo} de 4. Leva uns 5 minutos no total.</p>
@@ -88,7 +90,7 @@ export function PrimeiroUso() {
       {passo === 2 && (
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); passo2() }}>
           <h2>Quanto cada um pode gastar no mês?</h2>
-          <p className="sub">Cada caixinha é um limite: o app desconta dela cada gasto. Pode mudar depois em Planejamento.</p>
+          <p className="sub">Defina quanto cada pessoa e a casa podem gastar por mês. Pode mudar depois em Planejamento.</p>
           {envs.map(e => (
             <label className="campo" key={e.id}><span>{textoPrivado(e.nome)}</span>
               <CampoValor valor={lim[e.id] || ''} mudar={v => setLim({ ...lim, [e.id]: v.replace(/[^\d,]/g, '') })}  />

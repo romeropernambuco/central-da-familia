@@ -53,7 +53,7 @@ export function Casa() {
 const FalhaConfig = ({ m }: { m: string }) => (m ? <p className="aviso-erro" role="alert">Não deu pra abrir o que está salvo: {m} Nada foi apagado. Quando a internet voltar, a tela se atualiza sozinha.</p> : null)
 
 function Feira() {
-  const { api, familia, resumo, versao, tentar, toast } = useApp()
+  const { api, familia, resumo, versao, tentar, toast, oculto } = useApp()
   const hoje = hojeRecife()
   const [lista, setLista, falhaLista] = useConfig<Item[]>('casa_lista', [])
   const [pres, setPres] = useConfig<Record<string, string[]>>('casa_presenca', {})
@@ -168,10 +168,10 @@ function Feira() {
       {cod && (
         <Sheet titulo={textoPrivado(`Convite de ${cod.nome}`)} fechar={() => setCod(null)}>
           <p className="lbl" style={{ justifyContent: 'center' }}>Código de 4 números</p>
-          <p className="din big" style={{ letterSpacing: '.2em', textAlign: 'center' }} aria-label={'Código ' + cod.codigo.split('').join(' ')}>{cod.codigo}</p>
+          <p className="din big" style={{ letterSpacing: '.2em', textAlign: 'center' }} aria-label={oculto ? 'Código escondido' : 'Código ' + cod.codigo.split('').join(' ')}>{textoPrivado(cod.codigo, oculto)}</p>
           <p className="sub" style={{ textAlign: 'center' }}>{textoPrivado(cod.nome)} precisa das 2 coisas: abrir o link abaixo e digitar o código. Vale por 24 horas. Depois de 5 erros, gere outro.</p>
-          <p className="linkbox" aria-label="Link do convite">{cod.link}</p>
-          <a className="btn primary full" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('equipe', { familia: familia!.nome, quem: cod.nome, link: cod.link, codigo: cod.codigo }))}><MessageCircle size={20} />Abrir o WhatsApp com a mensagem</a>
+          <p className="linkbox" aria-label="Link do convite">{textoPrivado(cod.link, oculto)}</p>
+          <a className="btn primary full" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('equipe', { familia: familia!.nome, quem: cod.nome, link: cod.link, codigo: cod.codigo }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><MessageCircle size={20} />Abrir o WhatsApp com a mensagem</a>
           <button className="btn line full" type="button" onClick={() => tentar(async () => { if (await copiarProtegido(cod.link, undefined, toast)) toast('Link copiado. O código vai separado: ' + cod.codigo) })}><Copy size={20} />Copiar só o link</button>
           <p className="sub">O app só abre o WhatsApp com o texto pronto. Quem escolhe a conversa e envia é você.</p>
         </Sheet>
