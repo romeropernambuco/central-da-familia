@@ -36,7 +36,7 @@ export function PrimeiroUso() {
 
   const passo1 = () => faz(async () => {
     if (nomeFam.trim().length < 2 || nome.trim().length < 2) throw new Error('Escreva o nome da família e o seu nome.')
-    const id = await api.criarFamilia(nomeFam.trim(), nome.trim())
+    const id = fid || await api.criarFamilia(nomeFam.trim(), nome.trim())
     setFid(id)
     const r = await api.resumoHoje(id)
     setEnvs(r.envelopes)

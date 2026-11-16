@@ -1,6 +1,6 @@
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { novoUuid } from '../../lib/seguro'
 import { useConfig } from '../../app/useConfig'
 import { Users, ShoppingBasket, Flame, Wrench, FileText, Plus, MessageCircle, Check, KeyRound, CalendarDays, Trash2, Camera, LogOut, Copy } from 'lucide-react'
@@ -338,13 +338,26 @@ function CasaEquipe() {
   const [erro, setErro] = useState('')
   const [novo, setNovo] = useState('')
   const [ocupado, setOcupado] = useState(false)
-  useEffect(() => { if (familia) api.casaDaEquipe(familia.id).then(c => { setCasa(c); setErro('') }).catch(e => setErro((e as Error).message)) }, [api, familia?.id, versao])
+  const pedido = useRef(0)
+  const trava = useRef(false)
+  useEffect(() => {
+    const meu = ++pedido.current
+    if (familia) api.casaDaEquipe(familia.id).then(c => { if (meu === pedido.current) { setCasa(c); setErro('') } }).catch(e => { if (meu === pedido.current) setErro((e as Error).message) })
+    return () => { pedido.current++ }
+  }, [api, familia?.id, versao])
   const hoje = casa?.hoje || hojeRecife()
   const marcar = async (tipo: MarcaCasa, dados?: { id?: string; nome?: string }, aviso?: string) => {
-    if (!familia || ocupado) return
-    setOcupado(true)
+    if (!familia || trava.current) return false
+    trava.current = true; setOcupado(true)
+    const meu = ++pedido.current
     // E3 (conserto 9): depois de marcar, o "precisa de você" se refaz na hora (o piscineiro que veio sai da conta)
-    try { setCasa(await api.casaMarcar(familia.id, tipo, dados)); if (aviso) toast(aviso); await recarregar() } catch (e) { toast((e as Error).message) } finally { setOcupado(false) }
+    try {
+      const c = await api.casaMarcar(familia.id, tipo, dados)
+      if (meu === pedido.current) setCasa(c)
+      if (aviso) toast(aviso)
+      try { await recarregar() } catch { /* A marcação já foi confirmada. */ }
+      return true
+    } catch (e) { toast((e as Error).message); return false } finally { trava.current = false; setOcupado(false) }
   }
   if (!casa) return <div className="view">{erro ? <p className="erro" role="alert">{textoPrivado(erro)}</p> : <p className="sub">Abrindo a Casa...</p>}</div>
   const ponto = casa.presenca.meu_ponto
@@ -396,9 +409,9 @@ function CasaEquipe() {
               ))}
             </ul>
             {!casa.lista.length && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Acabou alguma coisa? Escreva abaixo.</Vazio>}
-            <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={e => { e.preventDefault(); if (novo.trim()) { marcar('acabou', { nome: novo.trim() }, 'Item posto na lista.'); setNovo('') } }}>
-              <CampoPrivado className="inp" placeholder="Acabou alguma coisa?" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
-              <button className="btn line" type="submit" aria-label="Pôr na lista"><Plus size={20} /></button>
+            <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await marcar('acabou', { nome: novo.trim() }, 'Item posto na lista.')) setNovo('') }}>
+              <CampoPrivado className="inp" placeholder="Acabou alguma coisa?" value={novo} disabled={ocupado} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
+              <button className="btn line" type="submit" disabled={ocupado} aria-label="Pôr na lista"><Plus size={20} /></button>
             </form>
           </section>
         </div>

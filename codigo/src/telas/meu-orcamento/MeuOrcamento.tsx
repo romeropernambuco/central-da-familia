@@ -40,7 +40,7 @@ export function MeuOrcamento() {
     const anot = new Set([...Object.keys(porDia), ...(semGasto || [])])
     // R8: o cofrinho bate com o mês: dia acima do valor come a sobra dos outros dias
     return { porDia, base, fechados, anot, cof: cofrinhoDoMes(porDia, base, fechados, anot) }
-  }, [lanc, env?.id, hoje, semGasto])
+  }, [lanc, env?.id, env?.limite_base, env?.limite_mes, hoje, semGasto])
 
   if (!resumo) return <div className="card"><p className="sub">Abrindo…</p></div>
   if (!env) return <div className="card"><p className="sub">Ainda não tem limite de pessoa. Crie em Planejamento.</p></div>

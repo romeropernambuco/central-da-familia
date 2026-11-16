@@ -1,4 +1,5 @@
 import { lojaEscritorio } from './escritorioCompartilhado'
+import { useInvalidacao } from './invalidacao'
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useApp } from './contexto'
@@ -16,13 +17,18 @@ export const perguntaDaLinha = new Map<string, string>()
 const semFuncao = (m: string) => /ainda não tem essa função/i.test(m)
 
 function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, limpar: (v: T) => T = v => v) {
-  const { familia, versao, tentar } = useApp()
+  const { api, familia, versao, tentar } = useApp()
+  const invalidacao = useInvalidacao(api, familia?.id || '')
+  const chave = `${familia?.id}:${familia?.papel}:${!!buscar}`
+  const [origem, setOrigem] = useState(chave)
   const [dado, setDado] = useState<T | null>(null)
   const [estado, setEstado] = useState<Leitura>('buscando')
   const [motivo, setMotivo] = useState('')
   const [n, setN] = useState(0)
   const pedido = useRef(0)
   useEffect(() => {
+    setOrigem(chave); setMotivo(''); setEstado('buscando')
+    if (origem !== chave || !buscar) setDado(null)
     if (!familia || !buscar) return
     const meu = ++pedido.current
     buscar(familia.id).then(v => { if (meu !== pedido.current) return; setDado(limpar(v)); setEstado('ok'); setMotivo('') }).catch((e: Error) => {
@@ -33,8 +39,8 @@ function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, limpar:
     })
     return () => { if (pedido.current === meu) pedido.current++ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familia?.id, versao, n, !!buscar])
-  return { dado, estado, motivo, atualizar: useCallback(() => setN(x => x + 1), []) }
+  }, [api, chave, versao, n, invalidacao])
+  return { dado: origem === chave && buscar ? dado : null, estado: origem === chave ? estado : 'buscando' as Leitura, motivo: origem === chave ? motivo : '', atualizar: useCallback(() => setN(x => x + 1), []) }
 }
 
 /** O dinheiro guardado e quanto rendeu hoje. Só o casal: a equipe e as outras pessoas nem perguntam ao banco. */

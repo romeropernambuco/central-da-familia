@@ -16,21 +16,28 @@ export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promi
   const [lido, setLido] = useState(false)
   const atual = useRef(v); atual.current = v
   const fid = familia?.id
+  const escopo = `${fid}:${chave}`
+  const [origem, setOrigem] = useState(escopo)
+  const escopoAtual = useRef(escopo); escopoAtual.current = escopo
   const guarda = useMemo(() => criarGuardaConfig<T>(() => api.config<T>(fid!, chave, padrao), nv => api.salvarConfig(fid!, chave, nv)), [api, fid, chave])
   useEffect(() => {
+    if (origem !== escopo) { setV(padrao); setFalha(''); setLido(false); setOrigem(escopo) }
     if (!fid) return
     let vivo = true
     guarda.carregar().then(r => { if (vivo && r) { setV(r.valor); setFalha(''); setLido(true) } }).catch(e => { if (vivo && !guarda.lido) setFalha((e as Error).message) })
     return () => { vivo = false }
   }, [guarda, fid, versao])
   const salvar = async (nv: T) => {
+    if (!fid || origem !== escopo || !lido) return false
+    const aindaAtual = () => escopoAtual.current === escopo
     const antes = atual.current
     setV(nv)
     let juntou = false
-    const ok = await tentar(async () => { const r = await guarda.salvar(nv); juntou = r.mudou; if (r.mudou) setV(r.valor) })
+    const ok = await tentar(async () => { const r = await guarda.salvar(nv); juntou = r.mudou; if (r.mudou && aindaAtual()) setV(r.valor) })
+    if (!aindaAtual()) return ok
     if (!ok) setV(antes)
     else if (juntou) toast('Outro celular mexeu nisso ao mesmo tempo. Juntei as 2 mudanças: confira.')
     return ok
   }
-  return [v, salvar, falha, lido]
+  return [origem === escopo ? v : padrao, salvar, origem === escopo ? falha : '', origem === escopo && lido]
 }

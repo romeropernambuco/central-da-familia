@@ -2,7 +2,7 @@ import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
 // E6 (fase final, parte de tela): os parâmetros do objetivo 2029 dentro do Planejamento. Os 2 do casal mudam; o banco
 // guarda quem mudou, quando, antes e depois; o Focus aparece ao lado de cada taxa. A tela NUNCA calcula 2029: só chama
 // futuro() de lib/futuro com a entrada que api.futuroEntradas() montou e escreve o resultado.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Save, Target } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor } from '../../componentes/base'
@@ -44,32 +44,52 @@ function mudancas(a: ParametrosObjetivo | null, d: ParametrosObjetivo): string {
 }
 
 export function Parametros() {
+  const { familia } = useApp()
+  return <ParametrosFamilia key={`${familia?.id}:${familia?.papel}`} />
+}
+
+function ParametrosFamilia() {
   const { api, familia, versao, tentar, toast } = useApp()
   const [obj, setObj] = useState<Objetivo | null>(null)
   const [f, setF] = useState<Record<string, string>>({})
   const [travado, setTravado] = useState(false)
   const [n, setN] = useState(0)
   const [gravando, setGravando] = useState(false)
+  const editado = useRef(false)
+  const edicao = useRef(0)
+  const editar = (v: Record<string, string>) => { editado.current = true; edicao.current++; setF(v) }
+  const editarTravado = (v: boolean) => { editado.current = true; edicao.current++; setTravado(v) }
+  const [falha, setFalha] = useState('')
+  const [carregando, setCarregando] = useState(true)
   const anos = useMemo(() => { const a0 = Number(hojeRecife().slice(0, 4)), a1 = Math.max(a0, Number(VIRADA.slice(0, 4)) - 1); /* depois da virada: o ano de hoje (modo renda) */ return Array.from({ length: Math.max(0, a1 - a0 + 1) }, (_, i) => String(a0 + i)) }, [])
   useEffect(() => {
     if (!familia || familia.papel !== 'casal' || !api.objetivo) return
+    let vivo = true
+    setCarregando(true); setFalha('')
     api.objetivo(familia.id).then(o => {
+      if (!vivo) return
       setObj(o)
+      if (editado.current) return
       const p = o.parametros || PARAMETROS_INICIAIS
       setTravado(p.travado_focus)
       setF({ gasto: reaisDe(p.gasto_2029_hoje), renda: reaisDe(p.renda_certa_2029 || null), margem: textoDaTaxa(p.margem), real: textoDaTaxa(p.taxa_real_trabalho), ir: textoDaTaxa(p.aliq_proj), ir2: textoDaTaxa(p.aliq_renda || PADROES_ECONOMISTA.aliq_renda), ir3: textoDaTaxa(p.aliq_aluguel || PADROES_ECONOMISTA.aliq_aluguel),
         piso: p.piso_meses == null ? '' : String(p.piso_meses), reajuste: String(p.mes_reajuste || 1),
         ...Object.fromEntries(anos.flatMap(a => [[`selic${a}`, textoDaTaxa(p.taxa_bruta_ano[a])], [`ipca${a}`, textoDaTaxa(p.ipca_ano[a])]])) })
-    }).catch(() => setObj({ parametros: null, historico: [], focus: [] }))
+    }).catch(() => { if (vivo) setFalha('Não deu pra buscar os parâmetros.') }).finally(() => { if (vivo) setCarregando(false) })
+    return () => { vivo = false }
   }, [api, familia?.id, versao, n])
   // E7: a única conta de 2029 é a do motor (useFuturo chama futuro()); a tela só desenha
   const { ent, saida, estado: estFuturo, motivo: motivoFuturo, atualizar } = useFuturo()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "os 2" nem "vocês"
   const sozinho = useAdultos() === 1
   if (!familia || familia.papel !== 'casal' || !api.objetivo) return null
-  if (!obj) return <section className="card"><p className="sub">Buscando o objetivo de 2029…</p></section>
+  const avisoLeitura = <>
+    {carregando && <p role="status">Buscando o objetivo de 2029…</p>}
+    {falha && <p role="alert">{falha} {obj && 'Dados desatualizados.'} <button type="button" onClick={() => setN(x => x + 1)}>Tentar novamente</button></p>}
+  </>
+  if (!obj) return <section className="card">{avisoLeitura}</section>
   const focus = new Map(obj.focus.map(x => [String(x.ano), x]))
-  const campo = (k: string) => ({ value: f[k] ?? '', onChange: (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value.replace(/[^\d,.-]/g, '') }) })
+  const campo = (k: string) => ({ value: f[k] ?? '', onChange: (e: { target: { value: string } }) => editar({ ...f, [k]: e.target.value.replace(/[^\d,.-]/g, '') }) })
 
   async function salvar() {
     if (!familia || gravando) return
@@ -86,13 +106,15 @@ export function Parametros() {
     const p: ParametrosObjetivo = { gasto_2029_hoje: f.gasto.trim() ? centDe(f.gasto) : null, renda_certa_2029: f.renda.trim() ? centDe(f.renda) : 0, margem: t('margem')!, taxa_real_trabalho: t('real')!, aliq_proj: t('ir')!, aliq_renda: t('ir2')!, aliq_aluguel: t('ir3')!,
       taxa_bruta_ano: selic as Record<string, string>, ipca_ano: ipca as Record<string, string>, piso_meses: piso, mes_reajuste: mes, travado_focus: travado }
     setGravando(true)
+    const salvaEdicao = edicao.current
     const ok = await tentar(() => api.objetivoSalvar!(familia.id, p))
     setGravando(false)
-    if (ok) { setN(x => x + 1); atualizar(); toast('Objetivo salvo. Fica no histórico quem mudou e o que era antes.') }
+    if (ok) { if (salvaEdicao === edicao.current) editado.current = false; setN(x => x + 1); atualizar(); toast('Objetivo salvo. Fica no histórico quem mudou e o que era antes.') }
   }
 
   return (
     <section className="card plan-topo" aria-labelledby="pObj">
+      {avisoLeitura}
       <div className="card-h"><h2 id="pObj"><Target size={24} aria-hidden="true" />Objetivo de 2029</h2></div>
       <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.</p>
 
@@ -107,8 +129,8 @@ export function Parametros() {
       <details className="numeros-conta">
         <summary><span><b>Os números da conta</b><small>gasto de 2029, margem, rendimento, impostos, piso, Selic e IPCA. Toque pra ver ou mudar</small></span></summary>
       <div>
-        <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => setF({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>
-        <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto. Não inclua aluguel de imóvel cadastrado: ele já entra sozinho.</small></span><CampoValor valor={f.renda || ''} mudar={v => setF({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
+        <label className="linha-campo"><span className="n">Gasto por mês em 2029<small>a preços de hoje. Vazio = a confirmar (usa o teto de hoje)</small></span><CampoValor valor={f.gasto || ''} mudar={v => editar({ ...f, gasto: v })} rotulo="Gasto por mês em 2029" /></label>
+        <label className="linha-campo"><span className="n">Renda certa em 2029<small>só com contrato assinado; abate do gasto. Não inclua aluguel de imóvel cadastrado: ele já entra sozinho.</small></span><CampoValor valor={f.renda || ''} mudar={v => editar({ ...f, renda: v })} rotulo="Renda certa em 2029" /></label>
         {(() => { const a = avisoRendaCerta(f.renda && valorDigitadoValido(f.renda) ? centDe(f.renda) : 0, saida?.imoveis); return a ? <p className="todo warn aviso-renda-certa" role="status"><span>{a}</span></p> : null })()}
         <label className="linha-campo"><span className="n">Margem de segurança (%)<small>a mais, pra imprevisto</small></span><CampoDecimal className="inp" inputMode="decimal" {...campo('margem')} /></label>
         <label className="linha-campo"><span className="n">Rendimento acima da inflação (%)<small>por ano, a taxa que a conta usa pra 2029</small></span><CampoDecimal className="inp" inputMode="decimal" {...campo('real')} /></label>
@@ -122,8 +144,8 @@ export function Parametros() {
 
       <h3 className="dayh" style={{ marginTop: 12 }}>Selic e IPCA de cada ano (%)</h3>
       <div className="pills" role="group" aria-label="De onde vem a taxa" style={{ margin: '6px 0 8px' }}>
-        <button type="button" className="pill" aria-pressed={!travado} onClick={() => setTravado(false)}>Usar o Focus</button>
-        <button type="button" className="pill" aria-pressed={travado} onClick={() => setTravado(true)}>{sozinho ? 'Travar as minhas' : 'Travar as nossas'}</button>
+        <button type="button" className="pill" aria-pressed={!travado} onClick={() => editarTravado(false)}>Usar o Focus</button>
+        <button type="button" className="pill" aria-pressed={travado} onClick={() => editarTravado(true)}>{sozinho ? 'Travar as minhas' : 'Travar as nossas'}</button>
       </div>
       <p className="sub" style={{ marginBottom: 6 }}>{travado ? `Vale o que ${sozinho ? 'você digitar' : 'vocês digitarem'}; o Focus fica ao lado só pra comparar.` : `Vale o Focus do Banco Central; o que ${sozinho ? 'você digitar' : 'vocês digitarem'} só entra no ano que o Focus não tiver.`}</p>
       {anos.map(a => (

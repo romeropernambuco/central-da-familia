@@ -3,7 +3,10 @@ import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // Regra do dono (13/11): até dez/2028 entram recebimentos com data que o dono marca como certos; o plano conta só esses.
 // Casal LÊ todos, com o nome do dono; só o dono lança e mexe. Atrasado nunca some: vai pro mês seguinte e vira pergunta ao
 // dono (regra F4 do ECONOMISTA, que mora em lib/futuro: a tela só chama mesDoRecebimento e não faz conta de 2029).
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
+import { invalidarDados } from '../../app/invalidacao'
+import { novoUuid } from '../../lib/seguro'
 import { CalendarClock, Check, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
@@ -24,22 +27,23 @@ export function situacaoRecebimento(r: RecebimentoTela, hoje = hojeRecife()) {
 
 export function Recebimentos() {
   const { api, familia, versao, tentar, toast } = useApp()
-  const [lista, setLista] = useState<RecebimentoTela[] | null>(null)
   const [n, setN] = useState(0)
   const [novo, setNovo] = useState(false)
   const [mudar, setMudar] = useState<RecebimentoTela | null>(null)
-  useEffect(() => { if (familia && api.recebimentos) api.recebimentos(familia.id).then(setLista).catch(() => setLista([])) }, [api, familia?.id, versao, n])
+  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${familia?.papel}`, familia && api.recebimentos ? () => api.recebimentos!(familia.id) : null, [api, versao, n])
   if (!api.recebimentos || familia?.papel !== 'casal') return null
   const hoje = hojeRecife()
   const mexer = (id: string, m: Parameters<NonNullable<typeof api.recebimentoMudar>>[2], aviso: string) =>
-    tentar(async () => { await api.recebimentoMudar!(familia.id, id, m); setN(x => x + 1); toast(aviso) })
+    tentar(async () => { await api.recebimentoMudar!(familia.id, id, m); invalidarDados(api, familia.id); setN(x => x + 1); toast(aviso) })
   const abertos = (lista || []).filter(r => !r.recebido_em)
   const chegaram = (lista || []).filter(r => r.recebido_em && r.recebido_em.slice(0, 7) >= hoje.slice(0, 7))
   return (
     <section className="card" aria-labelledby="pRec">
       <div className="card-h"><h2 id="pRec"><CalendarClock size={24} aria-hidden="true" />Recebimentos com data</h2><button className="lnk" type="button" onClick={() => setNovo(true)}><Plus size={16} />Recebimento</button></div>
       <p className="sub" style={{ marginBottom: 8 }}>Dinheiro que vai entrar até dezembro de 2028, cada um com o nome do dono. Só o que está marcado como certo entra na conta de 2029. Só o dono lança e muda.</p>
-      {lista && !lista.length && <Vazio ico={<CalendarClock size={24} />} acao={<button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Anotar recebimento</button>}>Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro.</Vazio>}
+      {!falha && !carregando && lista && !lista.length && <Vazio ico={<CalendarClock size={24} />} acao={<button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Anotar recebimento</button>}>Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro.</Vazio>}
+      {carregando && <p role="status">Buscando recebimentos…</p>}
+      {falha && <p role="alert">Não deu pra buscar recebimentos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       <ul className="list">
         {abertos.map(r => {
           const s = situacaoRecebimento(r, hoje)
@@ -63,23 +67,31 @@ export function Recebimentos() {
         })}
       </ul>
       {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {textoPrivado(chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; '))}.</p>}
-      {novo && <NovoReceb fechar={() => setNovo(false)} salvar={async r => { if (await tentar(() => api.recebimentoCriar!(familia.id, r))) { setNovo(false); setN(x => x + 1); toast(`${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) } }} />}
+      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={async r => { if (await tentar(() => api.recebimentoCriar!(familia.id, r))) { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(`${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) } }} />}
       {mudar && <MudarReceb r={mudar} fechar={() => setMudar(null)} mexer={async (m, aviso) => { if (await mexer(mudar.id, m, aviso)) setMudar(null) }} />}
     </section>
   )
 }
 
-function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRecebimento) => void }) {
+function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRecebimento & { chave: string }) => Promise<void> }) {
+  const trava = useRef(false)
+  const operacao = useRef<NovoRecebimento & { chave: string } | null>(null)
+  const [ocupado, setOcupado] = useState(false)
   const [desc, setDesc] = useState(''), [v, setV] = useState(''), [mes, setMes] = useState(proximo(hojeRecife().slice(0, 7)))
   const [tipo, setTipo] = useState<TipoRecebimento>('contrato'), [certo, setCerto] = useState(true), [erro, setErro] = useState('')
   return (
     <Sheet titulo="Novo recebimento" fechar={fechar}>
-      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => {
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {
         e.preventDefault()
+        if (trava.current) return
         if (!desc.trim()) { setErro('Diga o que é. Ex.: contrato de março, venda do carro.'); return }
         if (!valorDigitadoValido(v) || textoParaValor(v) <= 0) { setErro('Digite o valor, por exemplo 15.000.'); return }
         if (!/^\d{4}-\d{2}$/.test(mes)) { setErro('Escolha o mês em que entra.'); return }
-        salvar({ descricao: desc.trim(), valor: textoParaValor(v), mes_previsto: mes, tipo, certo })
+        const dados = { descricao: desc.trim(), valor: textoParaValor(v), mes_previsto: mes, tipo, certo }
+        const { chave: _chave, ...anterior } = operacao.current || { chave: '' }
+        if (!operacao.current || JSON.stringify(anterior) !== JSON.stringify(dados)) operacao.current = { ...dados, chave: novoUuid() }
+        trava.current = true; setOcupado(true)
+        try { await salvar(operacao.current) } finally { trava.current = false; setOcupado(false) }
       }}>
         <label className="campo"><span>O que é</span><CampoPrivado className="inp" value={desc} maxLength={120} placeholder="Ex.: contrato de consultoria" onChange={e => setDesc(e.target.value)} /></label>
         <div className="campo"><span>Quanto entra</span><CampoValor valor={v} mudar={setV} rotulo="Quanto entra" /></div>
@@ -96,7 +108,7 @@ function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRec
           <small>Incerto fica anotado, mas fora da conta de 2029 até virar certo.</small>
         </div>
         {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-        <button className="btn primary full" type="submit">Anotar</button>
+        <button className="btn primary full" type="submit" disabled={ocupado}>Anotar</button>
       </form>
     </Sheet>
   )

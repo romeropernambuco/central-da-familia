@@ -1,10 +1,11 @@
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
 import { MessageCircle, Sun, Moon, Smartphone, LogOut, ShieldCheck, Gauge, ChevronRight, UserPlus, Share, Copy, Zap } from 'lucide-react'
 import { enderecoDoAtalho } from '../../lib/atalho'
 import { useApp } from '../../app/contexto'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Sheet } from '../../componentes/base'
 import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from '../../lib/formato'
 
@@ -21,8 +22,7 @@ export function Ajustes() {
   const link = location.origin + location.pathname
   const casal = familia?.papel === 'casal'
   // C20: com o casal completo, o convite é pra alguém da família (papel pessoa), e o título muda
-  const [lista, setLista] = useState<ConviteFamilia[] | null>(null)
-  useEffect(() => { if (familia && casal && api.convites) api.convites(familia.id).then(setLista).catch(() => setLista([])) }, [api, familia?.id, n, casal])
+  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${casal}`, familia && casal && api.convites ? () => api.convites!(familia.id) : null, [api, n])
   const casalCompleto = (lista || []).filter(c => c.papel === 'casal' && c.situacao !== 'cancelado').length >= 2
   const papelConvite = casalCompleto ? 'pessoa' : 'casal'
   const mudaTema = (t: string) => {
@@ -59,7 +59,11 @@ export function Ajustes() {
           </div>
           </>}
         </section>
-        {api.convites && familia && casal && <QuemEsta lista={lista} mudou={() => setN(x => x + 1)} />}
+        {api.convites && familia && casal && <>
+          {carregando && <p role="status">Buscando a família…</p>}
+          {falha && <p role="alert">Não deu pra buscar a família. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+          <QuemEsta lista={lista} mudou={() => setN(x => x + 1)} />
+        </>}
         <section className="card" aria-labelledby="aInst">
           <h2 id="aInst"><Share size={22} aria-hidden="true" />Pôr na tela do iPhone</h2>
           <p className="sub" style={{ marginTop: 6 }}>No Safari, toque em Compartilhar (o quadrado com a seta) e depois em "Adicionar à Tela de Início". O ícone "Central" abre sem a barra do navegador.</p>
