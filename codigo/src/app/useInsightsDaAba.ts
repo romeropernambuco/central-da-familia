@@ -4,6 +4,7 @@ import { lojaEscritorio } from './escritorioCompartilhado'
 import { useApp } from './contexto'
 import { rotaPermitida, type Rota } from './rotas'
 import { ErroSessao } from '../api/erros'
+import { primeiraPerguntaGeral, FALA_ANALISTA } from '../lib/insights/donos'
 import { avaliarInsights } from '../lib/insights/motor'
 import { montarSnapshot } from '../lib/insights/snapshot'
 import { lerDadosInsights } from '../lib/insights/leitura'
@@ -55,6 +56,12 @@ export function useInsightsDaAba(rota: Rota) {
   const { memoria } = compartilhada
   const { visivel, mudanca, revisao } = useSyncExternalStore(compartilhada.assinar, compartilhada.snapshot, compartilhada.snapshot)
   const loja = lojaEscritorio(api, familia?.id || '')
+  const fila = useSyncExternalStore(loja.assinar, loja.snapshot, loja.snapshot)
+  useEffect(() => {
+    if (rota === 'inicio' && pode && familia && typeof api.escritorioHoje === 'function') void loja.ler(api, familia.id, versao)
+  }, [rota, pode, api, familia?.id, familia?.papel, versao, loja])
+  const primeiraPerguntaInicio = rota === 'inicio' && pode && familia
+    ? primeiraPerguntaGeral(fila.dado?.precisa_de_voce || [], familia.papel, agora, oculto, loja.travas) : null
   const setRevisao = () => compartilhada.mudar({ revisao: revisao + 1 })
   const dia = tempoRecife(agora)?.dia
   useEffect(() => {
@@ -149,7 +156,7 @@ export function useInsightsDaAba(rota: Rota) {
     setNota(null); setRevisao(); try { await recarregar() } catch { /* Foto já guardada. */ } return true
   }, [pode, familia, nota, escopo, tentar, api, recarregar, p, registrar, compartilhada, revisao])
   const pergunta = p ? apresentarInsight(p, oculto) : null
-  return { pergunta, perguntas: pergunta ? [pergunta] : [], responder, marcarVista,
+  return { primeiraPerguntaInicio, falaDoAnalista: rota === 'painel' && pode && sessao?.dono ? FALA_ANALISTA : null, pergunta, perguntas: pergunta ? [pergunta] : [], responder, marcarVista,
     exemplo: api.modo === 'exemplo', estado: !pode ? 'desligado' : !validos ? 'buscando' : validos.falhou ? 'erro' : 'ok',
     motivo: validos?.falhou ? 'Parte dos dados não pôde ser conferida. Tente atualizar.' : '',
     atualizar: setRevisao, notaPendente: nota?.escopo === escopo ? nota.feira : null,

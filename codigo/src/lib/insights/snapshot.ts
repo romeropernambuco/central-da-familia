@@ -56,14 +56,18 @@ export function montarSnapshot(familia: FamiliaMinha, modo: SnapshotInsights['mo
     s.aplicacoes = d.guardado?.aplicacoes.map(a => ({ id: a.id, nome: a.nome, vencimento: a.vence_em, ativa: true }))
     // Necessário é de patrimônio FINANCEIRO: imóveis já contribuíram pelo aluguel no motor existente.
     const f = d.futuro
+    s.contratos = f?.gatilhos?.filter(g => g.origem === 'imovel' && g.tipo === 'aluguel'
+      && f.imoveis?.some(i => i.id === g.id && !i.vendido && i.uso !== 'mora'))
+      .map(g => ({ id: g.id, nome: g.nome, motivo: g.motivo, mes: g.mes }))
     if (f && f.modo !== 'renda' && f.linha.length && mesValido(d.mesObjetivo)) s.objetivo = {
       mes: d.mesObjetivo, projetado: f.linha[f.linha.length - 1].saldo_final, necessario: f.patrimonio_necessario,
     }
     if (s.objetivo && f && d.entradaObjetivo) {
       const n = numerosRumo2029(f, d.entradaObjetivo)
       if (n.cobre_pct !== null && n.falta_com_margem !== null) {
+        s.objetivo.faltaComMargem = n.falta_com_margem
         const saldo = (v: number) => `${v > 0 ? 'faltam' : 'sobram'} ${reais(Math.abs(v) / 100)} por mês`
-        s.objetivo.resumo = `Garantido: ${saldo(n.falta_com_margem)}, com margem de segurança. Sem a margem de segurança: ${saldo(n.falta_sem_margem)}; estimativa, confira as premissas no cartão.`
+        s.objetivo.resumo = `No cenário Garantido de 2029, ${saldo(n.falta_com_margem)}, com margem de segurança; é uma estimativa.`
       }
     }
   }

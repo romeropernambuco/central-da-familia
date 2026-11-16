@@ -142,7 +142,10 @@ it('agente real fala o mesmo Garantido do cartão, Início e Painel; cenário al
   const frente = (i: string) => a.box.buscar(x => x.getAttribute('data-frente') === i)[0].textContent.replace(/\s/g, '')
   const com = `${dinheiroVisivel(n.falta_com_margem!)} por mês, com margem de segurança`.replace(/\s/g, '')
   const sem = `Sem a margem de segurança: faltam ${dinheiroVisivel(n.falta_sem_margem)} por mês`.replace(/\s/g, '')
-  for (const i of ['0', '2', '3', 'agente']) { expect(frente(i)).toContain(com); expect(frente(i)).toContain(sem) }
+  for (const i of ['0', '2', '3', 'agente']) {
+    expect(frente(i)).toContain(com)
+    expect(frente(i)).toContain(i === 'agente' ? 'NocenárioGarantidode2029' : sem)
+  }
   const oficial = frente('agente')
   await a.click('Com tudo')
   expect(frente('0')).not.toContain(com)

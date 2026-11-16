@@ -12,8 +12,8 @@ export const CASOS_LIGACAO = [
   ['reserva', 'planejamento', 'colchao', 'O dinheiro livre ficou abaixo da reserva. Quer revisar o plano?'],
   ['recebimento', 'planejamento', 'tesoureiro', 'Esse dinheiro já entrou ou adiamos a previsão?'],
   ['aplicacao', 'guardado', 'guardado', 'Quer revisar o destino da aplicação que está vencendo?'],
-  ['feira_nota', 'casa', 'fiscal', 'Falta guardar a nota ou explicar por que não houve.'],
-  ['objetivo', 'planejamento', 'tesoureiro', 'O plano ainda não alcança seu objetivo. Quer revisar quanto pretende guardar?'],
+  ['feira_nota', 'casa', 'fiscal', 'Quer guardar a nota da feira ou registrar que não houve nota?'],
+  ['objetivo', 'planejamento', 'tesoureiro', 'Quer conferir a estimativa de renda de 2029?'],
 ] as const satisfies readonly (readonly [string, Rota, string, string])[]
 
 export function contextoLigacao(tipo: string): Ctx {
