@@ -418,3 +418,23 @@ it('UX: olho fechado retira link privado de convite e bloqueia compartilhamento'
   expect(toast).toHaveBeenCalledWith('Abra o olho para compartilhar este convite.')
  } finally { await a.fechar() }
 })
+it('15: recolher e expandir informam estado acessível', async () => {
+ const a=await montar(createElement(AgenteDaAba,{rota:'casa'}))
+ try {
+  const botao=()=>a.container.buscar(n=>n.tagName==='BUTTON'&&/^(Recolher|Expandir)$/.test(n.textContent))[0]
+  expect(botao().getAttribute('aria-expanded')).toBe('true')
+  await act(async()=>botao().click())
+  expect(botao().getAttribute('aria-expanded')).toBe('false')
+ } finally {await a.fechar()}
+})
+it('3: agente com falha não anuncia sem pendências e pode repetir',async()=>{
+ const ler=vi.fn(async()=>{throw Error('falha')})
+ const a=await montar(createElement(AgenteDaAba,{rota:'casa'}),{escritorioHoje:ler})
+ try {
+  expect(a.container.textContent).toContain('Não foi possível conferir')
+  expect(a.container.textContent).not.toContain('Sem pendências')
+  const antes=ler.mock.calls.length
+  await a.clicar('Tentar de novo')
+  expect(ler.mock.calls.length).toBeGreaterThan(antes)
+ } finally {await a.fechar()}
+})

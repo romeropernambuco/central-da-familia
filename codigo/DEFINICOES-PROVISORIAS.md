@@ -59,3 +59,10 @@ PROVISÓRIA — Frente 16: numerosRumo2029 é a apresentação única do resulta
 PROVISÓRIA — Frente 16: cartão do Planejamento acompanha a preferência existente por aparelho; Início e Painel sempre Garantido. A preferência sincroniza instâncias e abas e, com armazenamento bloqueado, dura apenas na sessão. Nenhuma nova persistência; nenhuma troca de cenário escreve dados financeiros. codigo/src/app/useCenarioReceitas.ts e componentes/RumoA2029.tsx.
 PROVISÓRIA — Frente 16: prevalece a saída dos três cenários do adaptador/motor também no cartão. Receitas recorrentes até 2028 já integram as aplicações; após 2028 não viram renda mensal permanente, portanto contribuição mensal direta é zero, com certeza e valor cadastrado discriminados. Evita duplicar patrimônio e renda. Substitui somente a interpretação anterior do cartão sobre somar recorrências diretamente, sem mudar motor ou regras do dono. codigo/src/app/rumo2029.ts:rumoDoCenario.
 PROVISÓRIA — Frente 16: agente recebe exclusivamente entrada e saída Garantido e apresenta o resumo mensal de numerosRumo2029 no contexto do aviso de objetivo já existente. Não cria novo aviso quando cobre, nem muda condição patrimonial, prioridade, silêncio, memória, adiamento ou formato público do hook. Campo opcional resumo no snapshot é apenas texto de apresentação; sem gasto ou taxa calculável não inventa número. codigo/src/lib/insights/leitura.ts, snapshot.ts, tipos.ts e argumento de contexto em motor.ts.
+
+## Pendências do dono — auditoria F20
+
+Mantidas sem alterar comportamento:
+- “Não gastei” ainda é guardado sem dono por pessoa (MeuOrcamento.tsx e api/real.ts). Falta definir a identidade do registro.
+- “Desligado” hoje remove só o 3D e mantém a fala. Falta definir se deve esconder também a fala.
+- O resumo do funcionário usa o orçamento de quem olha, mesmo quando outro adulto está selecionado (numeros.ts). Falta definir qual orçamento deve resumir.

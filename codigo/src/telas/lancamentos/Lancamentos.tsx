@@ -46,7 +46,7 @@ function LancamentosFamilia() {
   useEffect(() => {
     if (!familia) return
     let vivo = true
-    Promise.all(meses.map(m => api.lancamentos(familia.id, m).then(l => [m, l] as const)))
+    Promise.all(meses.map(m => api.lancamentos(familia.id, m).then(l => [m, l.filter(x => !x.parcela)] as const)))
       .then(rs => { if (vivo) { setPorMes(Object.fromEntries(rs)); setFalha(''); setCarregou(true) } })
       .catch(e => { if (vivo) setFalha((e as Error).message) })
       .finally(() => { if (vivo) setBuscandoMes(false) })
@@ -184,7 +184,8 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 type Entrada = { data: string; valor: number }
 export function totaisDoMes(mes: string, hoje: string, gastos: Lancamento[], recebimentos: RecebimentoTela[], entradas: Entrada[]) {
-  const saiu = centavos(gastos.filter(l => !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje).reduce((s, l) => s + l.valor, 0))
+  // A compra original é a fonte; parcelas sintéticas do exemplo são só projeções de fatura.
+  const saiu = centavos(gastos.filter(l => !l.parcela && !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje).reduce((s, l) => s + l.valor, 0))
   const entrou = centavos(entradas.filter(e => e.data.startsWith(mes) && e.data <= hoje).reduce((s, e) => s + e.valor, 0)
     + recebimentos.filter(r => r.recebido_em?.startsWith(mes) && r.recebido_em.slice(0, 10) <= hoje).reduce((s, r) => s + (r.valor_recebido ?? r.valor), 0))
   const previsto = centavos(recebimentos.filter(r => !r.recebido_em && r.certo && (r.mes_novo || r.mes_previsto) === mes).reduce((s, r) => s + r.valor, 0))

@@ -21,7 +21,7 @@ export function contextoLigacao(tipo: string): Ctx {
   const familia = { id: 'ligacao-' + tipo, nome, membroId: 'eu', membroNome: nome, papel: 'casal', envelopeId: null }
   const fatura = ['fatura_vencendo', 'fatura_divergente', 'parcelas'].includes(tipo)
   const api = {
-    modo: 'real',
+    modo: 'real', config: vi.fn(async () => ({})),
     escritorioHoje: vi.fn(async () => ({ funcionarios: [], trabalhando: [], entregue: [], precisa_de_voce: [] })),
     escritorioResponder: vi.fn(async () => ({})),
     escritorioDiario: vi.fn(async () => []), estoque: vi.fn(async () => ({ itens: [], contagens: [] })),
@@ -41,7 +41,7 @@ export function contextoLigacao(tipo: string): Ctx {
     } })),
   } as unknown as Api
   return { api, familia, sessao: { userId: 'u', dono: true, familias: [familia] }, versao: 0, oculto: false,
-    resumo: tipo === 'reserva' ? { colchao: 9876.54, livre_mes: 0 } : null,
+    resumo: tipo === 'reserva' ? { colchao: 0, livre_mes: 0, envelopes: [{colchao_meta: 9876.54}] } : null,
     tentar: async (fn: () => Promise<unknown>) => { try { await fn(); return true } catch { return false } },
     recarregar: vi.fn(async () => {}), explicar: vi.fn(), toast() {}, abrirLancar() {},
   } as unknown as Ctx

@@ -60,3 +60,11 @@ it('falhas de atualização apagam dados e a resposta antiga não substitui a re
   atrasada.resolver([]); await flush()
   expect(render().find(f => f.id === 'tesoureiro')?.semDado).toBe(true)
 })
+it.each(['avisos','presenca'])('3: falha de %s não vira ninguém presente',async campo=>{
+ h.app={familia:{id:'teste'},versao:1,api:{recebimentos:async()=>[],estoque:async()=>({contagens:[]}),avisosCasa:async()=>{if(campo==='avisos')throw Error('falha');return []},config:async()=>{if(campo==='presenca')throw Error('falha');return {}}}}
+ render();await flush();const equipe=render()
+ expect(JSON.stringify(equipe)).not.toContain('Ninguém')
+ expect(equipe.find(f=>f.id==='presenca')?.semDado).toBe(true)
+ expect(equipe.falhou).toBe(true)
+ expect(equipe.repetir).toBeTypeOf('function')
+})

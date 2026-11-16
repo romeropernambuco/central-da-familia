@@ -84,7 +84,7 @@ export function Cartoes() {
               <h3 className="dayh">Próximas {fs.length} faturas</h3>
               {/* mês zerado não ganha linha com barra vazia: meses zerados seguidos viram 1 linha só */}
               {agruparFaturas(fs).map(g => g.tipo === 'zeros' ? (
-                <p key={g.de} className="fat zeros">{g.de === g.ate ? mesCurto(g.de) : `${mesCurto(g.de)} a ${mesCurto(g.ate)}`}: R$ 0</p>
+                <p key={g.de} className="fat zeros">{g.de === g.ate ? mesCurto(g.de) : `${mesCurto(g.de)} a ${mesCurto(g.ate)}`}: <Din v={0} /></p>
               ) : (
                 <div key={g.f.mes} className={'fat' + (g.f === atual ? ' cur' : '')}>
                   <span>{mesCurto(g.f.mes)}</span>

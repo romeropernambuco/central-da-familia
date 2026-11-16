@@ -49,7 +49,7 @@ export function seloImovel(i: Pick<ImovelTela, 'uso' | 'tem_contrato' | 'contrat
 }
 
 export function Imoveis({ aplicado }: { aplicado: number }) {
-  const { api, familia, versao, tentar, toast } = useApp()
+  const { api, familia, versao, tentar, toast, oculto } = useApp()
   const { saida, atualizar } = useFuturo()
   const adultos = useAdultos()
   const [n, setN] = useState(0)
@@ -85,7 +85,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
         <div><dt>Imóveis, à parte</dt><dd><Din v={somaImoveis} /></dd></div>
       </dl>}
-      <p className="sub imo-frase">Imóvel não é vendido pelo plano: o valor só aparece aqui, nunca vira saque. Só o aluguel com contrato entra na conta de 2029.</p>
+      <p className="sub imo-frase">O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas cadastradas.</p>
       {carregando && <p role="status">Buscando imóveis…</p>}
       {falha && <p role="alert">Não deu para buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" pra anotar casa, sala, lote ou apartamento.</Vazio> : (
@@ -100,7 +100,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                   <span className="tile"><Building2 size={20} /></span>
                   <span className="m"><b className="quebra">{textoPrivado(i.apelido)}</b>
                     <small>{textoPrivado(adultos !== 1 ? `${dono} · ` : '')}{textoPrivado(nomeUso(i.uso))}</small>
-                    {m && i.uso !== 'mora' && m.aluguel_liquido_mes > 0 && <small className="imo-renda">Aluguel líquido <strong>{reais(m.aluguel_liquido_mes / 100)}</strong> por mês · rende <strong>{pctAno(m.rentabilidade_ano)}</strong> ao ano{m.taxa_real_aplicacoes ? `; o aplicado rende ${pctAno(m.taxa_real_aplicacoes)}` : ''}</small>}
+                    {m && i.uso !== 'mora' && m.aluguel_liquido_mes > 0 && <small className="imo-renda">Aluguel líquido <strong>{reais(m.aluguel_liquido_mes / 100)}</strong> por mês · rende <strong>{oculto ? '•••' : pctAno(m.rentabilidade_ano)}</strong> ao ano{m.taxa_real_aplicacoes ? (oculto ? '; rendimento oculto' : `; o aplicado rende ${pctAno(m.taxa_real_aplicacoes)}`) : ''}</small>}
                     {i.venda_valor != null && i.venda_mes && <small>Venda planejada: {reais(i.venda_valor)} em {mesCurto(i.venda_mes + '-01')}</small>}
                     {selo && <small className={'imo-selo ' + (selo.entra ? 'ok' : 'warn')}>{textoPrivado(selo.texto)}</small>}
                   </span>
@@ -111,7 +111,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
           })}
         </ul>
       )}
-      {taxaAplic && imoveis.some(i => i.uso !== 'mora') && <p className="sub" style={{ marginTop: 8 }}>A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e imposto. O dinheiro aplicado rende {pctAno(taxaAplic)} ao ano acima da inflação.</p>}
+      {taxaAplic && imoveis.some(i => i.uso !== 'mora') && <p className="sub" style={{ marginTop: 8 }}>A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e imposto. O dinheiro aplicado rende {oculto ? '•••' : pctAno(taxaAplic)} ao ano acima da inflação.</p>}
       {folha && <FolhaImovel inicial={folha === 'novo' ? null : folha} entraHoje={folha === 'novo' ? undefined : doMotor.get(folha.id)?.entra_na_conta} renovaHoje={folha === 'novo' ? null : renovaDe(folha.id)} fechar={() => setFolha(null)} salvar={salvar} tirar={tirar} />}
     </section>
   )
@@ -153,7 +153,7 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
       {so && <p className="todo"><span>Este imóvel é de {textoPrivado(inicial!.dono_nome || 'outra pessoa')}: só {textoPrivado(inicial!.dono_nome || 'quem anotou')} muda.</span></p>}
       <fieldset className="imo-form" disabled={so}>
         <label className="campo"><span>Apelido {textoPrivado(q('Apelido', 'Um nome curto pra família reconhecer: "sala do centro", "casa da praia". Não precisa de endereço.'))}</span><CampoPrivado className="inp" maxLength={60} placeholder="Ex.: sala do centro" value={f.apelido} onChange={e => setF({ ...f, apelido: e.target.value })} /></label>
-        <div className="campo"><span>Quanto vale hoje {q('Quanto vale hoje', 'O valor estimado de venda hoje (pode ser o da avaliação ou o de imóveis parecidos na mesma rua). Só aparece no patrimônio; o plano nunca vende o imóvel.')}</span><CampoValor valor={f.valor} mudar={ver('valor')} rotulo="Quanto vale hoje" /></div>
+        <div className="campo"><span>Quanto vale hoje {q('Quanto vale hoje', 'O valor estimado de venda hoje (pode ser o da avaliação ou o de imóveis parecidos na mesma rua). Compõe o patrimônio; uma venda com contrato entra na projeção na data cadastrada.')}</span><CampoValor valor={f.valor} mudar={ver('valor')} rotulo="Quanto vale hoje" /></div>
         <div className="campo"><span id="imoUso">Pra que serve {q('Pra que serve', 'Mora: não rende nada. Aluga: o aluguel pode entrar na conta (só com contrato assinado). Parado: só aparece no patrimônio. Vai vender: diga a venda planejada.')}</span>
           <div className="pills" role="group" aria-labelledby="imoUso">{USO.map(u => <button key={u.v} type="button" className="pill" aria-pressed={f.uso === u.v} onClick={() => setF({ ...f, uso: u.v, vende: u.v === 'vende' ? true : f.vende })}>{u.nome}</button>)}</div>
           <small>{USO.find(u => u.v === f.uso)!.ajuda}</small>
