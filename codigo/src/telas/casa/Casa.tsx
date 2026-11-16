@@ -3,6 +3,7 @@ import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privac
 import { useEffect, useRef, useState } from 'react'
 import { novoUuid } from '../../lib/seguro'
 import { useConfig } from '../../app/useConfig'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Users, ShoppingBasket, Flame, Wrench, FileText, Plus, MessageCircle, Check, KeyRound, CalendarDays, Trash2, Camera, LogOut, Copy } from 'lucide-react'
 import { LerCupom } from '../../componentes/LerCupom'
 import { useApp } from '../../app/contexto'
@@ -28,7 +29,7 @@ export function Casa() {
   // A2: a pessoa da família (filha) vê só a lista e o gás: sem valor, sem Serviços, sem Folha, sem "Gerar código"
   const soCasal = familia?.papel === 'casal'
   const [aba, setAba] = useState<Aba>('feira')
-  if (equipe) return <CasaEquipe />
+  if (equipe) return <CasaEquipe key={familia.id} />
   const abas: [Aba, string, JSX.Element][] = [
     ['feira', soCasal ? 'Feira' : 'Lista', <ShoppingBasket size={18} />],
     ...(soCasal ? [['prestadores', 'Serviços', <Wrench size={18} />] as [Aba, string, JSX.Element]] : []),
@@ -334,15 +335,15 @@ function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: Pessoa
  *  Lê e marca pelo banco (casa_da_equipe e casa_marcar), na mesma lista que o casal usa. */
 function CasaEquipe() {
   const { api, familia, versao, toast, abrirLancar, recarregar } = useApp()
-  const [casa, setCasa] = useState<CasaDaEquipe | null>(null)
-  const [erro, setErro] = useState('')
+  const [marca, setMarca] = useState<{ familia: string; casa: CasaDaEquipe } | null>(null)
+  const { dado: leitura, erro, repetir } = useLeituraRemota(familia?.id || '', familia ? () => api.casaDaEquipe(familia.id) : null, [api, versao])
+  const casa = marca?.familia === familia?.id ? marca!.casa : leitura
   const [novo, setNovo] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const pedido = useRef(0)
   const trava = useRef(false)
   useEffect(() => {
-    const meu = ++pedido.current
-    if (familia) api.casaDaEquipe(familia.id).then(c => { if (meu === pedido.current) { setCasa(c); setErro('') } }).catch(e => { if (meu === pedido.current) setErro((e as Error).message) })
+    setMarca(null)
     return () => { pedido.current++ }
   }, [api, familia?.id, versao])
   const hoje = casa?.hoje || hojeRecife()
@@ -353,13 +354,13 @@ function CasaEquipe() {
     // E3 (conserto 9): depois de marcar, o "precisa de você" se refaz na hora (o piscineiro que veio sai da conta)
     try {
       const c = await api.casaMarcar(familia.id, tipo, dados)
-      if (meu === pedido.current) setCasa(c)
+      if (meu === pedido.current) setMarca({ familia: familia.id, casa: c })
       if (aviso) toast(aviso)
       try { await recarregar() } catch { /* A marcação já foi confirmada. */ }
       return true
     } catch (e) { toast((e as Error).message); return false } finally { trava.current = false; setOcupado(false) }
   }
-  if (!casa) return <div className="view">{erro ? <p className="erro" role="alert">{textoPrivado(erro)}</p> : <p className="sub">Abrindo a Casa...</p>}</div>
+  if (!casa || erro) return <div className="view">{erro ? <p className="erro" role="alert">{textoPrivado(erro)} <button type="button" onClick={repetir}>Tentar novamente</button></p> : <p className="sub">Abrindo a Casa...</p>}</div>
   const ponto = casa.presenca.meu_ponto
   const compradoHoje = casa.comprado.filter(c => c.data === hoje)
   const g = casa.gas

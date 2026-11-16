@@ -6,6 +6,7 @@ import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useRef, useState } from 'react'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { invalidarDados } from '../../app/invalidacao'
+import { ErroRede } from '../../api/erros'
 import { novoUuid } from '../../lib/seguro'
 import { CalendarClock, Check, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -67,23 +68,36 @@ export function Recebimentos() {
         })}
       </ul>
       {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {textoPrivado(chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; '))}.</p>}
-      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={async r => { if (await tentar(() => api.recebimentoCriar!(familia.id, r))) { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(`${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) } }} />}
+      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={r => api.recebimentoCriar!(familia.id, r)} salvo={(r, ja) => { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(ja ? 'Já estava salvo' : `${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) }} />}
       {mudar && <MudarReceb r={mudar} fechar={() => setMudar(null)} mexer={async (m, aviso) => { if (await mexer(mudar.id, m, aviso)) setMudar(null) }} />}
     </section>
   )
 }
 
-function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRecebimento & { chave: string }) => Promise<void> }) {
+function NovoReceb({ fechar, salvar, salvo }: { fechar: () => void; salvar: (r: NovoRecebimento & { chave: string }) => Promise<void>; salvo: (r: NovoRecebimento, ja: boolean) => void }) {
   const trava = useRef(false)
   const operacao = useRef<NovoRecebimento & { chave: string } | null>(null)
   const [ocupado, setOcupado] = useState(false)
+  const [aguardando, setAguardando] = useState(false)
+  const conferencia = useRef<(() => Promise<boolean>) | null>(null)
+  const conferir = async () => {
+    if (trava.current) return
+    trava.current = true; setOcupado(true)
+    try {
+      if (!conferencia.current) throw new Error('Conferência indisponível.')
+      if (await conferencia.current()) { salvo(operacao.current!, true); return }
+      setAguardando(false); conferencia.current = null
+      setErro('Não encontrei na lista. Pode tentar de novo.')
+    } catch { setErro('Aguardando conferência. Não deu pra reler a lista. Tente conferir novamente.') }
+    finally { trava.current = false; setOcupado(false) }
+  }
   const [desc, setDesc] = useState(''), [v, setV] = useState(''), [mes, setMes] = useState(proximo(hojeRecife().slice(0, 7)))
   const [tipo, setTipo] = useState<TipoRecebimento>('contrato'), [certo, setCerto] = useState(true), [erro, setErro] = useState('')
   return (
-    <Sheet titulo="Novo recebimento" fechar={fechar}>
+    <Sheet titulo="Novo recebimento" fechar={() => { if (!ocupado && !aguardando) fechar() }}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {
         e.preventDefault()
-        if (trava.current) return
+        if (trava.current || aguardando) return
         if (!desc.trim()) { setErro('Diga o que é. Ex.: contrato de março, venda do carro.'); return }
         if (!valorDigitadoValido(v) || textoParaValor(v) <= 0) { setErro('Digite o valor, por exemplo 15.000.'); return }
         if (!/^\d{4}-\d{2}$/.test(mes)) { setErro('Escolha o mês em que entra.'); return }
@@ -91,7 +105,15 @@ function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRec
         const { chave: _chave, ...anterior } = operacao.current || { chave: '' }
         if (!operacao.current || JSON.stringify(anterior) !== JSON.stringify(dados)) operacao.current = { ...dados, chave: novoUuid() }
         trava.current = true; setOcupado(true)
-        try { await salvar(operacao.current) } finally { trava.current = false; setOcupado(false) }
+        try { await salvar(operacao.current); salvo(operacao.current, false) }
+        catch (e) {
+          if (e instanceof ErroRede) {
+            setAguardando(true); setErro('Aguardando conferência…')
+            conferencia.current = (e as ErroRede & { conferir?: () => Promise<boolean> }).conferir || null
+            trava.current = false
+            await conferir()
+          } else setErro((e as Error).message)
+        } finally { trava.current = false; setOcupado(false) }
       }}>
         <label className="campo"><span>O que é</span><CampoPrivado className="inp" value={desc} maxLength={120} placeholder="Ex.: contrato de consultoria" onChange={e => setDesc(e.target.value)} /></label>
         <div className="campo"><span>Quanto entra</span><CampoValor valor={v} mudar={setV} rotulo="Quanto entra" /></div>
@@ -107,8 +129,9 @@ function NovoReceb({ fechar, salvar }: { fechar: () => void; salvar: (r: NovoRec
           </div>
           <small>Incerto fica anotado, mas fora da conta de 2029 até virar certo.</small>
         </div>
+        {aguardando && <p role="status">Aguardando conferência <button type="button" disabled={ocupado} onClick={conferir}>Conferir novamente</button></p>}
         {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-        <button className="btn primary full" type="submit" disabled={ocupado}>Anotar</button>
+        <button className="btn primary full" type="submit" disabled={ocupado || aguardando}>Anotar</button>
       </form>
     </Sheet>
   )

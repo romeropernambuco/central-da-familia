@@ -333,8 +333,26 @@ export const apiReal: Api = {
   async recebimentoCriar(familia, r) {
     const eu = await meuMembro(familia)
     if (!eu) throw new Error('Não achei você nesta família. Saia e entre de novo.')
-    const { error } = await sb().from('recebimentos').insert({ familia_id: familia, dono_membro: eu, descricao: r.descricao.trim(), valor_centavos: Math.round(r.valor * 100), mes_previsto: `${r.mes_previsto}-01`, tipo: r.tipo, certo: r.certo })
-    if (error) erro(error)
+    // A chave do formulário ainda não é persistida: falta coluna/função com unicidade
+    // no banco. INSERT não é idempotente; resposta perdida exige conferência antes de repetir.
+    const inicio = Date.now()
+    try {
+      const { error } = await sb().from('recebimentos').insert({ familia_id: familia, dono_membro: eu, descricao: r.descricao.trim(), valor_centavos: Math.round(r.valor * 100), mes_previsto: `${r.mes_previsto}-01`, tipo: r.tipo, certo: r.certo })
+      if (error) throw error
+    } catch (x) {
+      const e = x instanceof ErroRede ? x : traduzErro(x as Error)
+      if (!(e instanceof ErroRede)) throw e
+      // A leitura crua preserva criado_em e o dono, ausentes na lista normalizada.
+      // Repetir esta conferência nunca faz outro INSERT, mesmo se a leitura falhar.
+      throw Object.assign(e, { conferir: async () => {
+        const { data, error } = await sb().from('recebimentos').select('*').eq('familia_id', familia).is('apagado_em', null)
+        if (error) erro(error)
+        return (data || []).some((c: any) => c.dono_membro === eu && c.descricao === r.descricao.trim()
+          && Number(c.valor_centavos) === Math.round(r.valor * 100)
+          && String(c.mes_previsto).slice(0, 7) === r.mes_previsto
+          && Date.parse(c.criado_em) >= inicio)
+      } })
+    }
   },
   async recebimentoMudar(familia, id, m) {
     const campos: Record<string, unknown> = {}
