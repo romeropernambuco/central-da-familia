@@ -120,7 +120,7 @@ it('cobertura modos: Ajustes muda o agente vivo sem remontar página', async () 
  const a = await montar(createElement(Fragment, null, createElement(Ajustes), createElement(AgenteDaAba, { rota: 'cartoes' })))
  try {
   const pagina = a.container.childNodes[0]
-  for (const rotulo of ['Completo', 'Desligado', 'Compacto']) {
+  for (const rotulo of ['Completo', 'Desligado', 'Só texto']) {
    await a.clicar(rotulo)
    expect(a.container.childNodes[0]).toBe(pagina)
    expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === rotulo)[0].getAttribute('aria-pressed')).toBe('true')
