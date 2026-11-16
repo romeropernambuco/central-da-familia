@@ -1,7 +1,11 @@
-﻿import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as Three from './tres'
 import { montarCena } from './cena3d'
 import { MedidorFPS, type OpcoesCena } from './cenaBase'
+import { EQUIPE } from './equipe'
+import { ATIVIDADES_MINI, faseDoId, LIMITE_MESHES_MINI } from './atividadesMini'
+// @ts-ignore: o projeto não instala tipos do Three.
+import { Box3, Vector3, InstancedMesh } from 'three'
 
 class Elemento extends EventTarget {
   clientWidth = 900
@@ -10,6 +14,7 @@ class Elemento extends EventTarget {
   setAttribute() {}
   insertBefore() {}
   remove = vi.fn()
+  getBoundingClientRect() { return { left: 0, top: 0, width: this.clientWidth, height: this.clientHeight } }
 }
 function ambiente(parado = false) {
   vi.useFakeTimers()
@@ -153,4 +158,195 @@ it('oferece lista quando o primeiro render após restauração falha', () => {
   expect(a.frames.size).toBe(0)
   expect(a.renderer.dispose).toHaveBeenCalledTimes(1)
   c.destruir()
+})
+
+function miniDe(id: string, parado = false, altura = 128) {
+  const a = ambiente(parado), membro = EQUIPE.find(e => e.id === id)!
+  a.el.clientWidth = 303; a.el.clientHeight = altura; a.o.mini = true
+  a.o.funcionarios = [{ id, sala: membro.sala, estado: 'trabalhando' }]
+  const c = a.montar(); a.frame(100)
+  const [scene, camera] = a.renderer.render.mock.calls[a.renderer.render.mock.calls.length - 1]
+  const b = scene.getObjectByName(`agente:${id}`), trabalho = scene.getObjectByName(`atividade:${id}`)
+  const avancar = (inicio: number, fim: number, passo = 25) => { for (let t = inicio; t <= fim; t += passo) a.frame(t) }
+  const matrizes = (objeto: any) => { objeto.updateMatrixWorld(true); const valores: number[] = []; objeto.traverse((m: any) => { valores.push(...m.matrixWorld.elements) }); return valores }
+  return { ...a, c, scene, camera, b, trabalho, avancar, matrizes }
+}
+
+describe('atividades individuais dos minis', () => {
+  it('cobre todos os ids com atividade, objeto, câmera e fase próprios', () => {
+    expect(Object.keys(ATIVIDADES_MINI).sort()).toEqual(EQUIPE.map(e => e.id).sort())
+    for (const campo of ['atividade', 'objeto', 'camera'] as const) {
+      expect(new Set(EQUIPE.map(e => JSON.stringify(ATIVIDADES_MINI[e.id][campo]))).size).toBe(EQUIPE.length)
+    }
+    expect(new Set(EQUIPE.map(e => faseDoId(e.id))).size).toBe(EQUIPE.length)
+    const assinaturas = EQUIPE.map(e => {
+      const a = miniDe(e.id, true); expect(a.trabalho).toBeDefined()
+      const assinatura = JSON.stringify(a.matrizes(a.trabalho)); a.c.destruir(); return assinatura
+    })
+    expect(new Set(assinaturas).size).toBe(EQUIPE.length)
+  })
+  it.each(EQUIPE.map(e => e.id))('%s tem cenografia animada, orçamento real e cache de recursos', id => {
+    const a = miniDe(id), meshes: any[] = []
+    a.scene.traverse((m: any) => { if (m.isMesh) meshes.push(m) })
+    expect(a.trabalho).toBeDefined()
+    expect(meshes.length).toBeLessThanOrEqual(LIMITE_MESHES_MINI)
+    const antes = a.matrizes(a.trabalho); a.avancar(125, 1100)
+    expect(a.matrizes(a.trabalho)).not.toEqual(antes)
+    expect(new Set(meshes.map(m => m.geometry)).size).toBeLessThan(meshes.length)
+    const formas = new Set<any>(); a.trabalho.traverse((m: any) => { if (m.isMesh) formas.add(m.geometry) })
+    expect(formas.size).toBeLessThanOrEqual(id === 'guardado' ? 2 : 1)
+    expect(new Set(meshes.map(m => m.material)).size).toBeLessThan(meshes.length)
+    // Novos objetos não acrescentam sombras ou luzes.
+    a.trabalho.traverse((m: any) => { expect(m.castShadow).not.toBe(true); expect(m.isLight).not.toBe(true) })
+    const geometrias = new Set(meshes.map(m => m.geometry)), materiais = new Set(meshes.map(m => m.material))
+    const descartar = [...geometrias, ...materiais, ...meshes.filter(m => m.isInstancedMesh)].map(r => vi.spyOn(r, 'dispose'))
+    a.c.destruir(); a.c.destruir()
+    descartar.forEach(dispose => expect(dispose).toHaveBeenCalledTimes(1))
+    expect(a.frames.size).toBe(0)
+  })
+  it.each(EQUIPE.map(e => e.id))('%s mantém cabeça e atividade enquadradas em 303×128 e 303×180', id => {
+    for (const altura of [128, 180]) {
+      const a = miniDe(id, true, altura)
+      a.scene.updateMatrixWorld(true); a.camera.updateMatrixWorld(true)
+      const limites = new Box3().setFromObject(a.trabalho)
+      // Inclui a cabeça com coque e cabelo; não usa a caixa do cenário para esconder cortes.
+      const head = a.b.children[0].children.find((m: any) => m.position.y === .5)
+      limites.union(new Box3().setFromObject(head))
+      for (const x of [limites.min.x, limites.max.x]) for (const y of [limites.min.y, limites.max.y]) for (const z of [limites.min.z, limites.max.z]) {
+        const p = new Vector3(x, y, z).project(a.camera)
+        expect(Math.abs(p.x)).toBeLessThan(1); expect(Math.abs(p.y)).toBeLessThan(1)
+      }
+      a.c.destruir()
+    }
+  })
+  it.each(EQUIPE.map(e => e.id))('%s alcança os quatro estados, interpola poses, interrompe e retorna sem recriar recursos', id => {
+    const a = miniDe(id), geometria = vi.spyOn(Three.BufferGeometry.prototype, 'dispose')
+    const meshes: any[] = []; a.scene.traverse((m: any) => { if (m.isMesh) meshes.push(m) })
+    let tempo = 100
+    for (const st of ['chamando', 'parado', 'resolvido', 'trabalhando'] as const) {
+      const antes = a.matrizes(a.b)
+      a.c.definirEstado(id, st); expect(a.b.userData.estado).toBe(st)
+      expect(a.matrizes(a.b)).toEqual(antes)
+      a.avancar(tempo + 25, tempo + 1000); tempo += 1000
+      expect(a.matrizes(a.b)).not.toEqual(antes)
+      a.c.definirEstado(id, 'trabalhando'); a.avancar(tempo + 25, tempo + 1000); tempo += 1000
+    }
+    a.c.definirEstado(id, 'resolvido'); a.avancar(tempo + 25, tempo + 2000)
+    expect(a.b.userData.estado).toBe('trabalhando')
+    const depois: any[] = []; a.scene.traverse((m: any) => { if (m.isMesh) depois.push(m) })
+    expect(depois).toEqual(meshes); expect(geometria).not.toHaveBeenCalled()
+    expect(a.renderer.render.mock.calls.every(([s, c]) => s === a.scene && c === a.camera)).toBe(true)
+    a.c.definirEstado('desconhecido', 'chamando'); a.c.destruir()
+  })
+  it('para a atividade quando chama e a retoma, com indicador e joinha', () => {
+    const a = miniDe('colchao')
+    a.c.definirEstado('colchao', 'chamando'); a.avancar(125, 2500)
+    const antes = a.matrizes(a.trabalho); a.avancar(2525, 3500)
+    const depois = a.matrizes(a.trabalho)
+    depois.forEach((v, i) => expect(v).toBeCloseTo(antes[i], 7))
+    expect(a.scene.getObjectByName('agente:colchao').userData.estado).toBe('chamando')
+    expect(a.scene.getObjectByName('chamada:colchao').visible).toBe(true)
+    expect(a.scene.getObjectByName('joinha:colchao').visible).toBe(false)
+    a.c.definirEstado('colchao', 'resolvido'); a.frame(3525)
+    expect(a.scene.getObjectByName('chamada:colchao').visible).toBe(false)
+    expect(a.scene.getObjectByName('joinha:colchao').visible).toBe(true)
+    a.avancar(3550, 5500)
+    expect(a.b.userData.estado).toBe('trabalhando'); expect(a.matrizes(a.trabalho)).not.toEqual(depois)
+    a.c.destruir()
+  })
+  it('mini reduzido não agenda nenhum RAF, mantém atividade e aceita estados sob demanda', () => {
+    const a = miniDe('secretaria', true)
+    expect(a.frames.size).toBe(0); expect(a.renderer.render).toHaveBeenCalledTimes(1)
+    const antes = a.matrizes(a.trabalho)
+    a.c.definirEstado('secretaria', 'chamando'); expect(a.b.userData.estado).toBe('chamando')
+    a.c.definirEstado('secretaria', 'resolvido'); expect(a.b.userData.estado).toBe('resolvido')
+    vi.advanceTimersByTime(1600); expect(a.b.userData.estado).toBe('trabalhando')
+    expect(a.matrizes(a.trabalho)).toEqual(antes)
+    expect(a.frames.size).toBe(0)
+    a.c.definirEstado('secretaria', 'resolvido'); a.c.destruir(); vi.advanceTimersByTime(2000)
+    expect(a.renderer.render).toHaveBeenCalledTimes(5)
+  })
+  it('honra prefers-reduced-motion mesmo sem a opção parado', () => {
+    const a = ambiente(); a.o.mini = true
+    a.janela.matchMedia.mockImplementation(() => Object.assign(new EventTarget(), { matches: true }))
+    const c = a.montar(); expect(a.frames.size).toBe(0); expect(a.renderer.render).toHaveBeenCalledTimes(1); c.destruir()
+  })
+  it('modo leve congela microvida mas mantém o gesto principal; oculto pausa tudo', () => {
+    const a = miniDe('folha')
+    a.avancar(200, 9200, 100); expect(a.c.medir().degrau).toBeGreaterThan(0)
+    const antes = a.matrizes(a.trabalho), head = a.b.children[0].children.find((m: any) => m.position.y === .5)
+    const olhos = head.children.find((m: any) => m.position.y === .25), cabelo = head.children.find((m: any) => m.position.y === .4)
+    const micro = [olhos.scale.y, cabelo.rotation.z]
+    a.avancar(9300, 10000, 100)
+    expect(a.matrizes(a.trabalho)).not.toEqual(antes)
+    expect([olhos.scale.y, cabelo.rotation.z]).toEqual(micro)
+    a.c.definirEstado('folha', 'resolvido')
+    a.documento.hidden = true; a.documento.dispatchEvent(new Event('visibilitychange'))
+    expect(a.frames.size).toBe(0); a.frame(900000)
+    expect(a.b.userData.estado).toBe('resolvido')
+    a.documento.hidden = false; a.documento.dispatchEvent(new Event('visibilitychange')); a.frame(900025)
+    expect(a.b.userData.estado).toBe('resolvido'); a.avancar(900050, 901800)
+    expect(a.b.userData.estado).toBe('trabalhando'); a.c.destruir()
+  })
+  it('atualizar traduz os estados legados sem desmontar o mini', () => {
+    const a = miniDe('analista', true)
+    for (const [estado, esperado] of [['fila', 'parado'], ['precisa', 'chamando'], ['entregue', 'resolvido'], ['trabalhando', 'trabalhando']] as const) {
+      a.c.atualizar([{ id: 'analista', sala: 'gestao', estado }]); expect(a.b.userData.estado).toBe(esperado)
+    }
+    const entregue = [{ id: 'analista', sala: 'gestao', estado: 'entregue' as const }]
+    a.c.atualizar(entregue); vi.advanceTimersByTime(1600)
+    expect(a.b.userData.estado).toBe('trabalhando')
+    a.c.atualizar(entregue); expect(a.b.userData.estado).toBe('trabalhando')
+    a.c.destruir()
+  })
+  it('pausa o retorno pontual reduzido enquanto a aba está oculta', () => {
+    const a = miniDe('protetora', true)
+    const agora = vi.spyOn(performance, 'now').mockReturnValue(0)
+    a.c.definirEstado('protetora', 'resolvido'); vi.advanceTimersByTime(600)
+    agora.mockReturnValue(600)
+    a.documento.hidden = true; a.documento.dispatchEvent(new Event('visibilitychange')); vi.advanceTimersByTime(100000)
+    expect(a.b.userData.estado).toBe('resolvido')
+    agora.mockReturnValue(100600)
+    a.documento.hidden = false; a.documento.dispatchEvent(new Event('visibilitychange')); vi.advanceTimersByTime(999)
+    expect(a.b.userData.estado).toBe('resolvido'); vi.advanceTimersByTime(1)
+    expect(a.b.userData.estado).toBe('trabalhando'); expect(a.frames.size).toBe(0); a.c.destruir()
+  })
+  it('segue o ponteiro com a cabeça, sem interferir no gesto; remove o ouvinte ao destruir', () => {
+    const a = miniDe('contador')
+    const head = a.b.children[0].children.find((m: any) => m.position.y === .5)
+    const ev = Object.assign(new Event('pointermove'), { clientX: 303, clientY: 0 })
+    a.canvas.dispatchEvent(ev); a.avancar(125, 1000)
+    const seguindo = head.rotation.y
+    a.canvas.dispatchEvent(new Event('pointerleave')); a.avancar(1025, 2000)
+    expect(head.rotation.y).not.toBe(seguindo)
+    const remover = vi.spyOn(a.canvas, 'removeEventListener'); a.c.destruir()
+    expect(remover.mock.calls.some(([evento]) => evento === 'pointermove')).toBe(true)
+  })
+  it.each([false, true])('libera todo recurso inclusive em montagem interrompida: %s', falhar => {
+    const a = ambiente(); a.o.mini = true; a.o.funcionarios = [{ id: 'guardado', sala: 'patrimonio', estado: 'trabalhando' }]
+    const recursos: any[] = []
+    for (const nome of ['BoxGeometry', 'CylinderGeometry', 'CircleGeometry', 'BufferGeometry', 'MeshLambertMaterial', 'MeshBasicMaterial'] as const) {
+      const Original = a.T[nome]
+      a.T[nome] = function (...args: any[]) { const r = new Original(...args); recursos.push(r); return r } as never
+    }
+    const converter = Three.BufferGeometry.prototype.toNonIndexed
+    vi.spyOn(Three.BufferGeometry.prototype, 'toNonIndexed').mockImplementation(function (this: any) {
+      const g = converter.call(this); recursos.push(g); return g
+    })
+    // Falha depois da atividade montada, como uma API de interação indisponível.
+    if (falhar) a.T.Raycaster = class { constructor() { throw Error('depois das atividades') } } as never
+    const disposes = vi.spyOn(Three.BufferGeometry.prototype, 'dispose')
+    const materiais = vi.spyOn(Three.MeshLambertMaterial.prototype, 'dispose'), basicos = vi.spyOn(Three.MeshBasicMaterial.prototype, 'dispose')
+    const instancias = vi.spyOn(InstancedMesh.prototype, 'dispose')
+    let c: ReturnType<typeof montarCena> | undefined
+    if (falhar) expect(() => a.montar()).toThrow('depois das atividades')
+    else { c = a.montar(); a.frame(100); c.destruir() }
+    const liberados = [...disposes.mock.instances, ...materiais.mock.instances, ...basicos.mock.instances]
+    expect(new Set(liberados)).toEqual(new Set(recursos))
+    expect(liberados.length).toBe(new Set(recursos).size)
+    expect(recursos.some(r => r.type === 'CylinderGeometry')).toBe(true)
+    expect(instancias).toHaveBeenCalledTimes(2)
+    expect(a.frames.size).toBe(0); expect(a.renderer.dispose).toHaveBeenCalledTimes(1)
+    c?.destruir()
+  })
 })
