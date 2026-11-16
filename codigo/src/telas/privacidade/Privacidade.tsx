@@ -1,3 +1,4 @@
+import { Backup } from '../../componentes/Backup'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
@@ -58,6 +59,7 @@ export function Privacidade() {
           <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com tudo da família, com o nome do dono em cada linha, para guardar ou levar para outro lugar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
           <button className="btn line" type="button" onClick={baixar}><Download size={20} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
         </section>
+        <Backup />
         {!casal && <section className="card"><p className="sub">Quem pode apagar tudo é o casal.</p></section>}
         {casal && <section className="card" aria-labelledby="aT">
           <h2 id="aT">Apagar a família</h2>

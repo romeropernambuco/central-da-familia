@@ -1,3 +1,4 @@
+import { rascunhos } from '../app/rascunhos'
 import { textoPrivado } from '../lib/formato'
 import { createContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../app/contexto'
@@ -74,7 +75,7 @@ export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho }: { t
           <h2>{titulo}</h2>{cabecalho}
           <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><X size={22} /></button>
         </div>
-        <div className="sheet-body"><ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>
+        <div className="sheet-body">{rascunhos.size > 0 && <p className="sub" role="status">Continuar de onde parou: o rascunho fica nesta sessão ao fechar.</p>}<ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>
       </div>
     </>
   )

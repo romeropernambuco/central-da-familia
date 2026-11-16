@@ -101,3 +101,49 @@ Pedido: RPC sugerida `produto.registro_autoria_informar(familia uuid, origem tex
 Cadastros sem login: o casal já pode gravar `config_familia` pela API `salvarConfig`. Nome/função em `casa_folha.pessoas[].nome/funcao`, nome em `casa_prestadores[].nome` e dono textual em `rendas[].dono` funcionam no real e no exemplo, preservando os demais campos. Falta relação `rendas[].dono_membro` e vínculo do assessor cadastrado com o membro do convite para que renomear o login atualize todas as referências sem ambiguidade. Até existir, editar o cadastro da folha não renomeia uma conta real de acesso. A UI explica isso junto ao cadastro.
 
 No real, a validação de duplicidade entre membros é prévia na UI; a garantia concorrente precisa ser repetida nas RPCs sugeridas. `config_salvar` grava JSON inteiro: a UI relê e preserva os demais campos, mas ainda falta uma operação atômica por pessoa para resolver alterações simultâneas no mesmo cadastro. Nenhuma função sugerida é chamada antes de existir uma implementação real explícita em `Api`.
+
+## F23 — Desfazer, proteção e cópia de segurança (16/11/2026)
+
+Contrato central: `AcaoDesfazivel { rotulo, desfazer(): Promise<boolean> }`, em `src/app/desfazer.ts`. A barra anuncia sem deslocar foco, fica cerca de 10 segundos, pausa com mouse parado ou foco dentro e oferece “Manter aviso”. Não há como detectar se um leitor de tela está lendo; a pausa e o controle manual permitem conservar o aviso. Falha conserva a mesma ação para “Tentar de novo”. Só a mais recente fica disponível; as cinco últimas ficam na memória e são apagadas ao sair. Não existe histórico financeiro em localStorage, sessionStorage ou IndexedDB.
+
+Os callbacks de Lançar, cupom, lixeira, Guardado e recebimentos usam a mesma barra. O envio atrasado da Casa conserva sua janela de cancelamento de seis segundos na central: depois de enviar, o Assessor da Casa não recebe um falso inverso de `casa_marcar`.
+
+`api/protegida.ts` registra também alterações feitas pelos cadastros compartilhados. Configurações existentes e parâmetros existentes guardam o anterior e releem antes de desfazer, recusando mudança posterior conhecida. Edição de imóvel e situação de desejo têm escrita inversa. No exemplo, o casal tem um retrato completo em memória; desfazer confere que o estado não mudou antes de restaurar o anterior, incluindo identificadores e cadastros. Isso não é histórico por registro nem backup automático.
+
+### Inversos que faltam no banco
+
+Não habilitar inverso por recriar uma linha com identificador diferente. Faltam retorno do identificador e remoção/restauração segura para criação de imóvel, aplicação, recebimento e desejo; reabrir aplicação encerrada; reativar imóvel/receita/desejo retirado. O contrato atual só aceita apagar=true em algumas dessas operações. Configuração inexistente não pode voltar a inexistente por salvar null; primeiro objetivo não pode voltar a parâmetros ausentes. Convites enviados, fotos enviadas, respostas do Escritório, presença, gás, feira e contagem também não têm inverso geral seguro. Ações sem inverso limpam a oferta anterior e não anunciam Desfazer no real.
+
+Nomes de acesso dependem de RPC autorizada, já ausente no real; os nomes dos cadastros de Assessor da Casa, prestador e renda usam a configuração inteira anterior. Para desfazer identidade, o banco deve preservar vínculos pelo id, função e apelido anterior. Para o Assessor da Casa nunca se deve buscar um retrato financeiro.
+
+Leitura e escrita separadas não constituem controle atômico de concorrência. Pedido ao banco: aceitar revisão esperada e chave da ação nas gravações/inversos; recusar conflito em uma transação, inclusive para configuração, objetivo, imóvel e desejo. O app não promete proteção entre a última releitura e a escrita de outro aparelho.
+
+### Proteção e rascunhos
+
+Regra PROVISÓRIA de valor incomum: perguntar quando o valor superar 50% do limite mensal OU cinco vezes a mediana dos últimos até 30 gastos vivos do envelope no mês atual, sem parcelas projetadas. Sem histórico ou se a leitura falhar, usar somente o limite mensal. Igual ao limiar não alerta. A família pode confirmar normalmente ou corrigir. Olho fechado mascara os valores do aviso. O dono pode rever a janela e os multiplicadores depois de experimentar com dados fictícios.
+
+Rascunhos de Lançar, compra do Assessor da Casa e cadastros de imóvel, aplicação, Assessor da Casa, prestador, recebimento, cartão, renda e meta ficam em memória, isolados por usuário e família. Texto volta ao reabrir; nunca a foto do cupom. Salvar limpa o rascunho correspondente; sair/expirar sessão limpa todos. Recarregar ou fechar o aplicativo perde o rascunho, por escolha de privacidade. Os formulários da Casa passaram a aguardar o resultado antes de fechar ou apagar o digitado.
+
+Reenvio automático habilitado somente em lançamentos, via a mesma `chave` de `lancar_com_chave`; fila visível em memória, tentativa a cada cinco segundos e quando a rede volta. Manter o app aberto. Sair elimina a fila local; ao voltar, conferir os lançamentos, pois o servidor pode ter recebido a tentativa anterior. Demais gravações continuam mostrando erro e mantendo os campos, sem repetir criação às cegas. Para uma fila geral, faltam chaves idempotentes em todas as funções de escrita, consulta do resultado por chave e cancelamento/revisão. A fila não sobrevive a recarga: não gravar dinheiro em disco.
+
+### Cópia manual, formato 1
+
+JSON identificado por `central-da-familia`, versão do formato, versão do package.json e data ISO. Inclui lançamentos, cartões, aplicações, imóveis, receitas, desejos, pessoas, Assessores da Casa, parâmetros e configuração; o exemplo inclui também os estados e movimentos necessários ao round-trip. O download sempre pede confirmação explícita de que o arquivo contém valores, inclusive com o olho fechado.
+
+A importação valida JSON, versão, tamanho (20 MB), estrutura, coleções, ids únicos, tipos básicos, números finitos e chaves perigosas. A prévia mostra quantidades substituídas, novas e finais, sem expor valores. Exige RESTAURAR. Apenas casal tem interface e a API de exemplo também exige casal. No exemplo há validação de consistência entre coleções e estado antes de aplicar.
+
+No real a prévia funciona, mas a gravação é desabilitada. `importar_familia_json` antigo não é um restaurador completo deste formato: não cobre todos os cadastros e não oferece revisão esperada. Falta uma função proposta `restaurar_backup_familia(familia, formato, dados, revisao_esperada, chave)`: validar tudo, autorizar casal e família, preservar ids e vínculos, resolver papéis/propriedade sem ampliar acesso, aplicar todos os conjuntos em transação única e devolver revisão. Não encadear chamadas de criação no cliente. A exportação real usa as leituras disponíveis e cancela se faltar uma coleção obrigatória; não é um retrato transacional entre aparelhos. Para isso, falta `exportar_backup_familia` abrangendo todos os conjuntos numa única revisão.
+
+### Pedido ao banco: historico e backup automatico
+
+Desenho somente; nenhum SQL ou migração nesta entrega. Sugerir `historico_acoes` com família, ator, entidade, id, ação, revisão, chave idempotente, instante e antes/depois protegidos por RLS. Escritas somente por funções autorizadas, na mesma transação da alteração. Casal lê histórico da própria família; pessoa lê somente seus registros; Assessor da Casa não recebe valores nem snapshots financeiros. RPC de desfazer exige revisão ainda vigente e propriedade, sem permitir desfazer edição de outro adulto.
+
+Sugerir `backup_familia` com família, formato, revisão, data, hash e referência a objeto privado criptografado; serviço do banco cria snapshots consistentes, nunca navegador/localStorage. RPC de exportação/restauração somente para casal, com registro de auditoria; credencial de serviço não vai para o app. PROVISÓRIO: ações por 90 dias e cópias diárias por 30 dias, com exclusão após apagar família e tratamento explícito das cópias operacionais. O dono define retenção, custo, criptografia, rotação de chaves, atendimento à LGPD e agenda; testar recuperação em ambiente isolado antes de habilitar.
+
+### Evidência automatizada
+
+`src/app/seguranca-f23.test.ts`: limite de cinco ações, execução exclusiva, falha e repetição; fila em rede instável e rejeição de erro de negócio; backup gerar → alterar → restaurar com igualdade integral; rejeição de versão/estrutura e papel; inverso de configuração e conflito; criação desfeita no exemplo; limiares de valor incomum.
+
+`src/componentes/seguranca-f23-ui.test.ts`: anúncio/pausa/repetição da barra, confirmação de download, prévia com olho fechado e gravação real desabilitada, exclusão do Assessor da Casa, rascunho recuperado e campos conservados na falha sem escrita em disco. As regressões existentes de rascunho em `agente-interacoes.test.ts` e `ux-cobertura.test.ts` passaram a alimentar memória, mantendo isolamento, máscara, salvar e descartar.
+
+Complemento F23: limites mensais/envelopes com efeitos em meses futuros, reajustes/votos e criação de cartão também precisam de inverso transacional no banco para serem anunciados como reversíveis no real. Cadastros genéricos do Escritório preservam cada formulário por tipo e id em memória, inclusive ao recolher a ficha. O teste de cenários de 2029 aguarda as leituras fictícias antes de comparar páginas completas, evitando confundir chegada de dados com mudança de cenário.

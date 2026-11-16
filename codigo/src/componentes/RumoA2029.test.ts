@@ -90,6 +90,9 @@ it('troca sincroniza cartão e seletor, preserva oficial, persiste e informa cen
   const a = await montar(superfícies(), { futuroEntradas: async () => ({ entrada: e, confirmar: [] }), numerosSemana: async () => [], lancamentos: async () => [] },
     { resumo: await apiExemplo.resumoHoje('familia-ficticia'), sessao: { dono: true } as Ctx['sessao'] }, storage)
   const frente = (i: number) => a.box.buscar(x => x.getAttribute('data-frente') === String(i))[0].textContent
+  // As leituras fictícias do restante do Início/Painel usam timers de até 60 ms.
+  // Concluí-las antes de comparar a página inteira isola a troca de cenário.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 200)) })
   const oficial = [frente(2), frente(3)], antes = frente(0)
   expect(antes).not.toContain('Número oficial: Garantido')
   await a.click('Com tudo')

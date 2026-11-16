@@ -1,3 +1,4 @@
+import { rascunhos } from '../../app/rascunhos'
 import { validarNome } from '../../lib/nomePessoa'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { rotuloDeOpcao, textoDeAgente } from '../../lib/textoAgente'
@@ -129,22 +130,24 @@ type Form = Record<string, string>
 interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?: boolean | ((t: T) => boolean); extra?: (t: T) => ReactNode }
 
 function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, salvar, novo, vazio, semEditar, extra }: PropsLista<T>) {
-  const { tentar, recarregar, toast, oculto } = useApp()
+  const { tentar, recarregar, toast, oculto, familia, sessao } = useApp()
   const [aberto, setAberto] = useState<string | null>(null) // chave do item em edição, ou '+' pra novo
-  const [form, setForm] = useState<Form>({})
+  const [form, setF] = useState<Form>({})
+  const chaveRascunho = (k: string | null) => 'cadastro:ficha:' + nome + ':' + k + ':' + sessao?.userId + ':' + familia?.id
+  const setForm = (f: Form) => { setF(f); if(aberto) rascunhos.set(chaveRascunho(aberto),f) }
   const [erro, setErro] = useState('')
   const [gravando, setGravando] = useState(false)
-  const abrir = (k: string, t: T | null) => { setErro(''); if (aberto === k) { setAberto(null); return } setForm(paraForm(t)); setAberto(k) }
+  const abrir = (k: string, t: T | null) => { setErro(''); if (aberto === k) { setAberto(null); return } setF(rascunhos.get(chaveRascunho(k)) as Form || paraForm(t)); setAberto(k) }
   const gravar = async (t: T | null) => {
     setGravando(true); setErro('')
     let falta: string | void = ''
     const ok = await tentar(async () => { falta = await salvar(form, t) })
     setGravando(false)
     if (falta) { setErro(falta); return }
-    if (ok) { setAberto(null); toast('Salvo.'); await recarregar() }
+    if (ok) { rascunhos.delete(chaveRascunho(aberto)); setAberto(null); toast('Salvo.'); await recarregar() }
   }
   const formulario = (t: T | null) => (
-    <div className="cad-form">
+    <div className="cad-form">{rascunhos.has(chaveRascunho(aberto)) && <p role="status">Continuar de onde parou.</p>}
       {campos.map(c => (
         <div className="campo" key={c.k}>
           <span id={`cf-${nome}-${c.k}`}>{c.rotulo}</span>

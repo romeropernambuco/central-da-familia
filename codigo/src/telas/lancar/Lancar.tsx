@@ -1,3 +1,5 @@
+import { valorForaPadrao } from '../../app/valorForaPadrao'
+import { rascunhos } from '../../app/rascunhos'
 import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
@@ -20,7 +22,7 @@ import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 type Rascunho = { txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number }
 function lerRascunho(chave: string): Rascunho | null {
  try {
-  const d = JSON.parse(sessionStorage.getItem(chave) || 'null')
+  const d = rascunhos.get(chave) as Rascunho | undefined
   if (d && typeof d.txt === 'string' && typeof d.desc === 'string' && typeof d.quando === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.quando) && (d.cartao === null || typeof d.cartao === 'string') && typeof d.envelope === 'string' && Number.isInteger(d.parcelas) && d.parcelas >= 1 && d.parcelas <= 12) return d
  } catch { /* sem storage ou rascunho inválido */ }
  return null
@@ -78,11 +80,11 @@ export function Lancar() {
   useEffect(() => {
     if (!chaveRascunho || concluido.current) return
     try {
-      if (!txt && !desc) { sessionStorage.removeItem(chaveRascunho); return }
-      sessionStorage.setItem(chaveRascunho, JSON.stringify({ txt, desc, quando, cartao, parcelas, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' }))
+      if (!txt && !desc) { rascunhos.delete(chaveRascunho); return }
+      rascunhos.set(chaveRascunho, { txt, desc, quando, cartao, parcelas, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
     } catch { /* sem storage */ }
   }, [chaveRascunho, txt, desc, quando, cartao, parcelas])
-  const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) sessionStorage.removeItem(chaveRascunho) } catch { /* sem storage */ } }
+  const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) rascunhos.delete(chaveRascunho) } catch { /* sem storage */ } }
   const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setParcelas(1); setRecuperado(false); concluido.current = false }
   const atalho = !corr ? lancarAberto?.atalho : undefined
   const [cartaoAtalho, setCartaoAtalho] = useState<'achou' | 'nao achou' | null>(null)
@@ -107,6 +109,8 @@ export function Lancar() {
     return () => document.removeEventListener('keydown', k)
   }, [])
 
+  const [recentes, setRecentes] = useState<import('../../api/tipos').Lancamento[]>([])
+  useEffect(() => { let vivo=true; if(familia && !equipe) api.lancamentos(familia.id,hoje.slice(0,7)).then(ls=>{if(vivo)setRecentes(ls)}).catch(()=>{}); return ()=>{vivo=false} },[api,familia?.id,equipe,hoje])
   const valor = textoParaValor(txt)
   // E2: lança só no seu, na Casa e no sem dono; o limite do outro é só pra ler
   const envs = (resumo?.envelopes || []).filter(e => (!equipe || e.casa) && escreveNo(e, familia))
@@ -129,7 +133,7 @@ export function Lancar() {
   const [confirmar, setConfirmar] = useState<{ envelope: string; nome: string; mes: number } | null>(null)
   const salvar = (envelope: string, nome: string, certeza = false) => {
     const e = resumo?.envelopes.find(x => x.id === envelope), mes = e ? e.limite_base ?? e.limite_mes : 0
-    if (!certeza && !equipe && mes > 0 && valor > mes) { setConfirmar({ envelope, nome, mes }); return }
+    if (!certeza && !equipe && valorForaPadrao(valor, mes, recentes.filter(l=>l.envelope_id===envelope && !l.apagado_em && !l.parcela).slice(0,30).map(l=>l.valor))) { setConfirmar({ envelope, nome, mes }); return }
     setConfirmar(null)
     return trava(() => (corr ? corrigir(envelope, nome) : gravar(envelope, nome)))
   }
@@ -203,8 +207,8 @@ export function Lancar() {
   )
   const datas = quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
-    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={fecharLancar} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}>
-      {recuperado && <p role="status">Rascunho recuperado <button type="button" onClick={descartar}>Descartar</button></p>}
+    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}>
+      {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={descartar}>Descartar</button></p>}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
           <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}>Gastei</button>
@@ -261,9 +265,9 @@ export function Lancar() {
             })}
           </div>
           {confirmar && (
-            <div className="todo warn confirmar-valor" role="alert"><span><b>{reais(valor)} é mais que o mês todo de {textoPrivado(confirmar.nome)} ({reais(confirmar.mes)}).</b> Está certo?</span>
+            <div className="todo warn confirmar-valor" role="alert"><span><b>Confere? {reais(valor)} é bem acima do seu normal em {textoPrivado(confirmar.nome)}.</b></span>
               <span className="row-btns" style={{ marginTop: 8 }}>
-                <button className="btn sm primary" type="button" disabled={salvando} onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}>Sim, salvar {reais(valor)}</button>
+                <button className="btn sm primary" type="button" disabled={salvando} onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}>Confirmar {reais(valor)}</button>
                 <button className="btn sm line" type="button" onClick={() => { setConfirmar(null); setTxt(''); setSelecionado(false) }}>Corrigir o valor</button>
               </span>
             </div>
@@ -345,12 +349,12 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 function AnotarCompra() {
   const { api, familia, sessao, fecharLancar, toast, recarregar, tentar, oculto } = useApp()
   const chave = sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
-  const [rascunho] = useState(() => { try { return chave ? sessionStorage.getItem(chave) || '' : '' } catch { return '' } })
+  const [rascunho] = useState(() => { try { return chave ? rascunhos.get(chave) as string || '' : '' } catch { return '' } })
   const [recuperado, setRecuperado] = useState(!!rascunho)
   const [nome, setNome] = useState(rascunho)
   const salvo = useRef(false)
-  const limpar = () => { try { if (chave) sessionStorage.removeItem(chave) } catch { /* sem storage */ } }
-  useEffect(() => { if (!chave || salvo.current) return; try { if (nome) sessionStorage.setItem(chave, nome); else limpar() } catch { /* sem storage */ } }, [chave, nome])
+  const limpar = () => { try { if (chave) rascunhos.delete(chave) } catch { /* sem storage */ } }
+  useEffect(() => { if (!chave || salvo.current) return; try { if (nome) rascunhos.set(chave, nome); else limpar() } catch { /* sem storage */ } }, [chave, nome])
   const [tipo, setTipo] = useState<'feira' | 'casa'>('feira')
   const [foto, setFoto] = useState<string | null>(null)
   const [erro, setErro] = useState('')
@@ -379,7 +383,7 @@ function AnotarCompra() {
   }
   return (
     <Sheet titulo="Anotar compra" fechar={() => { if (!gravando && !fotoTrava.current) fecharLancar() }} rotulo="Anotar compra">
-      {recuperado && <p role="status">Rascunho recuperado <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
+      {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
       <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
         <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">

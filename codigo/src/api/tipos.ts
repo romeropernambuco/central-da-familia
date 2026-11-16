@@ -414,6 +414,8 @@ export interface Api {
 
   numerosSemana(): Promise<Numero[]>
   exportarFamilia(familia: string): Promise<unknown>
+  backupLer?(familia: string): Promise<Record<string, unknown>>
+  backupRestaurar?(familia: string, dados: Record<string, unknown>): Promise<void>
   /* E5: recebimentos (só o casal vê; só o dono cria e muda) */
   recebimentos?(familia: string): Promise<RecebimentoTela[]>
   recebimentoCriar?(familia: string, r: NovoRecebimento): Promise<void>

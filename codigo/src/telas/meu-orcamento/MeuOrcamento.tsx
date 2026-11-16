@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Conferencia } from '../../componentes/Conferencia'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -129,7 +130,7 @@ export function MeuOrcamento() {
               const m = metas?.[env.id]
               if (!m) return meu ? <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button> : null
               return <><ProgressoMeta meta={m} editavel={meu} salvar={m => salvarMetas({ ...metas, [env.id]: m })} />
-                {meu && <button className="btn sm ghost" type="button" onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>}</>
+                {meu && <button className="btn sm ghost" type="button" onClick={() => { if(window.confirm(textoPrivado('Tirar a meta ' + (m.nome || 'deste envelope') + '? Deixa de aparecer no seu planejamento.'))) void salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id))) }}>Tirar a meta</button>}</>
             })()}
           </section>
         </div>
@@ -168,7 +169,7 @@ function DaPraComprar({ livre, fechar }: { livre: number; fechar: () => void }) 
 }
 
 function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: string, valor: number) => void }) {
-  const [nome, setNome] = useState(''), [v, setV] = useState('')
+  const [nome, setNome] = useRascunho('cadastro:meta:nome', ''), [v, setV] = useRascunho('cadastro:meta:v', '')
   return (
     <Sheet titulo="Quero juntar pra…" fechar={fechar}>
       <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0) salvar(nome.trim(), textoParaValor(v)) }}>
@@ -198,7 +199,7 @@ export function MetaDoDesejo({ desejo }: { desejo: DesejoTela }) {
 
 export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; salvar: (meta: MetaPessoal) => Promise<boolean>; editavel: boolean }) {
   const { oculto } = useApp()
-  const [valor, setValor] = useState(''), [ocupado, setOcupado] = useState(false)
+  const [valor, setValor] = useRascunho('cadastro:meta:valor', ''), [ocupado, setOcupado] = useState(false)
   const [falha, setFalha] = useState('')
   const total = centavos((meta.anotacoes || []).reduce((s, a) => s + a.valor, 0))
   return <div className="meta-cofre">

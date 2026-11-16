@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
@@ -127,7 +128,7 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
   renovaHoje?: { aluguel_para_em?: string | null; mes: string | null } | null }) {
   const so = !!inicial && !inicial.meu
   const m0 = hojeRecife().slice(0, 7)
-  const [f, setF] = useState(() => ({
+  const [f, setF] = useRascunho('cadastro:imovel:f:' + (inicial?.id || 'novo'), () => ({
     apelido: inicial?.apelido || '', valor: inicial ? valorParaTexto(inicial.valor) : '', uso: (inicial?.uso || 'parado') as UsoImovel,
     aluguel: inicial ? valorParaTexto(inicial.aluguel) : '', custos: inicial ? valorParaTexto(inicial.custos) : '', vacancia: inicial ? textoDaTaxa(inicial.vacancia) : '0',
     contrato: inicial?.tem_contrato ?? false, contrato_ate: inicial?.contrato_ate || mesMais(m0, 12),

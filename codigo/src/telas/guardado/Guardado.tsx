@@ -1,3 +1,4 @@
+import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { ouvirAtalhoGuardado } from './atalhos'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
@@ -182,15 +183,15 @@ const TIPOS: TipoAplicacao[] = ['caixinha', 'cdb', 'lci_lca', 'tesouro_selic', '
 /** Nova aplicação em 4 campos: onde está, que tipo é, quanto rende e quanto tem lá. */
 function NovaAplicacao({ fechar }: { fechar: () => void }) {
   const { api, familia, tentar, recarregar, toast } = useApp()
-  const [titular, setTitular] = useState<'eu' | 'casal'>('eu')
+  const [titular, setTitular] = useRascunho<'eu' | 'casal'>('cadastro:aplicacao:titular', 'eu')
   // E3 (conserto 8): família de 1 adulto não tem "Do casal"
   const adultos = useAdultos()
   const sozinho = adultos === 1
-  const [banco, setBanco] = useState('')
-  const [tipo, setTipo] = useState<TipoAplicacao>('caixinha')
-  const [rende, setRende] = useState('100')
-  const [valor, setValor] = useState('')
-  const [vence, setVence] = useState('')
+  const [banco, setBanco] = useRascunho('cadastro:aplicacao:banco', '')
+  const [tipo, setTipo] = useRascunho<TipoAplicacao>('cadastro:aplicacao:tipo', 'caixinha')
+  const [rende, setRende] = useRascunho('cadastro:aplicacao:rende', '100')
+  const [valor, setValor] = useRascunho('cadastro:aplicacao:valor', '')
+  const [vence, setVence] = useRascunho('cadastro:aplicacao:vence', '')
   const [erro, setErro] = useState('')
   const [gravando, setGravando] = useState(false)
   const trava = useMemo(() => umaPorVez(async (f: () => Promise<void>) => f()), [])
