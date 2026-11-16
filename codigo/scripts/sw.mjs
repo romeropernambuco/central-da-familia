@@ -25,7 +25,7 @@ export function gravarSw(pastaBuild, modeloPath) {
   for (const a of arquivos) { h.update(a); h.update(readFileSync(join(pastaBuild, a))) }
   const versao = h.digest('hex').slice(0, 12)
   // o 3D do Escritório (Three.js) não entra na casca: só é baixado quando a pessoa abre essa tela, e aí o próprio sw guarda
-  const casca = arquivos.filter(a => !/assets\/(tres|cena3d)-/.test(a))
+  const casca = arquivos.filter(a => !/assets\/(tres|cena3d|modelosEscritorio|escritorioMini)-/.test(a) && !/^modelos\/escritorio\/.*\.glb$/.test(a))
   writeFileSync(join(pastaBuild, 'sw.js'), montarSw(readFileSync(modeloPath, 'utf8'), casca, versao))
   return { versao, arquivos }
 }

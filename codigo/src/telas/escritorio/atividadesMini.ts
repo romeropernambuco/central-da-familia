@@ -83,7 +83,7 @@ export function montarAtividade(id: string, f: OficinaMini): TrabalhoMini {
     for (let i = 0; i < n; i++) box(.24, .008, .018, TINTA, x, y, z + i * .075, pai)
   }
   const folha = (x: number, z: number, pai = raiz) => { box(.38, .025, .43, PAPEL, x, .67, z, pai); linhas(x, .69, z - .12, 3, pai) }
-  const caneta = (pai = raiz) => box(.025, .025, .25, TINTA, .26, .74, .51, pai)
+  const caneta = (pai = raiz) => { const m = box(.025, .025, .25, TINTA, .26, .74, .51, pai); m.userData.movel = true; return m }
   const prancheta = (pai: any) => { box(.49, .6, .05, MADEIRA, 0, 0, 0, pai); box(.42, .5, .02, PAPEL, 0, -.015, .037, pai); box(.18, .06, .035, TINTA, 0, .28, .04, pai) }
   const animacoes: ((t: number) => void)[] = []
   let gesto: (t: number) => Record<string, number> = () => ({})
@@ -113,7 +113,7 @@ export function montarAtividade(id: string, f: OficinaMini): TrabalhoMini {
       box(.48, .015, .025, OURO, .28, .765, .65)
       const carimbo = g(raiz, -.23, .78, .55)
       box(.25, .06, .18, TINTA, 0, 0, 0, carimbo); box(.07, .17, .07, MADEIRA, 0, .1, 0, carimbo); box(.16, .06, .1, MADEIRA, 0, .2, 0, carimbo)
-      const selo = box(.15, .01, .1, 0x9A5B4A, .28, .78, .6)
+      const selo = box(.15, .01, .1, 0x9A5B4A, .28, .78, .6); selo.userData.movel = true
       animacoes.push(t => { const s = (1 + Math.sin(t * 2.8)) / 2; carimbo.position.set(.28 - s * .5, .79 + s * .24, .6); selo.scale.x = .15 * (1 - s * .2) })
       gesto = t => ({ rx: -.6 - (1 + Math.sin(t * 2.8)) * .22, re: -1.15, lx: -.7, le: -1, cy: .14 }); break
     }
@@ -201,7 +201,7 @@ export function montarAtividade(id: string, f: OficinaMini): TrabalhoMini {
       const poses = [[-.48, .81, .75, .34, .29, .32], [-.12, .81, .75, .34, .29, .32], [.24, .81, .75, .34, .29, .32], [.06, 1.11, .75, .34, .29, .32]]
       repetidos(geo, MADEIRA, poses)
       repetidos(geo, PAPEL, poses.map(p => [p[0], p[1], p[2] + .168, .15, .09, .012]))
-      const ponteiro = box(.035, .035, .38, TINTA, -.15, 1.15, .43)
+      const ponteiro = box(.035, .035, .38, TINTA, -.15, 1.15, .43); ponteiro.userData.movel = true
       box(.18, .08, .18, 0x8E949C, -.42, .72, .35)
       animacoes.push(t => { ponteiro.position.x = Math.sin(t * 1.4) * .34; ponteiro.rotation.y = Math.sin(t * 1.4) * -.4 })
       gesto = t => ({ rx: -1.35, re: -1.25, rz: Math.sin(t * 1.4) * .22, lx: -.65, le: -1.2, cy: Math.sin(t * 1.4) * .3 }); break

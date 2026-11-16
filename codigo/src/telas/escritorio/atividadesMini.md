@@ -1,5 +1,7 @@
 # Atividades dos agentes no mini
 
+> Registro da cenografia de caixas, agora usada como fallback. A versão Kenney, seus contatos medidos, orçamentos, câmeras e validação atual estão em [escritorioMini.md](./escritorioMini.md). Na versão GLB todos os ids ficam sentados; as posturas e contagens abaixo descrevem apenas o fallback anterior.
+
 A cenografia e as câmeras abaixo só entram com `mini: true`. O escritório completo conserva as salas, os enquadramentos, as roupas e as poses legadas. Não foram acrescentadas luzes, texturas ou sombras aos acessórios. O boneco continua voxel/low-poly, usando as roupas de `equipe.ts` e cores já presentes na cena.
 
 ## API para a frente do componente

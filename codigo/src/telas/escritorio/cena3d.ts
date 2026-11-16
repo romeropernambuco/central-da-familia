@@ -16,6 +16,8 @@ import type { Cena, OpcoesCena, EstadoCena, EstadoAgente } from './cenaBase'
 import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
 import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
+import { caixaReal, montarEscritorioMini, fundirGrupos, enquadrarMini, criarApoioDasMaos } from './escritorioMini'
+import type { SalaEquipe } from './equipe'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
   gestao: { nome: 'Gestão', rot: [9, 2.45, -5.1], cx: 9, cz: -2.5, d: 5, piso: 0xDCC9AA, tapete: 0xB9A98C },
@@ -227,6 +229,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (o.mini) {
       ch.fase = faseDoId(e.id)
       const palco = new T.Group(); palco.position.copy(ch.S); scene.add(palco)
+      ch.palco = palco
       ch.trabalho = montarAtividade(e.id, { T, pai: palco, geo: GEO, mat, guardar })
       ch.estado = estadoMini(e.estado); ch.legadoRecebido = e.estado; ch.tempoEstado = 0; ch.tempoTrabalho = ch.fase; ch.pesoTrabalho = ch.estado === 'trabalhando' ? 1 : 0
       ch.micro = ch.fase; ch.rotacao = 0
@@ -269,7 +272,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     VISTAS[ch.sala] = vistaDe(ch.S.x - (miniCamera?.largura || 1.15), ch.S.x + (miniCamera?.largura || 1.15), ATIVIDADES_MINI[ch.id]?.emPe ? 1.95 : 1.72, ch.S.z - .35, ch.S.z + (miniCamera?.fundo || 1.35))
   }
   let vAtual = { ...VISTAS[o.mini ? chars[0]?.sala || 'tudo' : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? chars[0]?.sala || 'tudo' : 'tudo'
-  function aplicaVista(v: any) { const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix() }
+  function aplicaVista(v: any) {
+    if (chars[0]?.escritorio) { enquadrarMini(cam, el.clientWidth || 1, el.clientHeight || 1, chars[0].limitesMini); return }
+    const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix()
+  }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
   let largura = 0, altura = 0, dpr = pr
   function tamanho() {
@@ -424,12 +430,26 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (!reduz && degrau === 0 && !ch.microCongelada) ch.micro += dt
     const micro = ch.micro, t = ch.tempoTrabalho
     const respira = reduz ? 0 : Math.sin(micro * 2) * .006
-    const emPe = !!ATIVIDADES_MINI[ch.id]?.emPe
-    const alvo: any = { hy: (emPe ? HIP_PE : HIP_SENTADO) + respira, hx: .06, cx: .12, cy: 0,
+    const emPe = !ch.escritorio && !!ATIVIDADES_MINI[ch.id]?.emPe
+    const quadril = ch.escritorio ? ch.escritorio.assento + ch.folgaQuadril : emPe ? HIP_PE : HIP_SENTADO
+    const alvo: any = { hy: quadril + (ch.escritorio ? 0 : respira), hx: .06, cx: .12, cy: 0,
       lx: -.7, lz: 0, le: -1.1, rx: -.7, rz: 0, re: -1.1, rez: 0,
       tl: emPe ? -.03 : -1.5, kl: emPe ? .03 : 1.5, tr: emPe ? .03 : -1.5, kr: emPe ? .02 : 1.5 }
     Object.assign(alvo, ch.trabalho.pose(t))
     ch.trabalho.animar(t)
+    if (ch.escritorio) {
+      // Mãos no teclado/objeto: a atividade continua modulando cotovelo, olhar e punho.
+      const base = ch.trabalho.pose(0), ponto = ch.escritorio.teclado
+      const dy = ponto.y - quadril - .44, dz = ponto.z + .08
+      const beta = Math.acos(Math.max(-1, Math.min(1, (dy * dy + dz * dz - .24 ** 2 - .285 ** 2) / (2 * .24 * .285))))
+      const alpha = Math.atan2(dz, -dy) - Math.atan2(.285 * Math.sin(beta), .24 + .285 * Math.cos(beta))
+      alvo.hx = 0
+      for (const [ombro, cotovelo] of [['lx', 'le'], ['rx', 're']]) {
+        alvo[ombro] = -alpha + ((alvo[ombro] || 0) - (base[ombro] || 0)) * .3
+        alvo[cotovelo] = -beta + ((alvo[cotovelo] || 0) - (base[cotovelo] || 0)) * .3
+      }
+      ch.escritorio.tela.emissiveIntensity = degrau || ch.microCongelada ? .55 : .75 + (reduz ? 0 : Math.sin(micro * .8) * .035)
+    }
     const chamar = st === 'chamando', resolveu = st === 'resolvido'
     if (chamar) Object.assign(alvo, { hx: 0, cx: -.06, cy: 0, lx: -.3, le: -.4, rx: -.15, rz: 2.45, re: -.2, rez: reduz ? .2 : Math.sin(ch.tempoEstado * 6 + ch.fase) * .25 })
     if (resolveu) Object.assign(alvo, { hx: -.04, cx: -.08, cy: .1, rx: -1.25, rz: -.18, re: -1.7, rez: 0 })
@@ -442,19 +462,25 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     }
     const tomandoCafe = st === 'parado' && pausa === 2
     ch.cafe.position.x = lerp(ch.cafe.position.x, tomandoCafe ? -.3 : -.7, k)
-    ch.cafe.position.y = lerp(ch.cafe.position.y, tomandoCafe ? (emPe ? HIP_PE : HIP_SENTADO) + .56 : .69, k)
+    ch.cafe.position.y = lerp(ch.cafe.position.y, tomandoCafe ? quadril + .56 : ch.escritorio ? ch.escritorio.tampo + .07 : .69, k)
     ch.cafe.position.z = lerp(ch.cafe.position.z, tomandoCafe ? .28 : .85, k)
     ch.cafe.rotation.x = lerp(ch.cafe.rotation.x, tomandoCafe ? -.2 + (reduz ? 0 : Math.sin(micro) * .035) : 0, k)
     const olhando = (chamar || resolveu) ? Math.atan2(DIR.x, DIR.z) : 0
     ch.rotacao = lerp(ch.rotacao, olhando, k); b.r.rotation.y = ch.rotacao
     if (ponteiro.dentro && st !== 'parado' && !reduz && degrau === 0 && !ch.microCongelada) { alvo.cy += ponteiro.x * .13; alvo.cx += ponteiro.y * .06 }
     pose(ch, alvo, reduz || ch.pose.hy === undefined ? 1 : dt)
+    if (ch.escritorio && st === 'trabalhando') {
+      const variacao = reduz ? 0 : Math.sin(t * 8) * .007
+      ch.maoL.set(-.08, ch.escritorio.teclado.y - quadril + variacao, ch.escritorio.teclado.z - .1)
+      ch.maoR.set(.31, ch.escritorio.teclado.y - quadril - variacao, ch.escritorio.teclado.z - .1)
+      ch.apoiarMao(b.bL, ch.maoL); ch.apoiarMao(b.bR, ch.maoR)
+    }
     b.olhos.scale.y = reduz ? 1 : Math.pow(Math.max(0, Math.sin(micro * 1.07)), 48) > .8 ? .08 : 1
     b.cabelo.rotation.z = reduz ? 0 : Math.sin(micro * 1.4) * .018
     ch.vapor.position.y = reduz ? 0 : (1 + Math.sin(micro * 1.2)) * .035
     ch.vapor.rotation.z = reduz ? 0 : Math.sin(micro * 1.5) * .12
     ch.ponteiro.rotation.z = -micro * .12
-    ch.sinal.visible = chamar; ch.sinal.scale.setScalar(reduz ? 1 : 1 + Math.sin(ch.tempoEstado * 3) * .09)
+    ch.sinal.visible = chamar; ch.sinal.scale.setScalar(reduz || degrau || ch.microCongelada ? 1 : 1 + Math.sin(ch.tempoEstado * 3) * .09)
     ch.joinha.visible = resolveu; ch.pilha.visible = false
   }
 
@@ -531,6 +557,59 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   limpezas.push(() => consultaDpr?.removeEventListener('change', mudouDpr))
   observarDpr()
   tamanho(); solicitar()
+
+  if (o.mini && chars.length === 1) {
+    const controller = new AbortController(); limpezas.push(() => controller.abort())
+    const ch = chars[0]
+    // A cena de caixas já está funcionando. Import/carga/parse/montagem são uma transação.
+    void import('./modelosEscritorio').then(async ({ modelosEscritorio }) => {
+      if (destruida) return
+      const { nomesDaSala } = await import('./escritorioMini')
+      if (destruida) return
+      const carga = modelosEscritorio.adquirir(nomesDaSala(ch.sala as SalaEquipe), controller.signal)
+      const modelos = await carga.pronto
+      if (!modelos || destruida) return
+      const escritorio = montarEscritorioMini(ch.sala, modelos, POR_ID[ch.id]?.roupa.camisa || 0x6474a0, boneco)
+      if (destruida) { escritorio.destruir(); return }
+      limpezas.push(escritorio.destruir)
+      // A lease fica viva até desmontar: outros minis compartilham o parse e os buffers.
+      const objetos = [...scene.children].filter(x => !x.isLight && x !== sol.target && x !== ch.b.r && x !== ch.palco)
+      const objeto = ch.trabalho.raiz, medido = caixaReal(objeto.clone(true)), centro = medido.getCenter(new T.Vector3())
+      const posicaoAnterior = objeto.position.clone(), escalaAnterior = objeto.scale.clone()
+      try {
+        const escala = ch.sala === 'caixa' ? .42 : .52
+        objeto.scale.setScalar(escala)
+        objeto.position.set((ch.sala === 'caixa' ? -.18 : -.28) - centro.x * escala, escritorio.tampo - medido.min.y * escala, .53 - centro.z * escala)
+        fundirGrupos(objeto, guardar)
+        // Caneca/vapor e indicador mantêm seus pivôs; reduz apenas seus desenhos estáticos.
+        fundirGrupos(ch.cafe, guardar); fundirGrupos(ch.sinal, guardar)
+        ch.b.r.children.filter((m: any) => m.isMesh).forEach((m: any) => { m.visible = false })
+        escritorio.raiz.position.copy(ch.S); scene.add(escritorio.raiz)
+        ch.b.r.traverse((m: any) => { m.castShadow = false })
+        // Apoia a face inferior da coxa (26 cm × 20 cm), não o centro do quadril.
+        ch.folgaQuadril = .26 * Math.cos(1.5) + .1 * Math.sin(1.5)
+        ch.b.r.position.z = ch.S.z + .1
+        ch.apoiarMao = criarApoioDasMaos(); ch.maoL = new T.Vector3(); ch.maoR = new T.Vector3()
+        // Sapatos no piso do tapete, com a canela vertical e joelho dobrado.
+        for (const perna of [ch.b.pL, ch.b.pR]) perna.k.scale.y = (escritorio.assento + ch.folgaQuadril - .26 * Math.cos(1.5) - escritorio.piso) / .29
+        ch.escritorio = escritorio; ch.pose = {}; ch.rotacao = 0
+        atualizaMini(ch, 0)
+        DIR.y *= .3; DIR.normalize(); cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
+        const limites = caixaReal(escritorio.raiz).union(caixaReal(ch.b.r)).union(caixaReal(ch.palco))
+        // A reserva superior cobre aceno/joinha, sem variar zoom a cada gesto.
+        limites.max.y = Math.max(limites.max.y, ch.S.y + escritorio.assento + 1.24)
+        ch.limitesMini = limites; vPara = null; aplicaVista(vAtual)
+        objetos.forEach(x => { x.visible = false }); solicitar()
+      } catch (erro) {
+        scene.remove(escritorio.raiz); escritorio.destruir(); ch.escritorio = null
+        objeto.position.copy(posicaoAnterior); objeto.scale.copy(escalaAnterior)
+        ch.b.r.position.copy(ch.S); ch.b.pL.k.scale.y = ch.b.pR.k.scale.y = 1; ch.pose = {}
+        DIR.set(...(miniCamera?.direcao || [1, .86, 1])).normalize()
+        cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
+        aplicaVista(vAtual); throw erro
+      }
+    }).catch(() => { controller.abort() /* fallback total: não troca para lista */ })
+  }
 
   // Sem loop com movimento reduzido; apenas a celebração tem um retorno pontual.
   function definirEstado(id: string, estado: EstadoAgente) {

@@ -1,0 +1,2799 @@
+{
+  "bookcaseClosed": {
+    "bytes": 23132,
+    "min": [
+      0,
+      0,
+      -0.25
+    ],
+    "max": [
+      0.4000000059604645,
+      0.8499999642372131,
+      0
+    ],
+    "triangles": 372,
+    "nodes": [
+      {
+        "name": "bookcaseClosed(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "bookcaseClosedWide": {
+    "bytes": 23140,
+    "min": [
+      0,
+      0,
+      -0.25
+    ],
+    "max": [
+      0.800000011920929,
+      0.7899999618530273,
+      0
+    ],
+    "triangles": 372,
+    "nodes": [
+      {
+        "name": "bookcaseClosedWide(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "bookcaseOpen": {
+    "bytes": 18020,
+    "min": [
+      0,
+      0,
+      -0.25
+    ],
+    "max": [
+      0.4000000059604645,
+      0.8799999356269836,
+      0
+    ],
+    "triangles": 320,
+    "nodes": [
+      {
+        "name": "bookcaseOpen(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "books": {
+    "bytes": 6864,
+    "min": [
+      0,
+      0,
+      -0.09449999779462814
+    ],
+    "max": [
+      0.15044759213924408,
+      0.10390225797891617,
+      0
+    ],
+    "triangles": 62,
+    "nodes": [
+      {
+        "name": "books(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "carpetDarker",
+        "baseColorFactor": [
+          0.608,
+          0.29781273,
+          0.285152018,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpetWhite",
+        "baseColorFactor": [
+          0.972549,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "plant",
+        "baseColorFactor": [
+          0.181959763,
+          0.8207547,
+          0.575828552,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "cabinetTelevision": {
+    "bytes": 10524,
+    "min": [
+      0,
+      0,
+      -0.25
+    ],
+    "max": [
+      0.800000011920929,
+      0.3100000023841858,
+      0
+    ],
+    "triangles": 154,
+    "nodes": [
+      {
+        "name": "cabinetTelevision(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "cardboardBoxClosed": {
+    "bytes": 5400,
+    "min": [
+      0,
+      0,
+      -0.21249999105930328
+    ],
+    "max": [
+      0.21249999105930328,
+      0.2809999883174896,
+      9.02389263509778e-17
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "name": "cardboardBoxClosed(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "woodDark",
+        "baseColorFactor": [
+          0.678000033,
+          0.455947667,
+          0.2990306,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "cardboardBoxOpen": {
+    "bytes": 5404,
+    "min": [
+      -0.07968749850988388,
+      0,
+      -0.21249999105930328
+    ],
+    "max": [
+      0.29218748211860657,
+      0.2809999883174896,
+      9.02389263509778e-17
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "name": "cardboardBoxOpen(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "woodDark",
+        "baseColorFactor": [
+          0.678000033,
+          0.455947667,
+          0.2990306,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "chair": {
+    "bytes": 10756,
+    "min": [
+      0,
+      0,
+      -0.20000000298023224
+    ],
+    "max": [
+      0.20000000298023224,
+      0.4699999988079071,
+      0
+    ],
+    "triangles": 170,
+    "nodes": [
+      {
+        "name": "chair(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "chairCushion": {
+    "bytes": 12588,
+    "min": [
+      0,
+      0,
+      -0.20000000298023224
+    ],
+    "max": [
+      0.20000000298023224,
+      0.46000000834465027,
+      0
+    ],
+    "triangles": 198,
+    "nodes": [
+      {
+        "name": "chairCushion(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "chairDesk": {
+    "bytes": 39016,
+    "min": [
+      -2.3841845164795927e-11,
+      0,
+      -0.31429903566837314
+    ],
+    "max": [
+      0.3349500000238419,
+      0.6075999760627746,
+      -3.5762786898541066e-9
+    ],
+    "triangles": 588,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "chairDesk(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "chair",
+        "translation": [
+          0.167475,
+          0.19,
+          -0.16
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "computerKeyboard": {
+    "bytes": 3476,
+    "min": [
+      0,
+      1.602965340036949e-31,
+      -0.11819199472665787
+    ],
+    "max": [
+      0.28220000863075256,
+      0.027556000277400017,
+      -3.609557054039112e-16
+    ],
+    "triangles": 32,
+    "nodes": [
+      {
+        "name": "computerKeyboard(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "computerMouse": {
+    "bytes": 5868,
+    "min": [
+      -0.02484999969601631,
+      0,
+      -0.08510379493236542
+    ],
+    "max": [
+      0.02484999969601631,
+      0.023571999743580818,
+      0
+    ],
+    "triangles": 71,
+    "nodes": [
+      {
+        "name": "computerMouse(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "computerScreen": {
+    "bytes": 6404,
+    "min": [
+      -1.4438228216156449e-15,
+      -8.014826700184745e-32,
+      -0.10400399565696716
+    ],
+    "max": [
+      0.39268800616264343,
+      0.29428520798683167,
+      -5.414335713407566e-16
+    ],
+    "triangles": 72,
+    "nodes": [
+      {
+        "name": "computerScreen(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "desk": {
+    "bytes": 15048,
+    "min": [
+      -0.009999999776482582,
+      0,
+      -0.3799999952316284
+    ],
+    "max": [
+      0.7244754433631897,
+      0.38440755009651184,
+      0.012299999223480212
+    ],
+    "triangles": 198,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "desk(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "drawer",
+        "translation": [
+          0.04,
+          0.274016947,
+          -0.16399999
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "deskCorner": {
+    "bytes": 17984,
+    "min": [
+      0,
+      0,
+      -0.9744755029678345
+    ],
+    "max": [
+      0.9744755029678345,
+      0.38440755009651184,
+      0
+    ],
+    "triangles": 250,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "deskCorner(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "drawer",
+        "translation": [
+          0.05,
+          0.274016947,
+          -0.7584754
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "doorway": {
+    "bytes": 14532,
+    "min": [
+      0,
+      0,
+      -0.10124999285148659
+    ],
+    "max": [
+      0.4859999716281891,
+      1.0095317363739014,
+      0.012149997051486588
+    ],
+    "triangles": 188,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "doorway(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "door",
+        "translation": [
+          0.0283499975,
+          0,
+          -0.0445499979
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "floorFull": {
+    "bytes": 2260,
+    "min": [
+      0,
+      0,
+      -1
+    ],
+    "max": [
+      1,
+      0.05000000074505806,
+      0
+    ],
+    "triangles": 12,
+    "nodes": [
+      {
+        "name": "floorFull(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "kitchenCoffeeMachine": {
+    "bytes": 13332,
+    "min": [
+      0,
+      0,
+      -0.24016705217957496
+    ],
+    "max": [
+      0.1895400075316429,
+      0.17748900577425955,
+      0
+    ],
+    "triangles": 166,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "kitchenCoffeeMachine(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          0.78975,
+          0.585,
+          0.78975
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "mug",
+        "translation": [
+          0.115147434,
+          0.0600000024,
+          -0.0970564
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1.26622343,
+          1.70940173,
+          1.26622343
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpetWhite",
+        "baseColorFactor": [
+          0.972549,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "lampRoundTable": {
+    "bytes": 6604,
+    "min": [
+      -0.016019709408283234,
+      0,
+      -0.14778000116348267
+    ],
+    "max": [
+      0.13601970672607422,
+      0.31424999237060547,
+      0.027779998257756233
+    ],
+    "triangles": 76,
+    "nodes": [
+      {
+        "name": "lampRoundTable(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "lamp",
+        "baseColorFactor": [
+          1,
+          0.9137255,
+          0.5882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "lampSquareFloor": {
+    "bytes": 5624,
+    "min": [
+      0,
+      0,
+      -0.12000000476837158
+    ],
+    "max": [
+      0.12000000476837158,
+      0.8600000143051147,
+      0
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "name": "lampSquareFloor(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "lamp",
+        "baseColorFactor": [
+          1,
+          0.9137255,
+          0.5882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "lampSquareTable": {
+    "bytes": 5624,
+    "min": [
+      0,
+      0,
+      -0.12000000476837158
+    ],
+    "max": [
+      0.12000000476837158,
+      0.28999999165534973,
+      0
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "name": "lampSquareTable(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "lamp",
+        "baseColorFactor": [
+          1,
+          0.9137255,
+          0.5882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "laptop": {
+    "bytes": 5540,
+    "min": [
+      0,
+      0,
+      -0.24006515264511108
+    ],
+    "max": [
+      0.2640000104904175,
+      0.16180940508842467,
+      0
+    ],
+    "triangles": 68,
+    "nodes": [
+      {
+        "name": "laptop(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          0.44,
+          0.44,
+          0.44
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "loungeChair": {
+    "bytes": 9648,
+    "min": [
+      0,
+      0,
+      -0.4100000262260437
+    ],
+    "max": [
+      0.4899999797344208,
+      0.46000000834465027,
+      0
+    ],
+    "triangles": 128,
+    "nodes": [
+      {
+        "name": "loungeChair(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "loungeSofa": {
+    "bytes": 9644,
+    "min": [
+      0,
+      0,
+      -0.4100000262260437
+    ],
+    "max": [
+      0.9799999594688416,
+      0.46000000834465027,
+      0
+    ],
+    "triangles": 128,
+    "nodes": [
+      {
+        "name": "loungeSofa(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "plantSmall1": {
+    "bytes": 8224,
+    "min": [
+      -0.04733036459135887,
+      0,
+      -0.04733036546563366
+    ],
+    "max": [
+      0.04733036459135887,
+      0.14000000059604645,
+      0.04733036546563366
+    ],
+    "triangles": 102,
+    "nodes": [
+      {
+        "name": "plantSmall1(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          -0.707106769,
+          0,
+          0.7071068
+        ],
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "plant",
+        "baseColorFactor": [
+          0.181959763,
+          0.8207547,
+          0.575828552,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "plantSmall2": {
+    "bytes": 12996,
+    "min": [
+      -0.04733036459135887,
+      0,
+      -0.04733036546563366
+    ],
+    "max": [
+      0.04733036459135887,
+      0.14000000059604645,
+      0.04733036546563366
+    ],
+    "triangles": 158,
+    "nodes": [
+      {
+        "name": "plantSmall2(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          -0.707106769,
+          0,
+          0.7071068
+        ],
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "plant",
+        "baseColorFactor": [
+          0.181959763,
+          0.8207547,
+          0.575828552,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "plantSmall3": {
+    "bytes": 8424,
+    "min": [
+      -0.04899999917772119,
+      0,
+      -0.0424352449679584
+    ],
+    "max": [
+      0.04899999917772119,
+      0.14499999582767487,
+      0.0424352449679584
+    ],
+    "triangles": 98,
+    "nodes": [
+      {
+        "name": "plantSmall3(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          -0.707106769,
+          0,
+          0.7071068
+        ],
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "plant",
+        "baseColorFactor": [
+          0.181959763,
+          0.8207547,
+          0.575828552,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "pottedPlant": {
+    "bytes": 7576,
+    "min": [
+      -0.10602964,
+      0,
+      -0.12073097376031036
+    ],
+    "max": [
+      0.10602963431583405,
+      0.6540167939567566,
+      0.1207309738
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "pottedPlant(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          2,
+          2,
+          2
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "plant",
+        "translation": [
+          -0.05301482,
+          0.05912,
+          0.0603654869
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "woodDark",
+        "baseColorFactor": [
+          0.678000033,
+          0.455947667,
+          0.2990306,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "plant",
+        "baseColorFactor": [
+          0.181959763,
+          0.8207547,
+          0.575828552,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "radio": {
+    "bytes": 25020,
+    "min": [
+      0,
+      0,
+      -0.09750000387430191
+    ],
+    "max": [
+      0.3149999976158142,
+      0.228191077709198,
+      0
+    ],
+    "triangles": 432,
+    "nodes": [
+      {
+        "name": "radio(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "rugRectangle": {
+    "bytes": 3188,
+    "min": [
+      0,
+      0,
+      -0.9200000166893005
+    ],
+    "max": [
+      1.5699999332427979,
+      0.009999999776482582,
+      0
+    ],
+    "triangles": 28,
+    "nodes": [
+      {
+        "name": "rugRectangle(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpetDarker",
+        "baseColorFactor": [
+          0.608,
+          0.29781273,
+          0.285152018,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "rugRound": {
+    "bytes": 10164,
+    "min": [
+      0,
+      0,
+      -0.9200000166893005
+    ],
+    "max": [
+      0.9200000166893005,
+      0.009999999776482582,
+      0
+    ],
+    "triangles": 188,
+    "nodes": [
+      {
+        "name": "rugRound(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "carpet",
+        "baseColorFactor": [
+          0.9433962,
+          0.367175967,
+          0.3426486,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "carpetDarker",
+        "baseColorFactor": [
+          0.608,
+          0.29781273,
+          0.285152018,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "sideTable": {
+    "bytes": 8800,
+    "min": [
+      -0.009999999776482582,
+      0,
+      -0.20999999344348907
+    ],
+    "max": [
+      0.5244754552841187,
+      0.38440755009651184,
+      0.009999999776482582
+    ],
+    "triangles": 118,
+    "nodes": [
+      {
+        "name": "sideTable(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "_defaultMat",
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "speaker": {
+    "bytes": 15744,
+    "min": [
+      -1.0828671426815132e-15,
+      1.6919799104398645e-17,
+      -0.14800000190734863
+    ],
+    "max": [
+      0.14800000190734863,
+      0.6363999843597412,
+      -3.609557054039112e-16
+    ],
+    "triangles": 228,
+    "nodes": [
+      {
+        "name": "speaker(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalMedium",
+        "baseColorFactor": [
+          0.368627459,
+          0.466666669,
+          0.466666669,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "table": {
+    "bytes": 8196,
+    "min": [
+      0,
+      0,
+      -0.44737333059310913
+    ],
+    "max": [
+      0.8414879441261292,
+      0.3267339766025543,
+      0
+    ],
+    "triangles": 120,
+    "nodes": [
+      {
+        "name": "table(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "tableCoffee": {
+    "bytes": 8256,
+    "min": [
+      -0.4609960913658142,
+      -3.609557054039112e-16,
+      -0.30000001192092896
+    ],
+    "max": [
+      0.20000000298023224,
+      0.23000000417232513,
+      0.10000000149011612
+    ],
+    "triangles": 124,
+    "nodes": [
+      {
+        "name": "tableCoffee(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "tableRound": {
+    "bytes": 6444,
+    "min": [
+      0,
+      -0.26999998092651367,
+      -0.800000011920929
+    ],
+    "max": [
+      0.6928203105926514,
+      0.09673397988080978,
+      0
+    ],
+    "triangles": 80,
+    "nodes": [
+      {
+        "name": "tableRound(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "trashcan": {
+    "bytes": 6452,
+    "min": [
+      -0.10384674055672745,
+      -2.5062356547304757e-18,
+      -0.11163647732263944
+    ],
+    "max": [
+      0.10384674055672745,
+      0.42786596956182327,
+      0.1224877677452939
+    ],
+    "triangles": 68,
+    "nodes": [
+      {
+        "name": "trashcan(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0.707106769,
+          0,
+          0.7071068
+        ],
+        "scale": [
+          0.472030669,
+          0.472030669,
+          0.472030669
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metal",
+        "baseColorFactor": [
+          0.74061054,
+          0.822866738,
+          0.8396226,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "wall": {
+    "bytes": 3340,
+    "min": [
+      0,
+      0,
+      -0.05000000074505806
+    ],
+    "max": [
+      1,
+      1.2895317077636719,
+      0
+    ],
+    "triangles": 12,
+    "nodes": [
+      {
+        "name": "wall(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "_defaultMat",
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "wallCorner": {
+    "bytes": 4460,
+    "min": [
+      0,
+      -9.02389263509778e-17,
+      -0.550000011920929
+    ],
+    "max": [
+      0.550000011920929,
+      1.2895317077636719,
+      0
+    ],
+    "triangles": 28,
+    "nodes": [
+      {
+        "name": "wallCorner(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "_defaultMat",
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "wallDoorway": {
+    "bytes": 6444,
+    "min": [
+      0,
+      0,
+      -0.06955000013113022
+    ],
+    "max": [
+      1,
+      1.2895317077636719,
+      0.01954999938607216
+    ],
+    "triangles": 60,
+    "nodes": [
+      {
+        "name": "wallDoorway(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      }
+    ],
+    "materials": [
+      {
+        "name": "_defaultMat",
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  },
+  "wallWindow": {
+    "bytes": 10744,
+    "min": [
+      0,
+      0,
+      -0.06955000013113022
+    ],
+    "max": [
+      1,
+      1.2895317077636719,
+      0.01954999938607216
+    ],
+    "triangles": 108,
+    "nodes": [
+      {
+        "children": [
+          1
+        ],
+        "name": "wallWindow(Clone)",
+        "translation": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 0
+      },
+      {
+        "name": "window",
+        "translation": [
+          0.3127084,
+          0.3927084,
+          -0.002725
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "mesh": 1
+      }
+    ],
+    "materials": [
+      {
+        "name": "wood",
+        "baseColorFactor": [
+          0.8962264,
+          0.6015712,
+          0.3931559,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "metalDark",
+        "baseColorFactor": [
+          0.305882365,
+          0.3882353,
+          0.3882353,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "_defaultMat",
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "OPAQUE"
+      },
+      {
+        "name": "glass",
+        "baseColorFactor": [
+          0.698039234,
+          0.827451,
+          0.768627465,
+          0.5
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1,
+        "alphaMode": "BLEND"
+      }
+    ],
+    "origin": "origem glTF preservada; min/max mundiais com hierarquia",
+    "textures": 0
+  }
+}
