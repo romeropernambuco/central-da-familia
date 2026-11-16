@@ -134,22 +134,22 @@ describe('Revisão E14 (M2): o selo do imóvel segue o motor', () => {
     const m = s.imoveis!.find(i => i.id === sala.id)!
     return { m, selo: seloImovel({ ...sala, contrato_ate }, m.entra_na_conta) }
   }
-  it('contrato vencido: o motor diz que não entra e o selo pede pra renovar', async () => {
+  it('contrato vencido: o motor diz que não entra e o selo pede para renovar', async () => {
     const { m, selo } = await conta('2026-06')
     expect(m.entra_na_conta).toBe(false)
-    expect(selo).toEqual({ texto: 'Contrato acaba em 06/2026: renove pra contar', entra: false })
+    expect(selo).toEqual({ texto: 'Contrato acaba em 06/2026: renove para contar', entra: false })
   })
   it('contrato até 03/2029: o selo diz o mesmo que o motor', async () => {
     const { m, selo } = await conta('2029-03')
     expect(selo!.entra).toBe(m.entra_na_conta)
     expect(m.entra_na_conta).toBe(false) // MOTOR: contrato curto (antes de 12/2029) não abate o gasto perpétuo
-    expect(selo!.texto).toBe('Contrato acaba em 03/2029: renove pra contar') // sem o gatilho passado, a frase genérica
+    expect(selo!.texto).toBe('Contrato acaba em 03/2029: renove para contar') // sem o gatilho passado, a frase genérica
   })
 })
 
 describe('MOTOR (contrato curto): a falta de 2029 explica o aluguel que não abate', () => {
   afterEach(() => reiniciarExemplo())
-  it('contrato até 03/2029: frase "Inclui R$ X do aluguel de ..., que acaba em 03/2029. Renove o contrato pra ele contar."', async () => {
+  it('contrato até 03/2029: frase "Inclui R$ X do aluguel de ..., que acaba em 03/2029. Renove o contrato para ele contar."', async () => {
     reiniciarExemplo()
     exemploComo('bruno')
     const sala = (await apiExemplo.imoveis!('fam-silva')).find(i => i.apelido.startsWith('Sala'))!
@@ -160,11 +160,11 @@ describe('MOTOR (contrato curto): a falta de 2029 explica o aluguel que não aba
     const f = frasesRenova(s).map(limpa)
     expect(g.aluguel_para_em).toBe('2029-04')
     const mm = `${g.mes!.slice(5)}/${g.mes!.slice(0, 4)}`
-    expect(f).toEqual([`Inclui ${limpa(frasesGatilho(g)).match(/R\$ [\d.,]+/)![0]} do aluguel de Sala comercial (exemplo). O aluguel para em 04/2029. Renove até ${mm} pra ele contar em 2029.`])
+    expect(f).toEqual([`Inclui ${limpa(frasesGatilho(g)).match(/R\$ [\d.,]+/)![0]} do aluguel de Sala comercial (exemplo). O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`])
     // o selo da sala diz o mesmo
     const m = s.imoveis!.find(i => i.id === sala.id)!
-    expect(seloImovel({ ...sala, contrato_ate: '2029-03' }, m.entra_na_conta, g)).toEqual({ texto: `O aluguel para em 04/2029. Renove até ${mm} pra ele contar em 2029.`, entra: false })
-    expect(limpa(frasesGatilho(g))).toMatch(/contrato curto: renove até \d\d\/\d{4} pra contar/)
+    expect(seloImovel({ ...sala, contrato_ate: '2029-03' }, m.entra_na_conta, g)).toEqual({ texto: `O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`, entra: false })
+    expect(limpa(frasesGatilho(g))).toMatch(/contrato curto: renove até \d\d\/\d{4} para contar/)
   })
   it('contrato até 12/2029 (o do exemplo): nenhuma frase de renovar', async () => {
     reiniciarExemplo()

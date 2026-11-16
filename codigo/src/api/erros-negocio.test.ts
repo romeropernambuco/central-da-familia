@@ -51,5 +51,5 @@ it.each(['P0001', '22023', '42501'])('negócios reais com %s; mensagens técnica
 
 it('mensagem real de limite de aplicações usa TRADUZ com o SQLSTATE 54000 da migração', () => {
   const entrada = { code: '54000', message: negocios[0] }
-  expect(traduzErro(entrada).message).toBe(entrada.message)
+  expect(traduzErro(entrada).message).toBe('A família já tem 30 aplicações abertas.')
 })

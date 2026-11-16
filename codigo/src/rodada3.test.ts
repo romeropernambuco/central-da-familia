@@ -304,7 +304,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   it('Analista de Cartão: cadastra cartão com anuidade, informa o valor do banco e pergunta da diferença', async () => {
     em('2026-11-12')
     // E3 (conserto 8): membros traz o papel, pra família de 1 adulto não ver "Do casal"
-    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-ana', nome: 'Ana', papel: 'casal' }, { id: 'm-bruno', nome: 'Bruno', papel: 'casal' }])
+    expect(await apiExemplo.membros(F)).toEqual([{ id: 'm-ana', nome: 'Ana', papel: 'casal' }, { id: 'm-bruno', nome: 'Bruno', papel: 'casal' }, { id: 'm-bia', nome: 'Bia', papel: 'pessoa' }])
     // E2 (regra nova, 13/11, igual a f_02): cada um cadastra só o próprio cartão. Antes a Ana cadastrava o do Bruno e ele sumia pra ela.
     await expect(apiExemplo.cartaoSalvar(F, { nome: 'Inter do Bruno', banco: 'Inter', titular_id: 'm-bruno', dia_fechamento: 2, dia_vencimento: 9 })).rejects.toThrow(/próprio cartão/)
     expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter do Bruno')).toBeUndefined()

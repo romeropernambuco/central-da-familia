@@ -1,3 +1,6 @@
+import { nomeInformado } from '../../lib/nomePessoa'
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
+import { CadastroAssessor } from './CadastroAssessor'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useEffect, useRef, useState } from 'react'
@@ -38,7 +41,7 @@ export function Casa() {
   ]
   return (
     <div className="view">
-      {equipe && <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você anota o que comprou pra casa e marca a lista. Toque no botão verde pra lançar uma compra.</span></p>}
+      {equipe && <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você anota o que comprou para casa e marca a lista. Toque no botão verde para lançar uma compra.</span></p>}
       <div className="segbar"><div className="seg compacta" role="group" aria-label="Parte da casa">
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
       </div></div>
@@ -50,10 +53,10 @@ export function Casa() {
   )
 }
 
-const FalhaConfig = ({ m }: { m: string }) => (m ? <p className="aviso-erro" role="alert">Não deu pra abrir o que está salvo: {m} Nada foi apagado. Quando a internet voltar, a tela se atualiza sozinha.</p> : null)
+const FalhaConfig = ({ m }: { m: string }) => (m ? <p className="aviso-erro" role="alert">Não foi possível abrir o que está salvo: {m} Nada foi apagado. Quando a internet voltar, a tela se atualiza sozinha.</p> : null)
 
 function Feira() {
-  const { api, familia, resumo, versao, tentar, toast, oculto } = useApp()
+  const { api, familia, resumo, versao, tentar, toast, oculto, recarregar } = useApp()
   const hoje = hojeRecife()
   const [lista, setLista, falhaLista] = useConfig<Item[]>('casa_lista', [])
   const [pres, setPres] = useConfig<Record<string, string[]>>('casa_presenca', {})
@@ -62,6 +65,7 @@ function Feira() {
   const [folha] = useConfig<Folha>('casa_folha', { pessoas: [], daePaga: {} })
   const [lanc, setLanc] = useState<Lancamento[]>([])
   const [novo, setNovo] = useState('')
+  const [cadastro, setCadastro] = useState(false)
   const [cod, setCod] = useState<{ nome: string; codigo: string; link: string } | null>(null)
   const [gerando, setGerando] = useState(false)
   useEffect(() => { if (familia) api.lancamentos(familia.id, hoje.slice(0, 7)).then(setLanc).catch(() => {}) }, [api, familia?.id, versao])
@@ -88,14 +92,14 @@ function Feira() {
         <FalhaConfig m={falhaLista} />
         {casal && <section className="card" aria-labelledby="fHoje">
           <div className="card-h"><h2 id="fHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
-          <p className="sub" style={{ marginTop: -8, marginBottom: 12 }}>quem veio e o que saiu pra casa</p>
+          <p className="sub" style={{ marginTop: -8, marginBottom: 12 }}>quem veio e o que saiu para casa</p>
           <div className="duas">
             <div>
               <p className="lbl">Quem veio</p>
               {nomes.length ? (
-                <div className="pills" style={{ marginTop: 8 }}>{nomes.map(n => <button key={textoPrivado(n)} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Check size={16} />}{textoPrivado(n)}</button>)}</div>
-              ) : <p className="sub" style={{ marginTop: 6 }}>Equipe ainda não cadastrada. Cadastre na aba Folha.</p>}
-              {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={textoPrivado(n)} className="sub" style={{ marginTop: 6 }}>{textoPrivado(n)}: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
+                <div className="pills" style={{ marginTop: 8 }}>{nomes.map((n, i) => nomeInformado(n) ? <button key={n} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Check size={16} />}{textoPrivado(n)}</button> : <NomeDaPessoa key={i} pessoa={{ tipo: 'assessor', id: folha.pessoas[i]?.id || '', nome: n }} />)}</div>
+              ) : <p className="sub" style={{ marginTop: 6 }}>Nenhum Assessor da Casa cadastrado.</p>}
+              {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={textoPrivado(n)} className="sub" style={{ marginTop: 6 }}><NomeDaPessoa pessoa={{ tipo: 'membro', id: `ponto:${hoje}:${n}`, nome: n }} />: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
             </div>
             <div>
               <p className="lbl">O que saiu</p>
@@ -118,7 +122,7 @@ function Feira() {
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
-            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {textoPrivado(Object.entries(porQuem).map(([id, v]) => `${nomeDe(id) || 'alguém'} pôs ${reais(v)}`).join(', '))}.</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v]) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id, nome: nomeDe(id) }} /> pôs {reais(v)}; </span>)}.</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}
@@ -144,26 +148,29 @@ function Feira() {
 
         {casal && (
           <section className="card" aria-labelledby="fEq">
-            <div className="card-h"><h2 id="fEq">Equipe no app</h2></div>
-            <p className="sub" style={{ marginBottom: 10 }}>Quem trabalha na casa entra por um link que você manda, mais um código de 4 números. Sem e-mail. Vê só a tela da Casa, nunca o dinheiro do casal.</p>
+            <div className="card-h"><h2 id="fEq">Assessores da Casa</h2></div>
+            <p className="sub" style={{ marginBottom: 10 }}>Cada Assessor da Casa entra com um convite e um código de 4 números. O acesso permite cuidar da Casa, sem ver valores de dinheiro.</p>
             {folha.pessoas.length ? folha.pessoas.map(p => (
               <div key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b>{textoPrivado(p.nome)}</b><small>{textoPrivado(p.funcao)}</small></span>
+                <span className="m"><b><NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} /></b><small>{textoPrivado(p.funcao || 'Função não informada')}{p.celular && <> · {textoPrivado(p.celular)}</>}</small></span>
                 <button className="btn sm line" type="button" disabled={gerando} onClick={async () => {
                   setGerando(true)
                   await tentar(async () => {
                     const r = await api.convidar(familia!.id, 'equipe', p.nome)
                     // o link leva o id do convite; o código de 4 números vai separado. Sem os 2, ninguém entra.
-                    if (!r.codigo_4_digitos || !r.convite) throw new Error('O banco não devolveu o link e o código. Tente de novo.')
+                    if (!r.codigo_4_digitos || !r.convite) throw new Error('Não foi possível gerar o convite. Tente novamente.')
                     setCod({ nome: p.nome, codigo: r.codigo_4_digitos, link: linkEquipe(location.origin + location.pathname + location.search, r.convite) })
                   })
                   setGerando(false)
                 }}><KeyRound size={16} />Gerar código</button>
               </div>
-            )) : <p className="sub">Cadastre a equipe na aba Folha primeiro.</p>}
+            )) : <p className="sub">Cadastre um Assessor da Casa para gerar o convite.</p>}
+            <button className="btn line" type="button" onClick={() => setCadastro(true)}><Plus size={18} />Cadastrar Assessor da Casa</button>
+            <p className="sub" style={{ marginTop: 10 }}>Renovação de convite e desligamento de acesso ainda não estão disponíveis.</p>
           </section>
         )}
       </div>
+      {cadastro && <CadastroAssessor fechar={() => { setCadastro(false); void recarregar() }} />}
       {cupom && <LerCupom fechar={() => setCupom(false)} envelopePadrao={feira?.id} />}
       {cod && (
         <Sheet titulo={textoPrivado(`Convite de ${cod.nome}`)} fechar={() => setCod(null)}>
@@ -194,7 +201,7 @@ function Prestadores() {
   return (
     <div className="view">
       <FalhaConfig m={falhaPs} />
-      <p className="todo"><CalendarDays size={20} aria-hidden="true" /><span>Jardineiro, piscineiro, diarista: o app lembra na véspera com a mensagem pronta. Quando a pessoa vier, toque em "Veio hoje" e o pagamento já abre pra lançar.</span></p>
+      <p className="todo"><CalendarDays size={20} aria-hidden="true" /><span>Jardineiro, piscineiro, diarista: o app lembra na véspera com a mensagem pronta. Quando a pessoa vier, toque em "Veio hoje" e o pagamento já abre para lançar.</span></p>
       {!ps.length && !falhaPs && <div className="card"><Vazio ico={<Wrench size={24} />}>Nenhum serviço cadastrado. Ex.: jardineiro toda sexta, piscineiro toda quarta.</Vazio></div>}
       <div className="envs">
         {ps.map(p => {
@@ -204,7 +211,7 @@ function Prestadores() {
           const msg = `Oi, ${p.nome}! Confirmando ${ehHoje ? 'hoje' : amanhã(prox, hoje)} aqui em casa. Tudo certo?`
           return (
             <section className="card env" key={p.id} aria-label={textoPrivado(p.servico + ' ' + p.nome)}>
-              <div className="env-h"><b>{textoPrivado(p.servico)}: {textoPrivado(p.nome)}</b><span className="regra">{todoDia(p.dia)}</span></div>
+              <div className="env-h"><b>{textoPrivado(p.servico)}: <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></b><span className="regra">{todoDia(p.dia)}</span></div>
               <div className="numrow"><Din v={p.valor} tam="mid" /><span className="sub">por visita</span></div>
               <p className="sub">Próxima visita <b>{ehHoje ? 'hoje' : dataCurta(prox)}</b>{p.ultimaVez ? ` · veio por último ${dataCurta(p.ultimaVez)}` : ''}</p>
               {(amanha || ehHoje) && <p className="todo warn">{ehHoje ? 'É hoje.' : 'É amanhã.'} Mande a confirmação.</p>}
@@ -286,21 +293,21 @@ function FolhaCasa() {
         <section className="card" style={{ background: 'var(--warn-soft)' }} aria-label="Guia mensal do governo">
           <p className="lbl" style={{ color: 'var(--warn-ink)' }}><FuncIco id="folha" size={24} />Folha da Casa</p>
           <h2 style={{ marginTop: 6, color: 'var(--warn-ink)' }}>A guia mensal do governo vence {dataCurta(dae.vence)}</h2>
-          <p className="corpo" style={{ color: 'var(--warn-ink)', marginTop: 4 }}>{dae.dias > 0 ? `Faltam ${dae.dias} dias.` : 'Vence hoje.'} É o boleto mensal do registro de quem trabalha na casa. Gere no site do governo (eSocial Doméstico, o cadastro de quem trabalha em casa), pague no app do banco e marque aqui.</p>
+          <p className="corpo" style={{ color: 'var(--warn-ink)', marginTop: 4 }}>{dae.dias > 0 ? `Faltam ${dae.dias} dias.` : 'Vence hoje.'} É a guia mensal dos Assessores da Casa com vínculo de emprego. Emita no eSocial Doméstico, pague no banco e registre o pagamento aqui.</p>
           <button className="btn dark" type="button" style={{ marginTop: 12 }} onClick={() => setFolha({ ...folha, daePaga: { ...folha.daePaga, [mes]: true } })}><Check size={20} />Já paguei a guia deste mês</button>
         </section>
       ) : (
         <p className="todo ok"><Check size={20} aria-hidden="true" /><span>{folha.daePaga?.[mes] ? 'Guia mensal do governo marcada como paga.' : `A guia mensal do governo vence todo dia 7. O aviso aparece do dia 1 ao dia 7.`}</span></p>
       ))}
       <section className="card" aria-labelledby="flT">
-        <div className="card-h"><h2 id="flT">Quem trabalha na casa</h2></div>
+        <div className="card-h"><h2 id="flT">Assessores da Casa</h2></div>
         <ul className="list">
           {folha.pessoas.map(p => {
             const r = reservaFolha(p.salario)
             return (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
-                <span className="tile">{textoPrivado(p.nome.charAt(0))}</span>
-                <span className="m"><b>{textoPrivado(p.nome)}</b><small>{textoPrivado(p.funcao)} · salário {reais(p.salario)}</small></span>
+                <span className="tile">{textoPrivado((p.nome || '').charAt(0))}</span>
+                <span className="m"><b><NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} /></b><small>{textoPrivado(p.funcao)} · salário {reais(p.salario)}</small></span>
                 <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span><Din v={r.total} /><small className="sub" style={{ display: 'block' }}>guardar/mês</small></span>
                   <Qm titulo={textoPrivado(`Férias e 13º de ${p.nome}`)} linhas={[{ linha: '13º: 1 salário dividido por 12', valor: r.decimo }, { linha: 'Férias: 1 salário mais 1/3, dividido por 12', valor: r.ferias }, { linha: 'Guardar por mês', valor: r.total }]} nota="Estimativa simples. Os encargos do governo (aposentadoria e fundo de garantia) já vêm na guia mensal." />
                 </span>
@@ -309,7 +316,7 @@ function FolhaCasa() {
           })}
         </ul>
         {!folha.pessoas.length && !falhaFolha && <Vazio ico={<Users size={24} />}>Ninguém cadastrado. Quem trabalha na sua casa?</Vazio>}
-        {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês pra férias e 13º.</p>}
+        {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês para férias e 13º.</p>}
         <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Plus size={20} />Cadastrar pessoa</button>
       </section>
       {nova && <NovaPessoa fechar={() => setNova(false)} salvar={p => { setFolha({ ...folha, pessoas: [...folha.pessoas, p] }); setNova(false) }} />}
@@ -320,11 +327,11 @@ function FolhaCasa() {
 function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: PessoaFolha) => void }) {
   const [nome, setNome] = useState(''), [funcao, setFuncao] = useState(''), [sal, setSal] = useState('')
   return (
-    <Sheet titulo="Quem trabalha na casa" fechar={fechar}>
-      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && sal) salvar({ id: novoId(), nome, funcao: funcao || 'Equipe da casa', salario: textoParaValor(sal) }) }}>
+    <Sheet titulo="Assessores da Casa" fechar={fechar}>
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && sal) salvar({ id: novoId(), nome, funcao: funcao || 'Assessor da Casa', salario: textoParaValor(sal) }) }}>
         <label className="campo"><span>Nome</span><CampoPrivado className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
-        <label className="campo"><span>Função</span><CampoPrivado className="inp" placeholder="Ex.: Cozinheira, babá, motorista" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
-        <label className="campo"><span>Salário na carteira</span><CampoValor valor={sal} mudar={v => setSal(v.replace(/[^\d,]/g, ''))}  /><small>Fica só com o casal. A equipe nunca vê valor de dinheiro.</small></label>
+        <label className="campo"><span>Função</span><CampoPrivado className="inp" placeholder="Ex.: Cozinha, transporte, limpeza" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
+        <label className="campo"><span>Salário na carteira</span><CampoValor valor={sal} mudar={v => setSal(v.replace(/[^\d,]/g, ''))}  /><small>Fica só com o casal. Os Assessores da Casa nunca veem valor de dinheiro.</small></label>
         <button className="btn primary full" type="submit">Salvar</button>
       </form>
     </Sheet>
@@ -380,7 +387,7 @@ function CasaEquipe() {
   const g = casa.gas
   return (
     <div className="view">
-      <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
+      <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
       <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Flame size={24} />O gás acabou</button>
       {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); agendar('acabou', { nome: 'Gás de cozinha' }, 'Gás posto na lista de compras.') }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
       {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span><button className="btn line" type="button" onClick={cancelar}>Desfazer</button></div>}
@@ -391,8 +398,8 @@ function CasaEquipe() {
           <section className="card" aria-labelledby="eHoje">
             <div className="card-h"><h2 id="eHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
             <div className="row-btns">
-              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado || !!pendente} onClick={() => agendar('cheguei', undefined, 'Chegada avisada pro casal.')}><Check size={20} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
-              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado || !!pendente} onClick={() => agendar('sai', undefined, 'Saída avisada pro casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
+              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado || !!pendente} onClick={() => agendar('cheguei', undefined, 'Chegada avisada para o casal.')}><Check size={20} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
+              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado || !!pendente} onClick={() => agendar('sai', undefined, 'Saída avisada para o casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
             </div>
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(c.nome)}</b></span></li>)}</ul>
@@ -404,13 +411,13 @@ function CasaEquipe() {
             {g.media_dias ? <p className="sub">Um botijão dura uns <b>{g.media_dias} dias</b>. Próxima troca perto de <b>{dataCurta(g.proxima_troca!)}</b>.</p>
               : <p className="sub">Toque em "Troquei o gás" cada vez que trocar o botijão. Com 2 trocas o app calcula a próxima.</p>}
             {g.trocas.length > 0 && <p className="sub" style={{ marginTop: 6 }}>Última troca: <b>{dataCurta(g.trocas[g.trocas.length - 1])}</b></p>}
-            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado || !!pendente} onClick={() => agendar('troquei_gas', undefined, 'Troca de gás avisada pro casal.')}><Flame size={20} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
+            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado || !!pendente} onClick={() => agendar('troquei_gas', undefined, 'Troca de gás avisada para o casal.')}><Flame size={20} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
           </section>
           <section className="card" aria-labelledby="ePrest">
-            <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem pra casa</h2></div>
+            <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem para casa</h2></div>
             {casa.prestadores.length ? <ul className="list">{casa.prestadores.map(p => (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b>{textoPrivado(p.servico)}: {textoPrivado(p.nome)}</b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
+                <span className="m"><b>{textoPrivado(p.servico)}: <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
                 <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado || !!pendente} onClick={() => agendar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
             ))}</ul> : <Vazio ico={<Wrench size={24} />}>O casal ainda não cadastrou serviços.</Vazio>}
@@ -444,7 +451,7 @@ export function EstadoEstoqueEquipe() {
   const equipe = familia?.papel === 'equipe'
   const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:estoque`, equipe ? () => api.estoque(familia!.id) : null, [api, versao])
   if (!equipe) return null
-  if (erro) return <p role="alert">Não deu para consultar a conferência do estoque. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+  if (erro) return <p role="alert">Não foi possível consultar a conferência do estoque. <button type="button" onClick={repetir}>Tentar novamente</button></p>
   if (carregando || !dado) return <p role="status">Consultando conferência do estoque…</p>
   const sem = dado.itens.filter(i => i.ativo && !dado.contagens.some(c => c.itens.some(x => x.item_id === i.id))).length
   return <p className="sub">{sem ? `Sem conferência registrada: ${sem} ${sem === 1 ? 'item' : 'itens'}.` : 'Todos os itens ativos têm alguma conferência registrada.'} Isso não confirma o estoque de hoje.</p>

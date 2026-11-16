@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -49,7 +50,7 @@ export function MeuOrcamento() {
 
   const n = numeroEnvelope(env, resumo.dias_restantes)
   // E2 (regra nova, 13/11): o casal abre o orçamento do outro pra ler, com o nome dele, sem nenhum botão de mexer
-  const meu = escreveNo(env, familia), dono = donoDo(env) || 'outra pessoa'
+  const meu = escreveNo(env, familia), dono = donoDo(env) || ''
   const gastoHoje = dados.porDia[hoje] || 0
   const ontem = somaDias(hoje, -1)
   // R9: no lugar de "N dias em branco", 1 pergunta sobre ontem
@@ -85,7 +86,7 @@ export function MeuOrcamento() {
         <div className="col">
           <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}>
             <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
-            {!meu && <p className="sub dono-linha">Orçamento de {textoPrivado(dono)}: aqui é só pra ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
+            {!meu && <p className="sub dono-linha">Orçamento de <NomeDaPessoa pessoa={{ tipo: 'membro', id: env.dono_id || `envelope:${env.id}`, nome: dono }} />: aqui é só para ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
             <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}</p>
             <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
@@ -94,7 +95,7 @@ export function MeuOrcamento() {
             {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}><CalendarCheck size={20} aria-hidden="true" />
-                <span><b>Ontem você não gastou nada?</b> É só pra conta ficar certa.
+                <span><b>Ontem você não gastou nada?</b> É só para conta ficar certa.
                   <span className="row-btns" style={{ marginTop: 8 }}>
                     <button className="btn sm line" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}>Não gastei</button>
                     <button className="btn sm line" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de anotar</button>
@@ -105,7 +106,7 @@ export function MeuOrcamento() {
             {meu && <div className="row-btns" style={{ marginTop: 14 }}>
               <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Anotar em {textoPrivado(env.nome)}</button>
               {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
-              <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá pra comprar?</button>
+              <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá para comprar?</button>
             </div>}
           </section>
 
@@ -155,10 +156,10 @@ function DaPraComprar({ livre, fechar }: { livre: number; fechar: () => void }) 
   const [txt, setTxt] = useState('')
   const v = textoParaValor(txt), depois = centavos(livre - v)
   return (
-    <Sheet titulo="Dá pra comprar?" fechar={fechar}>
+    <Sheet titulo="Dá para comprar?" fechar={fechar}>
       <p className="sub">Simulação: nada é gravado.</p>
       <div className="campo"><span>Quanto custa?</span><CampoValor valor={txt} mudar={setTxt} rotulo="Quanto custa" /></div>
-      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><CircleCheck size={20} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe em {hojeRecife().slice(0, 7)}.</b> O que você ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Você pode criar uma meta e anotar quanto conseguir guardar.</>}</span></p>}
+      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><CircleCheck size={20} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe em {hojeRecife().slice(0, 7)}.</b> O que você ainda pode gastar no mês vai de {reais(livre)} para {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Você pode criar uma meta e anotar quanto conseguir guardar.</>}</span></p>}
     </Sheet>
   )
 }
@@ -185,7 +186,7 @@ export function MetaDoDesejo({ desejo }: { desejo: DesejoTela }) {
   const [ocupado, setOcupado] = useState(false)
   if (familia?.papel !== 'pessoa' || !familia.envelopeId || !desejo.meu) return null
   const id = familia.envelopeId, existente = metas[id]
-  return <>{falha && <span role="alert">Não deu para abrir sua meta. Tente quando a conexão voltar.</span>}
+  return <>{falha && <span role="alert">Não foi possível abrir sua meta. Tente quando a conexão voltar.</span>}
     <button type="button" className="btn line" disabled={!leu || ocupado || existente?.desejo === desejo.id} onClick={async () => {
       setOcupado(true)
       try { if (await salvar({ ...metas, [id]: { nome: desejo.nome, valor: desejo.valor, desejo: desejo.id, anotacoes: existente?.anotacoes || [] } })) toast('Meta pronta em Meu orçamento. Anote lá quanto guardou.') } finally { setOcupado(false) }
@@ -204,7 +205,7 @@ export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; s
     {editavel && <form onSubmit={async e => {
       e.preventDefault(); if (ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return
       setOcupado(true); setFalha('')
-      try { if (await salvar({ ...meta, anotacoes: [...(meta.anotacoes || []), { id: String(Date.now()), data: hojeRecife(), valor: textoParaValor(valor) }] })) setValor(''); else setFalha('Não deu para guardar a anotação. Seu valor continua aqui.') } finally { setOcupado(false) }
+      try { if (await salvar({ ...meta, anotacoes: [...(meta.anotacoes || []), { id: String(Date.now()), data: hojeRecife(), valor: textoParaValor(valor) }] })) setValor(''); else setFalha('Não foi possível guardar a anotação. Seu valor continua aqui.') } finally { setOcupado(false) }
     }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><button type="submit" className="btn line" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}>Anotar valor guardado</button></form>}
     {falha && <p role="alert">{falha}</p>}
   </div>

@@ -73,7 +73,7 @@ export function PrimeiroUso() {
           <p className="sub">Se quem mora com você já usa a Central, essa pessoa te mandou um convite no e-mail{sessao?.email ? '' : ''}. {sessao?.email ? <>Você entrou com <b>{textoPrivado(sessao.email)}</b>.</> : null} O convite só funciona com o mesmo e-mail que ela usou.</p>
           <button className="btn primary full" type="button" onClick={async () => { await sair() }}>Sim: entrar com o e-mail do convite</button>
           <button className="btn line full" type="button" onClick={() => setJaPerguntou(true)}>Não: vou criar a família<ArrowRight size={20} /></button>
-          <p className="sub">Não sabe qual e-mail? Pergunte pra quem convidou ou peça pra reenviar o convite em Família e ajustes.</p>
+          <p className="sub">Não sabe qual e-mail? Pergunte para quem convidou ou peça para reenviar o convite em Família e ajustes.</p>
         </div>
       )}
 
@@ -136,7 +136,7 @@ export function PrimeiroUso() {
           <p className="todo ok"><Check size={20} aria-hidden="true" /><span><b>Tudo pronto.</b> Agora é só tocar no botão verde e anotar cada gasto: valor e 1 toque.</span></p>
           <h2>Chame uma família amiga</h2>
           <p className="sub">Quem testa junto troca dica. A mensagem já vai pronta.</p>
-          <a className="btn line full" href={linkWhatsApp(msgAmiga)} target="_blank" rel="noreferrer"><MessageCircle size={20} />Mandar pra uma família amiga</a>
+          <a className="btn line full" href={linkWhatsApp(msgAmiga)} target="_blank" rel="noreferrer"><MessageCircle size={20} />Mandar para uma família amiga</a>
           <button className="btn primary full" type="button" onClick={fim}>Abrir o Início<ArrowRight size={20} /></button>
         </div>
       )}

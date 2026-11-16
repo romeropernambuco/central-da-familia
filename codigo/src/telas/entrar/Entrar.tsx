@@ -34,18 +34,18 @@ export function Entrar() {
   return (
     <div className="entrar">
       <div className="logo"><Marca size={48} /><b>Central da Família</b></div>
-      <p className="corpo">Quanto a sua casa pode gastar hoje, num número só. Dinheiro, feira e equipe da casa no mesmo lugar.</p>
+      <p className="corpo">Quanto a sua casa pode gastar hoje, num número só. Dinheiro, feira e Assessores da Casa no mesmo lugar.</p>
 
       {passo === 'email' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!emailValido(email)) throw new Error('Confira o e-mail: falta o @ ou o final, tipo .com'); await api.enviarCodigo(email); setPasso('codigo') }) }}>
+        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!emailValido(email)) throw new Error('Informe um e-mail válido.'); await api.enviarCodigo(email); setPasso('codigo') }) }}>
           <h2>Entrar</h2>
           <label className="campo"><span>Seu e-mail</span>
             <CampoPrivado className="inp" type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-            <small>A gente manda um código de 6 números pra esse e-mail. Não tem senha pra lembrar.</small>
+            <small>Você receberá um código de 6 números neste e-mail. Não é preciso criar uma senha.</small>
           </label>
           {erro && <AvisoConvite mensagem={erro} />}
           <button className="btn primary full" disabled={ocupado} type="submit"><Mail size={20} />Receber o código</button>
-          <button className="lnk equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={18} />Trabalha na casa (cozinheira, motorista)? Entre por aqui</button>
+          <button className="btn line equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={22} aria-hidden="true" /><span><b>Assessor da Casa</b><small>Entrar com o convite da família</small></span></button>
         </form>
       )}
 
@@ -62,12 +62,12 @@ export function Entrar() {
       )}
 
       {passo === 'equipe' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código da equipe tem 4 números.'); await api.entrarEquipe(convite, codigo); location.hash = '#/casa'; await trocarSessao() }) }}>
+        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); location.hash = '#/casa'; await trocarSessao() }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => { setErro(''); setPasso('email') }}><ArrowLeft size={18} />Voltar</button>
-          <h2>Equipe da casa</h2>
+          <h2>Assessor da Casa</h2>
           {convite ? (
             <>
-              <p className="sub">Digite os 4 números que vieram junto com este link. O código vale por 24 horas e só funciona neste link. Você vai ver só a tela da Casa, pra anotar as compras.</p>
+              <p className="sub">Digite os 4 números que vieram junto com este link. O código vale por 24 horas e só funciona neste link. Você vai ver só a tela da Casa, para anotar as compras.</p>
               <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
               {ex && <p className="sub">No exemplo, o código é 2468.</p>}
               {erro && <AvisoConvite mensagem={erro} />}
@@ -75,8 +75,8 @@ export function Entrar() {
             </>
           ) : (
             <>
-              <p className="todo"><Link2 size={20} aria-hidden="true" /><span><b>Peça o link pra quem cuida da família.</b> A entrada da equipe é pelo link do convite, que chega no WhatsApp junto com um código de 4 números. Abra o link neste celular e digite o código.</span></p>
-              <p className="sub">Se o link já chegou e abriu esta tela, ele veio cortado: peça pra mandarem de novo.</p>
+              <p className="todo"><Link2 size={20} aria-hidden="true" /><span><b>Peça o link para quem cuida da família.</b> A entrada do Assessor da Casa é pelo link do convite, que chega no WhatsApp junto com um código de 4 números. Abra o link neste celular e digite o código.</span></p>
+              <p className="sub">Se o link já chegou e abriu esta tela, ele veio cortado: peça para mandarem de novo.</p>
               {ex && <a className="btn line full" href={'#/equipe?c=' + CONVITE_EXEMPLO}>Abrir o link de exemplo</a>}
             </>
           )}

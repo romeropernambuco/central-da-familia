@@ -258,9 +258,9 @@ export function linkEquipe(base: string, convite: string): string {
  */
 export function mensagemConvite(tipo: 'pessoa' | 'amiga' | 'equipe', o: { familia: string; quem: string; link: string; codigo?: string; email?: string }): string {
   if (tipo === 'pessoa')
-    return `Oi${o.quem.trim() ? ', ' + o.quem.trim() : ''}! Coloquei a casa na Central da Família. Entra aqui pra ver o nosso número do dia: ${o.link} Entra com o seu e-mail${o.email ? ' (' + o.email.trim() + ')' : ''} e digita o código de 6 números que chega nele. No iPhone: toque e segure o link e escolha "Abrir no Safari" (não abra dentro do WhatsApp). Depois, no Safari, toque em Compartilhar e em "Adicionar à Tela de Início".`
+    return `Oi${o.quem.trim() ? ', ' + o.quem.trim() : ''}! Coloquei a casa na Central da Família. Entra aqui para ver o nosso número do dia: ${o.link} Entra com o seu e-mail${o.email ? ' (' + o.email.trim() + ')' : ''} e digita o código de 6 números que chega nele. No iPhone: toque e segure o link e escolha "Abrir no Safari" (não abra dentro do WhatsApp). Depois, no Safari, toque em Compartilhar e em "Adicionar à Tela de Início".`
   if (tipo === 'amiga')
-    return `Tô usando a Central da Família: abro e vejo quanto a casa pode gastar hoje, num número só. Feira e equipe da casa ficam no mesmo lugar. Quer testar com a gente? ${o.link}`
+    return `Tô usando a Central da Família: abro e vejo quanto a casa pode gastar hoje, num número só. Feira e Assessores da Casa ficam no mesmo lugar. Quer testar com a gente? ${o.link}`
   return `Oi, ${o.quem}! Pra anotar as compras da casa, abre este link: ${o.link} Depois digita o código ${o.codigo}. O código vale por 24 horas e só funciona nesse link.`
 }
 
@@ -316,5 +316,5 @@ export function textoPrivado<T>(texto: T, oculto = valoresOcultos()): T {
 export async function copiarProtegido(texto: string, protegido?: string, avisar: (s: string) => void = s => { if (typeof window !== 'undefined') window.alert?.(s) }, oculto = valoresOcultos()): Promise<boolean> {
   if (oculto && protegido === undefined) { avisar('Abra o olho para copiar este conteúdo privado.'); return false }
   try { await navigator.clipboard.writeText(oculto ? protegido! : texto); return true }
-  catch { avisar('Não deu para copiar. Tente novamente.'); return false }
+  catch { avisar('Não foi possível copiar. Tente novamente.'); return false }
 }

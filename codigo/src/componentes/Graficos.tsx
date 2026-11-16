@@ -51,7 +51,7 @@ function Quadro({ rotulo, altura, n, leitura, desenho, classe, indice }: {
   }
   return (
     <figure className={'graf ' + classe}>
-      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={`${textoPrivado(rotulo)} Use as setas pra ver cada ponto.`} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
+      <div ref={ref} className="graf-area" tabIndex={0} role="group" aria-label={`${textoPrivado(rotulo)} Use as setas para ver cada ponto.`} onKeyDown={tecla} onBlur={() => setAtivo(null)}>
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" onPointerMove={mover} onPointerDown={mover} onPointerLeave={e => { if (e.pointerType === 'mouse') setAtivo(null) }}>
           {desenho(w, h, ativo, xDe)}
         </svg>
@@ -86,7 +86,7 @@ export function GraficoMes({ gasto, limite, fecha, hoje, dias, porDia }: { gasto
   const naProjecao = (k: number) => (k <= dia ? acc[k - 1] : gasto + ((fecha - gasto) * (k - dia)) / Math.max(1, dias - dia))
   return (
     <Quadro classe="graf-mes" n={dias} altura={w => (w >= 600 ? 160 : 120)} rotulo={`Gasto do mês até hoje: ${reais(gasto)} de ${reais(limite)}. Se continuar assim, fecha em ${reais(fecha)}${passa ? `, passa ${reais(fecha - limite)}` : ''}.`}
-      leitura={i => i == null ? <span className="graf-dica">Toque na linha pra ver cada dia</span>
+      leitura={i => i == null ? <span className="graf-dica">Toque na linha para ver cada dia</span>
         : i + 1 <= dia ? <span>Dia {i + 1}: já saíram <b>{reais(naProjecao(i + 1))}</b></span>
         : <span>Dia {i + 1}: se continuar assim, <b>{reais(naProjecao(i + 1))}</b></span>}
       desenho={(w, h, ativo) => {
@@ -141,8 +141,8 @@ export function GraficoCaixa({ linha, renda2029, rendaRotulo }: { linha: LinhaMe
       indice={(px, w) => { const degrau = Math.max(92, Math.round(w * 0.14)); const fim = w - degrau - 10; return px > fim + 5 ? n : Math.round(((px - 6) / Math.max(1, fim - 6)) * (n - 1)) }}
       rotulo={`Caixa da família de ${curto(linha[0].mes)} a ${curto(ult.mes)}: começa com ${r$(linha[0].saldo_final)} e termina com ${ult.saldo_final < 0 ? 'devendo ' : ''}${r$(ult.saldo_final)}. A faixa cinza é o piso.${renda2029 != null ? ` Em 2029 rende ${r$(renda2029)} por mês.` : ''}`}
       leitura={i => {
-        if (i == null) return <span className="graf-dica">Toque na linha pra ver cada mês</span>
-        if (i >= n) return <span>2029: {renda2029 != null ? <>o dinheiro rende <b>{r$(renda2029)}</b> por mês, pra sempre</> : 'o rendimento não repõe a inflação'}</span>
+        if (i == null) return <span className="graf-dica">Toque na linha para ver cada mês</span>
+        if (i >= n) return <span>2029: {renda2029 != null ? <>o dinheiro rende <b>{r$(renda2029)}</b> por mês, para sempre</> : 'o rendimento não repõe a inflação'}</span>
         const l = linha[i]
         return <span>{curto(l.mes)}: caixa <b>{l.saldo_final < 0 ? 'devendo ' : ''}{r$(l.saldo_final)}</b>, piso {r$(l.piso)}{l.recebimentos > 0 ? <>. Entra {textoPrivado(l.marcos?.length ? l.marcos.map(m => `${m.descricao ?? `Recebimento de ${m.dono}`} ${r$(m.valor)}`).join(', ') : r$(l.recebimentos))}</> : null}{l.fica_devendo > 0 ? '. Abaixo do piso' : ''}</span>
       }}
@@ -187,7 +187,7 @@ export function GraficoDesejo({ sem, com, rendaSem, rendaCom }: { sem: LinhaMes[
     <div className="graf-desejo-b">
       <Quadro classe="graf-desejo" n={n} altura={w => (w >= 600 ? 150 : 120)}
         rotulo={`O caixa até ${curto(com[n - 1].mes)}: sem o desejo termina com ${r$(sem[n - 1].saldo_final)}, com o desejo ${r$(com[n - 1].saldo_final)}.`}
-        leitura={i => i == null ? <span className="graf-dica">Toque na linha pra ver cada mês</span>
+        leitura={i => i == null ? <span className="graf-dica">Toque na linha para ver cada mês</span>
           : <span>{curto(com[i].mes)}: hoje <b>{r$(sem[i].saldo_final)}</b>, com o desejo <b>{com[i].saldo_final < 0 ? 'devendo ' : ''}{r$(com[i].saldo_final)}</b></span>}
         desenho={(w, h, ativo) => {
           const vals = [...sem.slice(0, n).map(l => l.saldo_final), ...com.slice(0, n).map(l => l.saldo_final), ...com.slice(0, n).map(l => l.piso)]

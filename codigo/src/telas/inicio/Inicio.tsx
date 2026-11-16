@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ChevronRight, ListChecks } from 'lucide-react'
@@ -62,10 +63,10 @@ export function Inicio() {
       <RumoA2029 compacto />
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, {textoPrivado(familia?.membroNome)}</p>
+          <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>{n.estado === 'devendo' ? 'Seu mês passou do combinado' : 'Hoje você pode gastar'}</h2>
           <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="hero" /></span>
-            : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque pra ver o que mexeu no número de hoje"><Din v={meu.hoje ?? n.valor} tam="hero" /></button>
+            : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque para ver o que mexeu no número de hoje"><Din v={meu.hoje ?? n.valor} tam="hero" /></button>
             : <Din v={meu.hoje ?? n.valor} tam="hero" />}</div>
           {n.estado === 'devendo' && <p className="apoio"><b>fica devendo</b> neste mês</p>}
           {/* E3 (conserto 5): depois de gastar, o número do dia diz quanto já saiu e quanto ainda pode */}
@@ -83,11 +84,11 @@ export function Inicio() {
         </section>
       ) : (
         <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, {textoPrivado(familia?.membroNome)}</p>
+          <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>Hoje você pode gastar</h2>
           <div className="numrow"><Din v={resumo.pode_gastar_hoje} tam="hero" /></div>
           <p className="apoio">Sobram <b>{reais(sobra)}</b> até {dataCurta(fimDoMes(hoje))}, em {textoPrivado(plural(resumo.dias_restantes, 'dia', 'dias'))}.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>
-          <Qm texto titulo="Hoje você pode gastar" linhas={resumo.explicacao} nota="A conta é feita pelo banco da família, igual pra todo mundo da casa. Muda a cada gasto lançado." />
+          <Qm texto titulo="Hoje você pode gastar" linhas={resumo.explicacao} nota="A conta é feita pelo banco da família, igual para todo mundo da casa. Muda a cada gasto lançado." />
         </section>
       )}
 
@@ -113,7 +114,7 @@ export function Inicio() {
             {ult.map(l => (
               <li key={l.id} className="li">
                 <span className="tile">{textoPrivado((nomeEnv(l.envelope_id) || '?').charAt(0))}</span>
-                <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(nomeEnv(l.envelope_id))}{textoPrivado(rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : '')}{textoPrivado(env(l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : '')} · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
+                <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(nomeEnv(l.envelope_id))}{textoPrivado(rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : '')} · pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} /> · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
                 <span className="v"><Din v={l.valor} /></span>
               </li>
             ))}

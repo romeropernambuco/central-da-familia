@@ -1,4 +1,4 @@
-// Rodada 2 da revisão: 1 teste (ou mais) pra cada item ligado nesta rodada.
+// Rodada 2 da revisão: 1 teste (ou mais) para cada item ligado nesta rodada.
 import { beforeEach, describe, expect, it } from 'vitest'
 // @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node
 import { execSync } from 'node:child_process'
@@ -96,11 +96,27 @@ describe('1. equipe entra pelo link do convite + código', () => {
   })
   it('convidar devolve convite + código; sem o convite certo o código sozinho não entra', async () => {
     const c = await apiExemplo.convidar('f', 'equipe', 'Carla')
-    expect(c.convite).toBe(CONVITE_EXEMPLO); expect(c.codigo_4_digitos).toBe('2468')
+    expect(c.convite).toBeTruthy(); expect(c.codigo_4_digitos).toBe('2468')
     await expect(apiExemplo.entrarEquipe('11111111-1111-4111-8111-111111111111', '2468')).rejects.toThrow(/link/)
     await expect(apiExemplo.entrarEquipe(CONVITE_EXEMPLO, '0000')).rejects.toThrow(/Código/)
-    await apiExemplo.entrarEquipe(CONVITE_EXEMPLO, '2468')
+    await apiExemplo.entrarEquipe(c.convite!, '2468')
     expect((await apiExemplo.sessao())?.familias[0].papel).toBe('equipe')
+  })
+  it('cada Assessor da Casa entra e registra presença com o próprio nome, sem dinheiro', async () => {
+    reiniciarExemplo()
+    await expect(apiExemplo.convidar('f', 'equipe', '  ')).rejects.toThrow(/nome/)
+    const a = await apiExemplo.convidar('f', 'equipe', 'Carla')
+    const b = await apiExemplo.convidar('f', 'equipe', 'Davi Nogueira')
+    expect(a.convite).not.toBe(b.convite)
+    expect(conviteDoHash(new URL(linkEquipe('https://exemplo.invalid/', b.convite!)).hash)).toBe(b.convite)
+    for (const [c, nome] of [[a, 'Carla'], [b, 'Davi Nogueira']] as const) {
+      await apiExemplo.entrarEquipe(c.convite!, c.codigo_4_digitos!)
+      expect((await apiExemplo.sessao())?.familias[0].membroNome).toBe(nome)
+      const casa = await apiExemplo.casaMarcar('f', 'cheguei')
+      expect(casa.eu).toBe(nome)
+      expect(JSON.stringify(casa)).not.toMatch(/"(?:valor|salario|saldo)":/)
+    }
+    reiniciarExemplo()
   })
   it('o app real chama entrar_equipe_convite e não a entrada antiga só com 4 números', () => {
     expect(realTs).toContain("'entrar_equipe_convite', { convite, codigo }")
@@ -120,7 +136,7 @@ describe('1. limites por definir_limite', () => {
     // R1: a Ana só enxerga o limite dela e os da Casa, então o teste mexe no da Casa
     await apiExemplo.definirLimite('f', 'env-casa', 3100.5)
     expect((await apiExemplo.resumoHoje('f')).envelopes.find(e => e.id === 'env-casa')?.limite_mes).toBe(3100.5)
-    await expect(apiExemplo.definirLimite('f', 'env-casa', -1)).rejects.toThrow(/zero pra cima/)
+    await expect(apiExemplo.definirLimite('f', 'env-casa', -1)).rejects.toThrow(/zero para cima/)
     expect(traduzErro({ message: 'so o casal muda o limite' }).message).toBe('Só o casal muda o limite.')
   })
 })
@@ -149,13 +165,13 @@ describe('1. equipe: resumo só com nomes e lançamento sem valor', () => {
     const l = await apiExemplo.lancar(novo('eq1', { envelope: 'env-feira', valor: 77.7 }))
     expect(l.lancamento.valor).toBe(0)
     expect(l.resumo.so_nomes).toBe(true)
-    await expect(apiExemplo.lerCupom('f', '')).rejects.toThrow(/só pro casal/)
+    await expect(apiExemplo.lerCupom('f', '')).rejects.toThrow(/só para o casal/)
     reiniciarExemplo()
   })
 })
 
 describe('1. convite por e-mail: mensagens novas do banco', () => {
-  it('os 3 motivos de recusa saem em português e viram aviso pra pessoa', () => {
+  it('os 3 motivos de recusa saem em português e viram aviso para pessoa', () => {
     expect(AVISOS_CONVITE).toHaveLength(3)
     for (const m of AVISOS_CONVITE) { expect(TRADUZ[m]).toBeTruthy(); expect(TRADUZ[m]).not.toMatch(/codigo|numeros|familia\b/) }
     expect(traduzErro({ message: 'confirme o seu e-mail com o codigo de 6 numeros antes de entrar na familia' }).message).toMatch(/Confirme o seu e-mail/)
@@ -187,7 +203,7 @@ describe('1. IA do cupom, função versão 2', () => {
 describe('2. convite pro WhatsApp sem valor em R$', () => {
   it('nenhuma das 3 mensagens leva dinheiro; a da 2ª pessoa tem o texto combinado', () => {
     const p = mensagemConvite('pessoa', { familia: 'Silva', quem: 'Bruno', link: 'https://x/app/', email: 'bruno@x.com' })
-    expect(p).toContain('Entra aqui pra ver o nosso número do dia')
+    expect(p).toContain('Entra aqui para ver o nosso número do dia')
     expect(p).toContain('https://x/app/'); expect(p).toContain('bruno@x.com')
     for (const m of [p, mensagemConvite('amiga', { familia: '', quem: '', link: 'https://x' }), mensagemConvite('equipe', { familia: 'S', quem: 'C', link: 'https://x', codigo: '1234' })]) {
       expect(m).not.toMatch(/R\$|\d+,\d{2}/); expect(m).not.toMatch(/[—–]/)

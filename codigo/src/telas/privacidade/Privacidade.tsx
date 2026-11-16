@@ -46,22 +46,22 @@ export function Privacidade() {
         <h3>O que guardamos</h3>
         <p>Nome da família, quem participa, limites, cartões (só nome e dias), lançamentos e o que a família anota da casa. Não guardamos senha de banco nem número de cartão.</p>
         <h3>Quem vê</h3>
-        <p>Só a sua família. {sozinho ? 'Você vê tudo da família e é quem mexe. Se outro adulto entrar, cada um mexe só no seu, e tudo aparece com o nome de quem é.' : 'Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2.'} Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. A equipe da casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
+        <p>Só a sua família. {sozinho ? 'Você vê tudo da família e é quem mexe. Se outro adulto entrar, cada um mexe só no seu, e tudo aparece com o nome de quem é.' : 'Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2.'} Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. O Assessor da Casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
         <h3>Inteligência artificial</h3>
-        <p>A IA só lê a foto do cupom quando você manda e mostra pra você conferir antes de salvar. A conta de dinheiro é sempre do banco, nunca da IA. Cupom pode ter CPF: o app avisa antes de enviar.</p>
+        <p>A IA só lê a foto do cupom quando você manda e mostra para você conferir antes de salvar. A conta de dinheiro é sempre do banco, nunca da IA. Cupom pode ter CPF: o app avisa antes de enviar.</p>
         <h3>Seus direitos (LGPD)</h3>
         <p>Você pode baixar tudo a qualquer hora e apagar a família inteira. Apagar é de vez e não tem volta.</p>
       </section>
       <div className="col">
         <section className="card" aria-labelledby="bT">
           <h2 id="bT">{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</h2>
-          <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com tudo da família, com o nome do dono em cada linha, pra guardar ou levar pra outro lugar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
+          <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com tudo da família, com o nome do dono em cada linha, para guardar ou levar para outro lugar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
           <button className="btn line" type="button" onClick={baixar}><Download size={20} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
         </section>
         {!casal && <section className="card"><p className="sub">Quem pode apagar tudo é o casal.</p></section>}
         {casal && <section className="card" aria-labelledby="aT">
           <h2 id="aT">Apagar a família</h2>
-          <p className="sub" style={{ margin: '8px 0 12px' }}>Apaga lançamentos, cartões, limites, equipe e convites. Não tem como desfazer.</p>
+          <p className="sub" style={{ margin: '8px 0 12px' }}>Apaga lançamentos, cartões, limites, cadastros de Assessores da Casa e convites. Esta ação é definitiva.</p>
           <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Trash2 size={20} />Apagar a família</button>
         </section>}
       </div>
@@ -77,7 +77,7 @@ export function Privacidade() {
       )}
       {apagar && familia && (
         <Sheet titulo="Apagar a família?" fechar={() => setApagar(false)}>
-          <p className="corpo">Pra confirmar, digite o nome da família igualzinho: <b>{textoPrivado(familia.nome)}</b></p>
+          <p className="corpo">Para confirmar, digite o nome da família como aparece aqui: <b>{textoPrivado(familia.nome)}</b></p>
           <CampoPrivado className="inp" value={conf} onChange={e => setConf(e.target.value)} aria-label="Nome da família" />
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn danger on full" type="button" disabled={conf.trim() !== familia.nome} onClick={async () => {

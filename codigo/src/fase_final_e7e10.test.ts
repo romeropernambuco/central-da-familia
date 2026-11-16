@@ -32,15 +32,15 @@ function entrada(extra: Partial<FuturoEntrada> = {}, piso = 0): FuturoEntrada {
 }
 
 describe('E7: impacto de 2029 (F6) pela tela', () => {
-  it('F6-HOJE: R$ 50.000 em 12/2026 tiram R$ 194,89 por mês da renda de 2029, pra sempre', () => {
+  it('F6-HOJE: R$ 50.000 em 12/2026 tiram R$ 194,89 por mês da renda de 2029, para sempre', () => {
     const p = perdaPorMes(entrada(), 50000, '2026-12')
     expect(p).toBe(19489)
-    expect(limpa(fraseImpacto(p!))).toBe('Isso tira R$ 194,89 por mês da renda de 2029, pra sempre.')
+    expect(limpa(fraseImpacto(p!))).toBe('Isso tira R$ 194,89 por mês da renda de 2029, para sempre.')
   })
   it('F6-ULTIMO: R$ 10.000 em 12/2028 = R$ 32,74; com prefixo do Lançar a frase continua em minúscula', () => {
     const p = perdaPorMes(entrada(), 10000, '2028-12')
     expect(p).toBe(3274)
-    expect(limpa(fraseImpacto(p!, 'Gasto grande: se não estava no combinado, '))).toBe('Gasto grande: se não estava no combinado, isso tira R$ 32,74 por mês da renda de 2029, pra sempre.')
+    expect(limpa(fraseImpacto(p!, 'Gasto grande: se não estava no combinado, '))).toBe('Gasto grande: se não estava no combinado, isso tira R$ 32,74 por mês da renda de 2029, para sempre.')
   })
   it('taxa real zero: a frase diz que o rendimento não repõe a inflação (nunca divide por zero)', () => {
     const e = entrada(); e.parametros.taxa_real_trabalho = '0'
@@ -55,13 +55,13 @@ describe('E7: linha até dez/2028 (F4, F9, F5)', () => {
     const s: FuturoSaida = { linha: [l('2027-03', 4_000_000, 2_000_000, '2027-04'), l('2027-04', 9_500_000)], patrimonio_necessario: 9_000_000, renda_sustentavel: 31_000, folga: 500_000, ajustes_falta: null, perguntas: [], avisos_fgc: [] }
     const f = frasesLinha(s)
     expect(limpa(f.devendo)).toBe('Em 03/2027 o caixa fica abaixo do piso: fica devendo R$ 20.000 pro caixa até 04/2027.')
-    expect(limpa(f.virada)).toMatch(/^Em 2029 o dinheiro rende R\$ 310 por mês, pra sempre, e sobram R\$ 5\.000/)
+    expect(limpa(f.virada)).toMatch(/^Em 2029 o dinheiro rende R\$ 310 por mês, para sempre, e sobram R\$ 5\.000/)
     expect(JSON.stringify(f)).not.toMatch(/-R\$|R\$\s?-/)
   })
   it('B4 (revisão): com a família devendo no fim, a frase do piso não diz "fica devendo" de novo', () => {
     const s: FuturoSaida = { linha: [l('2026-12', 7_000_000, 798_537, null), l('2028-12', -30_409_053, 30_409_053 + 1, null)], patrimonio_necessario: 1, renda_sustentavel: 0, folga: -1, ajustes_falta: null, perguntas: [], avisos_fgc: [] }
     const f = frasesLinha(s)
-    expect(limpa(f.devendo)).toBe('Em 12/2026 o caixa fica R$ 7.985,37 abaixo do piso e não volta pra cima dele até 12/2028.')
+    expect(limpa(f.devendo)).toBe('Em 12/2026 o caixa fica R$ 7.985,37 abaixo do piso e não volta para cima dele até 12/2028.')
     expect(((f.caixa + ' ' + f.devendo).match(/fica devendo/g) || []).length).toBe(1)
   })
   it('F5 com falta: os ajustes do F9 com número (guardar por mês ou gastar menos em 2029)', () => {
@@ -172,7 +172,7 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     const c = cabeDesejo(entrada(t), d(false))
     expect(c.tira_por_mes_2029).toBe(19337)
     const f = frasesDesejo(c, d(false)).linhas.map(limpa)
-    expect(f).toContain('Tira R$ 193,37 por mês da renda de 2029, pra sempre.')
+    expect(f).toContain('Tira R$ 193,37 por mês da renda de 2029, para sempre.')
     expect(f).toContain('A volta é incerta: fica fora da conta, só entra se vier.')
   })
   it('cabe / ainda não cabe e quando cabe: o caixa com piso alto não comporta o desejo agora', () => {
@@ -199,9 +199,9 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     expect(linha).toBe(`Adiantar o contrato custa mais do que o caixa rende: perde R$ 11.194,13 até 2029 e tira R$ ${(Math.abs(a.impacto_renda_mensal!) / 100).toFixed(2).replace('.', ',')} por mês da renda de 2029.`)
     expect(linha).not.toMatch(/-R\$|R\$\s?-/)
   })
-  it('filha: só "dá pra comprar com o seu", sem 2029', () => {
-    expect(limpa(fraseDaFilha(120, 200, 300))).toBe('Dá pra comprar com o seu: sobram R$ 80 no seu mês.')
-    expect(fraseDaFilha(250, 200, 300, true)).toMatch(/^Dá pra comprar com o seu: cabe no seu limite daquele mês/)
+  it('filha: só "dá para comprar com o seu", sem 2029', () => {
+    expect(limpa(fraseDaFilha(120, 200, 300))).toBe('Dá para comprar com o seu: sobram R$ 80 no seu mês.')
+    expect(fraseDaFilha(250, 200, 300, true)).toMatch(/^Dá para comprar com o seu: cabe no seu limite daquele mês/)
     expect(limpa(fraseDaFilha(700, 200, 300))).toMatch(/são 3 meses juntando tudo/)
     expect(fraseDaFilha(700, 200, 300) + fraseDaFilha(120, 200, 300)).not.toMatch(/2029/)
   })
@@ -219,7 +219,7 @@ describe('E8: tranca dos desejos no exemplo (igual a f_06)', () => {
     expect(bia.every(d => d.dono_nome === 'Bia' && d.meu)).toBe(true)
     exemploComo('equipe')
     expect(await apiExemplo.desejos!('fam-silva')).toEqual([])
-    await expect(apiExemplo.desejoCriar!('fam-silva', { nome: 'x', valor: 1, mes: '2027-01', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false })).rejects.toThrow(/equipe/)
+    await expect(apiExemplo.desejoCriar!('fam-silva', { nome: 'x', valor: 1, mes: '2027-01', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false })).rejects.toThrow(/Assessores da Casa/)
   })
   it('só o dono muda: Ana não mexe no desejo do Bruno; desejo novo entra na conta de 2029 (futuroEntradas)', async () => {
     reiniciarExemplo()
@@ -235,7 +235,7 @@ describe('E8: tranca dos desejos no exemplo (igual a f_06)', () => {
     // mudado na revisão E12 (C2): o desejo vai com a situação e o MOTOR pula "desisti" (antes a tela nem mandava)
     expect((await apiExemplo.futuroEntradas!('fam-silva')).entrada!.desejos.find(d => d.id === meu.id)?.situacao).toBe('desisti')
   })
-  it('rota desejos: a filha abre; a equipe volta pra Casa', () => {
+  it('rota desejos: a filha abre; a equipe volta para Casa', () => {
     expect(rotaDoHash('#/desejos')).toBe('desejos')
     expect(rotaPermitida('desejos', 'pessoa')).toBe('desejos')
     expect(rotaPermitida('desejos', 'equipe')).toBe('casa')
@@ -315,7 +315,7 @@ describe('QA E11: a virada (31/12/2028, 01/01 e 02/01/2029) e os erros de tela',
     const s = futuro(ent.entrada!)
     expect(s.modo).toBe('renda')
     const r = frasesRenda(s.renda!)
-    expect(limpa(r.rende)).toMatch(/^Em jan\/29, o dinheiro guardado \(R\$ [\d.,]+\) rende R\$ [\d.,]+ por mês acima da inflação, pra sempre\. O mês gasta R\$ [\d.,]+\.$/)
+    expect(limpa(r.rende)).toMatch(/^Em jan\/29, o dinheiro guardado \(R\$ [\d.,]+\) rende R\$ [\d.,]+ por mês acima da inflação, para sempre\. O mês gasta R\$ [\d.,]+\.$/)
     expect(limpa(r.folga)).toMatch(/^(Sobram|Faltam) R\$ [\d.,]+ por mês/)
     expect(r.taxa).toMatch(/Falta a Selic e o IPCA de 2029/) // o Focus de exemplo vai só até 2028
     // o Desejo responde (nunca fica em "Fazendo a conta…") e fala da renda, sem "2029"
@@ -323,11 +323,11 @@ describe('QA E11: a virada (31/12/2028, 01/01 e 02/01/2029) e os erros de tela',
     const c = cabeDesejo(ent.entrada!, d)
     expect(c.modo).toBe('renda')
     const fd = frasesDesejo(c, d)
-    expect(fd.linhas.join(' ')).toMatch(/por mês da renda, pra sempre\./)
+    expect(fd.linhas.join(' ')).toMatch(/por mês da renda, para sempre\./)
     expect(fd.linhas.join(' ')).not.toMatch(/2029|12\/2028/)
     // o impacto do Lançar e do estouro: "da renda", sem "de 2029"
     const p = perdaPorMes(ent.entrada!, 2000, dia.slice(0, 7))
-    expect(limpa(fraseImpacto(p!, '', 'renda'))).toMatch(/^Isso tira R\$ [\d.,]+ por mês da renda, pra sempre\.$/)
+    expect(limpa(fraseImpacto(p!, '', 'renda'))).toMatch(/^Isso tira R\$ [\d.,]+ por mês da renda, para sempre\.$/)
   })
   it('erro 5: a regra do salário é da família, o mesmo número pros 2', async () => {
     em('2026-11-18')
@@ -336,9 +336,9 @@ describe('QA E11: a virada (31/12/2028, 01/01 e 02/01/2029) e os erros de tela',
     expect(await apiExemplo.entrouAMais!('fam-silva', '2026-11')).toEqual(ana)
     expect(ana).toMatchObject({ entrou: 800, guardado: 500 })
   })
-  it('E10: a frase da filha diz pra guardar o limite daquele mês (sem "deixar pra ele")', () => {
-    expect(fraseDaFilha(250, 200, 300, true)).not.toMatch(/deixar pra ele/)
-    expect(fraseDaFilha(250, 200, 300, true)).toMatch(/se você guardar o limite daquele mês pra isso/)
+  it('E10: a frase da filha diz para guardar o limite daquele mês (sem "deixar para ele")', () => {
+    expect(fraseDaFilha(250, 200, 300, true)).not.toMatch(/deixar para ele/)
+    expect(fraseDaFilha(250, 200, 300, true)).toMatch(/se você guardar o limite daquele mês para isso/)
   })
 })
 
@@ -422,7 +422,7 @@ describe('Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo 
     expect(b.limite_base ?? b.limite_mes).toBe(4180)
     // dia seguinte: o voto venceu
     em('2027-03-01')
-    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-casa', '2027-02')).rejects.toThrow(/O prazo pra aplicar acabou em 28\/02\. Votem de novo pra valer\./)
+    await expect(apiExemplo.reajusteAplicar!('fam-silva', 'env-casa', '2027-02')).rejects.toThrow(/O prazo para aplicar acabou em 28\/02\. Votem de novo para valer\./)
   })
 })
 
@@ -528,7 +528,7 @@ describe('Decisão: voto vencido, "Votar de novo" com a vigência no mês que ve
   })
 })
 
-describe('f_14: voto_aberto é a fonte principal pra achar o voto refeito (a config fica de apoio)', () => {
+describe('f_14: voto_aberto é a fonte principal para achar o voto refeito (a config fica de apoio)', () => {
   afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
   it('votar de novo sem a config gravada: o outro adulto acha pelo voto_aberto e aprova', async () => {
     const em = (dia: string) => vi.setSystemTime(new Date(`${dia}T10:00:00-03:00`))
@@ -538,7 +538,7 @@ describe('f_14: voto_aberto é a fonte principal pra achar o voto refeito (a con
     em('2027-03-05')
     // sem voto refeito ainda: vencido e nada em aberto
     expect((await apiExemplo.reajusteSituacao!('fam-silva', '2027-02')).voto_aberto).toBeNull()
-    // Bruno vota de novo pra 2027-04 e NÃO grava a config (só o banco sabe)
+    // Bruno vota de novo para 2027-04 e NÃO grava a config (só o banco sabe)
     await apiExemplo.reajusteVotar!('fam-silva', '2027-04', 1_020_000, '0.05')
     exemploComo('ana')
     const ler = (f: string, m: string) => apiExemplo.reajusteSituacao!(f, m)
@@ -560,7 +560,7 @@ describe('f_14: voto_aberto é a fonte principal pra achar o voto refeito (a con
     const s = await apiExemplo.reajusteVotar!('fam-silva', v, sit.votos[0].teto, sit.votos[0].ipca!)
     expect(s).toMatchObject({ aprovado: true, vale_a_partir: '2027-04', aplicar_ate: '2027-04-30', voto_aberto: null })
   })
-  it('banco antes do ajuste (voto_aberto só pra mês sem voto): a tela pergunta pelo mês seguinte e acha do mesmo jeito', async () => {
+  it('banco antes do ajuste (voto_aberto só para mês sem voto): a tela pergunta pelo mês seguinte e acha do mesmo jeito', async () => {
     const base = { aprovado: false, teto_aprovado: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, aplicar_ate: null, vencido: false, faltam: [] }
     const voto = { membro_id: 'm-b', nome: 'B', teto: 1, ipca: '0.05', votou_em: '2027-03-05' }
     const pedidos: string[] = []

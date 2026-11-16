@@ -78,7 +78,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
 
   return (
     <div className="cena3d-bloco">
-      {modo === 'lista' && <p className="todo quieto" role="status"><Info size={20} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista da equipe, logo abaixo.</span></p>}
+      {modo === 'lista' && <p className="todo quieto" role="status"><Info size={20} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span></p>}
       <div className={'cena3d' + (modo === 'lista' ? ' fora' : '')} ref={caixa} data-modo={modo}>
         {modo === 'abrindo' && <p className="cena3d-espera">Abrindo o escritório…</p>}
         <div className="cena3d-tags" hidden={modo !== '3d'}>
@@ -103,7 +103,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
           {salasUsadas.map(k => <button key={k} type="button" className="pill" aria-pressed={vista === k} onClick={() => ir(k)}>{SALAS[k]}</button>)}
         </div>
       )}
-      {modo === '3d' && leve && <p className="sub" role="status">Modo leve ligado: este aparelho estava mostrando {leve.fps} imagens por segundo (o mínimo pra ficar suave é 24). A cena ficou mais simples pra não travar.</p>}
+      {modo === '3d' && leve && <p className="sub" role="status">Modo leve ligado: este aparelho estava mostrando {leve.fps} imagens por segundo (o mínimo para ficar suave é 24). A cena ficou mais simples para não travar.</p>}
     </div>
   )
 }

@@ -50,7 +50,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant�
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -237,7 +237,7 @@ describe('regra do olho em cada tela real', () => {
       const aberto = html(container)
       if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-principal') === AGENTE_POR_ABA[nome.slice(7)]).length, nome).toBe(1); expect(aberto).toContain('Recolher') }
       // Algumas telas iniciais são formulários vazios e não apresentam dados privados.
-      if (!nome.startsWith('Agente:') && !['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
+      if (!nome.startsWith('Agente:') && !['CadastroAssessor', 'Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
       await act(async () => alternar())
       expect(html(container).match(padrao), nome).toBeNull()
     } finally { await act(async () => root.unmount()); esconderValores(false); vi.useRealTimers(); vi.unstubAllGlobals() }

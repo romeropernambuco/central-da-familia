@@ -1,10 +1,12 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
 import type { DesejoTela, ImovelTela, FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
+import { validarNome, podeEditarNome } from '../lib/nomePessoa'
 import * as ex2 from './exemplo2'
 import { entradaDoBanco, imovelInvalido, type FuturoBanco } from './futuro'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
-import { dadosTeste, familiaTeste, membrosTeste, nomeFamiliaTeste, usarFamiliaTeste } from './dadosTeste'
+import { novoUuid } from '../lib/seguro'
+import { dadosTeste, familiaTeste, membrosTeste, restaurarNomesTeste, nomeFamiliaTeste, usarFamiliaTeste } from './dadosTeste'
 import { pessoaDoTeste } from '../teste/relogio'
 import { centavos, dataCurta, diaSemana, diasNoMes, previsaoGas, diasRestantes, fimDoMes, hojeRecife, mesAnterior, mesCurto, reais, segundaDaSemana, simularCompra, somaDias } from '../lib/formato'
 import { gastoSemana, gastosDoMes, mesFatura, mesMais, parcelasDe, pesoDia, plano, projecao, PESO_FDS } from '../lib/plano'
@@ -19,6 +21,9 @@ if (pessoaDoTeste === 'autonoma') { usarFamiliaTeste('souza'); ex2.reiniciarExem
 /** Convite de exemplo da equipe: o link do exemplo é #/equipe?c=<este id> e o código é 2468. */
 export { CONVITE_EXEMPLO }
 const espera = (ms = 60) => new Promise(r => setTimeout(r, ms))
+// Convites distintos preservam a identidade de cada pessoa também na demonstração.
+const convitesAssessores = new Map<string, string>([[CONVITE_EXEMPLO, 'Carla']])
+let assessorNome = 'Carla'
 
 function criarDados() {
   const hoje = hojeRecife()
@@ -46,7 +51,7 @@ function criarDados() {
     ],
     casa_gas: { trocas: [somaDias(hoje, -64), somaDias(hoje, -33), somaDias(hoje, -2)] },
     casa_folha: {
-      pessoas: [{ id: 'f1', nome: 'Carla', funcao: 'Cozinheira', salario: 1800 }],
+      pessoas: [{ id: 'f1', nome: 'Carla', funcao: 'Cozinha', salario: 1800, celular: '81900000001' }, { id: 'f2', nome: 'Davi Nogueira', funcao: 'Transporte', salario: 0, celular: '81900000002' }],
       daePaga: {},
     },
     casa_lista: [
@@ -282,7 +287,7 @@ export function calcularResumo(): ResumoHoje {
   const eu = logado === 'carla' ? null : membroLogado()
   const quem = eu?.papel === 'pessoa' || !envelopes.some(e => e.casa) ? 'seu' : 'seu e da Casa'
   const explicacao = [
-    { linha: `Hoje você pode gastar: soma do que cada limite (${quem}) ainda tem pra hoje`, valor: pode },
+    { linha: `Hoje você pode gastar: soma do que cada limite (${quem}) ainda tem para hoje`, valor: pode },
     ...envelopes.map(e => ({ linha: e.regra === 'diario'
       ? `${e.nome}: o dia de hoje tem ${reais(e.valor_dia_inteiro || 0)}${pesoDia(hoje) > 1 ? ' (hoje é fim de semana ou feriado: vale 1,5 dia)' : ''} menos ${reais(e.gasto_hoje || 0)} gastos hoje`
       : e.regra === 'semanal' ? `${e.nome}: ${reais(e.teto_semana || 0)} da semana menos ${reais(e.gasto_semana || 0)} desde segunda, dividido pelos dias até domingo`
@@ -339,7 +344,7 @@ function casaSemDinheiro(): CasaDaEquipe {
   const casaIds = new Set(db.envs.filter(e => e.casa).map(e => e.id))
   const dow = new Date(hoje + 'T12:00:00').getDay()
   const g = previsaoGas(cfg.casa_gas?.trocas || [])
-  const eu = logado === 'carla' ? 'Carla' : membroLogado().nome
+  const eu = logado === 'carla' ? assessorNome : membroLogado().nome
   return {
     hoje, eu,
     lista: (cfg.casa_lista || []).map((i: any) => ({ id: i.id, nome: i.nome, ok: !!i.ok })),
@@ -368,7 +373,7 @@ const semValorPraEquipe = (l: Lancamento): Lancamento => (logado === 'carla' ? {
 const mundo: ex2.Mundo = {
   equipe: () => logado === 'carla',
   papel: () => papelLogado(),
-  quem: () => (logado === 'carla' ? 'Carla' : (familiaNova?.pessoa || membroLogado().nome).split(' ')[0]),
+  quem: () => (logado === 'carla' ? assessorNome : (familiaNova?.pessoa || membroLogado().nome).split(' ')[0]),
   // E2: os funcionários perguntam e mexem, então falam só do que é de quem olha (o seu e a Casa), nunca do limite do outro
   resumo: () => { const r = calcularResumo(); return { ...r, envelopes: r.envelopes.filter(e => e.escreve) } },
   eu: () => (logado === 'carla' ? null : membroLogado().id),
@@ -386,17 +391,18 @@ const mundo: ex2.Mundo = {
   sobraMesPassado: () => centavos(db.envs.reduce((t, x) => t + x.limite_mes, 0) * 0.04),
   lancarFeira: (data, valor, loja) => { const l: Lancamento = { id: 'l' + Date.now(), envelope_id: 'env-feira', cartao_id: null, valor: centavos(valor), data, descricao: loja, apagado_em: null, criado_em: new Date().toISOString() }; db.lanc.push(l); return l.id },
 }
+const nomesAvulsos: { id: string; nome: string }[] = []
 const membrosExemplo = () => membrosTeste().filter(x => x.papel === 'casal').map(x => ({ id: x.id, nome: x.nome, papel: x.papel }))
 const soCasal = () => { if (logado === 'carla') throw new Error('Só o casal vê o dinheiro guardado.') }
 /** E2 (igual a f_02): aplicação no nome do outro é só pra ler. */
 function minhaAplicacao(id: string) {
   const t = ex2.titularDaAplicacaoEx(id)
-  if (t && t !== membroLogado().id) { const n = membrosTeste().find(x => x.id === t)?.nome || 'outra pessoa'; throw new Error(`Essa aplicação está no nome de ${n}: só ${n} anota guardar, tirar ou encerrar.`) }
+  if (t && t !== membroLogado().id) { const n = membrosTeste().find(x => x.id === t)?.nome || ''; throw new Error(`Essa aplicação está no nome de ${n}: só ${n} anota guardar, tirar ou encerrar.`) }
 }
 /** E2: o cartão é de quem olha ou da família? (o do outro é só pra ler) */
 function meuCartao(id: string | undefined, titular?: string | null) {
   const c = id ? db.cartoes.find(x => x.id === id) : undefined
-  if (c && c.titular_id && c.titular_id !== membroLogado().id) throw new Error(`Esse cartão é de ${c.titular || 'outra pessoa'}: só ${c.titular || 'quem é dono'} muda.`)
+  if (c && c.titular_id && c.titular_id !== membroLogado().id) throw new Error(`Esse cartão é de ${c.titular || ''}: só ${c.titular || 'quem é dono'} muda.`)
   if (titular && titular !== membroLogado().id) throw new Error('Cada um cadastra só o próprio cartão (ou um da família, sem dono).')
 }
 
@@ -405,7 +411,7 @@ export const apiExemplo: Api = {
   async sessao(): Promise<Sessao | null> {
     await espera(30)
     if (!logado) return null
-    if (logado === 'carla') return { userId: 'u-carla', email: null, dono: false, familias: [{ id: FAM, nome: nomeFamiliaTeste(), papel: 'equipe', membroNome: 'Carla', envelopeId: 'env-feira' }] }
+    if (logado === 'carla') return { userId: 'u-carla', email: null, dono: false, familias: [{ id: FAM, nome: nomeFamiliaTeste(), papel: 'equipe', membroNome: assessorNome, envelopeId: 'env-feira', membroId: 'carla' }] }
     const eu = membroLogado()
     const fams = [{ id: FAM, nome: nomeFamiliaTeste(), papel: eu.papel, membroNome: eu.nome, envelopeId: eu.envelope, membroId: eu.id }]
     if (familiaNova) fams.unshift({ id: FAM, nome: familiaNova.nome, papel: 'casal', membroNome: familiaNova.pessoa, envelopeId: eu.envelope, membroId: eu.id })
@@ -413,7 +419,7 @@ export const apiExemplo: Api = {
   },
   async enviarCodigo(email) { await espera(); if (!email.includes('@')) throw new Error('E-mail inválido') },
   async confirmarCodigo(_email, codigo) { await espera(); if (codigo !== '123456') throw new Error('Código não confere. No exemplo, use 123456.'); logado = logadoInicial() === 'carla' ? 'ana' : logadoInicial() },
-  async entrarEquipe(convite, codigo) { await espera(); if (convite !== CONVITE_EXEMPLO) throw new Error('Esse link não é o do exemplo. Peça o link pra quem cuida da família.'); if (codigo !== '2468') throw new Error('Código não confere. No exemplo, use 2468.'); logado = 'carla' },
+  async entrarEquipe(convite, codigo) { await espera(); if (!convitesAssessores.has(convite)) throw new Error('Esse link não é o do exemplo. Peça o link para quem cuida da família.'); if (codigo !== '2468') throw new Error('Código não confere. No exemplo, use 2468.'); assessorNome = convitesAssessores.get(convite)!; logado = 'carla' },
   async sair() { logado = null; familiaNova = null },
 
   async criarFamilia(nome, nomePessoa) {
@@ -430,15 +436,16 @@ export const apiExemplo: Api = {
   async definirLimite(_f, id, valor) {
     const e = db.envs.find(x => x.id === id)
     if (!e) throw new Error('Esse limite não existe mais. Feche e abra a tela de novo.')
-    if (!(valor >= 0)) throw new Error('O limite tem que ser um valor de zero pra cima.')
+    if (!(valor >= 0)) throw new Error('O limite tem que ser um valor de zero para cima.')
     e.limite_mes = centavos(valor)
   },
   async convidar(_f, papel, nome, email) {
     await espera()
-    if (papel === 'equipe') return { convite: CONVITE_EXEMPLO, codigo_4_digitos: '2468', expira_em: new Date(Date.now() + 864e5).toISOString() }
+    if (!nome.trim()) throw new Error('Informe o nome do Assessor da Casa.');
+    if (papel === 'equipe') { const convite = novoUuid(); convitesAssessores.set(convite, nome.trim()); return { convite, codigo_4_digitos: '2468', expira_em: new Date(Date.now() + 864e5).toISOString() } }
     const ja = db.convites.find(c => c.email && email && c.email === email.trim().toLowerCase() && c.situacao !== 'cancelado')
     if (ja) throw new Error(ja.situacao === 'entrou' ? `${ja.nome} já está na família.` : `Esse e-mail já foi convidado. Use Reenviar em "Quem está na família".`)
-    db.convites.push({ id: 'cv' + Date.now(), nome: nome || 'Convidado', email: email ? email.trim().toLowerCase() : null, papel, situacao: 'esperando', enviado_em: hojeRecife() })
+    db.convites.push({ id: 'cv' + Date.now(), nome: nome.trim(), email: email ? email.trim().toLowerCase() : null, papel, situacao: 'esperando', enviado_em: hojeRecife() })
     return { ok: true, convite: 'email' }
   },
 
@@ -492,7 +499,7 @@ export const apiExemplo: Api = {
     if (!podeEscrever(envelope)) throw new Error('Só quem passou do combinado escolhe de onde sai.')
     const mes = hojeRecife().slice(0, 7)
     const casa = db.envs.find(e => e.casa && e.regra === 'mensal')
-    if (!casa) throw new Error('Não tem limite da Casa pra cobrir.')
+    if (!casa) throw new Error('Não tem limite da Casa para cobrir.')
     const ce = contaEnvelope(casa, hojeRecife())
     const sobra = centavos(ce.livre - casa.colchao)
     if (sobra < valor) throw new Error(`A Casa só tem ${reais(Math.max(0, sobra))} de sobra este mês, fora a reserva.`)
@@ -500,9 +507,9 @@ export const apiExemplo: Api = {
     db.ajustes.push({ id, mes, de: casa.id, para: envelope, valor: centavos(valor) })
     return async () => { db.ajustes = db.ajustes.filter(a => a.id !== id) }
   },
-  async convites() { await espera(30); return db.convites.filter(c => c.situacao !== 'cancelado').map(c => ({ ...c })) },
+  async convites() { await espera(30); return db.convites.filter(c => c.situacao !== 'cancelado').map(c => ({ ...c, membroId: c.situacao === 'entrou' ? membrosTeste().find(m => m.email === c.email)?.id : undefined })) },
   async reenviarConvite(_f, id) { await espera(40); const c = db.convites.find(x => x.id === id); if (!c) throw new Error('Esse convite não existe mais.'); if (c.situacao !== 'esperando') throw new Error(`${c.nome} já entrou.`); c.enviado_em = hojeRecife() },
-  async cancelarConvite(_f, id) { await espera(40); const c = db.convites.find(x => x.id === id); if (!c) throw new Error('Esse convite não existe mais.'); if (c.situacao !== 'esperando') throw new Error(`${c.nome} já entrou: não dá pra cancelar o convite.`); c.situacao = 'cancelado' },
+  async cancelarConvite(_f, id) { await espera(40); const c = db.convites.find(x => x.id === id); if (!c) throw new Error('Esse convite não existe mais.'); if (c.situacao !== 'esperando') throw new Error(`${c.nome} já entrou: não dá para cancelar o convite.`); c.situacao = 'cancelado' },
   // E2 (igual a f_02): apagar e trazer de volta só quem lançou, no seu limite ou na Casa
   async apagarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l && !lancMeu(l)) throw new Error('Só quem lançou apaga esse gasto.'); if (l) l.apagado_em = new Date().toISOString() },
   async restaurarLancamento(id) { const l = db.lanc.find(x => x.id === id); if (l && !lancMeu(l)) throw new Error('Só quem lançou traz esse gasto de volta.'); if (l) l.apagado_em = null },
@@ -523,7 +530,7 @@ export const apiExemplo: Api = {
   async casaMarcar(_f, tipo, dados = {}) {
     await espera(40)
     const hoje = hojeRecife()
-    const eu = logado === 'carla' ? 'Carla' : membroLogado().nome
+    const eu = logado === 'carla' ? assessorNome : membroLogado().nome
     const cfg = db.config as Record<string, any>
     if (tipo === 'comprei' || tipo === 'acabou') {
       const lista: { id: string; nome: string; ok: boolean }[] = cfg.casa_lista || []
@@ -559,7 +566,7 @@ export const apiExemplo: Api = {
     await espera(60)
     const hoje = hojeRecife(), nome = c.nome.trim()
     if (!nome) throw new Error('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.')
-    const quem = logado === 'carla' ? 'Carla' : membroLogado().nome
+    const quem = logado === 'carla' ? assessorNome : membroLogado().nome
     db.comprasEquipe.push({ id: 'ce' + Date.now(), data: hoje, nome: nome.slice(0, 60), tipo: c.tipo, nota: !!c.foto, por: quem })
     let falta = ''
     if (c.tipo === 'feira') {
@@ -597,7 +604,7 @@ export const apiExemplo: Api = {
   async lerCupom() {
     await espera(300)
     // resultado fixo de exemplo: nenhuma foto sai do aparelho
-    if (logado === 'carla') throw new Error('A leitura de cupom é só pro casal e pras pessoas da família. A equipe anota o que comprou e tira a foto da nota.')
+    if (logado === 'carla') throw new Error('A leitura de cupom é só para o casal e para as pessoas da família. O Assessor da Casa anota o que comprou e tira a foto da nota.')
     return { itens: [{ nome: 'Arroz 5 kg', valor: 28.9, qtd: 1 }, { nome: 'Feijão 1 kg', valor: 8.49, qtd: 1 }, { nome: 'Banana prata', valor: 7.98, qtd: 1.2 }, { nome: 'Detergente', valor: 2.79, qtd: 1 }], total: 48.16, soma_dos_itens: 48.16, total_confere: true, data: hojeRecife(), loja: 'Mercadinho', aviso: 'Confira antes de salvar. Nada foi lançado.' }
   },
 
@@ -619,7 +626,56 @@ export const apiExemplo: Api = {
   async escritorioResponder(_f, pergunta, opcao, dados) { await espera(60); return ex2.escritorioResponderEx(mundo, pergunta, opcao, dados) },
   async escritorioRelatorio(_f, de, ate) { await espera(30); return ex2.relatorioEx(mundo, de, ate) },
   async escritorioDiario(_f, funcionario, limite, antes) { await espera(20); return ex2.diarioEx(mundo, funcionario, limite, antes) },
-  async membros() { await espera(20); return membrosExemplo() },
+  async salvarNomePessoa(familia, p, nome, funcao) {
+    const f = (await this.sessao())?.familias[0] || null
+    if (!f || f.id !== familia || !podeEditarNome(f, p)) throw new Error('Você só pode editar o próprio nome.')
+    const ms = [...membrosTeste(), ...nomesAvulsos]
+    const n = validarNome(nome, ms, p.tipo === 'membro' ? p.id : undefined)
+    let anterior = p.nome || ''
+    if (p.tipo === 'membro' && p.id.startsWith('ponto:')) {
+      const dia = p.id.slice(6, 16), antigo = p.id.slice(17)
+      const ponto = db.config.casa_ponto as Record<string, Record<string, unknown>> | undefined
+      if (!ponto?.[dia] || !(antigo in ponto[dia])) throw new Error('Registro de presença não encontrado.')
+      ponto[dia][n] = ponto[dia][antigo]; delete ponto[dia][antigo]
+      const pres = db.config.casa_presenca as Record<string, string[]> | undefined
+      if (pres?.[dia]) pres[dia] = pres[dia].map(x => x === antigo ? n : x)
+      return
+    }
+    if (p.tipo === 'membro') {
+      if (p.id === 'carla') { anterior = assessorNome; assessorNome = n }
+      else {
+        const m = ms.find(x => x.id === p.id)
+        if (m) { anterior = m.nome; m.nome = n }
+        else nomesAvulsos.push({ id: p.id, nome: n })
+        const env = membrosTeste().find(x => x.id === p.id)?.envelope
+        const e = db.envs.find(x => x.id === env); if (e) e.nome = n
+        if (familiaNova && p.id === membroLogado().id) familiaNova.pessoa = n
+      }
+      for (const c of db.cartoes) if (c.titular_id === p.id) c.titular = n
+      for (const c of db.convites) if (c.id === p.id || (anterior && c.nome === anterior && c.situacao === 'entrou')) c.nome = n
+      for (const chave of ['rendas', 'entradas'] as const) for (const r of (db.config[chave] || []) as { dono?: string }[]) if (anterior && r.dono === anterior) r.dono = n
+    } else if (p.tipo === 'convite') {
+      const c = db.convites.find(c => c.id === p.id); if (!c) throw new Error('Convite não encontrado.'); c.nome = n
+    } else if (p.tipo === 'historico') {
+      const h = db.objetivo.historico[Number(p.id)]; if (!h) throw new Error('Registro não encontrado.'); h.quem = n
+    } else {
+      const chave = p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas'
+      const cfg = db.config[chave] as any
+      const lista = p.tipo === 'assessor' ? cfg?.pessoas : cfg
+      const r = lista?.find((x: any) => x.id === p.id); if (!r) throw new Error('Cadastro não encontrado.')
+      anterior = p.tipo === 'renda' ? r.dono : r.nome
+      if (p.tipo === 'renda') r.dono = n
+      else { r.nome = n; if (p.tipo === 'assessor') { r.funcao = (funcao || '').trim(); if (assessorNome === anterior) assessorNome = n } }
+    }
+    if (anterior && anterior !== n) {
+      const pres = db.config.casa_presenca as Record<string, string[]> | undefined
+      if (pres) for (const dia of Object.keys(pres)) pres[dia] = pres[dia].map(x => x === anterior ? n : x)
+      const folha = db.config.casa_folha as { pessoas: { nome: string }[] } | undefined
+      if (p.id === 'carla') for (const r of folha?.pessoas || []) if (r.nome === anterior) Object.assign(r, { nome: n, funcao: (funcao || '').trim() })
+      for (const [id, atual] of convitesAssessores) if (atual === anterior) convitesAssessores.set(id, n)
+    }
+  },
+  async membros() { await espera(20); if (papelLogado() === 'equipe') return [{ id: 'carla', nome: assessorNome, papel: 'equipe' }]; if (papelLogado() === 'pessoa') { const m = membroLogado(); return [{ id: m.id, nome: m.nome, papel: m.papel }] }; return [...membrosTeste().map(x => ({ id: x.id, nome: x.nome, papel: x.papel })), ...nomesAvulsos] },
   async cartaoSalvar(_f, c) { await espera(40); soCasal(); meuCartao(c.id, c.titular_id); ex2.cartaoSalvarEx(mundo, { ...c, titular: membrosExemplo().find(m => m.id === c.titular_id)?.nome || null }) },
   async faturasBanco() { await espera(20); soCasal(); return ex2.faturasBancoEx() },
   async faturaInformar(_f, cartao, mes, d) { await espera(40); soCasal(); meuCartao(cartao); ex2.faturaInformarEx(mundo, cartao, mes, d) },
@@ -743,7 +799,7 @@ export const apiExemplo: Api = {
     if (papelLogado() !== 'casal') throw new Error('Só o casal aplica o reajuste.')
     const s = situacaoReajusteEx(mes)
     if (!s.aprovado) throw new Error('O reajuste ainda não foi aprovado por todos os adultos no mesmo teto e IPCA.')
-    if (s.aplicar_ate && hojeRecife() > s.aplicar_ate) throw new Error(`O prazo pra aplicar acabou em ${dataCurta(s.aplicar_ate)}. Votem de novo pra valer.`)
+    if (s.aplicar_ate && hojeRecife() > s.aplicar_ate) throw new Error(`O prazo para aplicar acabou em ${dataCurta(s.aplicar_ate)}. Votem de novo para valer.`)
     if (!s.ja_vale) throw new Error(`O reajuste vale a partir de ${s.vale_a_partir!.slice(5)}/${s.vale_a_partir!.slice(0, 4)}.`)
     // o limite do outro adulto continua com ele (mesma regra do banco)
     const dono = membrosTeste().find(x => x.envelope === envelope)
@@ -765,7 +821,7 @@ export const apiExemplo: Api = {
   },
   async desejoCriar(_f, d) {
     await espera(40)
-    if (papelLogado() === 'equipe') throw new Error('Desejos são da família: a equipe da casa não anota.')
+    if (papelLogado() === 'equipe') throw new Error('Desejos são da família: os Assessores da Casa não anotam.')
     if (!d.nome.trim()) throw new Error('Diga o que é o desejo (ex.: viagem, bicicleta).')
     if (!(d.valor > 0)) throw new Error('O valor tem que ser maior que zero.')
     if (!/^\d{4}-\d{2}$/.test(d.mes)) throw new Error('Escolha o mês do desejo.')
@@ -829,13 +885,13 @@ export const apiExemplo: Api = {
   },
   async apagarFamilia(_f, confirmacao) {
     await espera()
-    if (confirmacao.trim() !== nomeFamiliaTeste()) throw new Error(`Digite o nome da família igualzinho: ${nomeFamiliaTeste()}`)
+    if (confirmacao.trim() !== nomeFamiliaTeste()) throw new Error(`Digite o nome da família como aparece aqui: ${nomeFamiliaTeste()}`)
     db = criarDados(); ex2.reiniciarExemplo2()
     logado = null
   },
 }
 
-export function reiniciarExemplo() { usarFamiliaTeste('silva'); ex2.reiniciarExemplo2(); db = criarDados(); logado = 'ana'; familiaNova = null; porChave.clear() }
+export function reiniciarExemplo() { nomesAvulsos.length = 0; restaurarNomesTeste(); assessorNome = 'Carla'; convitesAssessores.clear(); convitesAssessores.set(CONVITE_EXEMPLO, 'Carla'); usarFamiliaTeste('silva'); ex2.reiniciarExemplo2(); db = criarDados(); logado = 'ana'; familiaNova = null; porChave.clear() }
 /** Só pros testes: entra como outra pessoa da família de exemplo. */
 export function exemploComo(p: 'ana' | 'bruno' | 'filha' | 'equipe' | 'autonoma') {
   const fam = p === 'autonoma' ? 'souza' : 'silva'

@@ -71,7 +71,7 @@ describe('C2: lista única da equipe', () => {
       avisos: [{ tipo: 'casa_presenca', data: '2026-11-18', nome: 'Carla' }], pres: {},
     }, '2026-11-18')
     const f = (id: string) => r.find(x => x.id === id)!
-    expect(f('tesoureiro').frase.replace(/\u00a0/g, ' ')).toBe('1 recebimento com data pra entrar. O próximo: Contrato (exemplo), R$ 50.000 em 03/2027.')
+    expect(f('tesoureiro').frase.replace(/\u00a0/g, ' ')).toBe('1 recebimento com data para entrar. O próximo: Contrato (exemplo), R$ 50.000 em 03/2027.')
     expect(f('auditor').frase).toBe('Última contagem do estoque: 10/11. 1 item acabou, 1 com pouco.')
     expect(f('presenca').frase).toBe('Hoje marcou presença: Carla.')
     expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['analista', 'anfitriao', 'assistente', 'imoveis', 'protetora', 'sonhadora', 'usina', 'zelador'])

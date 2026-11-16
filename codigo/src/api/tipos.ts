@@ -98,7 +98,7 @@ export interface Lancamento {
 }
 
 /** Pessoa da família e como está o convite dela. */
-export interface ConviteFamilia { id: string; nome: string; email: string | null; papel: Papel; situacao: 'esperando' | 'entrou' | 'cancelado'; entrou_em?: string | null; enviado_em?: string | null }
+export interface ConviteFamilia { membroId?: string; id: string; nome: string; email: string | null; papel: Papel; situacao: 'esperando' | 'entrou' | 'cancelado'; entrou_em?: string | null; enviado_em?: string | null }
 
 export interface Cartao {
   id: string; nome: string; dia_fechamento: number | null; dia_vencimento: number | null
@@ -311,7 +311,10 @@ export interface ImovelTela extends NovoImovel { id: string; dono_membro: string
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
 export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto' | 'fontes_receita' | 'receitas_controle'
 
+export interface PessoaNome { tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'; id: string; nome?: string | null; funcao?: string }
 export interface Api {
+  /** Ausente no real até existir RPC autorizada. */
+  salvarNomePessoa?(familia: string, pessoa: PessoaNome, nome: string, funcao?: string): Promise<void>
   modo: 'real' | 'exemplo'
   sessao(): Promise<Sessao | null>
   enviarCodigo(email: string): Promise<void>

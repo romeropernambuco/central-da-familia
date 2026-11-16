@@ -25,7 +25,7 @@ async function abrirImagem(arq: Blob): Promise<{ img: CanvasImageSource; w: numb
   }
   const url = URL.createObjectURL(arq)
   const img = new Image()
-  await new Promise<void>((ok, falha) => { img.onload = () => ok(); img.onerror = () => falha(new Error('Não deu pra abrir essa foto. Tente outra.')); img.src = url })
+  await new Promise<void>((ok, falha) => { img.onload = () => ok(); img.onerror = () => falha(new Error('Não foi possível abrir essa foto. Tente outra.')); img.src = url })
   return { img, w: img.naturalWidth, h: img.naturalHeight, soltar: () => URL.revokeObjectURL(url) }
 }
 
@@ -59,14 +59,14 @@ export const MSG_CUPOM = {
   limite: 'A família chegou no limite de leituras de cupom deste mês. Volta no dia 1. Até lá, lance digitando o valor.',
   chave: 'A leitura de cupom ainda não está ligada: o dono precisa colocar a chave da IA no Supabase.',
   ritmo: 'Muitas fotos em 1 minuto (o limite é 6). Espere 1 minuto e tente de novo.',
-  geral: 'A leitura de cupom está pausada este mês pra todas as famílias. Até voltar, lance digitando o valor.',
-  equipe: 'A leitura de cupom é só pro casal e pras pessoas da família. A equipe anota a compra digitando o valor.',
+  geral: 'A leitura de cupom está pausada este mês para todas as famílias. Até voltar, lance digitando o valor.',
+  equipe: 'A leitura de cupom é só para o casal e para as pessoas da família. O Assessor da Casa anota a compra sem informar valores.',
   grande: 'A foto ficou grande demais. Tire outra mais perto do cupom.',
 }
 /** Respostas da função ia-ler-cupom (versão 2): 6 por minuto, teto da família, teto geral, equipe sem IA. */
 export function mensagemCupom(status: number, erro?: string): string {
   const e = erro || ''
-  if (status === 401) return 'Sua sessão acabou. Entre de novo pra ler o cupom.'
+  if (status === 401) return 'Sua sessão acabou. Entre de novo para ler o cupom.'
   if (status === 403) return MSG_CUPOM.equipe
   if (status === 404) return 'A leitura de cupom não está publicada no servidor ainda.'
   if (status === 413) return MSG_CUPOM.grande
@@ -77,5 +77,5 @@ export function mensagemCupom(status: number, erro?: string): string {
     return MSG_CUPOM.limite
   }
   if (e === 'limite do mês') return MSG_CUPOM.limite
-  return e || 'Não deu pra ler o cupom agora. Tente de novo ou lance digitando o valor.'
+  return e || 'Não foi possível ler o cupom agora. Tente de novo ou lance digitando o valor.'
 }

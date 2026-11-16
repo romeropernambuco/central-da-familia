@@ -17,6 +17,7 @@ export interface Ctx {
   familia: FamiliaMinha | null
   resumo: ResumoHoje | null
   versao: number
+  nomesMudaram?: () => void
   recarregar: () => Promise<void>
   trocarSessao: () => Promise<void>
   sair: () => Promise<void>
@@ -150,7 +151,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }, [sessaoCaiu])
 
   const v: Ctx = {
-    api, sessao, familia, resumo, versao, recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
+    api, sessao, familia, resumo, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
     // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
     abrirLancar: pre => { if (pre?.corrigir) setToast(null); setLancar(pre || {}) }, lancarAberto, fecharLancar: () => setLancar(null),
     explicar: setExp, oculto, alternarOculto,

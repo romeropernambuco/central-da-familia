@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoValor, CampoPrivado } from '../../componentes/privacidade'
 import { compromissoNesteMes, fraseParcelamento, mesesDaSimulacao } from './simulacao'
 import { useEffect, useState } from 'react'
@@ -49,7 +50,7 @@ export function Cartoes() {
   return (
     <div className="view">
       {carregando && <p role="status">Buscando cartões e faturas…</p>}
-      {falha && <p role="alert">Não deu para buscar cartões e faturas. {dado && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+      {falha && <p role="alert">Não foi possível buscar cartões e faturas. {dado && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       {cartoes.length > 0 && <p className="lbl"><FuncIco id="cartao" size={24} />Analista de Cartão: acompanha as faturas, não paga nada sozinho</p>}
       <div className="row-btns">
         <button className="btn primary" type="button" onClick={() => setSim(true)} disabled={!meus.length}><ShoppingBag size={20} />E se eu comprar?</button>
@@ -63,9 +64,9 @@ export function Cartoes() {
           const max = Math.max(1, ...fs.map(f => f.total))
           const meu = cartaoMeu(c, familia)
           return (
-            <section className="card" key={c.id} aria-label={textoPrivado(`Cartão ${c.nome}${meu ? '' : ` de ${c.titular}`}`)} {...(meu ? {} : { 'data-do-outro': textoPrivado(c.titular || 'outra pessoa') })}>
+            <section className="card" key={c.id} aria-label={textoPrivado(`Cartão ${c.nome}${meu ? '' : ` de ${c.titular}`}`)} {...(meu ? {} : { 'data-do-outro': textoPrivado(c.titular || '') })}>
               <div className="card-h">
-                <h2><CreditCard size={24} aria-hidden="true" />{textoPrivado(c.nome)}{!meu && c.titular ? <small className="dono"> de {textoPrivado(c.titular)}</small> : null}</h2>
+                <h2><CreditCard size={24} aria-hidden="true" />{textoPrivado(c.nome)}{!meu && <small className="dono"> de <NomeDaPessoa pessoa={{ tipo: 'membro', id: c.titular_id || `cartao:${c.id}`, nome: c.titular }} /></small>}</h2>
                 <span className="sub">{c.dia_fechamento && c.dia_vencimento ? `Fecha dia ${c.dia_fechamento} · Vence dia ${c.dia_vencimento}` : 'Falta o dia que fecha ou o que vence'}</span>
               </div>
               {meu && casal && <button className="btn sm line" type="button" style={{ justifySelf: 'start', marginBottom: 10 }} onClick={() => setDias(c)}>{c.dia_fechamento && c.dia_vencimento ? 'Mudar o dia que fecha e o que vence' : 'Pôr o dia que fecha e o que vence'}</button>}
@@ -74,11 +75,11 @@ export function Cartoes() {
                   <p className="lbl">Fatura que vence {dataCurta(atual.vencimento)} <span className={'chip' + (atual.fechada ? '' : ' ok')}>{atual.fechada ? 'fechada' : 'aberta'}</span></p>
                   <div className="numrow"><Din v={atual.total} tam="big" />
                     <Qm titulo={textoPrivado(`Fatura ${c.nome} de ${mesCurto(atual.mes)}`)} linhas={[{ linha: `Compras no ${c.nome} que caem na fatura que vence ${dataCurta(atual.vencimento)}`, valor: atual.total }]}
-                      nota={`À vista, a compra conta no orçamento na data da compra. Parcelada, cada parcela conta no dia 1 do mês da sua fatura. Compra feita a partir do dia ${c.dia_fechamento} vai pra fatura seguinte.`} />
+                      nota={`À vista, a compra conta no orçamento na data da compra. Parcelada, cada parcela conta no dia 1 do mês da sua fatura. Compra feita a partir do dia ${c.dia_fechamento} vai para fatura seguinte.`} />
                   </div>
                   {/* quem pagou (CASAL): a parte da Casa que está na fatura de quem pagou */}
                   {atual.da_casa ? <p className="todo ok" style={{ margin: '6px 0 0' }}><span>Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>. {textoPrivado(meu ? 'Foi você quem pagou pela Casa.' : `Foi ${c.titular || 'quem é dono do cartão'} quem pagou pela Casa.`)}</span></p> : null}
-                  <p className="sub" style={{ margin: '6px 0 14px' }}>{atual.fechada ? 'Pague no app do banco. Aqui é só pra acompanhar: o app não paga nada sozinho.' : 'Ainda entra compra nesta fatura até o dia do fechamento.'}</p>
+                  <p className="sub" style={{ margin: '6px 0 14px' }}>{atual.fechada ? 'Pague no app do banco. Aqui é só para acompanhar: o app não paga nada sozinho.' : 'Ainda entra compra nesta fatura até o dia do fechamento.'}</p>
                 </>
               )}
               <h3 className="dayh">Próximas {fs.length} faturas</h3>
@@ -133,12 +134,12 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
       {valor > 0 && (
         <>
           <p className={'todo ' + (cabe ? 'ok' : 'warn')}>{cabe ? <CircleCheck size={20} aria-hidden="true" /> : <TriangleAlert size={20} aria-hidden="true" />}
-            <span>{dono ? (cabe ? <><b>As parcelas deste mês cabem no seu limite.</b> O que você ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O que ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
+            <span>{dono ? (cabe ? <><b>As parcelas deste mês cabem no seu limite.</b> O que você ainda pode gastar no mês vai de {reais(livre)} para {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O que ainda pode gastar no mês vai de {reais(livre)} para {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
           <p className="sub">Verificado só em {mesCurto(hoje)}. Os outros meses mostram faturas, sem avaliar se cabem no orçamento.</p>
           {parc > 1 && <p className="sub parc-fatura">{textoPrivado(fraseParcelamento(valor, ps))}</p>}
           <ul className="exp">
             <li><span>{textoPrivado(dono ? `Ainda pode gastar no mês (${dono})` : 'Ainda pode gastar no mês')}</span><Din v={livre} /></li>
-            <li><span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
+            <li><span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compara (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
             {!dono && <li><span>Reserva: o dinheiro que a família combinou nunca gastar</span><Din v={-colchao} menos /></li>}
             <li className="tot"><span>{depois - colchao >= 0 ? 'Sobra depois da compra' : 'Depois da compra, passa'}</span><Din v={Math.abs(centavos(depois - colchao))} /></li>
           </ul>
@@ -193,7 +194,7 @@ function DiasDoCartao({ c, fechar, salvar }: { c: Cartao; fechar: () => void; sa
         if (!(f >= 1 && f <= 31) || !(v >= 1 && v <= 31)) { setErro('Os 2 dias vão de 1 a 31.'); return }
         try { await salvar(f, v) } catch (x) { setErro((x as Error).message) }
       }}>
-        <label className="campo"><span>Dia que a fatura fecha</span><CampoPrivado className="inp" inputMode="numeric" value={fe} onChange={e => setFe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Compra feita nesse dia ou depois vai pra fatura seguinte.</small></label>
+        <label className="campo"><span>Dia que a fatura fecha</span><CampoPrivado className="inp" inputMode="numeric" value={fe} onChange={e => setFe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Compra feita nesse dia ou depois vai para fatura seguinte.</small></label>
         <label className="campo"><span>Dia que a fatura vence</span><CampoPrivado className="inp" inputMode="numeric" value={ve} onChange={e => setVe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Cada parcela sai do seu limite no dia 1 do mês em que a fatura vence.</small></label>
         {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
         <button className="btn primary full" type="submit">Salvar os dias</button>

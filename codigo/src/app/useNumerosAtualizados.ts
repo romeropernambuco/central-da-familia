@@ -48,7 +48,7 @@ export function marcarConferencia(api: Api, fid: string, grupo: GrupoNumero, id:
       const novo = grupo === 'saldo_caixa' ? { ...remoto, saldo_caixa: data } : { ...remoto, [grupo]: { ...remoto[grupo], [id]: data } }
       if (api.modo !== 'exemplo') await api.salvarConfig(fid, CHAVE_NUMEROS, novo)
       l.dados = novo; l.erro = ''; emitir(l); return true
-    } catch { l.erro = 'O item foi mantido. Não deu para registrar a conferência; tente novamente.'; emitir(l); return false }
+    } catch { l.erro = 'O item foi mantido. Não foi possível registrar a conferência; tente novamente.'; emitir(l); return false }
   })
   l.fila = vez
   return vez

@@ -31,6 +31,8 @@ const MEMBROS_SILVA: MembroTeste[] = [
 const MEMBROS_SOUZA: MembroTeste[] = [
   { id: 'm-claudia', nome: 'Cláudia', papel: 'casal', envelope: 'env-claudia', email: 'claudia@exemplo.com' },
 ]
+const nomesIniciais = [...MEMBROS_SILVA, ...MEMBROS_SOUZA].map(m => [m, m.nome] as const)
+export function restaurarNomesTeste() { for (const [m, nome] of nomesIniciais) m.nome = nome }
 /** Quem é da família de exemplo aberta. */
 export const membrosTeste = () => (qual === 'souza' ? MEMBROS_SOUZA : MEMBROS_SILVA)
 /** Compatível com o código antigo. */
