@@ -400,7 +400,10 @@ export const apiReal: Api = {
   // R1: o banco calcula o limite novo pelo IPCA votado; a tela não manda valor
   async reajusteAplicar(familia, envelope, mes) { await rpc('reajuste_aplicar', { familia, envelope, mes_vigencia: `${mes}-01` }) },
 
-  async futuroEntradas(familia) { return entradaDoBanco(await rpc<FuturoBanco>('futuro_entradas', { familia })) },
+  async futuroEntradas(familia) {
+    const [j, fontes_receita, receitas_controle] = await Promise.all([rpc<FuturoBanco>('futuro_entradas', { familia }), this.config(familia, 'fontes_receita', {}), this.config(familia, 'receitas_controle', {})])
+    return entradaDoBanco({ ...j, config: { ...j.config, fontes_receita, receitas_controle } })
+  },
   // ---------- E8: desejos (produto.desejos, f_06). A tranca do banco: o casal lê todos, a pessoa só os dela; só o dono muda ----------
   async desejos(familia) {
     const { data, error } = await sb().from('desejos').select('*').eq('familia_id', familia).is('apagado_em', null).order('mes').order('criado_em')

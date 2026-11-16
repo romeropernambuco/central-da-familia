@@ -224,6 +224,22 @@ export interface RecebimentoTela {
 }
 export interface NovoRecebimento { descricao: string; valor: number; mes_previsto: string; tipo: TipoRecebimento; certo: boolean }
 
+/** Contrato compartilhado: controles da série ficam em outra chave. */
+export interface FonteReceita {
+  origem: 'empresa' | 'negocio_novo' | 'aluguel' | 'salario' | 'outro'
+  rotulo?: string
+  certeza: 'garantido' | 'provavel' | 'incerto'
+  recorrencia: 'unica' | 'mensal' | 'anual'
+  fim?: string
+}
+export type FontesReceita = Record<string, FonteReceita>
+export type CenarioReceitas = 'garantido' | 'previstos' | 'tudo'
+/** Chave receitas_controle. Valores em centavos; mês é a identidade da ocorrência. */
+export type ControleReceitas = Record<string, {
+  valor?: number; atualizado_em?: string
+  recebidas?: Record<string, { valor: number; data: string }>
+}>
+
 /* ---------- E6: parâmetros do objetivo 2029 (produto.objetivo, f_07), histórico e Focus (f_10) ---------- */
 /** As chaves exatas do banco (ECONOMISTA item 4). Dinheiro em centavos inteiros; taxa em texto decimal ("0.1000" = 10%). */
 export interface ParametrosObjetivo {
@@ -293,7 +309,7 @@ export interface NovoImovel {
 export interface ImovelTela extends NovoImovel { id: string; dono_membro: string; dono_nome: string | null; /** quem olha é o dono (só ele muda) */ meu: boolean }
 
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
-export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto'
+export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto' | 'fontes_receita' | 'receitas_controle'
 
 export interface Api {
   modo: 'real' | 'exemplo'

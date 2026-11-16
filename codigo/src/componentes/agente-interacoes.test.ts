@@ -114,13 +114,21 @@ it.each(['feito', 'adiar_para'])('pergunta pendente da Secretária responde %s p
   } finally { await a.fechar() }
 })
 
-it('Tesoureiro confirma recebimento usando a função existente e valor em reais', async () => {
+it('Tesoureiro confere data e valor antes de confirmar recebimento em reais', async () => {
   const recebimentoMudar = vi.fn(async () => {})
   const a = await montar(createElement(AgenteDaAba, { rota: 'planejamento' }), {
     recebimentoMudar,
     recebimentos: async () => [{ id: 'r', descricao: 'Contrato', valor: 123.45, mes_previsto: '2026-11', tipo: 'contrato', certo: true, meu: true, dono_membro: 'm', dono_nome: null, recebido_em: null, valor_recebido: null, mes_novo: null }],
   })
-  try { await a.abrirTarefas(); await a.clicar('Chegou'); expect(recebimentoMudar).toHaveBeenCalledWith(a.familia.id, 'r', { recebido_em: hojeRecife(), valor_recebido: 123.45 }) }
+  try {
+    await a.abrirTarefas(); await a.clicar('Chegou')
+    expect(recebimentoMudar).not.toHaveBeenCalled()
+    await a.preencher('Data em que chegou', hojeRecife())
+    const form = a.container.buscar(n => n.tagName === 'FORM')[0]
+    const props = Object.entries(form).find(([k]) => k.startsWith('__reactProps'))![1] as any
+    await act(async () => props.onSubmit({ preventDefault() {} }))
+    expect(recebimentoMudar).toHaveBeenCalledWith(a.familia.id, 'r', { recebido_em: hojeRecife(), valor_recebido: 123.45 })
+  }
   finally { await a.fechar() }
 })
 

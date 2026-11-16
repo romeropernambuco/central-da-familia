@@ -38,6 +38,7 @@ function criarDados() {
     casa_prestadores: [], casa_gas: { trocas: [somaDias(hoje, -50), somaDias(hoje, -12)] }, casa_folha: { pessoas: [], daePaga: {} },
     casa_lista: [{ id: 'i1', nome: 'Leite', ok: false }, { id: 'i2', nome: 'Pão', ok: true }], casa_presenca: {}, rendas: t.rendas, metas: [], entradas: t.entradas,
   } : {
+    fontes_receita: { rc1: { origem: 'empresa', rotulo: 'Consultoria (exemplo)', certeza: 'garantido', recorrencia: 'unica' }, rc2: { origem: 'negocio_novo', rotulo: 'Projeto novo (exemplo)', certeza: 'incerto', recorrencia: 'unica' } },
     entradas: t.entradas,
     casa_prestadores: [
       { id: 'p1', nome: 'Seu Zé', servico: 'Jardineiro', dia: 6, valor: 150, ultimaVez: somaDias(hoje, -12) },
@@ -708,7 +709,7 @@ export const apiExemplo: Api = {
       saldo_caixa: 0,
       recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em, descricao: r.descricao })),
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
-      config: { casa_folha: db.config.casa_folha as any },
+      config: { casa_folha: db.config.casa_folha as any, fontes_receita: db.config.fontes_receita, receitas_controle: db.config.receitas_controle },
       parcelas_futuras: vivos().filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l)).map(l => { const m1 = faturaDoLanc(l)!; return { parcelas_lista: parcelasDe(l.valor, l.parcelas!).map((v, i) => ({ mes_fatura: mesMais(m1, i), valor_centavos: Math.round(v * 100) })) } })
         .filter(l => l.parcelas_lista[l.parcelas_lista.length - 1].mes_fatura >= m0),
       // E8: igual ao f_08: os desejos vivos, menos os de quem desistiu
