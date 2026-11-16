@@ -35,6 +35,17 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   await act(async () => { await new Promise(r => setTimeout(r, 400)) })
   const botao = (texto: string) => container.buscar(n => n.tagName === 'BUTTON' && (n.textContent === texto || n.getAttribute('aria-label') === texto))[0]
   const clicar = async (texto: string) => { expect(botao(texto), texto).toBeDefined(); await act(async () => botao(texto).click()) }
+  const abrirTarefas = async () => {
+    const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null)
+    expect(botoes, 'Uma divulgacao por agente').toHaveLength(1)
+    const botao = botoes[0]
+    expect(botao.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => botao.click())
+    expect(botao.getAttribute('aria-expanded')).toBe('true')
+    const painel = container.buscar(n => n.getAttribute('id') === botao.getAttribute('aria-controls'))[0]
+    expect(painel).toBeDefined()
+    expect(painel.getAttribute('hidden')).toBeNull()
+  }
   const preencher = async (rotulo: string, valor: string) => {
     const input = container.buscar(n => n.tagName === 'INPUT' && !!(n.getAttribute('aria-label') === rotulo || n.parentNode?.textContent.startsWith(rotulo) || n.parentNode?.parentNode?.textContent.startsWith(rotulo)))[0]
     expect(input, rotulo).toBeDefined()
@@ -46,7 +57,7 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
     expect(link, texto).toBeDefined()
     await act(async () => link.click())
   }
-  return { api, ctx, familia, container, clicar, preencher, navegar, fechar: async () => { await act(async () => root.unmount()) } }
+  return { api, ctx, familia, container, clicar, abrirTarefas, preencher, navegar, fechar: async () => { await act(async () => root.unmount()) } }
 }
 
 it('equipe só monta agente em Casa e a feira não pede nem envia dinheiro', async () => {
@@ -57,7 +68,7 @@ it('equipe só monta agente em Casa e a feira não pede nem envia dinheiro', asy
     try {
       expect(a.container.buscar(n => !!n.getAttribute('data-agente')).length).toBe(rota === 'casa' ? 1 : 0)
       if (rota !== 'casa') continue
-      await a.clicar('Conversar e abrir tarefas'); await a.clicar('Nova feira')
+      await a.abrirTarefas(); await a.clicar('Nova feira')
       expect(a.container.textContent).not.toContain('Quanto deu')
       expect(a.container.textContent).not.toContain('R$')
       await a.clicar('Salvar')
@@ -73,7 +84,7 @@ it('Cartões informa valor do banco em reais e data de pagamento', async () => {
     faturas: async () => [{ cartao_id: 'cartao', cartao: 'Banco', mes: '2026-11', vencimento: '2026-11-20', total: 10, fechada: true }],
   })
   try {
-    await a.clicar('Conversar e abrir tarefas'); await a.clicar('Editar')
+    await a.abrirTarefas(); await a.clicar('Editar')
     await a.preencher('Valor que veio no banco', '123,45')
     await a.preencher('Paga em (deixe vazio se ainda não pagou)', '2026-11-15')
     await a.clicar('Salvar')
@@ -103,7 +114,7 @@ it('Tesoureiro confirma recebimento usando a função existente e valor em reais
     recebimentoMudar,
     recebimentos: async () => [{ id: 'r', descricao: 'Contrato', valor: 123.45, mes_previsto: '2026-11', tipo: 'contrato', certo: true, meu: true, dono_membro: 'm', dono_nome: null, recebido_em: null, valor_recebido: null, mes_novo: null }],
   })
-  try { await a.clicar('Conversar e abrir tarefas'); await a.clicar('Chegou'); expect(recebimentoMudar).toHaveBeenCalledWith(a.familia.id, 'r', { recebido_em: hojeRecife(), valor_recebido: 123.45 }) }
+  try { await a.abrirTarefas(); await a.clicar('Chegou'); expect(recebimentoMudar).toHaveBeenCalledWith(a.familia.id, 'r', { recebido_em: hojeRecife(), valor_recebido: 123.45 }) }
   finally { await a.fechar() }
 })
 
@@ -111,7 +122,7 @@ it('Secretária cria lembrete com o horário de Recife convertido para ISO', asy
   const lembreteCriar = vi.fn(async () => {})
   const a = await montar(createElement(AgenteDaAba, { rota: 'escritorio' }), { lembreteCriar, lembretes: async () => [] })
   try {
-    await a.clicar('Conversar e abrir tarefas'); await a.clicar('Novo lembrete'); await a.preencher('O quê', 'Ligar'); await a.preencher('Quando', '2026-11-20T09:00'); await a.clicar('Salvar')
+    await a.abrirTarefas(); await a.clicar('Novo lembrete'); await a.preencher('O quê', 'Ligar'); await a.preencher('Quando', '2026-11-20T09:00'); await a.clicar('Salvar')
     expect(lembreteCriar).toHaveBeenCalledWith(a.familia.id, { titulo: 'Ligar', quando: '2026-11-20T12:00:00.000Z', repetir: 'nunca', para: 'eu' })
   } finally { await a.fechar() }
 })
@@ -124,7 +135,7 @@ it('Fiscal registra feira, anexa a nota de exemplo e salva a contagem', async ()
     estoque: async () => ({ itens: [{ id: 'arroz', nome: 'Arroz', categoria: 'Despensa', ativo: true }], contagens: [] }),
   })
   try {
-    await a.clicar('Conversar e abrir tarefas'); await a.clicar('Nova feira'); await a.preencher('Quanto deu', '123,45'); await a.clicar('Salvar')
+    await a.abrirTarefas(); await a.clicar('Nova feira'); await a.preencher('Quanto deu', '123,45'); await a.clicar('Salvar')
     expect(feiraRegistrar).toHaveBeenCalledWith(a.familia.id, { data: hojeRecife(), valor: 123.45, loja: '' })
     await a.clicar('Anexar a nota'); expect(feiraAnexarNota).toHaveBeenCalledWith(a.familia.id, 'f', 'exemplo')
     await a.clicar('Contar agora'); await a.clicar('Pouco'); await a.clicar('Salvar a contagem')
@@ -136,7 +147,7 @@ it('Gestor abre aplicação e aporte na mesma aba, enviando reais', async () => 
   const guardadoCriar = vi.fn(async () => {}), guardadoMovimentar = vi.fn(async () => {})
   const a = await montar(createElement(Fragment, null, createElement(AgenteDaAba, { rota: 'guardado' }), createElement(Guardado)), { guardadoCriar, guardadoMovimentar })
   try {
-    await a.clicar('Conversar e abrir tarefas'); await a.navegar('Nova aplicação')
+    await a.abrirTarefas(); await a.navegar('Nova aplicação')
     await a.preencher('Onde o dinheiro está', 'Inter'); await a.preencher('Quanto tem lá hoje', '123,45'); await a.clicar('Guardar')
     expect(guardadoCriar).toHaveBeenCalledWith(a.familia.id, expect.objectContaining({ banco: 'Inter', tipo: 'caixinha', valor_inicial: 123.45, pct_cdi: 100, data: hojeRecife() }))
     await a.navegar('Guardar dinheiro'); await a.preencher('Quanto', '12,34'); await a.clicar('Anotar o que guardei')

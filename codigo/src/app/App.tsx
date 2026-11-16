@@ -141,7 +141,7 @@ export function App() {
         ) : (
           <>
             {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
-            <button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Lançar gasto"><Plus size={28} strokeWidth={2.25} /></button>
+            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Lançar gasto"><Plus size={28} strokeWidth={2.25} aria-hidden="true" /></button><span>Lançar</span></div>
             {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
           </>
         )}

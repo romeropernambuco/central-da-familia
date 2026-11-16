@@ -172,7 +172,7 @@ export function Lancar() {
         {oculto && valor > 0 && <small className="sub">Valores escondidos. Toque no olho, lá em cima, pra ver o que digitou.</small>}
       </div>
       {/* B10: o "O que foi?" fica à vista, logo abaixo do valor */}
-      {modo === 'gasto' && <CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" />}
+      {modo === 'gasto' && <label className="campo"><span>O que foi?</span><CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" /></label>}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
           <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
@@ -234,7 +234,7 @@ export function Lancar() {
               const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
               return (
                 <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}>
-                  <b>{textoPrivado(e.nome)}</b>
+                  <b>Salvar em {textoPrivado(e.nome)}</b>
                   <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
                 </button>
               )
