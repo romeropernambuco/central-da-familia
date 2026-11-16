@@ -1,9 +1,9 @@
 // F4 Linha mês a mês (do mês seguinte ao de hoje até o mês antes da virada) + recebimento atrasado.
 // ECONOMISTA item 3, F4: rendimento sobre o saldo do 1º dia; entradas e saídas no último dia.
-import { anoDe, compararMes, diasDoMes, listaMeses, proximoMes } from './decimal'
-import { rendimentoMes } from './f1_rendimento'
+import { anoDe, centavos, compararMes, diasDoMes, listaMeses, proximoMes } from './decimal'
+import { rendimentoAplicacao, rendimentoMes } from './f1_rendimento'
 import { ficaDevendo } from './f9_falta'
-import type { Centavos, LinhaMes, Mes, Recebimento, Taxa } from './tipos'
+import type { Aplicacao, Centavos, LinhaMes, Mes, Recebimento, Taxa } from './tipos'
 
 export type PorMes = Map<Mes, Centavos>
 
@@ -21,6 +21,62 @@ export interface LinhaEntrada {
   desvios?: PorMes
   retornos?: PorMes
   alugueis?: PorMes
+  aplicacoes?: Aplicacao[] /* saldo_inicial já inclui estes saldos; não somar novamente */
+  virada?: Mes
+  taxa_individual_sem_vencimento?: boolean /* padrão false, repassado dos parâmetros do motor */
+}
+
+/** Carteira em memória. Sem vencimento mantém a projeção histórica agregada por padrão.
+ *  Fluxos positivos vão à referência; saídas usam referência, caixa parado e aplicações por id.
+ *  Resgate é transferência interna de saldo já líquido, nunca recebimento nem novo desconto de IR. */
+function carteira(e: LinhaEntrada) {
+  const lotes = (e.aplicacoes ?? []).filter(a => a.resgate_previsto !== null || (e.taxa_individual_sem_vencimento === true && a.taxa_bruta_anual !== undefined)).map(a => ({ ...a }))
+    .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  let referencia = e.saldo_inicial - lotes.reduce((s, a) => s + centavos(a.saldo).toNumber(), 0)
+  let parado = 0
+  const transferir = (a: Aplicacao) => {
+    if (a.destino_no_vencimento === 'referencia_familia') referencia += a.saldo
+    else parado += a.saldo
+    a.saldo = 0
+  }
+  return {
+    render(m: Mes, tb: Taxa): Centavos {
+      // Vencidas antes da janela já são caixa na abertura, sem recriar juros passados.
+      for (const a of lotes) if (a.resgate_previsto !== null && a.resgate_previsto.slice(0, 7) < m) transferir(a)
+      let r = rendimentoMes(referencia, tb, e.aliq_proj, diasDoMes(m))
+      referencia += r
+      for (const a of lotes) {
+        const vencimento = a.resgate_previsto?.slice(0, 7)
+        if (vencimento !== undefined && vencimento < m) continue
+        const juros = rendimentoAplicacao(a, m, e.virada ?? proximoMes(e.ate), tb, e.aliq_proj)
+        a.saldo += juros
+        r += juros
+        if (vencimento === m) {
+          // Destino de referência rende só nos dias posteriores ao vencimento.
+          if (a.destino_no_vencimento === 'referencia_familia') {
+            const depois = rendimentoMes(a.saldo, tb, e.aliq_proj, diasDoMes(m) - Number(a.resgate_previsto!.slice(8, 10)))
+            a.saldo += depois
+            r += depois
+          }
+          transferir(a)
+        }
+      }
+      return r
+    },
+    movimentar(fluxo: Centavos) {
+      if (fluxo >= 0) { referencia += fluxo; return }
+      let falta = -fluxo
+      const daReferencia = Math.min(Math.max(0, referencia), falta)
+      referencia -= daReferencia; falta -= daReferencia
+      const doParado = Math.min(Math.max(0, parado), falta)
+      parado -= doParado; falta -= doParado
+      for (const a of lotes) {
+        const saque = Math.min(Math.max(0, a.saldo), falta)
+        a.saldo -= saque; falta -= saque
+      }
+      referencia -= falta // falta de dinheiro continua negativa; nunca rende
+    },
+  }
 }
 
 /** Soma valores por mês. */
@@ -38,10 +94,12 @@ export function projetarLinha(e: LinhaEntrada): LinhaMes[] {
   const v = (p: PorMes | undefined, m: Mes) => p?.get(m) ?? 0
   const linha: LinhaMes[] = []
   let saldo = e.saldo_inicial
+  centavos(saldo)
+  const ativos = carteira(e)
   for (const m of listaMeses(e.de, e.ate)) {
     const tb = e.taxa_bruta_ano[anoDe(m)]
     if (tb === undefined) throw new Error(`Falta a taxa bruta de ${anoDe(m)}`)
-    const rendimento = rendimentoMes(saldo, tb, e.aliq_proj, diasDoMes(m))
+    const rendimento = ativos.render(m, tb)
     const l: LinhaMes = {
       mes: m, saldo_inicial: saldo, rendimento,
       recebimentos: v(e.recebimentos, m), teto: e.teto(m), compromissos: v(e.compromissos, m),
@@ -49,6 +107,7 @@ export function projetarLinha(e: LinhaEntrada): LinhaMes[] {
       saldo_final: 0, piso: e.piso(m), fica_devendo: 0, devendo_ate: null,
     }
     l.saldo_final = saldo + rendimento + l.recebimentos - l.teto - l.compromissos - l.dividas - l.desvios + l.retornos + (l.alugueis ?? 0)
+    ativos.movimentar(l.saldo_final - saldo - rendimento)
     if (!Number.isSafeInteger(l.saldo_final)) throw new Error('Saldo fora do limite')
     linha.push(l)
     saldo = l.saldo_final

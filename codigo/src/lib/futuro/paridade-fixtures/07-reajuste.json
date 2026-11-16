@@ -1,0 +1,20 @@
+{
+  "start": "2026-12",
+  "initial": 100000,
+  "rate_basis": "annual_actual365",
+  "monthly_rate": 0,
+  "annual_rate": 0,
+  "ir": 0,
+  "income": 0,
+  "expense": 10000,
+  "events": [],
+  "id": "07-reajuste",
+  "title": "Dezembro a janeiro: teto 100 reajusta 10% em janeiro",
+  "months": 2,
+  "inflation": 0.1,
+  "month_list": [
+    "2026-12",
+    "2027-01"
+  ],
+  "expected_final_centavos": 79000
+}

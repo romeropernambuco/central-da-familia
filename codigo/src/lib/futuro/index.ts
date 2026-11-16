@@ -87,7 +87,7 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   const patrimonio = patrimonioHoje(e)
   const renda = rendaSustentavel(patrimonio, real)
   const al = aliqAluguel(e)
-  const im = analisarImoveis(e.imoveis ?? [], { meses: [], mes_ref: mes, aliq_aluguel: al.aliq, taxa_real_aplicacoes: real })
+  const im = analisarImoveis(e.imoveis ?? [], { meses: [], mes_ref: mes, mes_hoje: mes, aliq_aluguel: al.aliq, taxa_real_aplicacoes: real })
   const aluguel = im.aluguel_no_mes_ref // entra no mês, até contrato_ate
   // Conta perpétua: só o aluguel com contrato de pelo menos 12 meses à frente abate (revisão E14, M1).
   const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_perpetuo
@@ -132,7 +132,7 @@ function mesesDevendo(linha: LinhaMes[]): Set<Mes> {
 }
 
 /** Premissas da junção (escritas no MOTOR_E1b.md):
- *  - saldo do 1º mês da linha = saldo_caixa + soma das aplicações (todo o dinheiro rende pela taxa do ano, F4);
+ *  - saldo do 1º mês = caixa + aplicações; produtos com vencimento são projetados separadamente (MOTOR.md);
  *  - a linha vai do mês seguinte ao de hoje até o mês antes da virada;
  *  - compromissos, dívidas e desvios de meses anteriores à linha já estão no saldo e não entram;
  *  - desejo com mês já passado entra no 1º mês da linha (ainda é plano, não some);
@@ -168,13 +168,14 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
 
   // Imóveis: aluguel com contrato mês a mês e venda com contrato como recebimento; o resto vira gatilho.
   const al = aliqAluguel(e)
-  const im = analisarImoveis(e.imoveis ?? [], { meses: listaMeses(de, ultimo), mes_ref: p.virada, aliq_aluguel: al.aliq, taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real })
+  const im = analisarImoveis(e.imoveis ?? [], { meses: listaMeses(de, ultimo), mes_ref: p.virada, mes_hoje, aliq_aluguel: al.aliq, taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real })
   recs.push(...im.vendas)
   for (const v of im.vendas) marcos.push({ mes: v.mes, id: v.id, tipo: 'venda', descricao: v.apelido, dono: v.dono, valor: v.valor })
 
   const saldo_inicial = e.aplicacoes.reduce((s, a) => s + a.saldo, e.saldo_caixa)
   const linha = projetarLinha({
-    saldo_inicial, de, ate: ultimo,
+    saldo_inicial, de, ate: ultimo, aplicacoes: e.aplicacoes, virada: p.virada,
+    taxa_individual_sem_vencimento: p.taxa_individual_sem_vencimento ?? false,
     taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj,
     teto, piso: (m) => pisoDoMes(p.piso_meses, teto(m)),
     recebimentos: somarPorMes(recs),

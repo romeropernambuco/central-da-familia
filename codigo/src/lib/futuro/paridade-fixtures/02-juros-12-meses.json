@@ -1,0 +1,29 @@
+{
+  "start": "2026-10",
+  "initial": 100000,
+  "rate_basis": "monthly",
+  "monthly_rate": 0.01,
+  "annual_rate": 0,
+  "ir": 0,
+  "income": 0,
+  "expense": 0,
+  "events": [],
+  "id": "02-juros-12-meses",
+  "title": "R$ 1.000 a 1% mensal por 12 meses",
+  "months": 12,
+  "month_list": [
+    "2026-10",
+    "2026-11",
+    "2026-12",
+    "2027-01",
+    "2027-02",
+    "2027-03",
+    "2027-04",
+    "2027-05",
+    "2027-06",
+    "2027-07",
+    "2027-08",
+    "2027-09"
+  ],
+  "expected_final_centavos": 112684
+}

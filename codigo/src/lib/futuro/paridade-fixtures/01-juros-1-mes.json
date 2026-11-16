@@ -1,0 +1,18 @@
+{
+  "start": "2026-10",
+  "initial": 100000,
+  "rate_basis": "monthly",
+  "monthly_rate": 0.01,
+  "annual_rate": 0,
+  "ir": 0,
+  "income": 0,
+  "expense": 0,
+  "events": [],
+  "id": "01-juros-1-mes",
+  "title": "R$ 1.000 a 1% mensal por 1 mês",
+  "months": 1,
+  "month_list": [
+    "2026-10"
+  ],
+  "expected_final_centavos": 101000
+}

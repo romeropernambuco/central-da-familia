@@ -7,10 +7,10 @@ export type Taxa = string /* '0.1375' */
 
 // Mudança do REVISOR (C5, 13/11): conta_conjunta_titulares (número) virou titulares (lista de membros da conta),
 // pra cada titular da conjunta receber a parte dele no FGC. titular continua sendo o dono que a tela mostra.
-export interface Aplicacao { id: string; titular: string | null; titulares: string[]; banco: string; saldo: Centavos; taxa_bruta_anual: Taxa; isenta: boolean; aplicada_em: string; resgate_previsto: string | null; fgc: boolean }
+export interface Aplicacao { id: string; titular: string | null; titulares: string[]; banco: string; saldo: Centavos; taxa_bruta_anual?: Taxa; isenta: boolean; aplicada_em: string; resgate_previsto: string | null; fgc: boolean; destino_no_vencimento?: 'caixa' | 'referencia_familia' /* padrão conservador: caixa sem rendimento */ }
 export interface Recebimento { id: string; dono: string; valor: Centavos; mes_previsto: Mes; mes_novo: Mes | null; certo: boolean; recebido: boolean; descricao?: string | null /* nome do recebimento (futuro_entradas.recebimentos.descricao, f_05/f_08); opcional */ }
 export interface Desejo { id: string; dono: string; valor: Centavos; mes: Mes; volta_de: 'nada' | 'contrato' | 'investimento' | 'venda'; volta: Centavos; volta_mes: Mes | null; antecipado: Centavos | null; volta_certa: boolean; situacao?: 'pensando' | 'combinado' | 'feito' | 'desisti' /* REVISOR E12 C2: feito já saiu do saldo e desisti não sai; o motor ignora os 2. Sem o campo = pendente */ }
-export interface Parametros { mes_base: Mes; virada: Mes /* '2029-01' */; gasto_2029_hoje: Centavos; renda_certa_2029: Centavos; margem: Taxa; taxa_real_trabalho: Taxa; taxa_bruta_ano: Record<number, Taxa>; ipca_ano: Record<number, Taxa>; aliq_proj: Taxa; aliq_renda?: Taxa /* IR do modo renda (2029 em diante, aplicação longa); sem ele vale aliq_proj */; aliq_aluguel?: Taxa /* IR do aluguel (RODADA_PATRIMONIO); sem ele, 27,5% [confirmar] */; piso_meses: number; teto_mes: Centavos; mes_reajuste: number }
+export interface Parametros { mes_base: Mes; virada: Mes /* '2029-01' */; gasto_2029_hoje: Centavos; renda_certa_2029: Centavos; margem: Taxa; taxa_real_trabalho: Taxa; taxa_bruta_ano: Record<number, Taxa>; ipca_ano: Record<number, Taxa>; aliq_proj: Taxa; aliq_renda?: Taxa /* IR do modo renda (2029 em diante, aplicação longa); sem ele vale aliq_proj */; aliq_aluguel?: Taxa /* IR do aluguel (RODADA_PATRIMONIO); sem ele, 27,5% [confirmar] */; piso_meses: number; teto_mes: Centavos; mes_reajuste: number; taxa_individual_sem_vencimento?: boolean /* padrão false: preserva taxa/IR globais; true usa taxa/IR próprios quando há taxa individual */ }
 export interface FuturoEntrada { hoje: string; saldo_caixa: Centavos; aplicacoes: Aplicacao[]; recebimentos: Recebimento[]; compromissos: { mes: Mes; valor: Centavos; tipo: 'conta_grande' | 'folha_13' | 'parcela' }[]; dividas: { mes: Mes; valor: Centavos }[]; desvios: { mes: Mes; valor: Centavos; origem: string }[]; desejos: Desejo[]; parametros: Parametros; imoveis?: Imovel[] /* RODADA_PATRIMONIO; sem o campo = nenhum */ }
 // piso: acrescentado a pedido do REVISOR 2 (B3): a tela desenha o piso que o motor usou, sem refazer a conta.
 export interface LinhaMes { mes: Mes; saldo_inicial: Centavos; rendimento: Centavos; recebimentos: Centavos; teto: Centavos; compromissos: Centavos; dividas: Centavos; desvios: Centavos; retornos: Centavos; alugueis?: Centavos /* aluguel líquido com contrato (RODADA_PATRIMONIO); futuro() sempre preenche */; marcos?: Marco[] /* o que entra no mês, item por item (recebimentos e vendas com contrato); futuro() sempre preenche */; saldo_final: Centavos; piso: Centavos; fica_devendo: Centavos; devendo_ate: Mes | null }
@@ -63,6 +63,9 @@ export interface ImovelSaida {
   entra_na_conta: boolean /* aluguel abate o gasto perpétuo: contrato até 12 meses depois da referência (12/2029 na virada) ou mais */
   contrato_ate: Mes | null
   vendido: boolean /* venda com contrato até o mês de referência: saiu do patrimônio */
+  rendimento_liquido_anual_percentual?: Taxa /* rentabilidade_ano × 100; percentual, não fração */
+  meses_ate_fim_contrato?: number | null /* desde hoje (mes_ref em chamadas diretas sem mes_hoje); 0 no mês final ou vencido, null sem contrato datado */
+  impacto_renda_2029_sem_renovacao?: Centavos /* perda anual potencial em 2029 versus renovar, nunca somada à renda confirmada */
 }
 export interface Gatilho {
   origem: 'imovel' | 'recebimento'; id: string; nome: string

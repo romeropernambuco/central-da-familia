@@ -1,0 +1,33 @@
+{
+  "start": "2026-10",
+  "initial": 100000,
+  "rate_basis": "monthly",
+  "monthly_rate": 0,
+  "annual_rate": 0,
+  "ir": 0,
+  "income": 0,
+  "expense": 0,
+  "events": [
+    {
+      "id": "parcela",
+      "month": "2026-11",
+      "kind": "parcel",
+      "value": 20000
+    },
+    {
+      "id": "folha",
+      "month": "2026-12",
+      "kind": "13",
+      "value": 10000
+    }
+  ],
+  "id": "05-parcela-13",
+  "title": "Parcela única 200 e 13º pago 100 em dezembro",
+  "months": 3,
+  "month_list": [
+    "2026-10",
+    "2026-11",
+    "2026-12"
+  ],
+  "expected_final_centavos": 70000
+}

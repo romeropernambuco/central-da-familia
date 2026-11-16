@@ -1,0 +1,29 @@
+{
+  "start": "2026-10",
+  "initial": 100000,
+  "rate_basis": "monthly",
+  "monthly_rate": 0,
+  "annual_rate": 0,
+  "ir": 0,
+  "income": 30000,
+  "expense": 20000,
+  "events": [],
+  "id": "03-renda-gasto",
+  "title": "Renda 300, gasto 200, sem juros",
+  "months": 12,
+  "month_list": [
+    "2026-10",
+    "2026-11",
+    "2026-12",
+    "2027-01",
+    "2027-02",
+    "2027-03",
+    "2027-04",
+    "2027-05",
+    "2027-06",
+    "2027-07",
+    "2027-08",
+    "2027-09"
+  ],
+  "expected_final_centavos": 220000
+}
