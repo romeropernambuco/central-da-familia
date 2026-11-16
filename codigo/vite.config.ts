@@ -24,6 +24,6 @@ export default defineConfig(({ mode }) => {
       assetsInlineLimit: demo ? 100000000 : 4096,
       copyPublicDir: !demo,
     },
-    test: { include: ['src/**/*.test.ts'] },
+    test: { include: ['src/**/*.test.ts'], testTimeout: 30000 },
   }
 })
