@@ -18,7 +18,7 @@ export interface SnapshotInsights {
   recebimentos?: readonly { id: string; nome: string; mesPrevisto: string; mesNovo: string | null; recebido: boolean; meu: boolean; valor?: number }[]
   aplicacoes?: readonly { id: string; nome: string; vencimento: string | null; ativa: boolean }[]
   feiras?: readonly { id: string; semana: string; data: string; temNota: boolean; justificativa: string | null }[]
-  objetivo?: { mes: string; projetado: number | null; necessario: number | null }
+  objetivo?: { mes: string; projetado: number | null; necessario: number | null; resumo?: string }
 }
 export type TipoInsight = 'fatura_vencendo' | 'fatura_divergente' | 'parcelas' | 'reserva' | 'recebimento' | 'aplicacao' | 'feira_nota' | 'objetivo'
 export type AcaoInsight =

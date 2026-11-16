@@ -5,7 +5,7 @@ import { textoDaTaxa } from '../api/futuro'
 import type { CenarioReceitas, ControleReceitas, FontesReceita } from '../api/tipos'
 import { Din } from './base'
 import { mesCurto, textoPrivado } from '../lib/formato'
-import { rendaSustentavel } from '../lib/futuro'
+import { numerosRumo2029 } from '../app/rumo2029'
 
 export function CenariosReceitas({ fontes, controle, revisao }: { fontes: FontesReceita; controle: ControleReceitas; revisao: number }) {
   const { api, familia, versao, oculto } = useApp()
@@ -21,9 +21,9 @@ export function CenariosReceitas({ fontes, controle, revisao }: { fontes: Fontes
     {erro && <p role="alert">{erro}</p>}
     {resultados && e && (Object.keys(CENARIOS_RECEITAS) as CenarioReceitas[]).map(c => {
       const r = resultados[c]
-      // O corte e a conversão da folga usam as funções do próprio motor, incluindo a margem.
-      const falta = r.ajustes_falta?.cortar_por_mes_2029
-      return <p key={c} aria-current={cenario === c ? 'true' : undefined}>{CENARIOS_RECEITAS[c]}: {r.patrimonio_necessario === null ? 'sem renda sustentável calculável com esta taxa' : r.folga < 0 ? <>faltam <Din v={(falta ?? 0) / 100} /> por mês, com a margem</> : <>sobram <Din v={rendaSustentavel(r.folga, r.renda?.taxa_real_anual ?? e.parametros.taxa_real_trabalho) / 100} /> por mês, com a margem</>}.</p>
+      const n = numerosRumo2029(r, e)
+      const saldo = (v: number) => <>{v > 0 ? 'faltam' : 'sobram'} <Din v={Math.abs(v) / 100} /> por mês</>
+      return <div key={c} aria-current={cenario === c ? 'true' : undefined}><p>{CENARIOS_RECEITAS[c]}: {n.cobre_pct === null || n.falta_com_margem === null ? 'Informe o gasto necessário ou confira a taxa do Objetivo.' : <>{saldo(n.falta_com_margem)}, com margem de segurança.</>}</p>{n.cobre_pct !== null && <p className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</p>}</div>
     })}
     {resultado && e && <div aria-label="Detalhes do cenário selecionado">
       <p>Renda sustentável das aplicações: <Din v={resultado.renda_sustentavel / 100} /> por mês. Aluguéis líquidos: <Din v={(resultado.aluguel_liquido_2029 ?? 0) / 100} /> por mês.</p>

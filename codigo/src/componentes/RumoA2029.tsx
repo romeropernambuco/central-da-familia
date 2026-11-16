@@ -2,8 +2,10 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { Target } from 'lucide-react'
 import { useApp } from '../app/contexto'
 import { useFuturo } from '../app/useDados2'
+import { CENARIOS_RECEITAS, entradaDoCenario, useCenarioReceitas } from '../app/useCenarioReceitas'
+import type { CenarioReceitas } from '../api/tipos'
 import { useConfig } from '../app/useConfig'
-import { calcularRumo, type RumoCalculado } from '../app/rumo2029'
+import { rumoDoCenario, type RumoCalculado } from '../app/rumo2029'
 import { acompanharConferencias, CHAVE_FONTES, useNumerosAtualizados } from '../app/useNumerosAtualizados'
 import { AtualizarNumeros, numerosParaConferir } from './AtualizarNumeros'
 import { textoPrivado } from './privacidade'
@@ -14,26 +16,31 @@ const mesNome = (m: string) => `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'ju
 const percentual = (n: number) => `${Math.floor(n).toLocaleString('pt-BR')}%`
 
 /** A barreira vem antes dos hooks de leitura: pessoa/equipe nem buscam config ou valores do casal. */
-export function RumoA2029({ compacto = false }: { compacto?: boolean }) {
+export function RumoA2029({ compacto = false, oficial = false }: { compacto?: boolean; oficial?: boolean }) {
   const { familia } = useApp()
-  return familia?.papel === 'casal' ? <RumoDaFamilia key={familia.id} compacto={compacto} /> : null
+  return familia?.papel === 'casal' ? <RumoDaFamilia key={familia.id} compacto={compacto} oficial={oficial || compacto} /> : null
 }
 
-function RumoDaFamilia({ compacto }: { compacto: boolean }) {
+function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: boolean }) {
   const { api, familia, oculto, recarregar } = useApp()
   const { ent, estado, atualizar } = useFuturo()
   const [fontes, , erroFontes, fontesLidas] = useConfig<unknown>(CHAVE_FONTES, {})
+  const cenarios = useCenarioReceitas(ent)
+  const cenario = oficial ? 'garantido' : cenarios.cenario
   const conferencia = useNumerosAtualizados()
   const [folha, setFolha] = useState(false)
   const entrada = ent?.entrada
   const calculo = useMemo(() => {
     if (!entrada || !fontesLidas) return null
     try {
-      const c = calcularRumo(entrada, fontes, !compacto)
+      const s = cenarios.resultados?.[cenario]
+      const e = ent && entradaDoCenario(ent, cenario)
+      if (!s || !e) return null
+      const c = rumoDoCenario(e, s, ent.fontesReceita ?? fontes, !compacto)
       if (ent.confirmar.length) c.premissas.push(`A confirmar: ${ent.confirmar.join('; ')}.`)
       return c
     } catch { return null }
-  }, [entrada, fontes, fontesLidas, compacto])
+  }, [entrada, fontes, fontesLidas, compacto, cenarios.resultados, cenario, ent])
   const itens = useMemo(() => entrada ? numerosParaConferir(entrada) : [], [entrada])
   useEffect(() => { if (entrada) acompanharConferencias(api, familia!.id, entrada.aplicacoes.map(a => a.id)) }, [api, familia?.id, entrada])
   useEffect(() => {
@@ -45,7 +52,7 @@ function RumoDaFamilia({ compacto }: { compacto: boolean }) {
   const falhou = estado === 'erro' || estado === 'desligado' || !!erroFontes || (estado === 'ok' && fontesLidas && !calculo)
   const mensagem = falhou ? ent?.motivo || 'Não foi possível calcular agora. Confira os dados do objetivo e tente novamente.' : 'Buscando os números de 2029…'
   return <>
-    <RumoHero compacto={compacto} calculo={erroFontes || estado === 'erro' ? null : calculo} exemplo={api.modo === 'exemplo'} velhos={velhos} semConferencia={semConferencia}
+    <RumoHero cenario={cenario} compacto={compacto} calculo={erroFontes || estado === 'erro' ? null : calculo} exemplo={api.modo === 'exemplo'} velhos={velhos} semConferencia={semConferencia}
       mensagem={mensagem} erro={falhou} atualizar={() => { atualizar(); void recarregarConfig() }} abrir={() => setFolha(true)} />
     {folha && <AtualizarNumeros itens={itens} conferencia={conferencia} fechar={() => { setFolha(false); atualizar() }} />}
     {!compacto && conferencia.erro && <p className="sub">{textoPrivado(conferencia.erro, oculto)}</p>}
@@ -53,21 +60,26 @@ function RumoDaFamilia({ compacto }: { compacto: boolean }) {
   async function recarregarConfig() { await recarregar() }
 }
 
-export function RumoHero({ calculo: c, compacto = false, exemplo = false, velhos = false, semConferencia = false, mensagem = 'Informe o gasto necessário e confira os saldos para começar.', erro = false, abrir, atualizar }: {
-  calculo: RumoCalculado | null; compacto?: boolean; exemplo?: boolean; velhos?: boolean; semConferencia?: boolean; mensagem?: string; erro?: boolean; abrir: () => void; atualizar?: () => void
+export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, exemplo = false, velhos = false, semConferencia = false, mensagem = 'Informe o gasto necessário e confira os saldos para começar.', erro = false, abrir, atualizar }: {
+  calculo: RumoCalculado | null; cenario?: CenarioReceitas; compacto?: boolean; exemplo?: boolean; velhos?: boolean; semConferencia?: boolean; mensagem?: string; erro?: boolean; abrir: () => void; atualizar?: () => void
 }) {
   const { oculto } = useApp()
   const id = useId(), privado = (s: string) => textoPrivado(s, oculto)
-  const resposta = !c || c.cobertura === null ? null : c.falta > 0 ? <>Em {mesNome(c.referencia)} faltam <Din v={c.falta / 100} /> por mês para cobrir o gasto necessário.</>
-    : <>Em {mesNome(c.referencia)} seus rendimentos cobrem <b>{privado(percentual(c.cobertura))}</b> do gasto necessário.</>
+  const n = c?.numeros
+  const saldo = (v: number) => <>{v > 0 ? 'faltam' : 'sobram'} <Din v={Math.abs(v) / 100} /> por mês</>
+  const resposta = !c || !n || n.cobre_pct === null || n.falta_com_margem === null ? null : <>Em {mesNome(c.referencia)} {saldo(n.falta_com_margem)}, com margem de segurança.</>
+  const semMargem = n && n.cobre_pct !== null ? <span className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</span> : null
   if (compacto) return <a className="card rumo-resumo" href="#/planejamento">
-    <b>Rumo a 2029</b>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>
+    <b>Rumo a 2029</b><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
+    {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
   </a>
   return <section className="card rumo-hero" aria-labelledby={id}>
     <div className="card-h"><h2 id={id}><Target size={24} aria-hidden="true" />Rumo a 2029</h2>{exemplo && <span className="chip">Modo exemplo</span>}</div>
+    <span className="chip">{CENARIOS_RECEITAS[cenario]}</span>{cenario !== 'garantido' && <p className="sub">Número oficial: Garantido</p>}
     <p className="rumo-pergunta">Já dá para viver só de rendimentos?</p>
     {exemplo && <p className="sub">Simulação de exemplo. Não decide alertas nem grava na família real.</p>}
     {resposta ? <p className="rumo-resposta">{resposta}</p> : <p role={erro ? 'alert' : 'status'}>{c ? 'Informe o gasto necessário no objetivo. Gasto zero não permite avaliar a cobertura.' : privado(mensagem)}</p>}
+    {semMargem}
     {!c && atualizar && <button className="btn line" type="button" onClick={atualizar}>Tentar novamente</button>}
     {c && <>
       <div className="rumo-barra" role="img" aria-label={oculto ? 'Cobertura escondida' : c.cobertura === null ? 'Gasto necessário não informado' : `Cobertura estimada de ${percentual(c.cobertura)}`}>
@@ -78,9 +90,10 @@ export function RumoHero({ calculo: c, compacto = false, exemplo = false, velhos
       <div className="rumo-fontes">
         <div><span>Aplicações e caixa projetado</span><Din v={c.aplicacoes / 100} /><small>Previsto · rendimento estimado</small></div>
         <div><span>Aluguéis líquidos dos imóveis</span><Din v={c.alugueis / 100} /><small>Garantido no cadastro · contrato de pelo menos 12 meses</small></div>
-        <div><span>Receitas recorrentes confirmadas</span><Din v={c.recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0) / 100} /><small>Garantido no cadastro · empresas e novos negócios</small></div>
+        <div><span>Receitas recorrentes na renda mensal</span><Din v={c.recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0) / 100} /><small>Entradas até 2028 já compõem as aplicações; não somam renda permanente.</small></div>
+        {!!c.rendaCerta && <div><span>Renda certa do Objetivo</span><Din v={c.rendaCerta / 100} /><small>Origem a confirmar no cadastro; já incluída pelo motor.</small></div>}
       </div>
-      <p className="sub">Garantido: consta como certo no cadastro. Previsto: depende de estimativa. Incerto: não conta na cobertura.</p>
+      <p className="sub">Garantido: consta como certo no cadastro. Previsto: depende de estimativa. Incerto: só entra em Com tudo. Entradas acumuladas já estão nas aplicações.</p>
       {(c.saida.gatilhos ?? []).filter(g => g.tipo === 'aluguel').map(g => <p className="sub" key={`${g.id}:${g.motivo}`}>
         {privado(g.nome)} · {privado(g.motivo === 'sem contrato' ? 'Incerto' : 'Previsto')} · <Din v={g.valor / 100} /> por mês fora da cobertura: {privado(g.motivo)}.
       </p>)}
@@ -96,11 +109,11 @@ export function RumoHero({ calculo: c, compacto = false, exemplo = false, velhos
       <p>{privado(c.cobertura === null ? 'Informe o gasto necessário para projetar quando cobre.' : c.cobreEm ? `Cobertura projetada em ${mesNome(c.cobreEm)}.` : c.referencia > '2031-12' ? 'A data atual já passou da janela até dez/2031. A cobertura acima é a do mês atual.' : 'Não cobre até dez/2031 com estas premissas.')}</p>
       <p className="sub">Cada ponto simula começar a viver de rendimentos naquele mês; não garante os meses seguintes.</p>
       {oculto ? <p className="sub">Gráfico e valores escondidos.</p> : c.linha.length > 0 && <figure className="rumo-grafico">
-        <svg viewBox="0 0 360 100" role="img" aria-label="Cobertura mensal estimada de jan/2029 a dez/2031; valores completos na descrição abaixo">
+        <svg viewBox="0 0 360 100" role="img" aria-label={`Cenário ${CENARIOS_RECEITAS[cenario]}: cobertura mensal estimada com margem de segurança; valores completos na descrição abaixo`}>
           <line x1="0" y1="50" x2="360" y2="50" stroke="currentColor" strokeDasharray="4 4" />
           <polyline fill="none" stroke="var(--accent)" strokeWidth="3" points={c.linha.map((m, i) => `${i * 360 / Math.max(1, c.linha.length - 1)},${100 - Math.min(200, Math.max(0, m.cobertura ?? 0)) / 2}`).join(' ')} />
         </svg>
-        <figcaption>Linha pontilhada: 100% do gasto. {mesNome(c.linha[0].mes)} a {mesNome(c.linha[c.linha.length - 1].mes)}.</figcaption>
+        <figcaption>Linha pontilhada: 100% do gasto com margem de segurança. {mesNome(c.linha[0].mes)} a {mesNome(c.linha[c.linha.length - 1].mes)}.</figcaption>
       </figure>}
       <details><summary>Ver cobertura mês a mês em texto</summary><ul className="rumo-meses">{c.linha.map(m => <li key={m.mes}>{mesNome(m.mes)}: {privado(m.cobertura === null ? 'gasto não informado' : percentual(m.cobertura))} · renda <Din v={m.renda / 100} /> · gasto <Din v={m.gasto / 100} /></li>)}</ul></details>
       <div className="rumo-premissas"><h3>Premissas da conta</h3>{c.premissas.map((p, i) => <p className="sub" key={i}>{privado(p)}</p>)}</div>

@@ -4,7 +4,12 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../app/contexto'
 import type { Api, ImovelTela } from '../api/tipos'
 import { apiExemplo } from '../api/exemplo'
-import { calcularRumo, lerFontes } from '../app/rumo2029'
+import { calcularRumo, lerFontes, numerosRumo2029 } from '../app/rumo2029'
+import { CenariosReceitas } from './CenariosReceitas'
+import { Inicio } from '../telas/inicio/Inicio'
+import { Painel } from '../telas/painel/Painel'
+import { partesDinheiro } from '../lib/formato'
+import { AgenteDaAba } from './AgenteDaAba'
 import { acompanharConferencias, frescor, lerNumeros, marcarConferencia } from '../app/useNumerosAtualizados'
 import { futuro, gastoNaVirada, type FuturoEntrada } from '../lib/futuro'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
@@ -30,12 +35,17 @@ function comItens() {
   e.recebimentos = [{ id: 'r', descricao: 'Contrato fictício', dono: 'Teste', valor: 100_000, mes_previsto: '2027-03', mes_novo: null, certo: true, recebido: false }]
   return e
 }
-async function montar(el: ReactElement, apiExtra: Partial<Api> = {}, extra: Partial<Ctx> = {}) {
+async function montar(el: ReactElement, apiExtra: Partial<Api> = {}, extra: Partial<Ctx> = {}, storage = new Map<string, string>()) {
   const doc = new DocumentoTeste()
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] } })
   vi.stubGlobal('document', doc)
   vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
-  vi.stubGlobal('localStorage', { getItem() { return null }, setItem() {} })
+  vi.stubGlobal('addEventListener', window.addEventListener.bind(window))
+  vi.stubGlobal('removeEventListener', window.removeEventListener.bind(window))
+  vi.stubGlobal('Element', NoTeste)
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+  vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
+  vi.stubGlobal('localStorage', { getItem(k: string) { return storage.get(k) ?? null }, setItem(k: string, v: string) { storage.set(k, v) } })
   vi.stubGlobal('location', { hash: '#/planejamento', search: '', pathname: '/' })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const config: Record<string, unknown> = {}
@@ -52,10 +62,101 @@ async function montar(el: ReactElement, apiExtra: Partial<Api> = {}, extra: Part
 }
 const hero = (e: FuturoEntrada) => createElement(RumoHero, { calculo: calcularRumo(e, {}), abrir() {} })
 
+const dinheiroVisivel = (c: number) => { const p = partesDinheiro(Math.abs(c) / 100); return `R$${p.inteiro}${p.cents || ''}` }
+const superfícies = () => createElement('div', {},
+  ...[createElement(RumoA2029), createElement(CenariosReceitas, { fontes: {}, controle: {}, revisao: 0 }), createElement(Inicio), createElement(Painel)]
+    .map((el, i) => createElement('div', { key: i, 'data-frente': String(i) }, el)))
+
+it.each(['cobre', 'não cobre', 'sobra', 'sem dados'])('fonte única em cartão, seletor, Início e Painel: %s', async caso => {
+  const e = entrada(caso === 'não cobre' || caso === 'sem dados' ? 0 : caso === 'cobre' ? 100_000_000 : 300_000_000)
+  if (caso === 'sem dados') e.parametros.gasto_2029_hoje = 0
+  const n = numerosRumo2029(futuro(e), e)
+  const a = await montar(superfícies(), { futuroEntradas: async () => ({ entrada: e, confirmar: [] }), numerosSemana: async () => [], lancamentos: async () => [] },
+    { resumo: await apiExemplo.resumoHoje('familia-ficticia'), sessao: { dono: true } as Ctx['sessao'] })
+  for (let i = 0; i < 4; i++) {
+    const texto = a.box.buscar(x => x.getAttribute('data-frente') === String(i))[0].textContent
+    if (caso === 'sem dados') expect(texto).toContain('Informe o gasto necessário')
+    else {
+      expect(texto).toContain(`${dinheiroVisivel(n.falta_com_margem!)} por mês, com margem de segurança`)
+      expect(texto).toContain(`Sem a margem de segurança: ${n.falta_sem_margem > 0 ? 'faltam' : 'sobram'} ${dinheiroVisivel(n.falta_sem_margem)} por mês`)
+    }
+  }
+})
+
+it('troca sincroniza cartão e seletor, preserva oficial, persiste e informa cenário e base do gráfico', async () => {
+  const e = entrada(0)
+  e.recebimentos = [{ id: 'incerta', dono: 'Teste', valor: 90_000_000, mes_previsto: '2027-01', mes_novo: null, certo: false, recebido: false }]
+  const storage = new Map<string, string>([['cenario_receitas', 'inválido']])
+  const a = await montar(superfícies(), { futuroEntradas: async () => ({ entrada: e, confirmar: [] }), numerosSemana: async () => [], lancamentos: async () => [] },
+    { resumo: await apiExemplo.resumoHoje('familia-ficticia'), sessao: { dono: true } as Ctx['sessao'] }, storage)
+  const frente = (i: number) => a.box.buscar(x => x.getAttribute('data-frente') === String(i))[0].textContent
+  const oficial = [frente(2), frente(3)], antes = frente(0)
+  expect(antes).not.toContain('Número oficial: Garantido')
+  await a.click('Com tudo')
+  expect(frente(0)).not.toBe(antes)
+  expect(frente(0)).toContain('Número oficial: Garantido')
+  expect([frente(2), frente(3)]).toEqual(oficial)
+  expect(storage.get('cenario_receitas')).toBe('tudo')
+  expect(a.box.buscar(x => x.tagName === 'SVG').some(x => (x.getAttribute('aria-label') || '').includes('Com tudo: cobertura mensal estimada com margem'))).toBe(true)
+  const b = await montar(createElement(RumoA2029), { futuroEntradas: async () => ({ entrada: e, confirmar: [] }) }, {}, storage)
+  expect(b.box.textContent).toContain('Número oficial: Garantido')
+})
+
+it('frescor de 61 dias aparece também no resumo usado pelo Início', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(agora)
+  const a = await montar(createElement(RumoA2029, { compacto: true }), { config: async (_f, k, padrao) =>
+    String(k) === 'numeros_atualizados' ? { saldo_caixa: '2026-09-16', aplicacoes: {}, imoveis: {}, recebimentos: {} } as any : padrao })
+  expect(a.box.textContent).toContain('Há números com mais de 60 dias.')
+  expect(a.box.textContent).toContain('Sem a margem de segurança:')
+})
+
+it('fontes por cenário preservam certeza e não duplicam recorrência já acumulada nas aplicações', async () => {
+  const { e, fontes } = receitas(entrada())
+  const a = await montar(createElement('div', {}, createElement(RumoA2029), createElement(CenariosReceitas, { fontes: fontes as any, controle: {}, revisao: 0 })), {
+    config: async (_f, k, padrao) => String(k) === 'fontes_receita' ? fontes as any : padrao,
+    futuroEntradas: async () => ({ entrada: e, receitasBase: e.recebimentos, fontesReceita: fontes as any, confirmar: [] }),
+  })
+  const categoria = () => a.box.buscar(x => x.tagName === 'DIV' && x.getAttribute('class') === 'rumo-fontes')[0].textContent
+  const garantido = categoria()
+  await a.click('Com previstos')
+  expect(categoria()).not.toBe(garantido)
+  const previsto = categoria()
+  await a.click('Com tudo')
+  expect(categoria()).not.toBe(previsto)
+  expect(categoria()).toContain('Receitas recorrentes na renda mensalR$0')
+  expect(a.box.textContent).toContain('Fonte novo · Previsto')
+  expect(a.box.textContent).toContain('Fonte incerto · Incerto')
+  expect(a.box.textContent).toContain('não somam renda permanente')
+})
+
+it('agente real fala o mesmo Garantido do cartão, Início e Painel; cenário alternativo e olho não mudam sua base', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(agora)
+  const e = entrada(0)
+  e.recebimentos = [{ id: 'incerta', dono: 'Teste', valor: 90_000_000, mes_previsto: '2027-01', mes_novo: null, certo: false, recebido: false }]
+  const n = numerosRumo2029(futuro(e), e)
+  const a = await montar(createElement('div', {}, superfícies(), createElement('div', { 'data-frente': 'agente' }, createElement(AgenteDaAba, { rota: 'planejamento' }))), {
+    futuroEntradas: async () => ({ entrada: e, receitasBase: e.recebimentos, confirmar: [] }),
+    escritorioHoje: async () => ({ funcionarios: [], trabalhando: [], entregue: [], precisa_de_voce: [] }) as any,
+    recebimentos: async () => [], numerosSemana: async () => [], lancamentos: async () => [],
+  }, { resumo: await apiExemplo.resumoHoje('familia-ficticia'), sessao: { dono: true } as Ctx['sessao'] })
+  const frente = (i: string) => a.box.buscar(x => x.getAttribute('data-frente') === i)[0].textContent.replace(/\s/g, '')
+  const com = `${dinheiroVisivel(n.falta_com_margem!)} por mês, com margem de segurança`.replace(/\s/g, '')
+  const sem = `Sem a margem de segurança: faltam ${dinheiroVisivel(n.falta_sem_margem)} por mês`.replace(/\s/g, '')
+  for (const i of ['0', '2', '3', 'agente']) { expect(frente(i)).toContain(com); expect(frente(i)).toContain(sem) }
+  const oficial = frente('agente')
+  await a.click('Com tudo')
+  expect(frente('0')).not.toContain(com)
+  expect(frente('agente')).toBe(oficial)
+  await a.render({ oculto: true })
+  expect(frente('agente')).not.toContain(dinheiroVisivel(n.falta_com_margem!).replace(/\s/g, ''))
+  await a.render({ oculto: false })
+  expect(frente('agente')).toBe(oficial)
+})
+
 it('hero cobre: frase, barra, premissas e gráfico textual vêm de cenário fabricado rico', async () => {
   const e = entrada(300_000_000), c = calcularRumo(e, {})
   const a = await montar(hero(e))
-  expect(a.box.textContent).toContain('seus rendimentos cobrem')
+  expect(a.box.textContent).toContain('sobram')
   expect(c.cobertura).toBeGreaterThan(100)
   expect(c.cobreEm).toBe('2029-01')
   expect(a.box.textContent).toContain('Cobertura projetada em jan/2029')

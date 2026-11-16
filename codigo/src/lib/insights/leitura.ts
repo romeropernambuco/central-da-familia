@@ -1,6 +1,7 @@
 import type { Api, FamiliaMinha } from '../../api/tipos'
 import type { Rota } from '../../app/rotas'
 import { futuro } from '../futuro'
+import { entradaDoCenario } from '../../app/useCenarioReceitas'
 import { diasEntre, mesAnterior } from '../formato'
 import { tempoRecife } from './tempo'
 import { emCentavos, type LeiturasInsights } from './snapshot'
@@ -23,7 +24,12 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
     ])
     dados.recebimentos = rec
     if (f?.entrada) {
-      try { dados.futuro = futuro(f.entrada); dados.mesObjetivo = f.entrada.parametros.virada } catch (e) { erros.push(e) }
+      try {
+        const oficial = entradaDoCenario(f, 'garantido')!
+        dados.futuro = futuro(oficial)
+        dados.entradaObjetivo = oficial
+        dados.mesObjetivo = oficial.parametros.virada
+      } catch (e) { erros.push(e) }
     }
   }
   if (rota === 'cartoes') {
