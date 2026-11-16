@@ -1,5 +1,6 @@
+import { ChevronDown } from 'lucide-react'
 import { textoDeAgente } from '../lib/textoAgente'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useApp } from '../app/contexto'
 import { useEscritorio } from '../app/useDados2'
 import type { Rota } from '../app/rotas'
@@ -12,6 +13,7 @@ import { PerguntaCard } from './Pergunta'
 import { textoPrivado } from './privacidade'
 export const AGENTE_POR_ABA: Record<string, string> = Object.fromEntries(EQUIPE.map(m => [m.rota, m.id]))
 Object.assign(AGENTE_POR_ABA, { casa: 'fiscal', planejamento: 'tesoureiro', guardado: 'guardado' })
+const ACAO: Record<string, string> = { cartao: 'Ver cartões e faturas', fiscal: 'Ver tarefas da feira', guardado: 'Cadastrar aplicação ou aporte', tesoureiro: 'Cadastrar recebimento', secretaria: 'Criar lembrete', contador: 'Ver tarefas do mês' }
 const CONVITE: Record<string, string> = {
  cartao: 'Qual valor veio no banco? Já pagou a fatura?',
  fiscal: 'Já fez a feira? Guarde a nota e conte o estoque.',
@@ -28,6 +30,7 @@ export function AgenteDaAba({ rota }: { rota: Rota }) {
 function AgenteAutorizado({ rota }: { rota: Rota }) {
  const { familia, api, oculto } = useApp()
  const { e, perguntas, responder } = useEscritorio()
+ const painel = useId()
  const [aberto, setAberto] = useState(false)
  const m = EQUIPE.find(m => m.id === AGENTE_POR_ABA[rota])!
  const f = e?.funcionarios.find(f => f.id === m.id)
@@ -39,12 +42,12 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
    opcoes: pendente.opcoes.filter(o => o.pede !== 'valor').map(o => ({ ...o, pede2: o.pede2 === 'valor' ? undefined : o.pede2,
      rotulo: /R\$|\d/.test(o.rotulo) ? 'Responder' : o.rotulo })),
  } : pendente
- return <section className="card" data-agente={m.id} aria-label="Funcionário desta aba">
- <MiniAgente id={m.id} sala={m.sala} /><b>{m.nome}</b>
- {api.modo === 'exemplo' && <small> · Exemplo: nada é gravado na família real</small>}
+ return <section className="card agente-aba" data-agente={m.id} aria-label="Funcionário desta aba">
+ <MiniAgente id={m.id} sala={m.sala} /><header className="agente-aba-cabecalho"><b>{m.nome}</b>
+ {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
  {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={responder} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (f?.frase ? fala(f.frase) : m.papel)}</p>{f && familia?.papel !== 'equipe' && CONVITE[m.id] && <p className="sub">{fala(f.frase)}</p>}</div>}
- <button type="button" className="btn line" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>Conversar e abrir tarefas</button>
- {aberto && (['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</section>
+ <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{p?.opcoes.length ? 'Ver tarefas e cadastros' : ACAO[m.id] || 'Conversar e abrir tarefas'}<ChevronDown size={18} aria-hidden="true" /></button>
+ <div id={painel} hidden={!aberto}>{aberto && (['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div></section>
 }
 export function MiniAgente({ id, sala }: { id: string; sala: string }) {
  const caixa = useRef<HTMLDivElement>(null)
@@ -53,17 +56,22 @@ export function MiniAgente({ id, sala }: { id: string; sala: string }) {
  const el = caixa.current
  if (!el) return
  if (new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash) || !temWebGL()) { setLista(true); return }
+ const escuroAgora = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches }
  let cena: Cena | undefined
  liberarRenderer?.()
  const cancelar = tentarCarregarCena(() => Promise.all([import('../telas/escritorio/tres'), import('../telas/escritorio/cena3d')]), ([T, modulo]) => {
- cena = modulo.montarCena(T, el, { mini: true, funcionarios: [{ id, sala, estado: 'trabalhando' }], etiqueta: () => null, placa: () => null, aoTocar() {}, escuro: document.documentElement.dataset.theme === 'dark', celular: () => true, hora: () => 12, parado: matchMedia('(prefers-reduced-motion: reduce)').matches, aoContexto: estado => { if (estado === 'falhou') setLista(true) } })
+ cena = modulo.montarCena(T, el, { mini: true, funcionarios: [{ id, sala, estado: 'trabalhando' }], etiqueta: () => null, placa: () => null, aoTocar() {}, escuro: escuroAgora(), celular: () => true, hora: () => 12, parado: matchMedia('(prefers-reduced-motion: reduce)').matches, aoContexto: estado => { if (estado === 'falhou') setLista(true) } })
  cena.irPara(sala)
  }, () => setLista(true))
- const destruir = () => { cancelar(); cena?.destruir(); cena = undefined }
+ const mq = matchMedia('(prefers-color-scheme: dark)')
+ const tema = () => cena?.tema(escuroAgora())
+ mq.addEventListener('change', tema)
+ const obs = new MutationObserver(tema); obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+ const destruir = () => { mq.removeEventListener('change', tema); obs.disconnect(); cancelar(); cena?.destruir(); cena = undefined }
  const abrirEscritorio = () => { destruir(); setLista(true) }
  window.addEventListener('escritorio3d-abrir', abrirEscritorio)
  liberarRenderer = destruir
  return () => { window.removeEventListener('escritorio3d-abrir', abrirEscritorio); destruir(); if (liberarRenderer === destruir) liberarRenderer = undefined }
  }, [id, sala])
- return lista ? <span className="sub">Em lista</span> : <div className="cena3d" ref={caixa} aria-hidden="true" style={{ height: 180, aspectRatio: 'auto' }} />
+ return lista ? <span className="sub">Em lista</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true" />
 }
