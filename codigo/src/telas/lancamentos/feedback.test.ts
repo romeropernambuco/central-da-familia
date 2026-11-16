@@ -203,7 +203,7 @@ it('foto em preparo impede enviar uma compra sem a imagem escolhida', async () =
   expect(a.box.textContent).toContain('Preparando foto')
   await a.click('Anotar a compra'); expect(anotar).not.toHaveBeenCalled()
   await act(async () => imagem.rejeitar(Error('foto ilegível')))
-  expect(a.box.textContent).toContain('Não deu pra ler a foto')
+  expect(a.box.textContent).toContain('Não foi possível ler a foto')
 })
 
 it.each([

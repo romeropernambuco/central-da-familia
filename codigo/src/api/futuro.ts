@@ -221,7 +221,7 @@ export function imovelInvalido(d: NovoImovel): string {
   if (!d.apelido.trim()) return 'Dê um apelido pro imóvel (ex.: sala do centro).'
   if (d.apelido.trim().length > 60) return 'O apelido pode ter até 60 letras.'
   if (!(d.valor >= 0) || d.valor > 1e9) return 'Confira o valor do imóvel.'
-  if (!['mora', 'aluga', 'parado', 'vende'].includes(d.uso)) return 'Escolha pra que serve o imóvel.'
+  if (!['mora', 'aluga', 'parado', 'vende'].includes(d.uso)) return 'Escolha para que serve o imóvel.'
   if (!(d.aluguel >= 0) || !(d.custos >= 0) || d.aluguel > 1e8 || d.custos > 1e8) return 'Confira o aluguel e os custos.'
   if (!/^[0-9]+(\.[0-9]+)?$/.test(d.vacancia) || Number(d.vacancia) > 1) return 'Os meses vazios vão de 0 a 100%.'
   if (d.contrato_ate != null && !/^\d{4}-(0[1-9]|1[0-2])$/.test(d.contrato_ate)) return 'Escolha o mês em que o contrato acaba.'

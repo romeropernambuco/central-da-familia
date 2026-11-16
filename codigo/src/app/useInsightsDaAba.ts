@@ -130,7 +130,7 @@ export function useInsightsDaAba(rota: Rota) {
         nota: feira => setNota({ escopo, feira }),
         composicao: a => explicar({ titulo: 'Composição da fatura', linhas: [
           ...a.itens.map(x => ({ linha: textoPrivado(x.nome, oculto), valor: x.centavos / 100 })), { linha: 'Total calculado da fatura', valor: a.total / 100 },
-        ], nota: a.disponivel === false ? 'Não foi possível carregar a composição. Atualize e tente novamente.' : 'Compras localizadas nos lançamentos disponíveis. Tarifas ou itens não localizados devem ser conferidos no banco.' }),
+        ], nota: a.disponivel === false ? 'Não foi possível carregar os detalhes. Atualize e tente novamente.' : 'Compras localizadas nos lançamentos disponíveis. Tarifas ou itens não localizados devem ser conferidos no banco.' }),
       })
     })
     trava.current.delete(id)

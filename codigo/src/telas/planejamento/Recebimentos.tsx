@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E5 (fase final): recebimentos com data, um bloco dentro do Planejamento (sem tela nova).
 // Regra do dono (13/11): até dez/2028 entram recebimentos com data que o dono marca como certos; o plano conta só esses.
@@ -40,7 +41,7 @@ function MudarReceb({ r, fonte: inicial, pronto, fechar, mexer, salvarFonte }: {
   const [erro, setErro] = useState(''), [ocupado, setOcupado] = useState(false)
   const trava = useRef(false)
   return <Sheet titulo={textoPrivado(r.descricao)} fechar={() => { if (!ocupado) fechar() }}>
-    <p className="sub">Previsto pra {textoPrivado(mesCurto(r.mes_previsto))}, <Din v={r.valor} />.</p>
+    <p className="sub">Previsto para {textoPrivado(mesCurto(r.mes_previsto))}, <Din v={r.valor} />.</p>
     <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => {
       e.preventDefault(); if (trava.current || !pronto) return
       if (!valorDigitadoValido(valor) || textoParaValor(valor) <= 0) { setErro('Confira o valor de cada recebimento.'); return }
@@ -56,8 +57,8 @@ function MudarReceb({ r, fonte: inicial, pronto, fechar, mexer, salvarFonte }: {
       <button className="btn primary full" type="submit" disabled={ocupado || !pronto}>Salvar fonte e valor</button>
     </form>
     <label className="campo"><span>Vai chegar em</span><CampoPrivado className="inp" type="month" value={mes} min={min} onChange={e => setMes(e.target.value)} /><small>O mês novo tem que ser depois do previsto. Em uma série, muda só a primeira ocorrência.</small></label>
-    <button className="btn line full" type="button" disabled={ocupado || !mesReceitaValido(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar pra {mesReceitaValido(mes) ? textoPrivado(mesCurto(mes)) : 'o mês novo'}</button>
-    <button className="btn ghost full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Toque de novo pra tirar' : 'Não vai mais entrar: tirar da lista'}</button>
+    <button className="btn line full" type="button" disabled={ocupado || !mesReceitaValido(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar para {mesReceitaValido(mes) ? textoPrivado(mesCurto(mes)) : 'o mês novo'}</button>
+    <button className="btn ghost full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Toque de novo para tirar' : 'Não vai mais entrar: tirar da lista'}</button>
   </Sheet>
 }
 
@@ -123,7 +124,7 @@ function RecebimentosCasal() {
         const atual = remoto[r.id], recebidas = { ...atual?.recebidas }
         if (recebidas[mes]?.data !== data || recebidas[mes]?.valor !== Math.round(valor * 100)) throw new Error('Essa ocorrência mudou em outro aparelho. Confira antes de desfazer.')
         delete recebidas[mes]
-        if (!await fontes.salvarControle(r.id, { ...atual, recebidas })) throw new Error('Não deu para desfazer. Tente novamente.')
+        if (!await fontes.salvarControle(r.id, { ...atual, recebidas })) throw new Error('Não foi possível desfazer. Tente novamente.')
       }) : await tentar(() => api.recebimentoMudar!(familia.id, r.id, { recebido_em: r.recebido_em, valor_recebido: r.valor_recebido }))
       if (!desfeito) usado = false
       invalidarDados(api, familia.id); setN(x => x + 1)
@@ -139,12 +140,12 @@ function RecebimentosCasal() {
       <div className="card-h"><h2 id="pRec"><CalendarClock size={24} aria-hidden="true" />Recebimentos com data</h2><button className="lnk" type="button" onClick={() => setNovo(true)}><Plus size={16} />Recebimento</button></div>
       <p className="sub" style={{ marginBottom: 8 }}>Receitas da família, inclusive empresas e novos negócios. Só Garantido entra no número oficial de 2029. Só o dono lança e muda.</p>
       {api.modo === 'exemplo' && <p className="sub">Exemplo: receitas e valores inventados. Nenhuma alteração vai para a família real.</p>}
-      {fontes.erro && <p role="alert">Não deu para abrir o cadastro de fontes. {textoPrivado(fontes.erro)} <button type="button" onClick={() => recarregar()}>Conferir novamente</button></p>}
+      {fontes.erro && <p role="alert">Não foi possível abrir o cadastro de fontes. {textoPrivado(fontes.erro)} <button type="button" onClick={() => recarregar()}>Conferir novamente</button></p>}
       {fontes.pronto && <CenariosReceitas fontes={fontes.fontes} controle={fontes.controle} revisao={n} />}
       {!falha && !carregando && lista && fontes.pronto && !lista.some(r => ['empresa', 'negocio_novo'].includes(fontes.fontes[r.id]?.origem)) && <p>Tem uma empresa ou negócio novo que vai gerar receita? <button type="button" className="lnk" onClick={() => setNovo(true)}>Cadastre aqui</button></p>}
       {!falha && !carregando && lista && !lista.length && <Vazio ico={<CalendarClock size={24} />} acao={<button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Anotar recebimento</button>}>Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro.</Vazio>}
       {carregando && <p role="status">Buscando recebimentos…</p>}
-      {falha && <p role="alert">Não deu pra buscar recebimentos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+      {falha && <p role="alert">Não foi possível buscar recebimentos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       <ul className="list">
         {abertos.map(r => {
           const f = fontes.fontes[r.id], meses = pendentes(r)
@@ -152,16 +153,16 @@ function RecebimentosCasal() {
           const mesNovo = previsto === r.mes_previsto ? r.mes_novo : null
           const s = situacaoRecebimento({ ...r, mes_previsto: previsto, mes_novo: mesNovo, recebido_em: null, certo }, hoje)
           return (
-            <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.meu ? {} : { 'data-do-outro': textoPrivado(r.dono_nome || 'outra pessoa') })}>
+            <li key={r.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(r.meu ? {} : { 'data-do-outro': textoPrivado(r.dono_nome || '') })}>
               <span className="m"><b>{textoPrivado(r.descricao)}</b>
-                <small>{textoPrivado(r.meu ? 'seu' : `de ${r.dono_nome || 'outra pessoa'}`)} · {f ? ORIGENS_RECEITA[f.origem] : TIPO[r.tipo]} · {f ? CERTEZAS_RECEITA[f.certeza] : r.certo ? 'certo' : 'ainda incerto: fora da conta'}</small>
+                <small>{r.meu ? 'seu' : <NomeDaPessoa pessoa={{ tipo: 'membro', id: r.dono_membro, nome: r.dono_nome }} />} · {f ? ORIGENS_RECEITA[f.origem] : TIPO[r.tipo]} · {f ? CERTEZAS_RECEITA[f.certeza] : r.certo ? 'certo' : 'ainda incerto: fora da conta'}</small>
                 {f && <small>{textoPrivado(`${f.rotulo || ORIGENS_RECEITA[f.origem]} · ${f.recorrencia === 'mensal' ? 'Todo mês' : f.recorrencia === 'anual' ? 'Todo ano' : 'Só uma vez'}${f.recorrencia !== 'unica' ? `, até ${mesCurto(f.fim || '2031-12')}` : ''}`)}</small>}
                 <small>Fonte: anotado pelo dono · {fontes.controle[r.id]?.atualizado_em ? `Última atualização em ${textoPrivado(fontes.controle[r.id].atualizado_em)}. Confira se o valor ainda vale.` : 'Data de atualização não informada: confira se o valor ainda vale.'}</small>
                 {!!fontes.controle[r.id]?.recebidas && <small>{textoPrivado(Object.entries(fontes.controle[r.id].recebidas!).map(([m, x]) => `${mesCurto(m)}: chegou ${reais(x.valor / 100)} em ${dataCurta(x.data)}`).join('; '))}</small>}
                 {r.recebido_em && <small>{textoPrivado(`Primeiro recebimento conferido: ${reais(r.valor_recebido ?? r.valor)}, em ${dataCurta(r.recebido_em)}.`)}</small>}
-                <small>{!meses.length ? 'Nenhuma ocorrência pendente no prazo informado.' : textoPrivado(s.conta_em ? `Entra em ${mesCurto(s.conta_em)}${mesNovo ? ` (era ${mesCurto(previsto)})` : ''}` : certo ? 'Depois de dezembro de 2028' : `Previsto pra ${mesCurto(previsto)}`)}</small>
+                <small>{!meses.length ? 'Nenhuma ocorrência pendente no prazo informado.' : textoPrivado(s.conta_em ? `Entra em ${mesCurto(s.conta_em)}${mesNovo ? ` (era ${mesCurto(previsto)})` : ''}` : certo ? 'Depois de dezembro de 2028' : `Previsto para ${mesCurto(previsto)}`)}</small>
                 {/* atrasado: nunca some; o dono responde quando chega */}
-                {!!meses.length && s.atrasado && certo && <span className="sub" style={{ marginTop: 6 }}>{textoPrivado(`Era pra ${mesCurto(previsto)} e ainda não chegou. Na conta, foi pra ${mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.${s.pergunta ? ' Você pode conferir quando chegar.' : ''}`)}</span>}
+                {!!meses.length && s.atrasado && certo && <span className="sub" style={{ marginTop: 6 }}>{textoPrivado(`Era para ${mesCurto(previsto)} e ainda não chegou. Na conta, foi para ${mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.${s.pergunta ? ' Você pode conferir quando chegar.' : ''}`)}</span>}
                 {r.meu && <span className="row-btns" style={{ marginTop: 8 }}>
                   {!!meses.length && <button className="btn sm line" type="button" disabled={!fontes.pronto} onClick={() => { invalidarDados(api, familia.id); setConferir(r) }}><Check size={16} />Chegou</button>}
                   <button className="btn sm ghost" type="button" onClick={() => setMudar(r)}>Mudar o mês ou tirar</button>
@@ -173,7 +174,7 @@ function RecebimentosCasal() {
         })}
       </ul>
       {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {textoPrivado(chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; '))}.</p>}
-      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={salvarNovo} salvo={(r, ja) => { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(ja ? 'Já estava salvo' : `${r.descricao} anotado pra ${mesCurto(r.mes_previsto)}.`) }} />}
+      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={salvarNovo} salvo={(r, ja) => { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(ja ? 'Já estava salvo' : `${r.descricao} anotado para ${mesCurto(r.mes_previsto)}.`) }} />}
       {conferir && <ConfirmarReceita r={conferir} meses={pendentes(conferir)} fechar={() => setConferir(null)} confirmar={(m, v, d) => confirmar(conferir, m, v, d)} />}
       {mudar && <MudarReceb r={mudar} fonte={fontes.fontes[mudar.id]} pronto={fontes.pronto} fechar={() => setMudar(null)} salvarFonte={async (f, v) => {
         if (!await fontes.salvarFonte(mudar.id, f)) return false
@@ -199,7 +200,7 @@ function NovoReceb({ fechar, salvar, salvo }: { fechar: () => void; salvar: (r: 
       if (await conferencia.current()) { salvo(operacao.current!, true); return }
       setAguardando(false); conferencia.current = null
       setErro('Não encontrei na lista. Pode tentar de novo.')
-    } catch { setErro('Aguardando conferência. Não deu pra reler a lista. Tente conferir novamente.') }
+    } catch { setErro('Aguardando conferência. Não foi possível reler a lista. Tente conferir novamente.') }
     finally { trava.current = false; setOcupado(false) }
   }
   const [desc, setDesc] = useState(''), [v, setV] = useState(''), [mes, setMes] = useState(proximo(hojeRecife().slice(0, 7)))

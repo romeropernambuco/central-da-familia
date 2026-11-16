@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
 // E7 (F8): o reajuste do teto, sugerido no mês do reajuste (padrão janeiro) pela inflação do ano anterior. Vale só com
 // os 2 do casal aprovando no mesmo teto, a partir do mês de vigência; aí cada um aplica no que ajusta. Com a f_12 quem
@@ -179,14 +180,14 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     <div className={'todo reajuste ' + (pe === 'aprovado' || pe === 'aprovado, vale no mes seguinte' ? 'ok' : 'quieto')} style={{ marginTop: 12 }}>
       <CalendarClock size={20} aria-hidden="true" />
       <span>
-        <b>Reajuste do teto de {vig.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} pra <b>{reais(sugerido / 100)}</b> por mês.{' '}
-        {pe === 'vencido' ? `O prazo pra aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}.`
-          : pe === 'aprovado' ? `Aprovado e já vale. Toque pra aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até ${dataCurta(sit.aplicar_ate)}` : ''}.`
+        <b>Reajuste do teto de {vig.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto da família passa de {reais(teto / 100)} para <b>{reais(sugerido / 100)}</b> por mês.{' '}
+        {pe === 'vencido' ? `O prazo para aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}.`
+          : pe === 'aprovado' ? `Aprovado e já vale. Toque para aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até ${dataCurta(sit.aplicar_ate)}` : ''}.`
           : pe === 'aprovado, vale no mes seguinte' ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
           : pe === 'tetos diferentes' ? 'Os votos ficaram em tetos diferentes. Votem de novo no mesmo valor.'
           : `Só vale com ${adultos === 1 ? 'o seu "aprovo"' : 'os 2 aprovando'}, a partir de ${quando}.`}
-        {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{textoPrivado(sit.votos.map(v => `${v.nome} aprovou em ${dataCurta(v.votou_em.slice(0, 10))}`).join('. '))}{textoPrivado(sit.faltam.length ? `. Falta ${sit.faltam.map(a => a.nome).join(' e ')}.` : '.')}</small>}
-        {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo pra aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
+        {sit && sit.votos.length > 0 && pe !== 'aprovado' && pe !== 'vencido' && <small className="reajuste-quem">{sit.votos.map(v => <span key={v.membro_id}><NomeDaPessoa pessoa={{ tipo: 'membro', id: v.membro_id, nome: v.nome }} /> aprovou em {dataCurta(v.votou_em.slice(0, 10))}. </span>)}{sit.faltam.map(a => <span key={a.membro_id}>Falta <NomeDaPessoa pessoa={{ tipo: 'membro', id: a.membro_id, nome: a.nome }} />. </span>)}</small>}
+        {!prazo && (pe === 'sugestao pendente' || pe === 'tetos diferentes') && <small className="reajuste-quem">O prazo para aprovar acabou. Cada um ainda muda o próprio limite aqui em cima.</small>}
         {prazo && (pe === 'sem sugestao' || pe === 'sugestao pendente' || pe === 'tetos diferentes') && (!meuVoto || meuVoto.teto !== sugerido || !mesmoIpca(meuVoto.ipca, ipcaVoto)) && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" disabled={gravando} onClick={aprovar}><Check size={18} />Aprovo o reajuste</button></span>}
         {pe === 'vencido' && !refazer && <span className="row-btns" style={{ marginTop: 8 }}><button className="btn sm primary" type="button" onClick={() => setRefazer({ teto: valorParaTexto((sit?.teto_aprovado ?? sugerido) / 100), ipca: textoDaTaxa(sit?.ipca_aprovado ?? ipcaVoto) })}>Votar de novo</button></span>}
         {pe === 'vencido' && refazer && (

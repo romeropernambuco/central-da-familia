@@ -12,7 +12,7 @@ export interface Falha { titulo: string; texto: string }
 export function textoDaFalha(e: unknown): Falha {
   if (e instanceof ErroConfig || (e as Error)?.name === 'ErroConfig')
     return { titulo: 'O app está sem o endereço do banco', texto: 'Isso é um ajuste de quem publica o app, não é nada no seu celular. Avise quem cuida da Central e tente de novo daqui a pouco.' }
-  return { titulo: 'Não deu pra abrir a Central agora', texto: 'Parte do app não chegou ao seu celular. Confira a internet e toque em Tentar de novo.' }
+  return { titulo: 'Não foi possível abrir a Central agora', texto: 'Parte do app não chegou ao seu celular. Confira a internet e toque em Tentar de novo.' }
 }
 
 /** O mínimo de elemento que a tela de falha usa (o #root de verdade, ou um falso no teste). */

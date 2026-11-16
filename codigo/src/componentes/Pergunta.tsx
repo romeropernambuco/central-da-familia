@@ -37,7 +37,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
   const [marca, setMarca] = useState<Record<string, EstadoItem>>({})
   const [erro, setErro] = useState('')
   useEffect(() => { if (familia) api.estoque(familia.id).then(x => setItens(x.itens.filter(i => i.ativo))).catch((x: Error) => setErro(x.message)) }, [api, familia?.id])
-  if (erro) return <p className="aviso-erro" role="alert">Não deu pra buscar os itens: {textoPrivado(erro)}</p>
+  if (erro) return <p className="aviso-erro" role="alert">Não foi possível buscar os itens: {textoPrivado(erro)}</p>
   if (!itens) return <p className="sub">Buscando os itens da casa…</p>
   if (!itens.length) return <p className="sub">Ainda não tem item cadastrado. O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".</p>
   return (
@@ -170,7 +170,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
           <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) foto(f) }} />
           <button type="button" className="btn primary" disabled={gravando} onClick={() => camera.current?.click()}><Camera size={20} />{gravando ? 'Guardando a nota…' : 'Tirar foto da nota'}</button>
           {api.modo === 'exemplo' && <button type="button" className="btn line" disabled={gravando} onClick={() => foto(null)}>Usar uma nota de exemplo</button>}
-          <p className="sub">{equipe ? 'A foto vai pro casal. Você não precisa digitar nenhum valor.' : 'A foto fica guardada junto da feira, só pra família.'}</p>
+          <p className="sub">{equipe ? 'A foto vai para o casal. Você não precisa digitar nenhum valor.' : 'A foto fica guardada junto da feira, só para família.'}</p>
         </div>
       )}
       {aberta?.abre === 'contagem' && <div className="perg-campo col"><Contagem gravando={gravando} salvar={itens => trava(aberta.id, { ...extra, itens })} /></div>}

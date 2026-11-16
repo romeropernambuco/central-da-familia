@@ -1,3 +1,5 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
+import { useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../../componentes/AgenteDaAba'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -12,7 +14,7 @@ import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from 
 
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
-  const { api, familia, sessao, sair, toast, tentar, oculto } = useApp()
+  const { api, familia, sessao, sair, toast, tentar, oculto, versao } = useApp()
   // o convite é gravado ANTES de abrir o WhatsApp: se o banco recusar (e-mail repetido, sem internet), o motivo aparece na hora
   const [convidado, setConvidado] = useState<{ nome: string; email: string } | null>(null)
   const [convidando, setConvidando] = useState(false)
@@ -23,7 +25,7 @@ export function Ajustes() {
   const link = location.origin + location.pathname
   const casal = familia?.papel === 'casal'
   // C20: com o casal completo, o convite é pra alguém da família (papel pessoa), e o título muda
-  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${casal}`, familia && casal && api.convites ? () => api.convites!(familia.id) : null, [api, n])
+  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${casal}`, familia && casal && api.convites ? () => api.convites!(familia.id) : null, [api, n, versao])
   const casalCompleto = (lista || []).filter(c => c.papel === 'casal' && c.situacao !== 'cancelado').length >= 2
   const papelConvite = casalCompleto ? 'pessoa' : 'casal'
   const mudaTema = (t: string) => {
@@ -37,12 +39,12 @@ export function Ajustes() {
       <div className="col">
         <section className="card" aria-labelledby="aFam">
           <h2 id="aFam">{textoPrivado(familia?.nome)}</h2>
-          <p className="sub" style={{ margin: '4px 0 12px' }}>Você entrou como {textoPrivado(familia?.membroNome)}{textoPrivado(sessao?.email ? ` (${sessao.email})` : '')}.</p>
+          <p className="sub" style={{ margin: '4px 0 12px' }}>Você entrou como <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />{textoPrivado(sessao?.email ? ` (${sessao.email})` : '')}.</p>
           {/* A2: a pessoa da família (filha) não convida ninguém */}
           {!casal && <p className="sub">Quem convida e cuida da família é o casal. Aqui você muda a aparência e vê a privacidade.</p>}
           {casal && <>
           {/* E3 (conserto 10): o campo ganha o rótulo "Nome" (antes só tinha a dica dentro do campo, que some ao digitar) */}
-          <p className="lbl">{casalCompleto ? 'Convidar alguém da família (filho, avó, quem mora com vocês)' : 'Convidar a 2ª pessoa do casal'}</p>
+          <p className="lbl">{casalCompleto ? 'Convidar alguém da família' : 'Convidar a 2ª pessoa do casal'}</p>
           <label className="campo" style={{ marginTop: 8 }}><span>Nome</span><CampoPrivado className="inp" placeholder="Ex.: Helena" value={nome2} onChange={e => setNome2(e.target.value)} /></label>
           <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
@@ -60,9 +62,10 @@ export function Ajustes() {
           </div>
           </>}
         </section>
+        {casal && <MembrosDaFamilia />}
         {api.convites && familia && casal && <>
           {carregando && <p role="status">Buscando a família…</p>}
-          {falha && <p role="alert">Não deu pra buscar a família. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+          {falha && <p role="alert">Não foi possível buscar a família. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
           <QuemEsta lista={lista} mudou={() => setN(x => x + 1)} />
         </>}
         <section className="card" aria-labelledby="aInst">
@@ -85,7 +88,7 @@ export function Ajustes() {
         <section className="card">
           <ul className="list">
             <li><a className="li" href="#/privacidade" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><ShieldCheck size={20} /></span><span className="m"><b>Privacidade</b><small>termo, baixar e apagar dados</small></span><ChevronRight size={20} className="muted" /></a></li>
-            {sessao?.dono && <li><a className="li" href="#/painel" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Gauge size={20} /></span><span className="m"><b>Painel dos 4 números</b><small>só pro dono do produto</small></span><ChevronRight size={20} className="muted" /></a></li>}
+            {sessao?.dono && <li><a className="li" href="#/painel" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Gauge size={20} /></span><span className="m"><b>Painel dos 4 números</b><small>só para o dono do produto</small></span><ChevronRight size={20} className="muted" /></a></li>}
             {api.modo === 'exemplo' && casal && <li><a className="li" href="#/primeiro-uso" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><UserPlus size={20} /></span><span className="m"><b>Ver o primeiro uso</b><small>como uma família nova começa</small></span><ChevronRight size={20} className="muted" /></a></li>}
           </ul>
           <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={async () => { location.hash = '#/inicio'; await sair() }}><LogOut size={20} />Sair</button>
@@ -93,6 +96,14 @@ export function Ajustes() {
       </div>
     </div>
   )
+}
+
+function MembrosDaFamilia() {
+  const membros = useMembros()
+  return <section className="card"><h2>Pessoas da família</h2>
+    {membros.erro ? <p role="status">Não foi possível carregar os nomes. <button className="lnk" type="button" onClick={membros.repetir}>Tentar de novo</button></p>
+      : <ul className="list">{membros.lista.map(m => <li className="li" key={m.id}><NomeDaPessoa editar pessoa={{ tipo: 'membro', id: m.id, nome: m.nome }} /></li>)}</ul>}
+  </section>
 }
 
 /** R4 + C20: quem está na família e como está cada convite. Reenviar avisa; cancelar pede confirmação. */
@@ -108,8 +119,8 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
       <ul className="list" style={{ marginTop: 8 }}>
         {lista.map(c => (
           <li key={c.id} className="li quem">
-            <span className="tile">{textoPrivado(c.nome.charAt(0))}</span>
-            <span className="m"><b>{textoPrivado(c.nome)}{c.nome === familia.membroNome ? ' (você)' : ''}</b><small>{textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
+            <span className="tile">{textoPrivado((c.nome || '').charAt(0))}</span>
+            <span className="m"><b><NomeDaPessoa editar mudou={mudou} pessoa={{ tipo: c.situacao === 'entrou' ? 'membro' : 'convite', id: c.membroId || c.id, nome: c.nome }} />{c.nome === familia.membroNome ? ' (você)' : ''}</b><small>{textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
               {c.situacao === 'entrou'
                 ? <span className="chip ok" style={{ marginTop: 6 }}>entrou{c.entrou_em ? ` em ${dataCurta(c.entrou_em)}` : ''}</span>
                 : <span className="chip warn" style={{ marginTop: 6, whiteSpace: 'normal', height: 'auto' }}>esperando entrar{c.enviado_em ? ` desde ${dataCurta(c.enviado_em)}, vale até ${dataCurta(somaDias(c.enviado_em, 14))}` : ''}</span>}
@@ -127,7 +138,7 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
       <p className="sub" style={{ marginTop: 8 }}>A pessoa entra com o mesmo e-mail do convite. Se ela usar outro e-mail, cancele e convide de novo.</p>
       {cancelar && (
         <Sheet titulo={textoPrivado(`Cancelar o convite de ${cancelar.nome}?`)} fechar={() => setCancelar(null)}>
-          <p className="corpo">O link que {textoPrivado(cancelar.nome)} recebeu para de funcionar. Dá pra convidar de novo depois, com o e-mail certo.</p>
+          <p className="corpo">O link que {textoPrivado(cancelar.nome)} recebeu para de funcionar. Dá para convidar de novo depois, com o e-mail certo.</p>
           <button className="btn primary full" type="button" onClick={async () => { const c = cancelar; setCancelar(null); if (await tentar(() => api.cancelarConvite!(familia.id, c.id))) { setN(x => x + 1); toast(`Convite de ${c.nome} cancelado.`) } }}>Sim, cancelar o convite</button>
           <button className="btn ghost full" type="button" onClick={() => setCancelar(null)}>Não, deixar como está</button>
         </Sheet>
@@ -145,20 +156,20 @@ export const PASSOS_ATALHO = [
   'Toque no campo da URL e cole o endereço copiado aqui embaixo (botão "Copiar o endereço"). Ele termina em valor=.',
   'Logo depois de valor=, toque em "Entrada do Atalho" (aparece em cima do teclado) e escolha "Quantia".',
   'Escreva &loja= e escolha "Entrada do Atalho" de novo, agora "Comerciante". Escreva &cartao= e escolha "Entrada do Atalho", agora "Cartão ou Passe".',
-  'Toque em "Adicionar Ação" de novo, escreva Abrir URLs na busca e toque em "Abrir URLs". Toque em "OK" pra terminar.',
-  'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Anotar preenchido: confira e toque no seu nome pra salvar. Nada é salvo sozinho.',
+  'Toque em "Adicionar Ação" de novo, escreva Abrir URLs na busca e toque em "Abrir URLs". Toque em "OK" para terminar.',
+  'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Anotar preenchido: confira e toque no seu nome para salvar. Nada é salvo sozinho.',
 ]
 function AtalhoIphone() {
   const { toast } = useApp()
   const base = location.origin + location.pathname
   const endereco = enderecoDoAtalho(base)
-  const copiar = async () => { try { if (await copiarProtegido(endereco, undefined, toast)) toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não deu pra copiar. Segure o dedo no endereço e escolha Copiar.') } }
+  const copiar = async () => { try { if (await copiarProtegido(endereco, undefined, toast)) toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não foi possível copiar. Segure o dedo no endereço e escolha Copiar.') } }
   return (
     <section className="card" aria-labelledby="aAtalho">
       <h2 id="aAtalho"><Zap size={22} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>
       <p className="sub" style={{ marginTop: 6 }}>Pagou com Apple Pay, o app abre o Anotar com o valor, a loja e o cartão já preenchidos. Você só confere e toca no seu nome. Monta 1 vez só, em uns 3 minutos:</p>
       <ol className="passos-atalho">{PASSOS_ATALHO.map((p, i) => <li key={i}>{p}</li>)}</ol>
-      <p className="lbl" style={{ marginTop: 10 }}>O endereço pra colar no passo 5</p>
+      <p className="lbl" style={{ marginTop: 10 }}>O endereço para colar no passo 5</p>
       <p className="atalho-end"><code>{textoPrivado(endereco)}</code></p>
       <p className="sub atalho-montado">Montado, o campo da URL fica assim: {textoPrivado(endereco)}<b>Quantia</b>&amp;loja=<b>Comerciante</b>&amp;cartao=<b>Cartão ou Passe</b> (as palavras em negrito são as que você escolhe em "Entrada do Atalho").</p>
       <button className="btn line" type="button" style={{ marginTop: 10 }} onClick={copiar}><Copy size={20} />Copiar o endereço</button>

@@ -1,3 +1,4 @@
+import { membrosTeste } from './dadosTeste'
 import { privadosNoTexto } from '../lib/textoAgente'
 // Modo exemplo do CONTRATO2 e do CONTRATO3: Guardado, Escritório que fala como gente, Lembretes, cartões e Ajudante da Feira
 // da Família Silva. Imita as funções do banco em memória. Todo número aqui é de exemplo e nada sai do aparelho.
@@ -64,7 +65,7 @@ function criar(): Estado {
       { id: 'lb2', titulo: 'Pagar a escola das crianças', detalhe: null, quando: emRecife(somaDias(hoje, 3)), repetir: 'mes', para: 'casal', funcionario: 'secretaria', feito_em: null },
     ],
     diario: [
-      { id: 'd1', ref: 'lembrete:antigo', funcionario: 'secretaria', assunto: 'Levar o carro na revisão', pergunta: 'Você me pediu pra lembrar: levar o carro na revisão. Já fez?', resposta: 'Já fiz', quando: emRecife(somaDias(hoje, -2), 18), perguntado_em: emRecife(somaDias(hoje, -2), 9), adiado_ate: null, respondido_por: 'Ana' },
+      { id: 'd1', ref: 'lembrete:antigo', funcionario: 'secretaria', assunto: 'Levar o carro na revisão', pergunta: 'Você me pediu para lembrar: levar o carro na revisão. Já fez?', resposta: 'Já fiz', quando: emRecife(somaDias(hoje, -2), 18), perguntado_em: emRecife(somaDias(hoje, -2), 9), adiado_ate: null, respondido_por: 'Ana' },
       { id: 'd2', ref: 'gas:antigo', funcionario: 'comprador', assunto: 'Troca do gás', pergunta: 'O gás acaba em 5 dias. Já pediu?', resposta: 'Já pedi o gás', quando: emRecife(somaDias(hoje, -3), 10), perguntado_em: emRecife(somaDias(hoje, -3), 8), adiado_ate: null, respondido_por: 'Bruno' },
       { id: 'd3', ref: 'feira_nota:antiga', funcionario: 'fiscal', assunto: `Nota da feira de ${dataCurta(somaDias(seg, -7))}`, pergunta: 'A feira está sem a nota.', resposta: 'Anexei a nota', quando: emRecife(somaDias(seg, -6), 11), perguntado_em: emRecife(somaDias(seg, -7), 19), adiado_ate: null, respondido_por: 'Ana' },
     ],
@@ -87,7 +88,7 @@ export function reiniciarExemplo2() { e = criar() }
 export function guardadoHojeEx(eu?: string | null, lerTudo = false): GuardadoHoje {
   const meus = eu === undefined || lerTudo ? e.apps : e.apps.filter(a => !(a as any).titular || (a as any).titular === eu)
   const g = calcularGuardado(meus, hojeRecife(), CDI)
-  const nome = (id: string | null | undefined) => (id === 'm-ana' ? 'Ana' : id === 'm-bruno' ? 'Bruno' : id === 'm-bia' ? 'Bia' : id === 'm-claudia' ? 'Cláudia' : null)
+  const nome = (id: string | null | undefined) => membrosTeste().find(m => m.id === id)?.nome ?? null
   for (const ap of g.aplicacoes) { const t = (meus.find(a => a.id === ap.id) as any)?.titular ?? null; ap.titular = t; ap.titular_nome = nome(t) }
   g.seu_total = centavos(g.aplicacoes.filter(a => a.titular && a.titular === eu).reduce((s, a) => s + a.saldo, 0))
   if (eu) g.saldo_30_seu = calcularGuardado(e.apps.filter(a => (a as any).titular === eu), hojeRecife(), CDI).saldo_30
@@ -213,14 +214,14 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   } else if (!contagemDaSemana(seg) && (feira || e.semFeira[seg]) && e.itens.some(i => i.ativo) && (!e.pedidoEquipe[seg] || eq)) {
     P({ id: `estoque:${seg}`, funcionario: 'fiscal', assunto: `Contagem do estoque da semana de ${dataCurta(seg)}`, espera: Math.max(0, diasEntre(feira?.data || seg, hoje)),
       falas: () => { const f = { vi: "Quer registrar a contagem desta semana?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
-      opcoes: eq ? [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] : [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'pedir_equipe', rotulo: 'Pedir pra equipe' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] })
+      opcoes: eq ? [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] : [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'pedir_equipe', rotulo: 'Pedir pros Assessores da Casa' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] })
   }
 
   /* Comprador: prestador (véspera e no dia) e gás */
   for (const p of (cfg.casa_prestadores || []) as any[]) {
     const quem = `${String(p.servico).toLowerCase()} (${p.nome})`
     if (m.papel?.() === 'pessoa') continue
-    if ((hd + 1) % 7 === p.dia && !eq) P({ id: `prestador_vespera:${p.id}:${hoje}`, funcionario: 'comprador', assunto: `Véspera do ${String(p.servico).toLowerCase()}`, espera: 0, mensagem: `Oi, ${p.nome}, tudo certo pra amanhã? Pode vir no horário de sempre.`,
+    if ((hd + 1) % 7 === p.dia && !eq) P({ id: `prestador_vespera:${p.id}:${hoje}`, funcionario: 'comprador', assunto: `Véspera do ${String(p.servico).toLowerCase()}`, espera: 0, mensagem: `Oi, ${p.nome}, tudo certo para amanhã? Pode vir no horário de sempre.`,
       falas: () => { const f = { vi: "Quer confirmar a visita de amanhã?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'copiar_mensagem', rotulo: 'Copiar mensagem' }, { id: 'ja_mandei', rotulo: 'Já mandei' }, { id: 'nao_vem', rotulo: 'Ele não vem' }] })
     if (hd === p.dia && p.ultimaVez !== hoje && (eq || hora >= 17)) P({ id: `prestador_veio:${p.id}:${hoje}`, funcionario: 'comprador', assunto: `Visita do ${String(p.servico).toLowerCase()}`, espera: 0,
@@ -299,7 +300,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   /* Folha da Casa: guia do governo do dia 1 ao 7 e salário no dia combinado */
   const folha = cfg.casa_folha as { pessoas: { id: string; nome: string; salario: number; diaPagamento?: number }[]; daePaga: Record<string, boolean> } | undefined
   if (folha?.pessoas?.length) {
-    if (dia <= 7 && !folha.daePaga?.[mes]) P({ id: `dae:${mes}`, funcionario: 'folha', assunto: 'Guia do governo de quem trabalha na casa', vence_em: `${mes}-07`, espera: dia - 1,
+    if (dia <= 7 && !folha.daePaga?.[mes]) P({ id: `dae:${mes}`, funcionario: 'folha', assunto: 'Guia do governo de Assessores da Casa', vence_em: `${mes}-07`, espera: dia - 1,
       falas: () => { const f = { vi: "Já pagou a guia deste mês?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'paguei_guia', rotulo: 'Paguei a guia' }, { id: 'ainda_nao', rotulo: 'Ainda não paguei' }] })
     for (const p of folha.pessoas) if (dia === (p.diaPagamento || 5)) P({ id: `salario:${p.id}:${mes}`, funcionario: 'folha', assunto: `Salário de ${p.nome}`, valor: p.salario, espera: 0,
@@ -330,7 +331,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const de = x.de.charAt(0).toLowerCase() + x.de.slice(1)
     P({ id: `entrou_extra:${x.id}`, funcionario: 'guardado', assunto: 'Dinheiro que entrou a mais', valor: x.valor, espera: Math.max(0, diasEntre(x.data, hoje)),
       falas: () => { const f = { vi: "Quer revisar o destino desta entrada extra?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
-      opcoes: [{ id: 'guardar_entrada', rotulo: `Guardar os ${rs(x.valor)}` }, { id: 'gasto_combinado', rotulo: 'É pra um gasto combinado' }, { id: 'ainda_nao', rotulo: 'Me lembra amanhã' }] })
+      opcoes: [{ id: 'guardar_entrada', rotulo: `Guardar os ${rs(x.valor)}` }, { id: 'gasto_combinado', rotulo: 'É para um gasto combinado' }, { id: 'ainda_nao', rotulo: 'Me lembra amanhã' }] })
   }
 
   /* Contador: dia 1 fecha o mês; depois das 20h sem gasto anotado no dia */
@@ -357,7 +358,7 @@ function contadorDoMes(r: ReturnType<Mundo['resumo']>, sobra: number): EntregaEs
     if (passam.length) return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, ${passam.map(x => `${x.nome} passa ${rs(centavos(x.fecha - x.limite))}`).join(' e ')} do combinado. Isso sai do mês que vem.`, numero: centavos(passam.reduce((t, x) => t + x.fecha - x.limite, 0)) }
     return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, juntos vocês fecham com ${rs(juntos)} de sobra.`, numero: juntos }
   }
-  return { funcionario: 'contador', resumo: sobra >= 0 ? `Conferi o mês: sobram ${rs(sobra)} até o fim${r.colchao ? ', já sem contar a reserva' : ''}.` : `Conferi o mês: faltam ${rs(-sobra)} pra não mexer na reserva.`, numero: sobra }
+  return { funcionario: 'contador', resumo: sobra >= 0 ? `Conferi o mês: sobram ${rs(sobra)} até o fim${r.colchao ? ', já sem contar a reserva' : ''}.` : `Conferi o mês: faltam ${rs(-sobra)} para não mexer na reserva.`, numero: sobra }
 }
 
 /** 1 linha do que cada um fez hoje (quando não tem pergunta, ele mostra isso e não inventa assunto). */
@@ -495,7 +496,7 @@ export function escritorioResponderEx(m: Mundo, perguntaId: string, opcao: strin
       m.guardarEntrada?.(x.id)
       aviso = `${rs(x.valor)} foram pro guardado (${app.nome}). Regra do salário cumprida.`
     }
-    if (x && opcao === 'gasto_combinado') { (x as any).destino = 'gasto combinado'; aviso = `Anotado: os ${rs(x.valor)} são pra um gasto combinado.` }
+    if (x && opcao === 'gasto_combinado') { (x as any).destino = 'gasto combinado'; aviso = `Anotado: os ${rs(x.valor)} são para um gasto combinado.` }
   }
   if (tipo === 'semana_passou' && opcao === 'tirar_mes_que_vem') aviso = 'Combinado: o que passou sai do mês que vem.'
   if (tipo === 'semana_passou' && opcao === 'diluir') aviso = 'Combinado: fica dividido pelos dias que faltam.'
@@ -555,7 +556,7 @@ export function relatorioEx(m: Mundo, de: string, ate: string, agora = new Date(
 /* ---------- Lembretes ---------- */
 export function lembretesEx(): Lembrete[] { return e.lembretes.filter(l => !l.feito_em).sort((a, b) => a.quando.localeCompare(b.quando)).map(l => ({ ...l })) }
 export function lembreteCriarEx(l: NovoLembrete) {
-  if (!l.titulo.trim()) throw new Error('Escreva o que é pra lembrar.')
+  if (!l.titulo.trim()) throw new Error('Escreva o que é para lembrar.')
   if (!l.quando || isNaN(new Date(l.quando).getTime())) throw new Error('Escolha o dia e a hora.')
   e.lembretes.push({ id: 'lb' + Date.now(), titulo: l.titulo.trim().slice(0, 120), detalhe: l.detalhe?.trim() || null, quando: new Date(l.quando).toISOString(), repetir: l.repetir, para: l.para || 'eu', funcionario: 'secretaria', feito_em: null })
 }
@@ -573,7 +574,7 @@ function informarFatura(m: Mundo, cartao: string, mes: string, d: { valor_banco?
   if (d.paga_em !== undefined) { f.paga_em = d.paga_em; f.paga_por = d.paga_em ? m.quem() : null }
 }
 export function faturaInformarEx(m: Mundo, cartao: string, mes: string, d: { valor_banco?: number | null; paga_em?: string | null }) {
-  if (d.valor_banco != null && !(d.valor_banco >= 0)) throw new Error('O valor da fatura tem que ser de zero pra cima.')
+  if (d.valor_banco != null && !(d.valor_banco >= 0)) throw new Error('O valor da fatura tem que ser de zero para cima.')
   informarFatura(m, cartao, mes, d)
 }
 export function cartaoSalvarEx(m: Mundo, c: Partial<Cartao> & { nome: string }) {

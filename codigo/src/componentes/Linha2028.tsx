@@ -24,13 +24,13 @@ export function frasesLinha(s: FuturoSaida): { caixa: string; devendo: string | 
   // B4 (revisão): 1 "fica devendo" só por caixa. Se a frase de cima já diz que a família fica devendo, esta fala do piso
   const jaDevendo = !!ult && ult.saldo_final < 0
   const devendo = !d ? null : jaDevendo
-    ? `Em ${mesAno(d.mes)} o caixa fica ${r$(d.fica_devendo)} abaixo do piso e ${d.devendo_ate ? `volta pra cima dele em ${mesAno(d.devendo_ate)}` : 'não volta pra cima dele até 12/2028'}.`
+    ? `Em ${mesAno(d.mes)} o caixa fica ${r$(d.fica_devendo)} abaixo do piso e ${d.devendo_ate ? `volta para cima dele em ${mesAno(d.devendo_ate)}` : 'não volta para cima dele até 12/2028'}.`
     : `Em ${mesAno(d.mes)} o caixa fica abaixo do piso: fica devendo ${r$(d.fica_devendo)} pro caixa ${d.devendo_ate ? `até ${mesAno(d.devendo_ate)}` : 'até depois de 12/2028'}.`
   if (s.patrimonio_necessario === null) return { caixa, devendo, virada: 'Nesse cenário o rendimento não repõe a inflação.', ajuste: null, margem: null }
   const virada = s.folga >= 0
     ? (s.aluguel_liquido_2029 || 0) > 0
-      ? `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, pra sempre, o aluguel com contrato soma ${r$(s.aluguel_liquido_2029 || 0)}, e sobram ${r$(s.folga)} além do necessário.`
-      : `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, pra sempre, e sobram ${r$(s.folga)} além do necessário.`
+      ? `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, para sempre, o aluguel com contrato soma ${r$(s.aluguel_liquido_2029 || 0)}, e sobram ${r$(s.folga)} além do necessário.`
+      : `Em 2029 o dinheiro rende ${r$(s.renda_sustentavel)} por mês, para sempre, e sobram ${r$(s.folga)} além do necessário.`
     : `Pra viver do rendimento em 2029 faltam ${r$(s.folga)}.`
   const a = s.ajustes_falta
   // QA E11 (erro 3): com poucos meses até a virada o motor sugere cortar (sugerido 'cortar', guardar_por_mes 0): nunca "guardando R$ 0".
@@ -100,14 +100,14 @@ export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: Fut
 export function frasesGatilho(g: NonNullable<FuturoSaida['gatilhos']>[number]): string {
   const quando = g.motivo === 'renova o contrato' ? '' : g.mes ? (g.por_mes ? ` a partir de ${mesAno(g.mes)}` : ` em ${mesAno(g.mes)}`) : ''
   const valor = `${r$(g.valor)}${g.por_mes ? ' por mês' : ''}`
-  const porque = g.motivo === 'renova o contrato' ? `contrato curto: renove até ${g.mes ? mesAno(g.mes) : 'a virada'} pra contar` : g.motivo === 'sem contrato' ? 'sem contrato' : g.motivo === 'depois do contrato' ? 'depois que o contrato acaba' : g.motivo === 'contrato sem data de fim' ? 'contrato sem data de fim' : g.motivo === 'depois da virada' ? 'depois de 2028' : 'incerto'
+  const porque = g.motivo === 'renova o contrato' ? `contrato curto: renove até ${g.mes ? mesAno(g.mes) : 'a virada'} para contar` : g.motivo === 'sem contrato' ? 'sem contrato' : g.motivo === 'depois do contrato' ? 'depois que o contrato acaba' : g.motivo === 'contrato sem data de fim' ? 'contrato sem data de fim' : g.motivo === 'depois da virada' ? 'depois de 2028' : 'incerto'
   // MOTOR: o nome do recebimento vem em descricao; sem ele, "Recebimento de <dono>"
   const nome = g.origem === 'recebimento' ? g.descricao ?? `Recebimento${g.nome ? ` de ${g.nome}` : ''}` : g.nome
   return `${nome}: ${valor}${quando} (${porque}).`
 }
 /** "O aluguel para em MM/AAAA. Renove até MM/AAAA pra ele contar em 2029." (aluguel_para_em e mes do gatilho do motor) */
 export function fraseRenova(g: { aluguel_para_em?: string | null; mes: string | null }): string {
-  return `${g.aluguel_para_em ? `O aluguel para em ${mesAno(g.aluguel_para_em)}. ` : ''}Renove até ${g.mes ? mesAno(g.mes) : 'a virada'} pra ele contar em 2029.`
+  return `${g.aluguel_para_em ? `O aluguel para em ${mesAno(g.aluguel_para_em)}. ` : ''}Renove até ${g.mes ? mesAno(g.mes) : 'a virada'} para ele contar em 2029.`
 }
 /** MOTOR (contrato curto): a falta de 2029 inclui o aluguel que não abate porque o contrato acaba antes de 12 meses.
  *  1 frase por imóvel, embaixo da linha da falta, pra nunca ficar 2 números de falta sem explicação. Só escreve. */
@@ -131,7 +131,7 @@ export function PodeEntrar({ saida }: { saida: FuturoSaida }) {
 export function frasesRenda(r: RendaDoMes): { rende: string; folga: string; taxa: string | null } {
   const mes = mesCurto(r.mes + '-01')
   return {
-    rende: `Em ${mes}, o dinheiro guardado (${r$(r.patrimonio)}) rende ${r$(r.renda_sustentavel)} por mês acima da inflação, pra sempre. O mês gasta ${r$(r.gasto_do_mes)}.`,
+    rende: `Em ${mes}, o dinheiro guardado (${r$(r.patrimonio)}) rende ${r$(r.renda_sustentavel)} por mês acima da inflação, para sempre. O mês gasta ${r$(r.gasto_do_mes)}.`,
     folga: r.folga_do_mes >= 0 ? `Sobram ${r$(r.folga_do_mes)} por mês.` : `Faltam ${r$(r.folga_do_mes)} por mês: a renda ainda não cobre o gasto.`,
     taxa: r.falta_taxa ? `Falta a Selic e o IPCA de ${r.mes.slice(0, 4)}: a conta usou o rendimento acima da inflação do objetivo. Digite os 2 aqui embaixo.` : null,
   }
@@ -166,7 +166,7 @@ export function Linha2028Resumo() {
   // modo renda (depois da virada): 1 linha com a renda do mês
   if (saida.modo === 'renda' && saida.renda) {
     const f = frasesRenda(saida.renda)
-    const t = `Rende ${r$(saida.renda.renda_total ?? saida.renda.renda_sustentavel)} por mês, pra sempre. ${f.folga}`
+    const t = `Rende ${r$(saida.renda.renda_total ?? saida.renda.renda_sustentavel)} por mês, para sempre. ${f.folga}`
     return (
       <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Renda do dinheiro guardado: ${t} Abrir o Planejamento.`)}>
         <span className="tile"><Target size={20} /></span>
@@ -187,10 +187,10 @@ export function Linha2028Resumo() {
   }
   const ult = saida.linha[saida.linha.length - 1]
   const d = saida.linha.find(x => x.fica_devendo > 0)
-  const texto = d ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso. Toque pra ver.`
+  const texto = d ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso. Toque para ver.`
     : saida.patrimonio_necessario === null ? 'Nesse cenário o rendimento não repõe a inflação.'
     : saida.folga >= 0 ? `Chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}: rende ${r$(saida.renda_total_2029 ?? saida.renda_sustentavel)} por mês em 2029.`
-    : `Pra viver do rendimento em 2029 faltam ${r$(saida.folga)}. Toque pra ver como fechar.`
+    : `Pra viver do rendimento em 2029 faltam ${r$(saida.folga)}. Toque para ver como fechar.`
   return (
     <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Até dezembro de 2028: ${texto} Abrir o Planejamento.`)}>
       <span className="tile"><Target size={20} /></span>

@@ -16,7 +16,7 @@ export function CenariosReceitas({ fontes, controle, revisao }: { fontes: Fontes
     <h3>Receitas e a renda de 2029</h3>
     <div className="pills" role="group" aria-label="Comparar cenários de receitas">{Object.entries(CENARIOS_RECEITAS).map(([c, t]) => <button type="button" className="pill" key={c} aria-pressed={cenario === c} onClick={() => escolher(c as CenarioReceitas)}>{t}</button>)}</div>
     <p className="sub">Garantido é o número oficial. Com previstos inclui prováveis; Com tudo inclui também incertos. A escolha fica só neste aparelho.</p>
-    {leitura.erro && <p role="alert">Não deu para atualizar os cenários. {leitura.dado ? 'Dados desatualizados.' : 'A comparação está indisponível.'} <button type="button" onClick={leitura.repetir}>Tentar de novo</button></p>}
+    {leitura.erro && <p role="alert">Não foi possível atualizar os cenários. {leitura.dado ? 'Dados desatualizados.' : 'A comparação está indisponível.'} <button type="button" onClick={leitura.repetir}>Tentar de novo</button></p>}
     {leitura.carregando && <p role="status">Atualizando a comparação…</p>}
     {erro && <p role="alert">{erro}</p>}
     {resultados && e && (Object.keys(CENARIOS_RECEITAS) as CenarioReceitas[]).map(c => {

@@ -6,6 +6,8 @@ import { ContextoApp, type Ctx } from '../../app/contexto'
 import { apiExemplo } from '../../api/exemplo'
 import type { Api } from '../../api/tipos'
 import { Casa } from './Casa'
+import { CadastroAssessor } from './CadastroAssessor'
+import { Entrar } from '../entrar/Entrar'
 const roots: Root[] = []
 afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
 const pendente = <T,>() => { let resolver!: (v: T) => void; let rejeitar!: (e: Error) => void; const promessa = new Promise<T>((r, j) => { resolver = r; rejeitar = j }); return { promessa, resolver, rejeitar } }
@@ -33,6 +35,34 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
 }
 
 const casaTeste = (nome: string) => ({ hoje: '2026-11-15', lista: [{ id: nome, nome, ok: false }], comprado: [], prestadores: [], gas: { trocas: [] }, presenca: { hoje: [], meu_ponto: { chegou: nome } } })
+it('entrada oferece Assessor da Casa sem lista de profissões', async () => {
+  vi.stubGlobal('addEventListener', vi.fn()); vi.stubGlobal('removeEventListener', vi.fn())
+  const a = await montar(createElement(Entrar))
+  expect(a.box.textContent).toContain('Assessor da Casa')
+  expect(a.box.textContent).toContain('Entrar com o convite da família')
+  expect(a.box.textContent).not.toMatch(/cozinheira|motorista/i)
+})
+it('cadastro recusa nome vazio ou composto de espaços sem gravar', async () => {
+  const salvarConfig = vi.fn(), fechar = vi.fn()
+  const a = await montar(createElement(CadastroAssessor, { fechar }), { salvarConfig })
+  await a.submit()
+  expect(a.box.textContent).toContain('Informe o nome do Assessor da Casa.')
+  await a.change('Nome do Assessor da Casa', '   ')
+  await a.submit()
+  expect(salvarConfig).not.toHaveBeenCalled()
+  expect(fechar).not.toHaveBeenCalled()
+  expect(a.find('INPUT', 'Nome do Assessor da Casa')?.getAttribute('required')).not.toBeNull()
+})
+it('cadastro salva nome, função e celular na configuração existente', async () => {
+  const salvarConfig = vi.fn(), fechar = vi.fn()
+  const a = await montar(createElement(CadastroAssessor, { fechar }), { salvarConfig })
+  await a.change('Nome do Assessor da Casa', ' Lia Avelar ')
+  await a.change('Função na casa', 'Cozinha')
+  await a.change('Celular', '81900000003')
+  await a.submit()
+  expect(salvarConfig).toHaveBeenCalledWith('a', 'casa_folha', expect.objectContaining({ pessoas: [expect.objectContaining({ nome: 'Lia Avelar', funcao: 'Cozinha', celular: '81900000003' })] }))
+  expect(fechar).toHaveBeenCalledOnce()
+})
 it.each([false, true])('Casa: troca de família oculta lista e presença antigas; falha=%s', async falha => {
   const p = pendente<any>(), familia = { id: 'a', nome: 'Teste', papel: 'equipe' as const, membroNome: 'Pessoa', envelopeId: null }
   const ler = vi.fn().mockResolvedValueOnce(casaTeste('ANTIGA')).mockImplementationOnce(() => p.promessa).mockResolvedValue(casaTeste('ATUAL'))

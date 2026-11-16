@@ -782,3 +782,5 @@ input,select,textarea{border-color:var(--field-border)}
 .tabbar a{min-width:0;text-align:center}.seg{flex-wrap:wrap}.seg button{height:auto}
 .contagem .seg.tres button{min-width:44px;min-height:44px}
 #titulo-tela:focus{outline:2px solid var(--accent);outline-offset:4px}
+
+.equipe-lnk{justify-self:stretch;justify-content:flex-start;text-align:left;gap:12px;min-height:64px}.equipe-lnk span{display:grid;gap:4px}.equipe-lnk small{font-size:13px;font-weight:400;color:var(--muted)}

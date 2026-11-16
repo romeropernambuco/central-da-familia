@@ -58,7 +58,7 @@ export function RitmoMes({ e, quem, porDia }: { e: Envelope; /** E2: no orçamen
         <div className="ritmo-b">
           <p className="ritmo-t"><span>{rotuloSemana}</span><b>{reais(e.ate_domingo)}</b></p>
           {totalSemana != null && totalSemana > 0 && <Barra feito={(semana || 0) / totalSemana} marca={marcaSem} rotulo={`Semana: já foram ${reais(semana || 0)} de ${reais(totalSemana)}. O traço é onde deveria estar hoje.`} />}
-          {semana != null && <p className="ritmo-f">Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compra grande` : ''}.</p>}
+          {semana != null && <p className="ritmo-f">Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compara grande` : ''}.</p>}
         </div>
       )}
       {dia >= 2 && lim > 0 && (

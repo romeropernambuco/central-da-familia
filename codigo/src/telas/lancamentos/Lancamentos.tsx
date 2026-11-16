@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useConfig } from '../../app/useConfig'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import type { RecebimentoTela } from '../../api/tipos'
@@ -74,7 +75,7 @@ function LancamentosFamilia() {
     setOcupado(null)
     if (!ok) return
     setN(x => x + 1); await recarregar()
-    toast(`${reais(l.valor)} foi pra lixeira.`, async () => { await api.restaurarLancamento(l.id); setN(x => x + 1); await recarregar() })
+    toast(`${reais(l.valor)} foi para lixeira.`, async () => { await api.restaurarLancamento(l.id); setN(x => x + 1); await recarregar() })
   }
   async function restaurar(l: Lancamento) {
     if (ocupado) return
@@ -83,7 +84,7 @@ function LancamentosFamilia() {
     setOcupado(null)
     if (!ok) return
     setN(x => x + 1); await recarregar()
-    toast(`${reais(l.valor)} voltou pra conta.`)
+    toast(`${reais(l.valor)} voltou para conta.`)
   }
 
   return (
@@ -95,11 +96,11 @@ function LancamentosFamilia() {
         </div>
       </div>
       {!lixeira && casal && <ResumoDoMes />}
-      {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis pra corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
+      {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis para corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
       {lixeira && <p className="todo"><Trash2 size={20} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
       <div className={casal ? 'tela-larga lanc-larga' : undefined}>
       <section className="card">
-        {falha && <p className="aviso-erro" role="alert">Não deu pra buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
+        {falha && <p className="aviso-erro" role="alert">Não foi possível buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
         {!falha && !carregou && <p className="sub">Buscando os lançamentos…</p>}
         {!falha && carregou && !vis.length && (lixeira
           ? <Vazio ico={<Trash2 size={24} />}>A lixeira está vazia{meses.length > 1 ? ' nos meses abertos' : ' neste mês'}.</Vazio>
@@ -116,7 +117,7 @@ function LancamentosFamilia() {
                   return (
                   <li key={l.id} className="li" {...(dono ? { 'data-do-outro': textoPrivado((envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família') } : {})}>
                     <span className="tile">{textoPrivado(nomeEnv(l.envelope_id).charAt(0))}</span>
-                    <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))}{textoPrivado(resumo?.envelopes.find(e => e.id === l.envelope_id)?.casa && nomeDe(l.autor) ? ` · pago por ${nomeDe(l.autor)}` : '')}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
+                    <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))} · pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} />{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
                       {l.parcela || !mexe ? null : lixeira
@@ -152,7 +153,7 @@ function LancamentosFamilia() {
  */
 function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes: Envelope[]; faturas: Fatura[]; cartoes: Cartao[]; familia: FamiliaMinha | null; hoje: string }) {
   // regra do dono (E2): o casal lê tudo, com o nome do dono escrito no que é do outro adulto
-  const doOutroCartao = (id: string) => { const c = cartoes.find(x => x.id === id); return c && !cartaoMeu(c, familia) ? (c.titular || 'outra pessoa') : null }
+  const doOutroCartao = (id: string) => { const c = cartoes.find(x => x.id === id); return c && !cartaoMeu(c, familia) ? (c.titular || '') : null }
   // a 1ª fatura com valor que ainda vai vencer, de cada cartão
   const proxPorCartao: Fatura[] = []
   for (const f of faturas.filter(x => x.vencimento >= hoje && x.total > 0).sort((a, b) => a.vencimento.localeCompare(b.vencimento))) if (!proxPorCartao.some(x => x.cartao_id === f.cartao_id)) proxPorCartao.push(f)
@@ -172,7 +173,7 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
         {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
           <ul className="list">
             {proxPorCartao.map(f => (
-              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{textoPrivado(doOutroCartao(f.cartao_id) ? `De ${doOutroCartao(f.cartao_id)} · ` : '')}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
+              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{cartoes.find(c => c.id === f.cartao_id)?.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: cartoes.find(c => c.id === f.cartao_id)!.titular_id!, nome: doOutroCartao(f.cartao_id) }} /> · </>}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
             ))}
           </ul>
         )}
@@ -217,7 +218,7 @@ export function ResumoDoMes() {
       <h2>{mesCurto(mes + '-01')}</h2>
       <button type="button" className="btn line" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes(mesMais(mes, 1))}>→</button>
     </div>
-    {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro || falhaEntradas ? <p role="alert">Não deu para atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+    {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro || falhaEntradas ? <p role="alert">Não foi possível atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
       : carregando || !dado || !leuEntradas ? <p role="status">Buscando resumo…</p> : <><FaixaDoMes totais={totaisDoMes(mes, hoje, dado.gastos, dado.recebimentos, entradas)} /><p className="sub">Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.</p></>}
     {mes < atual && <><button type="button" className="btn line" onClick={() => setVerFechamento(v => !v)}>{verFechamento ? 'Ocultar fechamento registrado' : 'Ver fechamento registrado'}</button>
       {verFechamento && <FechamentoRegistrado key={`${familia?.id}:${mes}`} mes={mes} />}</>}
@@ -230,7 +231,7 @@ export function FechamentoRegistrado({ mes }: { mes: string }) {
   const hoje = hojeRecife(), permitido = familia?.papel === 'casal' && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) && mes < hoje.slice(0, 7)
   const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:fechamento:${mes}`, permitido ? () => api.escritorioRelatorio(familia!.id, mesMais(mes, 1) + '-01', hoje) : null, [api, versao])
   if (!permitido) return null
-  if (erro) return <p role="alert">Não deu para consultar o fechamento registrado. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+  if (erro) return <p role="alert">Não foi possível consultar o fechamento registrado. <button type="button" onClick={repetir}>Tentar novamente</button></p>
   if (carregando || !dado) return <p role="status">Buscando fechamento…</p>
   const linhas = dado.diario.filter(l => l.funcionario === 'contador' && l.ref === `fechou_mes:${mes}`)
   return <section aria-label="Fechamento registrado"><h3>Fechamento de {mesCurto(mes + '-01')}</h3>

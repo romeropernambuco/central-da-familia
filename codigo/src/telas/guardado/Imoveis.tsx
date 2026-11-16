@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 // RODADA_PATRIMONIO (ordem do dono, 14/11): o bloco "Imóveis" dentro do Guardado (não é tela nova).
@@ -21,7 +22,7 @@ import { mesMais } from '../../lib/plano'
 
 const USO: { v: UsoImovel; nome: string; ajuda: string }[] = [
   { v: 'mora', nome: 'A família mora', ajuda: 'Onde vocês moram: o valor aparece no patrimônio, mas não dá renda.' },
-  { v: 'aluga', nome: 'Aluga', ajuda: 'Alugado pra alguém (por mês ou por temporada).' },
+  { v: 'aluga', nome: 'Aluga', ajuda: 'Alugado para alguém (por mês ou por temporada).' },
   { v: 'parado', nome: 'Parado', ajuda: 'Fechado, sem aluguel nem venda combinada.' },
   { v: 'vende', nome: 'Vai vender', ajuda: 'Tem venda planejada: diga o valor e o mês lá embaixo.' },
 ]
@@ -42,7 +43,7 @@ export function seloImovel(i: Pick<ImovelTela, 'uso' | 'tem_contrato' | 'contrat
     if (entra === undefined) return { texto: `contrato até ${mesAno(i.contrato_ate)}: a conta confere ao salvar`, entra: null }
     return entra ? { texto: `com contrato até ${mesAno(i.contrato_ate)}`, entra: true }
       : renova ? { texto: fraseRenova(renova), entra: false }
-      : { texto: `Contrato acaba em ${mesAno(i.contrato_ate)}: renove pra contar`, entra: false }
+      : { texto: `Contrato acaba em ${mesAno(i.contrato_ate)}: renove para contar`, entra: false }
   }
   if (i.venda_valor != null) return i.venda_contrato ? { texto: 'venda com contrato', entra: true } : { texto: 'venda sem contrato: não entra na conta', entra: false }
   return null
@@ -87,16 +88,16 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       </dl>}
       <p className="sub imo-frase">O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas cadastradas.</p>
       {carregando && <p role="status">Buscando imóveis…</p>}
-      {falha && <p role="alert">Não deu para buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" pra anotar casa, sala, lote ou apartamento.</Vazio> : (
+      {falha && <p role="alert">Não foi possível buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.</Vazio> : (
         <ul className="list">
           {imoveis.map(i => {
             const m: ImovelSaida | undefined = doMotor.get(i.id)
             const selo = seloImovel(i, m?.entra_na_conta, renovaDe(i.id))
-            const dono = i.meu ? 'seu' : `de ${i.dono_nome || 'outra pessoa'}`
+            const dono = i.meu ? 'seu' : `de ${i.dono_nome || ''}`
             return (
-              <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': textoPrivado(i.dono_nome || 'outra pessoa') })}>
-                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={`${textoPrivado(i.apelido)}, ${i.meu ? dono : textoPrivado(dono)}, vale ${reais(i.valor)}${selo ? `, ${textoPrivado(selo.texto)}` : ''}. ${i.meu ? 'Abrir pra mudar.' : 'Abrir pra ver.'}`}>
+              <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': textoPrivado(i.dono_nome || '') })}>
+                <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={`${textoPrivado(i.apelido)}, ${i.meu ? dono : textoPrivado(dono)}, vale ${reais(i.valor)}${selo ? `, ${textoPrivado(selo.texto)}` : ''}. ${i.meu ? 'Abrir para mudar.' : 'Abrir para ver.'}`}>
                   <span className="tile"><Building2 size={20} /></span>
                   <span className="m"><b className="quebra">{textoPrivado(i.apelido)}</b>
                     <small>{textoPrivado(adultos !== 1 ? `${dono} · ` : '')}{textoPrivado(nomeUso(i.uso))}</small>
@@ -106,6 +107,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                   </span>
                   <span className="v"><Din v={i.valor} /></span>
                 </button>
+                {!i.meu && <NomeDaPessoa pessoa={{ tipo: 'membro', id: i.dono_membro, nome: i.dono_nome }} />}
               </li>
             )
           })}
@@ -150,9 +152,9 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
   const q = (titulo: string, nota: string) => <Qm titulo={textoPrivado(titulo)} linhas={[]} nota={nota} />
   return (
     <Sheet titulo={textoPrivado(inicial ? (so ? inicial.apelido : 'Mudar imóvel') : 'Novo imóvel')} fechar={fechar}>
-      {so && <p className="todo"><span>Este imóvel é de {textoPrivado(inicial!.dono_nome || 'outra pessoa')}: só {textoPrivado(inicial!.dono_nome || 'quem anotou')} muda.</span></p>}
+      {so && <p className="todo"><span>Este imóvel é de <NomeDaPessoa pessoa={{ tipo: 'membro', id: inicial!.dono_membro, nome: inicial!.dono_nome }} />: só {textoPrivado(inicial!.dono_nome || 'quem anotou')} muda.</span></p>}
       <fieldset className="imo-form" disabled={so}>
-        <label className="campo"><span>Apelido {textoPrivado(q('Apelido', 'Um nome curto pra família reconhecer: "sala do centro", "casa da praia". Não precisa de endereço.'))}</span><CampoPrivado className="inp" maxLength={60} placeholder="Ex.: sala do centro" value={f.apelido} onChange={e => setF({ ...f, apelido: e.target.value })} /></label>
+        <label className="campo"><span>Apelido {textoPrivado(q('Apelido', 'Um nome curto para família reconhecer: "sala do centro", "casa da praia". Não precisa de endereço.'))}</span><CampoPrivado className="inp" maxLength={60} placeholder="Ex.: sala do centro" value={f.apelido} onChange={e => setF({ ...f, apelido: e.target.value })} /></label>
         <div className="campo"><span>Quanto vale hoje {q('Quanto vale hoje', 'O valor estimado de venda hoje (pode ser o da avaliação ou o de imóveis parecidos na mesma rua). Compõe o patrimônio; uma venda com contrato entra na projeção na data cadastrada.')}</span><CampoValor valor={f.valor} mudar={ver('valor')} rotulo="Quanto vale hoje" /></div>
         <div className="campo"><span id="imoUso">Pra que serve {q('Pra que serve', 'Mora: não rende nada. Aluga: o aluguel pode entrar na conta (só com contrato assinado). Parado: só aparece no patrimônio. Vai vender: diga a venda planejada.')}</span>
           <div className="pills" role="group" aria-labelledby="imoUso">{USO.map(u => <button key={u.v} type="button" className="pill" aria-pressed={f.uso === u.v} onClick={() => setF({ ...f, uso: u.v, vende: u.v === 'vende' ? true : f.vende })}>{u.nome}</button>)}</div>

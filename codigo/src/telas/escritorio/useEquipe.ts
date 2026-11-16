@@ -45,19 +45,19 @@ export function completarEquipe(doBanco: FuncionarioEsc[] | undefined, d: { rec:
       // Tesoureiro: o que tem data pra entrar e ainda não entrou (produto.recebimentos)
       tesoureiro: rec == null ? null : (() => {
         const abertos = rec.filter(r => !r.recebido_em).sort((a, b) => (a.mes_novo || a.mes_previsto).localeCompare(b.mes_novo || b.mes_previsto))
-        if (!abertos.length) return 'Nenhum dinheiro com data pra entrar. Cadastre no Planejamento e eu acompanho.'
+        if (!abertos.length) return 'Nenhum dinheiro com data para entrar. Cadastre no Planejamento e eu acompanho.'
         const p = abertos[0], m = p.mes_novo || p.mes_previsto
-        return `${n(abertos.length, 'recebimento', 'recebimentos')} com data pra entrar. O próximo: ${p.descricao}, ${reais(p.valor)} em ${mesAno(m)}${p.mes_novo ? ' (mudou de mês)' : ''}${p.certo ? '' : ', ainda sem contrato'}.`
+        return `${n(abertos.length, 'recebimento', 'recebimentos')} com data para entrar. O próximo: ${p.descricao}, ${reais(p.valor)} em ${mesAno(m)}${p.mes_novo ? ' (mudou de mês)' : ''}${p.certo ? '' : ', ainda sem contrato'}.`
       })(),
       // Presença: quem marcou "Cheguei" hoje na tela Casa
       presenca: pres === null || avisos === null ? null : (() => {
         const veio = [...new Set([...(pres[hoje] || []), ...avisos.filter(a => a.tipo === 'casa_presenca' && a.data === hoje).map(a => a.nome)])]
-        return veio.length ? `Hoje ${veio.length === 1 ? 'marcou presença' : 'marcaram presença'}: ${veio.join(', ')}.` : 'Ninguém da equipe da casa marcou presença hoje ainda.'
+        return veio.length ? `Hoje ${veio.length === 1 ? 'marcou presença' : 'marcaram presença'}: ${veio.join(', ')}.` : 'Nenhum Assessor da Casa marcou presença hoje ainda.'
       })(),
       // Auditor: a última contagem do estoque
       auditor: est == null ? null : (() => {
         const c = [...est.contagens].sort((a, b) => b.data.localeCompare(a.data))[0]
-        if (!c) return 'Nenhuma contagem do estoque ainda. Quando a equipe contar, eu confiro.'
+        if (!c) return 'Nenhuma contagem do estoque ainda. Quando os Assessores da Casa contarem, eu confiro.'
         const acabou = c.itens.filter(i => i.estado === 'acabou').length, pouco = c.itens.filter(i => i.estado === 'pouco').length
         return `Última contagem do estoque: ${dataCurta(c.data)}. ${acabou === 0 ? 'Nada acabou' : `${n(acabou, 'item acabou', 'itens acabaram')}`}${pouco ? `, ${n(pouco, 'com pouco', 'com pouco')}` : ''}.`
       })(),

@@ -175,7 +175,7 @@ export function Lancar() {
     const ok = await tentar(() => api.apagarLancamento(corr.id))
     if (!ok) return
     fecharLancar(); await recarregar()
-    toast(`${reais(corr.valor)} foi pra lixeira.`, async () => { await api.restaurarLancamento(corr.id); await recarregar() })
+    toast(`${reais(corr.valor)} foi para lixeira.`, async () => { await api.restaurarLancamento(corr.id); await recarregar() })
   }
 
   const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'apagar']
@@ -212,7 +212,7 @@ export function Lancar() {
         </div>
       )}
       {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
-      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{textoPrivado(atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome pra salvar.')}{textoPrivado(cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : '')}</span></p>}
+      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{textoPrivado(atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome para salvar.')}{textoPrivado(cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : '')}</span></p>}
       {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} /> : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
@@ -233,7 +233,7 @@ export function Lancar() {
               <div className="pills parc" role="group" aria-label="Em quantas vezes">
                 {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} disabled={p > 1 && !temDias} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
               </div>
-              {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
+              {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões para parcelar.</p>}
               {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
               {valor > 0 && <><p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p><p className="sub parc-impacto">{textoPrivado(fraseImpacto)}</p></>}
             </div>
@@ -241,7 +241,7 @@ export function Lancar() {
           {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
           {/* QA E11 (E8): parcelado que não conta neste mês não mostra o aviso como se fosse gasto de hoje */}
           {casal && !corr && gastoGrande && sim.length <= 1 && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
-          <p className="lbl salvar-dica">{corr ? 'Toque no nome pra salvar a correção' : valor > 0 ? 'Toque no seu nome pra salvar' : 'Digite o valor e toque no seu nome pra salvar'}</p>
+          <p className="lbl salvar-dica">{corr ? 'Toque no nome para salvar a correção' : valor > 0 ? 'Toque no seu nome para salvar' : 'Digite o valor e toque no seu nome para salvar'}</p>
           <div className="envbtns">
             {ordem.map(e => {
               // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
@@ -304,7 +304,7 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
     }
     if (alvo === 'combinado') {
       const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'gasto combinado' }])
-      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados pra um gasto combinado. Não muda o que você pode gastar.`) }
+      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados para um gasto combinado. Não muda o que você pode gastar.`) }
       return
     }
     const app = apps.find(a => a.id === alvo)
@@ -313,7 +313,7 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
     const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
     if (!ok) return
     toque.gravou(); fecharLancar(); await recarregar()
-    toast(`${reais(valor)} foram pro guardado (${app.nome}) e contam pra 2029. Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
+    toast(`${reais(valor)} foram pro guardado (${app.nome}) e contam para 2029. Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
   })
   return (
     <>
@@ -321,15 +321,15 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
         <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}>É do meu trabalho</button>
         <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}>Entrou a mais</button>
       </div>
-      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta pra 2029) e <b>não aumenta</b> o que dá pra gastar.</>}</p>
+      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta para 2029) e <b>não aumenta</b> o que dá para gastar.</>}</p>
       {visor}
       <CampoPrivado className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
       {!trabalho && <div className="campo"><span id="eDest">Pra onde vai</span>
         <div className="pills" role="group" aria-labelledby="eDest">
           {apps.map(a => <button key={a.id} type="button" className="pill" aria-pressed={alvo === a.id} onClick={() => setDestino(a.id)}>{textoPrivado(a.nome)}<small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small></button>)}
-          <button type="button" className="pill" aria-pressed={alvo === 'combinado'} onClick={() => setDestino('combinado')}>É pra um gasto combinado</button>
+          <button type="button" className="pill" aria-pressed={alvo === 'combinado'} onClick={() => setDestino('combinado')}>É para um gasto combinado</button>
         </div>
-        {!apps.length && <small>Você ainda não tem nada no Guardado. Dá pra anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
+        {!apps.length && <small>Você ainda não tem nada no Guardado. Dá para anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
       </div>}
       <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}><ArrowDownToLine size={20} />{trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}</button>
     </>
@@ -374,7 +374,7 @@ function AnotarCompra() {
   const pegarFoto = async (arq: File | null) => {
     if (!arq || fotoTrava.current || gravando) return
     fotoTrava.current = true; setPreparandoFoto(true); setErro('')
-    try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') }
+    try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não foi possível ler a foto. Tente de novo.') }
     finally { fotoTrava.current = false; setPreparandoFoto(false) }
   }
   return (
@@ -394,7 +394,7 @@ function AnotarCompra() {
         {foto && <div role="status">
           {!oculto && <img alt="Miniatura da nota" src={foto === 'exemplo' ? 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="120"%3E%3Crect width="100" height="120" fill="white"/%3E%3Ctext x="10" y="60"%3ENota exemplo%3C/text%3E%3C/svg%3E' : `data:image/jpeg;base64,${foto}`} style={{ width: 100, height: 120, objectFit: 'contain', borderRadius: 8 }} />}
           <p><Check size={18} aria-hidden="true" />Foto recebida</p>
-          <p className="sub">{gravando ? 'Enviando a compra. Aguarde a confirmação.' : 'Foto neste aparelho. A compra ainda não foi confirmada.'}</p>
+          <p className="sub">{gravando ? 'Enviando a compra. Aguarde a confirmação.' : 'Foto neste aparelho. A compara ainda não foi confirmada.'}</p>
         </div>}
         {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
       </div>

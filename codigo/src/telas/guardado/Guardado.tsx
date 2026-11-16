@@ -1,3 +1,4 @@
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { ouvirAtalhoGuardado } from './atalhos'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
@@ -61,7 +62,7 @@ export function Guardado() {
   const meses = meuLim > 0 ? Math.floor(seu / meuLim) : 0
   // E2 (regra nova, 13/11): o casal vê tudo o que está guardado, com o nome de quem é; mexe só no seu e no do casal
   const doOutro = new Map<string, number>()
-  for (const a of g.aplicacoes) if (!aplicacaoMinha(a, familia)) doOutro.set(a.titular_nome || 'outra pessoa', (doOutro.get(a.titular_nome || 'outra pessoa') || 0) + a.saldo)
+  for (const a of g.aplicacoes) if (!aplicacaoMinha(a, familia)) doOutro.set(a.titular || `titular:${a.id}`, (doOutro.get(a.titular || `titular:${a.id}`) || 0) + a.saldo)
   const minhas = g.aplicacoes.filter(a => aplicacaoMinha(a, familia))
   // G10: 1 aviso só por marco, que some quando a pessoa fecha
   const marco = marcoGuardado(g.saldo_30_seu || g.saldo_30 || [])
@@ -83,7 +84,7 @@ export function Guardado() {
           <div><dt>Desde o início</dt><dd><Din v={g.rendeu_desde_inicio_liquido} /></dd></div>
           <div className="tot"><dt>{doOutro.size ? 'A família tem guardado' : 'Você tem guardado'}</dt><dd><Din v={g.total} /></dd></div>
         </dl>
-        {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={textoPrivado(n)}>No nome de {textoPrivado(n)} <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
+        {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={textoPrivado(n)}>No nome de <NomeDaPessoa pessoa={{ tipo: 'membro', id: n, nome: g.aplicacoes.find(a => a.titular === n)?.titular_nome }} /> <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
         {meses > 0 && !oculto && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}
         <button type="button" className="explica-l" onClick={abrirConta}><HelpCircle size={18} aria-hidden="true" /> De onde veio esse número?</button>
       </section>
@@ -123,12 +124,13 @@ export function Guardado() {
             </div>
             <ul className="list">
               {g.aplicacoes.map(a => (
-                <li key={a.id} {...(aplicacaoMinha(a, familia) ? {} : { 'data-do-outro': textoPrivado(a.titular_nome || 'outra pessoa') })}>
-                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={`${textoPrivado(a.nome)}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${textoPrivado(a.titular_nome || 'outra pessoa')}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`}>
+                <li key={a.id} {...(aplicacaoMinha(a, familia) ? {} : { 'data-do-outro': textoPrivado(a.titular_nome || '') })}>
+                  <button className="li" type="button" onClick={() => setFolha({ tipo: 'app', app: a })} aria-label={`${textoPrivado(a.nome)}${aplicacaoMinha(a, familia) ? '' : `, no nome de ${textoPrivado(a.titular_nome)}`}: rendeu hoje ${reais(a.rendeu_hoje_liquido)}, tem ${reais(a.saldo)}. Abrir.`}>
                     <span className="tile"><Landmark size={20} /></span>
-                    <span className="m"><b>{textoPrivado(a.nome)}</b>{a.titular !== undefined && <small className="dono">{textoPrivado(a.titular_nome ? `no nome de ${a.titular_nome}` : 'do casal')}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
+                    <span className="m"><b>{textoPrivado(a.nome)}</b>{a.titular !== undefined && <small className="dono">{a.titular ? textoPrivado(a.titular_nome) : 'do casal'}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
                     <span className="v guard-v"><small>rendeu hoje</small><Din v={a.rendeu_hoje_liquido} /></span>
                   </button>
+                  {a.titular && <NomeDaPessoa pessoa={{ tipo: 'membro', id: a.titular, nome: a.titular_nome }} />}
                 </li>
               ))}
             </ul>
@@ -294,7 +296,7 @@ function Aplicacao({ a, fechar, mover }: { a: GuardadoAplicacao; fechar: () => v
       </ul>
       <p className="sub"><b>{ROTULO_TIPO[a.tipo]}</b> no {textoPrivado(a.banco)}, {rendeQuanto(a)}. {a.ir_faixa > 0 ? `Imposto de renda de ${pct(a.ir_faixa, 1).replace(',0%', '%')} sobre o rendimento (cai quanto mais tempo fica guardado).` : 'Não paga imposto de renda.'} {a.liquidez === 'diaria' ? 'Pode tirar quando quiser.' : a.vence_em ? `Vence em ${dataBr(a.vence_em)}.` : 'Só sai no vencimento.'} {a.fgc_ok ? (a.tipo === 'tesouro_selic' ? 'Garantido pelo governo federal.' : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.') : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}</p>
       {/* E2: no nome do outro é só pra ler (o banco também tranca) */}
-      {!minha ? <p className="todo" data-do-outro={textoPrivado(a.titular_nome || 'outra pessoa')}><span>Está no nome de <b>{textoPrivado(a.titular_nome || 'outra pessoa')}</b>. Guardar, tirar e encerrar aqui é só com {textoPrivado(a.titular_nome || 'quem é o titular')}.</span></p> : <>
+      {!minha ? <p className="todo" data-do-outro={textoPrivado(a.titular_nome)}><span>Está no nome de <b><NomeDaPessoa pessoa={{ tipo: 'membro', id: a.titular || `titular:${a.id}`, nome: a.titular_nome }} /></b>. Guardar, tirar e encerrar aqui é só com {textoPrivado(a.titular_nome || 'quem é o titular')}.</span></p> : <>
       <div className="row-btns">
         <button className="btn primary" type="button" onClick={() => mover('aporte')}><ArrowDownToLine size={20} />Guardar mais</button>
         <button className="btn line" type="button" onClick={() => mover('resgate')}><ArrowUpFromLine size={20} />Tirar</button>

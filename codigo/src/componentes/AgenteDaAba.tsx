@@ -68,7 +68,7 @@ const SOBRE: Record<string, string> = {
 export function AjudaDaAba({ rota }: { rota: string }) {
  const [aberta, setAberta] = useState(false)
  return <><button type="button" className="btn line" onClick={() => setAberta(true)}>Preciso de ajuda</button>{aberta && <Sheet titulo="Preciso de ajuda" fechar={() => setAberta(false)}>
- <p>{SOBRE[rota] || 'Entre com seu e-mail ou com o convite da equipe.'}</p>
+ <p>{SOBRE[rota] || 'Entre com seu e-mail ou com o convite do Assessor da Casa.'}</p>
  <p>Para registrar uma compra, use “Anotar gasto” ou “Anotar compra”.</p>
  <p>Os números ficam no conteúdo da tela. O botão “?” explica de onde vieram.</p>
  <p>Use o olho para esconder ou mostrar valores. Ele também fica na folha de Anotar gasto.</p>

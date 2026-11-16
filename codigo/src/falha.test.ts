@@ -17,7 +17,7 @@ describe('C6: tela de falha em vez de tela branca', () => {
   it('pedaço do app que não baixou: mensagem de internet e botão Tentar de novo que recarrega', () => {
     const raiz = raizFalsa(); let recarregou = 0
     const f = mostrarFalha(raiz, new TypeError('Failed to fetch dynamically imported module: https://x/assets/partida-abc.js'), () => { recarregou++ })
-    expect(f.titulo).toBe('Não deu pra abrir a Central agora')
+    expect(f.titulo).toBe('Não foi possível abrir a Central agora')
     expect(raiz.innerHTML).toContain('Confira a internet')
     expect(raiz.innerHTML).toContain('>Tentar de novo</button>')
     expect(raiz.innerHTML).toContain('role="alert"')
@@ -34,7 +34,7 @@ describe('C6: tela de falha em vez de tela branca', () => {
     expect(raiz.innerHTML).not.toMatch(/VITE_|Supabase|undefined|Error|fetch/)
   })
   it('sem #root ainda devolve o texto e não quebra; texto sem travessão', () => {
-    expect(mostrarFalha(null, new Error('x'), () => {}).titulo).toBe('Não deu pra abrir a Central agora')
+    expect(mostrarFalha(null, new Error('x'), () => {}).titulo).toBe('Não foi possível abrir a Central agora')
     for (const f of [textoDaFalha(new ErroConfig()), textoDaFalha(new Error('x'))]) expect(f.titulo + f.texto).not.toMatch(/[–—]/)
   })
 })

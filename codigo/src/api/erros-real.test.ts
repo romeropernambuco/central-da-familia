@@ -21,5 +21,5 @@ it.each(['P0001', '22023', '42501', '54000'])('RPC preserva explicação de neg�
     rpc: async () => ({ data: null, error: { code, message } }),
   }) }))
   const { apiReal } = await import('./real')
-  await expect(apiReal.criarFamilia('Fictícia', 'Pessoa')).rejects.toThrow(message)
+  await expect(apiReal.criarFamilia('Fictícia', 'Pessoa')).rejects.toThrow(message === 'a familia ja tem 30 aplicacoes abertas' ? 'A família já tem 30 aplicações abertas.' : message)
 })

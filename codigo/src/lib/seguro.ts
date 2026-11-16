@@ -37,7 +37,7 @@ export function criarGuardaConfig<T>(ler: () => Promise<T>, gravar: (v: T) => Pr
     },
     /** Grava. `valor` é o que ficou no banco; `mudou` diz se entrou coisa de outro aparelho junto. */
     salvar(v: T): Promise<{ valor: T; mudou: boolean }> {
-      if (!lido) return Promise.reject(new Error('Ainda não deu pra abrir o que já estava salvo. Confira a internet e tente de novo: nada foi mudado.'))
+      if (!lido) return Promise.reject(new Error('Ainda não deu para abrir o que já estava salvo. Confira a internet e tente de novo: nada foi mudado.'))
       escritas++
       // 1 gravação por vez nesta chave: a 2ª espera a 1ª e parte do que a 1ª deixou
       const vez = fila.catch(() => {}).then(async () => {

@@ -9,21 +9,21 @@ export class ErroRede extends Error { constructor(m = 'Não foi possível confir
 export const TRADUZ: Record<string, string> = {
   'Codigo errado ou vencido.': 'Código errado ou vencido.',
   'Muitas tentativas. Peca um codigo novo a quem te convidou.': 'Muitas tentativas. Peça um código novo a quem te convidou.',
-  'Entrada da equipe pausada por 1 hora. Tente mais tarde.': 'Entrada da equipe pausada por 1 hora. Tente mais tarde.',
+  'Entrada da equipe pausada por 1 hora. Tente mais tarde.': 'Entrada do Assessor da Casa pausada por 1 hora. Tente mais tarde.',
   'Voce ja esta nessa familia.': 'Você já está nessa família.',
   'Esse convite ja foi usado.': 'Esse convite já foi usado.',
   'so o casal convida': 'Só o casal convida.',
   'falta um e-mail valido': 'Falta um e-mail válido de quem você está convidando.',
   'limite de 3 familias por pessoa': 'Cada pessoa cria no máximo 3 famílias.',
-  'login da equipe nao cria familia': 'O login da equipe não cria família. Entre com o seu e-mail.',
+  'login da equipe nao cria familia': 'O login do Assessor da Casa não cria família. Entre com o seu e-mail.',
   'o valor tem que ser maior que zero': 'O valor tem que ser maior que zero.',
-  'so o casal e a equipe da casa veem esta tela': 'Só o casal e a equipe da casa veem esta tela.',
-  'so o casal e a equipe da casa marcam a casa': 'Só o casal e a equipe da casa marcam a casa.',
+  'so o casal e a equipe da casa veem esta tela': 'Só o casal e os Assessores da Casa veem esta tela.',
+  'so o casal e a equipe da casa marcam a casa': 'Só o casal e os Assessores da Casa marcam a casa.',
   'item nao encontrado na lista': 'Esse item não está mais na lista.',
   'prestador nao encontrado': 'Esse serviço não está mais cadastrado.',
   // entrada da equipe pelo link do convite
   'Abra o link do convite que te mandaram e digite os 4 numeros.': 'Abra o link do convite que te mandaram e digite os 4 números.',
-  'abra a sessao antes (login anonimo)': 'Não deu pra abrir a entrada da equipe. Feche e abra o link de novo.',
+  'abra a sessao antes (login anonimo)': 'Não foi possível abrir a entrada do Assessor da Casa. Feche e abra o link de novo.',
   'ja existem 5 codigos abertos nesta familia; use um deles ou espere vencer': 'Já existem 5 códigos abertos nesta família. Use um deles ou espere vencer (24 horas).',
   'muitos convites abertos agora; tente de novo em alguns minutos': 'Muitos convites abertos agora. Tente de novo em alguns minutos.',
   // convite por e-mail (casal e pessoa)
@@ -33,19 +33,19 @@ export const TRADUZ: Record<string, string> = {
   'esse e-mail ja foi convidado nesta familia': 'Esse e-mail já foi convidado nesta família. A pessoa só precisa entrar com ele.',
   'a familia ja tem 50 pessoas': 'A família já tem 50 pessoas.',
   'falta o nome (ate 80 letras)': 'Falta o nome (até 80 letras).',
-  'papel tem que ser casal, pessoa ou equipe': 'O convite tem que ser pra casal, pessoa ou equipe.',
+  'papel tem que ser casal, pessoa ou equipe': 'O convite tem que ser para casal, pessoa ou Assessor da Casa.',
   // limite e lançamento
   'so o casal muda o limite': 'Só o casal muda o limite.',
-  'o limite tem que ser um valor de zero pra cima': 'O limite tem que ser um valor de zero pra cima.',
+  'o limite tem que ser um valor de zero pra cima': 'O limite tem que ser um valor de zero para cima.',
   'limite nao encontrado': 'Esse limite não existe mais. Feche e abra a tela de novo.',
-  'falta a chave do toque': 'Não deu pra marcar o toque. Feche o Anotar e abra de novo.',
+  'falta a chave do toque': 'Não foi possível marcar o toque. Feche o Anotar e abra de novo.',
   'esse lancamento ja foi gravado (mesma chave)': 'Esse lançamento já foi gravado. Confira em Gastos e entradas.',
   'o valor passou de 1 milhao; confira os numeros': 'O valor passou de 1 milhão. Confira os números.',
   'a data esta fora do calendario do app': 'A data está fora do calendário do app.',
   'precisa entrar no app antes de lancar': 'Entre no app antes de anotar.',
   'sem acesso a esta familia': 'Você não faz parte dessa família.',
   // Esta regra de negócio usa 54000 nas migrações; só esta mensagem é liberada, não o código inteiro.
-  'a familia ja tem 30 aplicacoes abertas': 'a familia ja tem 30 aplicacoes abertas',
+  'a familia ja tem 30 aplicacoes abertas': 'A família já tem 30 aplicações abertas.',
 }
 
 /** Erros do convite por e-mail que a pessoa precisa ler (os outros são só "não tinha convite"). */
@@ -73,7 +73,7 @@ export function traduzErro(e: { message?: string; code?: string; status?: number
   if (/token has expired or is invalid|otp.*(expired|invalid)|invalid.*otp/i.test(m)) return new Error('Código errado ou vencido. Confira os 6 números ou peça outro código.')
   if (/rate limit|only request this after|too many requests/i.test(m) || e?.status === 429) return new Error('Muitos pedidos seguidos. Espere 1 minuto e tente de novo.')
   if (/signups? not allowed|signup is disabled/i.test(m)) return new Error('A entrada de gente nova está desligada no banco. Fale com quem te convidou.')
-  if (/anonymous sign-?ins are disabled/i.test(m)) return new Error('A entrada da equipe ainda não está disponível. Fale com quem cuida do app.')
+  if (/anonymous sign-?ins are disabled/i.test(m)) return new Error('A entrada do Assessor da Casa ainda não está disponível. Fale com quem cuida do app.')
   if (m.trim() && CODIGOS_NEGOCIO.has(e?.code || '') && !MARCA_TECNICA.test(m) && !DADO_PRIVADO.test(m)) return new Error(m)
   let id = 2166136261
   for (const c of `${e?.code || ''}:${m}`) id = Math.imul(id ^ c.charCodeAt(0), 16777619)

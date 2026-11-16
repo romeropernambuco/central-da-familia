@@ -1,4 +1,5 @@
 import { useModoFuncionario } from '../../componentes/AgenteDaAba'
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
@@ -184,7 +185,7 @@ function RelatorioPeriodo({ dias }: { dias: number }) {
                 {porDia[dia].map(d => (
                   <li key={d.id} className="li">
                     <FuncIco id={idDe(d.funcionario)} size={36} />
-                    <span className="m"><small>{hhmm(d.quando)} · {textoPrivado(nome(d.funcionario))}{textoPrivado(d.respondido_por ? ` · respondeu ${mostrar(d.respondido_por)}` : '')}</small><span className="perg-d">{textoPrivado(mostrar(d.assunto || d.pergunta))}</span><b className="quebra">{textoPrivado(mostrar(d.resposta))}</b></span>
+                    <span className="m"><small>{hhmm(d.quando)} · {textoPrivado(nome(d.funcionario))} · respondeu <NomeDaPessoa pessoa={{ tipo: 'membro', id: `diario:${d.id}`, nome: d.respondido_por }} /></small><span className="perg-d">{textoPrivado(mostrar(d.assunto || d.pergunta))}</span><b className="quebra">{textoPrivado(mostrar(d.resposta))}</b></span>
                     <span />
                   </li>
                 ))}

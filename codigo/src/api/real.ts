@@ -193,14 +193,14 @@ export const apiReal: Api = {
     ])
     if (ev.error) erro(ev.error)
     const nomes = new Map((mb.data || []).map((m: any) => [m.user_id, m.nome]))
-    return (ev.data || []).map((e: any) => ({ tipo: e.tipo as AvisoCasa, data: hojeRecife(new Date(e.criado_em)), nome: nomes.get(e.user_id) || 'Equipe' }))
+    return (ev.data || []).map((e: any) => ({ tipo: e.tipo as AvisoCasa, data: hojeRecife(new Date(e.criado_em)), nome: nomes.get(e.user_id) || '' }))
   },
   async lerCupom(familia, foto) {
     // POST {URL}/functions/v1/ia-ler-cupom, Authorization: Bearer <token do login>, corpo {familia_id, foto}
     if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error(MSG_CUPOM.rede)
     const { data: s } = await sb().auth.getSession()
     const token = s.session?.access_token
-    if (!token) throw new ErroSessao('Sua sessão acabou. Entre de novo pra ler o cupom.')
+    if (!token) throw new ErroSessao('Sua sessão acabou. Entre de novo para ler o cupom.')
     let r: Response
     try {
       r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ia-ler-cupom`, {
@@ -249,7 +249,7 @@ export const apiReal: Api = {
   async membros(familia) {
     const { data, error } = await sb().from('membros').select('id, nome, papel').eq('familia_id', familia).eq('ativo', true).in('papel', ['casal', 'pessoa']).order('criado_em')
     if (error) erro(error)
-    return (data || []).map((m: any) => ({ id: String(m.id), nome: String(m.nome), ...(m.papel ? { papel: m.papel as Papel } : {}) }))
+    return (data || []).map((m: any) => ({ id: String(m.id), nome: String(m.nome ?? ''), ...(m.papel ? { papel: m.papel as Papel } : {}) }))
   },
   async cartaoSalvar(familia, c) {
     // com `cartao` o banco troca TODOS os campos: a ficha sempre manda o cadastro inteiro. `titular` é o id do membro da família.

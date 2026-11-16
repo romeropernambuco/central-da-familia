@@ -1,3 +1,5 @@
+import { validarNome } from '../../lib/nomePessoa'
+import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { rotuloDeOpcao, textoDeAgente } from '../../lib/textoAgente'
 import { abrirAtalhoGuardado } from '../guardado/atalhos'
 import { Recebimentos } from '../planejamento/Recebimentos'
@@ -101,7 +103,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
                 const texto = (s: string) => d.trechosPrivados ? textoDeAgente(s, d.trechosPrivados, oculto) : textoPrivado(s, oculto)
                 return (
                 <li key={d.id} data-resposta={texto(d.resposta)}>
-                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{d.respondido_por ? ` · ${textoPrivado(d.respondido_por, oculto)}` : ''}</small><span>{texto(d.assunto || d.pergunta)}</span><b>{texto(d.resposta)}</b></span>
+                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)} · <NomeDaPessoa pessoa={{ tipo: 'membro', id: `diario:${d.id}`, nome: d.respondido_por }} /></small><span>{texto(d.assunto || d.pergunta)}</span><b>{texto(d.resposta)}</b></span>
                   {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}>Corrigir</button>}
                 </li>
                 )
@@ -165,7 +167,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
         {itens.map(t => (
           <li key={chave(t)}>
             <div className="cad-l">
-              <span className="m"><b>{textoPrivado(titulo(t))}</b><small>{textoPrivado(sub(t))}</small></span>
+              <span className="m"><b>{typeof titulo(t) === 'string' ? textoPrivado(titulo(t)) : titulo(t)}</b><small>{textoPrivado(sub(t))}</small></span>
               {lado && <span className="v">{lado(t)}</span>}
               {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Pencil size={18} /></button>}
             </div>
@@ -227,16 +229,16 @@ function CadCartao() {
     <>
       <Lista<Cartao> nome="Cartões" novo="Novo cartão" itens={cartoes || []} chave={c => c.id} semEditar={c => doOutro(c)} vazio={cartoes ? 'Nenhum cartão cadastrado. Toque em "Novo cartão".' : 'Buscando os cartões…'}
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
-        sub={c => <>{textoPrivado(c.titular ? `de ${c.titular} · ` : '')}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
+        sub={c => <>{c.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: c.titular_id, nome: c.titular }} /> · </>}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
         campos={[
-          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', trechosPrivados: (membros || []).map(m => m.nome), opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, pra ler.' },
+          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', trechosPrivados: (membros || []).map(m => m.nome), opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, para ler.' },
           { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
-          { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra pra você ter o cartão. Se não cobra nada, deixe vazio.' },
+          { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra para você ter o cartão. Se não cobra nada, deixe vazio.' },
           { k: 'taxa_periodo', rotulo: 'Essa cobrança é', tipo: 'opcao', opcoes: [['mes', 'Todo mês'], ['ano', '1 vez por ano']] },
           { k: 'taxa_mes', rotulo: 'Mês em que a anuidade é cobrada', tipo: 'opcao', opcoes: MESES },
           { k: 'taxa_isenta_acima', rotulo: 'O banco não cobra se você gastar por mês', tipo: 'valor', dica: 'Se o banco dá isenção acima de um valor de gasto. Se não dá, deixe vazio.' },
-          { k: 'final4', rotulo: 'Os 4 últimos números (se quiser)', tipo: 'num', dica: 'Nunca o número inteiro do cartão: só pra você saber qual é.' },
+          { k: 'final4', rotulo: 'Os 4 últimos números (se quiser)', tipo: 'num', dica: 'Nunca o número inteiro do cartão: só para você saber qual é.' },
           { k: 'ativo', rotulo: 'Ainda usa esse cartão?', tipo: 'opcao', opcoes: [['sim', 'Uso'], ['nao', 'Não uso mais']] },
         ]}
         paraForm={c => ({ nome: c?.nome || '', banco: c?.banco || '', titular: c?.titular_id || '', dia_fechamento: c?.dia_fechamento ? String(c.dia_fechamento) : '', dia_vencimento: c?.dia_vencimento ? String(c.dia_vencimento) : '', limite: vt(c?.limite), taxa_valor: vt(c?.taxa_valor), taxa_periodo: c?.taxa_periodo || 'ano', taxa_mes: c?.taxa_mes ? String(c.taxa_mes) : '', taxa_isenta_acima: vt(c?.taxa_isenta_acima), final4: c?.final4 || '', ativo: c?.ativo === false ? 'nao' : 'sim' })}
@@ -278,13 +280,13 @@ function CadFiscal() {
       <input ref={arq} type="file" accept="image/*,application/pdf" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) anexar(f) }} />
       <Lista<Feira> nome="Feiras" novo="Nova feira" itens={feiras || []} chave={f => f.id} vazio={feiras ? 'Nenhuma feira registrada. Toque em "Nova feira".' : 'Buscando as feiras…'}
         titulo={f => `Feira de ${dataCurta(f.data)}${f.loja ? ` · ${f.loja}` : ''}`}
-        sub={f => <>{f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? <>sem nota: {textoPrivado(f.sem_nota_motivo)}</> : 'falta a nota'}{textoPrivado(f.feita_por ? ` · quem fez: ${f.feita_por}` : '')}</>}
+        sub={f => <>{f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? <>sem nota: {textoPrivado(f.sem_nota_motivo)}</> : 'falta a nota'} · quem fez: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `feira:${f.id}`, nome: f.feita_por }} /></>}
         lado={f => (!equipe && f.valor != null ? <Din v={f.valor} /> : null)}
         extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Camera size={16} />Anexar a nota</button> : null)}
         campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []), { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
         paraForm={f => ({ data: f?.data || hojeRecife(), valor: vt(f?.valor), loja: f?.loja || '', motivo: f?.sem_nota_motivo || '' })}
         salvar={async (fm, f) => {
-          if (f) { if (!fm.motivo.trim()) return 'Feira já registrada: aqui dá pra dizer por que não teve nota, ou anexar a nota pelo botão.'; await api.feiraSemNota(familia!.id, f.id, fm.motivo.trim()); return }
+          if (f) { if (!fm.motivo.trim()) return 'Feira já registrada: aqui dá para dizer por que não teve nota, ou anexar a nota pelo botão.'; await api.feiraSemNota(familia!.id, f.id, fm.motivo.trim()); return }
           if (!equipe && (!fm.valor || !val(fm.valor))) return 'Digite quanto deu a feira.'
           await api.feiraRegistrar(familia!.id, { data: fm.data, ...(equipe ? {} : { valor: val(fm.valor)! }), loja: fm.loja.trim() })
         }} />
@@ -293,7 +295,7 @@ function CadFiscal() {
         {contando && <Contagem gravando={gravando} salvar={async itens => { setGravando(true); const ok = await tentar(() => api.estoqueContar(familia!.id, itens)); setGravando(false); if (ok) { setContando(false); toast('Contagem salva.'); await recarregar() } }} />}
         {est && !est.contagens.length && <p className="sub">Nenhuma contagem ainda.</p>}
         <ul className="list">{(est?.contagens || []).slice(0, 4).map(c => { const ac = c.itens.filter(i => i.estado === 'acabou').length, po = c.itens.filter(i => i.estado === 'pouco').length
-          return <li key={c.id}><div className="cad-l"><span className="m"><b>{diaSemana(c.data)}, {dataCurta(c.data)}</b><small>{textoPrivado(c.contado_por ? `quem contou: ${c.contado_por} · ` : '')}{c.itens.length} itens · {ac === 1 ? '1 acabou' : `${ac} acabaram`} · {po} com pouco</small></span></div></li> })}</ul>
+          return <li key={c.id}><div className="cad-l"><span className="m"><b>{diaSemana(c.data)}, {dataCurta(c.data)}</b><small>quem contou: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `contagem:${c.id}`, nome: c.contado_por }} /> · {c.itens.length} itens · {ac === 1 ? '1 acabou' : `${ac} acabaram`} · {po} com pouco</small></span></div></li> })}</ul>
       </div>
       <Lista<Estoque['itens'][number]> nome="Itens da casa" novo="Novo item" itens={(est?.itens || []).filter(i => i.ativo)} chave={i => i.id} vazio={est ? 'Nenhum item. Toque em "Novo item".' : 'Buscando os itens…'}
         titulo={i => i.nome} sub={i => i.categoria}
@@ -310,19 +312,19 @@ function CadFolha() {
   const mes = hojeRecife().slice(0, 7), paga = !!folha.daePaga?.[mes]
   return (
     <>
-      <Lista<PessoaF> nome="Quem trabalha na casa" novo="Nova pessoa" itens={folha.pessoas as PessoaF[]} chave={p => p.id} vazio={lido ? 'Ninguém cadastrado. Toque em "Nova pessoa".' : 'Buscando…'}
-        titulo={p => `${p.nome} · ${p.funcao}`} sub={p => `salário pago todo dia ${p.diaPagamento || 5}`} lado={p => <Din v={p.salario} />}
-        campos={[{ k: 'nome', rotulo: 'Nome' }, { k: 'funcao', rotulo: 'Função', ph: 'Ex.: Cozinheira' }, { k: 'salario', rotulo: 'Salário do mês', tipo: 'valor' }, { k: 'dia', rotulo: 'Dia do pagamento', tipo: 'num' }]}
+      <Lista<PessoaF> nome="Assessores da Casa" novo="Nova pessoa" itens={folha.pessoas as PessoaF[]} chave={p => p.id} vazio={lido ? 'Ninguém cadastrado. Toque em "Nova pessoa".' : 'Buscando…'}
+        titulo={p => <NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} />} sub={p => `salário pago todo dia ${p.diaPagamento || 5}`} lado={p => <Din v={p.salario} />}
+        campos={[{ k: 'nome', rotulo: 'Nome' }, { k: 'funcao', rotulo: 'Função', ph: 'Ex.: Cozinha' }, { k: 'salario', rotulo: 'Salário do mês', tipo: 'valor' }, { k: 'dia', rotulo: 'Dia do pagamento', tipo: 'num' }]}
         paraForm={p => ({ nome: p?.nome || '', funcao: p?.funcao || '', salario: vt(p?.salario), dia: String(p?.diaPagamento || 5) })}
         salvar={async (f, p) => {
           if (!f.nome.trim()) return 'Escreva o nome.'
           if (!val(f.salario)) return 'Digite o salário do mês.'
           if (!(Number(f.dia) >= 1 && Number(f.dia) <= 31)) return 'O dia do pagamento tem que ser de 1 a 31.'
-          const nova: PessoaF = { id: p?.id || novoUuid().slice(0, 8), nome: f.nome.trim(), funcao: f.funcao.trim() || 'Ajuda em casa', salario: val(f.salario)!, diaPagamento: Number(f.dia) }
-          if (!(await salvar({ ...folha, pessoas: p ? folha.pessoas.map(x => (x.id === p.id ? nova : x)) : [...folha.pessoas, nova] }))) throw new Error('Não deu pra salvar. Tente de novo.')
+          const nova: PessoaF = { ...p, id: p?.id || novoUuid().slice(0, 8), nome: f.nome.trim(), funcao: f.funcao.trim() || 'Assessor da Casa', salario: val(f.salario)!, diaPagamento: Number(f.dia) }
+          if (!(await salvar({ ...folha, pessoas: p ? folha.pessoas.map(x => (x.id === p.id ? nova : x)) : [...folha.pessoas, nova] }))) throw new Error('Não foi possível salvar. Tente de novo.')
         }} />
       <div className="cad"><div className="cad-h"><b>Guia mensal do governo</b><button type="button" className="btn line sm" onClick={() => salvar({ ...folha, daePaga: { ...folha.daePaga, [mes]: !paga } })}>{paga ? 'Desmarcar' : 'Marcar como paga'}</button></div>
-        <p className="sub">{paga ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.` : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de quem trabalha na casa e vence todo dia 07.`}</p></div>
+        <p className="sub">{paga ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.` : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de Assessores da Casa e vence todo dia 07.`}</p></div>
     </>
   )
 }
@@ -335,18 +337,18 @@ function CadComprador() {
   return (
     <>
       <Lista<Prest> nome="Prestadores" novo="Novo prestador" itens={prest} chave={p => p.id} vazio={lidoP ? 'Nenhum prestador. Toque em "Novo prestador".' : 'Buscando…'}
-        titulo={p => `${p.servico} · ${p.nome}`} sub={p => `vem ${(p.dia === 0 || p.dia === 6 ? 'todo ' : 'toda ') + DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`} lado={p => <Din v={p.valor} />}
+        titulo={p => <>{textoPrivado(p.servico)} · <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></>} sub={p => `vem ${(p.dia === 0 || p.dia === 6 ? 'todo ' : 'toda ') + DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`} lado={p => <Din v={p.valor} />}
         campos={[{ k: 'servico', rotulo: 'Serviço', ph: 'Ex.: Jardineiro' }, { k: 'nome', rotulo: 'Nome' }, { k: 'dia', rotulo: 'Dia da semana', tipo: 'opcao', opcoes: DIAS }, { k: 'valor', rotulo: 'Valor por visita', tipo: 'valor' }]}
         paraForm={p => ({ servico: p?.servico || '', nome: p?.nome || '', dia: String(p?.dia ?? 6), valor: vt(p?.valor) })}
         salvar={async (f, p) => {
           if (!f.servico.trim() || !f.nome.trim()) return 'Escreva o serviço e o nome.'
           const novo: Prest = { ...(p || {}), id: p?.id || novoUuid().slice(0, 8), servico: f.servico.trim(), nome: f.nome.trim(), dia: Number(f.dia), valor: val(f.valor) || 0 }
-          if (!(await salvarP(p ? prest.map(x => (x.id === p.id ? novo : x)) : [...prest, novo]))) throw new Error('Não deu pra salvar. Tente de novo.')
+          if (!(await salvarP(p ? prest.map(x => (x.id === p.id ? novo : x)) : [...prest, novo]))) throw new Error('Não foi possível salvar. Tente de novo.')
         }} />
       <Lista<string> nome="Trocas de gás" novo="Nova troca" semEditar itens={trocas.slice(0, 4)} chave={d => d} vazio={lidoG ? 'Nenhuma troca anotada. Com 2 trocas eu já calculo quando o gás acaba.' : 'Buscando…'}
         titulo={d => `Trocado em ${dataCurta(d)}`} sub={d => diaSemana(d)}
         campos={[{ k: 'data', rotulo: 'Dia da troca', tipo: 'data' }]} paraForm={() => ({ data: hojeRecife() })}
-        salvar={async f => { if (!/^\d{4}-\d{2}-\d{2}$/.test(f.data)) return 'Escolha o dia.'; if (!(await salvarG({ trocas: [...new Set([...(gas.trocas || []), f.data])].sort() }))) throw new Error('Não deu pra salvar. Tente de novo.') }} />
+        salvar={async f => { if (!/^\d{4}-\d{2}-\d{2}$/.test(f.data)) return 'Escolha o dia.'; if (!(await salvarG({ trocas: [...new Set([...(gas.trocas || []), f.data])].sort() }))) throw new Error('Não foi possível salvar. Tente de novo.') }} />
     </>
   )
 }
@@ -371,11 +373,11 @@ function CadSecretaria() {
   const lista = useBusca<Lembrete[]>(f => api.lembretes(f))
   return (
     <Lista<Lembrete> nome="Lembretes" novo="Novo lembrete" itens={lista || []} chave={l => l.id} vazio={lista ? 'Nenhum lembrete guardado. Toque em "Novo lembrete".' : 'Buscando…'}
-      titulo={l => l.titulo} sub={l => `${dataCurta(diaDe(l.quando))} às ${hhmm(l.quando)} · ${REPETE.find(r => r[0] === l.repetir)?.[1].toLowerCase()} · pra ${l.para === 'casal' ? 'o casal' : l.para === 'eu' ? 'mim' : l.para}`}
+      titulo={l => l.titulo} sub={l => `${dataCurta(diaDe(l.quando))} às ${hhmm(l.quando)} · ${REPETE.find(r => r[0] === l.repetir)?.[1].toLowerCase()} · para ${l.para === 'casal' ? 'o casal' : l.para === 'eu' ? 'mim' : l.para}`}
       campos={[{ k: 'titulo', privado: true, rotulo: 'O quê', ph: 'Ex.: Ligar pro contador' }, { k: 'quando', rotulo: 'Quando', tipo: 'datahora' }, { k: 'repetir', rotulo: 'Repetir', tipo: 'opcao', opcoes: REPETE }, { k: 'para', rotulo: 'Pra quem', tipo: 'opcao', opcoes: [['eu', 'Só eu'], ['casal', 'O casal']] }]}
       paraForm={l => ({ titulo: l?.titulo || '', quando: l ? localDeRecife(l.quando) : `${hojeRecife()}T18:00`, repetir: l?.repetir || 'nunca', para: l?.para || 'eu' })}
       salvar={async (f, l) => {
-        if (!f.titulo.trim()) return 'Escreva o que é pra lembrar.'
+        if (!f.titulo.trim()) return 'Escreva o que é para lembrar.'
         if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(f.quando)) return 'Escolha o dia e a hora.'
         // editar = guardar o novo e tirar o antigo (o banco não apaga: só marca o antigo como inativo)
         await api.lembreteCriar(familia!.id, { titulo: f.titulo.trim(), quando: new Date(f.quando + ':00-03:00').toISOString(), repetir: f.repetir as Repetir, para: f.para })
@@ -399,7 +401,7 @@ function CadReserva() {
       salvar={async f => {
         if (!f.valor || val(f.valor) == null) return 'Digite o valor da reserva.'
         if (env && val(f.valor) !== combinado) await api.salvarEnvelope(familia!.id, env.id, { colchao: val(f.valor)! })
-        if (f.onde !== onde && !(await salvar(f.onde))) throw new Error('Não deu pra salvar. Tente de novo.')
+        if (f.onde !== onde && !(await salvar(f.onde))) throw new Error('Não foi possível salvar. Tente de novo.')
       }} />
   )
 }
@@ -415,7 +417,7 @@ function CadContador() {
   const [fixas, salvarF, , lidoF] = useConfig<Renda[]>('contas_fixas', [])
   const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string, outros: Renda[] = []) => (
     <Lista<Renda> nome={nome} novo={novo} itens={[...itens, ...outros]} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'} semEditar={r => outros.includes(r)}
-      titulo={r => r.nome} sub={r => `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
+      titulo={r => <>{textoPrivado(r.nome)} {nome === 'Rendas' && <NomeDaPessoa editar pessoa={{ tipo: 'renda', id: r.id, nome: r.dono }} />}</>} sub={r => `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
       campos={[{ k: 'nome', privado: true, rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
       paraForm={r => ({ nome: r?.nome || '', valor: vt(r?.valor), dia: r?.dia ? String(r.dia) : '' })}
       salvar={async (f, r) => {
@@ -423,7 +425,7 @@ function CadContador() {
         if (!val(f.valor)) return 'Digite o valor por mês.'
         if (f.dia && !(Number(f.dia) >= 1 && Number(f.dia) <= 31)) return 'O dia tem que ser de 1 a 31.'
         const n: Renda = { id: r?.id || novoUuid().slice(0, 8), nome: f.nome.trim(), valor: val(f.valor)!, ...(f.dia ? { dia: Number(f.dia) } : {}) }
-        if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n]))) throw new Error('Não deu pra salvar. Tente de novo.')
+        if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n]))) throw new Error('Não foi possível salvar. Tente de novo.')
       }} />
   )
   return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena', doOutro)}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
