@@ -40,11 +40,7 @@ export const ATIVIDADES_MINI: Record<string, AtividadeMini> = {
 }
 
 /** Metadados para a frente do cadastro; não consulta nem representa dados reais. */
-export const PERFIL_IMOVEIS = {
-  id: 'imoveis', nome: 'Ajudante dos Imóveis', sala: 'patrimonio', objeto: 'pasta',
-  papel: 'Acompanha seus imóveis de investimento: aluguel líquido, custos e contrato',
-  roupa: { camisa: 0x9bbb99, calca: 0x34343c, pele: 0xb98562, cabelo: 0x231a14, estilo: 'curto' },
-} as const
+export { PERFIL_IMOVEIS } from './equipe'
 
 export const LIMITE_MESHES_MINI = 150
 /** Hash estável: mini de um único funcionário não perde a defasagem da equipe. */

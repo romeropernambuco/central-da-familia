@@ -1,3 +1,9 @@
+export const PERFIL_IMOVEIS = {
+  id: 'imoveis', nome: 'Ajudante dos Imóveis', sala: 'patrimonio', objeto: 'pasta',
+  papel: 'Acompanha seus imóveis de investimento: aluguel líquido, custos e contrato.',
+  roupa: { camisa: 0x9bbb99, calca: 0x34343c, pele: 0xb98562, cabelo: 0x231a14, estilo: 'curto' },
+} as const
+
 import type { Rota } from '../../app/rotas'
 // A LISTA ÚNICA da equipe do Escritório (C2, 14/11). Daqui saem: o nome curto da etiqueta, a sala, a mesa (e a rota),
 // a roupa do boneco 3D, o objeto de trabalho e a aba aberta pela ficha.
@@ -105,10 +111,9 @@ export const EQUIPE: MembroEquipe[] = [
     papel: 'Explica o termo e acompanha as escolhas de privacidade da família.', dado: 'Dados da tela correspondente; exemplo identificado quando indisponíveis.',
     faz: ['Explica o termo e acompanha as escolhas de privacidade da família.', 'Mostro os números disponíveis na minha ficha.', 'Abro a minha aba quando você pedir.'],
     roupa: { camisa: 4816256, calca: 0x34343C, pele: 0xD9A27E, cabelo: 0x3A2A1E, estilo: 'curto' } },
-  { id: 'imoveis', rota: 'guardado', objeto: 'pasta', nome: 'Ajudante dos Imóveis', curto: 'Imóveis', sala: 'patrimonio', mesa: 2, icone: 'file', doBanco: false,
-    papel: 'Acompanha seus imóveis de investimento: aluguel líquido, custos e contrato.', dado: 'Imóveis e contratos cadastrados na tela Guardado.',
-    faz: ['Abro a pasta e acompanho com o dedo a linha de um contrato.', 'Confiro quanto sobra do aluguel depois dos custos registrados.', 'Acompanho o contrato dos seus imóveis de investimento.'],
-    roupa: { camisa: 0xA4CBA1, calca: 0x353C42, pele: 0xC48E6A, cabelo: 0x30251F, estilo: 'coque', oculos: true } },
+  { ...PERFIL_IMOVEIS, rota: 'guardado', curto: 'Imóveis', mesa: 2, icone: 'file', doBanco: false,
+    dado: 'Imóveis e contratos cadastrados na tela Guardado.',
+    faz: ['Abro a pasta e acompanho com o dedo a linha de um contrato.', 'Confiro quanto sobra do aluguel depois dos custos registrados.', 'Acompanho o contrato dos seus imóveis de investimento.'] },
 ]
 
 export const POR_ID: Record<string, MembroEquipe> = Object.fromEntries(EQUIPE.map(m => [m.id, m]))

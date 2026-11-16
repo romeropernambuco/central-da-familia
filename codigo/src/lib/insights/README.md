@@ -105,3 +105,11 @@ Resultado verificado: TypeScript (`node node_modules/typescript/bin/tsc -p . --n
 A ligação visual agora conecta o hook ao agente e renderiza a tarefa de foto. O mini recebe `definirEstado` sem remontagem por mudança de estado; o fallback apresenta o mesmo estado em texto. Não há notificações do sistema ou execução com app fechado. Leituras acompanham versão/dia/atualização; não houve alteração de cálculo, cena 3D, CSS, App, exportações API, scripts do repositório, pacotes, banco ou serviços externos.
 
 Validação da ligação (15/11/2026): TypeScript sem erros; **735 testes em 43 arquivos**, preservando os 708 da base e acrescentando 27. Componentes, hooks e motor reais; somente renderer/Three e fronteiras da API são simulados. A contraprova repôs temporariamente `AgenteDaAba.tsx`, `Pergunta.tsx` e `useInsightsDaAba.ts` anteriores: **27/27 testes novos falharam**; os arquivos foram restaurados com conferência de hash. Executor Vitest e logs ficaram no diretório temporário externo ao repositório. O DOM dos testes antigos recebeu os eventos usados pelo hook; a auditoria global fixa o relógio para não perder perguntas do exemplo após 22h. Inspeção visual em WebGL/aparelho real continua fora desta validação.
+
+## Integração final com elenco por aba
+
+O Início consome `primeiraPerguntaInicio`: pergunta, dono e ordem já filtrados pelo hook (silêncio, travas e escopo do papel). Esse dono escolhe o secundário, e o principal continua sendo o Anfitrião. Sem pergunta, vale o elenco padrão. No Painel autorizado, o Analista usa `falaDoAnalista`, referente ao uso do app. A equipe continua limitada à Casa, sem falas financeiras.
+
+O crédito do cartão Rumo a 2029 passa de Analista do Painel para Tesoureiro de Receitas. O aviso do objetivo já pertence ao Tesoureiro no motor; esta integração não altera valores, `numerosRumo2029` ou o cenário oficial Garantido. A legenda do agente usa somente os ids conservados por `composicaoMini`.
+
+Validação final da integração: 1.167 testes aprovados em 55 arquivos, 3 TODO preexistentes; TypeScript sem erros. Os dois testes novos têm contraprova vermelha com o comportamento anterior. O cartão compacto do Início também identifica o Tesoureiro no crédito, sem alterar números.

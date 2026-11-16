@@ -235,7 +235,7 @@ describe('regra do olho em cada tela real', () => {
       }
       await act(async () => alternar())
       const aberto = html(container)
-      if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-agente') === AGENTE_POR_ABA[nome.slice(7)]).length, nome).toBe(1); expect(aberto).toContain(container.buscar(n => n.getAttribute('data-pergunta') !== null).length ? 'Recolher' : 'Expandir') }
+      if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-principal') === AGENTE_POR_ABA[nome.slice(7)]).length, nome).toBe(1); expect(aberto).toContain('Recolher') }
       // Algumas telas iniciais são formulários vazios e não apresentam dados privados.
       if (!nome.startsWith('Agente:') && !['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
       await act(async () => alternar())

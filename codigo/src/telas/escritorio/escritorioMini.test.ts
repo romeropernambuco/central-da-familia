@@ -16,6 +16,8 @@ import type { SalaEquipe } from './equipe'
 import inventario from './inventarioModelos.json'
 import { montarCena } from './cena3d'
 import { EQUIPE } from './equipe'
+import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from './elencoPorAba'
+import { rotaPermitida, type Rota } from '../../app/rotas'
 // @ts-ignore: script JS do build.
 import { gravarSw } from '../../../scripts/sw.mjs'
 
@@ -92,6 +94,48 @@ function contagem(scene: any) {
   scene.traverseVisible((m: any) => { if (m.isMesh) { calls += Array.isArray(m.material) ? m.material.length : 1; triangles += (m.geometry.index?.count || m.geometry.attributes.position.count) / 3 * (m.isInstancedMesh ? m.count : 1); if (m.castShadow) calls++ } })
   return { calls, triangles }
 }
+
+it('integração final: 12 abas x 4 perfis, orçamento real e 20 trocas com descarte completo', async () => {
+  // Inclui o perfil integrado: esta regressão falha com o cadastro anterior.
+  expect(EQUIPE.find(e => e.id === 'imoveis')!.roupa).toEqual(PERFIL_IMOVEIS.roupa)
+  const rotas = Object.keys(PRINCIPAL_POR_ABA) as Rota[]
+  expect(rotas).toHaveLength(12)
+  const principais = ['anfitriao', 'contador', 'assistente', 'sonhadora', 'cartao', 'guardado', 'tesoureiro', 'fiscal', 'secretaria', 'zelador', 'protetora', 'analista']
+  for (const perfil of ['casal', 'pessoa', 'equipe', 'dono'] as const) {
+    const papel = perfil === 'dono' ? 'casal' : perfil, ehDono = perfil === 'dono'
+    for (let i = 0; i < rotas.length; i++) {
+      const rota = rotas[i], efetiva = rotaPermitida(rota, papel, ehDono)
+      const elenco = elencoDaAba({ rota: efetiva, papel, ehDono })
+      expect(elenco.principal).toBe(efetiva === 'casa' && papel === 'pessoa' ? 'comprador' : efetiva === rota ? principais[i] : efetiva === 'casa' ? 'fiscal' : 'anfitriao')
+      const esperado = papel === 'equipe' ? ['fiscal'] : efetiva === 'inicio' ? ['anfitriao', papel === 'casal' ? 'guardado' : 'contador']
+        : efetiva === 'guardado' ? ['guardado', 'imoveis'] : efetiva === 'planejamento' ? ['tesoureiro', 'colchao']
+        : efetiva === 'casa' && papel === 'pessoa' ? ['comprador'] : [elenco.principal]
+      expect([elenco.principal, ...elenco.secundarios]).toEqual(esperado)
+      expect(esperado.every(id => funcionarioAutorizado(id, papel, ehDono))).toBe(true)
+      const a = await mini(esperado[0], 303, 128, false, true, true, esperado, elenco.sala)
+      try {
+        expect(esperado.filter(id => a.scene.getObjectByName('agente:' + id))).toEqual(esperado)
+        expect(contagem(a.scene).calls).toBeLessThanOrEqual(40)
+        expect(contagem(a.scene).triangles).toBeLessThanOrEqual(60000)
+        expect(bytesDaSala(elenco.sala)).toBeLessThanOrEqual(150000)
+      } finally { a.c.destruir() }
+      expect(a.frames.size).toBe(0)
+      expect(a.renderer.dispose).toHaveBeenCalledOnce()
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    const elenco = elencoDaAba({ rota: rotas[i % 12], papel: 'casal', ehDono: true })
+    const ids = [elenco.principal, ...elenco.secundarios]
+    const a = await mini(ids[0], 303, 128, false, true, false, ids, elenco.sala)
+    const recursos = new Set<any>()
+    a.scene.traverse((m: any) => { if (m.isMesh) { recursos.add(m.geometry); for (const mat of Array.isArray(m.material) ? m.material : [m.material]) recursos.add(mat); if (m.isInstancedMesh) recursos.add(m) } })
+    const descartes = [...recursos].map(r => vi.spyOn(r, 'dispose'))
+    a.c.destruir(); a.c.destruir()
+    descartes.forEach(d => expect(d).toHaveBeenCalledOnce())
+    expect(a.renderer.dispose).toHaveBeenCalledOnce()
+    expect(a.frames.size).toBe(0)
+  }
+}, 20000)
 function projetar(box: any, camera: any) { return box.clone().applyMatrix4(camera.matrixWorldInverse).applyMatrix4(camera.projectionMatrix) }
 
 /** Raster de cobertura dos triângulos REAIS (sem iluminação, materiais, rede ou GPU).
@@ -318,8 +362,9 @@ describe('escritório real no mini (renderer simulado, GLBs locais reais)', () =
             const y = a.escritorio.userData.tampo + inventario.computerKeyboard.max[1] * .95
             for (const [braco, x] of [[esquerdo, -.08], [direito, .31]]) {
               const antebraco = braco.children.find((g: any) => g.isGroup)
-              const mao = antebraco.localToWorld(new T.Vector3(0, -.26, 0)).sub(a.escritorio.position)
-              expect(mao.distanceTo(new T.Vector3(x, y, a.escritorio.userData.pecas.computerKeyboard[0].getCenter(new T.Vector3()).z))).toBeLessThan(.025)
+              const mao = antebraco.localToWorld(new T.Vector3(0, id === 'imoveis' && x > 0 ? -.325 : -.26, 0))
+              const alvo = id === 'imoveis' ? a.atividade.localToWorld(a.atividade.userData.maos[x < 0 ? 'esquerda' : 'direita'].clone()) : new T.Vector3(x, y, a.escritorio.userData.pecas.computerKeyboard[0].getCenter(new T.Vector3()).z).add(a.escritorio.position)
+              expect(mao.distanceTo(alvo)).toBeLessThan(.025)
             }
             expect(caixaReal(a.atividade).min.y).toBeCloseTo(a.escritorio.userData.tampo, 5)
           }

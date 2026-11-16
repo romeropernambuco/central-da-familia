@@ -7,8 +7,8 @@ import { useInsightsDaAba } from '../app/useInsightsDaAba'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import type { Rota } from '../app/rotas'
 import { rotaPermitida } from '../app/rotas'
-import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
-import { APELIDO_BANCO, EQUIPE } from '../telas/escritorio/equipe'
+import { composicaoMini, elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
+import { APELIDO_BANCO, EQUIPE, type SalaEquipe } from '../telas/escritorio/equipe'
 import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../telas/escritorio/cenaBase'
 import { Cadastro, donoDaPergunta } from '../telas/escritorio/Ficha'
 import { NumerosAba } from '../telas/escritorio/NumerosAba'
@@ -104,17 +104,19 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const [celebrando, setCelebrando] = useState<{ funcionario: string } | null>(null)
  const elencoBase = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba })
  const idCanonico = (id: string) => APELIDO_BANCO[id] || id
- const pendente = perguntas.find(p => {
+ const primeira = insights.primeiraPerguntaInicio
+ const primeiraAutorizada = primeira && funcionarioAutorizado(primeira.dono, familia!.papel, !!sessao?.dono) ? primeira : null
+ const pendente = rota === 'inicio' ? primeiraAutorizada?.pergunta : perguntas.find(p => {
    const id = idCanonico(donoDaPergunta(p, e?.funcionarios || [])?.id || p.funcionario)
-   if (celebrando && (rota === 'inicio' || rota === 'casa') && id !== celebrando.funcionario) return false
-   return funcionarioAutorizado(id, familia!.papel, !!sessao?.dono) && (rota === 'inicio' || (rota === 'casa' ? EQUIPE.some(m => m.id === id && m.rota === rota) : [elencoBase.principal, ...elencoBase.secundarios].includes(id)))
+   if (celebrando && rota === 'casa' && id !== celebrando.funcionario) return false
+   return funcionarioAutorizado(id, familia!.papel, !!sessao?.dono) && (rota === 'casa' ? EQUIPE.some(m => m.id === id && m.rota === rota) : [elencoBase.principal, ...elencoBase.secundarios].includes(id))
  })
  const proposta = !pendente && e && !(celebrando && (rota === 'inicio' || rota === 'casa')) ? insights.pergunta : null
  const elenco = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba,
   perguntaPendente: pendente || proposta || (celebrando ? { funcionario: celebrando.funcionario } : null),
-  filaGeral: [...(celebrando ? [{ funcionario: celebrando.funcionario }] : []), ...perguntas.map(p => ({ funcionario: idCanonico(donoDaPergunta(p, e?.funcionarios || [])?.id || p.funcionario) }))] })
- const ids = [elenco.principal, ...elenco.secundarios]
- const id = pendente ? idCanonico(donoDaPergunta(pendente, e?.funcionarios || [])?.id || pendente.funcionario) : proposta?.funcionario || celebrando?.funcionario || elenco.principal
+  filaGeral: [...(celebrando ? [{ funcionario: celebrando.funcionario }] : []), ...(primeiraAutorizada ? [{ funcionario: primeiraAutorizada.dono }] : [])] })
+ const ids = composicaoMini(elenco.sala, [elenco.principal, ...elenco.secundarios]).ids
+ const id = pendente ? idCanonico(rota === 'inicio' ? primeiraAutorizada!.dono : donoDaPergunta(pendente, e?.funcionarios || [])?.id || pendente.funcionario) : proposta?.funcionario || celebrando?.funcionario || elenco.principal
  const m = EQUIPE.find(m => m.id === id) || EQUIPE.find(m => m.id === AGENTE_POR_ABA[rota])!
  const f = e?.funcionarios.find(f => f.id === m.id)
  const fala = (texto: string) => f?.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
@@ -173,7 +175,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  {completo && <MiniAgente id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
  {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
  {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
- {conversa && (p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
+ {conversa && (p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
  {modo !== 'desligado' && <button type="button" className="btn line" onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
  <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>
  <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
@@ -183,7 +185,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  </Sheet>}
  </section>
 }
-export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando', funcionarios }: { id: string; sala: string; estado?: EstadoAgente; funcionarios?: { id: string; estado: EstadoAgente }[] }) {
+export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando', funcionarios }: { id: string; sala: SalaEquipe; estado?: EstadoAgente; funcionarios?: { id: string; estado: EstadoAgente }[] }) {
  const caixa = useRef<HTMLDivElement>(null)
  const cenaAtual = useRef<Cena>()
  const pessoas = funcionarios || [{ id, estado }]

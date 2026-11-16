@@ -8,10 +8,14 @@ import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { CASOS_LIGACAO, contextoLigacao } from '../lib/insights/ligacao.dom-teste'
 import { chaveArmazenamento, lerMemoria } from '../lib/insights/memoria'
 import { AgenteDaAba, MiniAgente, ControleFuncionarios, migrarModoFuncionario } from './AgenteDaAba'
-import { elencoDaAba, SALA_POR_ABA } from '../telas/escritorio/elencoPorAba'
+import { elencoDaAba, SALA_POR_ABA, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
+import { rotaPermitida } from '../app/rotas'
 import { Sheet } from './base'
 import { FichaFuncionario } from '../telas/escritorio/Ficha'
 import { useEscritorio } from '../app/useDados2'
+import * as composicao from '../telas/escritorio/elencoPorAba'
+import { FALA_ANALISTA } from '../lib/insights/donos'
+import { RumoHero } from './RumoA2029'
 
 const cena = vi.hoisted(() => ({ montar: vi.fn(), definir: vi.fn(), destruir: vi.fn() }))
 vi.mock('../telas/escritorio/tres', () => ({}))
@@ -43,6 +47,53 @@ function ambiente(webgl = false) {
 function botao(n: NoTeste, texto: string) { const b = n.buscar(n => n.tagName === 'BUTTON' && n.textContent === texto)[0]; expect(b, texto).toBeDefined(); return b }
 const perguntas = (n: NoTeste) => n.buscar(n => n.getAttribute('data-pergunta') !== null)
 function memoria(ctx: Ctx, storage: Map<string, string>) { return lerMemoria(storage.get(chaveArmazenamento(ctx.api.modo, 'u', ctx.familia!.id)) || null) }
+
+it('integração final: Início segue primeira pergunta autorizada, Painel usa fala do dono e legenda segue degradação', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
+ const fila = [
+  { id: 'bloqueada', funcionario: 'cartao', pergunta: 'Não exibir', contexto: '', opcoes: [] },
+  { id: 'lancou:permitida', funcionario: 'contador', pergunta: 'Conferir meu gasto?', contexto: '', opcoes: [] },
+ ]
+ vi.mocked(ctx.api.escritorioHoje).mockResolvedValue({ funcionarios: [], trabalhando: [], entregue: [], precisa_de_voce: fila })
+ lojaEscritorio(ctx.api, ctx.familia!.id).travas.set('bloqueada', 'respondida')
+ try {
+  await a.render(ctx, 'inicio')
+  expect(cena.montar.mock.calls[cena.montar.mock.calls.length - 1][2].funcionarios.map((f: { id: string }) => f.id)).toEqual(['anfitriao', 'contador'])
+  expect(a.container.textContent).toContain('Conferir meu gasto?')
+  expect(a.container.textContent).not.toContain('Não exibir')
+  const dono = { ...ctx, sessao: { ...ctx.sessao!, dono: true } }
+  await a.render(dono, 'painel')
+  expect(a.container.textContent).toContain(FALA_ANALISTA)
+  const original = composicao.composicaoMini
+  const spy = vi.spyOn(composicao, 'composicaoMini').mockImplementation((sala, ids) => original(sala, ids, { desenhos: 1, triangulos: 1, KB: 1 }))
+  try {
+   await a.render(ctx, 'guardado')
+   expect(cena.montar.mock.calls[cena.montar.mock.calls.length - 1][2].funcionarios.map((f: { id: string }) => f.id)).toEqual(['guardado'])
+   expect(a.container.textContent).not.toContain('Com Ajudante dos Imóveis')
+  } finally { spy.mockRestore() }
+  for (const compacto of [false, true]) {
+   await a.render(ctx, 'planejamento', createElement(RumoHero, { calculo: null, compacto, abrir() {} }))
+   expect(a.container.textContent).toContain('Tesoureiro de Receitas: confira as premissas')
+   expect(a.container.textContent).not.toContain('Analista do Painel')
+  }
+  for (const perfil of ['casal', 'pessoa', 'equipe', 'dono'] as const) {
+   for (const rota of Object.keys(PRINCIPAL_POR_ABA) as Rota[]) {
+    const papel = perfil === 'dono' ? 'casal' : perfil, ehDono = perfil === 'dono'
+    await act(async () => a.root.render(null))
+    cena.montar.mockClear()
+    const restrito = { ...ctx, familia: { ...ctx.familia!, papel }, sessao: { ...ctx.sessao!, dono: ehDono } }
+    await a.render(restrito, rota)
+    const permitida = rotaPermitida(rota, papel, ehDono) === rota
+    expect(cena.montar.mock.calls.length, perfil + rota).toBe(permitida ? 1 : 0)
+    if (permitida) {
+     const elenco = elencoDaAba({ rota, papel, ehDono, filaGeral: rota === 'inicio' ? [{ funcionario: 'contador' }] : [] })
+     expect(cena.montar.mock.calls[0][2].funcionarios.map((f: { id: string }) => f.id)).toEqual([elenco.principal, ...elenco.secundarios])
+    }
+    if (papel === 'equipe') expect(a.container.textContent).not.toMatch(/R\$|renda|2029|fatura/i)
+   }
+  }
+ } finally { await a.limpar() }
+})
 
 it.each(CASOS_LIGACAO)('ligação: %s na aba %s, funcionário %s, uma pergunta e sem polling', async (tipo, rota, funcionario, texto) => {
   const a = ambiente(), ctx = contextoLigacao(tipo)

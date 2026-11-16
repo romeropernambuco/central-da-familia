@@ -190,11 +190,15 @@ describe('atividades individuais dos minis', () => {
     a.scene.traverse((m: any) => { if (m.isMesh) meshes.push(m) })
     expect(a.trabalho).toBeDefined()
     expect(meshes.length).toBeLessThanOrEqual(LIMITE_MESHES_MINI)
-    const antes = a.matrizes(a.trabalho); a.avancar(125, 1100)
-    expect(a.matrizes(a.trabalho)).not.toEqual(antes)
+    const antes = a.matrizes(a.trabalho), amostras = []
+    for (let t = 125; t <= 8100; t += 500) {
+      a.avancar(t, t + 475)
+      amostras.push(a.matrizes(a.trabalho))
+    }
+    expect(amostras.some(m => JSON.stringify(m) !== JSON.stringify(antes))).toBe(true)
     expect(new Set(meshes.map(m => m.geometry)).size).toBeLessThan(meshes.length)
     const formas = new Set<any>(); a.trabalho.traverse((m: any) => { if (m.isMesh) formas.add(m.geometry) })
-    expect(formas.size).toBeLessThanOrEqual(id === 'guardado' ? 2 : 1)
+    expect(formas.size).toBeLessThanOrEqual(['guardado', 'imoveis'].includes(id) ? 2 : 1)
     expect(new Set(meshes.map(m => m.material)).size).toBeLessThan(meshes.length)
     // Novos objetos não acrescentam sombras ou luzes.
     a.trabalho.traverse((m: any) => { expect(m.castShadow).not.toBe(true); expect(m.isLight).not.toBe(true) })

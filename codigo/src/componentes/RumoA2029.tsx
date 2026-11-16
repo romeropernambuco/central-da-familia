@@ -72,6 +72,7 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
   if (compacto) return <a className="card rumo-resumo" href="#/planejamento">
     <b>Rumo a 2029</b><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
     {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
+    <span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span>
   </a>
   return <section className="card rumo-hero" aria-labelledby={id}>
     <div className="card-h"><h2 id={id}><Target size={24} aria-hidden="true" />Rumo a 2029</h2>{exemplo && <span className="chip">Modo exemplo</span>}</div>
@@ -121,6 +122,6 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
     {!exemplo && velhos && <p className="sub">{privado('Há números com mais de 60 dias.')}</p>}
     {!exemplo && semConferencia && <p className="sub">{privado('Há números sem data de conferência.')}</p>}
     <button className="btn primary" type="button" onClick={abrir}>Atualizar meus números</button>
-    <p className="sub rumo-fala">Analista do Painel: confira as premissas antes de contar com essa renda.</p>
+    <p className="sub rumo-fala">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</p>
   </section>
 }

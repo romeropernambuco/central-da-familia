@@ -24,8 +24,8 @@ const DO_BANCO: FuncionarioEsc[] = [
 ]
 
 describe('C2: lista única da equipe', () => {
-  it('18 funcionários, preservando os originais e cobrindo as abas, com papel, dado e mesa', () => {
-    expect(EQUIPE).toHaveLength(18)
+  it('19 funcionários, preservando os originais e cobrindo as abas, com papel, dado e mesa', () => {
+    expect(EQUIPE).toHaveLength(19)
     for (const id of ['auditor', 'assistente', 'tesoureiro', 'usina', 'presenca']) expect(POR_ID[id], id).toBeTruthy()
     expect(POR_ID.auditor.nome).toBe('Ajudante de Estoque'); expect(POR_ID.tesoureiro.nome).toBe('Tesoureiro de Receitas')
     expect(POR_ID.usina.nome).toBe('Gerente da Usina'); expect(POR_ID.presenca.nome).toBe('Ajudante de Presença')
@@ -55,8 +55,12 @@ describe('C2: lista única da equipe', () => {
     const r = completarEquipe(DO_BANCO, { rec: null, est: null, avisos: [], pres: {} }, '2026-11-18')
     expect(r.map(f => f.id)).toEqual(EQUIPE.map(m => m.id))
     const sem = r.filter(f => f.semDado).map(f => f.id).sort()
-    expect(sem).toEqual(['analista', 'anfitriao', 'assistente', 'auditor', 'protetora', 'sonhadora', 'tesoureiro', 'usina', 'zelador'])
-    for (const f of r.filter(f => f.semDado)) { expect(f.frase).toMatch(/^Ainda sem dado\./); expect(f.frase).not.toMatch(/R\$|\d/) }
+    expect(sem).toEqual(['analista', 'anfitriao', 'assistente', 'auditor', 'imoveis', 'protetora', 'sonhadora', 'tesoureiro', 'usina', 'zelador'])
+    for (const f of r.filter(f => f.semDado)) {
+      expect(f.frase).toBe(`Ainda sem dado. ${POR_ID[f.id].papel}`)
+      // O ano no título do objetivo é metadado, não um saldo inventado.
+      expect(f.frase.replace('Rumo a 2029', '')).not.toMatch(/R\$|\d/)
+    }
     expect(r.find(f => f.id === 'fiscal')!.estado).toBe('precisa_de_voce') // o que veio do banco fica como veio
   })
   it('com dado no banco: Tesoureiro diz o próximo recebimento, Auditor a última contagem, Presença quem veio', () => {
@@ -70,6 +74,6 @@ describe('C2: lista única da equipe', () => {
     expect(f('tesoureiro').frase.replace(/\u00a0/g, ' ')).toBe('1 recebimento com data pra entrar. O próximo: Contrato (exemplo), R$ 50.000 em 03/2027.')
     expect(f('auditor').frase).toBe('Última contagem do estoque: 10/11. 1 item acabou, 1 com pouco.')
     expect(f('presenca').frase).toBe('Hoje marcou presença: Carla.')
-    expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['analista', 'anfitriao', 'assistente', 'protetora', 'sonhadora', 'usina', 'zelador'])
+    expect(r.filter(x => x.semDado).map(x => x.id).sort()).toEqual(['analista', 'anfitriao', 'assistente', 'imoveis', 'protetora', 'sonhadora', 'usina', 'zelador'])
   })
 })

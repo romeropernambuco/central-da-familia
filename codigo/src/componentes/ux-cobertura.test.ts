@@ -126,7 +126,7 @@ it('cobertura modos: Ajustes muda o agente vivo sem remontar página', async () 
    expect(a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === rotulo)[0].getAttribute('aria-pressed')).toBe('true')
    const agente = a.container.buscar(n => n.getAttribute('data-agente') === 'cartao')[0]
    expect(agente).toBeDefined()
-   expect(agente.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Recolher').length).toBe(rotulo === 'Completo' ? 1 : 0)
+   expect(agente.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Recolher').length).toBe(rotulo !== 'Desligado' ? 1 : 0)
    if (rotulo === 'Desligado') expect(agente.buscar(n => n.getAttribute('class') === 'cena3d mini-agente')).toHaveLength(0)
   }
  } finally { await a.fechar(); window.dispatchEvent(new Event('storage')) }
