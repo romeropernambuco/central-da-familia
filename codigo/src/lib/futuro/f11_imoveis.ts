@@ -5,7 +5,7 @@
 // - Venda planejada entra como recebimento SÓ com contrato; sem contrato, gatilho.
 // - O valor do imóvel é patrimônio à parte: o plano nunca saca nem vende.
 // - Onde a família mora: valor no patrimônio, renda zero.
-import { arred, centavos, compararMes, Dec, proximoMes, taxa, UM, ZERO } from './decimal'
+import { arred, centavos, compararMes, Dec, listaMeses, proximoMes, taxa, UM, ZERO } from './decimal'
 import type { Centavos, Gatilho, Imovel, ImovelSaida, Mes, Recebimento, Taxa } from './tipos'
 
 /** Aluguel líquido do mês (centavos) = (aluguel × (1 − vacância) − custos) × (1 − aliq_aluguel), arredondado 1 vez
@@ -55,7 +55,7 @@ export interface ImoveisAnalise {
  *  (virada 01/2029 → 12/2029). Regra do dono: só dinheiro certo (revisão E14, M1). */
 export function contratoMinimoPerpetuo(mes_ref: Mes): Mes { let m = mes_ref; for (let i = 0; i < 11; i++) m = proximoMes(m); return m }
 
-export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: Mes; aliq_aluguel: Taxa | Dec; taxa_real_aplicacoes: Dec }): ImoveisAnalise {
+export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: Mes; mes_hoje?: Mes; aliq_aluguel: Taxa | Dec; taxa_real_aplicacoes: Dec }): ImoveisAnalise {
   const minimo = contratoMinimoPerpetuo(o.mes_ref)
   let aluguel_perp = 0
   const alugueis: { mes: Mes; valor: Centavos }[] = []
@@ -95,6 +95,12 @@ export function analisarImoveis(imoveis: Imovel[], o: { meses: Mes[]; mes_ref: M
       aluguel_liquido_mes: liq, rentabilidade_ano: rent.toString(), taxa_real_aplicacoes: o.taxa_real_aplicacoes.toString(),
       rende_mais_que_aplicacao: liq > 0 && rent.gt(o.taxa_real_aplicacoes), entra_na_conta: perpetuo,
       contrato_ate: im.contrato_ate, vendido: vendidoAte(im, o.mes_ref),
+      rendimento_liquido_anual_percentual: rent.times(100).toString(),
+      meses_ate_fim_contrato: im.tem_contrato && im.contrato_ate !== null ? Math.max(0, compararMes(im.contrato_ate, o.mes_hoje ?? o.mes_ref)) : null,
+      // Comparação hipotética: renovar até dezembro versus respeitar o fim atual.
+      // Não inclui imóvel sem contrato datado nem meses posteriores à venda confirmada.
+      impacto_renda_2029_sem_renovacao: !im.tem_contrato || im.contrato_ate === null ? 0 : listaMeses('2029-01', '2029-12')
+        .filter(m => !aluguelNoMes(im, m) && aluguelNoMes({ ...im, contrato_ate: '2029-12' }, m)).length * liq,
     })
   }
   return { alugueis, vendas, aluguel_no_mes_ref: aluguel_ref, aluguel_perpetuo: aluguel_perp, patrimonio_imoveis: patrimonio, imoveis: saida, gatilhos }

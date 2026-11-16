@@ -1,5 +1,5 @@
 // F1 Rendimento líquido do mês, por aplicação (ECONOMISTA item 3, F1) + tabela de IR (item 2).
-import { arred, centavos, Dec, diasCorridos, potencia, taxa, UM, ZERO } from './decimal'
+import { arred, centavos, compararMes, Dec, diasCorridos, mesAnterior, potencia, taxa, UM, ZERO } from './decimal'
 import type { Aplicacao, Centavos, Mes, Taxa } from './tipos'
 import { diasDoMes } from './decimal'
 
@@ -38,11 +38,14 @@ export function rendimentoMes(saldo_inicial: Centavos, taxa_bruta_anual: Taxa | 
 }
 
 /** Padrão do resgate quando a aplicação não tem data: último dia antes da virada. */
-function resgatePadrao(virada: Mes): string { const [a] = virada.split('-'); return `${Number(a) - 1}-12-31` }
+function resgatePadrao(virada: Mes): string { const m = mesAnterior(virada); return `${m}-${diasDoMes(m)}` }
 
 /** F1 aplicado a uma aplicação cadastrada no mês m. */
-export function rendimentoAplicacao(ap: Aplicacao, m: Mes, virada: Mes): Centavos {
+export function rendimentoAplicacao(ap: Aplicacao, m: Mes, virada: Mes, taxa_referencia: Taxa = '0', aliq_referencia: Taxa = '0'): Centavos {
   const resgate = ap.resgate_previsto ?? resgatePadrao(virada)
-  const al = aliquotaIR(diasIR(ap.aplicada_em, resgate), ap.isenta)
-  return rendimentoMes(ap.saldo, ap.taxa_bruta_anual, al, diasDoMes(m))
+  const al = ap.taxa_bruta_anual === undefined ? taxa(aliq_referencia) : aliquotaIR(diasIR(ap.aplicada_em, resgate), ap.isenta)
+  if (compararMes(m, resgate.slice(0, 7)) > 0 || compararMes(m, ap.aplicada_em.slice(0, 7)) < 0) return 0
+  const inicio = m === ap.aplicada_em.slice(0, 7) ? Number(ap.aplicada_em.slice(8, 10)) : 1
+  const fim = m === resgate.slice(0, 7) ? Number(resgate.slice(8, 10)) : diasDoMes(m)
+  return rendimentoMes(ap.saldo, ap.taxa_bruta_anual ?? taxa_referencia, al, Math.max(0, fim - inicio + 1))
 }
