@@ -43,20 +43,20 @@ export function Entrar() {
             <CampoPrivado className="inp" type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" value={email} onChange={e => setEmail(e.target.value)} />
             <small>A gente manda um código de 6 números pra esse e-mail. Não tem senha pra lembrar.</small>
           </label>
-          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+          {erro && <AvisoConvite mensagem={erro} />}
           <button className="btn primary full" disabled={ocupado} type="submit"><Mail size={20} />Receber o código</button>
           <button className="lnk equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={18} />Trabalha na casa (cozinheira, motorista)? Entre por aqui</button>
         </form>
       )}
 
       {passo === 'codigo' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(r.aviso) }) }}>
+        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(mensagemConvite(r.aviso)) }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => setPasso('email')}><ArrowLeft size={18} />Trocar e-mail</button>
           <h2>Digite o código</h2>
           <p className="sub">Mandamos 6 números para <b>{textoPrivado(email)}</b>. Pode levar 1 minuto. Olhe também a caixa de spam.</p>
           <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="Código de 6 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))} />
           {ex && <p className="sub">No exemplo, o código é 123456.</p>}
-          {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+          {erro && <AvisoConvite mensagem={erro} />}
           <button className="btn primary full" disabled={ocupado || codigo.length !== 6} type="submit">Entrar</button>
         </form>
       )}
@@ -70,7 +70,7 @@ export function Entrar() {
               <p className="sub">Digite os 4 números que vieram junto com este link. O código vale por 24 horas e só funciona neste link. Você vai ver só a tela da Casa, pra anotar as compras.</p>
               <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
               {ex && <p className="sub">No exemplo, o código é 2468.</p>}
-              {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+              {erro && <AvisoConvite mensagem={erro} />}
               <button className="btn primary full" disabled={ocupado || codigo.length !== 4} type="submit">Entrar na Casa</button>
             </>
           ) : (
@@ -85,4 +85,18 @@ export function Entrar() {
       <p className="sub">Ao entrar você aceita o termo de uso. Seus dados ficam só com a sua família e você pode baixar ou apagar tudo quando quiser.</p>
     </div>
   )
+}
+
+export function mensagemConvite(mensagem: string): string {
+  const m = mensagem.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  if (/conexao|rede|network|fetch|load failed|nao foi possivel confirmar/.test(m)) return 'A conexão falhou. Confira a internet e tente novamente com o mesmo link e código.'
+  if (/e-mail do convite|mesmo e-mail que recebeu|email.*diferente/.test(m)) return 'Use o e-mail para o qual o convite foi enviado. Volte em Trocar e-mail ou peça outro convite a quem enviou.'
+  if (/convite.*(vencido|expirado|reconhecido|encontrado|usado|invalido)|codigo errado ou vencido/.test(m)) return 'Não foi possível reconhecer o convite ou ele venceu. Peça um novo link e código a quem convidou.'
+  if (/conta|account|user.*(exist|found)|e-mail.*(existe|cadastrado)/.test(m)) return 'Não foi possível entrar com esses dados. Confira o e-mail e o código ou fale com quem convidou.'
+  if (/[^\s@]+@[^\s@]+/.test(mensagem)) return 'Não foi possível entrar com esses dados. Confira o e-mail e o código ou fale com quem convidou.'
+  return mensagem
+}
+
+export function AvisoConvite({ mensagem }: { mensagem: string }) {
+  return <p className="erro" role="alert">{textoPrivado(mensagemConvite(mensagem))}</p>
 }

@@ -180,13 +180,13 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     const des = desejoDoMotor({ nome: 'Reforma (exemplo)', valor: 50000, mes: '2027-01', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false })
     const c = cabeDesejo(e, des)
     const f = frasesDesejo(c, des)
-    expect(['Cabe.', 'Cabe, mas tira de 2029.', 'Ainda não cabe.', 'O caixa já está apertado.']).toContain(f.titulo)
+    expect(['Cabe. Verificado de 01/2027 até 12/2028.', 'Cabe, mas tira de 2029. Verificado de 01/2027 até 12/2028.', 'Ainda não cabe. Verificado de 01/2027 até 12/2028.', 'O caixa já está apertado. Verificado de 01/2027 até 12/2028.']).toContain(f.titulo)
     if (c.situacao === 'ainda nao cabe') expect(f.linhas.join(' ')).toMatch(/abaixo do piso\./)
     // MOTOR_index (observação do cabeDesejo): em "ainda não cabe", o caixa já apertado sem o desejo também aparece
     const forjado = frasesDesejo({ situacao: 'ainda nao cabe', tira_por_mes_2029: 100, primeiro_mes_abaixo: '2027-01', caberia_em: '2027-02', apertado_sem_desejo: '2026-12' }, des)
     expect(forjado.linhas).toContain('Mesmo sem este desejo, em 12/2026 o caixa já fica abaixo do piso.')
     const folgado = cabeDesejo(entrada(t), desejoDoMotor({ nome: 'Fone (exemplo)', valor: 500, mes: '2027-01', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false }))
-    expect(frasesDesejo(folgado, d(true)).titulo).toBe('Cabe.')
+    expect(frasesDesejo(folgado, d(true)).titulo).toBe('Cabe. Verificado de 01/2027 até 12/2028.')
   })
   it('F7-ANTECIPA: contrato adiantado de R$ 120.000 por R$ 100.000 custa mais do que o caixa rende', async () => {
     const a = avaliarAntecipacao(10_000_000, '2026-12', 12_000_000, '2027-12', { taxa_bruta_ano: { 2026: '0.1375', 2027: '0.125', 2028: '0.11' }, aliq_proj: '0.225', virada: '2029-01', taxa_real_trabalho: '0.04' })

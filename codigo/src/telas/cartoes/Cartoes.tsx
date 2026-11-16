@@ -1,5 +1,5 @@
 import { textoPrivado, CampoValor, CampoPrivado } from '../../componentes/privacidade'
-import { compromissoNesteMes, mesesDaSimulacao } from './simulacao'
+import { compromissoNesteMes, fraseParcelamento, mesesDaSimulacao } from './simulacao'
 import { useEffect, useState } from 'react'
 import { CreditCard, Plus, ShoppingBag, CircleCheck, TriangleAlert } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -74,7 +74,7 @@ export function Cartoes() {
                   <p className="lbl">Fatura que vence {dataCurta(atual.vencimento)} <span className={'chip' + (atual.fechada ? '' : ' ok')}>{atual.fechada ? 'fechada' : 'aberta'}</span></p>
                   <div className="numrow"><Din v={atual.total} tam="big" />
                     <Qm titulo={textoPrivado(`Fatura ${c.nome} de ${mesCurto(atual.mes)}`)} linhas={[{ linha: `Compras no ${c.nome} que caem na fatura que vence ${dataCurta(atual.vencimento)}`, valor: atual.total }]}
-                      nota={`A compra conta no "pode gastar" pelo dia em que foi feita, e na fatura pelo mês em que vence. Compra feita depois do dia ${c.dia_fechamento} vai pra fatura seguinte.`} />
+                      nota={`À vista, a compra conta no orçamento na data da compra. Parcelada, cada parcela conta no dia 1 do mês da sua fatura. Compra feita a partir do dia ${c.dia_fechamento} vai pra fatura seguinte.`} />
                   </div>
                   {/* quem pagou (CASAL): a parte da Casa que está na fatura de quem pagou */}
                   {atual.da_casa ? <p className="todo ok" style={{ margin: '6px 0 0' }}><span>Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>. {textoPrivado(meu ? 'Foi você quem pagou pela Casa.' : `Foi ${c.titular || 'quem é dono do cartão'} quem pagou pela Casa.`)}</span></p> : null}
@@ -133,9 +133,11 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
       {valor > 0 && (
         <>
           <p className={'todo ' + (cabe ? 'ok' : 'warn')}>{cabe ? <CircleCheck size={20} aria-hidden="true" /> : <TriangleAlert size={20} aria-hidden="true" />}
-            <span>{dono ? (cabe ? <><b>As parcelas deste mês cabem no seu limite.</b> O seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
+            <span>{dono ? (cabe ? <><b>As parcelas deste mês cabem no seu limite.</b> O que você ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O que ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
+          <p className="sub">Verificado só em {mesCurto(hoje)}. Os outros meses mostram faturas, sem avaliar se cabem no orçamento.</p>
+          {parc > 1 && <p className="sub parc-fatura">{textoPrivado(fraseParcelamento(valor, ps))}</p>}
           <ul className="exp">
-            <li><span>{textoPrivado(dono ? `Livre no mês (${dono})` : 'Livre no mês hoje')}</span><Din v={livre} /></li>
+            <li><span>{textoPrivado(dono ? `Ainda pode gastar no mês (${dono})` : 'Ainda pode gastar no mês')}</span><Din v={livre} /></li>
             <li><span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>
             {!dono && <li><span>Reserva: o dinheiro que a família combinou nunca gastar</span><Din v={-colchao} menos /></li>}
             <li className="tot"><span>{depois - colchao >= 0 ? 'Sobra depois da compra' : 'Depois da compra, passa'}</span><Din v={Math.abs(centavos(depois - colchao))} /></li>

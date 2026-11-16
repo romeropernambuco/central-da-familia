@@ -137,7 +137,7 @@ it.each(['limite_base', 'limite_mes'] as const)('H: cofrinho acompanha alteraç�
   const resumo = { envelopes: [env], dias_restantes: 16 } as any
   const a = await montar(createElement(MeuOrcamento), { lancamentos: async () => [{ ...linha, data: '2026-11-14', valor: 1 }] }, { resumo })
   await a.render({ resumo: { ...resumo, envelopes: [{ ...env, [limite]: 600 }] } })
-  expect(a.box.textContent).toContain('dia de base de R$\u00a020')
+  expect(a.box.textContent).toContain('valor diário de referência de R$\u00a020')
 })
 it.each([['parâmetros', createElement(Parametros), 'objetivo', { parametros: null, historico: [], focus: [{ ano: 2026, fonte: 'ANTIGA', selic_fim: '0.1', ipca: '0.1', divulgado_em: '2026-11-01' }] }], ['desejos', createElement(Desejos), 'desejos', [{ id: 'd', nome: 'ANTIGA', valor: 1, mes: '2026-12', situacao: 'pensando', volta_de: 'nada' }]], ['equipe', createElement(Casa), 'casaDaEquipe', { hoje: '2026-11-15', lista: [{ id: 'i', nome: 'ANTIGA', ok: false }], comprado: [], prestadores: [], gas: { trocas: [] }, presenca: { hoje: [], meu_ponto: {} } }]] as const)('D: %s descarta resposta anterior', async (_n, el, metodo, velho) => {
   const p = pendente<unknown>(); const ler = vi.fn().mockImplementationOnce(() => p.promessa).mockResolvedValue(metodo === 'objetivo' ? { parametros: null, historico: [], focus: [] } : metodo === 'desejos' ? [] : { ...velho, lista: [] })

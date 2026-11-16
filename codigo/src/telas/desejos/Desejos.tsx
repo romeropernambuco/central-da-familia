@@ -1,3 +1,4 @@
+import { MetaDoDesejo } from '../meu-orcamento/MeuOrcamento'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E8: aba Desejos, a calculadora pra todos. "Quero R$ 50.000 pra viajar": cabe? de onde volta (contrato antecipado,
 // investimento, venda)? quanto tira de 2029? Os dados vão pra tabela desejos (f_06): o casal vê todos com o nome do dono,
@@ -48,7 +49,7 @@ export function seloDesejo(situacao: ReturnType<typeof cabeDesejo>['situacao']):
   return situacao === 'cabe' ? 'Cabe' : situacao === 'cabe, mas tira' ? 'Aperta' : situacao === 'ainda nao cabe' ? 'Ainda não' : 'Apertado'
 }
 
-export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, antecipa?: ReturnType<typeof avaliarAntecipacao> | null): { titulo: string; ok: boolean; linhas: string[]; selo: string } {
+export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, antecipa?: ReturnType<typeof avaliarAntecipacao> | null, periodo?: { inicio: string; fim: string }): { titulo: string; ok: boolean; linhas: string[]; selo: string } {
   const linhas: string[] = []
   let titulo: string, ok: boolean
   // modo renda (depois da virada, QA E11): sem linha até 2028; compara o dinheiro guardado de hoje com o piso
@@ -62,6 +63,7 @@ export function frasesDesejo(c: ReturnType<typeof cabeDesejo>, d: Desejo, anteci
     else { linhas.push(`Em ${mesAno(c.primeiro_mes_abaixo!)} o caixa fica abaixo do piso.`, c.caberia_em ? `Cabe a partir de ${mesAno(c.caberia_em)}.` : 'Até 12/2028 não cabe: só com mais dinheiro entrando.'); if (c.apertado_sem_desejo) linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo)} o caixa já fica abaixo do piso.`) }
   }
   else { titulo = 'O caixa já está apertado.'; ok = false; linhas.push(renda ? 'Mesmo sem este desejo, o dinheiro guardado já está abaixo do piso.' : `Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo!)} o caixa fica abaixo do piso.`) }
+  titulo += renda ? ` Verificado em ${mesAno(periodo?.inicio || d.mes)}.` : ` Verificado de ${mesAno(periodo?.inicio || d.mes)} até ${periodo ? mesAno(periodo.fim) : '12/2028'}.`
   const t = c.tira_por_mes_2029
   linhas.push(t === null ? 'Nesse cenário o rendimento não repõe a inflação.' : t > 0 ? `Tira ${r$(t)} por mês ${de}, pra sempre.` : t < 0 ? `Volta mais do que sai: soma ${r$(t)} por mês na ${de.slice(3)}.` : `Não muda a ${de.slice(3)}.`)
   if (d.volta_de !== 'nada' && d.volta_de !== 'contrato' && !d.volta_certa) linhas.push('A volta é incerta: fica fora da conta, só entra se vier.')
@@ -93,7 +95,7 @@ function avaliar(entrada: FuturoEntrada, d: Desejo, semEste = false) {
     const antecipa = d.volta_de === 'contrato' && d.antecipado != null && d.volta_mes
       ? avaliarAntecipacao(d.antecipado, d.mes, d.volta, d.volta_mes, { taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj, virada: p.virada, taxa_real_trabalho: p.taxa_real_trabalho })
       : null
-    return frasesDesejo(c, d, antecipa)
+    return frasesDesejo(c, d, antecipa, { inicio: entrada.hoje.slice(0, 7), fim: mesMais(entrada.parametros.virada, -1) })
   } catch { return null }
 }
 
@@ -164,7 +166,7 @@ export function Desejos() {
       </div>
       : semConta ? <p className="todo warn desejo-res" role="status"><span>{semConta}</span></p>
       : <p className="sub desejo-res">{demorou ? 'A conta está demorando. Espere um pouco ou mude um número pra tentar de novo.' : 'Fazendo a conta…'}</p>
-    : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))}</span></p> : null
+    : meuEnv ? <p className={'todo ' + (/^Dá pra/.test(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7))) ? 'ok' : 'warn') + ' desejo-res'} role="status"><span>{textoPrivado(fraseDaFilha(novo.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, novo.mes > hojeRecife().slice(0, 7)))} Verificado em {mesCurto(novo.mes + '-01')}.</span></p> : null
 
   async function guardar() {
     if (!familia || falta || gravando) return
@@ -185,6 +187,7 @@ export function Desejos() {
         <section className="card" aria-labelledby="dCalc">
           <div className="card-h"><h2 id="dCalc"><Sparkles size={24} aria-hidden="true" />Quero…</h2></div>
           <p className="sub" style={{ marginBottom: 10 }}>{casal ? (saidaF?.modo === 'renda' ? 'Escreva o que quer e quando. O app diz se cabe no dinheiro guardado e quanto tira da renda.' : 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.') : 'Escreva o que quer e quanto custa. O app diz se dá pra comprar com o seu.'}</p>
+          {casal && <p className="sub">Caixa é o dinheiro disponível. Piso é o mínimo de segurança cadastrado. O resultado é uma estimativa com os valores e taxas do Planejamento, sem garantia de renda futura.</p>}
           <div className="desejo-form">
           <label className="campo"><span>O que é</span><CampoPrivado className="inp" maxLength={80} placeholder={casal ? 'Ex.: viagem de férias' : 'Ex.: bicicleta'} value={f.nome} onChange={e => setF({ ...f, nome: e.target.value })} /></label>
           <div className="campo"><span>Quanto custa</span><CampoValor valor={f.valor} mudar={campo('valor')} rotulo="Quanto custa" /></div>
@@ -235,7 +238,8 @@ export function Desejos() {
                     <span className="m"><b className="quebra">{textoPrivado(d.nome)}</b>
                       <small>{textoPrivado(casal ? `${dono} · ` : '')}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
                       {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{textoPrivado(r.titulo)}</b> {textoPrivado([...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' '))}</small>}
-                      {!casal && meuEnv && d.situacao === 'pensando' && <small>{fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7))}</small>}
+                      {!casal && meuEnv && d.situacao === 'pensando' && <small>{textoPrivado(fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7)))} Verificado em {mesCurto(d.mes + '-01')}.</small>}
+                      {!casal && d.meu && <MetaDoDesejo desejo={d} />}
                       {d.meu ? (
                         <span className="pills desejo-sit" role="group" aria-label={textoPrivado(`Como está: ${d.nome}`)}>
                           {SITUACAO.map(s => <button key={s.v} type="button" className="pill" aria-pressed={d.situacao === s.v} onClick={() => d.situacao !== s.v && mudar(d, { situacao: s.v })}>{s.nome}</button>)}

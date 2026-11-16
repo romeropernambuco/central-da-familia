@@ -1,3 +1,8 @@
+import { useConfig } from '../../app/useConfig'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
+import type { RecebimentoTela } from '../../api/tipos'
+import { mesCurto } from '../../lib/formato'
+import { mesMais } from '../../lib/plano'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, ListChecks, History, Pencil } from 'lucide-react'
@@ -89,6 +94,7 @@ function LancamentosFamilia() {
           <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Trash2 size={18} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
         </div>
       </div>
+      {!lixeira && casal && <ResumoDoMes />}
       {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis pra corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
       {lixeira && <p className="todo"><Trash2 size={20} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
       <div className={casal ? 'tela-larga lanc-larga' : undefined}>
@@ -175,3 +181,60 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
   )
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
+type Entrada = { data: string; valor: number }
+export function totaisDoMes(mes: string, hoje: string, gastos: Lancamento[], recebimentos: RecebimentoTela[], entradas: Entrada[]) {
+  const saiu = centavos(gastos.filter(l => !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje).reduce((s, l) => s + l.valor, 0))
+  const entrou = centavos(entradas.filter(e => e.data.startsWith(mes) && e.data <= hoje).reduce((s, e) => s + e.valor, 0)
+    + recebimentos.filter(r => r.recebido_em?.startsWith(mes) && r.recebido_em.slice(0, 10) <= hoje).reduce((s, r) => s + (r.valor_recebido ?? r.valor), 0))
+  const previsto = centavos(recebimentos.filter(r => !r.recebido_em && r.certo && (r.mes_novo || r.mes_previsto) === mes).reduce((s, r) => s + r.valor, 0))
+  return { entrou, saiu, saldo: centavos(entrou - saiu), previsto }
+}
+
+export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
+  return <><h3>Realizado</h3><div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+    {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome}><p>{nome}</p><Din v={valor} /></div>)}
+  </div><h3>Previsto · ainda não recebido</h3><p>Entradas certas pendentes: <Din v={totais.previsto} /></p>
+  <p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês, inclusive atrasados. Incertos ficam fora. Previsto não entra no saldo realizado.</p></>
+}
+
+export function ResumoDoMes() {
+  const { api, familia, versao } = useApp()
+  const hoje = hojeRecife(), atual = hoje.slice(0, 7)
+  const [mes, setMes] = useState(atual)
+  const [verFechamento, setVerFechamento] = useState(false)
+  const [entradas, , falhaEntradas, leuEntradas] = useConfig<Entrada[]>('entradas', [])
+  const permitido = familia?.papel === 'casal'
+  const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:${mes}`, permitido && api.recebimentos ? async () => {
+    const [gastos, recebimentos] = await Promise.all([api.lancamentos(familia!.id, mes), api.recebimentos!(familia!.id)])
+    return { gastos, recebimentos }
+  } : null, [api, versao])
+  if (!permitido) return null
+  return <section className="card" aria-label="Resumo do mês">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <button type="button" className="btn line" aria-label="Mês anterior" onClick={() => setMes(mesMais(mes, -1))}>←</button>
+      <h2>{mesCurto(mes + '-01')}</h2>
+      <button type="button" className="btn line" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes(mesMais(mes, 1))}>→</button>
+    </div>
+    {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro || falhaEntradas ? <p role="alert">Não deu para atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+      : carregando || !dado || !leuEntradas ? <p role="status">Buscando resumo…</p> : <><FaixaDoMes totais={totaisDoMes(mes, hoje, dado.gastos, dado.recebimentos, entradas)} /><p className="sub">Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.</p></>}
+    {mes < atual && <><button type="button" className="btn line" onClick={() => setVerFechamento(v => !v)}>{verFechamento ? 'Ocultar fechamento registrado' : 'Ver fechamento registrado'}</button>
+      {verFechamento && <FechamentoRegistrado key={`${familia?.id}:${mes}`} mes={mes} />}</>}
+  </section>
+}
+
+/** Consulta o texto que o fechamento existente deixou no diário; não calcula nem registra um fechamento novo. */
+export function FechamentoRegistrado({ mes }: { mes: string }) {
+  const { api, familia, versao } = useApp()
+  const hoje = hojeRecife(), permitido = familia?.papel === 'casal' && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) && mes < hoje.slice(0, 7)
+  const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:fechamento:${mes}`, permitido ? () => api.escritorioRelatorio(familia!.id, mesMais(mes, 1) + '-01', hoje) : null, [api, versao])
+  if (!permitido) return null
+  if (erro) return <p role="alert">Não deu para consultar o fechamento registrado. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+  if (carregando || !dado) return <p role="status">Buscando fechamento…</p>
+  const linhas = dado.diario.filter(l => l.funcionario === 'contador' && l.ref === `fechou_mes:${mes}`)
+  return <section aria-label="Fechamento registrado"><h3>Fechamento de {mesCurto(mes + '-01')}</h3>
+    <p className="sub">Texto salvo no diário do Contador. Não atualiza nem refaz as contas daquele mês.</p>
+    {linhas.length ? linhas.map(l => <div key={l.id}><p>{textoPrivado(l.pergunta)}</p><p>{textoPrivado(l.resposta)}</p><small>Registrado em {dataCurta(l.quando.slice(0, 10))}</small></div>)
+      : <p>Não há fechamento salvo desse mês nesta consulta. Isso não significa saldo zero. Seus gastos continuam disponíveis, mas não é possível fechar esse mês por esta tela.</p>}
+  </section>
+}
