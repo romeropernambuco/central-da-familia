@@ -129,8 +129,9 @@ export function useInsightsDaAba(rota: Rota) {
     trava.current.delete(id)
     const evento = resultado.evento
     if (!ok || !evento) { loja.travas.delete(id); loja.emitir(); return false }
-    // Confirma a escrita ANTES de reler. Uma releitura falha nunca permite reenviar.
-    if (evento.tipo === 'visto') loja.travas.delete(id)
+    // Só respostas definitivas mantêm a trava após o envio. O adiamento expira
+    // pela memória, sem depender de uma releitura bem-sucedida do Escritório.
+    if (evento.tipo === 'visto' || evento.tipo === 'depois') loja.travas.delete(id)
     else loja.travas.set(id, 'respondida')
     loja.emitir()
     registrar(p, evento)
