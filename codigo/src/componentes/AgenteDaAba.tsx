@@ -1,3 +1,4 @@
+import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
 import { textoDeAgente } from '../lib/textoAgente'
 import { memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
@@ -92,7 +93,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
   document.addEventListener('click', acompanhar)
   return () => document.removeEventListener('click', acompanhar)
  }, [rota])
- const { e, perguntas, responder } = useEscritorio()
+ const { e, perguntas, responder, estado: leitura, atualizar } = useEscritorio()
  const insights = useInsightsDaAba(rota)
  const loja = lojaEscritorio(api, familia!.id)
  const escritorio = useSyncExternalStore(loja.assinar, loja.snapshot)
@@ -111,7 +112,9 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
    if (celebrando && rota === 'casa' && id !== celebrando.funcionario) return false
    return funcionarioAutorizado(id, familia!.papel, !!sessao?.dono) && (rota === 'casa' ? EQUIPE.some(m => m.id === id && m.rota === rota) : [elencoBase.principal, ...elencoBase.secundarios].includes(id))
  })
- const proposta = !pendente && e && !(celebrando && (rota === 'inicio' || rota === 'casa')) ? insights.pergunta : null
+ const conferindo = leitura === 'buscando' || insights.estado === 'buscando'
+ const falhou = leitura === 'erro' || insights.estado === 'erro'
+ const proposta = !falhou && !conferindo && !pendente && e && !(celebrando && (rota === 'inicio' || rota === 'casa')) ? insights.pergunta : null
  const elenco = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba,
   perguntaPendente: pendente || proposta || (celebrando ? { funcionario: celebrando.funcionario } : null),
   filaGeral: [...(celebrando ? [{ funcionario: celebrando.funcionario }] : []), ...(primeiraAutorizada ? [{ funcionario: primeiraAutorizada.dono }] : [])] })
@@ -172,11 +175,11 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const restrito = familia!.papel !== 'casal'
  const papel = restrito && rota === 'casa' ? (m.id === 'presenca' ? 'Acompanha seu próprio ponto.' : 'Acompanha as tarefas da casa, sem valores em dinheiro.') : m.papel
  return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
- {completo && <MiniAgente id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
+ {completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
  {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
  {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
- {conversa && (p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
- {modo !== 'desligado' && <button type="button" className="btn line" onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
+ {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
+ {modo !== 'desligado' && <button type="button" className="btn line" aria-expanded={conversa} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
  <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>
  <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
@@ -185,7 +188,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  </Sheet>}
  </section>
 }
-export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando', funcionarios }: { id: string; sala: SalaEquipe; estado?: EstadoAgente; funcionarios?: { id: string; estado: EstadoAgente }[] }) {
+export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalhando', funcionarios, conferencia }: { conferencia?: 'erro' | 'buscando'; id: string; sala: SalaEquipe; estado?: EstadoAgente; funcionarios?: { id: string; estado: EstadoAgente }[] }) {
  const caixa = useRef<HTMLDivElement>(null)
  const cenaAtual = useRef<Cena>()
  const pessoas = funcionarios || [{ id, estado }]
@@ -220,5 +223,5 @@ export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalh
  liberarRenderer = destruir
  return () => { window.removeEventListener('escritorio3d-abrir', abrirEscritorio); destruir(); if (liberarRenderer === destruir) liberarRenderer = undefined }
  }, [chave, sala])
- return lista ? <span className="sub">Em lista · {({ chamando: 'Precisa de você', resolvido: 'Respondido', parado: 'Sem pendências', trabalhando: 'Trabalhando' })[estado]}</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true" />
+ return lista ? <span className="sub">Em lista · {conferencia ? (conferencia === 'erro' ? 'Não foi possível conferir' : 'Conferindo…') : ({ chamando: 'Precisa de você', resolvido: 'Respondido', parado: 'Sem pendências', trabalhando: 'Trabalhando' })[estado]}</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true" />
 })

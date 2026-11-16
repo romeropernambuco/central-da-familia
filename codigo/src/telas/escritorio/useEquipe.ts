@@ -13,9 +13,10 @@ const n = (v: number, um: string, mais: string) => (v === 1 ? `1 ${um}` : `${v} 
  * cada um com o dado que já existe no banco (recebimentos, presença, contagem do estoque). Quem ainda não tem dado
  * entra com semDado: o card diz o que ele vai fazer e "ainda sem dado", sem número nenhum.
  */
-export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): FuncionarioEsc[] {
+export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): FuncionarioEsc[] & { falhou?: boolean; carregando?: boolean; repetir?: () => void } {
   const { api, familia, versao } = useApp()
-  type Dados = { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[]; pres: Record<string, string[]> }
+  type Dados = { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[] | null; pres: Record<string, string[]> | null }
+  const [n, setN] = useState(0)
   const [resultado, setResultado] = useState<{ familia: string; versao: number; dados: Dados } | null>(null)
   useEffect(() => {
     setResultado(null)
@@ -25,18 +26,19 @@ export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): Funcio
     Promise.all([
       api.recebimentos ? api.recebimentos(fid).catch(() => null) : Promise.resolve(null),
       api.estoque(fid).catch(() => null),
-      api.avisosCasa(fid).catch(() => []),
-      api.config<Record<string, string[]>>(fid, 'casa_presenca', {}).catch(() => ({})),
+      api.avisosCasa(fid).catch(() => null),
+      api.config<Record<string, string[]>>(fid, 'casa_presenca', {}).catch(() => null),
     ]).then(([rec, est, avisos, pres]) => { if (vivo) setResultado({ familia: fid, versao, dados: { rec, est, avisos, pres } }) })
     return () => { vivo = false }
-  }, [api, familia?.id, versao])
+  }, [api, familia?.id, versao, n])
   const dados = resultado?.familia === familia?.id && resultado?.versao === versao ? resultado.dados : null
-  return useMemo(() => completarEquipe(doBanco, dados || { rec: null, est: null, avisos: [], pres: {} }, hojeRecife()), [doBanco, dados])
+  const lista = useMemo(() => completarEquipe(doBanco, dados || { rec: null, est: null, avisos: null, pres: null }, hojeRecife()), [doBanco, dados])
+  return Object.assign(lista, { carregando: !dados, falhou: !!dados && (dados.pres === null || dados.avisos === null), repetir: () => setN(x => x + 1) })
 
 }
 
 /** A conta da lista (sem React, pra dar pra testar): os do banco + os que faltam da lista única, na ordem dela. */
-export function completarEquipe(doBanco: FuncionarioEsc[] | undefined, d: { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[]; pres: Record<string, string[]> }, hoje: string): FuncionarioEsc[] {
+export function completarEquipe(doBanco: FuncionarioEsc[] | undefined, d: { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[] | null; pres: Record<string, string[]> | null }, hoje: string): FuncionarioEsc[] {
     if (!doBanco) return []
     const { rec, est, avisos, pres } = d
     const frase: Record<string, string | null> = {
@@ -48,7 +50,7 @@ export function completarEquipe(doBanco: FuncionarioEsc[] | undefined, d: { rec:
         return `${n(abertos.length, 'recebimento', 'recebimentos')} com data pra entrar. O próximo: ${p.descricao}, ${reais(p.valor)} em ${mesAno(m)}${p.mes_novo ? ' (mudou de mês)' : ''}${p.certo ? '' : ', ainda sem contrato'}.`
       })(),
       // Presença: quem marcou "Cheguei" hoje na tela Casa
-      presenca: (() => {
+      presenca: pres === null || avisos === null ? null : (() => {
         const veio = [...new Set([...(pres[hoje] || []), ...avisos.filter(a => a.tipo === 'casa_presenca' && a.data === hoje).map(a => a.nome)])]
         return veio.length ? `Hoje ${veio.length === 1 ? 'marcou presença' : 'marcaram presença'}: ${veio.join(', ')}.` : 'Ninguém da equipe da casa marcou presença hoje ainda.'
       })(),

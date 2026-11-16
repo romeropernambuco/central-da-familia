@@ -19,8 +19,8 @@ type Folha = { tipo: 'nova' } | { tipo: 'aporte' | 'resgate'; app?: GuardadoApli
 
 /** Guardado (a caixinha): a resposta de "quanto rendeu hoje?" em 1 número. Só o casal abre. */
 export function Guardado() {
-  const { familia, explicar, resumo } = useApp()
-  const { g, estado, motivo } = useGuardado()
+  const { familia, explicar, resumo, oculto } = useApp()
+  const { g, estado, atualizar } = useGuardado()
   // E7 (F10): o aviso do FGC vem do motor (futuro().avisos_fgc); a tela só escreve
   const { saida } = useFuturo()
   const [grafico, setGrafico] = useState<'dia' | 'saldo'>('saldo')
@@ -45,7 +45,7 @@ export function Guardado() {
   }, [])
   if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado mostra o dinheiro da família. Só o casal vê esta tela.</Vazio></div>
   if (estado === 'desligado') return <div className="card"><Vazio ico={<Landmark size={24} />}>O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje.</Vazio></div>
-  if (estado === 'erro' && !g) return <div className="card"><p className="aviso-erro" role="alert">Não deu pra buscar o Guardado: {motivo} Seu dinheiro não mudou; é só a tela que não carregou.</p></div>
+  if (estado === 'erro') return <div className="card"><p className="aviso-erro" role="alert">Não foi possível conferir. {g && 'Dados desatualizados.'} <button type="button" className="btn line" onClick={atualizar}>Tentar de novo</button></p></div>
   if (!g) return <div className="card"><p className="sub">Buscando quanto rendeu hoje…</p></div>
 
   const abrirConta = () => explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g)} ${TORNEIRA}` })
@@ -84,7 +84,7 @@ export function Guardado() {
           <div className="tot"><dt>{doOutro.size ? 'A família tem guardado' : 'Você tem guardado'}</dt><dd><Din v={g.total} /></dd></div>
         </dl>
         {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={textoPrivado(n)}>No nome de {textoPrivado(n)} <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
-        {meses > 0 && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}
+        {meses > 0 && !oculto && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}
         <button type="button" className="explica-l" onClick={abrirConta}><HelpCircle size={18} aria-hidden="true" /> De onde veio esse número?</button>
       </section>
 
@@ -103,9 +103,10 @@ export function Guardado() {
               <button type="button" aria-pressed={grafico === 'dia'} onClick={() => setGrafico('dia')}>Rendeu por dia</button>
             </div>
             {grafico === 'saldo' && g.saldo_30 ? <LinhaSaldo s={g.saldo_30} /> : <>
-            <div className="barras30" role="img" aria-label={`Rendimento de cada um dos últimos 30 dias. O maior dia rendeu ${reais(Math.max(...g.por_dia_30.map(d => d.liquido)))}.`}>
+            {oculto ? <p className="sub">Gráfico oculto.</p> : <div className="barras30" role="img" aria-label={`Rendimento de cada um dos últimos 30 dias. O maior dia rendeu ${reais(Math.max(...g.por_dia_30.map(d => d.liquido)))}.`}>
               {barras.map(b => <i key={b.data} className={(b.util ? '' : 'folga') + (b.data === g.por_dia_30[g.por_dia_30.length - 1]?.data ? ' hoje' : '')} style={{ height: b.util ? `${Math.max(b.altura, 3)}%` : undefined }} title={`${dataCurta(b.data)}: ${b.util ? reais(b.liquido) : 'não rende'}`} />)}
             </div>
+            }<ul style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }} aria-label="Rendimento por dia">{g.por_dia_30.map(d => <li key={d.data}>{dataCurta(d.data)}: {oculto ? '•••' : reais(d.liquido)}</li>)}</ul>
             <div className="barras30-pe"><span>{dataCurta(g.por_dia_30[0]?.data || hojeRecife())}</span><span>hoje</span></div>
             <div className="leg" style={{ marginTop: 10 }}>
               <span><i className="q" />dia útil: rendeu</span>
@@ -329,6 +330,8 @@ export function CartaoGuardado() {
 
 /** G10: a linha do saldo subindo nos últimos 30 dias (SVG simples, sem biblioteca). */
 function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
+  const { oculto } = useApp()
+  if (oculto) return <p className="sub">Gráfico oculto.</p>
   const v = s.filter(x => x.saldo > 0)
   if (v.length < 2) return <p className="sub">Ainda sem 30 dias de histórico.</p>
   const min = Math.min(...v.map(x => x.saldo)), max = Math.max(...v.map(x => x.saldo))
@@ -343,7 +346,7 @@ function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
         <polyline points={pts} className="linha" />
       </svg>
       <figcaption className="barras30-pe"><span>{dataCurta(v[0].data)}: {reais(v[0].saldo)}</span><span>hoje: {reais(v[v.length - 1].saldo)}</span></figcaption>
-      <p className="sub" style={{ marginTop: 8 }}>{cresceu > 0 ? <>Cresceu <b>{reais(cresceu)}</b> em 30 dias, somando o que rendeu e o que entrou.</> : 'Ficou parado nestes 30 dias.'}</p>
+      <p className="sub" style={{ marginTop: 8 }}>{cresceu > 0 ? <>Cresceu <b>{reais(cresceu)}</b> em 30 dias, somando o que rendeu e o que entrou.</> : cresceu < 0 ? <>Caiu <b>{reais(-cresceu)}</b> em 30 dias, contando entradas e saídas.</> : 'Ficou parado nestes 30 dias.'}</p>
     </figure>
   )
 }

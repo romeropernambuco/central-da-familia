@@ -54,7 +54,7 @@ const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
-const padrao = /NomeSentinelaPrivado|9876|9\.876|876,54/
+const padrao = /NomeSentinelaPrivado|9876|9\.876|876,54|R\$\s*0(?:[^\d]|$)/
 
 for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
  for (const inicial of [true, false]) {
@@ -220,6 +220,8 @@ describe('regra do olho em cada tela real', () => {
         expect(vazamentos(container), nome + ' tarefas abertas').toEqual([])
       }
       if (nome === 'Guardado') {
+        await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Rendeu por dia')[0].click())
+        expect(vazamentos(container), 'Rendimentos: texto e atributos').toEqual([])
         const aplicacoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'li')
         expect(aplicacoes.length).toBeGreaterThan(0)
         for (const botao of aplicacoes) expect(botao.getAttribute('aria-label')).toContain('Abrir.')
@@ -367,3 +369,29 @@ for (const inicial of [true, false]) {
     } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
   })
 }
+import { GraficoMes } from './componentes/Graficos'
+import { Cartoes } from './telas/cartoes/Cartoes'
+it('4: zero literal e atributos monetários ficam protegidos', async()=>{
+ const doc=ambiente(), container=doc.createElement('div');doc.body.appendChild(container)
+ const root=createRoot(container as unknown as HTMLElement)
+ const sessao=(await apiExemplo.sessao())!, familia=sessao.familias[0]
+ const api={...apiExemplo,cartoes:async()=>[{id:'c',nome:'Cartão de teste'}],faturas:async()=>[{cartao_id:'c',mes:'2026-11',vencimento:'2026-11-30',total:0}]}
+ try {
+  esconderValores(true)
+  await act(async()=>root.render(createElement(ContextoApp.Provider,{value:{api,familia,oculto:true,versao:0} as unknown as Ctx},createElement(Cartoes))))
+  expect(container.buscar(n=>n.getAttribute('class')==='fat zeros')).toHaveLength(1)
+  expect(vazamentos(container)).toEqual([])
+  for(const n of container.buscar(n=>n.atributos.size>0)) for(const attr of ['title','aria-label','aria-valuetext']) expect(n.getAttribute(attr)||'').not.toMatch(/R\$\s*\d/)
+ } finally {await act(async()=>root.unmount());esconderValores(false);vi.unstubAllGlobals()}
+})
+it('4: gráfico oculto não guarda geometria financeira',async()=>{
+ const doc=ambiente(), container=doc.createElement('div');doc.body.appendChild(container)
+ const root=createRoot(container as unknown as HTMLElement)
+ try {
+  for(const gasto of [10,9000]) {
+   await act(async()=>root.render(createElement(ContextoApp.Provider,{value:{oculto:true} as Ctx},createElement(GraficoMes,{gasto,limite:10000,fecha:gasto*2,hoje:'2026-11-16',dias:30}))))
+   expect(container.textContent).toBe('Gráfico oculto.')
+   expect(container.buscar(n=>['SVG','POLYLINE','PATH'].includes(n.tagName))).toHaveLength(0)
+  }
+ } finally {await act(async()=>root.unmount());vi.unstubAllGlobals()}
+})

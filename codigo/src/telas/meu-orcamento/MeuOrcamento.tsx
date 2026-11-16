@@ -1,3 +1,5 @@
+import { useLeituraRemota } from '../../app/useLeituraRemota'
+import { Conferencia } from '../../componentes/Conferencia'
 import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -21,18 +23,18 @@ export function MeuOrcamento() {
   const pessoais = (resumo?.envelopes || []).filter(e => !e.casa)
   const [envId, setEnvId] = useState<string | null>(null)
   const env = pessoais.find(e => e.id === envId) || pessoais.find(e => e.id === familia?.envelopeId) || pessoais[0]
-  const [lanc, setLanc] = useState<Lancamento[]>([])
+  const leitura = useLeituraRemota(familia?.id || '', familia ? () => api.lancamentos(familia.id, hojeRecife().slice(0, 7)) : null, [api, versao])
+  const lanc = leitura.dado || []
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
   const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
   const [dpc, setDpc] = useState(false)
   const [metaAberta, setMetaAberta] = useState(false)
-  useEffect(() => { if (familia) api.lancamentos(familia.id, hojeRecife().slice(0, 7)).then(setLanc).catch(() => {}) }, [api, familia?.id, versao])
 
   const hoje = hojeRecife()
   const mes = hoje.slice(0, 7)
   const dados = useMemo(() => {
-    const meus = lanc.filter(l => !l.apagado_em && env && l.envelope_id === env.id && l.data.startsWith(mes))
+    const meus = lanc.filter(l => !l.parcela && !l.apagado_em && env && l.envelope_id === env.id && l.data.startsWith(mes))
     const porDia: Record<string, number> = {}
     for (const l of meus) porDia[l.data] = centavos((porDia[l.data] || 0) + l.valor)
     const base = env ? centavos((env.limite_base ?? env.limite_mes) / diasNoMes(hoje)) : 0
@@ -44,6 +46,7 @@ export function MeuOrcamento() {
     return { porDia, base, fechados, anot, cof: cofrinhoDoMes(porDia, base, fechados, anot) }
   }, [lanc, env?.id, env?.limite_base, env?.limite_mes, hoje, semGasto])
 
+  if (leitura.carregando || leitura.erro || !leitura.dado) return <Conferencia erro={!!leitura.erro} repetir={leitura.repetir} />
   if (!resumo) return <div className="card"><p className="sub">Abrindo…</p></div>
   if (!env) return <div className="card"><p className="sub">Ainda não tem limite de pessoa. Crie em Planejamento.</p></div>
 

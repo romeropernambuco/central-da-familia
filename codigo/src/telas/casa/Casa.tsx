@@ -1,3 +1,4 @@
+import { Conferencia } from '../../componentes/Conferencia'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useEffect, useRef, useState } from 'react'
@@ -60,11 +61,11 @@ function Feira() {
   const [ponto] = useConfig<Record<string, Record<string, { chegou?: string; saiu?: string }>>>('casa_ponto', {})
   const [cupom, setCupom] = useState(false)
   const [folha] = useConfig<Folha>('casa_folha', { pessoas: [], daePaga: {} })
-  const [lanc, setLanc] = useState<Lancamento[]>([])
+  const leitura = useLeituraRemota(familia?.id || '', familia ? () => api.lancamentos(familia.id, hoje.slice(0, 7)) : null, [api, versao])
+  const lanc = leitura.dado || []
   const [novo, setNovo] = useState('')
   const [cod, setCod] = useState<{ nome: string; codigo: string; link: string } | null>(null)
   const [gerando, setGerando] = useState(false)
-  useEffect(() => { if (familia) api.lancamentos(familia.id, hoje.slice(0, 7)).then(setLanc).catch(() => {}) }, [api, familia?.id, versao])
   const casaIds = new Set((resumo?.envelopes || []).filter(e => e.casa).map(e => e.id))
   const saiuHoje = centavos(lanc.filter(l => !l.apagado_em && l.data === hoje && casaIds.has(l.envelope_id)).reduce((s, l) => s + l.valor, 0))
   const feira = (resumo?.envelopes || []).find(e => e.regra === 'semanal' && e.casa) || (resumo?.envelopes || []).find(e => e.casa)
@@ -99,8 +100,7 @@ function Feira() {
             </div>
             <div>
               <p className="lbl">O que saiu</p>
-              <Din v={saiuHoje} tam="mid" />
-              <p className="sub">{saiuHoje ? 'em compras da casa hoje' : 'nenhuma compra hoje'}</p>
+              {leitura.carregando || leitura.erro || !leitura.dado ? <Conferencia erro={!!leitura.erro} repetir={leitura.repetir} /> : <><Din v={saiuHoje} tam="mid" /><p className="sub">{saiuHoje ? 'em compras da casa hoje' : 'nenhuma compra hoje'}</p></>}
             </div>
           </div>
         </section>}

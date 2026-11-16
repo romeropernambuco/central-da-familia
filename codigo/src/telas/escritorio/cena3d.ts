@@ -55,7 +55,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     recursos.clear()
   }
   try {
-  const reduz = !!o.parado || !!window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const movimento = window.matchMedia('(prefers-reduced-motion: reduce)')
+  let reduz = !!o.parado || movimento.matches
   const MOBILE = o.celular
   const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
   limpezas.push(() => { renderer.dispose(); try { renderer.forceContextLoss() } catch { /* perdido */ } })
@@ -526,9 +527,12 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   function pausar() { cancelAnimationFrame(raf); raf = 0; ult = 0; medidor.pausar(); baixo = 0 }
   function solicitar() {
     if (!vivo || destruida || perdido || !visivel || document.hidden || raf) return
-    if (o.mini && reduz) quadro(performance.now())
+    if (reduz) quadro(performance.now())
     else raf = requestAnimationFrame(quadro)
   }
+  const mudouMovimento = () => { reduz = movimento.matches; pausar(); sincronizarRetornos(); solicitar() }
+  movimento.addEventListener('change', mudouMovimento)
+  limpezas.push(() => movimento.removeEventListener('change', mudouMovimento))
   const visibilidade = () => { pausar(); sincronizarRetornos(); solicitar() }
   document.addEventListener('visibilitychange', visibilidade)
   const perdeu = (ev: Event) => {

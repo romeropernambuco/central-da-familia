@@ -1,3 +1,5 @@
+import { useLeituraRemota } from '../../app/useLeituraRemota'
+import { Conferencia } from '../../componentes/Conferencia'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ChevronRight, ListChecks } from 'lucide-react'
@@ -25,22 +27,14 @@ export function porDiaDe(l: Lancamento[], envelope: string, hoje: string): Recor
 export function Inicio() {
   const { resumo, familia, api, versao, abrirLancar, explicar } = useApp()
   const nomeDe = useMembros()
-  const [ult, setUlt] = useState<Lancamento[]>([])
-  // C3 (gráfico A): os lançamentos do mês, pra desenhar o gasto acumulado de cada dia
-  const [doMes, setDoMes] = useState<Lancamento[]>([])
-  useEffect(() => {
-    if (!familia) return
-    let vivo = true
-    // só o mês de hoje; no começo do mês, se vier menos de 4, completa com o mês passado
+  const leitura = useLeituraRemota(familia?.id || '', familia ? async () => {
     const mes = hojeRecife().slice(0, 7)
-    ;(async () => {
-      let l = (await api.lancamentos(familia.id, mes)).filter(x => !x.apagado_em)
-      if (vivo) setDoMes(l)
-      if (l.length < 4) l = [...l, ...(await api.lancamentos(familia.id, mesAnterior(mes))).filter(x => !x.apagado_em)]
-      if (vivo) setUlt(l.slice(0, 4))
-    })().catch(() => {})
-    return () => { vivo = false }
-  }, [api, familia?.id, versao])
+    const doMes = (await api.lancamentos(familia.id, mes)).filter(x => !x.apagado_em)
+    const ult = doMes.length < 4 ? [...doMes, ...(await api.lancamentos(familia.id, mesAnterior(mes))).filter(x => !x.apagado_em)] : doMes
+    return { doMes, ult: ult.slice(0, 4) }
+  } : null, [api, versao])
+  const { doMes = [], ult = [] } = leitura.dado || {}
+  if (leitura.carregando || leitura.erro || !leitura.dado) return <Conferencia erro={!!leitura.erro} repetir={leitura.repetir} />
 
   if (!resumo) return <div className="card"><p className="sub">Buscando o número de hoje…</p></div>
   const hoje = hojeRecife()

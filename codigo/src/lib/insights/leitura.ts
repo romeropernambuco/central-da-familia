@@ -22,7 +22,10 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
       rota === 'planejamento' && api.recebimentos ? ler(() => api.recebimentos!(familia.id)) : undefined,
       api.futuroEntradas ? ler(() => api.futuroEntradas!(familia.id)) : undefined,
     ])
-    dados.recebimentos = rec
+    if (rec) {
+      const controle = await ler(() => api.config(familia.id, 'receitas_controle', {}))
+      if (controle !== undefined) { dados.recebimentos = rec; dados.controleReceitas = controle }
+    }
     if (f?.entrada) {
       try {
         const oficial = entradaDoCenario(f, 'garantido')!

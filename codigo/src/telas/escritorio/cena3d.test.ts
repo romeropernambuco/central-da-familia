@@ -79,7 +79,7 @@ describe('ciclo da cena sem WebGL', () => {
   it('renderiza sob demanda com movimento reduzido', () => {
     const a = ambiente(true), c = a.montar(); a.frame(100)
     expect(a.frames.size).toBe(0)
-    c.irPara('recepcao'); expect(a.frames.size).toBe(1); a.frame(200)
+    c.irPara('recepcao'); expect(a.frames.size).toBe(0); a.frame(200)
     expect(a.frames.size).toBe(0)
     c.atualizar([{ id: 'secretaria', sala: 'recepcao', estado: 'precisa' }]); a.frame(300)
     expect(a.renderer.render).toHaveBeenCalledTimes(3)
@@ -353,4 +353,16 @@ describe('atividades individuais dos minis', () => {
     expect(a.frames.size).toBe(0); expect(a.renderer.dispose).toHaveBeenCalledTimes(1)
     c?.destruir()
   })
+})
+it.each([false,true])('9: mudança de movimento reduzido para imediatamente, mini=%s', mini => {
+ const a=ambiente(), media=Object.assign(new EventTarget(),{matches:false})
+ a.janela.matchMedia.mockImplementation(()=>media)
+ a.o.mini=mini
+ const cena=a.montar()
+ expect(a.frames.size).toBeGreaterThan(0)
+ media.matches=true;media.dispatchEvent(new Event('change'))
+ expect(a.frames.size).toBe(0)
+ const remover=vi.spyOn(media,'removeEventListener')
+ cena.destruir()
+ expect(remover.mock.calls.some(([nome])=>nome==='change')).toBe(true)
 })

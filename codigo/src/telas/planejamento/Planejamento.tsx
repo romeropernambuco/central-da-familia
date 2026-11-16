@@ -26,7 +26,7 @@ function lista(v: unknown): any[] {
 
 /** Planejamento: limites dos envelopes, colchão, rendas, metas e previsão dos próximos meses. */
 export function Planejamento() {
-  const { api, familia, resumo, recarregar, toast, versao, tentar, abrirLancar } = useApp()
+  const { api, familia, resumo, recarregar, toast, versao, tentar, abrirLancar, oculto } = useApp()
   const [salvando, setSalvando] = useState(false)
   const [lim, setLim] = useState<Record<string, string>>({})
   const [colchao, setColchao] = useState('')
@@ -162,7 +162,7 @@ export function Planejamento() {
           {metas.map(m => (
             <div key={m.id} style={{ padding: '8px 0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{textoPrivado(m.nome)}</b><span className="sub"><Din v={m.guardado} /> de {reais(m.valor)}</span></div>
-              <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true"><i style={{ width: Math.min(100, (m.guardado / (m.valor || 1)) * 100) + '%' }} /></div>
+              <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true"><i style={{ width: (oculto ? 0 : Math.min(100, (m.guardado / (m.valor || 1)) * 100)) + '%' }} /></div>
             </div>
           ))}
           {!metas.length && metasLidas && <Vazio ico={<Target size={24} />}>Nenhuma meta. Ex.: viagem de julho, material escolar.</Vazio>}

@@ -1,4 +1,4 @@
-import type { Cartao, FamiliaMinha, Fatura, FaturaBanco, Feira, GuardadoHoje, Lancamento, RecebimentoTela, ResumoHoje } from '../../api/tipos'
+import type { Cartao, ControleReceitas, FamiliaMinha, Fatura, FaturaBanco, Feira, GuardadoHoje, Lancamento, RecebimentoTela, ResumoHoje } from '../../api/tipos'
 import type { FuturoEntrada, FuturoSaida } from '../futuro'
 import { reais, simularCompra } from '../formato'
 import { numerosRumo2029 } from '../../app/rumo2029'
@@ -16,6 +16,7 @@ export interface LeiturasInsights {
   cartoes?: Cartao[]; faturas?: Fatura[]; banco?: FaturaBanco[]; lancamentos?: Lancamento[]
   resumo?: ResumoHoje | null; recebimentos?: RecebimentoTela[]; guardado?: GuardadoHoje
   feiras?: Feira[]; futuro?: FuturoSaida | null; mesObjetivo?: string
+  controleReceitas?: ControleReceitas
   entradaObjetivo?: FuturoEntrada
 }
 /** Adapta só leituras concluídas da API selecionada; nunca importa/cria EXEMPLO como fallback. */
@@ -46,12 +47,12 @@ export function montarSnapshot(familia: FamiliaMinha, modo: SnapshotInsights['mo
       return [{ cartaoId: c.id, mes: f.mes, nome: f.cartao, vencimento: f.vencimento, total,
         banco: b?.valor_banco == null ? null : emCentavos(b.valor_banco), paga: !!b?.paga_em, podeInformar: cartaoMeu(c, familia), composicao, composicaoDisponivel: d.lancamentos !== undefined }]
     })
-    if (d.resumo && !d.resumo.so_nomes) {
-      const combinada = emCentavos(d.resumo.colchao), livre = emCentavos(d.resumo.livre_mes)
+    if (d.resumo && !d.resumo.so_nomes && d.resumo.envelopes) {
+      const combinada = emCentavos(d.resumo.envelopes.reduce((s, e) => s + (e.colchao_meta || 0), 0)), livre = emCentavos(d.resumo.livre_mes)
       if (combinada !== null && livre !== null) s.reserva = { mes: t.dia.slice(0, 7), combinada, livre }
     }
     s.recebimentos = d.recebimentos?.map(r => ({ id: r.id, nome: r.descricao, mesPrevisto: r.mes_previsto,
-      mesNovo: r.mes_novo, recebido: !!r.recebido_em, meu: r.meu, ...(emCentavos(r.valor) !== null ? { valor: emCentavos(r.valor)! } : {}) }))
+      mesNovo: r.mes_novo, recebido: !!r.recebido_em || !!d.controleReceitas?.[r.id]?.recebidas?.[r.mes_previsto], meu: r.meu, ...(emCentavos(r.valor) !== null ? { valor: emCentavos(r.valor)! } : {}) }))
     // guardadoHoje devolve apenas aplicações ativas: encerradas não constam nessa leitura.
     s.aplicacoes = d.guardado?.aplicacoes.map(a => ({ id: a.id, nome: a.nome, vencimento: a.vence_em, ativa: true }))
     // Necessário é de patrimônio FINANCEIRO: imóveis já contribuíram pelo aluguel no motor existente.

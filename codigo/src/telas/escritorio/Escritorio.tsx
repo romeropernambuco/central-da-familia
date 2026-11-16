@@ -1,3 +1,4 @@
+import { useModoFuncionario } from '../../componentes/AgenteDaAba'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
@@ -52,14 +53,15 @@ export function Escritorio() {
 }
 
 function Hoje() {
+  const modo = useModoFuncionario()
   const [mostrarCena, setMostrarCena] = useState(false)
   const { familia, oculto } = useApp()
-  const { e, estado, motivo, responder } = useEscritorio()
+  const { e, estado, atualizar, responder } = useEscritorio()
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
   // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
   const funcs = useEquipeCompleta(e?.funcionarios)
   if (estado === 'desligado') return <div className="card"><Vazio ico={<ClipboardList size={24} />}>O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia.</Vazio></div>
-  if (estado === 'erro' && !e) return <div className="card"><p className="aviso-erro" role="alert">Não deu pra buscar o Escritório: {motivo}</p></div>
+  if (estado === 'erro') return <div className="card"><p className="aviso-erro" role="alert">Não foi possível conferir. <button type="button" onClick={atualizar}>Tentar de novo</button></p></div>
   if (!e) return <div className="card"><p className="sub">Chamando a equipe…</p></div>
 
   const fila = e.precisa_de_voce
@@ -69,6 +71,8 @@ function Hoje() {
 
   return (
     <>
+      {funcs.falhou && <p role="alert">Não foi possível conferir. <button type="button" onClick={funcs.repetir}>Tentar de novo</button></p>}
+      {funcs.carregando && <p role="status">Conferindo a equipe…</p>}
       <div className="esc-frase">
         <h2>{fraseDoDia(fila.length)}{fila.length ? ' hoje' : ''}</h2>
         <p className="sub">{fila.length ? 'Quem precisa de você está de pé, na frente da sala, acenando. Toque num funcionário pra abrir a ficha dele: a pergunta, o que ele cuida e o que você já respondeu.' : 'Tudo em ordem. Toque num funcionário pra ver o que ele cuida e o que você já respondeu pra ele.'}</p>
@@ -76,7 +80,7 @@ function Hoje() {
       </div>
       <div className="esc-grade">
         <section className="card esc-cena-card" aria-label="O escritório da família em 3D">
-          <button type="button" className="btn line" onClick={() => { window.dispatchEvent(new Event('escritorio3d-abrir')); setMostrarCena(true) }}>Ver o escritório completo em 3D</button>{mostrarCena && <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />}
+          {modo === 'completo' && <><button type="button" className="btn line" onClick={() => { window.dispatchEvent(new Event('escritorio3d-abrir')); setMostrarCena(true) }}>Ver o escritório completo em 3D</button>{mostrarCena && <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />}</>}
         </section>
         <section className="card" aria-labelledby="eEq">
           <div className="card-h"><h2 id="eEq">A equipe, sala por sala</h2></div>
@@ -108,13 +112,20 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
 
 /** Relatório: o diário de tudo que foi perguntado e respondido, com a conta de quanto demorou. */
 function Relatorio() {
+  const [dias, setDias] = useState(7)
+  return <><div className="pills" role="group" aria-label="Período do relatório">
+        {[7, 30].map(n => <button key={n} type="button" className="pill" aria-pressed={dias === n} onClick={() => setDias(n)}>Últimos {n} dias</button>)}
+      </div><RelatorioPeriodo key={dias} dias={dias} /></>
+}
+function RelatorioPeriodo({ dias }: { dias: number }) {
   const { api, familia, versao, sessao, oculto } = useApp()
   // R15: "demora pra responder" soa como bronca: só o dono do produto vê
   const dono = !!sessao?.dono
-  const [dias, setDias] = useState(7)
+  const [n, setN] = useState(0)
   const [r, setR] = useState<RelatorioEsc | null>(null)
   const [erro, setErro] = useState('')
   const [copiado, setCopiado] = useState(false)
+  const [copiaTentada, setCopiaTentada] = useState(false)
   const { e } = useEscritorio()
   useEffect(() => {
     if (!familia) return
@@ -122,27 +133,25 @@ function Relatorio() {
     const hoje = hojeRecife()
     api.escritorioRelatorio(familia.id, somaDias(hoje, -(dias - 1)), hoje).then(x => { if (vivo) { setR(x); setErro('') } }).catch((x: Error) => { if (vivo) setErro(x.message) })
     return () => { vivo = false }
-  }, [api, familia?.id, versao, dias])
+  }, [api, familia?.id, versao, dias, n])
   const nome = (id: string) => e?.funcionarios.find(f => f.id === id || chaveSimples(f.nome) === chaveSimples(id))?.nome || id
   const idDe = (id: string) => e?.funcionarios.find(f => f.id === id || chaveSimples(f.nome) === chaveSimples(id))?.id || id
 
-  if (erro && !r) return <div className="card"><p className="aviso-erro" role="alert">Não deu pra buscar o Relatório: {textoPrivado(erro)}</p></div>
+  if (erro && !r) return <div className="card"><p className="aviso-erro" role="alert">Não foi possível conferir. <button type="button" onClick={() => setN(x => x + 1)}>Tentar de novo</button></p></div>
   if (!r) return <div className="card"><p className="sub">Abrindo o diário…</p></div>
   const tot = r.funcionarios.reduce((s, f) => ({ p: s.p + f.perguntas, r: s.r + f.respondidas, pe: s.pe + f.pendentes }), { p: 0, r: 0, pe: 0 })
   const comTempo = r.funcionarios.filter(f => f.tempo_medio_min != null && f.respondidas > 0)
   const demora = comTempo.length ? comTempo.reduce((s, f) => s + (f.tempo_medio_min || 0) * f.respondidas, 0) / comTempo.reduce((s, f) => s + f.respondidas, 0) : null
   const mostrar = textoPrivado
-  const textoIntegral = [`Relatório do Escritório, últimos ${dias} dias`, `Perguntas: ${tot.p} · Respondidas: ${tot.r} · Esperando você: ${tot.pe} · Demora pra responder: ${demoraTexto(demora)}`, '', ...r.diario.map(d => `${dataCurta(diaDe(d.quando))} ${hhmm(d.quando)} · ${nome(d.funcionario)}: ${d.assunto || d.pergunta}. Resposta: ${d.resposta}${d.respondido_por ? ` (${mostrar(d.respondido_por)})` : ''}`)].join('\n')
+  const textoIntegral = [`Relatório do Escritório, últimos ${dias} dias`, `Perguntas: ${tot.p} · Respondidas: ${tot.r} · Esperando você: ${tot.pe}${dono ? ` · Demora pra responder: ${demoraTexto(demora)}` : ''}`, '', ...r.diario.map(d => `${dataCurta(diaDe(d.quando))} ${hhmm(d.quando)} · ${nome(d.funcionario)}: ${d.assunto || d.pergunta}. Resposta: ${d.resposta}${d.respondido_por ? ` (${mostrar(d.respondido_por)})` : ''}`)].join('\n')
   const texto = oculto ? 'Relatorio: conteudo oculto.' : textoIntegral
-  const copiar = async () => { try { await copiarProtegido(textoIntegral, texto) } catch { /* sem permissão: o texto aparece na caixa pra copiar à mão */ } setCopiado(true) }
+  const copiar = async () => { setCopiaTentada(true); try { setCopiado(await copiarProtegido(textoIntegral, texto)) } catch { setCopiado(false) } }
   const porDia: Record<string, typeof r.diario> = {}
   for (const d of r.diario) (porDia[diaDe(d.quando)] ||= []).push(d)
 
   return (
     <>
-      <div className="pills" role="group" aria-label="Período do relatório">
-        {[7, 30].map(n => <button key={n} type="button" className="pill" aria-pressed={dias === n} onClick={() => setDias(n)}>Últimos {n} dias</button>)}
-      </div>
+
       <section className="card" aria-labelledby="rNum">
         <div className="card-h"><h2 id="rNum">Cobrou, respondeu, resolveu</h2></div>
         <dl className="rel-ind">
@@ -166,7 +175,7 @@ function Relatorio() {
       </section>
       <section className="card" aria-labelledby="rDia">
         <div className="card-h"><h2 id="rDia">Diário</h2>{r.diario.length > 0 && <button className="lnk" type="button" onClick={copiar}><Copy size={16} />Copiar relatório</button>}</div>
-        {copiado && <div className="campo"><span>Relatório copiado. Se não colar, copie daqui:</span><textarea className="inp area" readOnly rows={6} value={texto} aria-label="Texto do relatório" /></div>}
+        {copiaTentada && <div className="campo"><span>{copiado ? 'Relatório copiado. Se não colar, copie daqui:' : 'Não foi possível copiar. Copie daqui:'}</span><textarea className="inp area" readOnly rows={6} value={texto} aria-label="Texto do relatório" /></div>}
         {!r.diario.length ? <Vazio ico={<ClipboardList size={24} />}>Nenhuma resposta anotada nesse período. Quando você responder uma pergunta do Escritório, ela aparece aqui.</Vazio> : (
           Object.keys(porDia).sort().reverse().map(dia => (
             <div key={dia}>

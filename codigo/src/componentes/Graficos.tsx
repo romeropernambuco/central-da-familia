@@ -1,3 +1,4 @@
+import { useApp } from '../app/contexto'
 import { textoPrivado } from './privacidade'
 // C3 e pacote 2 do design (REFERENCIAS.md, padrões A, B e C): 3 gráficos em SVG feito à mão, sem biblioteca.
 // A: o gasto do mês acumulado, pontilhado até o fim do mês, combinado tracejado, âmbar só se passar (Início e Meu orçamento).
@@ -39,8 +40,10 @@ function Quadro({ rotulo, altura, n, leitura, desenho, classe, indice }: {
   leitura: (i: number | null) => ReactNode
   desenho: (w: number, h: number, ativo: number | null, xDe: (px: number) => number) => ReactNode
 }) {
+  const { oculto } = useApp()
   const [ref, w] = useLargura()
   const [ativo, setAtivo] = useState<number | null>(null)
+  if (oculto) return <p className="sub">Gráfico oculto.</p>
   const xDe = (px: number) => Math.max(0, Math.min(n - 1, indice ? indice(px, w) : Math.round((px / Math.max(1, w)) * (n - 1))))
   const h = altura(w)
   const mover = (e: PointerEvent<SVGSVGElement>) => { const r = e.currentTarget.getBoundingClientRect(); setAtivo(xDe(e.clientX - r.left)) }
