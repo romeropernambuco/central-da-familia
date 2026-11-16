@@ -10,7 +10,9 @@ import * as T from 'three'
 // @ts-ignore: Three sem tipos locais.
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { criarCacheModelos } from './modelosEscritorio'
-import { VARIANTES, nomesDaSala, bytesDaSala, caixaReal, montarEscritorioMini } from './escritorioMini'
+import { VARIANTES, nomesDaSala, bytesDaSala, caixaReal, montarEscritorioMini, composicaoMini, LIMITES_MINI } from './escritorioMini'
+import { ATIVIDADES_MINI, PERFIL_IMOVEIS } from './atividadesMini'
+import type { SalaEquipe } from './equipe'
 import inventario from './inventarioModelos.json'
 import { montarCena } from './cena3d'
 import { EQUIPE } from './equipe'
@@ -66,7 +68,7 @@ class Elemento extends EventTarget {
   insertBefore() {} setAttribute() {} remove() {}
   getBoundingClientRect() { return { left: 0, top: 0, width: this.clientWidth, height: this.clientHeight } }
 }
-async function mini(id: string, w = 303, h = 128, falhar = false, esperar = true, reduz = true) {
+async function mini(id: string, w = 303, h = 128, falhar = false, esperar = true, reduz = true, ids = [id], sala?: SalaEquipe) {
   const janela = Object.assign(new EventTarget(), { devicePixelRatio: 1, matchMedia: () => Object.assign(new EventTarget(), { matches: reduz }) })
   const documento = Object.assign(new EventTarget(), { hidden: false })
   if (globalThis.IntersectionObserver) Object.assign(janela, { IntersectionObserver: globalThis.IntersectionObserver })
@@ -76,9 +78,8 @@ async function mini(id: string, w = 303, h = 128, falhar = false, esperar = true
   vi.stubGlobal('cancelAnimationFrame', (i: number) => frames.delete(i))
   const el = new Elemento(); el.clientWidth = w; el.clientHeight = h
   const renderer = { domElement: new Elemento(), shadowMap: {}, setPixelRatio() {}, setSize: vi.fn(), dispose: vi.fn(), forceContextLoss() {}, render: vi.fn(), info: { render: { calls: 0, triangles: 0 } } }
-  const membro = EQUIPE.find(e => e.id === id)!
   if (falhar) vi.stubGlobal('fetch', vi.fn(async () => { throw Error('offline') }))
-  const c = montarCena({ ...T, WebGLRenderer: function () { return renderer } }, el as any, { mini: true, funcionarios: [{ id, sala: membro.sala, estado: 'trabalhando' }], celular: () => true, escuro: false, parado: reduz, hora: () => 12, etiqueta: () => null, placa: () => null, aoTocar() {} })
+  const c = montarCena({ ...T, WebGLRenderer: function () { return renderer } }, el as any, { mini: true, sala, funcionarios: ids.map(id => ({ id, estado: 'trabalhando', sala: EQUIPE.find(e => e.id === id)?.sala || 'patrimonio' })), celular: () => true, escuro: false, parado: reduz, hora: () => 12, etiqueta: () => null, placa: () => null, aoTocar() {} })
   const frame = (tempo: number) => { const fs = [...frames.values()]; frames.clear(); fs.forEach(f => f(tempo)) }
   if (!reduz) frame(100)
   const [scene, camera] = renderer.render.mock.calls[0], agente = scene.getObjectByName('agente:' + id)
@@ -424,4 +425,223 @@ it('SW gerado guarda GLB sob demanda, serve offline e muda versão quando o GLB 
     expect((await requisitar()).corpo).toBe('GLB local'); expect(chamadas).toBe(1)
     writeFileSync(arquivo, 'modelo v2'); expect(gravarSw(temporario, resolve('src/sw.modelo.js')).versao).not.toBe(v1)
   } finally { rmSync(temporario, { recursive: true }) }
+})
+
+// Medição coletiva usa o renderer simulado e os GLBs reais, sem rede.
+describe('sala compartilhada', () => {
+  it.each(Object.keys(VARIANTES) as SalaEquipe[])('%s: custos coletivos', async sala => {
+    const a = await mini('contador',303,128,false,true,true,['contador','colchao'],sala)
+    try {
+      console.log('COLETIVO', sala, JSON.stringify(contagem(a.scene)),JSON.stringify(contagem(a.escritorio)))
+      for (const [w,h] of [[303,128],[303,180],[560,180]]) {
+        a.el.clientWidth=w; a.el.clientHeight=h; a.janela.dispatchEvent(new Event('resize'))
+        const p=projetar(caixaReal(a.agente),a.camera)
+        console.log('ALTURA_COLETIVO',sala,w,h,(p.max.y-p.min.y)/2)
+        expect((p.max.y-p.min.y)/2).toBeGreaterThanOrEqual(.5)
+        expect((p.max.y-p.min.y)/2).toBeLessThanOrEqual(.75)
+      }
+      expect(a.scene.getObjectByName('agente:colchao')).toBeDefined()
+      expect(contagem(a.scene).calls).toBeLessThanOrEqual(40)
+    } finally { a.c.destruir() }
+  })
+})
+
+const salasMini = Object.keys(VARIANTES) as SalaEquipe[]
+describe('contrato do compositor compartilhado', () => {
+  it.each(salasMini.flatMap(sala => [1,2,3].map(n => ({ sala, n }))))('$sala N=$n: postos, peças e previsão pura', async ({ sala, n }) => {
+    const ids = Object.freeze(['anfitriao','sonhadora','presenca'].slice(0,n))
+    const c = composicaoMini(sala, ids)
+    expect(composicaoMini(sala, ids)).toEqual(c)
+    expect(c.ids[0]).toBe(ids[0]); expect(c.ids.length).toBeGreaterThan(0)
+    expect(c.orcamento.desenhos).toBeLessThanOrEqual(40)
+    expect(c.orcamento.triangulos).toBeLessThanOrEqual(60000)
+    expect(c.orcamento.KB).toBe(bytesDaSala(sala)/1000)
+    for (const nome of [VARIANTES[sala].mesa, 'chairDesk','computerScreen','computerKeyboard',...VARIANTES[sala].exclusivas]) expect(c.pecas).toContain(nome)
+    c.postos.forEach((p,i) => c.postos.slice(i+1).forEach(q => {
+      expect([0,2].some(k => p.volume.max[k] <= q.volume.min[k] || q.volume.max[k] <= p.volume.min[k])).toBe(true)
+    }))
+    const a = await mini(ids[0],303,128,false,true,true,[...ids],sala)
+    try {
+      expect(a.escritorio.userData.postos).toHaveLength(c.ids.length)
+      expect(a.escritorio.userData.pecas.chairDesk).toHaveLength(c.ids.length)
+      expect(a.escritorio.userData.pecas.computerKeyboard).toHaveLength(c.ids.length)
+      const volumes=c.ids.map((_,i)=>new T.Box3().union(a.escritorio.userData.pecas[VARIANTES[sala].mesa][i]).union(a.escritorio.userData.pecas.chairDesk[i]).union(a.escritorio.userData.pecas.computerKeyboard[i]))
+      volumes.forEach((v:any,i)=>volumes.slice(i+1).forEach((outro:any)=>expect(v.intersectsBox(outro)).toBe(false)))
+      for(const nome of VARIANTES[sala].exclusivas) expect(a.escritorio.userData.pecas[nome].length).toBeGreaterThan(0)
+      const custos=[]
+      for(const estado of ['trabalhando','chamando','resolvido','parado'] as const) {
+        c.ids.forEach(id=>a.c.definirEstado(id,estado)); custos.push(contagem(a.scene))
+      }
+      expect(Math.max(...custos.map(x=>x.calls))).toBeLessThanOrEqual(c.orcamento.desenhos)
+      expect(Math.max(...custos.map(x=>x.triangles))).toBeLessThanOrEqual(c.orcamento.triangulos)
+      console.log('ORCAMENTO_N',sala,n,c.ids.length,JSON.stringify(custos.reduce((m,x)=>({ calls:Math.max(m.calls,x.calls),triangles:Math.max(m.triangles,x.triangles) }),{calls:0,triangles:0})))
+    } finally {a.c.destruir()}
+  })
+  it('remove o último secundário por cada limite; uma dupla normal não degrada', () => {
+    const ids=['anfitriao','sonhadora','presenca']
+    expect(composicaoMini('caixa',ids).ids).toEqual(ids)
+    for(const limites of [{...LIMITES_MINI,desenhos:27},{...LIMITES_MINI,triangulos:3000},{...LIMITES_MINI,KB:100}]) {
+      const c=composicaoMini('caixa',ids,limites)
+      expect(c.ids).toEqual(['anfitriao']); expect(c.removidos).toEqual(['sonhadora','presenca'])
+    }
+    const c=composicaoMini('casa',['fiscal','analista','usina'])
+    expect(c.ids).toEqual(['fiscal','analista']); expect(c.removidos).toEqual(['usina'])
+    expect(composicaoMini('patrimonio',['guardado','imoveis']).removidos).toEqual([])
+  })
+})
+
+// Todas as possibilidades autorizadas de secundário contextual, incluindo sala sobreposta da Casa.
+const elencosMini: { sala: SalaEquipe; ids: string[] }[] = [
+  ...[...new Set([...Object.keys(ATIVIDADES_MINI),'imoveis'])].filter(id=>id!=='anfitriao').map(id=>({sala:'gestao' as const,ids:['anfitriao',id]})),
+  ...['comprador','folha','presenca','auditor'].map(id=>({sala:'casa' as const,ids:['fiscal',id]})),
+  {sala:'patrimonio',ids:['guardado','imoveis']}, {sala:'caixa',ids:['tesoureiro','colchao']},
+  {sala:'gestao',ids:['anfitriao','sonhadora','presenca']},
+]
+describe('câmera e contato do elenco', () => {
+  it.each(elencosMini)('$sala $ids: três proporções, estados e contato por posto', async ({sala,ids}) => {
+    const a=await mini(ids[0],303,128,false,true,true,ids,sala)
+    try {
+      const renderer=a.renderer, camera=a.camera, principal=a.agente, posicionados=ids.map(id=>a.scene.getObjectByName('agente:'+id))
+      const inicio=principal.position.clone()
+      const alturas:number[]=[], custos:{ calls:number;triangles:number }[]=[]
+      for(const [w,h] of [[303,128],[303,180],[560,180]]) {
+        a.el.clientWidth=w; a.el.clientHeight=h; a.janela.dispatchEvent(new Event('resize'))
+        const p=projetar(caixaReal(principal),camera),altura=(p.max.y-p.min.y)/2
+        alturas.push(altura)
+        expect(altura).toBeGreaterThanOrEqual(.5); expect(altura).toBeLessThanOrEqual(.75)
+        for(const estado of ['trabalhando','chamando','resolvido','parado'] as const) {
+          ids.forEach(id=>a.c.definirEstado(id,estado))
+          for(const id of ids) for(const objeto of [a.scene.getObjectByName('agente:'+id),a.scene.getObjectByName('atividade:'+id),a.escritorio]) {
+            const p=projetar(caixaReal(objeto),camera)
+            expect(Math.max(Math.abs(p.min.x),Math.abs(p.max.x),Math.abs(p.min.y),Math.abs(p.max.y)),id+estado).toBeLessThanOrEqual(.901)
+          }
+          expect(contagem(a.scene).calls).toBeLessThanOrEqual(composicaoMini(sala,ids).orcamento.desenhos)
+          custos.push(contagem(a.scene))
+        }
+        ids.forEach(id=>a.c.definirEstado(id,'trabalhando'))
+        const cabecas=posicionados.map(b=>projetar(caixaReal(b.children[0].children.find((g:any)=>g.position.y===.5)),camera))
+        cabecas.forEach((b:any,i)=>cabecas.slice(i+1).forEach((c:any)=>expect(b.max.x<c.min.x || c.max.x<b.min.x).toBe(true)))
+      }
+      ids.forEach((id,i)=>{
+        const b=posicionados[i], quadril=b.children[0], escala=composicaoMini(sala,ids).postos[i].escala
+        const atividade=a.scene.getObjectByName('atividade:'+id), dados=a.escritorio.userData.postos[i]
+        for(const [lado,x] of [[-.3,-.08],[.3,.31]]) {
+          const braco=quadril.children.find((g:any)=>g.position.x===lado), antebraco=braco.children.find((g:any)=>g.isGroup)
+          const mao=antebraco.localToWorld(new T.Vector3(0,id==='imoveis' && lado>0 ? -.325 : -.26,0))
+          const alvo=id==='imoveis' ? atividade.localToWorld(atividade.userData.maos[lado<0?'esquerda':'direita'].clone()) : new T.Vector3(x*escala,dados.teclado.y*escala,dados.teclado.z*escala).add(atividade.parent.position)
+          expect(mao.distanceTo(alvo),id+lado).toBeLessThan(.025)
+        }
+      })
+      a.c.definirEstado(ids[1],'chamando')
+      expect(principal.position.toArray()).toEqual(inicio.toArray()); expect(principal.userData.estado).toBe('trabalhando')
+      a.c.definirEstado(ids[1],'resolvido')
+      expect(a.scene.getObjectByName('joinha:'+ids[1]).visible).toBe(true)
+      expect(a.scene.getObjectByName('joinha:'+ids[0]).visible).toBe(false)
+      expect(a.renderer).toBe(renderer); expect(a.renderer.render.mock.calls.every(([s,c])=>s===a.scene && c===camera)).toBe(true)
+      expect(a.frames.size).toBe(0)
+      console.log('ELENCO_MEDIDO',sala,JSON.stringify(ids),JSON.stringify({desenhos:Math.max(...custos.map(c=>c.calls)),triangulos:Math.max(...custos.map(c=>c.triangles)),alturas}))
+      const recursos=new Set<any>(); a.scene.traverse((m:any)=>{if(m.geometry)recursos.add(m.geometry); if(m.material)recursos.add(m.material); if(m.isInstancedMesh)recursos.add(m)})
+      const spies=[...recursos].map(r=>vi.spyOn(r,'dispose'))
+      a.c.destruir(); a.c.destruir(); spies.forEach(s=>expect(s).toHaveBeenCalledOnce())
+    } finally {a.c.destruir()}
+  })
+})
+
+describe('ciclo coletivo e regressão unitária', () => {
+  it.each(salasMini)('%s: N=1 mantém peças, custo e projeção com sala explícita', async sala => {
+    const id=EQUIPE.find(e=>e.sala===sala)!.id, a=await mini(id)
+    const b=await mini(id,303,128,false,true,true,[id],sala)
+    try {
+      expect(b.escritorio.userData.pecas).toEqual(a.escritorio.userData.pecas)
+      expect(b.escritorio.userData.bytes).toBe(a.escritorio.userData.bytes)
+      expect(contagem(b.scene)).toEqual(contagem(a.scene))
+      expect(b.camera.projectionMatrix.elements).toEqual(a.camera.projectionMatrix.elements)
+      expect(b.camera.matrixWorld.elements).toEqual(a.camera.matrixWorld.elements)
+      const legado:Record<string,[number,number,number]>={contador:[.6454,25,2449],folha:[.6482,28,3127],cartao:[.6312,25,2655],guardado:[.6600,26,3557],secretaria:[.6703,24,2437],anfitriao:[.6698,25,2501],zelador:[.6526,24,2265]}
+      const p=projetar(caixaReal(a.agente),a.camera)
+      expect((p.max.y-p.min.y)/2).toBeCloseTo(legado[id][0],3)
+      a.c.definirEstado(id,'chamando'); expect(contagem(a.scene)).toEqual({calls:legado[id][1],triangles:legado[id][2]})
+      expect(composicaoMini(sala,[id]).postos).toHaveLength(1)
+    } finally {a.c.destruir();b.c.destruir()}
+  })
+  it('Imóveis expõe metadados, câmera e pasta articulada com contatos durante todo o ciclo', async () => {
+    expect(PERFIL_IMOVEIS.id).toBe('imoveis'); expect(PERFIL_IMOVEIS.sala).toBe('patrimonio')
+    expect(ATIVIDADES_MINI.imoveis.camera.direcao).toHaveLength(3)
+    const a=await mini('guardado',303,128,false,true,false,['guardado','imoveis'],'patrimonio')
+    try {
+      const atividade=a.scene.getObjectByName('atividade:imoveis'), agente=a.scene.getObjectByName('agente:imoveis')
+      const alvos:any[]=[], posicoes:any[]=[]
+      for(let t=150;t<=18000;t+=50) {
+        a.frame(t); alvos.push(atividade.userData.maos.direita.toArray()); posicoes.push(atividade.children.filter((g:any)=>g.isGroup).map((g:any)=>g.rotation.z))
+        for(const [lado,chave] of [[-.3,'esquerda'],[.3,'direita']] as const) {
+          const braco=agente.children[0].children.find((g:any)=>g.position.x===lado), antebraco=braco.children.find((g:any)=>g.isGroup)
+          const mao=antebraco.localToWorld(new T.Vector3(0,lado>0 ? -.325 : -.26,0)), alvo=atividade.localToWorld(atividade.userData.maos[chave].clone())
+          expect(mao.distanceTo(alvo)).toBeLessThan(.025)
+        }
+      }
+      expect(new Set(alvos.map(v=>JSON.stringify(v))).size).toBeGreaterThan(4)
+      expect(new Set(posicoes.map(v=>JSON.stringify(v))).size).toBeGreaterThan(4)
+    } finally {a.c.destruir()}
+  })
+  it('pausa as duas atividades e celebrações fora da tela/aba, congela microvida no modo leve', async () => {
+    let observar!:(e:{isIntersecting:boolean}[])=>void
+    class Observador {constructor(fn:typeof observar){observar=fn}observe(){}disconnect(){}}
+    vi.stubGlobal('IntersectionObserver',Observador)
+    const ids=['guardado','imoveis'], a=await mini(ids[0],303,128,false,true,false,ids,'patrimonio')
+    try {
+      for(let t=200;t<=9500;t+=100)a.frame(t)
+      expect(a.c.medir().degrau).toBeGreaterThan(0)
+      const tela=a.escritorio.children.find((m:any)=>m.material?.emissiveIntensity>0)
+      const emissao=tela.material.emissiveIntensity
+      a.c.definirEstado('imoveis','resolvido')
+      for(let t=9600;t<=9900;t+=100)a.frame(t)
+      const estado=a.scene.getObjectByName('agente:imoveis').userData.estado
+      observar([{isIntersecting:false}]); expect(a.frames.size).toBe(0)
+      const renderizacoes=a.renderer.render.mock.calls.length
+      a.frame(100000); expect(a.renderer.render.mock.calls.length).toBe(renderizacoes)
+      a.documento.hidden=true; a.documento.dispatchEvent(new Event('visibilitychange')); observar([{isIntersecting:true}]); expect(a.frames.size).toBe(0)
+      a.documento.hidden=false; a.documento.dispatchEvent(new Event('visibilitychange')); a.frame(200000)
+      expect(a.scene.getObjectByName('agente:imoveis').userData.estado).toBe(estado)
+      expect(tela.material.emissiveIntensity).toBe(emissao)
+      for(let t=200100;t<204000;t+=100)a.frame(t)
+      expect(a.scene.getObjectByName('agente:imoveis').userData.estado).toBe('trabalhando')
+      expect(a.scene.getObjectByName('agente:guardado').userData.estado).toBe('trabalhando')
+    } finally {a.c.destruir()}
+  })
+  it('falha de carga conserva o elenco e sala sobreposta; falha durante fusão restaura pivôs', async () => {
+    const ids=['fiscal','presenca'], offline=await mini(ids[0],303,128,true,true,true,ids,'casa')
+    try {
+      expect(offline.escritorio).toBeUndefined()
+      expect(offline.scene.getObjectByName('agente:presenca').position.x).toBeCloseTo(offline.agente.position.x+1.45)
+      offline.c.definirEstado('presenca','chamando'); expect(offline.scene.getObjectByName('agente:presenca').userData.estado).toBe('chamando')
+    } finally {offline.c.destruir()}
+    let liberar!:()=>void
+    const espera=new Promise<void>(r=>liberar=r)
+    vi.stubGlobal('fetch',vi.fn(async (url:string)=>{await espera; return {ok:true,arrayBuffer:async()=>buffer(url.match(/([a-zA-Z0-9]+)\.glb$/)![1])}}))
+    const a=await mini(ids[0],303,128,false,false,true,ids,'casa')
+    const clone=T.BufferAttribute.prototype.clone; let interrompeu=false
+    vi.spyOn(T.BufferAttribute.prototype,'clone').mockImplementation(function(this:any){
+      if(!interrompeu && a.scene.getObjectByName('escritorio:kenney')){interrompeu=true;throw Error('fusão interrompida')}
+      return clone.call(this)
+    })
+    try {
+      liberar(); await vi.waitFor(()=>expect(interrompeu).toBe(true))
+      expect(a.scene.getObjectByName('escritorio:kenney')).toBeUndefined()
+      a.c.definirEstado('presenca','resolvido')
+      expect(a.scene.getObjectByName('agente:presenca').scale.x).toBe(.78)
+      expect(a.scene.getObjectByName('joinha:presenca').visible).toBe(true)
+    } finally {a.c.destruir()}
+  })
+  it('desmontar um elenco cancela a lease única e ignora resultados tardios', async () => {
+    let liberar!:()=>void
+    const espera=new Promise<void>(r=>liberar=r)
+    vi.stubGlobal('fetch',vi.fn(async (url:string)=>{await espera; return {ok:true,arrayBuffer:async()=>buffer(url.match(/([a-zA-Z0-9]+)\.glb$/)![1])}}))
+    const a=await mini('guardado',303,128,false,false,true,['guardado','imoveis'],'patrimonio')
+    const chamadas=(fetch as any).mock.calls
+    expect(chamadas.length).toBe(nomesDaSala('patrimonio').length)
+    expect(new Set(chamadas.map((c:any)=>c[0])).size).toBe(chamadas.length)
+    a.c.destruir(); liberar()
+    await vi.waitFor(()=>expect(chamadas.every((c:any)=>c[1].signal.aborted)).toBe(true))
+    expect(a.scene.getObjectByName('escritorio:kenney')).toBeUndefined();expect(a.frames.size).toBe(0)
+  })
 })

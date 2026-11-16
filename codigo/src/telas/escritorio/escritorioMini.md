@@ -1,5 +1,86 @@
 # Escritório real no mini
 
+## Frente 17 — sala compartilhada
+
+As seções posteriores registram a versão unitária, conservada como regressão. A frente 17 acrescenta o caminho coletivo apenas em `mini: true`, sem modificar o escritório completo. Foram lidas as auditorias A, B, C e D; prevalecem as decisões do dono no pedido da frente 17.
+
+### Contrato e composição
+
+```ts
+montarCena(T, el, {
+  mini: true, sala: 'patrimonio',
+  funcionarios: [
+    { id: 'guardado', estado: 'trabalhando' },
+    { id: 'imoveis', estado: 'trabalhando' },
+  ],
+  // demais opções da API existente
+})
+// A chamada muda só o responsável, inclusive o segundo/terceiro posto:
+cena.definirEstado('imoveis', 'chamando')
+```
+
+`funcionarios` mantém a ordem principal → secundários. `sala` opcional sobrepõe o cadastro do principal; sem ela usa-se a sala desse cadastro (ou a sala legada recebida, para id ainda não cadastrado). `FuncCena.sala` tornou-se opcional para aceitar o contrato sem repetir o cadastro. Estados iniciais/`atualizar` conservam a API persistida (`fila`, `trabalhando`, `entregue`, `precisa`); `definirEstado` usa os quatro estados de interação. Nenhuma quebra do contrato combinado.
+
+`composicaoMini(sala, ids)` é pura e retorna `ids`, `removidos`, `pecas`, `postos` (posição, escala e volume reservado) e `orcamento` (`desenhos`, `triangulos`, `KB` decimais). Não consulta DOM, dados, horário ou renderer. Deduplica ids e limita a três. A previsão combina os máximos medidos por rig/atividade, geometria estática da variante e incremento de geometria por posto; inclui sinais/joinhas e, em N=1, os 72 triângulos das micropeças preservadas. Assim também contempla funcionário fora da sala de cadastro. O custo frio de GLB é a soma dos nomes únicos da sala, independente de N. Antes de carregar/criar personagens, remove o último secundário enquanto qualquer teto exceder 40 / 60.000 / 150 KB. O principal nunca é removido. O terceiro argumento opcional de testes permite reduzir um teto; se nem o principal couber nesse teto artificial, ele é conservado e a previsão continua explicitando o excesso.
+
+Uma arquitetura, piso e decoração por sala. Cada pessoa recebe mesa da variante, cadeira, duas telas laterais, teclado e mouse dos modelos existentes. Principal em `(0, 0, .35)`, secundários em `(+1.45, 0, -.45)` e `(-1.45, 0, -.45)`, escala 0,78; volumes têm folga lateral, inclusive para a mesa mais larga da Gestão. N=1 mantém `(0,0,0)` e escala 1 do posto anterior. O boneco continua com fator 0,92 sobre a escala de seu posto. As sete identidades mantêm paleta, exclusivos e assinatura; a decoração coletiva recua, vasos/livros continuam sobre seus apoios, e rádio/luminárias/planta de mesa acompanham o posto principal. Nenhum GLB foi acrescentado ou alterado.
+
+Os GLBs repetidos usam instâncias e recebem tom por instância. Partes rígidas das pernas sentadas são fundidas; cabelo/olhos ficam junto à cabeça móvel. No coletivo ficam fora do desenho a caneca/vapor e o relógio de pulso: prioridade para rosto, mãos, objeto e atividade. Braços, cabeça, páginas e demais pivôs de trabalho continuam independentes; roupa dos secundários recebe tom 0,86. O caminho N=1 conserva também suas microanimações anteriores. Não há luz, textura ou sombra nova.
+
+### Medições reproduzíveis
+
+Renderer simulado, Three e GLBs reais do disco, sem rede. Travessia de objetos visíveis: uma chamada por mesh/material, triângulos multiplicados pelo número de instâncias. Máximos dos quatro estados simultâneos; não são números de GPU. A composição de referência abaixo é o prefixo de `[anfitriao, sonhadora, presenca]`, para exercitar N=1/2/3 nas sete salas. Na Casa, a solicitação de três degrada para duas porque sua previsão seria 41 desenhos.
+
+| Sala | N=1 desenhos / triângulos | N=2 desenhos / triângulos | N=3 solicitado: efetivo; desenhos / triângulos | KB GLB (qualquer N) |
+| --- | ---: | ---: | ---: | ---: |
+| casa | 27 / 2.911 | 31 / 4.316 | 2; 31 / 4.316 | 146,044 |
+| cartoes | 24 / 2.523 | 29 / 3.928 | 3; 39 / 5.489 | 132,420 |
+| caixa | 23 / 2.185 | 28 / 3.642 | 3; 38 / 5.255 | 116,640 |
+| patrimonio | 25 / 2.941 | 30 / 4.346 | 3; 40 / 5.907 | 132,824 |
+| recepcao | 23 / 2.305 | 28 / 3.710 | 3; 38 / 5.271 | 131,372 |
+| gestao | 25 / 2.501 | 30 / 3.906 | 3; 40 / 5.467 | 125,452 |
+| apoio | 23 / 2.217 | 28 / 3.622 | 3; 38 / 5.183 | 126,380 |
+
+Elencos do produto também são medidos separadamente; máximos de desenhos e triângulos podem vir de secundários diferentes:
+
+| Elenco | Desenhos máx. | Triângulos máx. | Principal: 303×128 / 303×180 / 560×180 |
+| --- | ---: | ---: | --- |
+| Início: anfitriao + cada um dos outros 18 ids (inclui imoveis) | 33 | 4.498 | 61,35% / 55,46% / 61,35% |
+| Casa: fiscal + comprador/folha/presenca/auditor | 36 | 4.628 | 61,75% / 55,68% / 61,75% |
+| Guardado: guardado + imoveis | 33 | 4.986 | 61,46% / 55,58% / 61,46% |
+| Planejamento: tesoureiro + colchao | 32 | 3.762 | 62,17% / 55,60% / 62,17% |
+
+Teste de degradação real: `casa + [fiscal, analista, usina]` prevê 50 desenhos e conserva `[fiscal, analista]` (37 previstos). Testes adicionais excedem separadamente desenhos, triângulos e KB por tetos artificiais. Todas as duplas aprovadas cabem sem degradação; trios mais caros podem perder o último secundário em qualquer sala.
+
+### Câmera, contatos e ciclo de vida
+
+O coletivo usa direção frontal elevada `(0,.24,1)` e caixas reais da sala inteira, atividades e todos os personagens, com reserva para acenos. Projeção ortográfica ocupa no máximo 90% em cada eixo (margem ≥5%). Resize usa a proporção real e altera só projeção/DPR/tamanho do renderer. Os testes projetam todos os objetos nos quatro estados em 303×128, 303×180 e 560×180, exigem altura do principal entre 50–75% e cabeças separadas em X. N=1 conserva direção, projeção, peças e orçamento anteriores; snapshots numéricos unitários usam tolerância de 0,05 ponto percentual na altura.
+
+Cada posto calcula tampo/assento/teclado antes da transformação da composição. O palco da atividade, personagem e móveis recebem a mesma escala/translação; o IK é resolvido nas coordenadas locais do quadril. Testes comparam mãos mundiais aos alvos de cada posto (erro <2,5 cm) e volumes reais de mesa/cadeira/teclado sem interseção entre postos. Imóveis usa alvos da própria pasta/contrato: a ponta do indicador direito estendido (32,5 cm do cotovelo) acompanha a linha, e a mão esquerda acompanha o carimbo. Foram amostrados aproximadamente 18 segundos de animação, incluindo virada de página. Os objetos nunca recebem números, nomes ou contratos reais.
+
+Chamadas/celebrações atuam por id, inclusive em secundários; não movimentam o principal. Reduced motion permanece estático, sem RAF; modo leve congela microvida/brilho. Aba oculta/fora da tela pausam atividade e tempo de celebração. Desmontagem cancela a lease única da sala e descarta recursos de todos os postos; resultados tardios não são aplicados. Falhas de carga preservam a cena de caixas coletiva; falhas durante fusão restauram hierarquia, transforms, visibilidade e sombras anteriores. Os testes forçam também essa falha intermediária.
+
+### Entrega e limites da frente
+
+- `cena3d.ts`: ramo mini compartilhado, enquadramento, estados individuais, IK por posto, instalação com rollback e descarte.
+- `cenaBase.ts`: sala opcional na montagem e nos funcionários para o contrato.
+- `escritorioMini.ts`: compositor puro, orçamento/degradação, vários postos em uma sala, instâncias e fusão de rig rígido.
+- `atividadesMini.ts`: atividade/câmera de `imoveis`, alvos de mãos e `PERFIL_IMOVEIS` para a frente responsável pelo cadastro.
+- `escritorioMini.test.ts` e `cena3d.test.ts`: cenários novos e regressões. Um teste existente de igualdade dos ids passou a aceitar `imoveis` antes da entrada em `equipe.ts`; nenhum texto de produto ou expectativa textual foi alterado.
+- Este documento e `atividadesMini.md`: contrato, medidas, decisões e integração.
+
+Não alterados: `AgenteDaAba`, cadastro `equipe.ts`, telas, CSS, insights, modo completo, `modelosEscritorio.ts`, inventário e 41 GLBs. O cache e as medidas originais já atendem à composição, por isso não precisaram mudar. Visibilidade permanente, seleção/autorização por papel, olho fechado, modo exemplo e `?sem3d` continuam a cargo dos componentes das outras frentes; o motor não lê dados nem amplia acesso. Sem persistência nova, commit, push, build, instalação, download ou acesso a serviços/dados reais. Servidores 5198/5199 preservados.
+
+**Só o navegador/GPU/celular confere:** legibilidade subjetiva das atividades a 303 px, sobreposições em todos os instantes entre mãos/rostos/móveis, contraste dia/noite/tema escuro, aparência do tom dos secundários, FPS/memória e contagens reais de `renderer.info` (incluindo eventuais passes do driver). A separação de caixas/projeções e a contagem simulada não certificam essas qualidades. Inspeção WebGL não foi realizada nesta frente; a integração visual com o componente permanente pertence às outras frentes.
+
+### Validação final da frente 17
+
+- TypeScript: **0 erros**, `node codigo/node_modules/typescript/bin/tsc -p codigo`, sem emissão.
+- Suíte completa final: **1.048 passaram + 3 TODO**, nos 53 arquivos; preservados os 983 testes da base e acrescentados 65. Os dois arquivos de teste desta frente somam 207 testes aprovados.
+- Contraprova: os quatro módulos de implementação foram repostos temporariamente com `git show HEAD:...`, preservando os testes novos. **65/65 testes novos falharam**; os 64 testes anteriores do arquivo ficaram fora do filtro. Implementação restaurada em `finally`, seguida da suíte completa aprovada. Não houve módulo novo que precisasse ser mantido para a carga do teste.
+- `npm test` encontrou acesso negado ao carregar `vite.config.ts`. Suíte executada pela API `startVitest`, configuração/cache e executor fora do repositório, sem build ou instalação. Logs e backups temporários também ficaram fora do repositório.
+- `git diff --check` sem erros. As auditorias permaneceram somente leitura e não foram incluídas em commit. Os números antigos ao final deste documento são o histórico unitário.
+
 Apenas `mini: true` recebe os modelos Kenney Furniture Kit 2.0 (CC0). O escritório completo conserva construção, roupas, luzes, percursos e câmeras. Os 41 GLBs foram inspecionados localmente: JSON, nós, hierarquia, materiais, escalas, origem e vértices transformados. O registro reproduzível está em `inventarioModelos.json`; o teste compara esse registro com cada original. Os assets não contêm imagens, texturas ou dependências externas.
 
 ## Composição e contato

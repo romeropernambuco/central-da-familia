@@ -2,9 +2,11 @@
 export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
 /** Estados de interação, independentes dos estados persistidos do escritório. */
 export type EstadoAgente = 'trabalhando' | 'chamando' | 'resolvido' | 'parado'
-export interface FuncCena { id: string; sala: string; estado: EstadoCena }
+export interface FuncCena { id: string; sala?: string; estado: EstadoCena }
 export interface OpcoesCena {
   mini?: boolean
+  /** Sala única do mini; sobrepõe o cadastro sem alterar o escritório completo. */
+  sala?: import('./equipe').SalaEquipe
   funcionarios: FuncCena[]
   /** etiqueta (botão em HTML) de cada funcionário e nome de cada sala: a cena só posiciona */
   etiqueta: (id: string) => HTMLElement | null
