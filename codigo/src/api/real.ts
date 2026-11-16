@@ -93,7 +93,8 @@ export const apiReal: Api = {
     // o banco não dá erro em código errado: devolve {ok:false, motivo, restam}
     const r = await rpc<{ ok: boolean; motivo?: string; restam?: number }>('entrar_equipe_convite', { convite, codigo })
     if (!r?.ok) {
-      const m = TRADUZ[r?.motivo || ''] || r?.motivo || 'Código errado ou vencido.'
+      const motivo = r?.motivo
+      const m = !motivo ? 'Código errado ou vencido.' : Object.values(TRADUZ).includes(motivo) ? motivo : traduzErro({ message: motivo }).message
       throw new Error(r?.restam != null && r.restam > 0 && /errado/i.test(m) ? `${m} Restam ${r.restam} tentativas.` : m)
     }
   },

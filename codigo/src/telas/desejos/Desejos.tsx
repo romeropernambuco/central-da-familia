@@ -6,6 +6,7 @@ import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Sparkles } from 'lucide-react'
 import { useApp } from '../../app/contexto'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
 import { CampoValor, Din, Vazio } from '../../componentes/base'
@@ -112,15 +113,11 @@ export function Desejos() {
   const { ent, saida: saidaF, estado: estFuturo, motivo: motivoFuturo } = useFuturo()
   const casal = familia?.papel === 'casal'
   const adultos = useAdultos()
-  const [lista, setLista] = useState<DesejoTela[] | null>(null)
   const [n, setN] = useState(0)
   const [f, setF] = useState(VAZIO)
   const [gravando, setGravando] = useState(false)
   const meses = useMemo(() => mesesDaqui(), [])
-  useEffect(() => {
-    if (!familia || !api.desejos) return
-    api.desejos(familia.id).then(setLista).catch(() => setLista([]))
-  }, [api, familia?.id, versao, n])
+  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${familia?.papel}`, familia && api.desejos ? () => api.desejos!(familia.id) : null, [api, versao, n])
 
   // calculado antes dos retornos: os ganchos (useMemo, useEffect) abaixo precisam rodar sempre na mesma ordem
   const mes = f.mes || meses[1]
@@ -224,7 +221,9 @@ export function Desejos() {
       <div className="col">
         <section className="card" aria-labelledby="dLista">
           <div className="card-h"><h2 id="dLista">{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
-          {lista === null ? <p className="sub">Buscando…</p> : !lista.length ? <Vazio ico={<Sparkles size={24} />}>Nenhum desejo ainda. Escreva o 1º aqui do lado.</Vazio> : (
+          {carregando && <p role="status">Buscando desejos…</p>}
+          {falha && <p role="alert">Não deu pra buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Sparkles size={24} />}>Nenhum desejo ainda. Escreva o 1º aqui do lado.</Vazio> : (
             <ul className="list">
               {lista.map(d => {
                 const m = desejoDoMotor(d, d.id, d.dono_membro)

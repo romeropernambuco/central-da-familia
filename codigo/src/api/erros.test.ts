@@ -6,7 +6,7 @@ describe('erros do banco e da rede', () => {
   it('sem internet no Chrome, no Firefox e no Safari/iPhone vira ErroRede', () => {
     for (const m of ['TypeError: Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed', 'fetch failed'])
       expect(traduzErro({ message: m })).toBeInstanceOf(ErroRede)
-    expect(traduzErro({ message: 'Load failed' }).message).toMatch(/Nada foi salvo/)
+    expect(traduzErro({ message: 'Load failed' }).message).toBe('Não foi possível confirmar. Confira antes de tentar de novo.')
   })
   it('token vencido vira ErroSessao; tranca do banco NÃO manda entrar de novo', () => {
     expect(traduzErro({ message: 'JWT expired', code: 'PGRST301' })).toBeInstanceOf(ErroSessao)
@@ -14,7 +14,7 @@ describe('erros do banco e da rede', () => {
     expect(traduzErro({ message: 'Invalid Refresh Token: Refresh Token Not Found' })).toBeInstanceOf(ErroSessao)
     const tranca = traduzErro({ message: 'new row violates row-level security policy for table "config_familia"' })
     expect(tranca).not.toBeInstanceOf(ErroSessao)
-    expect(tranca.message).toMatch(/permissão/)
+    expect(tranca.message).toMatch(/^Não foi possível concluir\. Diagnóstico: [a-z0-9]{7}\.$/)
     expect(traduzErro({ message: 'permission denied for function numeros_semana' })).not.toBeInstanceOf(ErroSessao)
   })
   it('erros do login por código saem em português', () => {
@@ -22,7 +22,7 @@ describe('erros do banco e da rede', () => {
     expect(traduzErro({ message: 'For security purposes, you can only request this after 43 seconds.' }).message).toMatch(/Espere 1 minuto/)
     expect(traduzErro({ message: 'Anonymous sign-ins are disabled' }).message).toMatch(/login anônimo/)
     expect(traduzErro({ message: 'so o casal convida' }).message).toBe('Só o casal convida.')
-    expect(traduzErro(null).message).toBe('Não deu certo')
+    expect(traduzErro(null).message).toMatch(/^Não foi possível concluir\. Diagnóstico: [a-z0-9]{7}\.$/)
   })
   it('login anônimo sem família (equipe errou o código) não é sessão', () => {
     expect(sessaoVale(true, 0)).toBe(false)

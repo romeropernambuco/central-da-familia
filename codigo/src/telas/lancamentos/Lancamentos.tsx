@@ -10,6 +10,18 @@ import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reai
 
 /** Lançamentos do mês com lixeira: apagar não some de vez, dá pra trazer de volta. */
 export function Lancamentos() {
+  const { familia } = useApp()
+  const [mes, setMes] = useState(() => hojeRecife().slice(0, 7))
+  useEffect(() => {
+    const atualizar = () => setMes(hojeRecife().slice(0, 7))
+    const timer = setInterval(atualizar, 30000)
+    window.addEventListener('focus', atualizar)
+    return () => { clearInterval(timer); window.removeEventListener('focus', atualizar) }
+  }, [])
+  return <LancamentosFamilia key={`${familia?.id}:${mes}`} />
+}
+
+function LancamentosFamilia() {
   const { api, familia, resumo, versao, recarregar, toast, tentar, abrirLancar } = useApp()
   const [falha, setFalha] = useState('')
   const [carregou, setCarregou] = useState(false)
