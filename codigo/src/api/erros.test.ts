@@ -20,7 +20,7 @@ describe('erros do banco e da rede', () => {
   it('erros do login por código saem em português', () => {
     expect(traduzErro({ message: 'Token has expired or is invalid' }).message).toMatch(/Código errado ou vencido/)
     expect(traduzErro({ message: 'For security purposes, you can only request this after 43 seconds.' }).message).toMatch(/Espere 1 minuto/)
-    expect(traduzErro({ message: 'Anonymous sign-ins are disabled' }).message).toMatch(/login anônimo/)
+    expect(traduzErro({ message: 'Anonymous sign-ins are disabled' }).message).toMatch(/Fale com quem cuida do app/)
     expect(traduzErro({ message: 'so o casal convida' }).message).toBe('Só o casal convida.')
     expect(traduzErro(null).message).toMatch(/^Não foi possível concluir\. Diagnóstico: [a-z0-9]{7}\.$/)
   })

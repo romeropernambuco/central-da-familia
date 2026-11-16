@@ -37,7 +37,7 @@ describe('faturas existentes no simulador de cartões', () => {
     let carregadas: Fatura[] = []
     const preparar = () => {
       mocks.useState.mockReset()
-      const estados = [[cartao], carregadas, true, false, null, 0, String(parcelas * 10), parcelas, 'c']
+      const estados = [[cartao], carregadas, true, false, null, 0, { chave: JSON.stringify(['f', undefined, 'casal']), carregando: false, falha: '', temDado: true }, String(parcelas * 10), parcelas, 'c']
       for (const [i, estado] of estados.entries()) {
         mocks.useState.mockImplementationOnce(() => [estado, i === 1 ? (fs: Fatura[]) => { carregadas = fs } : vi.fn()])
       }

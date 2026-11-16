@@ -24,12 +24,23 @@ export function Cartoes() {
   // E4: o dono do cartão muda o dia que fecha e o dia que vence (a parcela cai no mês da fatura por eles)
   const [dias, setDias] = useState<Cartao | null>(null)
   const [n, setN] = useState(0)
+  const [leitura, setLeitura] = useState({ chave: '', carregando: true, falha: '', temDado: false })
+  const chave = JSON.stringify([familia?.id, familia?.membroId, familia?.papel])
+  const atual = leitura.chave === chave
+  const carregando = !atual || leitura.carregando, falha = atual ? leitura.falha : ''
+  const dado = atual && leitura.temDado
+  const repetir = () => setN(x => x + 1)
   useEffect(() => {
     if (!familia) return
-    // E2 (regra nova, 13/11): o casal vê todos os cartões da família, com o nome do dono; o seu vem 1º
-    api.cartoes(familia.id).then(cs => setCartoes([...cs].sort((a, b) => Number(!cartaoMeu(a, familia)) - Number(!cartaoMeu(b, familia))))).catch(() => {})
-    api.faturas(familia.id, MESES_SIMULACAO).then(setFaturas).catch(() => {})
-  }, [api, familia?.id, versao, n])
+    let vivo = true
+    setLeitura(l => ({ chave, carregando: true, falha: '', temDado: l.chave === chave && l.temDado }))
+    Promise.all([api.cartoes(familia.id), api.faturas(familia.id, MESES_SIMULACAO)]).then(([cs, fs]) => {
+      if (!vivo) return
+      setCartoes([...cs].sort((a, b) => Number(!cartaoMeu(a, familia)) - Number(!cartaoMeu(b, familia))))
+      setFaturas(fs); setLeitura({ chave, carregando: false, falha: '', temDado: true })
+    }).catch(() => { if (vivo) setLeitura(l => ({ ...l, carregando: false, falha: 'Falha na leitura' })) })
+    return () => { vivo = false }
+  }, [api, chave, versao, n])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
   // "E se eu comprar?" é com o seu cartão: o do outro só aparece pra ler
@@ -37,14 +48,16 @@ export function Cartoes() {
 
   return (
     <div className="view">
+      {carregando && <p role="status">Buscando cartões e faturas…</p>}
+      {falha && <p role="alert">Não deu para buscar cartões e faturas. {dado && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       {cartoes.length > 0 && <p className="lbl"><FuncIco id="cartao" size={24} />Analista de Cartão: acompanha as faturas, não paga nada sozinho</p>}
       <div className="row-btns">
         <button className="btn primary" type="button" onClick={() => setSim(true)} disabled={!meus.length}><ShoppingBag size={20} />E se eu comprar?</button>
         {casal && <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Novo cartão</button>}
       </div>
-      {!cartoes.length && <div className="card"><Vazio ico={<CreditCard size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Cadastrar cartão</button> : undefined}>Nenhum cartão cadastrado. Com o dia que a fatura fecha e o dia que vence, a compra cai na fatura certa sozinha.</Vazio></div>}
+      {!falha && !carregando && dado && !cartoes.length && <div className="card"><Vazio ico={<CreditCard size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Cadastrar cartão</button> : undefined}>Nenhum cartão cadastrado. Com o dia que a fatura fecha e o dia que vence, a compra cai na fatura certa sozinha.</Vazio></div>}
       <div className="envs">
-        {cartoes.map(c => {
+        {(dado ? cartoes : []).map(c => {
           const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes)).slice(0, MESES)
           const atual = fs.find(f => f.vencimento >= hoje) || fs[0]
           const max = Math.max(1, ...fs.map(f => f.total))
@@ -120,7 +133,7 @@ function Simulador({ cartoes, faturas, livre, colchao, fechar, dono }: { cartoes
       {valor > 0 && (
         <>
           <p className={'todo ' + (cabe ? 'ok' : 'warn')}>{cabe ? <CircleCheck size={20} aria-hidden="true" /> : <TriangleAlert size={20} aria-hidden="true" />}
-            <span>{dono ? (cabe ? <><b>Cabe no seu combinado.</b> O seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
+            <span>{dono ? (cabe ? <><b>As parcelas deste mês cabem no seu limite.</b> O seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Passa {reais(colchao - depois)} do seu combinado.</b> Vale esperar, parcelar mais ou combinar com a Casa?</>) : cabe ? <><b>Cabe sem mexer na reserva.</b> O livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Mexe na reserva em {reais(colchao - depois)}.</b> Vale esperar ou parcelar mais?</>}</span></p>
           <ul className="exp">
             <li><span>{textoPrivado(dono ? `Livre no mês (${dono})` : 'Livre no mês hoje')}</span><Din v={livre} /></li>
             <li><span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compra (conta no dia da compra)'}</span><Din v={-noMes} menos /></li>

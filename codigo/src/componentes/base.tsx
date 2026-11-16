@@ -32,7 +32,7 @@ function emitirDialogo() { ouvintesDialogo.forEach(ouvir => ouvir()) }
 const FOCAVEL = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
 /** `lado`: no computador vira painel lateral (no celular continua subindo de baixo). */
-export function Sheet({ titulo, fechar, children, rotulo, lado }: { titulo: string; fechar: () => void; children: ReactNode; rotulo?: string; lado?: boolean }) {
+export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho }: { titulo: string; fechar: () => void; children: ReactNode; rotulo?: string; lado?: boolean; cabecalho?: ReactNode }) {
   const dialogo = useRef({})
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -71,7 +71,7 @@ export function Sheet({ titulo, fechar, children, rotulo, lado }: { titulo: stri
       <div className="scrim" onClick={fechar} />
       <div className={'sheet' + (lado ? ' lado' : '')} role="dialog" aria-modal="true" aria-label={rotulo || titulo} ref={ref} tabIndex={-1}>
         <div className="sheet-top">
-          <h2>{titulo}</h2>
+          <h2>{titulo}</h2>{cabecalho}
           <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><X size={22} /></button>
         </div>
         <div className="sheet-body"><ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>

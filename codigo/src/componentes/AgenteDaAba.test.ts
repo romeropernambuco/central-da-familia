@@ -130,7 +130,7 @@ it('design: barra real tem rotulo visivel para lancar', async () => {
  const ctx = contextoDesign(); ctx.lancarAberto = null
  await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(App))))
  const barra = container.buscar(n => n.tagName === 'NAV' && n.getAttribute('class') === 'tabbar')[0]
- expect(barra.buscar(n => n.tagName === 'SPAN' && n.textContent === 'Lan\u00e7ar')).toHaveLength(1)
+ expect(barra.buscar(n => n.tagName === 'SPAN' && n.textContent === 'Anotar')).toHaveLength(1)
  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals() }
 })
 
@@ -167,9 +167,9 @@ it('design: divulgacao real abre tarefas e informa o painel controlado', async (
  const escritorio = await ctx.api.escritorioHoje(ctx.familia!.id)
  ctx.api.escritorioHoje = async () => ({ ...escritorio, precisa_de_voce: [] })
  await act(async () => { await lojaEscritorio(ctx.api, ctx.familia!.id).ler(ctx.api, ctx.familia!.id) })
- expect(botao.textContent).toBe('Ver tarefas da feira')
+ expect(botao.textContent).toBe('Ver tarefas e cadastros')
  await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(AgenteDaAba, { rota: 'desejos' }))))
- expect(container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Conversar e abrir tarefas')).toHaveLength(1)
+ expect(container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Ver resumo desta tela')).toHaveLength(1)
 
  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals() }
 })

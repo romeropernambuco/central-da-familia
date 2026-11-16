@@ -27,8 +27,8 @@ describe('C2: lista única da equipe', () => {
   it('18 funcionários, preservando os originais e cobrindo as abas, com papel, dado e mesa', () => {
     expect(EQUIPE).toHaveLength(18)
     for (const id of ['auditor', 'assistente', 'tesoureiro', 'usina', 'presenca']) expect(POR_ID[id], id).toBeTruthy()
-    expect(POR_ID.auditor.nome).toBe('Auditor de Estoque'); expect(POR_ID.tesoureiro.nome).toBe('Tesoureiro de Receitas')
-    expect(POR_ID.usina.nome).toBe('Gerente da Usina'); expect(POR_ID.presenca.nome).toBe('Controlador de Presença')
+    expect(POR_ID.auditor.nome).toBe('Ajudante de Estoque'); expect(POR_ID.tesoureiro.nome).toBe('Tesoureiro de Receitas')
+    expect(POR_ID.usina.nome).toBe('Gerente da Usina'); expect(POR_ID.presenca.nome).toBe('Ajudante de Presença')
     for (const m of EQUIPE) { expect(m.papel.length, m.id).toBeGreaterThan(10); expect(m.dado.length, m.id).toBeGreaterThan(5); expect(m.faz).toHaveLength(3); expect(FAZ[m.id]).toEqual(m.faz) }
   })
   it('nenhuma sala com 2 pessoas na mesma mesa nem mais de 3 mesas', () => {
@@ -46,7 +46,7 @@ describe('C2: lista única da equipe', () => {
   it('preserva os 13 personagens do protótipo publicado sem exigir publicação dos novos', () => {
     expect(daPagina).toHaveLength(13)
     expect(daPagina.map(x => x.id)).toEqual(EQUIPE.slice(0, 13).map(m => m.id))
-    for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome, p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
+    for (const p of daPagina) { const m = POR_ID[p.id]; expect([p.nome.replace('Fiscal da Feira', 'Ajudante da Feira').replace('Controlador de Presença', 'Ajudante de Presença').replace('Auditor de Estoque', 'Ajudante de Estoque'), p.curto === 'Fiscal' ? 'Ajudante' : p.curto, p.sala, p.mesa], p.id).toEqual([m.nome, m.curto, m.sala, m.mesa]) }
   })
   it('na página, quem não tem dado no banco não tem número (semDado, sem num)', () => {
     for (const id of ['assistente', 'usina']) { const linha = bloco.slice(bloco.indexOf(`{id:'${id}'`), bloco.indexOf('cor:', bloco.indexOf(`{id:'${id}'`))); expect(linha).toContain('semDado:true'); expect(linha).not.toMatch(/num:/) }

@@ -7,7 +7,7 @@ import type { Rota } from '../app/rotas'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { CASOS_LIGACAO, contextoLigacao } from '../lib/insights/ligacao.dom-teste'
 import { chaveArmazenamento, lerMemoria } from '../lib/insights/memoria'
-import { AgenteDaAba, MiniAgente } from './AgenteDaAba'
+import { AgenteDaAba, MiniAgente, ControleFuncionarios } from './AgenteDaAba'
 import { Sheet } from './base'
 import { FichaFuncionario } from '../telas/escritorio/Ficha'
 import { useEscritorio } from '../app/useDados2'
@@ -17,7 +17,7 @@ vi.mock('../telas/escritorio/tres', () => ({}))
 vi.mock('../telas/escritorio/cena3d', () => ({ montarCena: cena.montar }))
 
 function ambiente(webgl = false) {
-  const doc = new DocumentoTeste(), eventos = new EventTarget(), storage = new Map<string, string>()
+  const doc = new DocumentoTeste(), eventos = new EventTarget(), storage = new Map<string, string>([['funcionarios:modo', 'completo']])
   Object.assign(doc.documentElement, { dataset: {} })
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] }, getContext() { return webgl ? {} : null } })
   vi.stubGlobal('document', doc)
@@ -36,7 +36,7 @@ function ambiente(webgl = false) {
   const root = createRoot(container as unknown as HTMLElement)
   return { root, container, storage, eventos,
     render: async (ctx: Ctx, rota: Rota, filhos: ReactNode = createElement(AgenteDaAba, { rota })) => { await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, filhos))) },
-    limpar: async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() },
+    limpar: async () => { await act(async () => eventos.dispatchEvent(new Event('storage'))); await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() },
   }
 }
 function botao(n: NoTeste, texto: string) { const b = n.buscar(n => n.tagName === 'BUTTON' && n.textContent === texto)[0]; expect(b, texto).toBeDefined(); return b }
@@ -51,7 +51,7 @@ it.each(CASOS_LIGACAO)('ligação: %s na aba %s, funcionário %s, uma pergunta e
     expect(a.container.buscar(n => n.getAttribute('data-agente') === funcionario)).toHaveLength(1)
     expect(perguntas(a.container)).toHaveLength(1)
     expect(a.container.textContent).toContain('Precisa de você')
-    expect(a.container.textContent).toContain('Ver tarefas e cadastros')
+    expect(a.container.textContent).toContain(funcionario === 'colchao' ? 'Ver resumo desta tela' : 'Ver tarefas e cadastros')
     const antes = Object.values(ctx.api).filter(v => vi.isMockFunction(v)).map(v => vi.mocked(v).mock.calls.length)
     await act(async () => { await vi.advanceTimersByTimeAsync(90000); a.eventos.dispatchEvent(new Event('focus')) })
     expect(Object.values(ctx.api).filter(v => vi.isMockFunction(v)).map(v => vi.mocked(v).mock.calls.length)).toEqual(antes)
@@ -262,4 +262,115 @@ it('ligação: sucesso do insight leva mini de chamando a resolvido e parado sem
     expect(cena.definir).toHaveBeenCalledTimes(chamadas)
     expect(cena.montar).toHaveBeenCalledTimes(1)
   } finally { await a.limpar() }
+})
+
+it('UX: compacto não monta WebGL, expandir monta e recolher destrói', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('cobranca_cartao')
+ a.storage.set('funcionarios:modo', 'compacto')
+ ctx.api.escritorioHoje = vi.fn().mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] })
+ ctx.api.faturas = vi.fn().mockResolvedValue([])
+ try {
+  await a.render(ctx, 'cartoes')
+  expect(cena.montar).not.toHaveBeenCalled()
+  await act(async () => botao(a.container, 'Expandir').click())
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  await act(async () => botao(a.container, 'Recolher').click())
+  expect(cena.destruir).toHaveBeenCalledTimes(1)
+  expect(a.container.textContent).toContain('Expandir')
+  const filhos = createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' }))
+  await a.render(ctx, 'cartoes', filhos)
+  await act(async () => botao(a.container, 'Desligado').click())
+  expect(a.storage.get('funcionarios:modo')).toBe('desligado')
+  await a.render(contextoLigacao('fatura_vencendo'), 'cartoes', filhos)
+  expect(perguntas(a.container)).toHaveLength(1)
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+  await act(async () => botao(a.container, 'Completo').click())
+  expect(cena.montar).toHaveBeenCalledTimes(2)
+  await act(async () => botao(a.container, 'Compacto').click())
+  // A pergunta continua visível e mantém o modo completo automático.
+  expect(perguntas(a.container)).toHaveLength(1)
+ } finally { await act(async () => a.eventos.dispatchEvent(new Event('storage'))); await a.limpar() }
+})
+
+// Apenas a fronteira WebGL é substituída; componentes, preferência e hooks são reais.
+it.each(['completo', 'compacto', 'desligado'] as const)('cobertura modos: %s persiste por aparelho entre montagens', async modo => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
+ try {
+  await a.render(ctx, 'cartoes', createElement(ControleFuncionarios))
+  await act(async () => botao(a.container, modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Compacto' : 'Desligado').click())
+  expect(a.storage.get('funcionarios:modo')).toBe(modo)
+  // Invalida enquanto ainda há assinante; depois desmonta, forçando leitura do storage.
+  await act(async () => a.eventos.dispatchEvent(new Event('storage')))
+  await act(async () => a.root.render(null))
+  await a.render(ctx, 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
+  expect(a.container.buscar(n => n.getAttribute('aria-pressed') === 'true').map(n => n.textContent)).toEqual([modo === 'completo' ? 'Completo' : modo === 'compacto' ? 'Compacto' : 'Desligado'])
+  expect(cena.montar.mock.calls.length).toBe(modo === 'completo' ? 1 : 0)
+ } finally { await a.limpar() }
+})
+it.each(['invalido', 'throw'])('cobertura modos: storage %s usa compacto e permite mudar na sessão', async tipo => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum')
+ try {
+  a.storage.set('funcionarios:modo', 'estranho')
+  if (tipo === 'throw') vi.stubGlobal('localStorage', { getItem() { throw Error('indisponível') }, setItem() { throw Error('cheio') } })
+  a.eventos.dispatchEvent(new Event('storage'))
+  await a.render(ctx, 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
+  expect(botao(a.container, 'Compacto').getAttribute('aria-pressed')).toBe('true')
+  expect(cena.montar).not.toHaveBeenCalled()
+  await act(async () => botao(a.container, 'Completo').click())
+  expect(botao(a.container, 'Completo').getAttribute('aria-pressed')).toBe('true')
+  expect(cena.montar).toHaveBeenCalledTimes(1)
+ } finally { await a.limpar() }
+})
+it.each(['compacto', 'desligado'])('cobertura modos: pergunta pendente no %s aparece automaticamente', async modo => {
+ const a = ambiente(true)
+ try {
+  a.storage.set('funcionarios:modo', modo); a.eventos.dispatchEvent(new Event('storage'))
+  await a.render(contextoLigacao('fatura_vencendo'), 'cartoes')
+  expect(perguntas(a.container)).toHaveLength(1)
+  expect(a.container.textContent).toContain('Já pagou a fatura que vence em breve?')
+  expect(cena.montar.mock.calls.length).toBe(modo === 'desligado' ? 0 : 1)
+  if (modo === 'compacto') expect(botao(a.container, 'Recolher')).toBeDefined()
+ } finally { await a.limpar() }
+})
+it('cobertura modos: vinte alternâncias descartam cada renderer e não prendem expansão', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum'), vivos = new Set<object>(), disposes: ReturnType<typeof vi.fn>[] = []
+ cena.montar.mockImplementation(() => {
+  const renderer = {}, dispose = vi.fn(() => vivos.delete(renderer)); vivos.add(renderer); disposes.push(dispose)
+  return { definirEstado: cena.definir, destruir: dispose, irPara() {}, tema() {} }
+ })
+ try {
+  a.storage.set('funcionarios:modo', 'compacto'); a.eventos.dispatchEvent(new Event('storage'))
+  await a.render(ctx, 'cartoes', createElement(Fragment, null, createElement(ControleFuncionarios), createElement(AgenteDaAba, { rota: 'cartoes' })))
+  const agente = a.container.buscar(n => n.getAttribute('data-agente') === 'cartao')[0]
+  for (let i = 0; i < 20; i++) {
+   await act(async () => botao(a.container, 'Completo').click())
+   expect(vivos.size).toBe(1); expect(botao(a.container, 'Recolher')).toBeDefined()
+   await act(async () => botao(a.container, 'Compacto').click())
+   expect(vivos.size).toBe(0); expect(botao(a.container, 'Expandir')).toBeDefined()
+   expect(a.container.buscar(n => n.getAttribute('data-agente') === 'cartao')[0]).toBe(agente)
+  }
+  // Também cobre mudanças no mesmo turno, antes de os imports assíncronos concluírem.
+  await act(async () => { for (let i = 0; i < 20; i++) { botao(a.container, 'Completo').click(); botao(a.container, 'Compacto').click() } })
+  expect(vivos.size).toBe(0)
+  expect(botao(a.container, 'Expandir')).toBeDefined()
+  expect(cena.montar).toHaveBeenCalledTimes(20)
+  for (const dispose of disposes) expect(dispose).toHaveBeenCalledTimes(1)
+  await act(async () => botao(a.container, 'Completo').click())
+  expect(vivos.size).toBe(1)
+ } finally { await a.limpar() }
+ expect(vivos.size).toBe(0)
+ expect(disposes).toHaveLength(21)
+ for (const dispose of disposes) expect(dispose).toHaveBeenCalledTimes(1)
+})
+it.each(['query', 'hash', 'sem-webgl'])('cobertura modos: fallback %s mantém pergunta sem renderer', async tipo => {
+ const a = ambiente(tipo !== 'sem-webgl')
+ try {
+  a.storage.set('funcionarios:modo', 'completo'); a.eventos.dispatchEvent(new Event('storage'))
+  if (tipo === 'query') location.search = '?sem3d'
+  if (tipo === 'hash') location.hash = '#/cartoes?sem3d'
+  await a.render(contextoLigacao('fatura_vencendo'), 'cartoes')
+  expect(cena.montar).not.toHaveBeenCalled()
+  expect(perguntas(a.container)).toHaveLength(1)
+  expect(a.container.textContent).toContain('Já pagou a fatura que vence em breve?')
+ } finally { await a.limpar() }
 })

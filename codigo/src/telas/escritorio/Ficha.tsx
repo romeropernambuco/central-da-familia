@@ -81,7 +81,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
           ) : (
             <>
               <p className="perg-t">{f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}</p>
-              <p className="perg-c">{fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando o dado entrar no banco da família, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)}</p>
+              <p className="perg-c">{fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando essa informação estiver cadastrada, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)}</p>
             </>
           )}
         </section>
@@ -258,7 +258,7 @@ function CadCartao() {
   )
 }
 
-/* Fiscal da Feira: feiras (com a nota), contagens do estoque e itens da casa */
+/* Ajudante da Feira: feiras (com a nota), contagens do estoque e itens da casa */
 function CadFiscal() {
   const { api, familia, tentar, recarregar, toast } = useApp()
   const equipe = familia?.papel === 'equipe'

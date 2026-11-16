@@ -5,15 +5,15 @@ import type { Ctx } from '../../app/contexto'
 import type { Rota } from '../../app/rotas'
 
 export const CASOS_LIGACAO = [
-  ['fatura_vencendo', 'cartoes', 'cartao', 'Sua fatura vence em breve. Já pagou?'],
-  ['fatura_divergente', 'cartoes', 'cartao', 'A fatura não bate com as compras anotadas. Vamos conferir?'],
+  ['fatura_vencendo', 'cartoes', 'cartao', 'Já pagou a fatura que vence em breve?'],
+  ['fatura_divergente', 'cartoes', 'cartao', 'Quer conferir a diferença entre a fatura e as compras anotadas?'],
   // Parcelas pertencem à mesma cobrança: contexto da fatura, sem um segundo card.
-  ['parcelas', 'cartoes', 'cartao', 'Há parcelas vencendo nesta fatura'],
-  ['reserva', 'planejamento', 'colchao', 'O livre ficou abaixo da reserva. Como vamos recompor?'],
+  ['parcelas', 'cartoes', 'cartao', 'há parcelas vencendo nesta fatura'],
+  ['reserva', 'planejamento', 'colchao', 'O dinheiro livre ficou abaixo da reserva. Quer revisar o plano?'],
   ['recebimento', 'planejamento', 'tesoureiro', 'Esse dinheiro já entrou ou adiamos a previsão?'],
-  ['aplicacao', 'guardado', 'guardado', 'Sua aplicação está vencendo. Quer revisar o destino?'],
+  ['aplicacao', 'guardado', 'guardado', 'Quer revisar o destino da aplicação que está vencendo?'],
   ['feira_nota', 'casa', 'fiscal', 'Falta guardar a nota ou explicar por que não houve.'],
-  ['objetivo', 'planejamento', 'tesoureiro', 'O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?'],
+  ['objetivo', 'planejamento', 'tesoureiro', 'O plano ainda não alcança seu objetivo. Quer revisar quanto pretende guardar?'],
 ] as const satisfies readonly (readonly [string, Rota, string, string])[]
 
 export function contextoLigacao(tipo: string): Ctx {

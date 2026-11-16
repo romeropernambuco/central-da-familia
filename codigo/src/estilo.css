@@ -773,3 +773,12 @@ select.inp{appearance:auto}
 
 input,select,textarea{border-color:var(--field-border)}
 ::placeholder{color:var(--muted);opacity:1}
+
+/* Rodada UX: conteúdo primeiro, zoom e alvos de toque. */
+.agente-compacto{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px}
+.agente-compacto .perg{flex:1;min-width:8em}.agente-compacto .perg p{margin:0}
+.agente-compacto .btn{font-size:14px;padding:0 12px}
+.rail a,.tabbar a,.seg button,.env-h b,.brand b,.brand small{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;overflow:visible}
+.tabbar a{min-width:0;text-align:center}.seg{flex-wrap:wrap}.seg button{height:auto}
+.contagem .seg.tres button{min-width:44px;min-height:44px}
+#titulo-tela:focus{outline:2px solid var(--accent);outline-offset:4px}

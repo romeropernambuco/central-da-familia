@@ -17,13 +17,55 @@ import { Sheet } from './base'
 import { reduzirFoto } from '../lib/foto'
 export const AGENTE_POR_ABA: Record<string, string> = Object.fromEntries(EQUIPE.map(m => [m.rota, m.id]))
 Object.assign(AGENTE_POR_ABA, { casa: 'fiscal', planejamento: 'tesoureiro', guardado: 'guardado' })
-const ACAO: Record<string, string> = { cartao: 'Ver cartões e faturas', fiscal: 'Ver tarefas da feira', guardado: 'Cadastrar aplicação ou aporte', tesoureiro: 'Cadastrar recebimento', secretaria: 'Criar lembrete', contador: 'Ver tarefas do mês' }
 const CONVITE: Record<string, string> = {
- cartao: 'Qual valor veio no banco? Já pagou a fatura?',
- fiscal: 'Já fez a feira? Guarde a nota e conte o estoque.',
+ cartao: 'Quer conferir a fatura?',
+ fiscal: 'Já fez a feira?',
  guardado: 'Quer cadastrar uma aplicação ou anotar um aporte?',
  tesoureiro: 'O recebimento previsto entrou ou mudou de mês?',
  secretaria: 'O que você quer lembrar e quando?',
+}
+export type ModoFuncionario = 'completo' | 'compacto' | 'desligado'
+const CHAVE_MODO = 'funcionarios:modo'
+const ouvintesModo = new Set<() => void>()
+let modoMemoria: ModoFuncionario | undefined
+function lerModo(): ModoFuncionario {
+ try { const v = localStorage.getItem(CHAVE_MODO); if (v === 'completo' || v === 'desligado') return v } catch { /* sem storage */ }
+ return 'compacto'
+}
+function snapshotModo() { return modoMemoria ?? lerModo() }
+export function definirModoFuncionario(modo: ModoFuncionario) {
+ modoMemoria = modo
+ try { localStorage.setItem(CHAVE_MODO, modo) } catch { /* mantém na sessão */ }
+ ouvintesModo.forEach(f => f())
+}
+function assinarModo(f: () => void) {
+ ouvintesModo.add(f)
+ const atualizar = () => { modoMemoria = undefined; f() }
+ window.addEventListener('storage', atualizar)
+ return () => { ouvintesModo.delete(f); window.removeEventListener('storage', atualizar) }
+}
+export function useModoFuncionario() { return useSyncExternalStore(assinarModo, snapshotModo, () => 'compacto' as const) }
+export function ControleFuncionarios() {
+ const modo = useModoFuncionario()
+ return <div role="group" aria-label="Funcionários" className="seg compacta"><span>Funcionários:</span>{(['completo', 'compacto', 'desligado'] as const).map(v => <button key={v} type="button" aria-pressed={modo === v} onClick={() => definirModoFuncionario(v)}>{v === 'completo' ? 'Completo' : v === 'compacto' ? 'Compacto' : 'Desligado'}</button>)}</div>
+}
+const SOBRE: Record<string, string> = {
+ inicio: 'Aqui você acompanha os números e avisos da família.', lancamentos: 'Aqui estão os gastos e entradas que vocês anotaram.',
+ orcamento: 'Aqui você acompanha seu limite e suas sobras.', casa: 'Aqui você acompanha a lista e as compras da casa.',
+ cartoes: 'Aqui você acompanha cartões e faturas.', guardado: 'Aqui você acompanha aplicações e imóveis.',
+ planejamento: 'Aqui você define limites e planeja os próximos meses.', desejos: 'Aqui você organiza o que quer comprar.',
+ escritorio: 'Aqui você vê tarefas e cadastros dos funcionários.', ajustes: 'Aqui você cuida da aparência e dos convites.',
+ 'primeiro-uso': 'Aqui você cria sua família e define os limites mensais.', privacidade: 'Aqui estão as opções de privacidade.', painel: 'Aqui o dono acompanha os indicadores do app.',
+}
+export function AjudaDaAba({ rota }: { rota: string }) {
+ const [aberta, setAberta] = useState(false)
+ return <><button type="button" className="btn line" onClick={() => setAberta(true)}>Preciso de ajuda</button>{aberta && <Sheet titulo="Preciso de ajuda" fechar={() => setAberta(false)}>
+ <p>{SOBRE[rota] || 'Entre com seu e-mail ou com o convite da equipe.'}</p>
+ <p>Para registrar uma compra, use “Anotar gasto” ou “Anotar compra”.</p>
+ <p>Os números ficam no conteúdo da tela. O botão “?” explica de onde vieram.</p>
+ <p>Use o olho para esconder ou mostrar valores. Ele também fica na folha de Anotar gasto.</p>
+ <p>Para pedir apoio, fale com a pessoa da família que convidou você para o app.</p>
+ </Sheet>}</>
 }
 let liberarRenderer: (() => void) | undefined
 export function AgenteDaAba({ rota }: { rota: Rota }) {
@@ -38,6 +80,9 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const loja = lojaEscritorio(api, familia!.id)
  const escritorio = useSyncExternalStore(loja.assinar, loja.snapshot)
  const painel = useId()
+ const modo = useModoFuncionario()
+ const [expansao, setExpansao] = useState<{ modo: ModoFuncionario; pergunta?: string; valor: boolean } | null>(null)
+ useEffect(() => setExpansao(null), [modo])
  const [aberto, setAberto] = useState(false)
  const [celebrando, setCelebrando] = useState<{ funcionario: string } | null>(null)
  const pendente = perguntas.find(p => {
@@ -93,11 +138,14 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
    } catch { setFotoErro('Não deu certo. Tente de novo.') }
    finally { fotoTrava.current = false; setGuardandoFoto(false) }
  }
- return <section className="card agente-aba" data-agente={m.id} aria-label="Funcionário desta aba">
- <MiniAgente id={m.id} sala={m.sala} estado={estado} /><header className="agente-aba-cabecalho"><b>{m.nome}</b>
- {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
- {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (f?.frase ? fala(f.frase) : m.papel)}</p>{f && familia?.papel !== 'equipe' && CONVITE[m.id] && <p className="sub">{fala(f.frase)}</p>}</div>}
- <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{p?.opcoes.length ? 'Ver tarefas e cadastros' : ACAO[m.id] || 'Conversar e abrir tarefas'}<ChevronDown size={18} aria-hidden="true" /></button>
+ const expandido = expansao?.modo === modo && expansao.pergunta === p?.id ? expansao.valor : null
+ const completo = modo !== 'desligado' && (expandido ?? (modo === 'completo' || precisa))
+ return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} aria-label="Funcionário desta aba">
+ {completo && <MiniAgente id={m.id} sala={m.sala} estado={estado} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b>
+ {completo && api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
+ {p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{CONVITE[m.id] || (f?.frase ? fala(f.frase) : m.papel)}</p></div>}
+ {modo !== 'desligado' && <button type="button" className="btn line" onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !completo })}>{completo ? 'Recolher' : 'Expandir'}</button>}
+ <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>
  <div id={painel} hidden={!aberto}>{aberto && (['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>

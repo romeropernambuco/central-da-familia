@@ -223,7 +223,7 @@ export function Desejos() {
           <div className="card-h"><h2 id="dLista">{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
           {carregando && <p role="status">Buscando desejos…</p>}
           {falha && <p role="alert">Não deu pra buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Sparkles size={24} />}>Nenhum desejo ainda. Escreva o 1º aqui do lado.</Vazio> : (
+          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Sparkles size={24} />}>Crie seu primeiro desejo no formulário.</Vazio> : (
             <ul className="list">
               {lista.map(d => {
                 const m = desejoDoMotor(d, d.id, d.dono_membro)

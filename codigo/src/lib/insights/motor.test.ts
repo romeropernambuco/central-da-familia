@@ -164,11 +164,12 @@ it('olho fechado em cada um dos oito: texto, contexto, opção e aria-label; fix
   expect(candidatos).toHaveLength(8)
   for (const i of candidatos) {
     const aberto = apresentarInsight(i, false), fechado = apresentarInsight(i, true)
-    expect(aberto.pergunta).toBe(i.pergunta)
-    expect(fechado.pergunta).toBe(i.pergunta)
+    const textos: Record<string, string> = {"Sua fatura vence em breve. Já pagou?":"Já pagou a fatura que vence em breve?","A fatura não bate com as compras anotadas. Vamos conferir?":"Quer conferir a diferença entre a fatura e as compras anotadas?","Sua aplicação está vencendo. Quer revisar o destino?":"Quer revisar o destino da aplicação que está vencendo?","O livre ficou abaixo da reserva. Como vamos recompor?":"O dinheiro livre ficou abaixo da reserva. Quer revisar o plano?","O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?":"O plano ainda não alcança seu objetivo. Quer revisar quanto pretende guardar?","Revisar aportes ou premissas":"Revisar quanto guardar"}
+    expect(aberto.pergunta).toBe(textos[i.pergunta] || i.pergunta)
+    expect(fechado.pergunta).toBe(textos[i.pergunta] || i.pergunta)
     const saidas = [fechado.pergunta, fechado.contexto, ...fechado.opcoes.flatMap(o => [o.rotulo, o.rotulo /* mesmo contrato do aria-label */])]
     expect(saidas.join(' ')).not.toMatch(/NomeSentinelaPrivado|987654|9\.876|876,54/)
-    expect(fechado.opcoes.map(o => o.rotulo)).toEqual(i.opcoes.map(o => o.rotulo))
+    expect(fechado.opcoes.map(o => o.rotulo)).toEqual(i.opcoes.map(o => o.rotulo === 'Abrir composição' ? 'Ver compras desta fatura' : textos[o.rotulo] || o.rotulo))
   }
   // Não depende da política global do olho: os parâmetros são a única entrada da função pura.
   esconderValores(true)

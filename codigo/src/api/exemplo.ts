@@ -225,8 +225,8 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
       const dif = centavos(p.valor_dia - v0)
       const peso = pesoDia(hoje) !== pesoDia(ontem) ? (pesoDia(hoje) > 1 ? ` Hoje é ${diaSemana(hoje)}: fim de semana e feriado valem 1,5 dia.` : ' Ontem era fim de semana ou feriado, que vale 1,5 dia; hoje é dia normal.') : ''
       const motivo = Math.abs(dif) < 0.5 ? `Ficou igual a ontem: ${reais(v0)}.${peso}`
-        : g0 > v0 ? `Ontem saíram ${reais(g0)} e o dia era ${reais(v0)}${maior ? ` (o maior foi ${maior.descricao || 'um gasto sem nome'}, ${reais(maior.valor)})` : ''}. Os ${reais(centavos(g0 - v0))} a mais foram divididos pelos dias que faltam.${peso}`
-        : `Ontem saíram ${reais(g0)} de ${reais(v0)}. O que sobrou foi dividido pelos dias que faltam.${peso}`
+        : g0 > v0 ? `Ontem saíram ${reais(g0)} e o dia era ${reais(v0)}${maior ? ` (o maior foi ${maior.descricao || 'um gasto sem nome'}, ${reais(maior.valor)})` : ''}; os ${reais(centavos(g0 - v0))} a mais foram divididos pelos dias que faltam.${peso}`
+        : `Ontem saíram ${reais(g0)} de ${reais(v0)}; o que sobrou foi dividido pelos dias que faltam.${peso}`
       mudou = { ontem: v0, motivo }
     }
     const temAnt = lancs.some(l => l.data.startsWith(ant))
@@ -423,7 +423,7 @@ export const apiExemplo: Api = {
   },
   async salvarEnvelope(_f, id, campos) {
     const e = db.envs.find(x => x.id === id)
-    if (!e) throw new Error('Envelope não encontrado')
+    if (!e) throw new Error('Esse limite não foi encontrado')
     Object.assign(e, campos)
   },
   async definirLimite(_f, id, valor) {
@@ -568,10 +568,10 @@ export const apiExemplo: Api = {
       // E3 (conserto 9): a foto de hoje é da compra de hoje. Ela não vale como a nota de uma feira de outro dia (o pedido continua)
       const outroDia = f && f.data !== hoje && !f.tem_nota
       if (id && c.foto && !outroDia) ex2.feiraAnexarEx(id)
-      if (outroDia) falta = ` A nota da feira de ${dataCurta(f!.data)} ainda falta: tire a foto dela no cartão do Fiscal.`
-      else if (!c.foto) falta = ' Quando tiver a nota, tire a foto no cartão do Fiscal.'
+      if (outroDia) falta = ` A nota da feira de ${dataCurta(f!.data)} ainda falta: tire a foto dela no cartão do Ajudante.`
+      else if (!c.foto) falta = ' Quando tiver a nota, tire a foto no cartão do Ajudante.'
     }
-    return { aviso: `Anotado: ${nome}${c.tipo === 'feira' ? ' (feira da semana)' : ''}.${c.foto ? ' A foto da nota foi pro casal. O casal confere o valor pela foto.' : ' O casal confere o valor.'}${falta}` }
+    return { aviso: `Anotado: ${nome}${c.tipo === 'feira' ? ' (feira da semana)' : ''}. O casal confere o valor${c.foto ? ' pela foto' : ''}${falta ? '; ' + falta.trim().replace(/\.$/, '') : ''}.` }
   },
   async entrouAMais(_f, mes) {
     await espera(20)

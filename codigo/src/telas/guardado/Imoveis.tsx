@@ -1,3 +1,4 @@
+import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 // RODADA_PATRIMONIO (ordem do dono, 14/11): o bloco "Imóveis" dentro do Guardado (não é tela nova).
 // Lista com apelido, dono, valor, aluguel líquido por mês, rentabilidade ao ano comparada com a das aplicações e o selo
@@ -51,13 +52,9 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
   const { api, familia, versao, tentar, toast } = useApp()
   const { saida, atualizar } = useFuturo()
   const adultos = useAdultos()
-  const [lista, setLista] = useState<ImovelTela[] | null>(null)
   const [n, setN] = useState(0)
   const [folha, setFolha] = useState<ImovelTela | 'novo' | null>(null)
-  useEffect(() => {
-    if (!familia || familia.papel !== 'casal' || !api.imoveis) return
-    api.imoveis(familia.id).then(setLista).catch(() => setLista([]))
-  }, [api, familia?.id, versao, n])
+  const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${familia?.membroId}:${familia?.papel}`, familia?.papel === 'casal' && api.imoveis ? () => api.imoveis!(familia.id) : null, [api, versao, n])
   const renovaDe = (id: string) => saida?.gatilhos?.find(g => g.origem === 'imovel' && g.id === id && g.motivo === 'renova o contrato') ?? null
   const doMotor = useMemo(() => new Map((saida?.imoveis || []).map(x => [x.id, x])), [saida])
 
@@ -83,13 +80,15 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       <div className="card-h"><h2 id="gImo"><Building2 size={24} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Plus size={16} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
       <p>Gestor do Guardado: quer cadastrar um imóvel?</p><button type="button" className="btn line" onClick={() => setFolha('novo')}>Cadastrar imóvel</button>
-      <dl className="imo-total">
+      {lista && <dl className="imo-total">
         <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
         <div><dt>Imóveis, à parte</dt><dd><Din v={somaImoveis} /></dd></div>
-      </dl>
+      </dl>}
       <p className="sub imo-frase">Imóvel não é vendido pelo plano: o valor só aparece aqui, nunca vira saque. Só o aluguel com contrato entra na conta de 2029.</p>
-      {lista === null ? <p className="sub">Buscando…</p> : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" pra anotar casa, sala, lote ou apartamento.</Vazio> : (
+      {carregando && <p role="status">Buscando imóveis…</p>}
+      {falha && <p role="alert">Não deu para buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
+      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" pra anotar casa, sala, lote ou apartamento.</Vazio> : (
         <ul className="list">
           {imoveis.map(i => {
             const m: ImovelSaida | undefined = doMotor.get(i.id)

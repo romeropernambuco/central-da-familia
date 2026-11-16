@@ -2,6 +2,8 @@ import { AgenteDaAba, AGENTE_POR_ABA } from './componentes/AgenteDaAba'
 ﻿import { act, createElement, useState, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
+// Semeia o exemplo na mesma data da auditoria, inclusive quando o teste roda após meia-noite.
+vi.hoisted(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00')) })
 import { ContextoApp, type Ctx } from './app/contexto'
 import { esconderValores } from './lib/formato'
 import { apiExemplo } from './api/exemplo'
@@ -233,7 +235,7 @@ describe('regra do olho em cada tela real', () => {
       }
       await act(async () => alternar())
       const aberto = html(container)
-      if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-agente') === AGENTE_POR_ABA[nome.slice(7)]).length).toBe(1); expect(aberto).toContain('Em lista') }
+      if (nome.startsWith('Agente:')) { expect(container.buscar(n => n.getAttribute('data-agente') === AGENTE_POR_ABA[nome.slice(7)]).length, nome).toBe(1); expect(aberto).toContain(container.buscar(n => n.getAttribute('data-pergunta') !== null).length ? 'Recolher' : 'Expandir') }
       // Algumas telas iniciais são formulários vazios e não apresentam dados privados.
       if (!nome.startsWith('Agente:') && !['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
       await act(async () => alternar())
@@ -348,7 +350,7 @@ for (const inicial of [true, false]) {
         await act(async () => olho().click())
       }
       if (olho().getAttribute('aria-pressed') !== 'true') await act(async () => olho().click())
-      await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Lançar gasto')[0].click())
+      await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Anotar gasto')[0].click())
       const teclas = classe('keys').buscar(n => n.tagName === 'BUTTON')
       const nomes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'Apagar']
       expect(teclas.map(n => n.getAttribute('aria-label'))).toEqual(nomes)
