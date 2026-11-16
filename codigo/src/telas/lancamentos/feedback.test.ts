@@ -143,7 +143,7 @@ it.each([
   expect(a.box.textContent.replace(/\u00a0/g, ' ')).toContain(de === 'nov/26' ? 'Neste mês conta R$ 33,34.' : 'Neste mês não conta nada.')
   await a.click('Salvar em Pessoal')
   expect(lancar).toHaveBeenCalledWith(expect.objectContaining({ valor: 100, parcelas: 3, data: hoje, cartao: 'c' }))
-  expect(toast.mock.calls[0][0]).toBe(previa)
+  expect(toast.mock.calls[0][0]).toBe(`${previa} Cada parcela sai do limite no dia 1 do mês da fatura. ${de === 'nov/26' ? 'Neste mês conta R$\u00a033,34.' : 'Neste mês não conta nada.'}`)
   expect(toast.mock.calls[0][0]).not.toContain('hoje não muda')
   const b = await montar(createElement(Cartoes), api, { resumo })
   await b.click('E se eu comprar?')

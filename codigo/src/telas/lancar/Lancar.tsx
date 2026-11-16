@@ -8,10 +8,10 @@ import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
 import type { Cartao, ResumoHoje } from '../../api/tipos'
-import { centavos, dataCurta, diaSemana, hojeRecife, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
+import { centavos, dataCurta, diaSemana, hojeRecife, reais, segundosDesde, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
 import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
-import { compromissoNesteMes, fraseParcelamento } from '../cartoes/simulacao'
+import { calcularImpactoDaCompra } from './parcelamento'
 import { LerCupom } from '../../componentes/LerCupom'
 import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
@@ -116,10 +116,8 @@ export function Lancar() {
   const c = cartoes.find(x => x.id === cartao)
   // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
   const temDias = !!(c?.dia_fechamento && c?.dia_vencimento)
-  const sim = c && temDias && parcelas > 1 && valor > 0 ? simularCompra(valor, parcelas, quando, c.dia_fechamento!, c.dia_vencimento!) : []
-  const fraseDaCompra = fraseParcelamento(valor, sim)
-  // o que conta NESTE mês: à vista, o valor todo; parcelado, só a parcela cuja fatura é deste mês (quase sempre nada)
-  const contaNoMes = (v: number) => compromissoNesteMes(v, sim.length ? parcelas : 1, hoje, sim)
+  const impactoCompra = calcularImpactoDaCompra(valor, parcelas, quando, hoje, c)
+  const { simulacao: sim, frase: fraseDaCompra, impacto: fraseImpacto, contaNoMes } = impactoCompra
 
   const meuLim = (() => { const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId); return e ? e.limite_base ?? e.limite_mes : 0 })()
   const gastoGrande = valor > 0 && valor >= Math.max(150, meuLim * 0.1)
@@ -150,7 +148,7 @@ export function Lancar() {
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
-      toast(equipe ? `Compra anotada em ${nome}.` : p > 1 ? fraseDaCompra : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
+      toast(equipe ? `Compra anotada em ${nome}.` : cartao ? impactoCompra.confirmacao : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
     } catch (e) {
       setSalvando(false)
       if (e instanceof ErroSessao) { await tentar(async () => { throw e }); return }
@@ -237,7 +235,7 @@ export function Lancar() {
               </div>
               {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
               {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
-              {sim.length > 1 && <><p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p><p className="sub">Cada parcela sai do limite no dia 1 do mês da fatura. {textoPrivado(contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.')}</p></>}
+              {valor > 0 && <><p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p><p className="sub parc-impacto">{textoPrivado(fraseImpacto)}</p></>}
             </div>
           )}
           {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
@@ -251,7 +249,7 @@ export function Lancar() {
               // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
               const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
               const onde = e.regra === 'diario' ? ['hoje', 'do dia'] : e.regra === 'semanal' ? ['na semana', 'da semana'] : ['no mês', 'do mês']
-              const conta = contaNoMes(valor)
+              const conta = contaNoMes
               const depois = centavos(agora - conta)
               const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
               return (
@@ -370,7 +368,7 @@ function AnotarCompra() {
     let aviso = ''
     const ok = await tentar(async () => { aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso })
     setGravando(false)
-    if (!ok) { setErro('Não foi possível confirmar o envio. A foto continua aqui. Confira se a compra apareceu antes de tentar de novo.'); return }
+    if (!ok) { setErro('Não consegui enviar. Tente de novo. A foto continua aqui.'); return }
     salvo.current = true; limpar(); fecharLancar(); await recarregar(); toast(aviso)
   })
   const pegarFoto = async (arq: File | null) => {
