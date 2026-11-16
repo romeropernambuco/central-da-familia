@@ -1,10 +1,53 @@
 # Insights proativos — contrato para integração
 
+## Frente 19 — donos e falas
+
+`donoDoInsight(pergunta)` é puro: tipos locais usam a tabela abaixo, perguntas do banco conservam `funcionario`. A ordem e o contrato de composição 3D não foram alterados.
+
+| Tipo local | Dono | Aba |
+| --- | --- | --- |
+| `fatura_vencendo`, `fatura_divergente`, `parcelas` | `cartao` | Cartões |
+| `reserva` | `colchao` | Planejamento |
+| `recebimento` | `tesoureiro` | Planejamento |
+| `aplicacao` | `guardado` | Guardado |
+| `feira_nota` | `fiscal` (Ajudante da Feira) | Casa |
+| `objetivo` / Rumo a 2029 | `tesoureiro` | Planejamento |
+| `contrato_imovel` (novo encaminhamento) | `imoveis` | Guardado |
+
+| Perguntas do banco/exemplo | Dono preservado |
+| --- | --- |
+| Gastos não anotados, fechamento, semana pessoal | `contador` |
+| Recomposição da reserva | `colchao` |
+| Fatura, diferença, fechamento do cartão, anuidade | `cartao` |
+| Guia mensal e salário | `folha` |
+| Visita do prestador e gás | `comprador` |
+| Feira feita, nota e contagem semanal | `fiscal` |
+| Conferência de saldo, vencimento, reserva na conta e entrada extra | `guardado` |
+| Lembretes | `secretaria` |
+
+Esses oito IDs, nomes e textos recebidos do banco não são editados nesta frente: são responsabilidade do endpoint `escritorioHoje` e das regras do banco. O exemplo apenas simula suas perguntas; seus nomes também foram preservados. Perguntas de recebimentos que vierem com `tesoureiro` mantêm esse dono. A tabela não reatribui silenciosamente perguntas do banco por prefixo.
+
+O hook acrescenta `primeiraPerguntaInicio: { dono, pergunta } | null` sem remover ou mudar campos existentes. Usa a mesma loja de `PrecisaDeVoce`, conserva a ordem, ignora perguntas travadas, respeita silêncio noturno e máscara de texto. É somente a referência para escolher o secundário do Início: **não** exibe, marca vista ou responde outra pergunta. Sem pergunta retorna null; o secundário padrão cabe à frente visual. A fila do endpoint já é autorizada por sessão/RLS, com adiamentos e resoluções; pessoa recebe somente `contador`/`lancou:*` próprio, equipe não tem fila no Início. Não se faz varredura financeira de todas as abas ao entrar.
+
+`falaDoAnalista` só existe na rota Painel autorizada para dono e descreve indicadores de uso do produto, sem valores nem 2029. O personagem institucional para casal não dono cabe à frente visual.
+
+Rumo a 2029 lê sempre `entradaDoCenario(..., 'garantido')`, independente da preferência do seletor, e usa `numerosRumo2029` como o cartão oficial. `faltaComMargem` conserva os centavos desse cálculo; valor positivo gera falta, negativo gera sobra. A frase tem uma sentença, identifica Garantido e margem, e diz que é estimativa. Zero ou base desconhecida não gera nova chamada; snapshots antigos sem esse campo conservam a regra anterior. A fala permanece com Tesoureiro, inclusive na sobra. Não cria segunda regra de renda.
+
+Guardado passa a ler também o endpoint existente `futuroEntradas`. Contratos vêm exclusivamente de `FuturoSaida.gatilhos` de aluguel (`sem contrato`, `depois do contrato`, `contrato sem data de fim`, `renova o contrato`), com imóvel correspondente em `imoveis`, fora de moradia e não vendido. Não se calcula prazo/renovação nem se inventa vencimento para atravessar o silêncio. O assunto contrato+referência+mês permite dedupe/adiamento e disputa uma única pergunta da rota com aplicações. Dados patrimoniais só entram para casal.
+
+**Lacunas mantidas:** Presença e Estoque não têm gatilho automático sustentado pelos dados auditados. A contagem semanal existente continua pertencendo ao Ajudante da Feira. Sem insights fabricados para Início, Orçamento, Desejos, Ajustes ou Privacidade; apresentação e atividades desses funcionários pertencem à outra frente. Os textos fixos de `AgenteDaAba`, `equipe.ts`, telas e o crédito antigo ao Analista em `RumoA2029.tsx` estão fora desta área e precisam ser alinhados pela integração visual.
+
+As 21 famílias de perguntas do exemplo usam uma tarefa por vez, convite curto, sem escalada de cobrança; mantém opções, condições, silêncio, memória e ações. A fatura pode mudar o convite após adiamento sem repreensão. Nomes/títulos são dados privados mascarados, não termos descobertos por capitalização. Os testes antigos de ligação (`ligacao.dom-teste.ts`) e `rodada3.test.ts` tiveram somente expectativas de texto atualizadas (feira, objetivo, reserva, fatura, lembrete, fechamento do cartão e diferença). `RumoA2029.test.ts` mantém a comparação numérica com o cartão e passa a esperar no agente a frase curta com margem, em vez de exigir também o segundo cenário sem margem.
+
+Validação F19: testes reais de hook com `createElement`, tabela pura, falta/sobra com números do motor, contrato existente, papéis, máscara e guarda estática de falas. Regressão conferida com implementação antiga temporariamente restaurada (módulo novo mantido com comportamento neutralizado): os sete casos novos falham por comportamento. Executor Vitest via API fora do repositório, sem cache, porque `npm test` não consegue ler a configuração neste sandbox.
+
+Resultado final: TypeScript sem erros (`tsc -p codigo --noEmit`); 54 arquivos de teste aprovados, 991 testes passando e 3 todo. Nenhum build, pacote instalado, commit, push, alteração de auditorias ou escrita de regra no banco.
+
 O motor permanece independente das telas, do cálculo existente e do banco. A ligação visual fica em `AgenteDaAba.tsx` e usa `PerguntaCard`.
 
 ## Motor e regras
 
-`avaliarInsights(snapshot, agora, memoria)` é puro e devolve no máximo um `Insight` por rota. `candidatosInsights` permite auditar separadamente os oito gatilhos. `agora` aceita epoch em milissegundos, Date válido ou ISO com fuso explícito; texto sem fuso é rejeitado. Calendário e silêncio usam `America/Recife`, sem getters locais do aparelho. Ausência/valor inválido não vira zero.
+`avaliarInsights(snapshot, agora, memoria)` é puro e devolve no máximo um `Insight` por rota. `candidatosInsights` permite auditar separadamente os oito gatilhos originais e o encaminhamento de contrato. `agora` aceita epoch em milissegundos, Date válido ou ISO com fuso explícito; texto sem fuso é rejeitado. Calendário e silêncio usam `America/Recife`, sem getters locais do aparelho. Ausência/valor inválido não vira zero.
 
 | Gatilho | Condição | Funcionário / rota | Ação explícita |
 | --- | --- | --- | --- |
@@ -15,13 +58,14 @@ O motor permanece independente das telas, do cálculo existente e do banco. A li
 | Recebimento | Aberto; `mesNovo || mesPrevisto` estritamente anterior ao mês atual | tesoureiro / planejamento | Dono confirma data e valor previsto, ou reagenda para mês futuro, via `recebimentoMudar`; alheio só consulta |
 | Aplicação | Ativa; vencimento inclusivo de hoje até 15 dias | guardado / guardado | Revisar destino no Guardado |
 | Feira | Registrada até hoje, sem nota e justificativa nula ou vazia | fiscal / casa | Abrir tarefa de foto ou `feiraSemNota` |
-| Objetivo | Projeção financeira menor que necessário, na saída existente de `futuro` em modo projeção | tesoureiro / planejamento | Rever aportes/premissas; não usa metas pessoais |
+| Objetivo | Falta ou sobra com margem de `numerosRumo2029`; snapshot antigo conserva comparação patrimonial | tesoureiro / planejamento | Rever premissas; não usa metas pessoais |
+| Contrato | Gatilho de aluguel/contrato do motor e imóvel correspondente, conforme F19 acima | imoveis / guardado | Conferir contrato, sem executar renovação |
 
 Prioridade: vence hoje (0), vence em breve (1), informativo (2). Desempate: data mais próxima, ordem explícita do motor, chave do assunto. Divergência não herda a exceção noturna da fatura: é informativa. Silêncio das 22h inclusive até 7h exclusive; só vencimentos do próprio dia passam. Adiamento e resolução continuam valendo mesmo nessa exceção.
 
 Fatura, divergência e parcela compartilham chave cartão+mês. Se coexistem, a cobrança ganha; a frase “Há parcelas vencendo nesta fatura” aparece no contexto e a composição permanece disponível no mesmo card. Não se fazem três perguntas sobre a mesma fatura. A mesma chave vista suprime todos esses candidatos naquele dia; outro cartão continua elegível. Reserva/objetivo usam período mensal; recebimento usa mês efetivo; aplicação usa vencimento; feira usa registro+semana. “Já resolvido” cala esse assunto/período, sem afirmar pagamento ao banco.
 
-Dinheiro chega da API em reais somente ao adaptador `snapshot.ts`, que o converte a centavos inteiros seguros. O motor não formata nem interpola valores: nenhuma das oito perguntas precisa deles. Nomes ficam no contexto com fragmentos explícitos; `apresentarInsight` usa as mesmas primitivas centrais de `PerguntaCard` (`textoDeAgente`/`rotuloDeOpcao`, sobre `formato`). O hook usa `textoPrivado`, reexportado por `componentes/privacidade`, na composição. Rótulos fixos continuam legíveis; não há descoberta de nomes por capitalização.
+Dinheiro chega da API em reais somente ao adaptador `snapshot.ts`, que o converte a centavos inteiros seguros. O motor não calcula nem formata valores; o resumo do objetivo chega formatado pelo snapshot a partir de `numerosRumo2029`. Nomes ficam no contexto com fragmentos explícitos; `apresentarInsight` usa as mesmas primitivas centrais de `PerguntaCard` (`textoDeAgente`/`rotuloDeOpcao`, sobre `formato`). O hook usa `textoPrivado`, reexportado por `componentes/privacidade`, na composição. Rótulos fixos continuam legíveis; não há descoberta de nomes por capitalização.
 
 ## Uso do hook
 
@@ -44,7 +88,7 @@ O contrato público do hook foi preservado. Internamente, instâncias da mesma A
 
 Cartões usa cartões, faturas de 2 meses e pagamentos informados. Sem uma dessas leituras não infere “não pagou”. Apenas quando há cobrança/divergência elegível, lê o histórico por mês de compra: 26 meses, em grupos de 4, cobrindo até 24 parcelas com deslocamento de até 2 meses do calendário de fechamento. Reutiliza `simularCompra`, sem alterar a lógica de cálculo. O exemplo também entrega parcelas sintéticas; elas são ignoradas para não duplicar as compras originais. Qualquer falha no histórico impede a composição e o gatilho de parcela; a cobrança baseada na fatura continua válida. A folha distingue composição indisponível de compras localizadas; itens/tarifas não localizados não são inventados. Compras com mais de 24 parcelas estão fora do contrato do cálculo existente.
 
-Aplicações de `guardadoHoje` já são as ativas. Objetivo reutiliza `futuro`; compara a última linha financeira com `patrimonio_necessario`, sem somar imóveis novamente e sem converter centavos em centavos outra vez. Modo renda, taxa que produz necessário null e saída sem projeção não geram esse aviso.
+Aplicações de `guardadoHoje` já são as ativas. Objetivo reutiliza `futuro` e `numerosRumo2029`, sem somar imóveis novamente e sem converter centavos em centavos outra vez. Modo renda, taxa que produz necessário null e saída sem projeção não geram esse aviso.
 
 ## Persistência
 

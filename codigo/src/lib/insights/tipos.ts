@@ -18,9 +18,10 @@ export interface SnapshotInsights {
   recebimentos?: readonly { id: string; nome: string; mesPrevisto: string; mesNovo: string | null; recebido: boolean; meu: boolean; valor?: number }[]
   aplicacoes?: readonly { id: string; nome: string; vencimento: string | null; ativa: boolean }[]
   feiras?: readonly { id: string; semana: string; data: string; temNota: boolean; justificativa: string | null }[]
-  objetivo?: { mes: string; projetado: number | null; necessario: number | null; resumo?: string }
+  contratos?: readonly { id: string; nome: string; motivo: string; mes: string | null }[]
+  objetivo?: { mes: string; projetado: number | null; necessario: number | null; resumo?: string; faltaComMargem?: number | null }
 }
-export type TipoInsight = 'fatura_vencendo' | 'fatura_divergente' | 'parcelas' | 'reserva' | 'recebimento' | 'aplicacao' | 'feira_nota' | 'objetivo'
+export type TipoInsight = 'fatura_vencendo' | 'fatura_divergente' | 'parcelas' | 'reserva' | 'recebimento' | 'aplicacao' | 'feira_nota' | 'objetivo' | 'contrato_imovel'
 export type AcaoInsight =
   | { tipo: 'informar_pagamento'; cartaoId: string; mes: string }
   | { tipo: 'composicao'; cartaoId: string; mes: string; itens: FaturaInsight['composicao']; total: number; disponivel?: boolean }

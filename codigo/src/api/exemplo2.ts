@@ -178,7 +178,7 @@ function perguntar(m: Mundo, hoje: string, p: { id: string; funcionario: string;
   const lembra = u ? `Dia ${dataCurta(hojeRecife(new Date(u.quando)))} você me respondeu "${u.resposta}". ` : ''
   const f = p.falas(espera, lembra)[espera === 0 ? 0 : espera <= 2 ? 1 : 2]
   const nome = m.quem()
-  const vi = `${nome}, ${f.vi.replace(lembra, '').split(/(?<=[.!?])\s+/)[0]}`
+  const vi = `${nome}, ${f.vi.charAt(0).toLowerCase() + f.vi.slice(1)}`
   // E7: na 3ª cobrança do mesmo assunto (2 adiamentos ou 3 dias esperando) aparece "Não perguntar de novo sobre isso"
   const terceira = !m.equipe() && (adiamentos(p.id) >= 2 || espera >= 3)
   return {
@@ -203,28 +203,16 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   const chegouAHora = hd !== 1 || hora >= 18
   if (!feira && !e.semFeira[seg] && chegouAHora) {
     P({ id: `feira_feita:${seg}`, funcionario: 'fiscal', assunto: `Feira da semana de ${dataCurta(seg)}`, espera: Math.max(0, diasEntre(seg, hoje)),
-      falas: (n, l) => [
-        { vi: 'a feira desta semana ainda não apareceu aqui. Foi feita?', importa: eq ? 'Sem esse registro o casal não sabe se a casa está abastecida.' : 'Sem a feira anotada eu não sei quanto da semana já foi gasto.', sugiro: eq ? 'Se foi, me diz o dia.' : 'Se foi, me diz o dia e o valor que eu anoto.' },
-        { vi: `${l}já ${n === 1 ? 'passou 1 dia' : `passaram ${n} dias`} da segunda e a feira desta semana continua sem registro. Foi feita?`, importa: eq ? 'Sem esse registro o casal não sabe se a casa está abastecida.' : 'Enquanto ela não entra, o valor livre da semana aparece maior do que é.', sugiro: 'Se não vai ter feira esta semana, me avisa que eu paro de perguntar.' },
-        { vi: `${l}a semana está acabando e a feira não foi registrada, ${dias(n)} depois da segunda. Foi feita?`, importa: eq ? 'Sem esse registro o casal não sabe se a casa está abastecida.' : 'Semana sem feira anotada fica de fora da minha conferência de preço.', sugiro: 'Me diz o que aconteceu que eu fecho a semana.' },
-      ],
+      falas: () => { const f = { vi: "A feira desta semana foi feita?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: eq ? [{ id: 'foi_feita', rotulo: 'Foi feita', pede: 'data' }, { id: 'ainda_nao', rotulo: 'Ainda não foi feita' }] : [{ id: 'foi_feita', rotulo: 'Foi feita', pede: 'valor', pede2: 'data' }, { id: 'ainda_nao', rotulo: 'Ainda não foi feita' }, { id: 'sem_feira', rotulo: 'Esta semana não vai ter' }] })
   } else if (feira && !feira.tem_nota && !feira.sem_nota_motivo) {
     const qual = eq ? `A feira de ${dataCurta(feira.data)}` : `A feira de ${dataCurta(feira.data)} (${rs(feira.valor)})`
     P({ id: `feira_nota:${feira.id}`, funcionario: 'fiscal', assunto: `Nota da feira de ${dataCurta(feira.data)}`, espera: Math.max(0, diasEntre(feira.data, hoje)), ...(eq ? {} : { valor: feira.valor }),
-      falas: (n, l) => [
-        { vi: `${qual.charAt(0).toLowerCase() + qual.slice(1)} está sem a nota.`, importa: 'Sem nota eu não consigo conferir preço nem item.', sugiro: 'Tira uma foto dela agora que eu guardo.' },
-        { vi: `${l}${qual.charAt(0).toLowerCase() + qual.slice(1)} continua sem a nota, já faz ${dias(n)}.`, importa: 'Quanto mais tempo passa, maior a chance de a nota se perder.', sugiro: 'Se não teve nota, me diz o motivo que eu anoto.' },
-        { vi: `${l}faz ${dias(n)} que a feira de ${dataCurta(feira.data)} está sem nota.`, importa: 'Sem ela, essa feira fica fora da comparação de preço do mês.', sugiro: 'Anexa a foto ou me diz que não teve.' },
-      ],
+      falas: () => { const f = { vi: "Quer guardar a nota da feira ou registrar que não houve nota?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'anexar_nota', rotulo: 'Anexar a nota agora', abre: 'nota' }, { id: 'sem_nota', rotulo: 'Não teve nota', pede: 'texto' }, { id: 'ainda_nao', rotulo: 'Anexar depois' }] })
   } else if (!contagemDaSemana(seg) && (feira || e.semFeira[seg]) && e.itens.some(i => i.ativo) && (!e.pedidoEquipe[seg] || eq)) {
     P({ id: `estoque:${seg}`, funcionario: 'fiscal', assunto: `Contagem do estoque da semana de ${dataCurta(seg)}`, espera: Math.max(0, diasEntre(feira?.data || seg, hoje)),
-      falas: (n, l) => [
-        { vi: 'a contagem do estoque desta semana ainda não foi feita.', importa: 'Sem ela eu não sei o que faltou nem o que sobrou.', sugiro: `Pode conferir os ${e.itens.filter(i => i.ativo).length} itens quando puder?` },
-        { vi: `${l}o estoque desta semana continua sem contagem, já faz ${dias(n)}.`, importa: 'Sem contar, a próxima lista de compras sai no chute.', sugiro: eq ? 'Pode contar o estoque quando puder?' : 'Se não der pra você, eu peço pra equipe da casa.' },
-        { vi: `${l}faz ${dias(n)} que o estoque está sem contagem.`, importa: 'Item que acaba sem ninguém ver vira compra de última hora, que sai mais cara.', sugiro: 'Pode contar o estoque quando puder?' },
-      ],
+      falas: () => { const f = { vi: "Quer registrar a contagem desta semana?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: eq ? [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] : [{ id: 'contar', rotulo: 'Contar agora', abre: 'contagem' }, { id: 'pedir_equipe', rotulo: 'Pedir pra equipe' }, { id: 'ainda_nao', rotulo: 'Contar depois' }] })
   }
 
@@ -233,21 +221,17 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const quem = `${String(p.servico).toLowerCase()} (${p.nome})`
     if (m.papel?.() === 'pessoa') continue
     if ((hd + 1) % 7 === p.dia && !eq) P({ id: `prestador_vespera:${p.id}:${hoje}`, funcionario: 'comprador', assunto: `Véspera do ${String(p.servico).toLowerCase()}`, espera: 0, mensagem: `Oi, ${p.nome}, tudo certo pra amanhã? Pode vir no horário de sempre.`,
-      falas: () => { const f = { vi: `amanhã é dia do ${quem}. Já mandou a mensagem confirmando?`, importa: `Confirmar na véspera evita ele esquecer e você perder os ${rs(p.valor)} do dia parado.`, sugiro: 'Deixei a mensagem pronta: é só copiar e colar no WhatsApp.' }; return [f, f, f] },
+      falas: () => { const f = { vi: "Quer confirmar a visita de amanhã?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'copiar_mensagem', rotulo: 'Copiar mensagem' }, { id: 'ja_mandei', rotulo: 'Já mandei' }, { id: 'nao_vem', rotulo: 'Ele não vem' }] })
     if (hd === p.dia && p.ultimaVez !== hoje && (eq || hora >= 17)) P({ id: `prestador_veio:${p.id}:${hoje}`, funcionario: 'comprador', assunto: `Visita do ${String(p.servico).toLowerCase()}`, espera: 0,
-      falas: () => { const f = { vi: `hoje é dia do ${quem}. Ele veio?`, importa: eq ? 'Marcando aqui, o casal fica sabendo sem precisar perguntar.' : 'Visita marcada vira histórico: dá pra ver se ele está faltando.', sugiro: 'É só 1 toque.' }; return [f, f, f] },
+      falas: () => { const f = { vi: "O prestador veio hoje?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'veio', rotulo: 'Veio hoje' }, { id: 'nao_veio', rotulo: 'Não veio' }] })
   }
   const gas = previsaoGas(cfg.casa_gas?.trocas || [])
   if (gas.acaba && diasEntre(hoje, gas.acaba) <= 5 && diasEntre(hoje, gas.acaba) >= -10) {
     const f = diasEntre(hoje, gas.acaba)
     P({ id: `gas:${gas.acaba}`, funcionario: 'comprador', assunto: 'Troca do gás', espera: 5 - f,
-      falas: (_n, l) => [
-        { vi: `pela média das últimas trocas, o gás acaba em ${dias(Math.max(f, 0))}, dia ${dataCurta(gas.acaba!)}.`, importa: 'Gás que acaba no meio do almoço é o pior horário pra resolver.', sugiro: eq ? 'Se já trocou, marca aqui.' : 'Quer conferir se precisa pedir o gás?' },
-        { vi: `${l}o gás deve acabar ${f > 0 ? `em ${dias(f)}` : 'hoje'}, dia ${dataCurta(gas.acaba!)}, e eu ainda não sei se foi pedido.`, importa: 'Pedido em cima da hora costuma demorar mais pra chegar.', sugiro: eq ? 'Se já trocou, marca aqui.' : 'Quer conferir se precisa pedir o gás?' },
-        { vi: `${l}pela minha conta o gás ${f >= 0 ? 'acaba hoje' : `já devia ter acabado há ${dias(-f)}`}.`, importa: 'Se ainda está durando, ótimo: eu refaço a média quando trocar.', sugiro: eq ? 'Quando trocar, marca aqui.' : 'Me diz se já pediu.' },
-      ],
+      falas: () => { const f = { vi: "Pelas últimas trocas, o gás pode estar perto de acabar; quer conferir?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: eq ? [{ id: 'troquei', rotulo: 'Troquei hoje' }, { id: 'ainda_nao', rotulo: 'Ainda não troquei' }] : [{ id: 'ja_pedi', rotulo: 'Já pedi o gás' }, { id: 'ainda_nao', rotulo: 'Peço depois' }] })
   }
   // a equipe só recebe as perguntas da Casa, sem nenhum valor
@@ -259,11 +243,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const t = l.titulo.charAt(0).toLowerCase() + l.titulo.slice(1)
     const rep = l.repetir === 'nunca' ? '' : `, e volta ${{ dia: 'todo dia', semana: 'toda semana', mes: 'todo mês', ano: 'todo ano' }[l.repetir]}`
     P({ id: `lembrete:${l.id}`, funcionario: 'secretaria', assunto: l.titulo, espera: n, vence_em: d0, atrasado_dias: n,
-      falas: (_n, lem) => [
-        { vi: `você me pediu pra lembrar hoje: ${t}. Já fez?`, importa: l.detalhe || `Está marcado pra ${dataCurta(d0)}${rep}.`, sugiro: 'Se já resolveu, pode marcar como feito.' },
-        { vi: `${lem}${n === 1 ? 'ontem' : 'anteontem'} era o dia de ${t} e ficou sem resposta. Já fez?`, importa: l.detalhe || `Estava marcado pra ${dataCurta(d0)}${rep}.`, sugiro: 'Se precisar de mais tempo, eu jogo pra outro dia.' },
-        { vi: `${lem}faz ${dias(n)} que "${l.titulo}" está esperando. Já fez?`, importa: l.detalhe || `Estava marcado pra ${dataCurta(d0)}${rep}.`, sugiro: 'Se não vale mais, marca como feito que eu tiro da lista.' },
-      ],
+      falas: () => { const f = { vi: "Quer conferir este lembrete?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; f.vi = `Quer conferir ${t}?`; return [f, f, f] },
       opcoes: [{ id: 'feito', rotulo: 'Já fiz' }, { id: 'adiar_1_dia', rotulo: 'Me lembra amanhã' }, { id: 'adiar_para', rotulo: 'Me lembra outro dia', pede: 'data' }] })
   }
 
@@ -277,30 +257,25 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     if (!fb?.paga_em && falta <= 3 && falta >= -20 && !(falta < 0 && !e.desde[`fatura:${f.cartao_id}:${f.mes}`])) {
       const total = fb?.valor_banco ?? f.total
       P({ id: `fatura:${f.cartao_id}:${f.mes}`, funcionario: 'cartao', assunto: `Fatura do ${f.cartao}`, espera: 3 - falta, valor: total, vence_em: f.vencimento, atrasado_dias: Math.max(0, -falta),
-        falas: (_n, l) => [
-          { vi: `a fatura do ${f.cartao} está em ${rs(total)} e vence ${diaSemana(f.vencimento)}, ${dataCurta(f.vencimento)}. Faltam ${dias(falta)}; já pagou?`, importa: 'Pagando até o dia, não tem juros nem multa.', sugiro: 'Se ainda não pagou, confira no banco antes do vencimento.' },
-          { vi: `${l}a fatura do ${f.cartao} (${rs(total)}) ${quandoVence(falta)} e você ainda não me disse se pagou.`, importa: 'Atrasando, o banco cobra juros e multa.', sugiro: 'Se já pagou, me diz o dia que eu anoto.' },
-          { vi: `${l}a fatura do ${f.cartao} (${rs(total)}) ${quandoVence(falta)} e continua sem resposta.`, importa: falta < 0 ? `Cada dia de atraso aumenta os juros: são ${dias(-falta)} até agora.` : 'Atrasando, o banco cobra juros e multa.', sugiro: 'Se ainda não pagou, confira no banco antes do vencimento.' },
-        ],
+        falas: () => { const f = { vi: "Já pagou esta fatura?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, { ...f, vi: 'Quer registrar o pagamento desta fatura?' }, { ...f, vi: 'Quer conferir a situação desta fatura?' }] },
         opcoes: [{ id: 'paguei_hoje', rotulo: 'Paguei hoje' }, { id: 'paguei_outro_dia', rotulo: 'Paguei outro dia', pede: 'data' }, { id: 'ainda_nao', rotulo: 'Ainda não paguei' }] })
     }
     if (fb?.valor_banco != null && Math.abs(fb.valor_banco - f.total) >= 1) {
       const dif = centavos(fb.valor_banco - f.total)
       P({ id: `fatura_dif:${f.cartao_id}:${f.mes}`, funcionario: 'cartao', assunto: `Diferença na fatura do ${f.cartao}`, valor: Math.abs(dif),
-        falas: (n, l) => { const f1 = { vi: dif > 0 ? `o banco cobrou ${rs(fb.valor_banco!)} na fatura do ${f.cartao} e eu somei ${rs(f.total)}.` : `o banco cobrou ${rs(fb.valor_banco!)} na fatura do ${f.cartao}, menos que os ${rs(f.total)} que eu somei.`, importa: dif > 0 ? `Tem ${rs(dif)} que não foi anotado aqui.` : `Sobraram ${rs(-dif)}: pode ser compra anotada em dobro ou no cartão errado.`, sugiro: dif > 0 ? 'Se quiser, anote o gasto que falta.' : 'Vale conferir os lançamentos desse cartão.' }
-          const f2 = { ...f1, vi: `${l}a diferença de ${rs(Math.abs(dif))} na fatura do ${f.cartao} continua sem explicação, já faz ${dias(n)}.` }; return [f1, f2, f2] },
+        falas: () => { const f = { vi: "Quer conferir a diferença entre esta fatura e as compras anotadas?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
         opcoes: dif > 0 ? [{ id: 'lancar_diferenca', rotulo: 'Anotar agora', abre: 'lancar' }, { id: 'juros_tarifa', rotulo: 'É juros ou tarifa do banco' }, { id: 'ainda_nao', rotulo: 'Vejo depois' }] : [{ id: 'conferi', rotulo: 'Já conferi' }, { id: 'ainda_nao', rotulo: 'Vejo depois' }] })
     }
   }
   for (const c of cartoes) {
     if (!c.dia_fechamento) P({ id: `cartao_sem_dia:${c.id}`, funcionario: 'cartao', assunto: `Dia de fechamento do ${c.nome}`,
-      falas: (n, l) => { const f1 = { vi: `o cartão ${c.nome} está sem o dia em que a fatura fecha.`, importa: 'Sem esse dia eu não sei em qual mês cada compra vai ser cobrada.', sugiro: 'O dia aparece no app do banco, na tela da fatura.' }; const f2 = { ...f1, vi: `${l}o cartão ${c.nome} continua sem o dia de fechamento, já faz ${dias(n)}.` }; return [f1, f2, f2] },
+      falas: () => { const f = { vi: "Quer informar o fechamento deste cartão?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'abrir_cadastro', rotulo: 'Informar o dia', abre: 'cartao' }, { id: 'ainda_nao', rotulo: 'Informo depois' }] })
     const prox = (Number(hoje.slice(5, 7)) % 12) + 1
     if (c.taxa_valor && c.taxa_periodo === 'ano' && c.taxa_mes === prox) {
       const anoProx = Number(hoje.slice(0, 4)) + (prox === 1 ? 1 : 0), dia1 = `${anoProx}-${String(prox).padStart(2, '0')}-01`
       P({ id: `anuidade:${c.id}:${dia1.slice(0, 7)}`, funcionario: 'cartao', assunto: `Anuidade do ${c.nome}`, valor: c.taxa_valor,
-        falas: (n, l) => { const f1 = { vi: `mês que vem o ${c.nome} cobra a anuidade de ${rs(c.taxa_valor!)}.`, importa: c.taxa_isenta_acima ? `Pelo cadastro, o banco não cobra de quem gasta ${rs(c.taxa_isenta_acima)} ou mais por mês.` : 'Muita gente consegue não pagar pedindo pelo chat do banco antes da cobrança.', sugiro: `Quer que eu te lembre de pedir isenção dia ${dataCurta(dia1)}?` }; const f2 = { ...f1, vi: `${l}a anuidade de ${rs(c.taxa_valor!)} do ${c.nome} chega mês que vem e ainda não combinamos nada, já faz ${dias(n)}.` }; return [f1, f2, f2] },
+        falas: () => { const f = { vi: "Quer conferir a próxima anuidade?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
         opcoes: [{ id: 'lembrar_isencao', rotulo: `Me lembra dia ${dataCurta(dia1)}` }, { id: 'ja_pedi_isencao', rotulo: 'Já pedi a isenção' }, { id: 'vou_pagar', rotulo: 'Vou pagar mesmo' }] })
     }
   }
@@ -308,39 +283,27 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   /* Gestor do Guardado */
   const g = guardadoHojeEx(m.eu?.()), r = m.resumo()
   if (dia === 1 && g.aplicacoes.length) P({ id: `conferir_saldo:${mes}`, funcionario: 'guardado', assunto: 'Conferência do saldo guardado', valor: g.total, espera: 0,
-    falas: () => { const f = { vi: `virou o mês. Pela minha conta você tem ${rs(g.total)} guardados.`, importa: 'Se o banco mostrar outro valor, eu acerto a diferença e a conta do rendimento volta a bater.', sugiro: 'Abre o app do banco e me diz quanto aparece lá.' }; return [f, f, f] },
+    falas: () => { const f = { vi: "Quer conferir o saldo guardado no banco?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
     opcoes: [{ id: 'saldo_conferido', rotulo: 'Dizer quanto aparece no banco', pede: 'valor' }, { id: 'ainda_nao', rotulo: 'Confiro depois' }] })
   for (const a of g.aplicacoes.filter(x => x.vence_em && diasEntre(hoje, x.vence_em) <= 15 && diasEntre(hoje, x.vence_em) >= 0)) {
     const falta = diasEntre(hoje, a.vence_em!)
     P({ id: `vence:${a.id}:${a.vence_em}`, funcionario: 'guardado', assunto: `Vencimento do ${a.nome}`, valor: a.saldo, vence_em: a.vence_em, espera: 15 - falta > 12 ? 3 : undefined,
-      falas: (n, l) => [
-        { vi: `o ${a.nome} vence dia ${dataCurta(a.vence_em!)}, daqui a ${dias(falta)}. Tem ${rs(a.saldo)} lá.`, importa: `Se ninguém decidir, o banco devolve pra conta comum, que não rende: são mais ou menos ${rs(rendePorMes(a.saldo))} por mês que deixam de entrar.`, sugiro: 'Eu renovaria, se a taxa continuar parecida.' },
-        { vi: `${l}o ${a.nome} ${quandoVence(falta)} e ainda não sei o que você quer fazer com os ${rs(a.saldo)}, já faz ${dias(n)} que perguntei.`, importa: `Parado na conta depois do vencimento, esse dinheiro deixa de render mais ou menos ${rs(rendePorMes(a.saldo))} por mês.`, sugiro: 'Eu renovaria, se a taxa continuar parecida.' },
-        { vi: `${l}o ${a.nome} ${quandoVence(falta)}. São ${rs(a.saldo)} sem destino combinado.`, importa: `Parado na conta, deixa de render mais ou menos ${rs(rendePorMes(a.saldo))} por mês.`, sugiro: 'Decide hoje: renovar ou tirar.' },
-      ],
+      falas: () => { const f = { vi: "Quer revisar o destino desta aplicação no vencimento?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'renovar', rotulo: 'Vou renovar' }, { id: 'tirar', rotulo: 'Vou tirar o dinheiro' }, { id: 'ainda_nao', rotulo: 'Decido depois' }] })
   }
   const onde = cfg.reserva_onde || 'conta'
   if (r.colchao > 0 && onde === 'conta' && g.aplicacoes.length) P({ id: `reserva_parada:${mes}`, funcionario: 'guardado', assunto: 'Reserva parada na conta', valor: r.colchao,
-    falas: (n, l) => [
-      { vi: `a reserva de ${rs(r.colchao)} (o dinheiro que a família combinou nunca gastar) está na conta comum, que não rende.`, importa: `Guardada onde rende todo dia e dá pra tirar na hora, daria mais ou menos ${rs(rendePorMes(r.colchao))} por mês.`, sugiro: 'Quer que eu mostre como guardar?' },
-      { vi: `${l}a reserva de ${rs(r.colchao)} continua na conta comum, sem render, já faz ${dias(n)} que avisei.`, importa: `São mais ou menos ${rs(rendePorMes(r.colchao))} por mês que deixam de entrar.`, sugiro: 'Quer escolher onde guardar?' },
-      { vi: `${l}faz ${dias(n)} que a reserva de ${rs(r.colchao)} está parada na conta comum.`, importa: `Em 1 ano são mais ou menos ${rs(rendePorMes(r.colchao) * 12)} que deixam de entrar.`, sugiro: 'Se preferir deixar na conta, me diz que eu não toco mais no assunto este mês.' },
-    ],
+    falas: () => { const f = { vi: "Quer conferir onde a reserva está guardada?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
     opcoes: [{ id: 'mostrar_guardar', rotulo: 'Mostrar como guardar', abre: 'guardado' }, { id: 'deixar_na_conta', rotulo: 'Deixar na conta' }, { id: 'lembrar_dia_15', rotulo: 'Me lembra dia 15' }] })
 
   /* Folha da Casa: guia do governo do dia 1 ao 7 e salário no dia combinado */
   const folha = cfg.casa_folha as { pessoas: { id: string; nome: string; salario: number; diaPagamento?: number }[]; daePaga: Record<string, boolean> } | undefined
   if (folha?.pessoas?.length) {
     if (dia <= 7 && !folha.daePaga?.[mes]) P({ id: `dae:${mes}`, funcionario: 'folha', assunto: 'Guia do governo de quem trabalha na casa', vence_em: `${mes}-07`, espera: dia - 1,
-      falas: (_n, l) => [
-        { vi: `a guia do governo de quem trabalha na casa vence dia 07/${mes.slice(5)}. Faltam ${dias(7 - dia)}; já pagou?`, importa: 'É o boleto mensal do registro de quem trabalha na casa. Pago em dia, não tem multa.', sugiro: 'Se ainda não pagou, confira no banco antes do vencimento.' },
-        { vi: `${l}a guia do governo de quem trabalha na casa ${quandoVence(7 - dia)} e ainda não sei se foi paga.`, importa: 'Com atraso, vem multa e juros em cima do valor.', sugiro: 'Se ainda não pagou, confira no banco antes do vencimento.' },
-        { vi: `${l}a guia do governo de quem trabalha na casa ${quandoVence(7 - dia)}.`, importa: 'Depois do dia 07 o valor já vem com multa.', sugiro: 'Se ainda não pagou, confira no banco antes do vencimento.' },
-      ],
+      falas: () => { const f = { vi: "Já pagou a guia deste mês?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'paguei_guia', rotulo: 'Paguei a guia' }, { id: 'ainda_nao', rotulo: 'Ainda não paguei' }] })
     for (const p of folha.pessoas) if (dia === (p.diaPagamento || 5)) P({ id: `salario:${p.id}:${mes}`, funcionario: 'folha', assunto: `Salário de ${p.nome}`, valor: p.salario, espera: 0,
-      falas: () => { const f = { vi: `hoje é dia do salário de ${p.nome}: ${rs(p.salario)}. Já pagou?`, importa: 'Salário pago no dia combinado evita conversa chata e deixa a folha em ordem.', sugiro: 'Pagou, me diz que eu anoto a data.' }; return [f, f, f] },
+      falas: () => { const f = { vi: "Já pagou este salário?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'paguei_hoje', rotulo: 'Paguei hoje' }, { id: 'pago_outro_dia', rotulo: 'Pago outro dia', pede: 'data' }, { id: 'ainda_nao', rotulo: 'Ainda não paguei' }] })
   }
 
@@ -348,11 +311,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   if (r.livre_mes < r.colchao) {
     const tem = Math.max(0, r.livre_mes), faltam = centavos(r.colchao - tem)
     P({ id: `colchao:${mes}`, funcionario: 'colchao', assunto: 'Reserva abaixo do combinado', valor: faltam,
-      falas: (n, l) => [
-        { vi: `a reserva da família (o dinheiro que a família combinou nunca gastar) está em ${rs(tem)}. O combinado é ${rs(r.colchao)}, então faltam ${rs(faltam)}.`, importa: 'Sem a reserva inteira, um imprevisto vira dívida.', sugiro: 'De onde esse dinheiro volta, e em que dia?' },
-        { vi: `${l}hoje ainda faltam ${rs(faltam)} pra reserva voltar aos ${rs(r.colchao)}, ${dias(n)} depois do meu aviso.`, importa: 'Enquanto ela não volta, qualquer gasto fora do combinado sai do dinheiro de emergência.', sugiro: l ? 'O dinheiro entrou?' : 'Me diz de onde ele volta, e em que dia.' },
-        { vi: `${l}faz ${dias(n)} que a reserva está ${rs(faltam)} abaixo do combinado.`, importa: 'Reserva furada por muito tempo deixa de ser reserva.', sugiro: 'Vale rever os limites do mês em Planejamento, ou me dizer de onde o dinheiro volta.' },
-      ],
+      falas: () => { const f = { vi: "Quer revisar a reserva abaixo do combinado?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'repor', rotulo: 'Dizer de onde volta e quando', pede: 'texto', pede2: 'data' }, { id: 'ja_voltou', rotulo: 'Já repus o dinheiro' }, { id: 'ainda_nao', rotulo: 'Me lembra amanhã' }] })
   }
 
@@ -362,7 +321,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const lim = minha.limite_base ?? minha.limite_mes, teto = centavos((lim * 7) / Number(fimDoMes(hoje).slice(8)))
     const passou = centavos(minha.gasto_semana_dia - teto)
     if (passou > 0) P({ id: `semana_passou:${seg}`, funcionario: 'contador', assunto: 'A semana passou do combinado', valor: passou, espera: 0,
-      falas: () => { const f = { vi: `esta semana foram ${rs(minha.gasto_semana_dia!)} e o combinado da semana era ${rs(teto)}. Passou ${rs(passou)}.`, importa: `O que passou já foi dividido pelos dias que faltam: é por isso que o número de hoje ficou menor.`, sugiro: 'Eu deixaria assim, diluído até o fim do mês.' }; return [f, f, f] },
+      falas: () => { const f = { vi: "Quer conferir como ficou seu limite nesta semana?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'diluir', rotulo: 'Diluir até o fim do mês' }, { id: 'tirar_mes_que_vem', rotulo: 'Tirar do mês que vem' }, { id: 'mostrar_conta', rotulo: 'Me mostra a conta', abre: 'orcamento' }] })
   }
 
@@ -370,26 +329,18 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   for (const x of m.entradasNaConta?.() || []) {
     const de = x.de.charAt(0).toLowerCase() + x.de.slice(1)
     P({ id: `entrou_extra:${x.id}`, funcionario: 'guardado', assunto: 'Dinheiro que entrou a mais', valor: x.valor, espera: Math.max(0, diasEntre(x.data, hoje)),
-      falas: (_n, l) => [
-        { vi: `entraram ${rs(x.valor)} a mais: ${de}.`, importa: `Pelo combinado da família, o que entra a mais do que o salário não aumenta o gasto do mês. Guardado, rende uns ${rs(Math.max(1, rendePorMes(x.valor)))} por mês.`, sugiro: 'Eu guardaria hoje.' },
-        { vi: `${l}os ${rs(x.valor)} que entraram a mais continuam parados na conta.`, importa: 'Parado na conta, esse dinheiro acaba virando gasto sem ninguém decidir.', sugiro: 'Eu guardaria hoje.' },
-        { vi: `${l}faz ${dias(Math.max(0, diasEntre(x.data, hoje)))} que os ${rs(x.valor)} estão na conta.`, importa: 'Regra do salário: o que entra a mais vai pro guardado e conta pra 2029.', sugiro: 'Guarda hoje ou me diz pra que gasto ele é.' },
-      ],
+      falas: () => { const f = { vi: "Quer revisar o destino desta entrada extra?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
       opcoes: [{ id: 'guardar_entrada', rotulo: `Guardar os ${rs(x.valor)}` }, { id: 'gasto_combinado', rotulo: 'É pra um gasto combinado' }, { id: 'ainda_nao', rotulo: 'Me lembra amanhã' }] })
   }
 
   /* Contador: dia 1 fecha o mês; depois das 20h sem gasto anotado no dia */
   const sobrou = m.sobraMesPassado()
   if (dia === 1 && sobrou > 0 && rendePorMes(sobrou) >= 20) P({ id: `fechou_mes:${mes}`, funcionario: 'contador', assunto: 'Fechamento do mês', valor: sobrou, espera: 0,
-    falas: () => { const f = { vi: `fechei o mês passado: sobraram ${rs(sobrou)} do combinado.`, importa: `Parado na conta esse dinheiro não rende. Guardado, daria mais ou menos ${rs(rendePorMes(sobrou))} por mês.`, sugiro: 'Eu mandaria pro Guardado hoje.' }; return [f, f, f] },
+    falas: () => { const f = { vi: "Quer revisar a sobra anotada do mês passado?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
     opcoes: [{ id: 'mostrar_guardar', rotulo: 'Guardar agora', abre: 'guardado' }, { id: 'deixar_na_conta', rotulo: 'Deixar na conta' }, { id: 'lembrar_dia_5', rotulo: 'Me lembra dia 5' }] })
   const ug = m.ultimoGasto(), semAnotar = ug ? diasEntre(ug, hoje) : 3
   if (hora >= 20 && semAnotar > 0) P({ id: `lancou:${hoje}`, funcionario: 'contador', assunto: `Gastos de ${dataCurta(hoje)}`, espera: semAnotar - 1,
-    falas: () => [
-      { vi: `são ${hora}h e não tem nenhum gasto anotado hoje. Gastou alguma coisa e ficou sem anotar?`, importa: 'Gasto sem anotar faz o número de amanhã sair maior do que é de verdade.', sugiro: 'Se gastou, anota agora: leva 10 segundos.' },
-      { vi: `já são ${dias(semAnotar)} sem nenhum gasto anotado. Ficou alguma coisa pra trás?`, importa: 'Quanto mais dias, mais difícil lembrar, e a conta do mês sai errada.', sugiro: 'Anota o que lembrar agora, mesmo que seja aproximado.' },
-      { vi: `faz ${dias(semAnotar)} que ninguém anota um gasto aqui.`, importa: `O número de hoje (${rs(r.pode_gastar_hoje)}) está contando que nada foi gasto nesses dias.`, sugiro: 'Se gastaram, anota 1 valor só com o total: já ajuda.' },
-    ],
+    falas: () => { const f = { vi: "Houve algum gasto seu que ficou sem anotar?", importa: 'Conferência dos registros', sugiro: 'Você pode conferir pelos botões abaixo.' }; return [f, f, f] },
     opcoes: [{ id: 'lancar_agora', rotulo: 'Anotar agora', abre: 'lancar' }, { id: 'hoje_nao_gastei', rotulo: 'Hoje não gastei' }, { id: 'lembrar_21h', rotulo: 'Me lembra às 21h' }] })
   // rodada 2: a pessoa da família (filha) só ouve o que é dela: o Contador falando dos gastos dela
   if (m.papel?.() === 'pessoa') return out.filter(p => p.funcionario === 'contador' && /^lancou:/.test(p.id))
@@ -428,7 +379,7 @@ function entregas(m: Mundo, agora: Date): EntregaEsc[] {
       return meu ? { funcionario: 'colchao', resumo: `A reserva de ${rs(r.colchao)} está inteira, mas ${meu.nome} passou ${rs(-meu.livre)} do combinado do mês. Isso sai do mês que vem, não da reserva.`, numero: r.colchao }
         : { funcionario: 'colchao', resumo: `A reserva de ${rs(r.colchao)} está inteira. O número de hoje já deixa esse valor de fora.`, numero: r.colchao } })(),
     { funcionario: 'cartao', resumo: prox ? `Somei as faturas: a próxima é a do ${prox.cartao}, ${rs(prox.total)}, que vence dia ${dataCurta(prox.vencimento)}.` : 'Somei as faturas: nenhuma com valor pela frente.', numero: prox ? prox.total : null },
-    { funcionario: 'folha', resumo: reserva ? `Folha em dia. Pra férias e 13º, o certo é separar ${rs(reserva)} por mês.` : 'Ninguém cadastrado na folha ainda.', numero: reserva || null },
+    { funcionario: 'folha', resumo: reserva ? `A estimativa para férias e 13º é de ${rs(reserva)} por mês.` : 'Ninguém cadastrado na folha ainda.', numero: reserva || null },
     { funcionario: 'comprador', resumo: falta ? `Olhei a lista de compras: ${falta === 1 ? 'falta 1 item' : `faltam ${falta} itens`}.` : 'Olhei a lista de compras: está em dia.', numero: null },
     { funcionario: 'fiscal', resumo: fiscal.replace('. A semana passou', '; a semana passou'), numero: feira ? feira.valor : null },
     { funcionario: 'guardado', resumo: !g.aplicacoes.length ? 'Nada guardado ainda.' : g.motivo_zero ? g.motivo_zero : `O dinheiro guardado rendeu ${rs(g.rendeu_hoje_liquido)} hoje, já sem o imposto.`, numero: g.aplicacoes.length ? g.rendeu_hoje_liquido : null },

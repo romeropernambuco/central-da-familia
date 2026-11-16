@@ -241,7 +241,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     em('2026-11-12')
     for (const id of ['env-ana', 'env-bruno', 'env-feira', 'env-casa']) await apiExemplo.definirLimite(F, id, 700)
     const p = (await fila()).find(x => x.id.startsWith('colchao:'))!
-    expect(p.pergunta).toMatch(/^Ana, a reserva da família \(o dinheiro que a família combinou nunca gastar\) está em R\$\s/) // E3 (conserto 8): sem "vocês", que não serve pra família de 1 adulto
+    expect(p.pergunta).toBe('Ana, quer revisar a reserva abaixo do combinado?')
     await apiExemplo.escritorioResponder(F, p.id, 'repor', { texto: 'com o aluguel, dia 15' })
     expect((await doFunc('colchao')).ultimas_respostas![0].resposta).toBe('Dizer de onde volta e quando: com o aluguel, dia 15')
   })
@@ -255,18 +255,18 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
   it('adiar volta na hora certa, com outra frase e lembrando a resposta anterior', async () => {
     em('2026-11-07') // sábado: a fatura do Nubank vence dia 10, faltam 3 dias
     const p1 = (await fila()).find(x => x.id.startsWith('fatura:car-nu'))!
-    expect(p1.pergunta).toMatch(/^Ana, a fatura do Nubank está em R\$\s.* e vence terça, 10\/11\.$/)
+    expect(p1.pergunta).toBe('Ana, já pagou esta fatura?')
     await apiExemplo.escritorioResponder(F, p1.id, 'ainda_nao')
     expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-07', 23); expect((await fila()).find(x => x.id === p1.id)).toBeUndefined()
     avanca('2026-11-09', 8)
     const p2 = (await fila()).find(x => x.id === p1.id)!
-    expect(p2.pergunta).toMatch(/^Ana, a fatura do Nubank .* vence amanhã e você ainda não me disse se pagou\.$/)
-    expect(p2.contexto).toBe('Se já pagou, me diz o dia que eu anoto.')
+    expect(p2.pergunta).toBe('Ana, quer registrar o pagamento desta fatura?')
+    expect(p2.contexto).toBe('Você pode conferir pelos botões abaixo.')
     expect(p2.espera_dias).toBe(2)
     avanca('2026-11-12', 8)
     const p3 = (await fila()).find(x => x.id === p1.id)!
-    expect(p3.pergunta).toMatch(/venceu há 2 dias e continua sem resposta/)
+    expect(p3.pergunta).toBe('Ana, quer conferir a situação desta fatura?')
     expect(new Set([p1.pergunta, p2.pergunta, p3.pergunta]).size).toBe(3)
     // pagou: o app já sabe, não pergunta mais
     await apiExemplo.faturaInformar(F, 'car-nu', p1.id.split(':')[2], { paga_em: '2026-11-12' })
@@ -293,7 +293,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => /ligar pro contador/.test(p.pergunta))).toBe(false)
     avanca('2026-11-13', 10)
     const p = (await fila()).find(x => /ligar pro contador/.test(x.pergunta))!
-    expect(p.pergunta).toBe('Ana, você me pediu pra lembrar hoje: ligar pro contador.')
+    expect(p.pergunta).toBe('Ana, quer conferir ligar pro contador?')
     await apiExemplo.escritorioResponder(F, p.id, 'feito')
     const l = (await apiExemplo.lembretes(F)).find(x => x.titulo === 'Ligar pro contador')!
     expect(l.quando.slice(0, 10)).toBe('2026-12-13')
@@ -310,12 +310,12 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter do Bruno')).toBeUndefined()
     await apiExemplo.cartaoSalvar(F, { nome: 'Inter da Ana', banco: 'Inter', titular_id: 'm-ana', dia_vencimento: 15, taxa_valor: 19.9, taxa_periodo: 'mes' })
     expect((await apiExemplo.cartoes(F)).find(c => c.nome === 'Inter da Ana')).toMatchObject({ titular_id: 'm-ana', titular: 'Ana' })
-    expect((await fila()).find(p => p.id.startsWith('cartao_sem_dia:'))!.pergunta).toBe('Ana, o cartão Inter da Ana está sem o dia em que a fatura fecha.')
+    expect((await fila()).find(p => p.id.startsWith('cartao_sem_dia:'))!.pergunta).toBe('Ana, quer informar o fechamento deste cartão?')
     await expect(apiExemplo.cartaoSalvar(F, { nome: 'X', final4: '12' })).rejects.toThrow(/4 últimos/)
     const fat = (await apiExemplo.faturas(F, 3)).find(f => f.total > 0)!
     await apiExemplo.faturaInformar(F, fat.cartao_id, fat.mes, { valor_banco: fat.total + 172 })
     const dif = (await fila()).find(p => p.id.startsWith('fatura_dif:'))!
-    expect(dif.contexto).toBe('Se quiser, anote o gasto que falta.')
+    expect(dif.contexto).toBe('Você pode conferir pelos botões abaixo.')
     expect(dif.opcoes.map(o => o.rotulo)).toEqual(['Anotar agora', 'É juros ou tarifa do banco', 'Vejo depois'])
     expect((await apiExemplo.faturasBanco(F))[0]).toMatchObject({ valor_banco: centavos(fat.total + 172), paga_em: null })
   })
@@ -324,16 +324,16 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
     avanca('2026-11-16', 19)
     let f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira desta semana ainda não apareceu aqui.')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira desta semana foi feita?')
     expect(f[0].opcoes.map(o => o.rotulo)).toEqual(['Foi feita', 'Ainda não foi feita', 'Esta semana não vai ter'])
     const antes = (await apiExemplo.lancamentos(F, '2026-11')).length
     await apiExemplo.escritorioResponder(F, f[0].id, 'foi_feita', { data: '2026-11-16', valor: 1080 })
     expect((await apiExemplo.lancamentos(F, '2026-11')).length).toBe(antes + 1) // virou gasto no limite da Feira
     f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a feira de 16/11 (R$\u00a01.080) está sem a nota.')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, quer guardar a nota da feira ou registrar que não houve nota?')
     await apiExemplo.escritorioResponder(F, f[0].id, 'anexar_nota', { caminho: await apiExemplo.notaSubir(F, f[0].id.split(':')[1], 'exemplo') })
     f = (await fila()).filter(p => p.funcionario === 'fiscal')
-    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, a contagem do estoque desta semana ainda não foi feita.')
+    expect(f).toHaveLength(1); expect(f[0].pergunta).toBe('Ana, quer registrar a contagem desta semana?')
     const itens = (await apiExemplo.estoque(F)).itens.map((i, k) => ({ item_id: i.id, estado: (k < 3 ? 'acabou' : 'tem') as 'acabou' | 'tem' }))
     await apiExemplo.escritorioResponder(F, f[0].id, 'contar', { itens })
     expect((await fila()).some(p => p.funcionario === 'fiscal')).toBe(false)
@@ -349,7 +349,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect(e.entregue).toEqual([])
     expect(JSON.stringify(e)).not.toMatch(/R\$|"valor"/)
     const p = e.precisa_de_voce.find(x => x.funcionario === 'fiscal')!
-    expect(p.pergunta).toBe('Carla, a feira desta semana ainda não apareceu aqui.')
+    expect(p.pergunta).toBe('Carla, a feira desta semana foi feita?')
     expect(p.opcoes.map(o => [o.rotulo, o.pede])).toEqual([['Foi feita', 'data'], ['Ainda não foi feita', undefined]])
     await apiExemplo.escritorioResponder(F, p.id, 'foi_feita', { data: '2026-11-16' })
     const depois = await apiExemplo.escritorioHoje(F)

@@ -1,3 +1,4 @@
+import { donoDoInsight } from './donos'
 import type { OpcaoPergunta } from '../../api/tipos'
 import { diasEntre } from '../formato'
 import { diaValido, mesValido, tempoRecife } from './tempo'
@@ -10,7 +11,7 @@ const lista = <T>(a: readonly T[] | undefined): readonly T[] => Array.isArray(a)
 const chave = (...s: string[]) => JSON.stringify(s)
 const op = (id: string, rotulo: string, pede?: 'data' | 'texto'): OpcaoPergunta => ({ id, rotulo, ...(pede ? { pede } : {}) })
 const controles = [op('depois', 'Depois'), op('resolvido', 'Já resolvido')]
-const ordem: TipoInsight[] = ['fatura_vencendo', 'parcelas', 'aplicacao', 'fatura_divergente', 'reserva', 'recebimento', 'feira_nota', 'objetivo']
+const ordem: TipoInsight[] = ['fatura_vencendo', 'parcelas', 'aplicacao', 'fatura_divergente', 'reserva', 'recebimento', 'feira_nota', 'contrato_imovel', 'objetivo']
 
 /** Candidatos sem efeitos: exportado para auditar cada regra, antes da arbitragem por aba. */
 export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight[] {
@@ -23,7 +24,7 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
     // Só eventos que de fato vencem hoje atravessam o silêncio; divergência não herda vencimento.
     if ((t.hora >= 22 || t.hora < 7) && prioridade !== 0) return
     const k = chave(...assunto)
-    out.push({ id: `insight:${tipo}:${k}`, chave: k, tipo, rota, funcionario, pergunta, contexto,
+    out.push({ id: `insight:${tipo}:${k}`, chave: k, tipo, rota, funcionario: donoDoInsight({ tipo, funcionario }), pergunta, contexto,
       trechosPrivados: privados, opcoes: [...opcoes, ...controles.map(o => ({ ...o }))], acao, prioridade,
       ...(vence ? { vence_em: vence } : {}), exemplo: s.modo === 'exemplo', ...(s.modo === 'exemplo' ? { etiqueta: ETIQUETA_EXEMPLO } : {}) })
   }
@@ -64,16 +65,22 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
         'Sua aplicação está vencendo. Quer revisar o destino?', { tipo: 'atalho', destino: '#/guardado' }, [op('abrir', 'Revisar destino')],
         typeof a.nome === 'string' ? `Aplicação: ${a.nome}.` : '', typeof a.nome === 'string' ? [a.nome] : [], a.vencimento)
     }
+    for (const c of lista(s.contratos)) {
+      if (!id(c.id) || !['sem contrato', 'depois do contrato', 'contrato sem data de fim', 'renova o contrato'].includes(c.motivo)) continue
+      add('contrato_imovel', 'guardado', 'imoveis', ['contrato_imovel', c.id, c.mes || 'sem-data', t.dia.slice(0, 7)],
+        'Quer conferir o contrato deste imóvel?', { tipo: 'atalho', destino: '#/guardado' }, [op('abrir', 'Conferir contrato')],
+        'Imóvel: ' + c.nome + '.', [c.nome])
+    }
     const o = s.objetivo
-    if (o && mesValido(o.mes) && o.mes >= t.dia.slice(0, 7) && inteiro(o.projetado) && inteiro(o.necessario) && o.projetado < o.necessario)
+    if (o && mesValido(o.mes) && o.mes >= t.dia.slice(0, 7) && inteiro(o.projetado) && inteiro(o.necessario) && (o.faltaComMargem !== undefined ? inteiro(o.faltaComMargem) && o.faltaComMargem !== 0 : o.projetado < o.necessario))
       add('objetivo', 'planejamento', 'tesoureiro', ['objetivo', o.mes, t.dia.slice(0, 7)],
-        'O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?', { tipo: 'atalho', destino: '#/planejamento?aba=parametros' }, [op('abrir', 'Revisar aportes ou premissas')], o.resumo)
+        o.resumo ? 'Quer conferir a estimativa de renda de 2029?' : 'O plano está abaixo do necessário para o objetivo. Quer revisar aportes ou premissas?', { tipo: 'atalho', destino: '#/planejamento?aba=parametros' }, [op('abrir', 'Revisar aportes ou premissas')], o.resumo)
   }
   // A Casa é a única superfície da equipe; nenhum valor/nome de feira entra na proposta.
   if (s.papel === 'casal' || s.papel === 'equipe') for (const f of lista(s.feiras)) {
     if (f && id(f.id) && diaValido(f.data) && f.data <= t.dia && diaValido(f.semana) && f.temNota === false &&
       (f.justificativa === null || typeof f.justificativa === 'string' && !f.justificativa.trim()))
-      add('feira_nota', 'casa', 'fiscal', ['feira', f.id, f.semana], 'Falta guardar a nota ou explicar por que não houve.',
+      add('feira_nota', 'casa', 'fiscal', ['feira', f.id, f.semana], 'Quer guardar a nota da feira ou registrar que não houve nota?',
         { tipo: 'feira', id: f.id }, [op('abrir', 'Guardar a nota'), op('sem_nota', 'Explicar por que não houve nota', 'texto')])
   }
   return out

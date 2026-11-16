@@ -35,6 +35,27 @@ const apiBase = (): Api => ({ modo: 'real', guardadoHoje: vi.fn(async () => ({ a
   feiraAnexarNota: vi.fn(async () => 'caminho'), feiraSemNota: vi.fn(async () => {}),
 } as unknown as Api)
 
+it('Início expõe a primeira pergunta geral com dono e máscara; Analista só para dono', async () => {
+  const { root } = ambiente(), api = apiBase()
+  api.escritorioHoje = vi.fn(async () => ({ precisa_de_voce: [{ id: 'fatura:1', funcionario: 'cartao', pergunta: `Conferir ${segredo}?`, contexto: '', trechosPrivados: [segredo], opcoes: [] }], funcionarios: [], entregue: [], trabalhando: [] }))
+  let ctx = contexto(api), rota: Rota = 'inicio', saida!: ReturnType<typeof useInsightsDaAba>
+  function Captura() { saida = useInsightsDaAba(rota); return null }
+  const render = async () => act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(Captura))))
+  try {
+    await render()
+    expect(saida.primeiraPerguntaInicio).toMatchObject({ dono: 'cartao', pergunta: { pergunta: 'Conferir •••?' } })
+    expect(saida.pergunta).toBeNull()
+    rota = 'painel'; await render()
+    expect(saida.falaDoAnalista).toContain('uso do app')
+    ctx = { ...ctx, sessao: { ...ctx.sessao!, dono: false } }; await render()
+    expect(saida.falaDoAnalista).toBeNull()
+    ctx = { ...ctx, familia: { ...familia, papel: 'pessoa' } }; rota = 'inicio'; await render()
+    expect(saida.primeiraPerguntaInicio).toBeNull()
+    ctx = { ...ctx, familia: { ...familia, papel: 'equipe' } }; await render()
+    expect(saida.primeiraPerguntaInicio).toBeNull()
+  } finally { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() }
+})
+
 function contexto(api: Api): Ctx {
   return { api, familia, sessao: { userId: 'u', dono: true, email: null, familias: [familia] }, versao: 0, resumo: null, oculto: true,
     tentar: async (f: () => Promise<unknown>) => { try { await f(); return true } catch { return false } }, recarregar: vi.fn(async () => {}), explicar: vi.fn() } as unknown as Ctx
