@@ -342,20 +342,27 @@ function CasaEquipe() {
   const [ocupado, setOcupado] = useState(false)
   const [confirmarGas, setConfirmarGas] = useState(false)
   const [pendente, setPendente] = useState<{ tipo: MarcaCasa; dados: { id?: string; nome?: string }; aviso?: string } | null>(null)
+  const aguardando = useRef(false)
+  const agendar = (tipo: MarcaCasa, dados: { id?: string; nome?: string } = {}, aviso?: string) => {
+    if (aguardando.current || trava.current) return
+    aguardando.current = true
+    setPendente({ tipo, dados, aviso })
+  }
+  const cancelar = () => { aguardando.current = false; setPendente(null) }
   useEffect(() => {
     if (!pendente) return
-    const timer = setTimeout(() => { setPendente(null); void marcar(pendente.tipo, pendente.dados, pendente.aviso) }, 6000)
+    const timer = setTimeout(() => { aguardando.current = false; setPendente(null); void marcar(pendente.tipo, pendente.dados, pendente.aviso) }, 6000)
     return () => clearTimeout(timer)
   }, [pendente, familia?.id])
   const pedido = useRef(0)
   const trava = useRef(false)
   useEffect(() => {
-    setMarca(null); setPendente(null); setConfirmarGas(false)
+    setMarca(null); cancelar(); setConfirmarGas(false)
     return () => { pedido.current++ }
   }, [api, familia?.id, versao])
   const hoje = casa?.hoje || hojeRecife()
   const marcar = async (tipo: MarcaCasa, dados?: { id?: string; nome?: string }, aviso?: string) => {
-    if (!familia || trava.current) return false
+    if (!familia || trava.current || aguardando.current) return false
     trava.current = true; setOcupado(true)
     const meu = ++pedido.current
     // E3 (conserto 9): depois de marcar, o "precisa de você" se refaz na hora (o piscineiro que veio sai da conta)
@@ -375,8 +382,8 @@ function CasaEquipe() {
     <div className="view">
       <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
       <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Flame size={24} />O gás acabou</button>
-      {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); setPendente({ tipo: 'acabou', dados: { nome: 'Gás de cozinha' }, aviso: 'Gás posto na lista de compras.' }) }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
-      {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span><button className="btn line" type="button" onClick={() => setPendente(null)}>Desfazer</button></div>}
+      {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); agendar('acabou', { nome: 'Gás de cozinha' }, 'Gás posto na lista de compras.') }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
+      {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span><button className="btn line" type="button" onClick={cancelar}>Desfazer</button></div>}
       <PrecisaDeVoce equipe />
       <EstadoEstoqueEquipe />
       <div className="tela-larga">
@@ -384,8 +391,8 @@ function CasaEquipe() {
           <section className="card" aria-labelledby="eHoje">
             <div className="card-h"><h2 id="eHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
             <div className="row-btns">
-              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado} onClick={() => marcar('cheguei', undefined, 'Chegada avisada pro casal.')}><Check size={20} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
-              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado} onClick={() => marcar('sai', undefined, 'Saída avisada pro casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
+              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado || !!pendente} onClick={() => agendar('cheguei', undefined, 'Chegada avisada pro casal.')}><Check size={20} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
+              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado || !!pendente} onClick={() => agendar('sai', undefined, 'Saída avisada pro casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
             </div>
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(c.nome)}</b></span></li>)}</ul>
@@ -397,14 +404,14 @@ function CasaEquipe() {
             {g.media_dias ? <p className="sub">Um botijão dura uns <b>{g.media_dias} dias</b>. Próxima troca perto de <b>{dataCurta(g.proxima_troca!)}</b>.</p>
               : <p className="sub">Toque em "Troquei o gás" cada vez que trocar o botijão. Com 2 trocas o app calcula a próxima.</p>}
             {g.trocas.length > 0 && <p className="sub" style={{ marginTop: 6 }}>Última troca: <b>{dataCurta(g.trocas[g.trocas.length - 1])}</b></p>}
-            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado} onClick={() => marcar('troquei_gas', undefined, 'Troca de gás avisada pro casal.')}><Flame size={20} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
+            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado || !!pendente} onClick={() => agendar('troquei_gas', undefined, 'Troca de gás avisada pro casal.')}><Flame size={20} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
           </section>
           <section className="card" aria-labelledby="ePrest">
             <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem pra casa</h2></div>
             {casa.prestadores.length ? <ul className="list">{casa.prestadores.map(p => (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
                 <span className="m"><b>{textoPrivado(p.servico)}: {textoPrivado(p.nome)}</b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
-                <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado} onClick={() => marcar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
+                <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado || !!pendente} onClick={() => agendar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
             ))}</ul> : <Vazio ico={<Wrench size={24} />}>O casal ainda não cadastrou serviços.</Vazio>}
           </section>
@@ -416,7 +423,7 @@ function CasaEquipe() {
             <ul className="list">
               {casa.lista.map(i => (
                 <li key={i.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
-                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado || !!pendente} onChange={() => setPendente({ tipo: i.ok ? 'acabou' : 'comprei', dados: { id: i.id } })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
+                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado || !!pendente} onChange={() => agendar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
                 </li>
               ))}
             </ul>
