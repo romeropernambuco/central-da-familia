@@ -340,10 +340,17 @@ function CasaEquipe() {
   const casa = marca?.familia === familia?.id ? marca!.casa : leitura
   const [novo, setNovo] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [confirmarGas, setConfirmarGas] = useState(false)
+  const [pendente, setPendente] = useState<{ tipo: MarcaCasa; dados: { id?: string; nome?: string }; aviso?: string } | null>(null)
+  useEffect(() => {
+    if (!pendente) return
+    const timer = setTimeout(() => { setPendente(null); void marcar(pendente.tipo, pendente.dados, pendente.aviso) }, 6000)
+    return () => clearTimeout(timer)
+  }, [pendente, familia?.id])
   const pedido = useRef(0)
   const trava = useRef(false)
   useEffect(() => {
-    setMarca(null)
+    setMarca(null); setPendente(null); setConfirmarGas(false)
     return () => { pedido.current++ }
   }, [api, familia?.id, versao])
   const hoje = casa?.hoje || hojeRecife()
@@ -367,7 +374,11 @@ function CasaEquipe() {
   return (
     <div className="view">
       <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, {textoPrivado(familia?.membroNome)}! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
+      <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Flame size={24} />O gás acabou</button>
+      {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); setPendente({ tipo: 'acabou', dados: { nome: 'Gás de cozinha' }, aviso: 'Gás posto na lista de compras.' }) }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
+      {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span><button className="btn line" type="button" onClick={() => setPendente(null)}>Desfazer</button></div>}
       <PrecisaDeVoce equipe />
+      <EstadoEstoqueEquipe />
       <div className="tela-larga">
         <div className="col">
           <section className="card" aria-labelledby="eHoje">
@@ -405,7 +416,7 @@ function CasaEquipe() {
             <ul className="list">
               {casa.lista.map(i => (
                 <li key={i.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
-                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado} onChange={() => marcar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
+                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado || !!pendente} onChange={() => setPendente({ tipo: i.ok ? 'acabou' : 'comprei', dados: { id: i.id } })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
                 </li>
               ))}
             </ul>
@@ -419,4 +430,15 @@ function CasaEquipe() {
       </div>
     </div>
   )
+}
+
+export function EstadoEstoqueEquipe() {
+  const { api, familia, versao } = useApp()
+  const equipe = familia?.papel === 'equipe'
+  const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:estoque`, equipe ? () => api.estoque(familia!.id) : null, [api, versao])
+  if (!equipe) return null
+  if (erro) return <p role="alert">Não deu para consultar a conferência do estoque. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+  if (carregando || !dado) return <p role="status">Consultando conferência do estoque…</p>
+  const sem = dado.itens.filter(i => i.ativo && !dado.contagens.some(c => c.itens.some(x => x.item_id === i.id))).length
+  return <p className="sub">{sem ? `Sem conferência registrada: ${sem} ${sem === 1 ? 'item' : 'itens'}.` : 'Todos os itens ativos têm alguma conferência registrada.'} Isso não confirma o estoque de hoje.</p>
 }

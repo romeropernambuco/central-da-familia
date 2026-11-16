@@ -8,10 +8,10 @@ import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
 import type { Cartao, ResumoHoje } from '../../api/tipos'
-import { centavos, dataBr, dataCurta, diaSemana, hojeRecife, mesLongo, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
+import { centavos, dataCurta, diaSemana, hojeRecife, reais, segundosDesde, simularCompra, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
 import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
-import { parcelasDe } from '../../lib/plano'
+import { compromissoNesteMes, fraseParcelamento } from '../cartoes/simulacao'
 import { LerCupom } from '../../componentes/LerCupom'
 import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
@@ -28,10 +28,8 @@ function lerRascunho(chave: string): Rascunho | null {
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 /** O que fica pra ela depois do gasto, numa frase (R9: sem segundos, sem "custou de rendimento"). */
-function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number, nome: string, parcelas: number, desc?: string): string {
+function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number, nome: string, desc?: string): string {
   const e = r?.envelopes.find(x => x.id === envelope)
-  // E4 (decisão do dono, TIME.md): cada parcela sai no dia 1 do mês da fatura dela; neste mês (o da compra) não conta nada
-  if (parcelas > 1) return `${reais(valor)} em ${parcelas}x em ${nome}: ${reais(parcelasDe(valor, parcelas)[parcelas - 1])} por mês, cada parcela no dia 1 do mês da fatura dela. O que você pode gastar hoje não muda.`
   const parte = `${reais(valor)} em ${nome}.`
   if (!e) return parte
   // E1 (rodada 2): gasto grande (10% do mês e no mínimo R$ 150) ganha a conta do resto do mês, sem culpa
@@ -119,9 +117,9 @@ export function Lancar() {
   // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
   const temDias = !!(c?.dia_fechamento && c?.dia_vencimento)
   const sim = c && temDias && parcelas > 1 && valor > 0 ? simularCompra(valor, parcelas, quando, c.dia_fechamento!, c.dia_vencimento!) : []
-  const venceEm = (mes: string) => { const [a, m] = mes.split('-').map(Number); return `${mes}-${String(Math.min(c?.dia_vencimento || 1, new Date(Date.UTC(a, m, 0)).getUTCDate())).padStart(2, '0')}` }
+  const fraseDaCompra = fraseParcelamento(valor, sim)
   // o que conta NESTE mês: à vista, o valor todo; parcelado, só a parcela cuja fatura é deste mês (quase sempre nada)
-  const contaNoMes = (v: number) => (sim.length ? centavos(sim.filter(p => p.mes === hoje.slice(0, 7)).reduce((t, p) => t + p.valor, 0)) : v)
+  const contaNoMes = (v: number) => compromissoNesteMes(v, sim.length ? parcelas : 1, hoje, sim)
 
   const meuLim = (() => { const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId); return e ? e.limite_base ?? e.limite_mes : 0 })()
   const gastoGrande = valor > 0 && valor >= Math.max(150, meuLim * 0.1)
@@ -152,7 +150,7 @@ export function Lancar() {
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
-      toast(equipe ? `Compra anotada em ${nome}.` : fraseDepois(r.resumo, envelope, valor, nome, p, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
+      toast(equipe ? `Compra anotada em ${nome}.` : p > 1 ? fraseDaCompra : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
     } catch (e) {
       setSalvando(false)
       if (e instanceof ErroSessao) { await tentar(async () => { throw e }); return }
@@ -239,7 +237,7 @@ export function Lancar() {
               </div>
               {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões pra parcelar.</p>}
               {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
-              {sim.length > 1 && <p className="sub parc-fatura"><b>{parcelas}x de {reais(sim[sim.length - 1].valor)}</b> nas faturas de {dataCurta(venceEm(sim[0].mes))} a {dataBr(venceEm(sim[sim.length - 1].mes)).replace(/^(\d\d\/\d\d)\/\d\d(\d\d)$/, '$1/$2')}. Cada parcela sai do seu limite no dia 1 do mês da fatura: {mesLongo(sim[0].mes + '-01')} a {mesLongo(sim[sim.length - 1].mes + '-01')}. {contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.'}</p>}
+              {sim.length > 1 && <><p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p><p className="sub">Cada parcela sai do limite no dia 1 do mês da fatura. {textoPrivado(contaNoMes(valor) ? `Neste mês conta ${reais(contaNoMes(valor))}.` : 'Neste mês não conta nada.')}</p></>}
             </div>
           )}
           {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
@@ -347,7 +345,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
  * Ela diz o que comprou, se foi a feira da semana ou coisa da casa, e tira a foto da nota. O casal confere o valor pela foto.
  */
 function AnotarCompra() {
-  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
+  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar, oculto } = useApp()
   const chave = sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
   const [rascunho] = useState(() => { try { return chave ? sessionStorage.getItem(chave) || '' : '' } catch { return '' } })
   const [recuperado, setRecuperado] = useState(!!rascunho)
@@ -359,9 +357,12 @@ function AnotarCompra() {
   const [foto, setFoto] = useState<string | null>(null)
   const [erro, setErro] = useState('')
   const [gravando, setGravando] = useState(false)
+  const [preparandoFoto, setPreparandoFoto] = useState(false)
+  const fotoTrava = useRef(false)
   const camera = useRef<HTMLInputElement>(null)
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   const anotar = () => trava(async () => {
+    if (fotoTrava.current) return
     if (!familia) return
     if (!nome.trim()) { setErro('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.'); return }
     if (!api.anotarCompraEquipe) { setErro('Essa opção ainda não está disponível. Fale com quem cuida do app.'); return }
@@ -369,12 +370,17 @@ function AnotarCompra() {
     let aviso = ''
     const ok = await tentar(async () => { aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso })
     setGravando(false)
-    if (!ok) return
+    if (!ok) { setErro('Não foi possível confirmar o envio. A foto continua aqui. Confira se a compra apareceu antes de tentar de novo.'); return }
     salvo.current = true; limpar(); fecharLancar(); await recarregar(); toast(aviso)
   })
-  const pegarFoto = async (arq: File | null) => { if (!arq) return; try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') } }
+  const pegarFoto = async (arq: File | null) => {
+    if (!arq || fotoTrava.current || gravando) return
+    fotoTrava.current = true; setPreparandoFoto(true); setErro('')
+    try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não deu pra ler a foto. Tente de novo.') }
+    finally { fotoTrava.current = false; setPreparandoFoto(false) }
+  }
   return (
-    <Sheet titulo="Anotar compra" fechar={fecharLancar} rotulo="Anotar compra">
+    <Sheet titulo="Anotar compra" fechar={() => { if (!gravando && !fotoTrava.current) fecharLancar() }} rotulo="Anotar compra">
       {recuperado && <p role="status">Rascunho recuperado <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
       <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
@@ -384,13 +390,19 @@ function AnotarCompra() {
         </div>
       </div>
       <div className="foto-nota">
-        <input ref={camera} type="file" accept="image/*" capture="environment" onChange={ev => { const f = ev.target.files?.[0] || null; ev.target.value = ''; pegarFoto(f) }} />
-        <button type="button" className={'btn full ' + (foto ? 'line' : 'line')} onClick={() => camera.current?.click()}>{foto ? <><Check size={20} />Foto da nota pronta</> : <><Camera size={20} />Tirar foto da nota</>}</button>
+        <input ref={camera} type="file" accept="image/*" capture="environment" disabled={gravando || preparandoFoto} onChange={ev => { const f = ev.target.files?.[0] || null; ev.target.value = ''; pegarFoto(f) }} />
+        <button type="button" className="btn full line" disabled={gravando || preparandoFoto} onClick={() => camera.current?.click()}>{foto ? <><Camera size={20} />Trocar foto da nota</> : <><Camera size={20} />Tirar foto da nota</>}</button>
+        {preparandoFoto && <p role="status">Preparando foto…</p>}
+        {foto && <div role="status">
+          {!oculto && <img alt="Miniatura da nota" src={foto === 'exemplo' ? 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="120"%3E%3Crect width="100" height="120" fill="white"/%3E%3Ctext x="10" y="60"%3ENota exemplo%3C/text%3E%3C/svg%3E' : `data:image/jpeg;base64,${foto}`} style={{ width: 100, height: 120, objectFit: 'contain', borderRadius: 8 }} />}
+          <p><Check size={18} aria-hidden="true" />Foto recebida</p>
+          <p className="sub">{gravando ? 'Enviando a compra. Aguarde a confirmação.' : 'Foto neste aparelho. A compra ainda não foi confirmada.'}</p>
+        </div>}
         {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
       </div>
       <p className="sub">O casal confere o valor pela foto. Você não precisa digitar nenhum valor.</p>
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <button type="button" className="btn primary full" disabled={gravando} onClick={anotar}><Check size={20} />Anotar a compra</button>
+      <button type="button" className="btn primary full" disabled={gravando || preparandoFoto} onClick={anotar}><Check size={20} />{gravando ? 'Enviando a compra…' : 'Anotar a compra'}</button>
     </Sheet>
   )
 }

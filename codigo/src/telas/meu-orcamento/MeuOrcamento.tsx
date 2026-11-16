@@ -1,3 +1,5 @@
+import type { DesejoTela } from '../../api/tipos'
+import { valorDigitadoValido } from '../../lib/formato'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target } from 'lucide-react'
@@ -22,7 +24,7 @@ export function MeuOrcamento() {
   const [lanc, setLanc] = useState<Lancamento[]>([])
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
-  const [metas, salvarMetas] = useConfig<Record<string, { nome: string; valor: number }>>('metas_pessoais', {})
+  const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
   const [dpc, setDpc] = useState(false)
   const [metaAberta, setMetaAberta] = useState(false)
   useEffect(() => { if (familia) api.lancamentos(familia.id, hojeRecife().slice(0, 7)).then(setLanc).catch(() => {}) }, [api, familia?.id, versao])
@@ -60,7 +62,7 @@ export function MeuOrcamento() {
   const conquistas = [
     { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0 },
     { nome: '7 dias dentro do valor do dia', ok: dentro >= 7 },
-    { nome: 'Cofrinho passou de R$ 100', ok: dados.cof >= 100 },
+    { nome: 'Sobra anotada passou de R$ 100', ok: dados.cof >= 100 },
     { nome: '3 dias seguidos anotados', ok: ult3.length === 3 && branco === 0 },
   ]
 
@@ -74,7 +76,7 @@ export function MeuOrcamento() {
       <nav className="segbar" aria-label="Ir para">
         <div className="seg">
           <button type="button" onClick={() => ir('oHoje')}>Hoje</button>
-          <button type="button" onClick={() => ir('oCofrinho')}>Cofrinho</button>
+          <button type="button" onClick={() => ir('oCofrinho')}>Sobra anotada</button>
           <button type="button" onClick={() => ir('oMais')}>Conquistas</button>
         </div>
       </nav>
@@ -84,7 +86,7 @@ export function MeuOrcamento() {
           <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}>
             <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
             {!meu && <p className="sub dono-linha">Orçamento de {textoPrivado(dono)}: aqui é só pra ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
-            <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o livre do mês ÷ os dias que faltam)'}</p>
+            <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}</p>
             <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
@@ -108,30 +110,22 @@ export function MeuOrcamento() {
           </section>
 
           <section className="card" id="oCofrinho" aria-labelledby="oCofT" style={{ scrollMarginTop: 72 }}>
-            <div className="card-h"><h2 id="oCofT"><PiggyBank size={24} aria-hidden="true" />Cofrinho</h2></div>
+            <div className="card-h"><h2 id="oCofT"><PiggyBank size={24} aria-hidden="true" />Sobra anotada</h2></div>
             <div className="numrow"><Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
-              <Qm titulo="Cofrinho" linhas={[
+              <Qm titulo="Sobra anotada" linhas={[
                 { linha: 'Valor diário usado para calcular sua sobra', valor: dados.base },
                 { linha: `Nos ${plural(dados.fechados.filter(d => dados.anot.has(d)).length, 'dia anotado', 'dias anotados')} até ontem: o que sobrou menos o que passou`, valor: dados.cof },
-              ]} nota="A mesma base do número de hoje: o que sobra do dia de base fica no cofrinho e volta dividido pelos dias que faltam. Dia que passou do valor come a sobra dos outros dias. Dia sem anotação não conta. Hoje só entra amanhã." />
+              ]} nota="O que sobra do valor diário de referência entra na sobra anotada e volta dividido pelos dias que faltam. Gastar acima do valor reduz essa sobra. Dia sem anotação não conta. Hoje só entra amanhã. Isso não significa que você guardou dinheiro." />
             </div>
             <p className="sub">{textoPrivado(env.livre < 0 ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
-              : dados.cof <= 0 ? `Ainda vazio. Ele enche nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que ${reais(dados.base)}, o dia de base. Livre no mês: ${reais(Math.max(0, env.livre))}.`
-              // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o dia de base mais o cofrinho dividido pelos dias que faltam
-              : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do dia de base de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`)}</p>
+              : dados.cof <= 0 ? `Ainda sem sobra anotada. Ela aumenta nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que ${reais(dados.base)}, o valor diário de referência. Ainda pode gastar no mês: ${reais(Math.max(0, env.livre))}.`
+              // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o valor diário de referência mais o cofrinho dividido pelos dias que faltam
+              : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do valor diário de referência de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`)}</p>
             {(() => {
               const m = metas?.[env.id]
               if (!m) return meu ? <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button> : null
-              const tem = env.livre < 0 ? 0 : dados.cof, falta = centavos(Math.max(0, m.valor - tem))
-              // no ritmo do valor de base, quando dá pra comprar: o livre do mês até o fim do mês cobre a meta?
-              const quando = falta <= 0 ? 'já dá pra comprar' : env.livre >= m.valor ? `compra em ${dataCurta(fimDoMes(hoje))} se gastar até ${reais(centavos((env.livre - m.valor) / diasRestantes(hoje)))} por dia` : 'não cabe no livre deste mês'
-              return (
-                <div className="meta-cofre">
-                  <p className="corpo"><b>Quero juntar pra: {textoPrivado(m.nome)} {reais(m.valor)}</b> · faltam {reais(falta)} · {quando}</p>
-                  <div className="meter ok" aria-hidden="true"><i style={{ width: Math.min(100, (tem / m.valor) * 100) + '%' }} /></div>
-                  {meu && <button className="btn sm ghost" type="button" style={{ justifySelf: 'start' }} onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>}
-                </div>
-              )
+              return <><ProgressoMeta meta={m} editavel={meu} salvar={m => salvarMetas({ ...metas, [env.id]: m })} />
+                {meu && <button className="btn sm ghost" type="button" onClick={() => salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id)))}>Tirar a meta</button>}</>
             })()}
           </section>
         </div>
@@ -164,7 +158,7 @@ function DaPraComprar({ livre, fechar }: { livre: number; fechar: () => void }) 
     <Sheet titulo="Dá pra comprar?" fechar={fechar}>
       <p className="sub">Simulação: nada é gravado.</p>
       <div className="campo"><span>Quanto custa?</span><CampoValor valor={txt} mudar={setTxt} rotulo="Quanto custa" /></div>
-      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><CircleCheck size={20} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe.</b> Seu livre do mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Dá pra juntar no cofrinho e comprar depois.</>}</span></p>}
+      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><CircleCheck size={20} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe em {hojeRecife().slice(0, 7)}.</b> O que você ainda pode gastar no mês vai de {reais(livre)} pra {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Você pode criar uma meta e anotar quanto conseguir guardar.</>}</span></p>}
     </Sheet>
   )
 }
@@ -180,4 +174,38 @@ function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: strin
       </form>
     </Sheet>
   )
+}
+
+export type MetaPessoal = { nome: string; valor: number; desejo?: string; anotacoes?: { id: string; data: string; valor: number }[] }
+export type Metas = Record<string, MetaPessoal>
+
+export function MetaDoDesejo({ desejo }: { desejo: DesejoTela }) {
+  const { familia, toast } = useApp()
+  const [metas, salvar, falha, leu] = useConfig<Metas>('metas_pessoais', {})
+  const [ocupado, setOcupado] = useState(false)
+  if (familia?.papel !== 'pessoa' || !familia.envelopeId || !desejo.meu) return null
+  const id = familia.envelopeId, existente = metas[id]
+  return <>{falha && <span role="alert">Não deu para abrir sua meta. Tente quando a conexão voltar.</span>}
+    <button type="button" className="btn line" disabled={!leu || ocupado || existente?.desejo === desejo.id} onClick={async () => {
+      setOcupado(true)
+      try { if (await salvar({ ...metas, [id]: { nome: desejo.nome, valor: desejo.valor, desejo: desejo.id, anotacoes: existente?.anotacoes || [] } })) toast('Meta pronta em Meu orçamento. Anote lá quanto guardou.') } finally { setOcupado(false) }
+    }}>{existente?.desejo === desejo.id ? 'Já é sua meta' : existente ? 'Usar como meta e manter o que anotou' : 'Criar meta em Meu orçamento'}</button></>
+}
+
+export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; salvar: (meta: MetaPessoal) => Promise<boolean>; editavel: boolean }) {
+  const { oculto } = useApp()
+  const [valor, setValor] = useState(''), [ocupado, setOcupado] = useState(false)
+  const [falha, setFalha] = useState('')
+  const total = centavos((meta.anotacoes || []).reduce((s, a) => s + a.valor, 0))
+  return <div className="meta-cofre">
+    <p><b>{textoPrivado(meta.nome)}</b> · <Din v={total} /> de <Din v={meta.valor} /></p>
+    {!oculto && <progress aria-label="Progresso da meta" max={meta.valor} value={Math.min(total, meta.valor)} style={{ width: '100%' }} />}
+    <p className="sub">Só soma o que você anotar. Continua nos próximos meses. Não altera saldo nem transfere dinheiro.</p>
+    {editavel && <form onSubmit={async e => {
+      e.preventDefault(); if (ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return
+      setOcupado(true); setFalha('')
+      try { if (await salvar({ ...meta, anotacoes: [...(meta.anotacoes || []), { id: String(Date.now()), data: hojeRecife(), valor: textoParaValor(valor) }] })) setValor(''); else setFalha('Não deu para guardar a anotação. Seu valor continua aqui.') } finally { setOcupado(false) }
+    }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><button type="submit" className="btn line" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}>Anotar valor guardado</button></form>}
+    {falha && <p role="alert">{falha}</p>}
+  </div>
 }
