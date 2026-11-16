@@ -122,7 +122,7 @@ function Feira() {
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
-            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v]) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id, nome: nomeDe(id) }} /> pôs {reais(v)}; </span>)}.</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id, nome: nomeDe(id) }} /> pôs {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}
