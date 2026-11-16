@@ -7,6 +7,7 @@ import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
 import { Recebimentos } from './Recebimentos'
 import { Parametros } from './Parametros'
+import { RumoA2029 } from '../../componentes/RumoA2029'
 import { Reajuste } from './Reajuste'
 import { novoUuid } from '../../lib/seguro'
 import { Qm } from '../../componentes/Qm'
@@ -98,7 +99,7 @@ export function Planejamento() {
   return (
     <div className="tela-larga">
       {/* C3 (sim do dono): o Objetivo de 2029, com o gráfico até 12/2028 e os 3 números, sobe pro topo da tela */}
-      <div className="col col-toda"><Parametros /></div>
+      <div className="col col-toda"><RumoA2029 /><Parametros /></div>
       <div className="col">
         <section className="card" aria-labelledby="pLim">
           <div className="card-h"><h2 id="pLim"><Wallet size={24} aria-hidden="true" />Limites do mês</h2></div>
