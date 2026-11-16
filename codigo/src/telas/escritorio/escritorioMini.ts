@@ -71,6 +71,59 @@ export const VARIANTES: Record<SalaEquipe, IdentidadeSala> = {
 export const nomesDaSala = (sala: SalaEquipe) => [...new Set([...comuns, VARIANTES[sala].tapete, VARIANTES[sala].mesa, ...VARIANTES[sala].extras])]
 export const bytesDaSala = (sala: SalaEquipe) => nomesDaSala(sala).reduce((n, k) => n + (inventario as any)[k].bytes, 0)
 
+export interface OrcamentoMini { desenhos: number; triangulos: number; KB: number }
+export interface PostoMini {
+  id: string; posicao: [number, number, number]; escala: number
+  /** Volume reservado ao posto inteiro em coordenadas da sala. */
+  volume: { min: number[]; max: number[] }
+}
+export interface ComposicaoMini {
+  sala: SalaEquipe; ids: string[]; removidos: string[]; pecas: string[]
+  postos: PostoMini[]; orcamento: OrcamentoMini
+}
+export const LIMITES_MINI: OrcamentoMini = { desenhos: 40, triangulos: 60000, KB: 150 }
+// Desenhos unitários com Anfitrião / triângulos estáticos / incremento por posto.
+const CUSTO_SALA: Record<SalaEquipe, [number, number, number]> = {
+  caixa: [23, 1693, 1085], casa: [27, 2419, 1033], cartoes: [24, 2031, 1033], patrimonio: [25, 2449, 1033],
+  recepcao: [23, 1813, 1033], gestao: [25, 2009, 1033], apoio: [23, 1725, 1033],
+}
+// Máximos dos quatro estados: sinal ou joinha, conforme o responsável.
+const DESENHOS_RIG: Record<string, number> = {
+  contador: 12, colchao: 12, tesoureiro: 12, folha: 11, comprador: 11, fiscal: 13,
+  cartao: 11, assistente: 11, guardado: 11, imoveis: 12, usina: 13, secretaria: 11,
+  presenca: 10, auditor: 12, anfitriao: 10, sonhadora: 10, analista: 13, zelador: 11, protetora: 10,
+}
+const DESENHOS_SALA: Record<SalaEquipe, number> = { caixa: 8, casa: 11, cartoes: 9, patrimonio: 10, recepcao: 8, gestao: 10, apoio: 8 }
+const TRIANGULOS_RIG: Record<string, number> = {
+  contador: 684, colchao: 528, tesoureiro: 456, folha: 636, comprador: 480, fiscal: 540,
+  cartao: 552, assistente: 480, guardado: 1036, imoveis: 468, usina: 564, secretaria: 552,
+  presenca: 528, auditor: 576, anfitriao: 420, sonhadora: 444, analista: 504, zelador: 468, protetora: 432,
+}
+/** Pura: sem DOM, carga ou mutação de ids. O principal nunca é descartado.
+ * O teto opcional permite simular limites menores em testes. */
+export function composicaoMini(sala: SalaEquipe, ids: readonly string[], limites = LIMITES_MINI): ComposicaoMini {
+  const candidatos = [...new Set(ids)].slice(0, 3), removidos = [...new Set(ids)].slice(3)
+  if (!candidatos.length) throw Error('mini precisa de um principal')
+  const prever = (n: number): OrcamentoMini => ({
+    desenhos: n === 1 ? CUSTO_SALA[sala][0] + (DESENHOS_RIG[candidatos[0]] || 13) - 10 : DESENHOS_SALA[sala] + candidatos.reduce((s, id) => s + (DESENHOS_RIG[id] || 13), 0),
+    triangulos: CUSTO_SALA[sala][1] + (n - 1) * CUSTO_SALA[sala][2] + (n === 1 ? 72 : 0) + candidatos.reduce((s, id) => s + (TRIANGULOS_RIG[id] || 1500), 0),
+    KB: bytesDaSala(sala) / 1000,
+  })
+  let orcamento = prever(candidatos.length)
+  while (candidatos.length > 1 && (orcamento.desenhos > limites.desenhos || orcamento.triangulos > limites.triangulos || orcamento.KB > limites.KB)) {
+    removidos.unshift(candidatos.pop()!); orcamento = prever(candidatos.length)
+  }
+  const coletivo = candidatos.length > 1
+  const postos = candidatos.map((id, i): PostoMini => {
+    const x = !coletivo || i === 0 ? 0 : i === 1 ? 1.45 : -1.45
+    const z = !coletivo ? 0 : i === 0 ? .35 : -.45, escala = i ? .78 : 1
+    const meiaLargura = sala === 'gestao' ? .8 : .75
+    return { id, posicao: [x, 0, z], escala,
+      volume: { min: [x - meiaLargura * escala, 0, z - .3 * escala], max: [x + meiaLargura * escala, 1.9 * escala, z + 1.04 * escala] } }
+  })
+  return { sala, ids: candidatos, removidos, pecas: nomesDaSala(sala), postos, orcamento }
+}
+
 export function caixaReal(raiz: any) { raiz.updateMatrixWorld(true); return new T.Box3().setFromObject(raiz, true) }
 
 /** Copia vértices e cores para a montagem; nunca altera/dispose os recursos emprestados. */
@@ -103,11 +156,30 @@ export function fundirGrupos(raiz: any, guardar: (r: any) => any, material?: any
   })
 }
 
-export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, any>, cor: number, _boneco: (roupa: any) => any) {
+/** Partes sem gesto no coletivo: pernas sentadas ou cabelo/olhos junto à cabeça.
+ * Mantém os pivôs/referências do rig; só as superfícies rígidas viram um desenho. */
+export function fundirRamo(raiz: any, guardar: (r: any) => any, tinta = 1) {
+  raiz.updateWorldMatrix(true, true)
+  const inversa = raiz.matrixWorld.clone().invert(), partes: any[] = [], meshes: any[] = []
+  raiz.traverse((m: any) => { if (m.isMesh) {
+    const c = m.material.color?.clone().multiplyScalar(tinta)
+    const substituto = { geometry: m.geometry, material: m.material, userData: { ...m.userData, ...(c && !m.material.vertexColors ? { tinta: c.getHex() } : {}) } }
+    partes.push(colorida(substituto, new T.Matrix4().multiplyMatrices(inversa, m.matrixWorld))); meshes.push(m)
+  } })
+  if (!partes.length) return
+  const geometria = guardar(mergeGeometries(partes, false)); partes.forEach(g => g.dispose())
+  if (tinta !== 1) { const c = geometria.attributes.color; for (let i = 0; i < c.count; i++) c.setXYZ(i, c.getX(i) * tinta, c.getY(i) * tinta, c.getZ(i) * tinta) }
+  meshes.forEach(m => m.removeFromParent())
+  raiz.add(new T.Mesh(geometria, guardar(new T.MeshLambertMaterial({ vertexColors: true }))))
+}
+
+export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, any>, cor: number, _boneco: (roupa: any) => any, composicao?: ComposicaoMini) {
   const recursos = new Set<any>(), guardar = (r: any) => { recursos.add(r); return r }
   const destruir = () => { recursos.forEach(r => r.dispose()); recursos.clear() }
   try {
     const variante = VARIANTES[sala]
+    const coletivo = !!composicao && composicao.ids.length > 1
+    const dadosPostos: any[] = [], gruposDosPostos = new Set<any>()
     const raiz = new T.Group(), pecas: Record<string, any[]> = {}, estaticos = new T.Group(); raiz.add(estaticos)
     raiz.name = 'escritorio:kenney'
     const opaco = guardar(new T.MeshLambertMaterial({ vertexColors: true }))
@@ -152,6 +224,8 @@ export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, a
     if (sala === 'recepcao') { parede('wallDoorway', -1, -.55, 1.05, 1.03); parede('wall', .45, -.55, 1.85, .72) }
     if (sala === 'gestao') { parede('wallWindow', 0, -.57, 3.05, 1.02); parede('wall', -1.55, .08, 1.3, .5, Math.PI / 2) }
     if (sala === 'apoio') { parede('wall', -.65, -.55, 1.8, .48); parede('wallDoorway', 1.02, -.55, 1.05, .98) }
+    function montarPosto(posto: any, indice: number) {
+    const antes = new Set(estaticos.children)
     const canto = variante.mesa === 'deskCorner'
     const mesa = por(variante.mesa, canto ? .18 : 0, base, canto ? .26 : .57, canto ? [1.48, ESCALA_MOVEL_MINI, .88] : [sala === 'gestao' ? 2.09 : ESCALA_MOVEL_MINI, ESCALA_MOVEL_MINI, ESCALA_MOVEL_MINI], Math.PI)
     const tampo = caixaReal(mesa).max.y
@@ -166,6 +240,20 @@ export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, a
     por('computerScreen', canto ? -.36 : -.53, tampo, .65, 1.43, Math.PI / 2 + .12)
     // Segunda tela compacta no próprio posto, em vez do colega idêntico ao fundo.
     por('computerScreen', .53, tampo, canto ? .60 : .80, .65, -Math.PI / 2 - .12)
+    const dados = { tampo, assento, teclado: new T.Vector3(.13, caixaReal(teclado).max.y, tecladoZ), piso: base }
+    for (const g of estaticos.children) if (!antes.has(g)) {
+      gruposDosPostos.add(g)
+      if (coletivo) {
+        g.position.multiplyScalar(posto.escala).add(new T.Vector3(...posto.posicao)); g.scale.multiplyScalar(posto.escala)
+        g.userData.tom = indice ? .86 : 1
+        if (indice) g.traverse((m: any) => { if (m.isMesh) m.userData.tinta = m.material.color.clone().multiplyScalar(.86).getHex() })
+      }
+    }
+    dadosPostos.push(dados)
+    }
+    const postos = composicao?.postos || [{ id: '', posicao: [0, 0, 0], escala: 1 }]
+    postos.forEach(montarPosto)
+    const { tampo, assento, teclado } = dadosPostos[0]
     const sobre = (nome: string, apoio: any, escala: number, giro = 0) => {
       const b = caixaReal(apoio), c = b.getCenter(new T.Vector3())
       return por(nome, c.x, b.max.y, c.z, escala, giro)
@@ -215,6 +303,16 @@ export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, a
       por('trashcan', 1.18, 0, -.08, 1.15)
       por('cardboardBoxOpen', 1.1, 0, .95, 1.5, .2)
     }
+    if (coletivo) {
+      // Uma única arquitetura, com a cenografia ao fundo dos postos.
+      for (const g of estaticos.children) if (!gruposDosPostos.has(g)) {
+        if (['radio', 'lampSquareTable', 'lampRoundTable', 'plantSmall2'].includes(g.name)) {
+          g.position.add(new T.Vector3(...postos[0].posicao)); continue
+        }
+        g.position.x *= 1.25; g.position.y *= .85; g.position.z = -1.15 + g.position.z * .55; g.scale.multiplyScalar(.85)
+      }
+      pisoMesh.scale.set(1.4, 1, 1.65); pisoMesh.position.z = -.35
+    }
     estaticos.updateMatrixWorld(true)
     const tipoMaterial = (m: any, monitor: boolean) => m.material.transparent ? 1 : monitor && m.material.name === 'metal' ? 2 : 0
     // Móveis/livros repetidos: uma geometria normalizada por modelo/material, várias matrizes.
@@ -226,7 +324,7 @@ export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, a
       for (let i = 0; i < 3; i++) if (prototipo[i].length) {
         const geometria = guardar(mergeGeometries(prototipo[i], false)); prototipo[i].forEach(p => p.dispose())
         const instancias = guardar(new T.InstancedMesh(geometria, [opaco, vidro, tela][i], grupos.length))
-        grupos.forEach((g, n) => { instancias.setMatrixAt(n, g.matrix); g.removeFromParent() })
+        grupos.forEach((g, n) => { instancias.setMatrixAt(n, g.matrix); if (coletivo) instancias.setColorAt(n, new T.Color().setRGB(g.userData.tom || 1, g.userData.tom || 1, g.userData.tom || 1)); g.removeFromParent() })
         instancias.instanceMatrix.needsUpdate = true; raiz.add(instancias)
       }
     }
@@ -249,16 +347,17 @@ export function montarEscritorioMini(sala: SalaEquipe, modelos: Record<string, a
     raiz.userData.tampo = tampo; raiz.userData.assento = assento
     raiz.userData.bytes = bytesDaSala(sala)
     raiz.userData.identidade = variante
-    return { raiz, tampo, assento, piso: base, tela, teclado: new T.Vector3(.13, caixaReal(teclado).max.y, tecladoZ), pecas, guardar, destruir }
+    raiz.userData.composicao = composicao; raiz.userData.postos = dadosPostos
+    return { raiz, tampo, assento, piso: base, tela, teclado, postos: dadosPostos, pecas, guardar, destruir }
   } catch (e) { destruir(); throw e }
 }
 
 /** IK de dois segmentos. Buffers próprios do personagem; nenhuma alocação no quadro. */
-export function criarApoioDasMaos() {
+export function criarApoioDasMaos(alcance = .26) {
   const baixo = new T.Vector3(0, -1, 0), d = new T.Vector3(), curva = new T.Vector3(), cotovelo = new T.Vector3(), segmento = new T.Vector3(), inversa = new T.Quaternion()
   return (braco: any, alvo: any) => {
     d.copy(alvo).sub(braco.o.position)
-    const distancia = Math.min(.499, Math.max(.025, d.length())), a = (.24 ** 2 - .26 ** 2 + distancia ** 2) / (2 * distancia)
+    const distancia = Math.min(.24 + alcance - .001, Math.max(.025, d.length())), a = (.24 ** 2 - alcance ** 2 + distancia ** 2) / (2 * distancia)
     d.normalize(); curva.copy(baixo).addScaledVector(d, -baixo.dot(d)).normalize()
     cotovelo.copy(braco.o.position).addScaledVector(d, a).addScaledVector(curva, Math.sqrt(Math.max(0, .24 ** 2 - a ** 2)))
     segmento.copy(cotovelo).sub(braco.o.position).normalize()
@@ -270,9 +369,9 @@ export function criarApoioDasMaos() {
 }
 
 /** Enquadra o conjunto real de pontos, com margem de 5%; sem depender do tamanho CSS. */
-export function enquadrarMini(camera: any, largura: number, altura: number, limites: any) {
+export function enquadrarMini(camera: any, largura: number, altura: number, limites: any, coletivo = false) {
   camera.updateMatrixWorld(true)
   const inversa = camera.matrixWorldInverse, b = limites.clone().applyMatrix4(inversa), c = b.getCenter(new T.Vector3()), s = b.getSize(new T.Vector3())
-  const aspecto = largura / altura, hh = Math.max(s.y / 1.65, s.x / (1.65 * aspecto)), hw = hh * aspecto
+  const aspecto = largura / altura, ocupacao = coletivo ? 1.8 : 1.65, hh = Math.max(s.y / ocupacao, s.x / (ocupacao * aspecto)), hw = hh * aspecto
   camera.left = c.x - hw; camera.right = c.x + hw; camera.top = c.y + hh; camera.bottom = c.y - hh; camera.updateProjectionMatrix()
 }

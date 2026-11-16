@@ -15,8 +15,8 @@
 import type { Cena, OpcoesCena, EstadoCena, EstadoAgente } from './cenaBase'
 import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
-import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
-import { caixaReal, montarEscritorioMini, fundirGrupos, enquadrarMini, criarApoioDasMaos, ESCALA_FUNCIONARIO_MINI } from './escritorioMini'
+import { ATIVIDADES_MINI, PERFIL_IMOVEIS, faseDoId, montarAtividade } from './atividadesMini'
+import { caixaReal, composicaoMini, montarEscritorioMini, fundirGrupos, fundirRamo, enquadrarMini, criarApoioDasMaos, ESCALA_FUNCIONARIO_MINI } from './escritorioMini'
 import type { SalaEquipe } from './equipe'
 
 const SALAS: Record<string, { nome: string; rot: [number, number, number]; cx: number; cz: number; d: number; piso: number; tapete: number }> = {
@@ -39,6 +39,11 @@ const estadoMini = (e: EstadoCena): EstadoAgente => e === 'precisa' ? 'chamando'
 const estadoLegado = (e: EstadoAgente): EstadoCena => e === 'chamando' ? 'precisa' : e === 'resolvido' ? 'entregue' : e === 'parado' ? 'fila' : 'trabalhando'
 
 export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
+  const salaPedida = o.sala || POR_ID[o.funcionarios[0]?.id]?.sala || o.funcionarios[0]?.sala || 'recepcao'
+  const salaMini = SALAS[salaPedida] ? salaPedida : 'recepcao'
+  const composicao = o.mini && o.funcionarios.length ? composicaoMini(salaMini as SalaEquipe, o.funcionarios.map(f => f.id)) : null
+  if (composicao) o = { ...o, funcionarios: composicao.ids.map(id => ({ ...o.funcionarios.find(f => f.id === id)!, sala: composicao.sala })) }
+  const coletivo = !!composicao && composicao.ids.length > 1
   const limpezas: (() => void)[] = [], recursos = new Set<any>()
   let destruida = false
   const guardar = <V extends { dispose(): void }>(v: V): V => { recursos.add(v); return v }
@@ -175,7 +180,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (c.estilo === 'coque') { cx(0.2, 0.18, 0.2, c.cabelo, 0, o.mini ? .23 : .63, o.mini ? 0 : -.08, cabelo) }
     if (o.mini) fecha(cabelo)
     if (c.oculos) { [-0.1, 0.1].forEach(x => { cx(0.17, 0.02, 0.02, 0x1E1E22, x, 0.315, 0.225, head); cx(0.17, 0.02, 0.02, 0x1E1E22, x, 0.185, 0.225, head); cx(0.02, 0.15, 0.02, 0x1E1E22, x - 0.075, 0.25, 0.225, head); cx(0.02, 0.15, 0.02, 0x1E1E22, x + 0.075, 0.25, 0.225, head) }) }
-    function braco(x: number) { const b = grupo(hips, x, 0.44, 0); cx(0.13, 0.24, 0.14, c.camisa, 0, -0.12, 0, b); const e = grupo(b, 0, -0.24, 0); cx(0.115, 0.2, 0.125, c.pele, 0, -0.1, 0, e); cx(0.125, 0.09, 0.135, c.pele, 0, -0.24, 0, e); fecha(b); fecha(e); return { o: b, e } }
+    function braco(x: number) { const b = grupo(hips, x, 0.44, 0); cx(0.13, 0.24, 0.14, c.camisa, 0, -0.12, 0, b); const e = grupo(b, 0, -0.24, 0); cx(0.115, 0.2, 0.125, c.pele, 0, -0.1, 0, e); cx(0.125, 0.09, 0.135, c.pele, 0, -0.24, 0, e); if (o.mini && c.apontaContrato && x > 0) cx(.035, .07, .035, c.pele, 0, -.29, 0, e); fecha(b); fecha(e); return { o: b, e } }
     function perna(x: number) { const b = grupo(hips, x, 0, 0); cx(0.18, 0.26, 0.2, c.calca, 0, -0.13, 0, b); const k = grupo(b, 0, -0.26, 0); cx(0.165, 0.22, 0.185, c.calca, 0, -0.11, 0, k); cx(0.175, 0.07, 0.27, 0x2A2623, 0, -0.255, 0.035, k); fecha(b); fecha(k); return { o: b, k } }
     p.bL = braco(-0.3); p.bR = braco(0.3); p.pL = perna(-0.12); p.pR = perna(0.12)
     fecha(hips); fecha(head)
@@ -187,11 +192,16 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   /* tela acesa pelo estado (B6): trabalhando acesa, precisa de você meia luz, o resto quase apagada */
   const luzTela = (st: EstadoCena) => (st === 'trabalhando' ? 0.9 : st === 'precisa' ? 0.5 : 0.12)
   o.funcionarios.forEach((e, i) => {
-    const sala = SALAS[e.sala] ? e.sala : 'recepcao'
-    const s = SALAS[sala], g = salaG[sala]
+    const sala = e.sala && SALAS[e.sala] ? e.sala : 'recepcao'
+    const s = SALAS[sala], g = coletivo ? new T.Group() : salaG[sala]
+    if (coletivo) {
+      const p = composicao!.postos[i]
+      g.position.set(s.cx + p.posicao[0], 0, s.cz + p.posicao[2] - 1.72 + 1.72 * p.escala)
+      g.scale.setScalar(p.escala); g.userData.lista = []; scene.add(g)
+    }
     // C2: a mesa vem da lista única; se a dela já estiver ocupada (ou o funcionário for novo), a 1ª livre
     const u = usadas[sala] || (usadas[sala] = []), quer = POR_ID[e.id]?.sala === sala ? POR_ID[e.id].mesa : null
-    const xs = quer != null && !u.includes(quer) ? quer : ([-2, 0, 2].find(x => !u.includes(x)) ?? [-2, 0, 2][u.length % 3]); u.push(xs)
+    const xs = coletivo ? 0 : quer != null && !u.includes(quer) ? quer : ([-2, 0, 2].find(x => !u.includes(x)) ?? [-2, 0, 2][u.length % 3]); u.push(xs)
     /* mesa, notebook, cadeira */
     cx(o.mini ? 1.65 : 1.1, 0.06, o.mini ? .85 : .6, MADEIRA, xs, 0.6, -1.0, g); [[-0.48, -0.24], [0.48, -0.24], [-0.48, 0.24], [0.48, 0.24]].forEach(q => { cx(0.06, 0.57, 0.06, MADEIRA_E, xs + q[0], 0.285, -1.0 + q[1], g) })
     if (!o.mini) cx(0.42, 0.02, 0.28, 0x8E949C, xs, 0.64, -1.06, g, true)
@@ -219,13 +229,16 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     }
     fecha(acessorio)
     }
-    const b = boneco(POR_ID[e.id]?.roupa || RESERVA[i % RESERVA.length])
+    let roupa = POR_ID[e.id]?.roupa || (e.id === 'imoveis' ? PERFIL_IMOVEIS.roupa : RESERVA[i % RESERVA.length])
+    if (coletivo && i) roupa = { ...roupa, ...Object.fromEntries(['camisa', 'calca', 'pele', 'cabelo'].map(k => [k, new T.Color((roupa as any)[k]).multiplyScalar(.86).getHex()])) }
+    const b = boneco(o.mini && e.id === 'imoveis' ? { ...roupa, apontaContrato: true } : roupa)
     mancha(0.3, 0, 0.07, 0, b.r)
     b.r.traverse((x: any) => { x.userData.id = e.id })
     scene.add(b.r)
     const xg = xs + (xs >= 2 ? -1 : 1), zf = s.d === 5 ? 1.45 : 1.2
     const W = (x: number, z: number) => new T.Vector3(s.cx + x, 0, s.cz + z)
     const ch: any = { id: e.id, sala, st: e.estado, b, pilha, tela: telaMat, S: W(xs, -1.72), G1: W(xg, -1.72), G2: W(xg, zf - 0.5), F: W(xs, zf - 0.5), loc: 'sentado', path: null, fase: i * 1.7, festa: 0, anim: true, pose: {} }
+    if (coletivo) ch.S.set(s.cx + composicao!.postos[i].posicao[0], 0, s.cz - 1.72 + composicao!.postos[i].posicao[2])
     if (o.mini) {
       ch.fase = faseDoId(e.id)
       const palco = new T.Group(); palco.position.copy(ch.S); scene.add(palco)
@@ -252,6 +265,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       cx(.055, .14, .07, mat(POR_ID[e.id]?.roupa.pele || 0xD9A27E), -.065, 0, 0, ch.joinha, true)
       b.r.name = `agente:${e.id}`; b.r.userData.estado = ch.estado
     }
+    if (coletivo) { fecha(g); b.r.scale.setScalar(composicao!.postos[i].escala); ch.palco.scale.setScalar(composicao!.postos[i].escala) }
     if (!o.mini && e.estado === 'precisa') { ch.loc = 'frente'; b.r.position.copy(ch.F); b.r.rotation.y = Math.PI / 4 } else { b.r.position.copy(ch.S) }
     chars.push(ch)
   })
@@ -260,7 +274,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   /* câmera isométrica */
   const cam = new T.OrthographicCamera(-10, 10, 10, -10, 0.1, 100)
   const miniCamera = o.mini && chars[0] ? ATIVIDADES_MINI[chars[0].id]?.camera : null
-  const DIR = new T.Vector3(...(miniCamera?.direcao || [1, .86, 1])).normalize()
+  const DIR = new T.Vector3(...(coletivo ? [0, .24, 1] : miniCamera?.direcao || [1, .86, 1])).normalize()
   cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld()
   const Rt = new T.Vector3(), Up = new T.Vector3(), Fw = new T.Vector3(); cam.matrixWorld.extractBasis(Rt, Up, Fw)
   function vistaDe(x0: number, x1: number, y1: number, z0: number, z1: number) { const a = [1e9, -1e9, 1e9, -1e9], v = new T.Vector3(); [x0, x1].forEach(x => { [0, y1].forEach(y => { [z0, z1].forEach(z => { v.set(x, y, z).sub(cam.position); const cxx = v.dot(Rt), cy = v.dot(Up); a[0] = Math.min(a[0], cxx); a[1] = Math.max(a[1], cxx); a[2] = Math.min(a[2], cy); a[3] = Math.max(a[3], cy) }) }) }); return { cx: (a[0] + a[1]) / 2, cy: (a[2] + a[3]) / 2, hw: (a[1] - a[0]) / 2, hh: (a[3] - a[2]) / 2 } }
@@ -270,10 +284,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   if (o.mini && chars[0]) {
     const ch = chars[0]
     VISTAS[ch.sala] = vistaDe(ch.S.x - (miniCamera?.largura || 1.15), ch.S.x + (miniCamera?.largura || 1.15), ATIVIDADES_MINI[ch.id]?.emPe ? 1.95 : 1.72, ch.S.z - .35, ch.S.z + (miniCamera?.fundo || 1.35))
+    if (coletivo) VISTAS[ch.sala] = vistaDe(ch.S.x - 1, ch.S.x + 2.1, 1.95, ch.S.z - 1.5, ch.S.z + 1.35)
   }
   let vAtual = { ...VISTAS[o.mini ? chars[0]?.sala || 'tudo' : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? chars[0]?.sala || 'tudo' : 'tudo'
   function aplicaVista(v: any) {
-    if (chars[0]?.escritorio) { enquadrarMini(cam, el.clientWidth || 1, el.clientHeight || 1, chars[0].limitesMini); return }
+    if (chars[0]?.limitesMini) { enquadrarMini(cam, el.clientWidth || 1, el.clientHeight || 1, chars[0].limitesMini, coletivo); return }
     const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix()
   }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
@@ -474,7 +489,12 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       const variacao = reduz ? 0 : Math.sin(t * 8) * .007
       ch.maoL.set(-.08 / escalaBoneco, ch.escritorio.teclado.y / escalaBoneco - quadril + variacao, (ch.escritorio.teclado.z - .1) / escalaBoneco)
       ch.maoR.set(.31 / escalaBoneco, ch.escritorio.teclado.y / escalaBoneco - quadril - variacao, (ch.escritorio.teclado.z - .1) / escalaBoneco)
-      ch.apoiarMao(b.bL, ch.maoL); ch.apoiarMao(b.bR, ch.maoR)
+      if (ch.trabalho.maos) {
+        b.r.updateWorldMatrix(true, true); ch.trabalho.raiz.updateWorldMatrix(true, false)
+        ch.maoL.copy(ch.trabalho.maos.esquerda); ch.trabalho.raiz.localToWorld(ch.maoL); b.hips.worldToLocal(ch.maoL)
+        ch.maoR.copy(ch.trabalho.maos.direita); ch.trabalho.raiz.localToWorld(ch.maoR); b.hips.worldToLocal(ch.maoR)
+      }
+      ch.apoiarMao(b.bL, ch.maoL); (ch.apoiarMaoR || ch.apoiarMao)(b.bR, ch.maoR)
     }
     b.olhos.scale.y = reduz ? 1 : Math.pow(Math.max(0, Math.sin(micro * 1.07)), 48) > .8 ? .08 : 1
     b.cabelo.rotation.z = reduz ? 0 : Math.sin(micro * 1.4) * .018
@@ -559,58 +579,74 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   observarDpr()
   tamanho(); solicitar()
 
-  if (o.mini && chars.length === 1) {
+  if (o.mini && chars.length) {
     const controller = new AbortController(); limpezas.push(() => controller.abort())
-    const ch = chars[0]
-    // A cena de caixas já está funcionando. Import/carga/parse/montagem são uma transação.
     void import('./modelosEscritorio').then(async ({ modelosEscritorio }) => {
       if (destruida) return
       const { nomesDaSala } = await import('./escritorioMini')
       if (destruida) return
-      const carga = modelosEscritorio.adquirir(nomesDaSala(ch.sala as SalaEquipe), controller.signal)
-      const modelos = await carga.pronto
+      const modelos = await modelosEscritorio.adquirir(nomesDaSala(chars[0].sala), controller.signal).pronto
       if (!modelos || destruida) return
-      const escritorio = montarEscritorioMini(ch.sala, modelos, POR_ID[ch.id]?.roupa.camisa || 0x6474a0, boneco)
+      const escritorio = montarEscritorioMini(chars[0].sala, modelos, POR_ID[chars[0].id]?.roupa.camisa || 0x6474a0, boneco, composicao!)
       if (destruida) { escritorio.destruir(); return }
       limpezas.push(escritorio.destruir)
-      // A lease fica viva até desmontar: outros minis compartilham o parse e os buffers.
-      const objetos = [...scene.children].filter(x => !x.isLight && x !== sol.target && x !== ch.b.r && x !== ch.palco)
-      const objeto = ch.trabalho.raiz, medido = caixaReal(objeto.clone(true)), centro = medido.getCenter(new T.Vector3())
-      const posicaoAnterior = objeto.position.clone(), escalaAnterior = objeto.scale.clone()
+      // Medidas sem alterar os pivôs; rollback conserva o fallback se a fusão falhar.
+      const preparados: any[] = []
       try {
-        const escala = ch.sala === 'caixa' ? .42 : .52
-        objeto.scale.setScalar(escala)
-        objeto.position.set((ch.sala === 'caixa' ? -.18 : -.28) - centro.x * escala, escritorio.tampo - medido.min.y * escala, .53 - centro.z * escala)
-        fundirGrupos(objeto, guardar)
-        // Caneca/vapor e indicador mantêm seus pivôs; reduz apenas seus desenhos estáticos.
+        for (const ch of chars) {
+          const indice = chars.indexOf(ch), posto = composicao!.postos[indice], dados = escritorio.postos[indice]
+          const objeto = ch.trabalho.raiz, medido = caixaReal(objeto.clone(true)), centro = medido.getCenter(new T.Vector3())
+          const escala = ch.sala === 'caixa' ? .42 : .52
+          preparados.push({ ch, objeto, escala, posicao: new T.Vector3((ch.id === 'imoveis' ? .04 : ch.sala === 'caixa' ? -.18 : -.28) - centro.x * escala, dados.tampo - medido.min.y * escala, (ch.id === 'imoveis' ? .43 : .53) - centro.z * escala), posto, dados })
+        }
+      } catch { escritorio.destruir(); return }
+      const anteriores: any[] = []
+      for (const ch of chars) for (const raiz of [ch.b.r, ch.palco]) raiz.traverse((n: any) => anteriores.push({ n, filhos: [...n.children], pos: n.position.clone(), escala: n.scale.clone(), rot: n.quaternion.clone(), visivel: n.visible, sombra: n.castShadow }))
+      try {
+      // Uma única sala/lease para o elenco; cada posto conserva coordenadas locais para o IK.
+      const objetos = [...scene.children].filter(x => !x.isLight && x !== sol.target && !chars.some(ch => x === ch.b.r || x === ch.palco))
+      const origem = coletivo ? new T.Vector3(SALAS[chars[0].sala].cx, 0, SALAS[chars[0].sala].cz - 1.72) : chars[0].S
+      escritorio.raiz.position.copy(origem); scene.add(escritorio.raiz)
+      const limites = caixaReal(escritorio.raiz)
+      for (const { ch, objeto, escala, posicao, posto, dados } of preparados) {
+        objeto.scale.setScalar(escala); objeto.position.copy(posicao); fundirGrupos(objeto, guardar)
         fundirGrupos(ch.cafe, guardar); fundirGrupos(ch.sinal, guardar)
         ch.b.r.children.filter((m: any) => m.isMesh).forEach((m: any) => { m.visible = false })
-        escritorio.raiz.position.copy(ch.S); scene.add(escritorio.raiz)
         ch.b.r.traverse((m: any) => { m.castShadow = false })
-        // Apoia a face inferior da coxa (26 cm × 20 cm), não o centro do quadril.
         ch.folgaQuadril = .26 * Math.cos(1.5) + .1 * Math.sin(1.5)
-        ch.b.r.scale.setScalar(ESCALA_FUNCIONARIO_MINI)
-        ch.b.r.position.z = ch.S.z + .1
+        ch.b.r.scale.setScalar(ESCALA_FUNCIONARIO_MINI * posto.escala)
+        ch.b.r.position.z = ch.S.z + .1 * posto.escala
+        ch.palco.scale.setScalar(posto.escala)
         ch.apoiarMao = criarApoioDasMaos(); ch.maoL = new T.Vector3(); ch.maoR = new T.Vector3()
-        // Sapatos no piso do tapete, com a canela vertical e joelho dobrado.
-        for (const perna of [ch.b.pL, ch.b.pR]) perna.k.scale.y = (escritorio.assento / ESCALA_FUNCIONARIO_MINI + ch.folgaQuadril - .26 * Math.cos(1.5) - escritorio.piso / ESCALA_FUNCIONARIO_MINI) / .29
-        ch.escritorio = escritorio; ch.pose = {}; ch.rotacao = 0
+        if (ch.id === 'imoveis') ch.apoiarMaoR = criarApoioDasMaos(.325)
+        for (const perna of [ch.b.pL, ch.b.pR]) perna.k.scale.y = (dados.assento / ESCALA_FUNCIONARIO_MINI + ch.folgaQuadril - .26 * Math.cos(1.5) - dados.piso / ESCALA_FUNCIONARIO_MINI) / .29
+        ch.escritorio = { ...dados, tela: escritorio.tela }; ch.pose = {}; ch.rotacao = 0
         atualizaMini(ch, 0)
-        DIR.y *= .3; DIR.normalize(); cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
-        const limites = caixaReal(escritorio.raiz).union(caixaReal(ch.b.r)).union(caixaReal(ch.palco))
-        // A reserva superior cobre aceno/joinha, sem variar zoom a cada gesto.
-        limites.max.y = Math.max(limites.max.y, ch.S.y + escritorio.assento + 1.24 * ESCALA_FUNCIONARIO_MINI)
-        ch.limitesMini = limites; vPara = null; aplicaVista(vAtual)
-        objetos.forEach(x => { x.visible = false }); solicitar()
-      } catch (erro) {
-        scene.remove(escritorio.raiz); escritorio.destruir(); ch.escritorio = null
-        objeto.position.copy(posicaoAnterior); objeto.scale.copy(escalaAnterior)
-        ch.b.r.position.copy(ch.S); ch.b.r.scale.setScalar(1); ch.b.pL.k.scale.y = ch.b.pR.k.scale.y = 1; ch.pose = {}
-        DIR.set(...(miniCamera?.direcao || [1, .86, 1])).normalize()
-        cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
-        aplicaVista(vAtual); throw erro
+        if (coletivo) {
+          // Pernas sentadas são rígidas; cabelo e olhos se juntam à cabeça móvel.
+          const pernas = new T.Group(); ch.b.hips.add(pernas)
+          for (const perna of [ch.b.pL, ch.b.pR]) { pernas.add(perna.o.clone(true)); perna.o.visible = false }
+          fundirRamo(pernas, guardar); fundirRamo(ch.b.head, guardar)
+          ch.cafe.visible = false; ch.relogio.visible = false
+        }
+        limites.union(caixaReal(ch.b.r)).union(caixaReal(ch.palco))
+        limites.max.y = Math.max(limites.max.y, ch.S.y + (dados.assento + 1.24 * ESCALA_FUNCIONARIO_MINI) * posto.escala)
       }
-    }).catch(() => { controller.abort() /* fallback total: não troca para lista */ })
+      if (!coletivo) { DIR.y *= .3; DIR.normalize() }
+      cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true)
+      chars[0].limitesMini = limites; vPara = null; aplicaVista(vAtual)
+      objetos.forEach(x => { x.visible = false }); solicitar()
+      } catch (erro) {
+        scene.remove(escritorio.raiz); escritorio.destruir()
+        for (const { n, filhos, pos, escala, rot, visivel, sombra } of anteriores) {
+          n.clear(); if (filhos.length) n.add(...filhos); n.position.copy(pos); n.scale.copy(escala); n.quaternion.copy(rot); n.visible = visivel; n.castShadow = sombra
+        }
+        chars.forEach(ch => { ch.escritorio = null; ch.limitesMini = null; ch.pose = {} })
+        DIR.set(...(coletivo ? [0, .24, 1] : miniCamera?.direcao || [1, .86, 1])).normalize()
+        cam.position.copy(DIR).multiplyScalar(40); cam.lookAt(0, 0, 0); cam.updateMatrixWorld(true); aplicaVista(vAtual)
+        throw erro
+      }
+    }).catch(() => { controller.abort() /* fallback em falha de carga */ })
   }
 
   // Sem loop com movimento reduzido; apenas a celebração tem um retorno pontual.

@@ -174,7 +174,7 @@ function miniDe(id: string, parado = false, altura = 128) {
 
 describe('atividades individuais dos minis', () => {
   it('cobre todos os ids com atividade, objeto, câmera e fase próprios', () => {
-    expect(Object.keys(ATIVIDADES_MINI).sort()).toEqual(EQUIPE.map(e => e.id).sort())
+    expect(Object.keys(ATIVIDADES_MINI).sort()).toEqual([...new Set([...EQUIPE.map(e => e.id), 'imoveis'])].sort())
     for (const campo of ['atividade', 'objeto', 'camera'] as const) {
       expect(new Set(EQUIPE.map(e => JSON.stringify(ATIVIDADES_MINI[e.id][campo]))).size).toBe(EQUIPE.length)
     }

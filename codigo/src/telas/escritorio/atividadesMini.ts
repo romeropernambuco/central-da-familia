@@ -27,6 +27,7 @@ export const ATIVIDADES_MINI: Record<string, AtividadeMini> = {
   cartao: ficha('Passar cartão e conferir fatura', 'maquininha, cartão com chip e fatura', .8, 1.05, 1.5),
   assistente: ficha('Distribuir o orçamento nos compartimentos', 'carteira aberta e divisórias do mês', 1, 1.15, 1.6),
   guardado: ficha('Empilhar moedas e acompanhar rendimento', 'moedas e gráfico ascendente', 1.25, .85, 1.6),
+  imoveis: ficha('Abrir pasta, acompanhar contrato e virar folha', 'pasta, contrato e carimbo ilustrativos', .85, .9, 1.7),
   usina: emPe(ficha('Inspecionar as células solares', 'dois painéis solares e medidor', .9, 1.05, 1.7, 1.25)),
   secretaria: ficha('Atender telefone e anotar na agenda', 'telefone com gancho e agenda aberta', 1.2, .8, 1.8),
   presenca: ficha('Registrar vistos na grade', 'quadro de presença com grade e vistos', .75, .95, 1.8),
@@ -37,6 +38,13 @@ export const ATIVIDADES_MINI: Record<string, AtividadeMini> = {
   zelador: emPe(ficha('Regular o mecanismo com a chave', 'chave de boca e roda de ajuste', .85, 1, 1.7)),
   protetora: ficha('Abrir e fechar o cadeado', 'cadeado com arco móvel e pasta protegida', 1, .8, 1.9),
 }
+
+/** Metadados para a frente do cadastro; não consulta nem representa dados reais. */
+export const PERFIL_IMOVEIS = {
+  id: 'imoveis', nome: 'Ajudante dos Imóveis', sala: 'patrimonio', objeto: 'pasta',
+  papel: 'Acompanha seus imóveis de investimento: aluguel líquido, custos e contrato',
+  roupa: { camisa: 0x9bbb99, calca: 0x34343c, pele: 0xb98562, cabelo: 0x231a14, estilo: 'curto' },
+} as const
 
 export const LIMITE_MESHES_MINI = 150
 /** Hash estável: mini de um único funcionário não perde a defasagem da equipe. */
@@ -56,6 +64,8 @@ export interface TrabalhoMini {
   /** Tempo local para quando sai de trabalhando; sem alocações no frame. */
   animar(t: number): void
   pose(t: number): Record<string, number>
+  /** Alvos locais da atividade; os buffers são reutilizados, inclusive após escalar o posto. */
+  maos?: { esquerda: any; direita: any }
 }
 
 const PAPEL = 0xFBF8F1, TINTA = 0x3F5873, OURO = 0xD8C27A, VERDE = 0x7E9A86, MADEIRA = 0xB88D62
@@ -86,8 +96,31 @@ export function montarAtividade(id: string, f: OficinaMini): TrabalhoMini {
   const caneta = (pai = raiz) => { const m = box(.025, .025, .25, TINTA, .26, .74, .51, pai); m.userData.movel = true; return m }
   const prancheta = (pai: any) => { box(.49, .6, .05, MADEIRA, 0, 0, 0, pai); box(.42, .5, .02, PAPEL, 0, -.015, .037, pai); box(.18, .06, .035, TINTA, 0, .28, .04, pai) }
   const animacoes: ((t: number) => void)[] = []
+  let maos: TrabalhoMini['maos']
   let gesto: (t: number) => Record<string, number> = () => ({})
   switch (id) {
+    case 'imoveis': {
+      box(.94, .035, .55, VERDE, 0, .67, .61)
+      const capa = g(raiz, -.46, .70, .61)
+      box(.45, .025, .53, TINTA, .225, 0, 0, capa)
+      const contrato = g(raiz, .01, .705, .61)
+      box(.40, .012, .46, PAPEL, .20, 0, 0, contrato)
+      linhas(.20, .015, -.14, 4, contrato)
+      const carimbo = g(raiz, -.27, .75, .63)
+      box(.16, .04, .12, TINTA, 0, 0, 0, carimbo); box(.055, .12, .055, MADEIRA, 0, .07, 0, carimbo)
+      maos = { esquerda: new T.Vector3(-.27, .84, .63), direita: new T.Vector3(.25, .73, .51) }
+      raiz.userData.maos = maos
+      animacoes.push(t => {
+        const ciclo = (t % 8 + 8) % 8
+        capa.rotation.z = -.2 - Math.min(1, ciclo) * 2.6
+        contrato.rotation.z = ciclo > 6 ? Math.sin((ciclo - 6) / 2 * Math.PI) * 2.5 : 0
+        carimbo.position.y = .75 + (ciclo > 5 && ciclo < 6 ? Math.sin((ciclo - 5) * Math.PI) * .08 : 0)
+        maos!.esquerda.set(-.27, carimbo.position.y + .09, .63)
+        // matrix atualizada explicitamente: nenhum alvo depende do frame anterior.
+        contrato.updateMatrix(); maos!.direita.set(.08 + Math.min(ciclo, 5) / 5 * .3, .025, -.06).applyMatrix4(contrato.matrix)
+      })
+      gesto = t => ({ lx: -.8, le: -1.2, rx: -.8, re: -1.25, cy: Math.sin(t * .6) * .12 }); break
+    }
     case 'contador': {
       box(.36, .06, .46, TINTA, -.29, .69, .53)
       box(.27, .012, .09, VERDE, -.29, .728, .39)
@@ -255,5 +288,5 @@ export function montarAtividade(id: string, f: OficinaMini): TrabalhoMini {
     }
     default: folha(0, .6)
   }
-  return { raiz, animar(t) { for (const fn of animacoes) fn(t) }, pose: gesto }
+  return { raiz, animar(t) { for (const fn of animacoes) fn(t) }, pose: gesto, maos }
 }

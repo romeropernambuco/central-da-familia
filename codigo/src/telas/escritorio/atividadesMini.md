@@ -1,5 +1,13 @@
 # Atividades dos agentes no mini
 
+## Frente 17: Imóveis e elencos compartilhados
+
+`ATIVIDADES_MINI.imoveis` fornece atividade, objeto e câmera. `PERFIL_IMOVEIS` exporta os metadados necessários à outra frente: id `imoveis`, nome **Ajudante dos Imóveis**, sala `patrimonio`, objeto `pasta`, camisa verde clara/calça grafite e papel **“Acompanha seus imóveis de investimento: aluguel líquido, custos e contrato”**. A entrada em `equipe.ts`, rota Guardado e autorização somente casal são responsabilidade daquela frente; este módulo não consulta nem autoriza dados.
+
+A pasta tem capa e página articuladas, linhas abstratas de contrato e carimbo. O ciclo abre a pasta, percorre a folha com o indicador direito estendido, acompanha o carimbo com a esquerda e vira a folha. O indicador é fundido à mão, sem desenho adicional; seu alcance de 32,5 cm a partir do cotovelo é considerado no IK. Não há número, texto de contrato real ou operação financeira confirmada pela animação. `TrabalhoMini.maos` é opcional: contém dois vetores reutilizados, locais à atividade; `animar(t)` os atualiza junto com a página/carimbo. A cena os transforma para o quadril de cada personagem antes de resolver o IK, inclusive em postos menores/recuados. As demais atividades mantêm o contato unitário anterior, convertido pela escala/translação do posto.
+
+O tempo/estado pertence a cada id, inclusive no terceiro posto aceito. A câmera coletiva e o orçamento/degradação estão em [escritorioMini.md](./escritorioMini.md#frente-17--sala-compartilhada). No coletivo, pernas sentadas e cabeça com cabelo/olhos são fundidas, caneca/vapor/relógio não são desenhados; braços e os pivôs das atividades continuam independentes. N=1 conserva a representação anterior. Nenhuma microvida avança com reduced motion, aba oculta ou cena fora da tela.
+
 > Registro da cenografia de caixas, agora usada como fallback. A versão Kenney, seus contatos medidos, orçamentos, câmeras e validação atual estão em [escritorioMini.md](./escritorioMini.md). Na versão GLB todos os ids ficam sentados; as posturas e contagens abaixo descrevem apenas o fallback anterior.
 
 A cenografia e as câmeras abaixo só entram com `mini: true`. O escritório completo conserva as salas, os enquadramentos, as roupas e as poses legadas. Não foram acrescentadas luzes, texturas ou sombras aos acessórios. O boneco continua voxel/low-poly, usando as roupas de `equipe.ts` e cores já presentes na cena.
