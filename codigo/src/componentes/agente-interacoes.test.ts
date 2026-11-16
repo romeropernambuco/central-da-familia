@@ -21,6 +21,8 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   Object.assign(doc.documentElement, { dataset: {} })
   vi.stubGlobal('document', doc)
   vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal('addEventListener', window.addEventListener.bind(window))
+  vi.stubGlobal('removeEventListener', window.removeEventListener.bind(window))
   vi.stubGlobal('localStorage', { getItem() { return null }, setItem() {} })
   vi.stubGlobal('location', { hash: '#/casa?sem3d', search: '?sem3d' })
   vi.stubGlobal('history', { state: null, replaceState(_s: unknown, _t: string, url: string) { location.hash = url.slice(url.indexOf('#')) } })

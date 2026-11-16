@@ -25,6 +25,9 @@ export function FuncIco({ id, size = 40, precisa }: { id: string; size?: number;
 
 /** Devolve false se não gravou; a mensagem pronta quando a opção é copiar. */
 export type Responder = (pergunta: string, opcao: string, dados?: Record<string, unknown>) => Promise<boolean | { mensagem?: string }>
+// A confirmação também chega ao mini quando a releitura já retirou a trava/pergunta
+// antes de o React pintar. Apenas metadados transitórios, na mesma loja da família.
+export const respostasConfirmadas = new WeakMap<object, { id: string; funcionario: string }>()
 const ESTADOS: [EstadoItem, string][] = [['tem', 'Tem'], ['pouco', 'Pouco'], ['acabou', 'Acabou']]
 
 /** Lista dos itens da casa pra marcar tem, pouco ou acabou. */
@@ -58,7 +61,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
  * 1 pergunta de 1 funcionário, com os botões de resposta. 1 passo por vez (padrão do Cobrador do app do Michel):
  * resposta simples grava com 1 toque; resposta que pede dia, valor, texto, foto ou contagem abre só esse passo.
  */
-export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; corrige?: boolean; aoResponder?: () => void }) {
+export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder, aoExibir }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; corrige?: boolean; aoResponder?: () => void; aoExibir?: () => void }) {
   const { abrirLancar, familia, api, tentar, oculto, sessao, resumo } = useApp()
   const privados = [...(p.trechosPrivados || []), ...nomesPrivados([familia, sessao, resumo])]
   const fala = (texto: string) => p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)
@@ -75,6 +78,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
   }, [loja, p.id])
   const dono = [...(loja.donos.get(p.id) || [])].find(candidato => (candidato as { dialogo: object | null }).dialogo === dialogoAtivo)
   const bloqueio = loja.travas.get(p.id)
+  useEffect(() => { if (dono === instancia.current && !bloqueio) aoExibir?.() }, [dono, bloqueio, aoExibir])
   const equipe = familia?.papel === 'equipe'
   const [aberta, setAberta] = useState<OpcaoPergunta | null>(null)
   const [campos, setCampos] = useState<Record<string, string>>({})
@@ -83,7 +87,17 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
   const [erro, setErro] = useState('')
   const camera = useRef<HTMLInputElement>(null)
   // trava do toque duplo: vale no mesmo instante do 1º toque
-  const trava = useMemo(() => umaPorVez(async (opcao: string, dados?: Record<string, unknown>) => { setGravando(true); try { const r = await responder(p.id, opcao, dados); if (r !== false) aoResponder?.() } finally { setGravando(false) } }), [responder, p.id])
+  const trava = useMemo(() => umaPorVez(async (opcao: string, dados?: Record<string, unknown>) => {
+    setGravando(true)
+    try {
+      const r = await responder(p.id, opcao, dados)
+      if (r !== false) {
+        respostasConfirmadas.set(loja, { id: p.id, funcionario: EQUIPE.find(m => m.nome === quem)?.id || p.funcionario }); loja.emitir(); aoResponder?.()
+      } else setErro('Não deu certo. Tente de novo.')
+    }
+    catch { setErro('Não deu certo. Tente de novo.') }
+    finally { setGravando(false) }
+  }), [responder, p.id, aoResponder, loja, quem])
   // corrigindo uma resposta antiga: vai junto pra o diário guardar a antiga e valer a nova
   const extra = corrige ? { corrige: true } : undefined
 
@@ -98,6 +112,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
       // a mensagem pronta vem na resposta do banco (efeito.mensagem)
       setGravando(true)
       const r = await responder(p.id, o.id, extra)
+      if (r !== false) { respostasConfirmadas.set(loja, { id: p.id, funcionario: EQUIPE.find(m => m.nome === quem)?.id || p.funcionario }); loja.emitir() }
       setGravando(false)
       const texto = (typeof r === 'object' && r.mensagem) || p.mensagem || ''
       if (texto) { try { await copiarProtegido(texto, 'Conteúdo oculto.') } catch { /* sem permissão: o texto aparece logo abaixo pra copiar à mão */ } setCopiado(texto) }

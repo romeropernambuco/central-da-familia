@@ -1,6 +1,6 @@
 # Insights proativos — contrato para integração
 
-Todos os arquivos desta frente são novos. Não houve mudança em `Pergunta.tsx`, `AgenteDaAba.tsx`, telas, cálculo existente ou banco.
+O motor permanece independente das telas, do cálculo existente e do banco. A ligação visual fica em `AgenteDaAba.tsx` e usa `PerguntaCard`.
 
 ## Motor e regras
 
@@ -34,6 +34,10 @@ Dinheiro chega da API em reais somente ao adaptador `snapshot.ts`, que o convert
 
 Passar `p={pergunta}`, `quem` conforme `funcionario`, `responder={responder}`. Conservar a etiqueta já existente de `api.modo === 'exemplo'`. Não enviar IDs `insight:*` a `useEscritorio().responder`/`escritorioResponder`. A composição abre a folha de explicação existente; atalhos navegam pelo hash. Nenhuma resposta de domínio é escrita por efeito de avaliação, timer ou render. As escritas ficam nos callbacks de ação do usuário e usam a API selecionada. Trava síncrona impede toque duplo; falha não marca resolvido.
 
+Na integração, a pergunta do banco tem preferência; sem ela, o único insight da rota escolhe também o funcionário (reserva usa `colchao`, recebimentos/objetivo usam `tesoureiro`). `PerguntaCard.aoExibir` é um callback opcional de visibilidade efetiva: somente o dono na superfície ativa o chama. Assim `marcarVista` não consome um insight encoberto pela ficha ou por uma pergunta do banco. A folha de nota usa `reduzirFoto` e `anexarNota`, sem passar pelo contrato de upload da pergunta do banco.
+
+O contrato público do hook foi preservado. Internamente, instâncias da mesma API/usuário/família/papel/rota compartilham leitura e retenção da pergunta, e as respostas usam a trava central por família+pergunta. Resolução/adiamento são registrados antes da releitura; falha de atualização não desfaz a confirmação nem autoriza novo envio. O relógio não usa polling: foco, visibilidade, storage e timeouts nas fronteiras de 7h, 22h e meia-noite atualizam a elegibilidade. A mudança de dia pode reler; foco e silêncio não acrescentam leituras.
+
 ## Leituras e limites de dados
 
 `leitura.ts` usa apenas endpoints existentes, por aba, sem importar `api/exemplo*` ou fallback fictício. Equipe só consulta `feiras` em Casa; pessoa não consulta finanças. O snapshot da equipe descarta dinheiro/nome de feira mesmo se a resposta contiver campos extras. O resumo do contexto é reutilizado no Planejamento.
@@ -54,4 +58,6 @@ Testes `.test.ts`, sem JSX: tabelas dos oito gatilhos, limites de centavos/calen
 
 Resultado verificado: TypeScript (`node node_modules/typescript/bin/tsc -p . --noEmit`) sem erros; suíte completa com **590 testes em 37 arquivos**, incluindo os **504 existentes + 86 novos**. `npm test` teve acesso negado ao carregar vite.config.ts; foi usada a API do Vitest por executor temporário fora do repositório, com cwd/root em `codigo`, `config:false`, `envFile:false`, JSX automático e processos isolados. Contraprova: implementações novas substituídas temporariamente por exportações sem comportamento, mantendo imports/coleta válidos; **86/86 testes novos falharam**. Os arquivos foram restaurados byte a byte antes da validação final. Nenhum teste ficou pulado, nem houve instalação ou build.
 
-A integração visual ficou deliberadamente fora: outra frente conecta o hook ao agente e renderiza a tarefa de foto. Sem esse encaixe, nada novo aparece no app. Não há notificações do sistema ou execução com app fechado: o hook verifica o relógio a cada 30 segundos, no foco e na volta de visibilidade; leituras acompanham versão/dia/atualização. Não houve alteração de telas, componentes protegidos, exportações API, scripts do repositório, pacotes, banco ou serviços externos.
+A ligação visual agora conecta o hook ao agente e renderiza a tarefa de foto. O mini recebe `definirEstado` sem remontagem por mudança de estado; o fallback apresenta o mesmo estado em texto. Não há notificações do sistema ou execução com app fechado. Leituras acompanham versão/dia/atualização; não houve alteração de cálculo, cena 3D, CSS, App, exportações API, scripts do repositório, pacotes, banco ou serviços externos.
+
+Validação da ligação (15/11/2026): TypeScript sem erros; **735 testes em 43 arquivos**, preservando os 708 da base e acrescentando 27. Componentes, hooks e motor reais; somente renderer/Three e fronteiras da API são simulados. A contraprova repôs temporariamente `AgenteDaAba.tsx`, `Pergunta.tsx` e `useInsightsDaAba.ts` anteriores: **27/27 testes novos falharam**; os arquivos foram restaurados com conferência de hash. Executor Vitest e logs ficaram no diretório temporário externo ao repositório. O DOM dos testes antigos recebeu os eventos usados pelo hook; a auditoria global fixa o relógio para não perder perguntas do exemplo após 22h. Inspeção visual em WebGL/aparelho real continua fora desta validação.

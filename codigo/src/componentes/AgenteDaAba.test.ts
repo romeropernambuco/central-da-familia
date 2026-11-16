@@ -48,7 +48,7 @@ it('trocar de aba e desmontar libera a cena; sem3d não importa nem monta render
   vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   ciclo.destruir.mockClear(); ciclo.montar.mockReset()
-  ciclo.montar.mockImplementation(() => ({ destruir: ciclo.destruir, irPara() {} }))
+  ciclo.montar.mockImplementation(() => ({ destruir: ciclo.destruir, definirEstado() {}, irPara() {} }))
   const container = doc.createElement('div'); doc.body.appendChild(container)
   const root = createRoot(container as unknown as HTMLElement)
   try {
@@ -141,6 +141,8 @@ it('design: divulgacao real abre tarefas e informa o painel controlado', async (
  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
  vi.stubGlobal('location', { hash: '', search: '?sem3d' })
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+ vi.stubGlobal('addEventListener', () => {})
+ vi.stubGlobal('removeEventListener', () => {})
  const ctx = contextoDesign()
  await lojaEscritorio(ctx.api, ctx.familia!.id).ler(ctx.api, ctx.familia!.id)
  const container = doc.createElement('div'); doc.body.appendChild(container)
@@ -187,7 +189,7 @@ it('design: mini segue tema automatico, explicito e remove observadores', async 
  vi.stubGlobal('MutationObserver', class { constructor(f: () => void) { observar = f } observe() {} disconnect = desconectar })
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
  const tema = vi.fn()
- ciclo.montar.mockReset(); ciclo.montar.mockImplementation(() => ({ destruir() {}, irPara() {}, tema }))
+ ciclo.montar.mockReset(); ciclo.montar.mockImplementation(() => ({ destruir() {}, definirEstado() {}, irPara() {}, tema }))
  const container = doc.createElement('div'); doc.body.appendChild(container)
  const root = createRoot(container as unknown as HTMLElement)
  try {

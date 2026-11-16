@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import type { Api } from '../api/tipos'
+import { lojaEscritorio } from './escritorioCompartilhado'
 import { useApp } from './contexto'
 import { rotaPermitida, type Rota } from './rotas'
 import { ErroSessao } from '../api/erros'
@@ -13,34 +15,68 @@ import type { EventoInsight, Insight } from '../lib/insights/tipos'
 import type { LeiturasInsights } from '../lib/insights/snapshot'
 import { textoPrivado } from '../componentes/privacidade'
 
+// Uma sessão de exibição por aba, inclusive quando a ficha e o fundo estão montados.
+// Compartilha a leitura em andamento e a retenção do card visto, sem polling ou novo endpoint.
+const sessoes = new WeakMap<Api, Map<string, ReturnType<typeof criarSessao>>>()
+function criarSessao(chave: string) {
+  let estado: { visivel: Insight | null; mudanca: number; revisao: number } = { visivel: null, mudanca: 0, revisao: 0 }
+  const ouvintes = new Set<() => void>()
+  const leituras = new Map<string, ReturnType<typeof lerDadosInsights>>()
+  return {
+    memoria: criarMemoriaLocal(chave), leituras,
+    snapshot: () => estado,
+    assinar(f: () => void) {
+      ouvintes.add(f)
+      return () => { ouvintes.delete(f); if (!ouvintes.size) { estado = { ...estado, visivel: null }; leituras.clear() } }
+    },
+    mudar(p: Partial<typeof estado>) { estado = { ...estado, ...p, mudanca: estado.mudanca + 1 }; ouvintes.forEach(f => f()) },
+  }
+}
+function sessaoInsights(api: Api, escopo: string, chave: string) {
+  let mapa = sessoes.get(api)
+  if (!mapa) { mapa = new Map(); sessoes.set(api, mapa) }
+  let sessao = mapa.get(escopo)
+  if (!sessao) { sessao = criarSessao(chave); mapa.set(escopo, sessao) }
+  return sessao
+}
+
 /** Não monta UI nem escreve durante a avaliação. A tela recebe PerguntaEsc + responder.
  * chamar marcarVista(p.id) APÓS exibir (não durante render); ver integração em lib/insights/README.md. */
 export function useInsightsDaAba(rota: Rota) {
   const { api, familia, sessao, versao, resumo, oculto, tentar, recarregar, explicar } = useApp()
   const [agora, setAgora] = useState(() => Date.now())
-  const [revisao, setRevisao] = useState(0)
   const [dados, setDados] = useState<{ escopo: string; versao: number; dados: LeiturasInsights; falhou: boolean } | null>(null)
   const [nota, setNota] = useState<{ escopo: string; feira: string } | null>(null)
-  const [mudanca, setMudanca] = useState(0)
   const pode = !!familia && rotaPermitida(rota, familia.papel, sessao?.dono) === rota
   const escopo = chaveArmazenamento(api.modo, sessao?.userId || '', familia?.id || '') + ':' + rota + ':' + familia?.papel + ':' + familia?.membroId
   const atual = useRef(escopo); atual.current = escopo
   const trava = useRef(new Set<string>())
-  const memoria = useMemo(() => criarMemoriaLocal(chaveArmazenamento(api.modo, sessao?.userId || '', familia?.id || '')), [api, api.modo, sessao?.userId, familia?.id])
+  const compartilhada = sessaoInsights(api, escopo, chaveArmazenamento(api.modo, sessao?.userId || '', familia?.id || ''))
+  const { memoria } = compartilhada
+  const { visivel, mudanca, revisao } = useSyncExternalStore(compartilhada.assinar, compartilhada.snapshot, compartilhada.snapshot)
+  const loja = lojaEscritorio(api, familia?.id || '')
+  const setRevisao = () => compartilhada.mudar({ revisao: revisao + 1 })
   const dia = tempoRecife(agora)?.dia
   useEffect(() => {
     const tick = () => setAgora(Date.now())
-    const storage = () => { setMudanca(x => x + 1); tick() }
-    const relogio = setInterval(tick, 30000)
+    const storage = () => { compartilhada.mudar({}); tick() }
+    // Somente as fronteiras do calendário/silêncio podem mudar uma proposta sem novos dados.
+    const t = tempoRecife(agora)
+    const inicio = t ? Date.parse(t.dia + 'T00:00:00-03:00') : agora
+    const proxima = [7, 22, 24].map(h => inicio + h * 3600000).find(ms => ms > agora)!
+    const relogio = setTimeout(tick, Math.max(1, proxima - agora))
     addEventListener('focus', tick); addEventListener('storage', storage)
     document.addEventListener('visibilitychange', tick)
-    return () => { clearInterval(relogio); removeEventListener('focus', tick); removeEventListener('storage', storage); document.removeEventListener('visibilitychange', tick) }
-  }, [])
+    return () => { clearTimeout(relogio); removeEventListener('focus', tick); removeEventListener('storage', storage); document.removeEventListener('visibilitychange', tick) }
+  }, [compartilhada, agora])
   useEffect(() => {
     if (!pode || !familia) return
     let vivo = true
     setDados(null)
-    void lerDadosInsights(api, familia, rota, Date.now()).then(r => {
+    const chave = JSON.stringify([versao, revisao, dia])
+    let leitura = compartilhada.leituras.get(chave)
+    if (!leitura) { compartilhada.leituras.clear(); leitura = lerDadosInsights(api, familia, rota, Date.now()); compartilhada.leituras.set(chave, leitura) }
+    void leitura.then(r => {
       if (!vivo) return
       const sessaoVencida = r.erros.find(e => e instanceof ErroSessao)
       if (sessaoVencida) { void tentar(async () => { throw sessaoVencida }); return }
@@ -51,25 +87,28 @@ export function useInsightsDaAba(rota: Rota) {
   const validos = pode && dados?.escopo === escopo && dados.versao === versao ? dados : null
   const snapshot = useMemo(() => familia && validos ? montarSnapshot(familia, api.modo, { ...validos.dados,
     ...(rota === 'planejamento' ? { resumo } : {}) }, agora) : null, [familia, validos, api.modo, rota, resumo, agora])
-  const [visivel, setVisivel] = useState<{ escopo: string; insight: Insight } | null>(null)
   const propostas = useMemo(() => snapshot ? avaliarInsights(snapshot, agora, memoria.ler()).filter(i => i.rota === rota) : [], [snapshot, agora, memoria, mudanca, rota])
   // A confirmação de exibição persiste o dedupe, mas não retira o card já na tela.
   const m = memoria.ler()
-  const memoriaRetida = visivel ? { ...m, [visivel.insight.chave]: { ...m[visivel.insight.chave], vistoEm: undefined } } : m
-  const retido = visivel?.escopo === escopo && snapshot
-    ? avaliarInsights(snapshot, agora, memoriaRetida).find(i => i.id === visivel.insight.id) : undefined
+  const memoriaRetida = visivel ? { ...m, [visivel.chave]: { ...m[visivel.chave], vistoEm: undefined } } : m
+  const retido = visivel && snapshot
+    ? avaliarInsights(snapshot, agora, memoriaRetida).find(i => i.id === visivel.id) : undefined
   const p = retido || propostas[0]
   const registrar = useCallback((i: Insight, evento: EventoInsight) => {
-    memoria.registrar(i.chave, evento, Date.now()); setMudanca(x => x + 1)
-    if (evento.tipo !== 'visto') setVisivel(null)
-  }, [memoria])
+    memoria.registrar(i.chave, evento, Date.now())
+    compartilhada.mudar(evento.tipo !== 'visto' ? { visivel: null } : {})
+  }, [memoria, compartilhada])
   const marcarVista = useCallback((id: string) => {
     if (p?.id !== id) return
-    setVisivel({ escopo, insight: p }); registrar(p, { tipo: 'visto' })
-  }, [p, escopo, registrar])
+    if (visivel?.id === id) return
+    compartilhada.mudar({ visivel: p }); registrar(p, { tipo: 'visto' })
+  }, [p, visivel, compartilhada, registrar])
   const responder = useCallback(async (id: string, opcao: string, campos: Record<string, unknown> = {}) => {
-    if (!p || p.id !== id || !familia || trava.current.has(id) || atual.current !== escopo) return false
+    if (!p || p.id !== id || !familia || trava.current.has(id) || loja.travas.has(id) || atual.current !== escopo) return false
+    const lembranca = memoria.ler()[p.chave]
+    if (lembranca?.resolvido || (lembranca?.adiadoAte || 0) > Date.now()) return false
     trava.current.add(id)
+    loja.travas.set(id, 'enviando'); loja.emitir()
     const resultado: { evento: EventoInsight | false } = { evento: false }
     const ok = await tentar(async () => {
       let i = p
@@ -89,23 +128,29 @@ export function useInsightsDaAba(rota: Rota) {
     })
     trava.current.delete(id)
     const evento = resultado.evento
-    if (!ok || !evento || atual.current !== escopo) return false
+    if (!ok || !evento) { loja.travas.delete(id); loja.emitir(); return false }
+    // Confirma a escrita ANTES de reler. Uma releitura falha nunca permite reenviar.
+    if (evento.tipo === 'visto') loja.travas.delete(id)
+    else loja.travas.set(id, 'respondida')
+    loja.emitir()
     registrar(p, evento)
-    if (evento.tipo === 'resolvido') { setRevisao(x => x + 1); await recarregar() }
+    if (atual.current !== escopo) return true
+    if (evento.tipo === 'resolvido') { setRevisao(); try { await recarregar() } catch { /* Já gravada e lembrada. */ } }
     return true
-  }, [p, familia, escopo, tentar, snapshot, api, explicar, oculto, registrar, recarregar])
+  }, [p, familia, escopo, tentar, snapshot, api, explicar, oculto, registrar, recarregar, loja, compartilhada, revisao])
   const anexarNota = useCallback(async (fotoBase64Jpeg: string) => {
     if (!pode || !familia || !['casal', 'equipe'].includes(familia.papel) || nota?.escopo !== escopo || atual.current !== escopo || trava.current.has('nota') || !fotoBase64Jpeg) return false
     trava.current.add('nota')
     const ok = await tentar(() => api.feiraAnexarNota(familia.id, nota.feira, fotoBase64Jpeg))
     trava.current.delete('nota')
     if (!ok || atual.current !== escopo) return false
-    setNota(null); setVisivel(null); setRevisao(x => x + 1); await recarregar(); return true
-  }, [pode, familia, nota, escopo, tentar, api, recarregar])
+    if (p?.acao.tipo === 'feira' && p.acao.id === nota.feira) registrar(p, { tipo: 'resolvido' })
+    setNota(null); setRevisao(); try { await recarregar() } catch { /* Foto já guardada. */ } return true
+  }, [pode, familia, nota, escopo, tentar, api, recarregar, p, registrar, compartilhada, revisao])
   const pergunta = p ? apresentarInsight(p, oculto) : null
   return { pergunta, perguntas: pergunta ? [pergunta] : [], responder, marcarVista,
     exemplo: api.modo === 'exemplo', estado: !pode ? 'desligado' : !validos ? 'buscando' : validos.falhou ? 'erro' : 'ok',
     motivo: validos?.falhou ? 'Parte dos dados não pôde ser conferida. Tente atualizar.' : '',
-    atualizar: () => setRevisao(x => x + 1), notaPendente: nota?.escopo === escopo ? nota.feira : null,
+    atualizar: setRevisao, notaPendente: nota?.escopo === escopo ? nota.feira : null,
     anexarNota, fecharNota: () => setNota(null) }
 }

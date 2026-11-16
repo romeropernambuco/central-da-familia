@@ -13,6 +13,39 @@ import { copiarProtegido } from './componentes/privacidade'
 import { App as AppReal } from './app/App'
 import { Provedor } from './app/contexto'
 import { Cadastro, FichaFuncionario } from './telas/escritorio/Ficha'
+import { CASOS_LIGACAO, contextoLigacao } from './lib/insights/ligacao.dom-teste'
+
+it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mantém opções/aria legíveis', async (tipo, rota, funcionario, pergunta) => {
+  const doc = ambiente(), container = doc.createElement('div'); doc.body.appendChild(container)
+  const root = createRoot(container as unknown as HTMLElement), ctx = contextoLigacao(tipo)
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-12-30T12:00:00-03:00'))
+  let alternar = () => {}
+  function App() {
+    const [oculto, mudar] = useState(true)
+    alternar = () => mudar(v => !v); esconderValores(oculto)
+    return createElement(ContextoApp.Provider, { value: { ...ctx, oculto } }, createElement(AgenteDaAba, { rota }))
+  }
+  try {
+    await act(async () => root.render(createElement(App)))
+    expect(container.textContent).toContain(pergunta)
+    const card = container.buscar(n => n.getAttribute('data-pergunta')?.startsWith('insight:') === true)[0]
+    expect(card).toBeDefined()
+    expect(container.buscar(n => n.getAttribute('data-agente') === funcionario)).toHaveLength(1)
+    const opcoes = card.buscar(n => n.tagName === 'BUTTON').map(n => n.textContent)
+    for (const fechado of [true, false, true]) {
+      expect(container.buscar(n => n.getAttribute('data-pergunta') !== null)).toHaveLength(1)
+      expect(card.buscar(n => n.tagName === 'BUTTON').map(n => n.textContent)).toEqual(opcoes)
+      expect(card.buscar(n => n.tagName === 'BUTTON').map(n => n.getAttribute('aria-label'))).toEqual(opcoes)
+      expect(opcoes).toContain('Depois'); expect(opcoes).toContain('Já resolvido')
+      expect(opcoes.every(r => !r.includes('•••'))).toBe(true)
+      if (fechado) expect(vazamentos(container)).toEqual([])
+      else if (['fatura_vencendo', 'fatura_divergente', 'parcelas', 'recebimento', 'aplicacao'].includes(tipo)) {
+        expect(card.textContent).toContain(segredo); expect(card.textContent).toContain('9.876,54')
+      }
+      await act(async () => alternar())
+    }
+  } finally { await act(async () => root.unmount()); esconderValores(false); vi.useRealTimers(); vi.unstubAllGlobals() }
+})
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
 const telas = ['Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
@@ -150,6 +183,8 @@ describe('regra do olho em cada tela real', () => {
   it('cada tela: HTML completo, fechado → aberto → fechado sem remontar', async () => {
    expect(Object.entries(modulos).filter(([, m]) => !telas.some(nome => m[nome])).map(([arquivo]) => arquivo)).toEqual([])
    for (const nome of [...telas, ...rotasAgentes.map(r => 'Agente:' + r)]) {
+    // O exemplo silencia perguntas às 22h; a auditoria precisa sempre exercitar dados.
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00'))
     const doc = ambiente()
     const container = doc.createElement('div'); doc.body.appendChild(container)
     const root = createRoot(container as unknown as HTMLElement)
@@ -203,7 +238,7 @@ describe('regra do olho em cada tela real', () => {
       if (!nome.startsWith('Agente:') && !['Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(nome)) expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
       await act(async () => alternar())
       expect(html(container).match(padrao), nome).toBeNull()
-    } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
+    } finally { await act(async () => root.unmount()); esconderValores(false); vi.useRealTimers(); vi.unstubAllGlobals() }
    }
   }, 60000)
 })
