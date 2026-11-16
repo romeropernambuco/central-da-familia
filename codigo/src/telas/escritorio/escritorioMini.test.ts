@@ -10,7 +10,7 @@ import * as T from 'three'
 // @ts-ignore: Three sem tipos locais.
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { criarCacheModelos } from './modelosEscritorio'
-import { VARIANTES, nomesDaSala, bytesDaSala, caixaReal } from './escritorioMini'
+import { VARIANTES, nomesDaSala, bytesDaSala, caixaReal, montarEscritorioMini } from './escritorioMini'
 import inventario from './inventarioModelos.json'
 import { montarCena } from './cena3d'
 import { EQUIPE } from './equipe'
@@ -93,6 +93,176 @@ function contagem(scene: any) {
 }
 function projetar(box: any, camera: any) { return box.clone().applyMatrix4(camera.matrixWorldInverse).applyMatrix4(camera.projectionMatrix) }
 
+/** Raster de cobertura dos triângulos REAIS (sem iluminação, materiais, rede ou GPU).
+ * A mesma direção nas sete salas evita confundir câmera diferente com planta diferente. */
+function silhueta(raiz: any) {
+  raiz = raiz.clone(true); raiz.position.set(0, 0, 0)
+  const w = 303, h = 128, pixels = new Uint8Array(w * h)
+  const camera = new T.OrthographicCamera(-2.1, 2.1, .887, -.887, .1, 100)
+  camera.position.set(10, 3, 16); camera.lookAt(0, .65, .25); camera.updateMatrixWorld(true)
+  const vista = new T.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+  const local = new T.Matrix4(), matriz = new T.Matrix4(), ponto = new T.Vector3()
+  raiz.updateMatrixWorld(true)
+  raiz.traverseVisible((m: any) => {
+    if (!m.isMesh) return
+    const g = m.geometry, pos = g.attributes.position, n = g.index?.count || pos.count
+    for (let instancia = 0; instancia < (m.isInstancedMesh ? m.count : 1); instancia++) {
+      local.identity(); if (m.isInstancedMesh) m.getMatrixAt(instancia, local)
+      matriz.copy(vista).multiply(m.matrixWorld).multiply(local)
+      for (let i = 0; i < n; i += 3) {
+        const v = [0, 1, 2].map(j => {
+          ponto.fromBufferAttribute(pos, g.index ? g.index.getX(i + j) : i + j).applyMatrix4(matriz)
+          return [(ponto.x + 1) * w / 2, (1 - ponto.y) * h / 2]
+        })
+        const lado = (a: number[], b: number[], x: number, y: number) => (x - a[0]) * (b[1] - a[1]) - (y - a[1]) * (b[0] - a[0])
+        for (let y = Math.max(0, Math.floor(Math.min(...v.map(p => p[1])))); y <= Math.min(h - 1, Math.ceil(Math.max(...v.map(p => p[1])))); y++) {
+          for (let x = Math.max(0, Math.floor(Math.min(...v.map(p => p[0])))); x <= Math.min(w - 1, Math.ceil(Math.max(...v.map(p => p[0])))); x++) {
+            const s = [lado(v[0], v[1], x + .5, y + .5), lado(v[1], v[2], x + .5, y + .5), lado(v[2], v[0], x + .5, y + .5)]
+            if (s.every(n => n >= 0) || s.every(n => n <= 0)) pixels[y * w + x] = 1
+          }
+        }
+      }
+    }
+  })
+  return pixels
+}
+
+describe('identidades das salas — regressões da frente salas', () => {
+  it.each(Object.keys(VARIANTES) as (keyof typeof VARIANTES)[])('%s: tinta real, três modelos exclusivos e assinatura construída', async sala => {
+    const a = await mini(EQUIPE.find(e => e.sala === sala)!.id)
+    try {
+      const v = VARIANTES[sala], d = a.escritorio.userData, pecas = d.pecas
+      expect(d.identidade).toEqual(v)
+      expect(v.assinatura.length).toBeGreaterThan(20); expect(v.planta.length).toBeGreaterThan(20)
+      expect(v.exclusivas.length).toBeGreaterThanOrEqual(3)
+      for (const nome of v.exclusivas) {
+        expect(pecas[nome]?.length, nome).toBeGreaterThan(0)
+        for (const outra of Object.keys(VARIANTES) as (keyof typeof VARIANTES)[]) if (outra !== sala) expect(nomesDaSala(outra), nome).not.toContain(nome)
+      }
+      const piso = pecas.floorFull[0]
+      for (const [nome, caixas] of Object.entries(pecas) as [string, any[]][]) {
+        if (nome.startsWith('wall') || nome === 'doorway' || nome === 'floorFull') continue
+        for (const b of caixas) {
+          expect(b.min.x, nome).toBeGreaterThanOrEqual(piso.min.x - .00001)
+          expect(b.max.x, nome).toBeLessThanOrEqual(piso.max.x + .00001)
+          expect(b.min.z, nome).toBeGreaterThanOrEqual(piso.min.z - .00001)
+          expect(b.max.z, nome).toBeLessThanOrEqual(piso.max.z + .00001)
+        }
+      }
+      const rgb = (n: number) => [n >> 16, n >> 8 & 255, n & 255]
+      for (const outra of Object.keys(VARIANTES) as (keyof typeof VARIANTES)[]) if (outra !== sala) {
+        const distancia = (k: 'parede' | 'piso') => Math.hypot(...rgb(v.paleta[k]).map((c, i) => c - rgb(VARIANTES[outra].paleta[k])[i]))
+        expect(distancia('parede'), sala + '/' + outra).toBeGreaterThanOrEqual(60)
+        expect(distancia('piso')).toBeGreaterThanOrEqual(25)
+        expect(v.paleta.tapete).not.toBe(VARIANTES[outra].paleta.tapete)
+      }
+      // A declaração sozinha não basta: as três tintas devem chegar aos buffers desenhados.
+      const contadores = [0, 0, 0], cores = Object.values(v.paleta).map(n => new T.Color(n))
+      a.escritorio.traverseVisible((m: any) => {
+        const c = m.geometry?.attributes.color
+        if (!c) return
+        for (let i = 0; i < c.count; i++) cores.forEach((cor, k) => {
+          if (Math.hypot(c.getX(i) - cor.r, c.getY(i) - cor.g, c.getZ(i) - cor.b) < .00001) contadores[k]++
+        })
+        expect(m.material?.map).toBeFalsy(); expect(m.castShadow).toBe(false)
+      })
+      expect(contadores.every(n => n >= 36)).toBe(true)
+      expect(pecas[v.tapete]).toHaveLength(1)
+      if (sala === 'casa') {
+        expect(pecas.plantSmall1).toHaveLength(3)
+        pecas.plantSmall1.forEach((b: any) => expect(b.min.y).toBeCloseTo(pecas.bookcaseClosedWide[0].max.y, 6))
+      }
+      if (sala === 'cartoes') {
+        expect(pecas.cardboardBoxClosed).toHaveLength(3)
+        for (let i = 1; i < 3; i++) expect(pecas.cardboardBoxClosed[i].min.y).toBeCloseTo(pecas.cardboardBoxClosed[i - 1].max.y, 6)
+      }
+      if (sala === 'caixa') expect(pecas.radio[0].min.y).toBeCloseTo(d.tampo, 6)
+      if (sala === 'patrimonio') { expect(pecas.bookcaseOpen).toHaveLength(2); expect(pecas.books).toHaveLength(4) }
+      if (sala === 'recepcao') expect(pecas.pottedPlant[0].max.y).toBeGreaterThan(pecas.loungeSofa[0].max.y * 1.5)
+      if (sala === 'gestao') { expect(pecas.chairCushion).toHaveLength(2); expect(pecas.computerScreen[2].min.y).toBeCloseTo(pecas.cabinetTelevision[0].max.y, 6) }
+      if (sala === 'apoio') expect(pecas.laptop[0].min.y).toBeCloseTo(pecas.table[0].max.y, 6)
+      expect(contagem(a.scene).calls).toBeLessThanOrEqual(40)
+      expect(contagem(a.scene).triangles).toBeLessThanOrEqual(60000)
+      expect(bytesDaSala(sala)).toBeLessThanOrEqual(150000)
+    } finally { a.c.destruir() }
+  })
+
+  it('as 21 duplas diferem em pelo menos 4% da silhueta monocromática a 303×128', async () => {
+    const imagens: { sala: string; pixels: Uint8Array }[] = []
+    for (const sala of Object.keys(VARIANTES)) {
+      const a = await mini(EQUIPE.find(e => e.sala === sala)!.id)
+      try { imagens.push({ sala, pixels: silhueta(a.escritorio) }) } finally { a.c.destruir() }
+    }
+    for (let i = 0; i < imagens.length; i++) for (let j = i + 1; j < imagens.length; j++) {
+      let diferentes = 0, uniao = 0
+      imagens[i].pixels.forEach((v, k) => { const b = imagens[j].pixels[k]; if (v || b) uniao++; if (v !== b) diferentes++ })
+      console.log('SILHUETA', imagens[i].sala, imagens[j].sala, diferentes / uniao)
+      expect(diferentes / uniao, imagens[i].sala + '/' + imagens[j].sala).toBeGreaterThanOrEqual(.04)
+    }
+  })
+
+  it.each(EQUIPE.map(e => e.id))('%s: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos', async id => {
+    const a = await mini(id)
+    try {
+      const d = a.escritorio.userData, hips = a.agente.children[0], head = hips.children.find((g: any) => g.position.y === .5)
+      expect(a.agente.scale.toArray()).toEqual([.92, .92, .92])
+      const alturaMesaGLB = inventario.desk.max[1] - inventario.desk.min[1]
+      expect(d.tampo - .011).toBeCloseTo(alturaMesaGLB * 1.815, 6)
+      const monitor = d.pecas.computerScreen[0], alturaMonitor = monitor.max.y - monitor.min.y
+      expect(alturaMonitor).toBeCloseTo((inventario.computerScreen.max[1] - inventario.computerScreen.min[1]) * 1.43, 6)
+      // Centro da cabeça acima do tampo, em alturas do monitor GLB completo (base inclusa).
+      const centro = caixaReal(head).getCenter(new T.Vector3()).sub(a.escritorio.position)
+      const proporcao = (centro.y - d.tampo) / alturaMonitor
+      console.log('ESCALA', id, proporcao)
+      expect(proporcao).toBeGreaterThanOrEqual(1.10); expect(proporcao).toBeLessThanOrEqual(1.50)
+      for (const [w, h] of [[303, 128], [303, 180], [560, 180]]) {
+        a.el.clientWidth = w; a.el.clientHeight = h; a.janela.dispatchEvent(new Event('resize'))
+        const p = projetar(caixaReal(a.agente), a.camera), ph = projetar(caixaReal(head), a.camera)
+        expect((p.max.y - p.min.y) / 2).toBeGreaterThanOrEqual(.55)
+        expect((p.max.y - p.min.y) / 2).toBeLessThanOrEqual(.70)
+        expect(Math.max(Math.abs(ph.min.x), Math.abs(ph.max.x), Math.abs(ph.min.y), Math.abs(ph.max.y))).toBeLessThanOrEqual(.9)
+        for (const estado of ['trabalhando', 'chamando', 'resolvido', 'parado'] as const) {
+          a.c.definirEstado(id, estado)
+          for (const objeto of [a.agente, a.atividade, a.escritorio]) {
+            const b = projetar(caixaReal(objeto), a.camera)
+            expect(Math.max(Math.abs(b.min.x), Math.abs(b.max.x), Math.abs(b.min.y), Math.abs(b.max.y))).toBeLessThanOrEqual(.9)
+          }
+        }
+        a.c.definirEstado(id, 'trabalhando')
+      }
+    } finally { a.c.destruir() }
+  })
+
+  it('tintas simultâneas preservam o GLB do cache; bases dos acessórios encontram o tampo real', async () => {
+    const salas = Object.keys(VARIANTES) as (keyof typeof VARIANTES)[]
+    const nomes = [...new Set(salas.flatMap(nomesDaSala))], modelos: Record<string, any> = {}
+    for (const nome of nomes) modelos[nome] = (await new GLTFLoader().parseAsync(buffer(nome), '')).scene
+    const originais: { material: any; cor: number }[] = []
+    Object.values(modelos).forEach(m => m.traverse((n: any) => { if (n.isMesh) originais.push({ material: n.material, cor: n.material.color.getHex() }) }))
+    const montagens: ReturnType<typeof montarEscritorioMini>[] = []
+    try {
+      for (const sala of salas) {
+        const a = montarEscritorioMini(sala, modelos, 0x123456, () => { throw Error('colega universal removido') }); montagens.push(a)
+        const mesa = a.pecas[VARIANTES[sala].mesa][0]; mesa.updateMatrixWorld(true)
+        for (const nome of ['computerScreen', 'computerKeyboard', 'computerMouse', 'lampSquareTable', 'lampRoundTable', 'radio', 'plantSmall2']) for (const g of a.pecas[nome] || []) {
+          if (Math.abs(g.position.y - a.tampo) > .00001) continue // TV tem aparador próprio.
+          const raio = new T.Raycaster(new T.Vector3(g.position.x, a.tampo + .01, g.position.z), new T.Vector3(0, -1, 0))
+          const contato = raio.intersectObject(mesa, true)[0]
+          expect(contato, sala + '/' + nome).toBeDefined()
+          expect(contato.point.y).toBeCloseTo(a.tampo, 6)
+        }
+      }
+      expect(new Set(montagens.map(a => a.raiz.userData.identidade.paleta.parede)).size).toBe(7)
+      originais.forEach(({ material, cor }) => expect(material.color.getHex()).toBe(cor))
+    } finally {
+      montagens.forEach(a => a.destruir())
+      const recursos = new Set<any>()
+      Object.values(modelos).forEach(m => m.traverse((n: any) => { if (n.isMesh) { recursos.add(n.geometry); recursos.add(n.material) } }))
+      recursos.forEach(r => r.dispose())
+    }
+  })
+})
+
 describe('escritório real no mini (renderer simulado, GLBs locais reais)', () => {
   it.each(Object.keys(VARIANTES))('%s compõe peças, mede tampo/assento e respeita orçamento', async sala => {
     const e = EQUIPE.find(e => e.sala === sala)!, a = await mini(e.id)
@@ -106,7 +276,7 @@ describe('escritório real no mini (renderer simulado, GLBs locais reais)', () =
       }
       expect(medidas.computerScreen.length).toBeGreaterThanOrEqual(2)
       expect(d.tampo).toBeCloseTo(medidas[VARIANTES[e.sala].mesa][0].max.y, 6)
-      expect(a.agente.children[0].position.y - d.assento).toBeCloseTo(.26 * Math.cos(1.5) + .1 * Math.sin(1.5), 5)
+      expect(a.agente.children[0].position.y * a.agente.scale.y - d.assento).toBeCloseTo((.26 * Math.cos(1.5) + .1 * Math.sin(1.5)) * a.agente.scale.y, 5)
       const perna = a.agente.children[0].children.find((g: any) => g.position.x === -.12)
       const coxa = perna.children.find((g: any) => g.isMesh)
       expect(caixaReal(coxa).min.y).toBeCloseTo(d.assento, 5)
@@ -142,7 +312,7 @@ describe('escritório real no mini (renderer simulado, GLBs locais reais)', () =
           if (estado === 'trabalhando') {
             const p = projetar(caixaReal(a.agente), a.camera), altura = (p.max.y - p.min.y) / 2
             dados.push([w, h, +(altura * 100).toFixed(2)])
-            expect(altura, id + ' altura').toBeGreaterThanOrEqual(.5); expect(altura).toBeLessThanOrEqual(.75)
+            expect(altura, id + ' altura').toBeGreaterThanOrEqual(.55); expect(altura).toBeLessThanOrEqual(.70)
             const quadril = a.agente.children[0], esquerdo = quadril.children.find((g: any) => g.position.x === -.3), direito = quadril.children.find((g: any) => g.position.x === .3)
             const y = a.escritorio.userData.tampo + inventario.computerKeyboard.max[1] * .95
             for (const [braco, x] of [[esquerdo, -.08], [direito, .31]]) {
