@@ -13,27 +13,27 @@ const n = (v: number, um: string, mais: string) => (v === 1 ? `1 ${um}` : `${v} 
  * cada um com o dado que já existe no banco (recebimentos, presença, contagem do estoque). Quem ainda não tem dado
  * entra com semDado: o card diz o que ele vai fazer e "ainda sem dado", sem número nenhum.
  */
-export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined): FuncionarioEsc[] & { falhou?: boolean; carregando?: boolean; repetir?: () => void } {
+export function useEquipeCompleta(doBanco: FuncionarioEsc[] | undefined, consultarExtras = true, invalidacao = 0): FuncionarioEsc[] & { falhou?: boolean; carregando?: boolean; repetir?: () => void } {
   const { api, familia, versao } = useApp()
   type Dados = { rec: RecebimentoTela[] | null; est: Estoque | null; avisos: { tipo: string; data: string; nome: string }[] | null; pres: Record<string, string[]> | null }
   const [n, setN] = useState(0)
-  const [resultado, setResultado] = useState<{ familia: string; versao: number; dados: Dados } | null>(null)
+  const [resultado, setResultado] = useState<{ familia: string; versao: number; invalidacao: number; dados: Dados } | null>(null)
   useEffect(() => {
     setResultado(null)
-    if (!familia) return
+    if (!familia || !consultarExtras) return
     let vivo = true
     const fid = familia.id
     Promise.all([
       api.recebimentos ? api.recebimentos(fid).catch(() => null) : Promise.resolve(null),
-      api.estoque(fid).catch(() => null),
-      api.avisosCasa(fid).catch(() => null),
-      api.config<Record<string, string[]>>(fid, 'casa_presenca', {}).catch(() => null),
-    ]).then(([rec, est, avisos, pres]) => { if (vivo) setResultado({ familia: fid, versao, dados: { rec, est, avisos, pres } }) })
+      api.estoque?.(fid).catch(() => null),
+      api.avisosCasa?.(fid).catch(() => null),
+      api.config?.<Record<string, string[]>>(fid, 'casa_presenca', {}).catch(() => null),
+    ]).then(([rec, est, avisos, pres]) => { if (vivo) setResultado({ familia: fid, versao, invalidacao, dados: { rec, est: est ?? null, avisos: avisos ?? null, pres: pres ?? null } }) })
     return () => { vivo = false }
-  }, [api, familia?.id, versao, n])
-  const dados = resultado?.familia === familia?.id && resultado?.versao === versao ? resultado.dados : null
+  }, [api, familia?.id, versao, invalidacao, n, consultarExtras])
+  const dados = resultado?.familia === familia?.id && resultado?.versao === versao && resultado?.invalidacao === invalidacao ? resultado.dados : null
   const lista = useMemo(() => completarEquipe(doBanco, dados || { rec: null, est: null, avisos: null, pres: null }, hojeRecife()), [doBanco, dados])
-  return Object.assign(lista, { carregando: !dados, falhou: !!dados && (dados.pres === null || dados.avisos === null), repetir: () => setN(x => x + 1) })
+  return Object.assign(lista, { carregando: consultarExtras && !dados, falhou: consultarExtras && !!dados && (dados.pres === null || dados.avisos === null), repetir: () => setN(x => x + 1) })
 
 }
 

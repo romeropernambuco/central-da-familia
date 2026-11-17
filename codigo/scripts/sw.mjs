@@ -33,7 +33,7 @@ export function gravarSw(pastaBuild, modeloPath) {
 export function arquivosEssenciais(arquivos, ler) {
  const usados = new Set()
  function incluir(p) {
- p=p.replace(/^\.\//,'');if(usados.has(p)||!arquivos.includes(p))return
+ p=p.replace(/^\.\//,'');if(usados.has(p)||!arquivos.includes(p)||/^(assets\/cenaIsometrica-|retratos-escritorio\/)/.test(p))return
  usados.add(p)
  if(p==='index.html') { const html=ler(p);for(const m of html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css))["']/g))incluir(m[1]);return }
  if(p.endsWith('.js'))for(const m of ler(p).matchAll(/(?:import|export)\s*(?:[^"'();]*?\sfrom\s*)?["']([^"']+)["']/g))incluir(posix.join(posix.dirname(p),m[1]))

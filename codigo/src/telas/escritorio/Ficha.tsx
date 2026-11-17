@@ -39,14 +39,15 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
  * A ficha do funcionário, igual pra todos, em 4 partes fixas: Agora, O que eu cuido, O que você já me respondeu, O que eu faço e quando.
  * No celular sobe de baixo; no computador é um painel do lado direito.
  */
-export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void }) {
+export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omitirNumeros }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void; perguntaInicial?: string; omitirNumeros?: boolean }) {
   const destino = useDestino()
   const { api, familia, versao, oculto } = useApp()
   const mostrar = textoPrivado
   const fala = (texto: string) => f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
   const nomePublico = EQUIPE.find(m => m.id === f.id)?.nome === f.nome
   const cad = useRef<HTMLElement>(null)
-  const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome)).sort((a, b) => Number(b.id === destino.entidade) - Number(a.id === destino.entidade))
+  const preferida = perguntaInicial || destino.entidade
+  const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome)).sort((a, b) => Number(b.id === preferida) - Number(a.id === preferida))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
   const chaveLeitura = familia?.id + ':' + f.id
   const [diario, setDiario] = useState<{ chave: string; linhas: LinhaDiario[] } | null>(null)
@@ -70,7 +71,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
   return (
     <Sheet titulo={nomePublico ? f.nome : textoPrivado(f.nome)} fechar={fechar} lado rotulo={`Ficha: ${nomePublico ? f.nome : textoPrivado(f.nome)}`}>
       <div className="ficha" data-ficha={f.id}>
-        <NumerosAba key={f.id} id={f.id} fechar={fechar} />
+        {!omitirNumeros && <NumerosAba key={f.id} id={f.id} fechar={fechar} />}
         <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></p>
 
         <section aria-labelledby="fAgora" data-parte="agora" ref={topo}>

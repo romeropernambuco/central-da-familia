@@ -137,7 +137,7 @@ export function App() {
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
-        <AgenteDaAba key={r} rota={r} />
+        {r !== 'inicio' && r !== 'escritorio' && <AgenteDaAba key={r} rota={r} />}
         <Suspense key={'tela:' + r} fallback={<Carregando />} >
         {r === 'inicio' && <Inicio />}
         {r === 'lancamentos' && <Lancamentos />}
@@ -152,6 +152,7 @@ export function App() {
         {r === 'privacidade' && <Privacidade />}
         {r === 'painel' && <Painel />}
         </Suspense>
+        {(r === 'inicio' || r === 'escritorio') && <AgenteDaAba key={r} rota={r} semCena />}
         <AjudaDaAba rota={r} />
       </main>
       {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
