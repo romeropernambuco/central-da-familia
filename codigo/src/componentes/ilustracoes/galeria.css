@@ -1,0 +1,16 @@
+/* Somente na entrada interna DEV; tokens de amostra são locais a cada tema. */
+body:has(#galeria-root) { margin: 0; }
+.cf-galeria { font: 16px/1.5 system-ui, sans-serif; padding: 24px; color: CanvasText; background: Canvas; }
+.cf-galeria * { box-sizing: border-box; }
+.cf-galeria header { max-width: 70ch; margin-bottom: 24px; }
+.cf-galeria h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.2; }
+.cf-galeria label { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.cf-galeria input { width: 24px; height: 24px; flex: none; }
+.cf-galeria a { display: inline-flex; align-items: center; min-height: 44px; }
+.cf-galeria :focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+.cf-galeria-temas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cf-galeria-tema { min-width: 0; background: var(--ground); color: var(--ink); padding: 20px; border-radius: 24px; }
+.cf-galeria-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.cf-galeria figure { display: grid; justify-items: center; margin: 0; padding: 12px 0; border-radius: 16px; background: var(--surface); }
+.cf-galeria figcaption { font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 760px) { .cf-galeria-temas { grid-template-columns: 1fr; } .cf-galeria { padding: 12px; } }

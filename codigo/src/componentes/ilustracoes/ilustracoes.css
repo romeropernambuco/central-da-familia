@@ -1,0 +1,21 @@
+.cf-ilustracao {
+  display: block;
+  flex: none;
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  color: var(--accent);
+}
+/* Uma única passagem, sem movimento contínuo nem vínculo com números. */
+.cf-ilustracao--animada .cf-ilustracao-desenho {
+  animation: cf-acolher 3s ease-in-out 1;
+  transform-origin: 80px 60px;
+}
+@keyframes cf-acolher {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-ilustracao--animada .cf-ilustracao-desenho { animation: none; }
+}

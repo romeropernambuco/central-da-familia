@@ -1,0 +1,31 @@
+.cf-estado-vazio {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 20px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  font-family: var(--font, system-ui);
+}
+.cf-estado-vazio h2 { margin: 0; font-size: 20px; line-height: 1.4; text-wrap: balance; }
+.cf-estado-vazio p { margin: 0; max-width: 38ch; color: var(--ink-2); line-height: 1.5; }
+.cf-estado-vazio button {
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  padding: 10px 20px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-accent);
+  background: var(--accent);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.cf-estado-vazio button:hover:not(:disabled) { background: var(--accent-press); }
+.cf-estado-vazio button:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.cf-estado-vazio button:disabled { cursor: default; background: var(--raised); color: var(--muted); border-color: var(--border); }
