@@ -1,3 +1,4 @@
+import { prepararAcolhimento } from '../lib/acolhimento'
 // Banco de verdade: Supabase, schema `produto`. As contas vêm das funções (RPC) do CONTRATO.md;
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -58,7 +59,7 @@ export const apiReal: Api = {
     const lembra = (fs: FamiliaMinha[]) => { papeis.clear(); for (const f of fs) papeis.set(f.id, f.papel) }
     // convidado por e-mail que entrou mas o convite não ligou na hora (internet caiu): tenta de novo antes de mostrar "criar família"
     if (!familias.length && !(u as any).is_anonymous && u.email) {
-      try { const r = await rpc<{ familias?: unknown[] }>('entrar_por_convite'); if (r?.familias?.length) familias = await buscar() } catch { /* sem convite ou banco recusou: segue pro primeiro uso */ }
+      try { const r = await rpc<{ familias?: unknown[] }>('entrar_por_convite'); if (r?.familias?.length) { prepararAcolhimento(); familias = await buscar() } } catch { /* sem convite ou banco recusou: segue pro primeiro uso */ }
     }
     // equipe que errou o código fica com login anônimo sem família: não é sessão (senão caía no "criar família")
     if (!sessaoVale(!!(u as any).is_anonymous, familias.length)) return null
@@ -81,6 +82,7 @@ export const apiReal: Api = {
     // O banco só liga com e-mail confirmado e sessão aberta por código (nunca senha nem login anônimo): se recusar, a pessoa lê o motivo.
     let r: { data: unknown; error: { message?: string; code?: string } | null }
     try { r = await sb().rpc('entrar_por_convite') } catch { return }
+    if (!r.error && (r.data as { familias?: unknown[] })?.familias?.length) prepararAcolhimento()
     const m = r.error?.message || ''
     if (AVISOS_CONVITE.includes(m)) return { aviso: TRADUZ[m] }
   },
@@ -128,6 +130,12 @@ export const apiReal: Api = {
     let r: { data: any; error: { message?: string; code?: string } | null }
     try { r = await lancarComChave((nome, args) => sb().rpc(nome, args) as any, n) as any } catch (x) { throw traduzErro(x as Error) }
     if (r.error) erro(r.error)
+    // Coluna e permissão já previstas na f_04. A chave preserva a compra ao repetir.
+    if (n.pago_por) {
+      const { error } = await sb().from('lancamentos').update({ pago_por: n.pago_por }).eq('id', r.data?.lancamento?.id).eq('familia_id', n.familia).select('id').single()
+      if (error) erro(error)
+      r.data.lancamento.pago_por = n.pago_por
+    }
     // equipe: o banco devolve o lançamento sem `valor` e o resumo com so_nomes
     return { lancamento: normalizaLancamento(r.data?.lancamento), resumo: normalizaResumo(r.data?.resumo), repetido: !!r.data?.repetido }
   },

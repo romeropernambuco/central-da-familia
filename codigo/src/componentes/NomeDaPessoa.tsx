@@ -17,6 +17,7 @@ export function NomeDaPessoa({ pessoa, editar = false, mudou }: { pessoa: Pessoa
   const [erro, setErro] = useState(''), [ocupado, ocupar] = useState(false)
   const trava = useRef(false)
   const { permitido, salvar, somenteCadastro } = useEdicaoNome(pessoa)
+  if (pessoa.tipo === 'membro' && !tem && membros.carregando) return <span role="status">Carregando identificação</span>
   if (pessoa.tipo === 'membro' && membros.erro) return <span role="status">Não foi possível carregar os nomes. <button className="lnk" type="button" onClick={membros.repetir}>Tentar de novo</button></span>
   return <>
     <span>{tem ? textoPrivado(atual, oculto) : 'Sem nome.'}</span>{' '}

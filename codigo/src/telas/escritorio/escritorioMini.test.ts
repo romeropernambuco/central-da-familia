@@ -107,7 +107,7 @@ it('integração final: 12 abas x 4 perfis, orçamento real e 20 trocas com desc
     for (let i = 0; i < rotas.length; i++) {
       const rota = rotas[i], efetiva = rotaPermitida(rota, papel, ehDono)
       const elenco = elencoDaAba({ rota: efetiva, papel, ehDono })
-      expect(elenco.principal).toBe(efetiva === 'casa' && papel === 'pessoa' ? 'comprador' : efetiva === rota ? principais[i] : efetiva === 'casa' ? 'fiscal' : 'anfitriao')
+      expect(elenco.principal).toBe(papel === 'equipe' ? 'fiscal' : efetiva === 'casa' && papel === 'pessoa' ? 'comprador' : efetiva === rota ? principais[i] : efetiva === 'casa' ? 'fiscal' : 'anfitriao')
       const esperado = papel === 'equipe' ? ['fiscal'] : efetiva === 'inicio' ? ['anfitriao', papel === 'casal' ? 'guardado' : 'contador']
         : efetiva === 'guardado' ? ['guardado', 'imoveis'] : efetiva === 'planejamento' ? ['tesoureiro', 'colchao']
         : efetiva === 'casa' && papel === 'pessoa' ? ['comprador'] : [elenco.principal]

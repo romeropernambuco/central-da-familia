@@ -147,3 +147,29 @@ Sugerir `backup_familia` com família, formato, revisão, data, hash e referênc
 `src/componentes/seguranca-f23-ui.test.ts`: anúncio/pausa/repetição da barra, confirmação de download, prévia com olho fechado e gravação real desabilitada, exclusão do Assessor da Casa, rascunho recuperado e campos conservados na falha sem escrita em disco. As regressões existentes de rascunho em `agente-interacoes.test.ts` e `ux-cobertura.test.ts` passaram a alimentar memória, mantendo isolamento, máscara, salvar e descartar.
 
 Complemento F23: limites mensais/envelopes com efeitos em meses futuros, reajustes/votos e criação de cartão também precisam de inverso transacional no banco para serem anunciados como reversíveis no real. Cadastros genéricos do Escritório preservam cada formulário por tipo e id em memória, inclusive ao recolher a ficha. O teste de cenários de 2029 aguarda as leituras fictícias antes de comparar páginas completas, evitando confundir chegada de dados com mudança de cenário.
+
+
+## Pessoas e papéis — f25 (16/11/2026)
+
+- Feito no app: autor significa quem anotou. Pago por só aparece quando informado; totais da Casa separam pagou de anotou. O seletor Quem pagou começa vazio. Decisão do dono pendente: autorizar ou não pré-selecionar o membro atual. Nenhuma atribuição automática foi criada.
+- A f_04 já oferece coluna, FK de família e permissão de atualização de pago_por. No real, o app primeiro usa a RPC idempotente e depois atualiza a mesma linha. Uma falha na segunda etapa pode deixar a compra anotada sem o pagador; repetir com a mesma chave retoma a mesma compra. Não houve alteração SQL. Futuramente é preferível gravar ambos na mesma transação.
+- Privacidade tem resumo por papel, versão 2026-11-16.1; Assessor da Casa lê apenas texto e não recebe exportação, backup ou exclusão. Acesso individual não é encerrado por esta interface.
+- Ajuda distingue os papéis e não presume que o casal recebeu convite. A abertura dos funcionários usa o nome uma vez por conversa, mascarado com olho fechado. Nomes com conteúdo monetário não são usados na saudação.
+- Início do casal tem Plano 2029; Mais usa ícone de menu e conserva os destinos anteriores. Primeiro uso oferece gestão individual ou compartilhada e prioriza aplicações, imóveis e receitas.
+- Conexão não comprova salvamento. O acompanhamento da ação indica Salvando, Salvo ou Não foi possível salvar; a fila continua responsável por repetir lançamentos com a mesma chave. Sair limpa o estado. O acolhimento do convite é transitório, só em memória; não é histórico de aceite nem ciência de termos.
+
+## Pedidos ao banco: pessoas e papeis
+
+Nenhum pedido abaixo foi implementado nesta frente.
+
+- Lista real de acesso: RPC produto.acessos_listar(familia), chamada pelo casal. Validar sessão, membro ativo e família; devolver identidade, papel e estado efetivo, sem códigos de convite ou segredos.
+- Encerrar acesso: RPC produto.acesso_encerrar(familia, membro), chamada pelo casal para acesso administrável ou pelo próprio membro para si. Validar família, papel, proteção do último administrador e revogação das sessões; preservar autoria dos registros. Não confundir com apagar a família.
+- Estados reais de convite: RPC produto.convites_situacao(familia), chamada pelo casal. Validar administração e família; devolver estado calculado do aceite, cancelamento e expiração, sem inferir por nomes nem expor código. Reenvio/cancelamento devem conferir o estado atual na transação.
+- Titularidade de renda por id: coluna produto.recebimentos.dono_membro (ou equivalente para a configuração de receitas) e RPC produto.renda_salvar(familia, renda, dono_membro, dados), chamada pelo titular autorizado. Validar FK composta da família e dono ativo; não resolver titularidade pelo nome. A migração das rendas antigas precisa de conferência do casal.
+- Histórico de confirmações: tabela produto.confirmacoes com membro_id, familia_id, tipo, versao, ocorrido_em e referência; RPC produto.confirmacao_registrar, chamada pelo próprio membro. Validar sessão, versão conhecida, escopo e idempotência; nunca fabricar confirmação anterior.
+- Vínculo de menor: tabela produto.vinculos_responsaveis e RPC produto.vinculo_menor_definir(familia, menor, responsavel), chamada por administrador autorizado. Validar membros da mesma família, capacidade do responsável, permissões e revogação. Não inferir parentesco pela idade ou nome.
+- Ciência de termos: RPC produto.termos_ciencia_registrar(familia, versao), chamada pela pessoa autenticada após ação explícita. Validar versão publicada e identidade; guardar data do servidor e versão, de modo auditável. Não converter simples login em ciência registrada.
+- Pagamento atômico: parâmetro opcional pago_por em produto.lancar_com_chave e correção autorizada em produto.lanc_mudar, chamados por quem pode anotar/corrigir o lançamento. Validar pagador ativo na mesma família, permissões do lançamento e mesma chave; autor continua sendo quem anotou, sem preencher pago_por automaticamente.
+
+
+Validação f25: TypeScript sem erros (npx tsc --noEmit); suíte completa com 66 arquivos, 1.267 testes aprovados e 3 TODO preexistentes. Os 11 testes novos tiveram contraprova vermelha com o comportamento anterior. Dois testes antigos de atualização de nomes receberam relógio fixo, pois dependiam do horário de funcionamento dos personagens. O comando npx vitest run src foi tentado; o carregador de configuração recebeu acesso negado ao percorrer diretórios superiores. A execução completa usou a API do mesmo Vitest, com config false, JSX automático, apenas src/**/*.test.ts, timeout de 30 segundos e sem cache. Scripts e logs temporários foram removidos. Não houve acesso ao banco real nem inspeção visual em navegador nesta frente.

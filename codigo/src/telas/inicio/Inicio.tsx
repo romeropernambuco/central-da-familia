@@ -54,6 +54,7 @@ export function Inicio() {
 
   return (
     <div className="view">
+      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento">Plano 2029<ChevronRight size={20} aria-hidden="true" /></a>}
       <RumoA2029 compacto />
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">

@@ -84,10 +84,10 @@ function Feira() {
   const togglePres = (n: string) => setPres({ ...pres, [hoje]: veio.includes(n) ? veio.filter(x => x !== n) : [...veio, n] })
   const livreSem = feira?.teto_semana != null ? centavos(feira.teto_semana - (feira.gasto_semana || 0)) : null
   const casal = familia?.papel === 'casal'
-  // C19 "quem pagou": quanto cada um pôs na Casa este mês
+  // Pagamento informado e autoria sem pagamento são grupos distintos.
   const nomeDe = useMembros()
   const porQuem: Record<string, number> = {}
-  for (const l of lanc) if (!l.apagado_em && casaIds.has(l.envelope_id) && l.autor && !l.parcela) porQuem[l.autor] = centavos((porQuem[l.autor] || 0) + l.valor)
+  for (const l of lanc) if (!l.apagado_em && casaIds.has(l.envelope_id) && (l.pago_por || l.autor) && !l.parcela) porQuem[(l.pago_por ? 'pagou:' + l.pago_por : 'anotou:' + l.autor)] = centavos((porQuem[(l.pago_por ? 'pagou:' + l.pago_por : 'anotou:' + l.autor)] || 0) + l.valor)
 
   return (
     <div className="tela-larga">
@@ -124,7 +124,7 @@ function Feira() {
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
-            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id, nome: nomeDe(id) }} /> pôs {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id: id.slice(id.indexOf(':') + 1), nome: nomeDe(id.slice(id.indexOf(':') + 1)) }} /> {id.startsWith('pagou:') ? 'pagou' : 'anotou'} {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}

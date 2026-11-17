@@ -1,4 +1,4 @@
-// Nome de quem lançou (rodada 2, "quem pagou"): o lançamento guarda o id do membro; a tela mostra o nome.
+// Identidade dos membros, sem inferir quem pagou a partir de quem anotou.
 import { useEffect, useState } from 'react'
 import { useApp } from './contexto'
 import type { Api } from '../api/tipos'
@@ -19,15 +19,16 @@ export function useMembros() {
   const { api, familia, versao } = useApp()
   const [ms, setMs] = useState<{ id: string; nome: string }[]>([])
   const pode = familia?.papel === 'casal'
+  const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState(false), [n, setN] = useState(0)
   const repetir = invalidarNomes
   useEffect(() => { const avisar = () => setN(x => x + 1); ouvintes.add(avisar); return () => { ouvintes.delete(avisar) } }, [])
   useEffect(() => {
-    let vivo = true; setMs([]); setErro(false)
-    if (familia && pode) lerMembros(api, familia.id, versao).then(m => { if (vivo) setMs(m) }).catch(() => { if (vivo) setErro(true) })
+    let vivo = true; setMs([]); setErro(false); setCarregando(pode)
+    if (familia && pode) lerMembros(api, familia.id, versao).then(m => { if (vivo) { setMs(m); setCarregando(false) } }).catch(() => { if (vivo) { setErro(true); setCarregando(false) } })
     return () => { vivo = false }
   }, [api, familia?.id, pode, versao, n])
-  return Object.assign((id?: string | null) => id === familia?.membroId ? familia?.membroNome || null : (id ? ms.find(m => m.id === id)?.nome || null : null), { erro, repetir, lista: ms, invalidar: invalidarNomes })
+  return Object.assign((id?: string | null) => id === familia?.membroId ? familia?.membroNome || null : (id ? ms.find(m => m.id === id)?.nome || null : null), { erro, carregando, repetir, lista: ms, invalidar: invalidarNomes })
 }
 
 /** E3 (conserto 8): quantos adultos tem o casal. Família de 1 adulto não vê "Do casal" nem "vocês". null = ainda buscando. */

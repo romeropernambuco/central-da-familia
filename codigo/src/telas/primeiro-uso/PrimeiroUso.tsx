@@ -111,9 +111,9 @@ export function PrimeiroUso() {
           <p className="lbl">Hoje você pode gastar</p>
           <Din v={hoje} tam="big" />
           {/* AUTONOMA ideia 4: quem cuida sozinha da casa segue sem achar que falta alguém */}
-          <button className="btn primary full" type="button" onClick={() => setPasso(4)}>Aqui é só eu (com meus filhos)<ArrowRight size={20} /></button>
-          <h2>Mais alguém divide as contas com você?</h2>
-          <p className="sub">Se sim, chame essa pessoa: quando os 2 lançam, o número fica certo. A mensagem já vai pronta pro WhatsApp.</p>
+          <button className="btn primary full" type="button" onClick={() => setPasso(4)}>Vou cuidar da gestão por enquanto<ArrowRight size={20} /></button>
+          <h2>Quer compartilhar a gestão?</h2>
+          <p className="sub">Você pode convidar outro adulto agora ou depois, em Família e ajustes.</p>
           <label className="campo"><span>Nome dela ou dele</span><CampoPrivado className="inp" placeholder="Ex.: Caio" value={segunda} onChange={e => setSegunda(e.target.value)} /></label>
           <label className="campo"><span>E-mail dela ou dele</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="bruno@email.com" value={email2} onChange={e => { setEmail2(e.target.value); setConvidado(false) }} /><small>É com esse e-mail que a pessoa entra. O convite fica guardado nele.</small></label>
           {convidado
@@ -134,10 +134,12 @@ export function PrimeiroUso() {
       {passo === 4 && (
         <div className="card" style={{ display: 'grid', gap: 14 }}>
           <p className="todo ok"><Check size={20} aria-hidden="true" /><span><b>Tudo pronto.</b> Agora é só tocar no botão verde e anotar cada gasto: valor e 1 toque.</span></p>
-          <h2>Chame uma família amiga</h2>
+          <h2>Próximos passos para 2029</h2>
+          <p>Em Guardado, cadastre suas aplicações e imóveis. Em Planejamento, registre receitas extras e confira o Plano 2029.</p>
+          <button className="btn primary full" type="button" onClick={fim}>Começar pelo Início<ArrowRight size={20} /></button>
+          <h3>Se quiser, indique a amigos</h3>
           <p className="sub">Quem testa junto troca dica. A mensagem já vai pronta.</p>
           <a className="btn line full" href={linkWhatsApp(msgAmiga)} target="_blank" rel="noreferrer"><MessageCircle size={20} />Mandar para uma família amiga</a>
-          <button className="btn primary full" type="button" onClick={fim}>Abrir o Início<ArrowRight size={20} /></button>
         </div>
       )}
     </div>

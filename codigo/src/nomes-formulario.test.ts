@@ -9,7 +9,7 @@ import { useEscritorio } from './app/useDados2'
 import type { Api, PessoaNome } from './api/tipos'
 
 let root: Root | undefined
-afterEach(async () => { if (root) await act(async () => root!.unmount()); root = undefined; vi.unstubAllGlobals() })
+afterEach(async () => { if (root) await act(async () => root!.unmount()); root = undefined; vi.unstubAllGlobals(); vi.useRealTimers() })
 const props = (n: NoTeste) => (n as unknown as Record<string, any>)[Object.keys(n).find(k => k.startsWith('__reactProps'))!]
 async function montar(pessoa: PessoaNome, api: Api, oculto = false) {
   const doc = new DocumentoTeste()
@@ -44,6 +44,7 @@ async function montar(pessoa: PessoaNome, api: Api, oculto = false) {
   }
 }
 it('salva pela folha: lista e fala viva usam nome novo sem recarregar página', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-16T12:00:00-03:00'))
   reiniciarExemplo()
   const a = await montar({ tipo: 'membro', id: 'm-ana', nome: 'Ana' }, apiExemplo)
   await a.clicar('Editar nome')

@@ -1,6 +1,7 @@
+import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from 'react'
-import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { Building2, CreditCard, House, ListChecks, Plus, Menu, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
@@ -51,7 +52,7 @@ const TITULO: Record<string, [string, string]> = {
   desejos: ['o que quero, quando e se cabe', 'Desejos'],
   escritorio: ['quem ajuda você a acompanhar', 'Escritório'],
   ajustes: ['quem está na família e aparência', 'Família e ajustes'],
-  privacidade: ['termo, baixar e apagar dados', 'Privacidade'],
+  privacidade: ['seu papel e seus dados', 'Privacidade'],
   painel: ['painel do dono do produto', 'Os 4 números'],
 }
 
@@ -101,8 +102,8 @@ export function App() {
   // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
   if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <Suspense fallback={<Carregando />}><PrimeiroUso /></Suspense>
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
-  const permitidas = MENU.filter(m => podeVerNoMenu(m.r, familia.papel))
-  const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
+  const permitidas = [...MENU.filter(m => podeVerNoMenu(m.r, familia.papel)), ...(equipe ? [{ r: 'privacidade' as Rota, nome: 'Privacidade', ico: <ShieldCheck size={22} /> }] : [])]
+  const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe && r !== 'privacidade' ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
   const navAtivo = r === 'privacidade' || r === 'painel' ? 'ajustes' : r
 
   return (
@@ -114,20 +115,21 @@ export function App() {
         {permitidas.map(m => (
           <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
         ))}
-        <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Guardado online'}</p>
+        <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
       <main id="main">
         <header className="top">
           <div className="tt"><small>{subt}</small><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1></div>
-          <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'sem internet' : 'salvo'}</span>
+          <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'Sem internet' : 'Conectado'}</span>
           {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}
-          {!equipe && <button className="iconbtn mais" type="button" onClick={() => setMais(true)} aria-label={familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Settings2 size={22} /></button>}
+          {<button className="btn line mais" type="button" onClick={() => setMais(true)} aria-label={equipe ? 'Mais: privacidade' : familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Menu size={22} aria-hidden="true" />Mais</button>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
           <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
         )}
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
+        <Acolhimento key={[sessao.userId, familia.id].join(':')} />
         <AgenteDaAba key={r} rota={r} />
         <Suspense key={'tela:' + r} fallback={<Carregando />} >
         {r === 'inicio' && <Inicio />}

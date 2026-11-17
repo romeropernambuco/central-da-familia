@@ -83,7 +83,7 @@ it('integração final: Início segue primeira pergunta autorizada, Painel usa f
     cena.montar.mockClear()
     const restrito = { ...ctx, familia: { ...ctx.familia!, papel }, sessao: { ...ctx.sessao!, dono: ehDono } }
     await a.render(restrito, rota)
-    const permitida = rotaPermitida(rota, papel, ehDono) === rota
+    const permitida = rotaPermitida(rota, papel, ehDono) === rota && !(papel === 'equipe' && rota === 'privacidade')
     expect(cena.montar.mock.calls.length, perfil + rota).toBe(permitida ? 1 : 0)
     if (permitida) {
      const elenco = elencoDaAba({ rota, papel, ehDono, filaGeral: rota === 'inicio' ? [{ funcionario: 'contador' }] : [] })
