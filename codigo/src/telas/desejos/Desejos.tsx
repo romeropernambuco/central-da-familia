@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { MetaDoDesejo } from '../meu-orcamento/MeuOrcamento'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -153,7 +155,7 @@ export function Desejos() {
   }, [casal, ent, lista])
 
   if (!familia || familia.papel === 'equipe') return null
-  if (!api.desejos) return <div className="card"><Vazio ico={<Sparkles size={24} />}>Os desejos ainda estão sendo ligados no banco da família.</Vazio></div>
+  if (!api.desejos) return <div className="card"><Vazio ico={<Icone desenho={Sparkles} />}>Os desejos ainda estão sendo ligados no banco da família.</Vazio></div>
 
   const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId)
 
@@ -186,7 +188,7 @@ export function Desejos() {
     <div className="tela-larga">
       <div className="col">
         <section className="card" aria-labelledby="dCalc">
-          <div className="card-h"><h2 id="dCalc"><Sparkles size={24} aria-hidden="true" />Quero…</h2></div>
+          <div className="card-h"><h2 id="dCalc"><Icone desenho={Sparkles} aria-hidden="true" />Quero…</h2></div>
           <p className="sub" style={{ marginBottom: 10 }}>{casal ? (saidaF?.modo === 'renda' ? 'Escreva o que quer e quando. O app diz se cabe no dinheiro guardado e quanto tira da renda.' : 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.') : 'Escreva o que quer e quanto custa. O app diz se dá para comprar com o seu.'}</p>
           {casal && <p className="sub">Caixa é o dinheiro disponível. Piso é o mínimo de segurança cadastrado. O resultado é uma estimativa com os valores e taxas do Planejamento, sem garantia de renda futura.</p>}
           <div className="desejo-form">
@@ -219,15 +221,15 @@ export function Desejos() {
           </div>
 
           {falta && (f.nome || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
-          <button className="btn primary" type="button" disabled={!!falta || gravando} onClick={guardar} style={{ marginTop: 12 }}><Plus size={20} />Guardar na lista</button>
+          <Botao variante="primario" type="button" disabled={!!falta || gravando} onClick={guardar} style={{ marginTop: 12 }}><Icone desenho={Plus} />Guardar na lista</Botao>
         </section>
       </div>
       <div className="col">
         <section className="card" aria-labelledby="dLista">
-          <div className="card-h"><h2 id="dLista">{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
+          <div className="card-h"><h2 id="dLista"><Icone nome="desejos" />{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
           {carregando && <p role="status">Buscando desejos…</p>}
           {falha && <p role="alert">Não foi possível buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Sparkles size={24} />}>Crie seu primeiro desejo no formulário.</Vazio> : (
+          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Icone desenho={Sparkles} />}>Crie seu primeiro desejo no formulário.</Vazio> : (
             <ul className="list">
               {lista.map(d => {
                 const m = desejoDoMotor(d, d.id, d.dono_membro)

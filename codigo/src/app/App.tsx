@@ -1,7 +1,8 @@
+import { Icone } from '../componentes/Icone'
 import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from 'react'
-import { Building2, CreditCard, House, ListChecks, Plus, Menu, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
+import { FlaskConical } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
@@ -29,17 +30,17 @@ export type { Rota } from './rotas'
 import { Carregando } from '../componentes/Carregando'
 
 const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
-  { r: 'inicio', nome: 'Início', ico: <House size={22} /> },
-  { r: 'lancamentos', nome: 'Gastos e entradas', ico: <ListChecks size={22} /> },
-  { r: 'orcamento', nome: 'Meu orçamento', ico: <Wallet size={22} /> },
-  { r: 'casa', nome: 'Casa', ico: <ShoppingBasket size={22} /> },
+  { r: 'inicio', nome: 'Início', ico: <Icone nome="inicio" /> },
+  { r: 'lancamentos', nome: 'Gastos e entradas', ico: <Icone nome="lancamentos" /> },
+  { r: 'orcamento', nome: 'Meu orçamento', ico: <Icone nome="orcamento" /> },
+  { r: 'casa', nome: 'Casa', ico: <Icone nome="casa" /> },
   // E8: a calculadora de desejos (a filha também abre: vê só os dela, sem 2029)
-  { r: 'desejos', nome: 'Desejos', ico: <Sparkles size={22} /> },
-  { r: 'guardado', nome: 'Guardado', ico: <Landmark size={22} /> },
-  { r: 'cartoes', nome: 'Cartões', ico: <CreditCard size={22} /> },
-  { r: 'planejamento', nome: 'Planejamento', ico: <Target size={22} /> },
-  { r: 'escritorio', nome: 'Escritório', ico: <Building2 size={22} /> },
-  { r: 'ajustes', nome: 'Família e ajustes', ico: <Settings2 size={22} /> },
+  { r: 'desejos', nome: 'Desejos', ico: <Icone nome="desejos" /> },
+  { r: 'guardado', nome: 'Guardado', ico: <Icone nome="guardado" /> },
+  { r: 'cartoes', nome: 'Cartões', ico: <Icone nome="cartoes" /> },
+  { r: 'planejamento', nome: 'Planejamento', ico: <Icone nome="planejamento" /> },
+  { r: 'escritorio', nome: 'Escritório', ico: <Icone nome="escritorio" /> },
+  { r: 'ajustes', nome: 'Família e ajustes', ico: <Icone nome="ajustes" /> },
 ]
 
 const TITULO: Record<string, [string, string]> = {
@@ -102,7 +103,7 @@ export function App() {
   // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
   if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <Suspense fallback={<Carregando />}><PrimeiroUso /></Suspense>
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
-  const permitidas = [...MENU.filter(m => podeVerNoMenu(m.r, familia.papel)), ...(equipe ? [{ r: 'privacidade' as Rota, nome: 'Privacidade', ico: <ShieldCheck size={22} /> }] : [])]
+  const permitidas = [...MENU.filter(m => podeVerNoMenu(m.r, familia.papel)), ...(equipe ? [{ r: 'privacidade' as Rota, nome: 'Privacidade', ico: <Icone nome="privacidade" /> }] : [])]
   const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe && r !== 'privacidade' ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
   const navAtivo = r === 'privacidade' || r === 'painel' ? 'ajustes' : r
 
@@ -111,21 +112,21 @@ export function App() {
       <nav className="rail" aria-label="Telas">
         <div className="brand"><Marca /><span><b>Central da Família</b><small>{textoPrivado(familia.nome, oculto)}</small></span></div>
         {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
-        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Plus size={20} />Anotar</button>}
+        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar</button>}
         {permitidas.map(m => (
-          <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
+          <a data-grupo={m.r === 'desejos' || m.r === 'escritorio' ? 'inicio' : undefined} key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
         ))}
         <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
       <main id="main">
         <header className="top">
           <div className="tt"><small>{subt}</small><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1></div>
-          <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><i />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'Sem internet' : 'Conectado'}</span>
-          {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}
-          {<button className="btn line mais" type="button" onClick={() => setMais(true)} aria-label={equipe ? 'Mais: privacidade' : familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Menu size={22} aria-hidden="true" />Mais</button>}
+          <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><Icone nome={semRede ? 'erro' : api.modo === 'exemplo' ? 'ajuda' : 'salvo'} />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'Sem internet' : 'Conectado'}</span>
+          {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <Icone nome="olhoFechado" /> : <Icone nome="olho" />}</button>}
+          {<button className="btn line mais" type="button" onClick={() => setMais(true)} aria-label={equipe ? 'Mais: privacidade' : familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Icone nome="mais" aria-hidden="true" />Mais</button>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
-          <p className="exemplo-faixa"><FlaskConical size={18} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
+          <p className="exemplo-faixa"><Icone desenho={FlaskConical} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
         )}
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
@@ -150,11 +151,11 @@ export function App() {
       {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
       <nav className={'tabbar' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas'}>
         {equipe ? (
-          <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Plus size={24} strokeWidth={2.25} aria-hidden="true" />Anotar compra</button>
+          <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" aria-hidden="true" />Anotar compra</button>
         ) : (
           <>
             {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
-            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Plus size={28} strokeWidth={2.25} aria-hidden="true" /></button><span>Anotar</span></div>
+            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Icone nome="lancar" aria-hidden="true" /></button><span>Anotar</span></div>
             {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
           </>
         )}
@@ -162,10 +163,10 @@ export function App() {
       {mais && (
         <Sheet titulo="Mais telas" fechar={() => setMais(false)}>
           <ul className="list">
-            {[...MENU.slice(4).filter(m => podeVerNoMenu(m.r, familia.papel)), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <ShieldCheck size={22} /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Gauge size={22} /> }] : [])].map(m => (
+            {[...MENU.slice(4).filter(m => podeVerNoMenu(m.r, familia.papel)), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <Icone nome="privacidade" /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Icone nome="painel" /> }] : [])].map(m => (
               <li key={m.r}>
-                <button className="li" type="button" onClick={() => { setMais(false); ir(m.r) }}>
-                  <span className="tile">{m.ico}</span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><ChevronRight size={20} className="muted" />
+                <button className="li" aria-current={navAtivo === m.r ? 'page' : undefined} type="button" onClick={() => { setMais(false); ir(m.r) }}>
+                  <span className="tile">{m.ico}</span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><Icone nome="abrir" className="muted" />
                 </button>
               </li>
             ))}

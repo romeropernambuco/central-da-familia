@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Conferencia } from '../../componentes/Conferencia'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -54,7 +55,7 @@ export function Inicio() {
 
   return (
     <div className="view">
-      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento">Plano 2029<ChevronRight size={20} aria-hidden="true" /></a>}
+      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento">Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
       <RumoA2029 compacto />
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">
@@ -103,7 +104,7 @@ export function Inicio() {
       </section>
 
       <section className="card" aria-labelledby="hUlt">
-        <div className="card-h"><h2 id="hUlt">Últimos lançamentos</h2><a className="lnk" href="#/lancamentos">Ver todos<ChevronRight size={16} /></a></div>
+        <div className="card-h"><h2 id="hUlt"><Icone nome="lancamentos" />Últimos lançamentos</h2><a className="lnk" href="#/lancamentos">Ver todos<Icone desenho={ChevronRight} /></a></div>
         {ult.length ? (
           <ul className="list">
             {ult.map(l => (
@@ -115,7 +116,7 @@ export function Inicio() {
             ))}
           </ul>
         ) : (
-          <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum gasto ainda. É só o valor e 1 toque.</Vazio>
+          <Vazio ico={<Icone desenho={ListChecks} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum gasto ainda. É só o valor e 1 toque.</Vazio>
         )}
         {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}>Anotar gasto</button>}
       </section>

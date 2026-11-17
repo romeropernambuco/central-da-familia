@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { textoPrivado } from './privacidade'
 import { useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../lib/seguro'
@@ -64,16 +65,16 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
           <p className="sub">A foto é reduzida no celular antes de sair. Se o cupom tiver CPF, a IA não devolve o CPF.</p>
           <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) ler(f) }} />
           <input ref={galeria} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) ler(f) }} />
-          <button className="btn primary full" type="button" disabled={etapa === 'lendo'} onClick={() => camera.current?.click()}><Camera size={20} />{etapa === 'lendo' ? 'Lendo o cupom…' : 'Tirar foto'}</button>
-          <button className="btn line full" type="button" disabled={etapa === 'lendo'} onClick={() => galeria.current?.click()}><ImageUp size={20} />Escolher da galeria</button>
-          {api.modo === 'exemplo' && <button className="btn ghost full" type="button" disabled={etapa === 'lendo'} onClick={() => ler(null)}><Receipt size={20} />Ver com um cupom de exemplo</button>}
+          <button className="btn primary full" type="button" disabled={etapa === 'lendo'} onClick={() => camera.current?.click()}><Icone desenho={Camera} />{etapa === 'lendo' ? 'Lendo o cupom…' : 'Tirar foto'}</button>
+          <button className="btn line full" type="button" disabled={etapa === 'lendo'} onClick={() => galeria.current?.click()}><Icone desenho={ImageUp} />Escolher da galeria</button>
+          {api.modo === 'exemplo' && <button className="btn ghost full" type="button" disabled={etapa === 'lendo'} onClick={() => ler(null)}><Icone desenho={Receipt} />Ver com um cupom de exemplo</button>}
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
         </>
       )}
       {etapa === 'conferir' && lido && (
         <>
-          <p className="todo"><Check size={20} aria-hidden="true" /><span>Confira os itens. Nada foi lançado ainda.</span></p>
-          {lido.total_confere === false && lido.total > 0 && <p className="todo warn"><TriangleAlert size={20} aria-hidden="true" /><span>A soma dos itens lidos ({reais(lido.soma_dos_itens ?? total)}) não bate com o total impresso no cupom ({reais(lido.total)}). Pode ter faltado item ou desconto: confira antes de lançar.</span></p>}
+          <p className="todo"><Icone desenho={Check} aria-hidden="true" /><span>Confira os itens. Nada foi lançado ainda.</span></p>
+          {lido.total_confere === false && lido.total > 0 && <p className="todo warn"><Icone desenho={TriangleAlert} aria-hidden="true" /><span>A soma dos itens lidos ({reais(lido.soma_dos_itens ?? total)}) não bate com o total impresso no cupom ({reais(lido.total)}). Pode ter faltado item ou desconto: confira antes de lançar.</span></p>}
           <p className="sub">{textoPrivado(lido.loja || 'Loja sem nome no cupom')} · {dataCurta(data)}{lido.data && lido.data !== data ? ' (data do cupom fora do prazo, ficou hoje)' : ''}</p>
           <ul className="list" aria-label="Itens lidos do cupom">
             {lido.itens.map((it, i) => (
@@ -88,7 +89,7 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
             {envs.map(e => <button key={e.id} type="button" className="pill" aria-pressed={env === e.id} onClick={() => setEnv(e.id)}>{textoPrivado(e.nome)}</button>)}
           </div>
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Check size={20} />Anotar {reais(total)}{textoPrivado(nomeEnv ? ` em ${nomeEnv}` : '')}</button>
+          <button className="btn primary full" type="button" disabled={total <= 0 || !env || salvando} onClick={lancar}><Icone desenho={Check} />Anotar {reais(total)}{textoPrivado(nomeEnv ? ` em ${nomeEnv}` : '')}</button>
           <button className="btn ghost full" type="button" onClick={() => { setLido(null); setEtapa('foto') }}>Ler outra foto</button>
         </>
       )}

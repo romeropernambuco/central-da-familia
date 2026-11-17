@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
 // E6 (fase final, parte de tela): os parâmetros do objetivo 2029 dentro do Planejamento. Os 2 do casal mudam; o banco
@@ -116,7 +117,7 @@ function ParametrosFamilia() {
   return (
     <section className="card plan-topo" aria-labelledby="pObj">
       {avisoLeitura}
-      <div className="card-h"><h2 id="pObj"><Target size={24} aria-hidden="true" />Objetivo de 2029</h2></div>
+      <div className="card-h"><h2 id="pObj"><Icone desenho={Target} aria-hidden="true" />Objetivo de 2029</h2></div>
       <p className="sub" style={{ marginBottom: 10 }}>A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta. {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.</p>
 
       {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
@@ -162,9 +163,9 @@ function ParametrosFamilia() {
         </div>
       ))}
       {obj.focus[0] && <p className="sub" style={{ marginTop: 4 }}>Fonte: {obj.focus[0].fonte}.</p>}
-      <button className="btn primary" type="button" disabled={gravando} onClick={salvar} style={{ marginTop: 14 }}><Save size={20} />Salvar o objetivo</button>
+      <button className="btn primary" type="button" disabled={gravando} onClick={salvar} style={{ marginTop: 14 }}><Icone desenho={Save} />Salvar o objetivo</button>
 
-      <h3 className="dayh" style={{ marginTop: 16 }}><History size={16} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Quem mudou</h3>
+      <h3 className="dayh" style={{ marginTop: 16 }}><Icone desenho={History} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Quem mudou</h3>
       {obj.historico.length ? <ul className="list">{obj.historico.slice(0, 6).map((h, i) => (
         <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b><NomeDaPessoa pessoa={{ tipo: 'historico', id: String(i), nome: h.quem }} />, {dataCurta(h.quando.slice(0, 10))}</b><small>{mudancas(h.antes, h.depois)}</small></span></li>
       ))}</ul> : <p className="sub">Ninguém mudou ainda. Valem as premissas: margem 10%, 4% acima da inflação, piso de 6 meses.</p>}

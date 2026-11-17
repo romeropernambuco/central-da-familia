@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState } from 'react'
 import { Check, Clock, Hand, Info, Keyboard, Maximize2 } from 'lucide-react'
@@ -10,7 +11,7 @@ import { nomeCurto } from './equipe'
 const ESTADO: Record<EstadoFuncionario, EstadoCena> = { vai_comecar: 'fila', trabalhando: 'trabalhando', entregue: 'entregue', precisa_de_voce: 'precisa' }
 export const ROTULO_ESTADO: Record<EstadoFuncionario, string> = { vai_comecar: 'ainda vai começar', trabalhando: 'trabalhando', entregue: 'entregue', precisa_de_voce: 'precisa de você' }
 export function IcoEstado({ e, size = 14 }: { e: EstadoFuncionario; size?: number }) {
-  return e === 'precisa_de_voce' ? <Hand size={size} /> : e === 'entregue' ? <Check size={size} /> : e === 'trabalhando' ? <Keyboard size={size} /> : <Clock size={size} />
+  return e === 'precisa_de_voce' ? <Icone desenho={Hand} /> : e === 'entregue' ? <Icone desenho={Check} /> : e === 'trabalhando' ? <Icone desenho={Keyboard} /> : <Icone desenho={Clock} />
 }
 /** Sala que vem do banco ("Cartões", "Patrimônio") vira a chave da cena ("cartoes", "patrimonio"). Sala desconhecida fica na Recepção. */
 export const salaDe = (s: string) => { const k = chaveSimples(s); return SALAS[k] ? k : 'recepcao' }
@@ -78,7 +79,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
 
   return (
     <div className="cena3d-bloco">
-      {modo === 'lista' && <p className="todo quieto" role="status"><Info size={20} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span></p>}
+      {modo === 'lista' && <p className="todo quieto" role="status"><Icone desenho={Info} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span></p>}
       <div className={'cena3d' + (modo === 'lista' ? ' fora' : '')} ref={caixa} data-modo={modo}>
         {modo === 'abrindo' && <p className="cena3d-espera">Abrindo o escritório…</p>}
         <div className="cena3d-tags" hidden={modo !== '3d'}>
@@ -99,7 +100,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
       </div>
       {modo === '3d' && (
         <div className="pills cena3d-salas" role="group" aria-label="Aproximar de uma sala">
-          <button type="button" className="pill" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}><Maximize2 size={16} />Ver tudo</button>
+          <button type="button" className="pill" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}><Icone desenho={Maximize2} />Ver tudo</button>
           {salasUsadas.map(k => <button key={k} type="button" className="pill" aria-pressed={vista === k} onClick={() => ir(k)}>{SALAS[k]}</button>)}
         </div>
       )}

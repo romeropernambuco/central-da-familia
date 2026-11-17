@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { textoPrivado } from './privacidade'
 // E7: a linha do caixa mês a mês até dez/2028 (F4), o "fica devendo até MM/AAAA" (F9) e a folga de 2029 (F5).
 // No Início: 1 linha. No Planejamento: a linha desenhada, mês a mês, com o piso tracejado.
@@ -169,9 +170,9 @@ export function Linha2028Resumo() {
     const t = `Rende ${r$(saida.renda.renda_total ?? saida.renda.renda_sustentavel)} por mês, para sempre. ${f.folga}`
     return (
       <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Renda do dinheiro guardado: ${t} Abrir o Planejamento.`)}>
-        <span className="tile"><Target size={20} /></span>
+        <span className="tile"><Icone desenho={Target} /></span>
         <span className="m"><b>Renda do dinheiro guardado</b><small>{textoPrivado(t)}</small></span>
-        <ChevronRight size={20} className="muted" aria-hidden="true" />
+        <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
       </a>
     )
   }
@@ -179,9 +180,9 @@ export function Linha2028Resumo() {
     const t = frasesLinha(saida).virada
     return (
       <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Janeiro de 2029: ${t} Abrir o Planejamento.`)}>
-        <span className="tile"><Target size={20} /></span>
+        <span className="tile"><Icone desenho={Target} /></span>
         <span className="m"><b>Janeiro de 2029</b><small>{textoPrivado(t)}</small></span>
-        <ChevronRight size={20} className="muted" aria-hidden="true" />
+        <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
       </a>
     )
   }
@@ -193,9 +194,9 @@ export function Linha2028Resumo() {
     : `Pra viver do rendimento em 2029 faltam ${r$(saida.folga)}. Toque para ver como fechar.`
   return (
     <a className="card guard-card linha-2028-resumo" href="#/planejamento" aria-label={textoPrivado(`Até dezembro de 2028: ${texto} Abrir o Planejamento.`)}>
-      <span className="tile"><Target size={20} /></span>
+      <span className="tile"><Icone desenho={Target} /></span>
       <span className="m"><b>Até dezembro de 2028</b><small>{textoPrivado(texto)}</small></span>
-      <ChevronRight size={20} className="muted" aria-hidden="true" />
+      <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
     </a>
   )
 }

@@ -1,10 +1,11 @@
+import { Icone, icones, type NomeIcone } from './Icone'
 import { EQUIPE } from '../telas/escritorio/equipe'
 import { nomesPrivados, textoDeAgente, rotuloDeOpcao } from '../lib/textoAgente'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import { copiarProtegido } from './privacidade'
 import { textoPrivado, CampoPrivado } from './privacidade'
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { BellRing, Calculator, Camera, Check, ClipboardCheck, Coins, Copy, CreditCard, FileText, HeartHandshake, PackageSearch, ShieldCheck, ShoppingBasket, Sun, UserCheck, UserRound, Landmark } from 'lucide-react'
+import { Camera, Check, Copy } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
 import { useApp } from '../app/contexto'
 import { CampoValor, ContextoDialogo, superficieDialogo } from './base'
@@ -12,15 +13,9 @@ import { umaPorVez } from '../lib/seguro'
 import { reduzirFoto } from '../lib/foto'
 import { hojeRecife, textoParaValor, valorDigitadoValido } from '../lib/formato'
 
-const ICO: Record<string, (s: number) => ReactNode> = {
-  contador: s => <Calculator size={s} />, colchao: s => <ShieldCheck size={s} />, cartao: s => <CreditCard size={s} />, folha: s => <FileText size={s} />,
-  comprador: s => <ShoppingBasket size={s} />, fiscal: s => <ClipboardCheck size={s} />, guardado: s => <Landmark size={s} />, secretaria: s => <BellRing size={s} />,
-  // C2: os 5 que entraram pela lista única (telas/escritorio/equipe.ts)
-  tesoureiro: s => <Coins size={s} />, assistente: s => <HeartHandshake size={s} />, usina: s => <Sun size={s} />, presenca: s => <UserCheck size={s} />, auditor: s => <PackageSearch size={s} />,
-}
 /** Rosto do funcionário nas listas: ícone num círculo (o boneco 3D só existe na tela Escritório). */
 export function FuncIco({ id, size = 40, precisa }: { id: string; size?: number; precisa?: boolean }) {
-  return <span className={'tile func' + (precisa ? ' precisa' : '')} style={{ width: size, height: size }} aria-hidden="true">{(ICO[id] || (s => <UserRound size={s} />))(Math.round(size * 0.5))}</span>
+  return <span className={'tile func' + (precisa ? ' precisa' : '')} style={{ width: size, height: size }} aria-hidden="true">{<Icone nome={id in icones ? id as NomeIcone : 'pessoa'} />}</span>
 }
 
 /** Devolve false se não gravou; a mensagem pronta quando a opção é copiar. */
@@ -160,15 +155,15 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => (
           <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Copy size={18} />}{o.abre === 'nota' && <Camera size={18} />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
+            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
           </button>
         ))}
       </div>
-      {copiado && <p className="perg-msg" role="status"><Check size={18} aria-hidden="true" /><span>Copiado. Cole no WhatsApp: "{textoPrivado(copiado)}"</span></p>}
+      {copiado && <p className="perg-msg" role="status"><Icone desenho={Check} aria-hidden="true" /><span>Copiado. Cole no WhatsApp: "{textoPrivado(copiado)}"</span></p>}
       {aberta?.abre === 'nota' && (
         <div className="perg-campo col">
           <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) foto(f) }} />
-          <button type="button" className="btn primary" disabled={gravando} onClick={() => camera.current?.click()}><Camera size={20} />{gravando ? 'Guardando a nota…' : 'Tirar foto da nota'}</button>
+          <button type="button" className="btn primary" disabled={gravando} onClick={() => camera.current?.click()}><Icone desenho={Camera} />{gravando ? 'Guardando a nota…' : 'Tirar foto da nota'}</button>
           {api.modo === 'exemplo' && <button type="button" className="btn line" disabled={gravando} onClick={() => foto(null)}>Usar uma nota de exemplo</button>}
           <p className="sub">{equipe ? 'A foto vai para o casal. Você não precisa digitar nenhum valor.' : 'A foto fica guardada junto da feira, só para família.'}</p>
         </div>

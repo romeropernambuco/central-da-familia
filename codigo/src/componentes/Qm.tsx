@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { textoPrivado } from './privacidade'
 import { HelpCircle } from 'lucide-react'
 import { useApp } from '../app/contexto'
@@ -10,7 +11,7 @@ export function Qm({ titulo, linhas, nota, texto }: { titulo: string; linhas: Li
   if (texto)
     return (
       <button type="button" className="explica-l" onClick={abrir}>
-        <HelpCircle size={18} aria-hidden="true" /> De onde veio esse número?
+        <Icone desenho={HelpCircle} aria-hidden="true" /> De onde veio esse número?
       </button>
     )
   return (

@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -32,7 +33,7 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
     <section className="card precisa" aria-labelledby="pvT" data-precisa={fila.length}>
       <div className="card-h">
         <h2 id="pvT">{equipe ? (total === 1 ? '1 coisa da casa precisa de você' : `${total} coisas da casa precisam de você`) : fraseDoDia(total)}</h2>
-        {!equipe && !pessoa && <a className="lnk" href="#/escritorio">Escritório<ChevronRight size={16} /></a>}
+        {!equipe && !pessoa && <a className="lnk" href="#/escritorio">Escritório<Icone desenho={ChevronRight} /></a>}
       </div>
       {p ? (
         <>

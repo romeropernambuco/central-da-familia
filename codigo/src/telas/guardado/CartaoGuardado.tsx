@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { Landmark, ChevronRight } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
@@ -12,7 +13,7 @@ export function CartaoGuardado() {
   const vazio = !g.aplicacoes.length
   return (
     <a className="card guard-card" href="#/guardado" aria-label={vazio ? 'Guardado: começar a guardar' : `Guardado: ${reais(g.total)}. Rendeu hoje ${reais(g.rendeu_hoje_liquido)}. Abrir.`}>
-      <span className="tile"><Landmark size={20} /></span>
+      <span className="tile"><Icone desenho={Landmark} /></span>
       {vazio ? (
         <span className="m"><b>Guardado</b><small>Diga onde o dinheiro está e veja quanto ele rende por dia.</small></span>
       ) : (
@@ -22,7 +23,7 @@ export function CartaoGuardado() {
           {g.motivo_zero && <small>{textoPrivado(g.motivo_zero)}</small>}
         </span>
       )}
-      <ChevronRight size={20} className="muted" aria-hidden="true" />
+      <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
     </a>
   )
 }

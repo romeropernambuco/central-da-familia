@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { desfazer, type AcaoDesfazivel } from '../../app/desfazer'
 import { useRascunho } from '../../app/useRascunho'
 import { Conferencia } from '../../componentes/Conferencia'
@@ -37,14 +38,14 @@ export function Casa() {
   const [aba, setAba] = useState<Aba>('feira')
   if (equipe) return <CasaEquipe key={familia.id} />
   const abas: [Aba, string, JSX.Element][] = [
-    ['feira', soCasal ? 'Feira' : 'Lista', <ShoppingBasket size={18} />],
-    ...(soCasal ? [['prestadores', 'Serviços', <Wrench size={18} />] as [Aba, string, JSX.Element]] : []),
-    ['gas', 'Gás', <Flame size={18} />],
-    ...(soCasal ? [['folha', 'Folha', <FileText size={18} />] as [Aba, string, JSX.Element]] : []),
+    ['feira', soCasal ? 'Feira' : 'Lista', <Icone desenho={ShoppingBasket} />],
+    ...(soCasal ? [['prestadores', 'Serviços', <Icone desenho={Wrench} />] as [Aba, string, JSX.Element]] : []),
+    ['gas', 'Gás', <Icone desenho={Flame} />],
+    ...(soCasal ? [['folha', 'Folha', <Icone desenho={FileText} />] as [Aba, string, JSX.Element]] : []),
   ]
   return (
     <div className="view">
-      {equipe && <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você anota o que comprou para casa e marca a lista. Toque no botão verde para lançar uma compra.</span></p>}
+      {equipe && <p className="todo"><Icone desenho={Users} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você anota o que comprou para casa e marca a lista. Toque no botão verde para lançar uma compra.</span></p>}
       <div className="segbar"><div className="seg compacta" role="group" aria-label="Parte da casa">
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
       </div></div>
@@ -94,13 +95,13 @@ function Feira() {
       <div className="col">
         <FalhaConfig m={falhaLista} />
         {casal && <section className="card" aria-labelledby="fHoje">
-          <div className="card-h"><h2 id="fHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
+          <div className="card-h"><h2 id="fHoje"><Icone desenho={Users} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
           <p className="sub" style={{ marginTop: -8, marginBottom: 12 }}>quem veio e o que saiu para casa</p>
           <div className="duas">
             <div>
               <p className="lbl">Quem veio</p>
               {nomes.length ? (
-                <div className="pills" style={{ marginTop: 8 }}>{nomes.map((n, i) => nomeInformado(n) ? <button key={n} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Check size={16} />}{textoPrivado(n)}</button> : <NomeDaPessoa key={i} pessoa={{ tipo: 'assessor', id: folha.pessoas[i]?.id || '', nome: n }} />)}</div>
+                <div className="pills" style={{ marginTop: 8 }}>{nomes.map((n, i) => nomeInformado(n) ? <button key={n} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Icone desenho={Check} />}{textoPrivado(n)}</button> : <NomeDaPessoa key={i} pessoa={{ tipo: 'assessor', id: folha.pessoas[i]?.id || '', nome: n }} />)}</div>
               ) : <p className="sub" style={{ marginTop: 6 }}>Nenhum Assessor da Casa cadastrado.</p>}
               {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={textoPrivado(n)} className="sub" style={{ marginTop: 6 }}><NomeDaPessoa pessoa={{ tipo: 'membro', id: `ponto:${hoje}:${n}`, nome: n }} />: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
             </div>
@@ -113,7 +114,7 @@ function Feira() {
 
         {feira && !equipe && (
           <section className="card" aria-labelledby="fSem">
-            <div className="card-h"><h2 id="fSem">Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
+            <div className="card-h"><h2 id="fSem"><Icone nome="casa" />Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
             {/* B8: nunca "livre" e "passou" na mesma tela */}
             <p className="lbl">{textoPrivado(feira.nome)}: {livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
             <div className="numrow">{livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}
@@ -125,32 +126,32 @@ function Feira() {
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
             {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa autoria={id.startsWith('anotou:')} pessoa={{ tipo: 'membro', id: id.slice(id.indexOf(':') + 1), nome: nomeDe(id.slice(id.indexOf(':') + 1)) }} /> {id.startsWith('pagou:') ? 'pagou' : 'anotou'} {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
-            <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
+            <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Icone desenho={Camera} />Ler cupom com foto</button>
           </section>
         )}
       </div>
 
       <div className="col">
         <section className="card" aria-labelledby="fLista">
-          <div className="card-h"><h2 id="fLista">Lista de compras</h2><span className="chip">{lista.filter(i => !i.ok).length} faltam</span></div>
+          <div className="card-h"><h2 id="fLista"><Icone nome="casa" />Lista de compras</h2><span className="chip">{lista.filter(i => !i.ok).length} faltam</span></div>
           <ul className="list">
             {lista.map(i => (
               <li key={i.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
                 <label className="check" style={{ gridColumn: '1 / 3' }}><input type="checkbox" checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
-                <button className="iconbtn quieto" type="button" aria-label={`Tirar ${textoPrivado(i.nome)} da lista`} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Trash2 size={20} /></button>
+                <button className="iconbtn quieto" type="button" aria-label={`Tirar ${textoPrivado(i.nome)} da lista`} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Icone desenho={Trash2} /></button>
               </li>
             ))}
           </ul>
-          {!lista.length && !falhaLista && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Escreva abaixo o que falta em casa.</Vazio>}
+          {!lista.length && !falhaLista && <Vazio ico={<Icone desenho={ShoppingBasket} />}>A lista está vazia. Escreva abaixo o que falta em casa.</Vazio>}
           <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await setLista([...lista, { id: novoId(), nome: novo.trim(), ok: false }])) setNovo('') }}>
             <CampoPrivado className="inp" placeholder="Acrescentar item" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Novo item da lista" />
-            <button className="btn line" type="submit" aria-label="Acrescentar"><Plus size={20} /></button>
+            <button className="btn line" type="submit" aria-label="Acrescentar"><Icone desenho={Plus} /></button>
           </form>
         </section>
 
         {casal && (
           <section className="card" aria-labelledby="fEq">
-            <div className="card-h"><h2 id="fEq">Assessores da Casa</h2></div>
+            <div className="card-h"><h2 id="fEq"><Icone nome="assessor" />Assessores da Casa</h2></div>
             <p className="sub" style={{ marginBottom: 10 }}>Cada Assessor da Casa entra com um convite e um código de 4 números. O acesso permite cuidar da Casa, sem ver valores de dinheiro.</p>
             {folha.pessoas.length ? folha.pessoas.map(p => (
               <div key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
@@ -164,10 +165,10 @@ function Feira() {
                     setCod({ nome: p.nome, codigo: r.codigo_4_digitos, link: linkEquipe(location.origin + location.pathname + location.search, r.convite) })
                   })
                   setGerando(false)
-                }}><KeyRound size={16} />Gerar código</button>
+                }}><Icone desenho={KeyRound} />Gerar código</button>
               </div>
             )) : <p className="sub">Cadastre um Assessor da Casa para gerar o convite.</p>}
-            <button className="btn line" type="button" onClick={() => setCadastro(true)}><Plus size={18} />Cadastrar Assessor da Casa</button>
+            <button className="btn line" type="button" onClick={() => setCadastro(true)}><Icone desenho={Plus} />Cadastrar Assessor da Casa</button>
             <p className="sub" style={{ marginTop: 10 }}>Renovação de convite e desligamento de acesso ainda não estão disponíveis.</p>
           </section>
         )}
@@ -180,8 +181,8 @@ function Feira() {
           <p className="din big" style={{ letterSpacing: '.2em', textAlign: 'center' }} aria-label={oculto ? 'Código escondido' : 'Código ' + cod.codigo.split('').join(' ')}>{textoPrivado(cod.codigo, oculto)}</p>
           <p className="sub" style={{ textAlign: 'center' }}>{textoPrivado(cod.nome)} precisa das 2 coisas: abrir o link abaixo e digitar o código. Vale por 24 horas. Depois de 5 erros, gere outro.</p>
           <p className="linkbox" aria-label="Link do convite">{textoPrivado(cod.link, oculto)}</p>
-          <a className="btn primary full" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('equipe', { familia: familia!.nome, quem: cod.nome, link: cod.link, codigo: cod.codigo }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><MessageCircle size={20} />Abrir o WhatsApp com a mensagem</a>
-          <button className="btn line full" type="button" onClick={() => tentar(async () => { if (await copiarProtegido(cod.link, undefined, toast)) toast('Link copiado. O código vai separado: ' + cod.codigo) })}><Copy size={20} />Copiar só o link</button>
+          <a className="btn primary full" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('equipe', { familia: familia!.nome, quem: cod.nome, link: cod.link, codigo: cod.codigo }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><Icone desenho={MessageCircle} />Abrir o WhatsApp com a mensagem</a>
+          <button className="btn line full" type="button" onClick={() => tentar(async () => { if (await copiarProtegido(cod.link, undefined, toast)) toast('Link copiado. O código vai separado: ' + cod.codigo) })}><Icone desenho={Copy} />Copiar só o link</button>
           <p className="sub">O app só abre o WhatsApp com o texto pronto. Quem escolhe a conversa e envia é você.</p>
         </Sheet>
       )}
@@ -203,8 +204,8 @@ function Prestadores() {
   return (
     <div className="view">
       <FalhaConfig m={falhaPs} />
-      <p className="todo"><CalendarDays size={20} aria-hidden="true" /><span>Jardineiro, piscineiro, diarista: o app lembra na véspera com a mensagem pronta. Quando a pessoa vier, toque em "Veio hoje" e o pagamento já abre para lançar.</span></p>
-      {!ps.length && !falhaPs && <div className="card"><Vazio ico={<Wrench size={24} />}>Nenhum serviço cadastrado. Ex.: jardineiro toda sexta, piscineiro toda quarta.</Vazio></div>}
+      <p className="todo"><Icone desenho={CalendarDays} aria-hidden="true" /><span>Jardineiro, piscineiro, diarista: o app lembra na véspera com a mensagem pronta. Quando a pessoa vier, toque em "Veio hoje" e o pagamento já abre para lançar.</span></p>
+      {!ps.length && !falhaPs && <div className="card"><Vazio ico={<Icone desenho={Wrench} />}>Nenhum serviço cadastrado. Ex.: jardineiro toda sexta, piscineiro toda quarta.</Vazio></div>}
       <div className="envs">
         {ps.map(p => {
           const prox = proxDia(hoje, p.dia)
@@ -218,14 +219,14 @@ function Prestadores() {
               <p className="sub">Próxima visita <b>{ehHoje ? 'hoje' : dataCurta(prox)}</b>{p.ultimaVez ? ` · veio por último ${dataCurta(p.ultimaVez)}` : ''}</p>
               {(amanha || ehHoje) && <p className="todo warn">{ehHoje ? 'É hoje.' : 'É amanhã.'} Mande a confirmação.</p>}
               <div className="row-btns">
-                <a className="btn sm line" target="_blank" rel="noreferrer" href={linkWhatsApp(msg)}><MessageCircle size={16} />Confirmar</a>
-                <button className="btn sm primary" type="button" onClick={() => { setPs(ps.map(x => x.id === p.id ? { ...x, ultimaVez: hoje } : x)); abrirLancar({ envelope: casaMensal?.id, valor: p.valor, descricao: `${p.servico} ${p.nome}` }) }}><Check size={16} />Veio hoje</button>
+                <a className="btn sm line" target="_blank" rel="noreferrer" href={linkWhatsApp(msg)}><Icone desenho={MessageCircle} />Confirmar</a>
+                <button className="btn sm primary" type="button" onClick={() => { setPs(ps.map(x => x.id === p.id ? { ...x, ultimaVez: hoje } : x)); abrirLancar({ envelope: casaMensal?.id, valor: p.valor, descricao: `${p.servico} ${p.nome}` }) }}><Icone desenho={Check} />Veio hoje</button>
               </div>
             </section>
           )
         })}
       </div>
-      <button className="btn line" type="button" style={{ justifySelf: 'start' }} onClick={() => setNovo(true)}><Plus size={20} />Novo serviço</button>
+      <button className="btn line" type="button" style={{ justifySelf: 'start' }} onClick={() => setNovo(true)}><Icone desenho={Plus} />Novo serviço</button>
       {novo && <NovoPrestador fechar={() => setNovo(false)} salvar={async p => { const ok=await setPs([...ps,p]); if(ok)setNovo(false);return ok }} />}
     </div>
   )
@@ -261,7 +262,7 @@ function Gas() {
     <div className="tela-larga">
       <section className="card" aria-labelledby="gT">
         <FalhaConfig m={falhaGas} />
-        <div className="card-h"><h2 id="gT"><Flame size={24} aria-hidden="true" />Gás de cozinha</h2></div>
+        <div className="card-h"><h2 id="gT"><Icone desenho={Flame} aria-hidden="true" />Gás de cozinha</h2></div>
         {p.media ? (
           <>
             <p className="lbl">Um botijão dura em média</p>
@@ -270,12 +271,12 @@ function Gas() {
             {hora && <p className="todo warn" style={{ marginTop: 12 }}>Hora de pedir o gás: faltam uns {Math.max(0, Math.round((Date.parse(p.acaba!) - Date.parse(hoje)) / 864e5))} dias.</p>}
           </>
         ) : <p className="sub">Toque em "Troquei hoje" cada vez que trocar o botijão. Com 2 trocas o app já calcula a média e avisa antes de acabar.</p>}
-        <button className="btn primary" type="button" style={{ marginTop: 14 }} disabled={gas.trocas.includes(hoje)} onClick={() => setGas({ trocas: [...gasCfg.trocas, hoje] })}><Check size={20} />Troquei hoje</button>
+        <button className="btn primary" type="button" style={{ marginTop: 14 }} disabled={gas.trocas.includes(hoje)} onClick={() => setGas({ trocas: [...gasCfg.trocas, hoje] })}><Icone desenho={Check} />Troquei hoje</button>
       </section>
       <section className="card" aria-labelledby="gH">
-        <div className="card-h"><h2 id="gH">Trocas anotadas</h2></div>
+        <div className="card-h"><h2 id="gH"><Icone nome="pendente" />Trocas anotadas</h2></div>
         <ul className="list">{[...gas.trocas].sort().reverse().map(d => <li key={d} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{diaSemana(d)}, {dataCurta(d)}</b></span></li>)}</ul>
-        {!gas.trocas.length && <Vazio ico={<Flame size={24} />}>Nenhuma troca anotada ainda.</Vazio>}
+        {!gas.trocas.length && <Vazio ico={<Icone desenho={Flame} />}>Nenhuma troca anotada ainda.</Vazio>}
       </section>
     </div>
   )
@@ -296,13 +297,13 @@ function FolhaCasa() {
           <p className="lbl" style={{ color: 'var(--warn-ink)' }}><FuncIco id="folha" size={24} />Folha da Casa</p>
           <h2 style={{ marginTop: 6, color: 'var(--warn-ink)' }}>A guia mensal do governo vence {dataCurta(dae.vence)}</h2>
           <p className="corpo" style={{ color: 'var(--warn-ink)', marginTop: 4 }}>{dae.dias > 0 ? `Faltam ${dae.dias} dias.` : 'Vence hoje.'} É a guia mensal dos Assessores da Casa com vínculo de emprego. Emita no eSocial Doméstico, pague no banco e registre o pagamento aqui.</p>
-          <button className="btn dark" type="button" style={{ marginTop: 12 }} onClick={() => setFolha({ ...folha, daePaga: { ...folha.daePaga, [mes]: true } })}><Check size={20} />Já paguei a guia deste mês</button>
+          <button className="btn dark" type="button" style={{ marginTop: 12 }} onClick={() => setFolha({ ...folha, daePaga: { ...folha.daePaga, [mes]: true } })}><Icone desenho={Check} />Já paguei a guia deste mês</button>
         </section>
       ) : (
-        <p className="todo ok"><Check size={20} aria-hidden="true" /><span>{folha.daePaga?.[mes] ? 'Guia mensal do governo marcada como paga.' : `A guia mensal do governo vence todo dia 7. O aviso aparece do dia 1 ao dia 7.`}</span></p>
+        <p className="todo ok"><Icone desenho={Check} aria-hidden="true" /><span>{folha.daePaga?.[mes] ? 'Guia mensal do governo marcada como paga.' : `A guia mensal do governo vence todo dia 7. O aviso aparece do dia 1 ao dia 7.`}</span></p>
       ))}
       <section className="card" aria-labelledby="flT">
-        <div className="card-h"><h2 id="flT">Assessores da Casa</h2></div>
+        <div className="card-h"><h2 id="flT"><Icone nome="assessor" />Assessores da Casa</h2></div>
         <ul className="list">
           {folha.pessoas.map(p => {
             const r = reservaFolha(p.salario)
@@ -317,9 +318,9 @@ function FolhaCasa() {
             )
           })}
         </ul>
-        {!folha.pessoas.length && !falhaFolha && <Vazio ico={<Users size={24} />}>Ninguém cadastrado. Quem trabalha na sua casa?</Vazio>}
+        {!folha.pessoas.length && !falhaFolha && <Vazio ico={<Icone desenho={Users} />}>Ninguém cadastrado. Quem trabalha na sua casa?</Vazio>}
         {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês para férias e 13º.</p>}
-        <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Plus size={20} />Cadastrar pessoa</button>
+        <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Icone desenho={Plus} />Cadastrar pessoa</button>
       </section>
       {nova && <NovaPessoa fechar={() => setNova(false)} salvar={async p => { const ok=await setFolha({ ...folha, pessoas: [...folha.pessoas, p] });if(ok)setNova(false);return ok }} />}
     </div>
@@ -392,8 +393,8 @@ function CasaEquipe() {
   const g = casa.gas
   return (
     <div className="view">
-      <p className="todo"><Users size={20} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
-      <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Flame size={24} />O gás acabou</button>
+      <p className="todo"><Icone desenho={Users} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
+      <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Icone desenho={Flame} />O gás acabou</button>
       {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); agendar('acabou', { nome: 'Gás de cozinha' }, 'Gás posto na lista de compras.') }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
       {pendente && <div role="status" className="todo"><span>Vai enviar em 6 segundos.</span></div>}
       <PrecisaDeVoce equipe />
@@ -401,36 +402,36 @@ function CasaEquipe() {
       <div className="tela-larga">
         <div className="col">
           <section className="card" aria-labelledby="eHoje">
-            <div className="card-h"><h2 id="eHoje"><Users size={24} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
+            <div className="card-h"><h2 id="eHoje"><Icone desenho={Users} aria-hidden="true" />Hoje, {diaSemana(hoje)} {dataCurta(hoje)}</h2></div>
             <div className="row-btns">
-              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado || !!pendente} onClick={() => agendar('cheguei', undefined, 'Chegada avisada para o casal.')}><Check size={20} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
-              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado || !!pendente} onClick={() => agendar('sai', undefined, 'Saída avisada para o casal.')}><LogOut size={20} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
+              <button className="btn primary" type="button" disabled={!!ponto.chegou || ocupado || !!pendente} onClick={() => agendar('cheguei', undefined, 'Chegada avisada para o casal.')}><Icone desenho={Check} />{ponto.chegou ? `Chegou ${ponto.chegou}` : 'Cheguei'}</button>
+              <button className="btn line" type="button" disabled={!ponto.chegou || !!ponto.saiu || ocupado || !!pendente} onClick={() => agendar('sai', undefined, 'Saída avisada para o casal.')}><Icone desenho={LogOut} />{ponto.saiu ? `Saiu ${ponto.saiu}` : 'Saí'}</button>
             </div>
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(c.nome)}</b></span></li>)}</ul>
-              : <Vazio ico={<ShoppingBasket size={24} />}>Nenhuma compra anotada hoje.</Vazio>}
+              : <Vazio ico={<Icone desenho={ShoppingBasket} />}>Nenhuma compra anotada hoje.</Vazio>}
             {/* C4 (14/11): o "Anotar compra" da equipe é 1 só, o botão grande de baixo (App.tsx); a folha dele não tem valor */}
           </section>
           <section className="card" aria-labelledby="eGas">
-            <div className="card-h"><h2 id="eGas"><Flame size={24} aria-hidden="true" />Gás de cozinha</h2></div>
+            <div className="card-h"><h2 id="eGas"><Icone desenho={Flame} aria-hidden="true" />Gás de cozinha</h2></div>
             {g.media_dias ? <p className="sub">Um botijão dura uns <b>{g.media_dias} dias</b>. Próxima troca perto de <b>{dataCurta(g.proxima_troca!)}</b>.</p>
               : <p className="sub">Toque em "Troquei o gás" cada vez que trocar o botijão. Com 2 trocas o app calcula a próxima.</p>}
             {g.trocas.length > 0 && <p className="sub" style={{ marginTop: 6 }}>Última troca: <b>{dataCurta(g.trocas[g.trocas.length - 1])}</b></p>}
-            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado || !!pendente} onClick={() => agendar('troquei_gas', undefined, 'Troca de gás avisada para o casal.')}><Flame size={20} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
+            <button className="btn line" type="button" style={{ marginTop: 12 }} disabled={g.trocas.includes(hoje) || ocupado || !!pendente} onClick={() => agendar('troquei_gas', undefined, 'Troca de gás avisada para o casal.')}><Icone desenho={Flame} />{g.trocas.includes(hoje) ? 'Gás trocado hoje' : 'Troquei o gás hoje'}</button>
           </section>
           <section className="card" aria-labelledby="ePrest">
-            <div className="card-h"><h2 id="ePrest"><Wrench size={24} aria-hidden="true" />Quem vem para casa</h2></div>
+            <div className="card-h"><h2 id="ePrest"><Icone desenho={Wrench} aria-hidden="true" />Quem vem para casa</h2></div>
             {casa.prestadores.length ? <ul className="list">{casa.prestadores.map(p => (
               <li key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
                 <span className="m"><b>{textoPrivado(p.servico)}: <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
-                <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado || !!pendente} onClick={() => agendar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Check size={16} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
+                <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado || !!pendente} onClick={() => agendar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Icone desenho={Check} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
-            ))}</ul> : <Vazio ico={<Wrench size={24} />}>O casal ainda não cadastrou serviços.</Vazio>}
+            ))}</ul> : <Vazio ico={<Icone desenho={Wrench} />}>O casal ainda não cadastrou serviços.</Vazio>}
           </section>
         </div>
         <div className="col">
           <section className="card" aria-labelledby="eLista">
-            <div className="card-h"><h2 id="eLista">Lista de compras</h2><span className="chip">{casa.lista.filter(i => !i.ok).length} faltam</span></div>
+            <div className="card-h"><h2 id="eLista"><Icone nome="casa" />Lista de compras</h2><span className="chip">{casa.lista.filter(i => !i.ok).length} faltam</span></div>
             <p className="sub" style={{ marginBottom: 8 }}>A mesma lista do casal. Sem marca = falta comprar. Marque quando comprar.</p>
             <ul className="list">
               {casa.lista.map(i => (
@@ -439,10 +440,10 @@ function CasaEquipe() {
                 </li>
               ))}
             </ul>
-            {!casa.lista.length && <Vazio ico={<ShoppingBasket size={24} />}>A lista está vazia. Acabou alguma coisa? Escreva abaixo.</Vazio>}
+            {!casa.lista.length && <Vazio ico={<Icone desenho={ShoppingBasket} />}>A lista está vazia. Acabou alguma coisa? Escreva abaixo.</Vazio>}
             <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await marcar('acabou', { nome: novo.trim() }, 'Item posto na lista.')) setNovo('') }}>
               <CampoPrivado className="inp" placeholder="Acabou alguma coisa?" value={novo} disabled={ocupado} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
-              <button className="btn line" type="submit" disabled={ocupado} aria-label="Pôr na lista"><Plus size={20} /></button>
+              <button className="btn line" type="submit" disabled={ocupado} aria-label="Pôr na lista"><Icone desenho={Plus} /></button>
             </form>
           </section>
         </div>

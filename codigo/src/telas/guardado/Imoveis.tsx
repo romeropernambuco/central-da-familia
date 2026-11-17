@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
@@ -79,9 +81,9 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
 
   return (
     <section className="card imoveis" aria-labelledby="gImo">
-      <div className="card-h"><h2 id="gImo"><Building2 size={24} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Plus size={16} />Imóvel</button></div>
+      <div className="card-h"><h2 id="gImo"><Icone desenho={Building2} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Icone desenho={Plus} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
-      <p>Gestor do Guardado: quer cadastrar um imóvel?</p><button type="button" className="btn line" onClick={() => setFolha('novo')}>Cadastrar imóvel</button>
+      <p>Gestor do Guardado: quer cadastrar um imóvel?</p><Botao type="button" variante="secundario" onClick={() => setFolha('novo')}>Cadastrar imóvel</Botao>
       {lista && <dl className="imo-total">
         <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
@@ -90,7 +92,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       <p className="sub imo-frase">O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas cadastradas.</p>
       {carregando && <p role="status">Buscando imóveis…</p>}
       {falha && <p role="alert">Não foi possível buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Home size={24} />}>Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.</Vazio> : (
+      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Icone desenho={Home} />}>Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.</Vazio> : (
         <ul className="list">
           {imoveis.map(i => {
             const m: ImovelSaida | undefined = doMotor.get(i.id)
@@ -99,7 +101,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
             return (
               <li key={i.id} {...(i.meu ? {} : { 'data-do-outro': textoPrivado(i.dono_nome || '') })}>
                 <button className="li imo" type="button" onClick={() => setFolha(i)} aria-label={`${textoPrivado(i.apelido)}, ${i.meu ? dono : textoPrivado(dono)}, vale ${reais(i.valor)}${selo ? `, ${textoPrivado(selo.texto)}` : ''}. ${i.meu ? 'Abrir para mudar.' : 'Abrir para ver.'}`}>
-                  <span className="tile"><Building2 size={20} /></span>
+                  <span className="tile"><Icone desenho={Building2} /></span>
                   <span className="m"><b className="quebra">{textoPrivado(i.apelido)}</b>
                     <small>{textoPrivado(adultos !== 1 ? `${dono} · ` : '')}{textoPrivado(nomeUso(i.uso))}</small>
                     {m && i.uso !== 'mora' && m.aluguel_liquido_mes > 0 && <small className="imo-renda">Aluguel líquido <strong>{reais(m.aluguel_liquido_mes / 100)}</strong> por mês · rende <strong>{oculto ? '•••' : pctAno(m.rentabilidade_ano)}</strong> ao ano{m.taxa_real_aplicacoes ? (oculto ? '; rendimento oculto' : `; o aplicado rende ${pctAno(m.taxa_real_aplicacoes)}`) : ''}</small>}
@@ -198,8 +200,8 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
       </fieldset>
       {!so && <>
         {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
-        <button className="btn primary full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) { setF.limpar(); fechar() } }}>Salvar</button>
-        {inicial && <button className="btn line full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}>Tirar da lista</button>}
+        <Botao variante="primario" className="full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) { setF.limpar(); fechar() } }}>Salvar</Botao>
+        {inicial && <Botao variante="secundario" className="full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}>Tirar da lista</Botao>}
       </>}
     </Sheet>
   )
