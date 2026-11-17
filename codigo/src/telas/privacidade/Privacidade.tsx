@@ -1,10 +1,11 @@
+import { resumoPrivacidade, VERSAO_PRIVACIDADE } from './resumos'
 import { Backup } from '../../componentes/Backup'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
 import { useApp } from '../../app/contexto'
-import { useAdultos } from '../../app/useMembros'
+
 import { Sheet } from '../../componentes/base'
 import { hojeRecife } from '../../lib/formato'
 
@@ -12,7 +13,7 @@ import { hojeRecife } from '../../lib/formato'
 export function Privacidade() {
   const { api, familia, trocarSessao, toast, oculto } = useApp()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "vocês dois"
-  const sozinho = useAdultos() === 1
+
   const [apagar, setApagar] = useState(false)
   const [conf, setConf] = useState('')
   const [erro, setErro] = useState('')
@@ -44,19 +45,14 @@ export function Privacidade() {
     <div className="tela-larga">
       <section className="card termo" aria-labelledby="tT">
         <h2 id="tT"><ShieldCheck size={24} aria-hidden="true" />Termo de uso, em 1 tela</h2>
-        <h3>O que guardamos</h3>
-        <p>Nome da família, quem participa, limites, cartões (só nome e dias), lançamentos e o que a família anota da casa. Não guardamos senha de banco nem número de cartão.</p>
-        <h3>Quem vê</h3>
-        <p>Só a sua família. {!casal ? 'Seu acesso segue seu papel: pessoa da família vê seu orçamento; equipe vê as tarefas da Casa.' : sozinho ? 'Você vê tudo da família e é quem mexe. Se outro adulto entrar, cada um mexe só no seu, e tudo aparece com o nome de quem é.' : 'Vocês dois veem tudo da família, cada um com o nome do dono. Cada um mexe só no seu. O orçamento é um só: cada limite, cartão, renda, gasto e dinheiro guardado aparece com o nome de quem é, e só essa pessoa lança, corrige ou apaga. A Casa é dos 2.'} Cada pessoa da família (um filho, a avó) vê só o próprio orçamento. O Assessor da Casa vê só a tela da Casa e nunca um valor em dinheiro. Nenhuma outra família vê nada, nem por erro: o banco tranca por família.</p>
-        <h3>Inteligência artificial</h3>
-        <p>A IA só lê a foto do cupom quando você manda e mostra para você conferir antes de salvar. A conta de dinheiro é sempre do banco, nunca da IA. Cupom pode ter CPF: o app avisa antes de enviar.</p>
-        <h3>Seus direitos (LGPD)</h3>
-        <p>{casal ? 'Você pode baixar os dados da família e apagar a família inteira. Apagar é de vez e não tem volta.' : 'Você pode baixar seus dados. Quem pode apagar a família inteira é o casal.'}</p>
+        <p className="sub">Versão {VERSAO_PRIVACIDADE} · {familia?.papel === 'equipe' ? 'Assessor da Casa' : familia?.papel === 'casal' ? 'Casal' : 'Pessoa da família'}</p>
+        {resumoPrivacidade(familia?.papel || null).map(([titulo, texto]) => <div key={titulo}><h3>{titulo}</h3><p>{texto}</p></div>)}
+        <h3>Leitura de cupom</h3><p>A foto é enviada para leitura quando você solicita. Confira os dados antes de salvar; o cupom pode conter informações pessoais.</p>
       </section>
-      <div className="col">
+      {familia?.papel !== 'equipe' && <div className="col">
         <section className="card" aria-labelledby="bT">
           <h2 id="bT">{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</h2>
-          <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com tudo da família, com o nome do dono em cada linha, para guardar ou levar para outro lugar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
+          <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com os dados disponíveis da família. Confira o conteúdo antes de guardar ou compartilhar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
           <button className="btn line" type="button" onClick={baixar}><Download size={20} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
         </section>
         <Backup />
@@ -66,7 +62,7 @@ export function Privacidade() {
           <p className="sub" style={{ margin: '8px 0 12px' }}>Apaga lançamentos, cartões, limites, cadastros de Assessores da Casa e convites. Esta ação é definitiva.</p>
           <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Trash2 size={20} />Apagar a família</button>
         </section>}
-      </div>
+      </div>}
       {json != null && !oculto && (
         <Sheet titulo={casal ? 'Dados da família' : 'Seus dados'} fechar={() => setJson(null)}>
           <p className="sub">No exemplo o arquivo não é baixado: o conteúdo aparece aqui. Toque em Copiar e cole onde quiser guardar.</p>

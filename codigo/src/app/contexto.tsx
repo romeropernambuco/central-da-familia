@@ -1,3 +1,5 @@
+import { encerrarAcolhimento } from '../lib/acolhimento'
+import { salvamento } from './salvamento'
 import { FilaPendentes } from '../componentes/FilaPendentes'
 import { pendentes } from './pendentes'
 import { desfazer } from './desfazer'
@@ -76,7 +78,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sessão caiu (token vencido, saiu em outro aparelho): limpa o que está na memória e volta pra tela de entrar. */
   const sessaoCaiu = useCallback(async () => {
-    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
+    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* já estava fora */ } finally { saindo.current = false }
     setSessao(null); setErro(null)
@@ -85,7 +87,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sair por vontade própria: limpa tudo da memória e volta pra tela de entrar, sem aviso de erro. */
   const sair = useCallback(async () => {
-    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
+    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* sem rede: sai do aparelho do mesmo jeito */ } finally { saindo.current = false }
     await trocarSessao()
@@ -118,7 +120,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
   useEffect(() => api.aoSairSessao?.(() => {
     if (saindo.current) return
-    pendentes.limpar(); desfazer.limpar(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
+    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
     setToast({ msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() })
   }), [api])
 

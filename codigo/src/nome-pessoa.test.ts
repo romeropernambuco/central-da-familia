@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ContextoApp, type Ctx } from './app/contexto'
@@ -16,7 +16,8 @@ function mostrar(nome: string, api = apiExemplo, familia = f, oculto = false) {
   return renderToStaticMarkup(createElement(ContextoApp.Provider, { value: ctx }, createElement(NomeDaPessoa, { pessoa: { tipo: 'membro', id: 'm-bruno', nome }, editar: true })))
 }
 describe('identidade editável', () => {
-  beforeEach(() => reiniciarExemplo())
+  beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-16T12:00:00-03:00')); reiniciarExemplo() })
+  afterEach(() => vi.useRealTimers())
   it.each(antigos)('oferece cadastro em vez de %j', nome => {
     expect(nomeInformado(nome)).toBe(false)
     const html = mostrar(nome)

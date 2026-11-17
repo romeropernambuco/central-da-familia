@@ -1,3 +1,4 @@
+import { useMembros } from '../../app/useMembros'
 import { valorForaPadrao } from '../../app/valorForaPadrao'
 import { rascunhos } from '../../app/rascunhos'
 import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
@@ -19,7 +20,7 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
-type Rascunho = { txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number }
+type Rascunho = { txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number; pago_por?: string }
 function lerRascunho(chave: string): Rascunho | null {
  try {
   const d = rascunhos.get(chave) as Rascunho | undefined
@@ -68,6 +69,8 @@ export function Lancar() {
   const hoje = hojeRecife()
   const [quando, setQuando] = useState<string>(corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : rascunho?.quando || hoje)
   const [cartao, setCartao] = useState<string | null>(corr ? corr.cartao_id : rascunho?.cartao || null)
+  const membrosPagamento = useMembros()
+  const [pagoPor, setPagoPor] = useState(rascunho?.pago_por || '')
   const [parcelas, setParcelas] = useState(corr?.parcelas || rascunho?.parcelas || 1)
   const [cartoes, setCartoes] = useState<Cartao[]>([])
   const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || rascunho?.desc || '')
@@ -81,11 +84,11 @@ export function Lancar() {
     if (!chaveRascunho || concluido.current) return
     try {
       if (!txt && !desc) { rascunhos.delete(chaveRascunho); return }
-      rascunhos.set(chaveRascunho, { txt, desc, quando, cartao, parcelas, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
+      rascunhos.set(chaveRascunho, { txt, desc, quando, cartao, parcelas, pago_por: pagoPor, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
     } catch { /* sem storage */ }
-  }, [chaveRascunho, txt, desc, quando, cartao, parcelas])
+  }, [chaveRascunho, txt, desc, quando, cartao, parcelas, pagoPor])
   const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) rascunhos.delete(chaveRascunho) } catch { /* sem storage */ } }
-  const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setParcelas(1); setRecuperado(false); concluido.current = false }
+  const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setPagoPor(''); setParcelas(1); setRecuperado(false); concluido.current = false }
   const atalho = !corr ? lancarAberto?.atalho : undefined
   const [cartaoAtalho, setCartaoAtalho] = useState<'achou' | 'nao achou' | null>(null)
   useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => {
@@ -145,8 +148,8 @@ export function Lancar() {
       const p = cartao ? parcelas : 1
       // B10: nada salva como "Gasto": sem nome vira "Gasto de quarta 18/11" (o dia ajuda a lembrar depois)
       const descricao = desc.trim() || `Gasto de ${diaSemana(quando)} ${dataCurta(quando)}`
-      const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p].join('|'))
-      const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave })
+      const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p, pagoPor].join('|'))
+      const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave, pago_por: pagoPor || null })
       limparRascunho()
       toque.gravou()
       ;(window as any).__ultimoTempoLancar = s
@@ -222,6 +225,7 @@ export function Lancar() {
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
           {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Camera size={18} />Ler cupom com foto</button>}
           {visor}
+          {!corr && <label className="campo"><span>Quem pagou? (opcional)</span><select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}><option value="">Não informado</option>{(casal ? membrosPagamento.lista : familia?.membroId ? [{ id: familia.membroId, nome: familia.membroNome }] : []).map(m => <option key={m.id} value={m.id}>{textoPrivado(m.nome)}</option>)}</select><small>Quem anota não é necessariamente quem paga.</small></label>}
           <div className="atrow"><span className="atl">Quando</span>
             {datas.map(d => <button key={d} type="button" className="pill" aria-pressed={quando === d} onClick={() => setQuando(d)}>{d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}</button>)}
           </div>

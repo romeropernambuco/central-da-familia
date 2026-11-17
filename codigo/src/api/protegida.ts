@@ -1,3 +1,4 @@
+import { salvamento } from '../app/salvamento'
 import { pendentes } from '../app/pendentes'
 import { limparRascunhos } from '../app/rascunhos'
 import type { Api } from './tipos'
@@ -9,7 +10,7 @@ export function protegerApi(api: Api): Api {
  return new Proxy(api, { get(alvo, prop: keyof Api) {
  const f = alvo[prop]
  if (typeof f !== 'function' || !mutacoes.test(prop)) return f
- return async (...args: any[]) => {
+ return async (...args: any[]) => salvamento.acompanhar(async () => {
  if (desfazer.ocupado) return (f as Function).apply(api,args)
  const geracao = pendentes.geracao
  let inverso: (() => Promise<void>) | undefined
@@ -48,6 +49,6 @@ export function protegerApi(api: Api): Api {
  desfazer.dispensar()
  if (inverso) desfazer.registrar({ rotulo: 'Última alteração', desfazer: async () => { await inverso!(); return true } })
  return r
- }
+ })
  } })
 }

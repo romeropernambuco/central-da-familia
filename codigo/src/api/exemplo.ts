@@ -459,7 +459,7 @@ export const apiExemplo: Api = {
     // E4 (igual a f_04): parcelado só no cartão com dia de fechamento e de vencimento
     if ((nv.parcelas || 1) > 1 && !faturaDoLanc({ cartao_id: nv.cartao || null, data: nv.data })) throw new Error('Parcelado só no cartão com o dia que fecha e o dia que vence. Cadastre os 2 dias em Cartões.')
     if (logado !== 'carla' && !podeEscrever(nv.envelope)) throw new Error(`Esse limite ${donoDoEnv(nv.envelope) ? `é de ${donoDoEnv(nv.envelope)}` : 'não é seu'}. Lance no seu ou num da Casa.`)
-    const l: Lancamento = { id: 'l' + Date.now(), envelope_id: nv.envelope, cartao_id: nv.cartao || null, valor: centavos(nv.valor), data: nv.data, descricao: nv.descricao, apagado_em: null, criado_em: new Date().toISOString(), ...(nv.cartao && (nv.parcelas || 1) > 1 ? { parcelas: Math.min(12, Math.floor(nv.parcelas!)) } : {}), autor: logado === 'carla' ? 'carla' : membroLogado().id }
+    const l: Lancamento = { id: 'l' + Date.now(), envelope_id: nv.envelope, cartao_id: nv.cartao || null, valor: centavos(nv.valor), data: nv.data, descricao: nv.descricao, apagado_em: null, criado_em: new Date().toISOString(), ...(nv.cartao && (nv.parcelas || 1) > 1 ? { parcelas: Math.min(12, Math.floor(nv.parcelas!)) } : {}), autor: logado === 'carla' ? 'carla' : membroLogado().id, pago_por: nv.pago_por || null }
     db.lanc.push(l)
     porChave.set(nv.chave, l)
     if (nv.segundos != null) tempos.push(nv.segundos)

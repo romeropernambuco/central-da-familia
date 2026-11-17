@@ -1,6 +1,7 @@
 // Superfície DOM mínima para montar com react-dom em Node, sem dependências extras.
 // Não simula hooks nem a reconciliação: ambos são executados pelo React real.
 export class NoTeste {
+  get options() { return this.childNodes.filter(n => n instanceof NoTeste && n.tagName === 'OPTION') }
   readonly nodeType: number
   readonly nodeName: string
   readonly tagName: string

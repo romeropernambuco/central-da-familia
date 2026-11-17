@@ -115,3 +115,19 @@ describe('f_13: o IR de 2029 em diante vai junto no objetivo_salvar', () => {
     expect(enviado.parametros.aliq_proj).toBe('0.225')
   })
 })
+
+
+describe('f25: pagamento explícito usa a coluna existente sem trocar autoria',()=>{
+ it('grava pagador na mesma compra retornada pela RPC e o entrega normalizado',async()=>{
+  respostas['rpc:lancar_com_chave']={data:{lancamento:{id:'l',autor:'a',valor:10},resumo:{}},error:null}
+  respostas['lancamentos:update+select+single']={data:{id:'l'},error:null}
+  const r=await api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'})
+  expect(r.lancamento).toMatchObject({autor:'a',pago_por:'b'})
+  expect(chamadas.find(c=>c.tabela==='lancamentos')?.passos).toEqual(expect.arrayContaining([['update',[{pago_por:'b'}]],['eq',['familia_id','f']],['eq',['id','l']]]))
+ })
+ it('não anuncia sucesso quando a compra foi anotada mas a identificação do pagador falhou',async()=>{
+  respostas['rpc:lancar_com_chave']={data:{lancamento:{id:'l',autor:'a'},resumo:{}},error:null}
+  respostas['lancamentos:update+select+single']={data:null,error:{message:'pagador recusado'} as any}
+  await expect(api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'})).rejects.toThrow()
+ })
+})

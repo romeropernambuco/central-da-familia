@@ -1,3 +1,4 @@
+import { prepararAcolhimento } from '../../lib/acolhimento'
 import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Link2, Mail, Users } from 'lucide-react'
@@ -62,7 +63,7 @@ export function Entrar() {
       )}
 
       {passo === 'equipe' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); location.hash = '#/casa'; await trocarSessao() }) }}>
+        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); prepararAcolhimento(); location.hash = '#/casa'; await trocarSessao() }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => { setErro(''); setPasso('email') }}><ArrowLeft size={18} />Voltar</button>
           <h2>Assessor da Casa</h2>
           {convite ? (
@@ -82,7 +83,7 @@ export function Entrar() {
           )}
         </form>
       )}
-      <p className="sub">Ao entrar você aceita o termo de uso. Seus dados ficam só com a sua família e você pode baixar ou apagar tudo quando quiser.</p>
+      <p className="sub">Ao entrar você aceita o termo de uso. O acesso aos dados e as opções de baixar ou pedir encerramento dependem do seu papel. Consulte Privacidade após entrar.</p>
     </div>
   )
 }

@@ -93,6 +93,8 @@ export interface Lancamento {
   parcela?: { n: number; de: number; compra: string }
   /** Membro que lançou. */
   autor?: string
+  /** Membro que pagou, somente quando informado. */
+  pago_por?: string | null
   /** E2: quem olha pode corrigir e apagar (lançou e o limite é dele ou da Casa). Sem o campo: a tela decide pelo limite. */
   meu?: boolean
 }
@@ -123,7 +125,7 @@ export interface Convite { convite?: string; codigo_4_digitos?: string; expira_e
 
 export interface Numero { chave: string; nome: string; valor: number; texto: string; meta: string; ok: boolean; explicacao: string }
 
-export interface NovoLancamento { familia: string; envelope: string; valor: number; data: string; descricao: string; cartao?: string | null; /** compra no cartão em N vezes */ parcelas?: number; /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number; /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string }
+export interface NovoLancamento { pago_por?: string | null; familia: string; envelope: string; valor: number; data: string; descricao: string; cartao?: string | null; /** compra no cartão em N vezes */ parcelas?: number; /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number; /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string }
 
 /** O que a equipe anota na Casa sem ler config_familia (a tranca não deixa): vai como evento. */
 export type AvisoCasa = 'casa_gas' | 'casa_presenca'

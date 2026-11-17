@@ -1,3 +1,4 @@
+import { nomeInformado } from '../lib/nomePessoa'
 import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
 import { textoDeAgente } from '../lib/textoAgente'
@@ -66,18 +67,19 @@ const SOBRE: Record<string, string> = {
  'primeiro-uso': 'Aqui você cria sua família e define os limites mensais.', privacidade: 'Aqui estão as opções de privacidade.', painel: 'Aqui o dono acompanha os indicadores do app.',
 }
 export function AjudaDaAba({ rota }: { rota: string }) {
+ const { familia } = useApp()
  const [aberta, setAberta] = useState(false)
  return <><button type="button" className="btn line" onClick={() => setAberta(true)}>Preciso de ajuda</button>{aberta && <Sheet titulo="Preciso de ajuda" fechar={() => setAberta(false)}>
- <p>{SOBRE[rota] || 'Entre com seu e-mail ou com o convite do Assessor da Casa.'}</p>
+ <p>{familia?.papel === 'pessoa' && rota === 'inicio' ? 'Aqui você acompanha seu orçamento e seus avisos.' : SOBRE[rota] || 'Entre com seu e-mail ou com o convite do Assessor da Casa.'}</p>
  <p>Para registrar uma compra, use “Anotar gasto” ou “Anotar compra”.</p>
- <p>Os números ficam no conteúdo da tela. O botão “?” explica de onde vieram.</p>
- <p>Use o olho para esconder ou mostrar valores. Ele também fica na folha de Anotar gasto.</p>
- <p>Para pedir apoio, fale com a pessoa da família que convidou você para o app.</p>
+ {familia?.papel === 'equipe' ? <p>Na Casa você acompanha tarefas e anota compras sem valores. Consulte seu resumo em Mais → Privacidade.</p> : familia && <><p>Os números ficam no conteúdo da tela. O botão “?” explica de onde vieram.</p><p>Use o olho para esconder ou mostrar valores. Ele também fica na folha de Anotar gasto.</p></>}
+ <p>{!familia ? 'Confira o e-mail ou o link do convite para entrar.' : familia.papel === 'casal' ? 'Você pode conferir os cadastros em Família e ajustes. Se divide a gestão, combine as correções com o outro adulto.' : 'Para pedir apoio, fale com quem administra a família.'}</p>
  </Sheet>}</>
 }
 let liberarRenderer: (() => void) | undefined
 export function AgenteDaAba({ rota }: { rota: Rota }) {
  const { familia, sessao, api } = useApp()
+ if (familia?.papel === 'equipe' && rota === 'privacidade') return null
  if (!familia || rotaPermitida(rota, familia.papel, sessao?.dono) !== rota || !AGENTE_POR_ABA[rota]) return null
  return <AgenteAutorizado key={[familia.id, rota, api.modo, familia.papel, familia.membroId, sessao?.userId].join(':')} rota={rota} />
 }
@@ -178,6 +180,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  {completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
  {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
  {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
+ {conversa && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome) && <p className="sub">Olá, {textoPrivado(familia!.membroNome, oculto)}.</p>}
  {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : papel)}</p></div>)}
  {modo !== 'desligado' && <button type="button" className="btn line" aria-expanded={conversa} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
  <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>

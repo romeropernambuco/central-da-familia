@@ -43,7 +43,7 @@ export function normalizaCasa(r: any): CasaDaEquipe {
 
 /** Lançamento que volta do banco. Pra equipe ele vem sem `valor` (e sem cartão): fica 0 e a tela da equipe nunca mostra. */
 export function normalizaLancamento(l: any): Lancamento {
-  return { id: String(l?.id), ...(l?.autor != null ? { autor: String(l.autor) } : {}), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || ''), ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}) }
+  return { id: String(l?.id), ...(l?.autor != null ? { autor: String(l.autor) } : {}), pago_por: l?.pago_por == null ? null : String(l.pago_por), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || ''), ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}) }
 }
 
 export function normalizaCupom(j: any): CupomLido {

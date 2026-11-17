@@ -13,9 +13,9 @@ export function rotaDoHash(hash: string): Rota {
   const h = hash.replace(/^#\/?/, '').split('?')[0] as Rota
   return ROTAS.includes(h) ? h : 'inicio'
 }
-/** Tela que cada papel pode abrir. A equipe só tem a Casa: nenhum endereço digitado leva a outra tela. */
+/** Tela que cada papel pode abrir. O Assessor da Casa acessa Casa e seu resumo de privacidade. */
 export function rotaPermitida(rota: Rota, papel: 'casal' | 'pessoa' | 'equipe' | null, dono = false): Rota {
-  if (papel === 'equipe') return 'casa'
+  if (papel === 'equipe') return rota === 'privacidade' ? 'privacidade' : 'casa'
   if (rota === 'entrar') return 'inicio'
   if (rota === 'primeiro-uso' && papel !== 'casal') return 'inicio'
   if (rota === 'painel' && !dono) return 'inicio'

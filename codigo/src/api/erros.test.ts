@@ -34,7 +34,7 @@ describe('erros do banco e da rede', () => {
 describe('rotas por papel', () => {
   it('a equipe só abre a Casa, digite o endereço que digitar', () => {
     for (const h of ['#/inicio', '#/primeiro-uso', '#/planejamento', '#/cartoes', '#/painel', '#/privacidade', '#/qualquer', ''])
-      expect(rotaPermitida(rotaDoHash(h), 'equipe')).toBe('casa')
+      expect(rotaPermitida(rotaDoHash(h), 'equipe')).toBe(h === '#/privacidade' ? 'privacidade' : 'casa')
   })
   it('endereço desconhecido abre o Início; painel só pro dono', () => {
     expect(rotaDoHash('#/nao-existe')).toBe('inicio')
