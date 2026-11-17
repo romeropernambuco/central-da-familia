@@ -149,7 +149,7 @@ it('design: divulgacao real abre tarefas e informa o painel controlado', async (
  const root = createRoot(container as unknown as HTMLElement)
  try {
  await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(AgenteDaAba, { rota: 'casa' }))))
- const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null)
+ const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null && (n.getAttribute('class') || '').includes('agente-aba-divulgacao'))
  expect(botoes).toHaveLength(1)
  const botao = botoes[0]
  expect(botao.textContent).toBe('Ver tarefas e cadastros')

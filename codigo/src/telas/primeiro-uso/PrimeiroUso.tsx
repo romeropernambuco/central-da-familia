@@ -1,8 +1,10 @@
+import '../entrar/entrar.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { AjudaDaAba } from '../../componentes/AgenteDaAba'
 import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useState } from 'react'
-import { ArrowRight, MessageCircle, Check, Clock } from 'lucide-react'
+import { ArrowRight, MessageCircle, Clock } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { ir } from '../../app/rotas'
 import { Marca } from '../../componentes/Marca'
@@ -62,25 +64,25 @@ export function PrimeiroUso() {
   const msgAmiga = mensagemConvite('amiga', { familia: nomeFam, quem: '', link: linkApp() })
 
   return (
-    <div className="entrar">
+    <div className="entrar f32-primeiro">
       <AjudaDaAba rota="primeiro-uso" />
       <div className="logo"><Marca size={48} /><b>Central da Família</b></div>
       <div className="passos" aria-label={`Passo ${passo} de 4`}>{[1, 2, 3, 4].map(i => <i key={i} className={i <= passo ? 'on' : ''} />)}</div>
       <p className="sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icone desenho={Clock} aria-hidden="true" />Passo {passo} de 4. Leva uns 5 minutos no total.</p>
 
       {passo === 1 && !jaPerguntou && (
-        <div className="card" style={{ display: 'grid', gap: 14 }}>
+        <div className="card" style={{ display: 'grid', gap: 16 }}>
           <h2>Alguém da sua casa já te convidou?</h2>
           <p className="sub">Se quem mora com você já usa a Central, essa pessoa te mandou um convite no e-mail{sessao?.email ? '' : ''}. {sessao?.email ? <>Você entrou com <b>{textoPrivado(sessao.email)}</b>.</> : null} O convite só funciona com o mesmo e-mail que ela usou.</p>
-          <button className="btn primary full" type="button" onClick={async () => { await sair() }}>Sim: entrar com o e-mail do convite</button>
+          <button className="btn primary full" type="button" onClick={async () => { await sair() }}><Icone nome="email" />Sim: entrar com o e-mail do convite</button>
           <button className="btn line full" type="button" onClick={() => setJaPerguntou(true)}>Não: vou criar a família<Icone desenho={ArrowRight} /></button>
           <p className="sub">Não sabe qual e-mail? Pergunte para quem convidou ou peça para reenviar o convite em Família e ajustes.</p>
         </div>
       )}
 
       {passo === 1 && jaPerguntou && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); passo1() }}>
-          <h2>Quem é a família?</h2>
+        <form className="card" style={{ display: 'grid', gap: 16 }} onSubmit={e => { e.preventDefault(); passo1() }}>
+          <h1>Quem é a família?</h1>
           <label className="campo"><span>Nome da família</span><CampoPrivado className="inp" placeholder="Ex.: Família Oliveira" value={nomeFam} onChange={e => setNomeFam(e.target.value)} /><small>Aparece no topo do app e no convite.</small></label>
           <label className="campo"><span>Seu nome</span><CampoPrivado className="inp" placeholder="Ex.: Helena" value={nome} onChange={e => setNome(e.target.value)} /><small>{textoPrivado(sessao?.email ? `Você entrou com ${sessao.email}.` : 'Você entra como quem cuida da família.')}</small></label>
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
@@ -89,7 +91,7 @@ export function PrimeiroUso() {
       )}
 
       {passo === 2 && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); passo2() }}>
+        <form className="card" style={{ display: 'grid', gap: 16 }} onSubmit={e => { e.preventDefault(); passo2() }}>
           <h2>Quanto cada um pode gastar no mês?</h2>
           <p className="sub">Defina quanto cada pessoa e a casa podem gastar por mês. Pode mudar depois em Planejamento.</p>
           {envs.map(e => (
@@ -108,7 +110,7 @@ export function PrimeiroUso() {
       )}
 
       {passo === 3 && (
-        <div className="card" style={{ display: 'grid', gap: 14 }}>
+        <div className="card" style={{ display: 'grid', gap: 16 }}>
           <p className="lbl">Hoje você pode gastar</p>
           <Din v={hoje} tam="big" />
           {/* AUTONOMA ideia 4: quem cuida sozinha da casa segue sem achar que falta alguém */}
@@ -133,8 +135,8 @@ export function PrimeiroUso() {
       )}
 
       {passo === 4 && (
-        <div className="card" style={{ display: 'grid', gap: 14 }}>
-          <p className="todo ok"><Icone desenho={Check} aria-hidden="true" /><span><b>Tudo pronto.</b> Agora é só tocar no botão verde e anotar cada gasto: valor e 1 toque.</span></p>
+        <div className="card" style={{ display: 'grid', gap: 16 }}>
+          <EstadoVazio ilustracao="TudoEmDia" titulo="Tudo pronto." frase="Agora é só tocar no botão verde e anotar cada gasto: valor e 1 toque." />
           <h2>Próximos passos para 2029</h2>
           <p>Em Guardado, cadastre suas aplicações e imóveis. Em Planejamento, registre receitas extras e confira o Plano 2029.</p>
           <button className="btn primary full" type="button" onClick={fim}>Começar pelo Início<Icone desenho={ArrowRight} /></button>

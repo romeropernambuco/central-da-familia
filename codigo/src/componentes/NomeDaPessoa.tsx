@@ -1,3 +1,5 @@
+import './apoio-f32.css'
+import { Icone } from './Icone'
 import { useRef, useState } from 'react'
 import type { PessoaNome } from '../api/tipos'
 import { useApp } from '../app/contexto'
@@ -22,7 +24,7 @@ export function NomeDaPessoa({ pessoa, editar = false, mudou, autoria = false }:
   if (autoria && !tem) return <span>{textoPrivado('alguém da família', oculto)}</span>
   return <>
     <span>{tem ? textoPrivado(atual, oculto) : 'Sem nome.'}</span>{' '}
-    {(!tem || editar) && (permitido ? <button className="lnk nome-pessoa" type="button" onClick={() => { setNome(tem ? atual!.trim() : ''); setFuncao(pessoa.funcao || ''); setErro(''); abrir(true) }}>{tem ? 'Editar nome' : 'Informar'}</button> : <small>Peça a quem administra a família para informar o nome</small>)}
+    {(!tem || editar) && (permitido ? <button className="lnk nome-pessoa" type="button" onClick={() => { setNome(tem ? atual!.trim() : ''); setFuncao(pessoa.funcao || ''); setErro(''); abrir(true) }}><Icone nome="pessoa" size={16} />{tem ? 'Editar nome' : 'Informar'}</button> : <small>Peça a quem administra a família para informar o nome</small>)}
     {aberto && <Sheet titulo={tem ? 'Editar nome' : 'Informar nome'} fechar={() => { if (!ocupado) abrir(false) }}>
       {oculto ? <p>Abra o olho para informar o nome.</p> : <form onSubmit={async e => {
         e.preventDefault(); if (trava.current || !permitido) return
@@ -35,7 +37,7 @@ export function NomeDaPessoa({ pessoa, editar = false, mudou, autoria = false }:
         <label className="campo"><span>Nome</span><CampoPrivado className="inp" autoFocus required maxLength={60} value={nome} onChange={e => setNome(e.target.value)} /></label>
         {(pessoa.tipo === 'assessor' || familia?.papel === 'equipe') && <label className="campo"><span>Função na casa</span><CampoPrivado className="inp" maxLength={60} value={funcao} onChange={e => setFuncao(e.target.value)} /></label>}
         {erro && <p role="alert">{textoPrivado(erro)}</p>}
-        <button className="btn line" type="submit" disabled={ocupado}>{ocupado ? 'Salvando…' : 'Salvar nome'}</button>
+        <button className="btn line" type="submit" disabled={ocupado}><Icone nome="salvo" />{ocupado ? 'Salvando…' : 'Salvar nome'}</button>
       </form>}
     </Sheet>}
   </>

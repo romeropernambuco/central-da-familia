@@ -1,3 +1,6 @@
+import './apoio-f32.css'
+import { Icone } from './Icone'
+import { EstadoVazio } from './EstadoVazio'
 import { useState } from 'react'
 import { useApp } from '../app/contexto'
 import { gerarCopia, validarCopia, previaCopia, type Copia } from '../app/backup'
@@ -21,15 +24,15 @@ export function Backup() {
  setTimeout(()=>URL.revokeObjectURL(url),2000); setFeito('Cópia de segurança baixada.')
  } catch(e) { setErro((e as Error).message) } finally { setOcupado(false) }
  }
- return <section className="card"><h2>Cópia de segurança</h2><p>Guarde o arquivo em lugar seguro. Ele contém valores mesmo com o olho fechado.</p>
- <button className="btn line" type="button" disabled={ocupado} onClick={baixar}>Baixar cópia de segurança</button>
+ return <section className="card f32-backup"><h2><Icone nome="backup" />Cópia de segurança</h2><p>Guarde o arquivo em lugar seguro. Ele contém valores mesmo com o olho fechado.</p>
+ <button className="btn primary" type="button" disabled={ocupado} onClick={baixar}><Icone nome="backup" />Baixar cópia de segurança</button>
  <label className="campo"><span>Restaurar de uma cópia</span><input type="file" accept="application/json,.json" disabled={ocupado} onChange={async e=>{
  const arquivo=e.target.files?.[0]; e.target.value=''; if (!arquivo) return
  setOcupado(true); setErro(''); setConf(''); setCopia(null)
  try { if(arquivo.size>20000000) throw new Error('Arquivo muito grande.'); const c=validarCopia(await arquivo.text()); const a=await gerarCopia(api,familia.id); setAntes(a); setCopia(c) }
  catch(e){setErro((e as Error).message)} finally{setOcupado(false)}
  }} /></label>
- {erro && <p role="alert">{textoPrivado(erro,oculto)}</p>}{feito && <p role="status">{feito}</p>}
+ {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível concluir" frase={textoPrivado(erro,oculto)} /></div>}{feito && <div role="status"><EstadoVazio ilustracao="Backup" titulo={feito} frase="Guarde sua cópia em um lugar seguro." /></div>}
  {copia && antes && <Sheet titulo="Conferir restauração" fechar={()=>{if(!ocupado)setCopia(null)}}>
  <p>Cópia de {new Date(copia.data).toLocaleString('pt-BR')}. Vai substituir os dados atuais. Confira antes de continuar.</p>
  {previaCopia(antes,copia).map(p=><details key={p.colecao}><summary>{p.colecao}: {p.novos} incluídos, {p.excluidos} excluídos, {p.alterados} alterados.</summary>{oculto ? <p>Valores escondidos. Abra o olho para conferir as diferenças.</p> : p.diferencas.map(d=><div key={d.id}><b>{d.tipo}: {d.id}</b><p>Antes</p><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(d.antes,null,2) ?? 'Ausente'}</pre><p>Depois</p><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(d.depois,null,2) ?? 'Ausente'}</pre></div>)}</details>)}
@@ -41,6 +44,6 @@ export function Backup() {
  setOcupado(true);setErro('')
  try { await api.backupRestaurar!(familia.id,copia.dados); desfazer.limpar(); limparRascunhos(); await trocarSessao();await recarregar();setCopia(null);setFeito('Cópia restaurada.') }
  catch(e){setErro((e as Error).message)} finally{setOcupado(false)}
- }}>Restaurar e substituir dados</button></Sheet>}
+ }}><Icone nome="desfazer" />Restaurar e substituir dados</button></Sheet>}
  </section>
 }

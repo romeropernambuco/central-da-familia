@@ -1,3 +1,4 @@
+import './apoio-f32.css'
 import { Icone } from './Icone'
 import { textoPrivado } from './privacidade'
 import { HelpCircle } from 'lucide-react'
@@ -15,6 +16,6 @@ export function Qm({ titulo, linhas, nota, texto }: { titulo: string; linhas: Li
       </button>
     )
   return (
-    <button type="button" className="qm" onClick={abrir} aria-label={`De onde veio esse número? ${textoPrivado(titulo)}`} title="De onde veio esse número?">?</button>
+    <button type="button" className="qm" onClick={abrir} aria-label={`De onde veio esse número? ${textoPrivado(titulo)}`} title="De onde veio esse número?"><Icone nome="ajuda" /></button>
   )
 }

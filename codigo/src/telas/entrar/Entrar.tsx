@@ -1,9 +1,12 @@
+import './entrar.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
+import { Bemvindo } from '../../componentes/ilustracoes'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { prepararAcolhimento } from '../../lib/acolhimento'
 import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Link2, Mail, Users } from 'lucide-react'
+import { ArrowLeft, Mail, Users } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { Marca } from '../../componentes/Marca'
 import { codigo4Valido, codigo6Valido, emailValido } from '../../lib/formato'
@@ -35,12 +38,12 @@ export function Entrar() {
   }
 
   return (
-    <div className="entrar">
+    <div className="entrar f32-entrada">
       <div className="logo"><Marca size={48} /><b>Central da Família</b></div>
-      <p className="corpo">Quanto a sua casa pode gastar hoje, num número só. Dinheiro, feira e Assessores da Casa no mesmo lugar.</p>
+      <div className="entrada-apresentacao"><Bemvindo /><h1>Sua casa, bem cuidada.</h1><p className="corpo">Quanto a sua casa pode gastar hoje, num número só. Dinheiro, feira e Assessores da Casa no mesmo lugar.</p></div>
 
       {passo === 'email' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!emailValido(email)) throw new Error('Informe um e-mail válido.'); await api.enviarCodigo(email); setPasso('codigo') }) }}>
+        <form className="card" style={{ display: 'grid', gap: 16 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!emailValido(email)) throw new Error('Informe um e-mail válido.'); await api.enviarCodigo(email); setPasso('codigo') }) }}>
           <h2>Entrar</h2>
           <label className="campo"><span>Seu e-mail</span>
             <CampoPrivado className="inp" type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" value={email} onChange={e => setEmail(e.target.value)} />
@@ -53,19 +56,19 @@ export function Entrar() {
       )}
 
       {passo === 'codigo' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(mensagemConvite(r.aviso)) }) }}>
+        <form className="card" style={{ display: 'grid', gap: 16 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(mensagemConvite(r.aviso)) }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => setPasso('email')}><Icone desenho={ArrowLeft} />Trocar e-mail</button>
           <h2>Digite o código</h2>
           <p className="sub">Mandamos 6 números para <b>{textoPrivado(email)}</b>. Pode levar 1 minuto. Olhe também a caixa de spam.</p>
           <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="Código de 6 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))} />
           {ex && <p className="sub">No exemplo, o código é 123456.</p>}
           {erro && <AvisoConvite mensagem={erro} />}
-          <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 6} type="submit" carregando={ocupado}>Entrar</Botao>
+          <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 6} type="submit" carregando={ocupado}><Icone nome="abrir" />Entrar</Botao>
         </form>
       )}
 
       {passo === 'equipe' && (
-        <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); prepararAcolhimento(); location.hash = '#/casa'; await trocarSessao() }) }}>
+        <form className="card" style={{ display: 'grid', gap: 16 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); prepararAcolhimento(); location.hash = '#/casa'; await trocarSessao() }) }}>
           <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => { setErro(''); setPasso('email') }}><Icone desenho={ArrowLeft} />Voltar</button>
           <h2>Assessor da Casa</h2>
           {convite ? (
@@ -74,11 +77,11 @@ export function Entrar() {
               <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
               {ex && <p className="sub">No exemplo, o código é 2468.</p>}
               {erro && <AvisoConvite mensagem={erro} />}
-              <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 4} type="submit" carregando={ocupado}>Entrar na Casa</Botao>
+              <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 4} type="submit" carregando={ocupado}><Icone nome="casa" />Entrar na Casa</Botao>
             </>
           ) : (
             <>
-              <p className="todo"><Icone desenho={Link2} aria-hidden="true" /><span><b>Peça o link para quem cuida da família.</b> A entrada do Assessor da Casa é pelo link do convite, que chega no WhatsApp junto com um código de 4 números. Abra o link neste celular e digite o código.</span></p>
+              <EstadoVazio ilustracao="AssessorDaCasa" titulo="Peça o link para quem cuida da família." frase="O convite chega no WhatsApp com um código de 4 números. Abra o link neste celular e digite o código." />
               <p className="sub">Se o link já chegou e abriu esta tela, ele veio cortado: peça para mandarem de novo.</p>
               {ex && <a className="btn line full" href={'#/equipe?c=' + CONVITE_EXEMPLO}>Abrir o link de exemplo</a>}
             </>
@@ -101,5 +104,5 @@ export function mensagemConvite(mensagem: string): string {
 }
 
 export function AvisoConvite({ mensagem }: { mensagem: string }) {
-  return <p className="erro" role="alert">{textoPrivado(mensagemConvite(mensagem))}</p>
+  return <div className="f32-erro" role="alert"><EstadoVazio ilustracao="Erro" titulo="Vamos tentar de novo?" frase={textoPrivado(mensagemConvite(mensagem))} /></div>
 }

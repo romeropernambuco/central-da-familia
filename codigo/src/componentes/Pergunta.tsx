@@ -1,3 +1,5 @@
+import './agente-cartao.css'
+import { EstadoVazio } from './EstadoVazio'
 import { Icone, icones, type NomeIcone } from './Icone'
 import { EQUIPE } from '../telas/escritorio/equipe'
 import { nomesPrivados, textoDeAgente, rotuloDeOpcao } from '../lib/textoAgente'
@@ -32,15 +34,15 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
   const [marca, setMarca] = useState<Record<string, EstadoItem>>({})
   const [erro, setErro] = useState('')
   useEffect(() => { if (familia) api.estoque(familia.id).then(x => setItens(x.itens.filter(i => i.ativo))).catch((x: Error) => setErro(x.message)) }, [api, familia?.id])
-  if (erro) return <p className="aviso-erro" role="alert">Não foi possível buscar os itens: {textoPrivado(erro)}</p>
+  if (erro) return <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível buscar os itens" frase={textoPrivado(erro)} /></div>
   if (!itens) return <p className="sub">Buscando os itens da casa…</p>
-  if (!itens.length) return <p className="sub">Ainda não tem item cadastrado. O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".</p>
+  if (!itens.length) return <EstadoVazio ilustracao="CasaVazia" titulo="Ainda não tem item cadastrado." frase={'O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".'} />
   return (
     <div className="contagem">
       <ul className="list">
         {itens.map(i => (
           <li key={i.id} className="cont-l">
-            <span className="n"><b>{textoPrivado(i.nome)}</b><small>{textoPrivado(i.categoria)}</small></span>
+            <span className="tile"><Icone nome="casa" /></span><span className="n"><b>{textoPrivado(i.nome)}</b><small>{textoPrivado(i.categoria)}</small></span>
             <span className="seg tres" role="group" aria-label={textoPrivado(`${i.nome}: como está`)}>
               {ESTADOS.map(([e, r]) => <button key={e} type="button" aria-pressed={(marca[i.id] || 'tem') === e} onClick={() => setMarca({ ...marca, [i.id]: e })}>{r}</button>)}
             </span>
@@ -155,7 +157,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => (
           <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
+            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{!/^copiar/.test(o.id) && o.abre !== 'nota' && <Icone nome="abrir" />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
           </button>
         ))}
       </div>
@@ -178,10 +180,10 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
                 : <label className="campo" key={t}><span>{rotuloTexto}{opc}</span><CampoPrivado className="inp" value={campos.texto || ''} maxLength={140} onChange={ev => setCampos({ ...campos, texto: ev.target.value })} /></label>
           })}
           {!tipos.length && <p className="sub">É só confirmar.</p>}
-          <button type="button" className="btn primary" disabled={gravando} onClick={salvar}>Salvar resposta</button>
+          <button type="button" className="btn primary" disabled={gravando} onClick={salvar}><Icone nome="salvo" />Salvar resposta</button>
         </div>
       )}
-      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível responder" frase={textoPrivado(erro)} /></div>}
     </div>
   )
 }

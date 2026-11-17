@@ -1,0 +1,21 @@
+.card.agente-aba{position:relative;gap:12px;padding:16px;border-color:var(--border);min-width:0}
+.agente-aba .cena3d.mini-agente{height:112px;border-radius:var(--r-md);overflow:hidden;background:var(--sunken)}
+.agente-aba-cabecalho{gap:8px}.agente-aba-cabecalho>b{font-size:20px;letter-spacing:-.025em}
+.agente-aba-cabecalho .agente-papel{display:flex;align-items:center;gap:8px;width:fit-content;max-width:100%;padding:6px 10px;border-radius:12px;background:var(--sunken);color:var(--ink-2);font-size:13px;line-height:1.5}
+.agente-papel .ico{flex:none;width:18px;height:18px}
+.agente-conversa{min-width:0}.agente-conversa[hidden]{display:none}
+.agente-conversa>.sub{margin-bottom:8px}.agente-aba>.sub{font-size:13px}
+.agente-aba .perg{padding:16px;border-radius:var(--r-md);background:var(--sunken);border:0;margin:0}
+.agente-aba .perg-t,.agente-aba .perg>p:first-child{font-size:20px;line-height:1.4;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+.agente-aba .perg-c{font-size:14px;line-height:1.6;margin-top:8px}
+.perg-ops{gap:8px}.agente-aba .perg-ops{display:flex;flex-wrap:wrap;margin-top:16px}
+.agente-aba .perg-ops .btn{flex:1 1 140px;white-space:normal;min-height:44px}
+.agente-aba .agente-recolher{justify-self:start;color:var(--muted);font-size:14px;min-height:44px;padding:8px}
+.agente-recolher[aria-expanded=true] .ico{transform:rotate(180deg)}
+.agente-aba .agente-aba-divulgacao{width:100%;justify-content:flex-start;white-space:normal;text-align:left;min-height:48px;border-top:1px solid var(--border);border-radius:0;padding:12px 0 0}
+.agente-aba-divulgacao>.ico:last-child{margin-left:auto;flex:none}.agente-aba-divulgacao[aria-expanded=true]>.ico:last-child{transform:rotate(180deg)}
+.agente-aba button:focus-visible,.agente-aba a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.agente-aba button:active{transform:translateY(1px)}
+@media(hover:hover){.agente-aba .btn:hover{filter:brightness(1.08)}}
+@media(min-width:700px){.card.agente-aba{padding:20px}.agente-aba .cena3d.mini-agente{height:128px}}
+@media(prefers-reduced-motion:reduce){.agente-aba *{transition:none!important;animation:none!important}.agente-aba button:active{transform:none}}

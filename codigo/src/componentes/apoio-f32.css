@@ -1,0 +1,11 @@
+.f32-marca{flex-shrink:0;border-radius:20%}
+.f32-carga{gap:16px;text-align:center}.f32-carga>b{font-size:24px;letter-spacing:-.025em}.f32-carga>p{color:var(--muted)}
+.f32-acolhimento{display:grid;gap:16px;min-width:0}.f32-acolhimento>svg{width:112px;height:84px}.f32-acolhimento h2{font-size:24px;line-height:1.3}
+.f32-acolhimento p,.f32-backup p{line-height:1.6;color:var(--ink-2)}
+.f32-backup{display:grid;gap:16px;min-width:0}.f32-backup h2{display:flex;gap:8px;align-items:center}.f32-backup input[type=file]{max-width:100%;min-height:44px}
+.f32-feedback{gap:12px;flex-wrap:wrap;align-items:center}.f32-feedback>span{flex:1;min-width:120px}
+.f32-feedback button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:var(--r-md);font:inherit}
+.nome-pessoa.lnk{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding-inline:4px}
+.qm{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.explica-l{min-height:44px}
+:is(.f32-feedback,.f32-backup,.f32-acolhimento) button:focus-visible,.nome-pessoa:focus-visible,.qm:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
