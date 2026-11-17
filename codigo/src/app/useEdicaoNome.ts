@@ -12,7 +12,9 @@ export function useEdicaoNome(p: PessoaNome) {
   const salvar = async (nome: string, funcao: string) => {
     if (!permitido || !familia) throw new Error('Peça a quem administra a família para informar o nome')
     const ms = familia.papel === 'casal' ? await api.membros(familia.id) : []
-    const n = validarNome(nome, ms, p.tipo === 'membro' ? p.id : undefined)
+    const colecao = p.tipo === 'membro' ? ms : await api.config<any>(familia.id,p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas',null)
+    const listaNomes = p.tipo === 'membro' ? ms : p.tipo === 'assessor' ? colecao?.pessoas || [] : colecao || []
+    const n = validarNome(nome, listaNomes.map((x:any)=>({id:x.id,nome:p.tipo==='renda'?x.dono:x.nome})), p.id)
     if (api.salvarNomePessoa) await api.salvarNomePessoa(familia.id, p, n, funcao.trim())
     else {
       const chave = p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas'

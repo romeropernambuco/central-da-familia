@@ -38,10 +38,11 @@ function ligar(versao: string, rede: (url: string) => Resp | Error, cachesAntigo
 }
 
 describe('service worker', () => {
-  it('instala a casca inteira (abre sem internet já depois da 1ª visita) e apaga o cache da versão antiga', async () => {
+  it('instala a casca inteira (abre sem internet já depois da 1ª visita) e preserva o cache da versão ainda em uso', async () => {
     const sw = ligar('v2', u => resp('novo ' + u), { 'central-v1': new Map([[PASTA + 'assets/index-velho.js', resp('velho')]]), 'outro-site': new Map() })
     await sw.dispara('install'); await sw.dispara('activate')
-    expect([...sw.guardados.keys()].sort()).toEqual(['central-v2', 'outro-site'])
+    expect([...sw.guardados.keys()].sort()).toEqual(['central-v1', 'central-v2', 'outro-site'])
+    expect((await sw.pede('assets/index-velho.js'))!.corpo).toBe('velho')
     expect([...sw.guardados.get('central-v2')!.keys()]).toEqual([PASTA + 'index.html', PASTA + 'assets/index-abc.js', PASTA + 'assets/index-abc.css'])
   })
   it('página de erro (404, portal do wi-fi) nunca substitui a casca guardada', async () => {

@@ -1,4 +1,6 @@
 // Pedidos do REVISOR 2 (fase_final/revisao/E4_E10.md, item 2, B3 e observação do cabeDesejo). Todo número é exemplo.
+// @ts-ignore Node usado somente no teste
+import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import * as motor from './index'
 import { cabeDesejo, folha13, futuro, pisoDoMes } from './index'
@@ -6,7 +8,10 @@ import type { Desejo, FuturoEntrada } from './index'
 
 describe('fronteira: fora de lib/futuro só se importa pelo index', () => {
   it('nenhum arquivo de codigo/src importa um arquivo de dentro de lib/futuro', () => {
-    const fontes = import.meta.glob('/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    // Caminhos relativos evitam duplicar a letra da unidade no plugin raw do Vite no Windows.
+    const fontes: Record<string,string> = {}
+    function ler(pasta: string) { for(const item of readdirSync(pasta,{withFileTypes:true})) { const p=pasta+'/'+item.name; if(item.isDirectory())ler(p);else if(/\.tsx?$/.test(p))fontes['/'+p]=readFileSync(p,'utf8') } }
+    ler('src')
     expect(Object.keys(fontes).length).toBeGreaterThan(20)
     const porDentro = /(?:from\s*|import\s*\(\s*)['"]([^'"]*\bfuturo\/[^'"]+)['"]/g
     const erros: string[] = []

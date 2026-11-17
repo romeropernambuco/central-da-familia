@@ -1,6 +1,5 @@
 import { salvamento } from '../app/salvamento'
 import { pendentes } from '../app/pendentes'
-import { limparRascunhos } from '../app/rascunhos'
 import type { Api } from './tipos'
 import { desfazer } from '../app/desfazer'
 const copia = <T,>(v: T): T => structuredClone(v)
@@ -11,7 +10,8 @@ export function protegerApi(api: Api): Api {
  const f = alvo[prop]
  if (typeof f !== 'function' || !mutacoes.test(prop)) return f
  return async (...args: any[]) => salvamento.acompanhar(async () => {
- if (desfazer.ocupado) return (f as Function).apply(api,args)
+ // Inversos chamam explicitamente a API interna; chamadas públicas sempre passam pelas proteções.
+ if(prop === 'backupRestaurar' && pendentes.itens.size) throw new Error('Há envios pendentes. Conclua ou cancele antes de restaurar.')
  const geracao = pendentes.geracao
  let inverso: (() => Promise<void>) | undefined
  const [familia, id, dados] = args
@@ -29,22 +29,20 @@ export function protegerApi(api: Api): Api {
  }
  if (prop === 'imovelSalvar' && id) {
  const antes = copia((await api.imoveis!(familia)).find(x=>x.id===id))
- if (antes) inverso = () => api.imovelSalvar!(familia,id,antes)
+ if (antes) { const depois = {...antes,...copia(dados)}; inverso = async () => { if (!igual((await api.imoveis!(familia)).find(x=>x.id===id),depois)) throw new Error('Isso mudou depois; confira antes de desfazer'); await api.imovelSalvar!(familia,id,antes) } }
  }
  if (prop === 'desejoMudar' && !dados.apagar) {
- const antes = (await api.desejos!(familia)).find(x=>x.id===id)
- if (antes) inverso = () => api.desejoMudar!(familia,id,{situacao: antes.situacao})
+ const antes = copia((await api.desejos!(familia)).find(x=>x.id===id))
+ if (antes) { const depois = {...antes,...copia(dados)}; inverso = async () => { if(!igual((await api.desejos!(familia)).find(x=>x.id===id),depois)) throw new Error('Isso mudou depois; confira antes de desfazer'); await api.desejoMudar!(familia,id,{situacao:antes.situacao}) } }
  }
 
  const r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args)
  if(geracao !== pendentes.geracao) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
- const escopo = prop === 'criarCartao' || prop === 'cartaoSalvar' ? 'cartao' : prop === 'imovelSalvar' ? 'imovel' : prop === 'guardadoCriar' ? 'aplicacao' : prop === 'recebimentoCriar' ? 'receita' : prop === 'salvarConfig' && id === 'casa_prestadores' ? 'prestador' : prop === 'salvarConfig' && id === 'casa_folha' ? 'assessor' : ''
- if(escopo) limparRascunhos('cadastro:' + escopo)
- if(prop === 'salvarConfig' && ['rendas','metas','metas_pessoais'].includes(id)) { limparRascunhos('cadastro:plano'); limparRascunhos('cadastro:meta') }
  if (snapshot && api.backupLer && api.backupRestaurar) {
  const fid = typeof familia === 'string' ? familia : familia.familia
- const depois = await api.backupLer(fid), antes = snapshot
- inverso = async () => { if(!igual(await api.backupLer!(fid),depois)) throw new Error('Dados mudaram depois dessa ação. Confira antes de desfazer.'); await api.backupRestaurar!(fid,antes) }
+ try { const depois = await api.backupLer(fid), antes = snapshot
+ inverso = async () => { if(!igual(await api.backupLer!(fid),depois)) throw new Error('Isso mudou depois; confira antes de desfazer'); await api.backupRestaurar!(fid,antes) }
+ } catch { inverso = undefined; salvamento.aviso = 'Salvo. Desfazer indisponível agora.' }
  }
  desfazer.dispensar()
  if (inverso) desfazer.registrar({ rotulo: 'Última alteração', desfazer: async () => { await inverso!(); return true } })

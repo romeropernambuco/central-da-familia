@@ -445,7 +445,7 @@ it('usa apenas assets locais licenciados e exclui GLBs do precache', () => {
   const carregador = readFileSync(resolve('src/telas/escritorio/modelosEscritorio.ts'), 'utf8')
   expect(carregador).not.toMatch(/https?:\/\//); expect(carregador).toContain('import.meta.env.BASE_URL')
   expect(carregador).toContain("three/examples/jsm/loaders/GLTFLoader.js")
-  expect(gravarSw.toString()).toContain('modelos\\/escritorio')
+  expect(gravarSw.toString()).toContain('arquivosEssenciais')
 })
 
 it('SW gerado guarda GLB sob demanda, serve offline e muda versão quando o GLB muda', async () => {

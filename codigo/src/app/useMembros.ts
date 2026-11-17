@@ -5,7 +5,7 @@ import type { Api } from '../api/tipos'
 
 const ouvintes = new Set<() => void>()
 let geracao = 0
-const cache = new WeakMap<Api, Map<string, Promise<{ id: string; nome: string }[]>>>()
+const cache = new WeakMap<Api, Map<string, Promise<{ id: string; user_id?: string; nome: string }[]>>>()
 function lerMembros(api: Api, fid: string, versao: number) {
   let entradas = cache.get(api)
   if (!entradas) { entradas = new Map(); cache.set(api, entradas) }
@@ -17,7 +17,7 @@ function lerMembros(api: Api, fid: string, versao: number) {
 export function invalidarNomes() { geracao++; ouvintes.forEach(f => f()) }
 export function useMembros() {
   const { api, familia, versao } = useApp()
-  const [ms, setMs] = useState<{ id: string; nome: string }[]>([])
+  const [ms, setMs] = useState<{ id: string; user_id?: string; nome: string }[]>([])
   const pode = familia?.papel === 'casal'
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState(false), [n, setN] = useState(0)
@@ -28,7 +28,7 @@ export function useMembros() {
     if (familia && pode) lerMembros(api, familia.id, versao).then(m => { if (vivo) { setMs(m); setCarregando(false) } }).catch(() => { if (vivo) { setErro(true); setCarregando(false) } })
     return () => { vivo = false }
   }, [api, familia?.id, pode, versao, n])
-  return Object.assign((id?: string | null) => id === familia?.membroId ? familia?.membroNome || null : (id ? ms.find(m => m.id === id)?.nome || null : null), { erro, carregando, repetir, lista: ms, invalidar: invalidarNomes })
+  return Object.assign((id?: string | null) => id === familia?.membroId ? familia?.membroNome || null : (id ? ms.find(m => m.id === id || m.user_id === id)?.nome || null : null), { erro, carregando, repetir, lista: ms, invalidar: invalidarNomes })
 }
 
 /** E3 (conserto 8): quantos adultos tem o casal. Família de 1 adulto não vê "Do casal" nem "vocês". null = ainda buscando. */

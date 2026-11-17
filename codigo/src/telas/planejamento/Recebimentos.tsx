@@ -221,7 +221,7 @@ function NovoReceb({ fechar, salvar, salvo }: { fechar: () => void; salvar: (r: 
         const { chave: _chave, ...anterior } = operacao.current || { chave: '' }
         if (!operacao.current || JSON.stringify(anterior) !== JSON.stringify(dados)) operacao.current = { ...dados, chave: novoUuid() }
         trava.current = true; setOcupado(true)
-        try { await salvar(operacao.current, fonte); salvo(operacao.current, false) }
+        try { await salvar(operacao.current, fonte); [setDesc,setV,setMes,setTipo,setFonte].forEach(s=>s.limpar()); salvo(operacao.current, false) }
         catch (e) {
           if (e instanceof ErroRede) {
             setAguardando(true); setErro('Aguardando conferência…')

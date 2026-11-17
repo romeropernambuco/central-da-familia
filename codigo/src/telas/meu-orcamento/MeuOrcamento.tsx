@@ -150,7 +150,7 @@ export function MeuOrcamento() {
         </div>
       </div>
       {dpc && <DaPraComprar livre={Math.max(0, env.livre)} fechar={() => setDpc(false)} />}
-      {metaAberta && <NovaMeta fechar={() => setMetaAberta(false)} salvar={async (nome, valor) => { if (await salvarMetas({ ...(metas || {}), [env.id]: { nome, valor } })) setMetaAberta(false) }} />}
+      {metaAberta && <NovaMeta fechar={() => setMetaAberta(false)} salvar={async (nome, valor) => { const ok=await salvarMetas({ ...(metas || {}), [env.id]: { nome, valor } });if(ok)setMetaAberta(false);return ok }} />}
     </div>
   )
 }
@@ -168,11 +168,11 @@ function DaPraComprar({ livre, fechar }: { livre: number; fechar: () => void }) 
   )
 }
 
-function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: string, valor: number) => void }) {
+function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: string, valor: number) => Promise<boolean> }) {
   const [nome, setNome] = useRascunho('cadastro:meta:nome', ''), [v, setV] = useRascunho('cadastro:meta:v', '')
   return (
     <Sheet titulo="Quero juntar pra…" fechar={fechar}>
-      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0) salvar(nome.trim(), textoParaValor(v)) }}>
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0 && await salvar(nome.trim(), textoParaValor(v))) [setNome,setV].forEach(s=>s.limpar()) }}>
         <label className="campo"><span>O que você quer comprar?</span><CampoPrivado className="inp" placeholder="Ex.: Fone" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Quanto custa?</span><CampoValor valor={v} mudar={setV} rotulo="Quanto custa" /></div>
         <button className="btn primary full" type="submit">Guardar a meta</button>

@@ -11,12 +11,10 @@ const INDEX = PASTA + 'index.html'
 
 self.addEventListener('install', e => {
   // casca inteira já na 1ª visita: abre sem internet mesmo sem ter passado pela 2ª visita
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS.map(a => new Request(PASTA + a, { cache: 'reload' })))).then(() => self.skipWaiting()))
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS.map(a => new Request(PASTA + a, { cache: 'reload' })))))
 })
-self.addEventListener('activate', e => {
-  // versão nova: apaga a casca das versões antigas (cada build tem o seu cache)
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith(PREFIXO) && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()))
-})
+// A nova versão espera as abas antigas fecharem. Não toma controle nem apaga assets em uso.
+self.addEventListener('activate', e => { e.waitUntil(Promise.resolve()) })
 self.addEventListener('fetch', e => {
   const req = e.request
   if (req.method !== 'GET' || !req.url.startsWith(PASTA)) return

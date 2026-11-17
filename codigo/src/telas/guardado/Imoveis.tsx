@@ -198,7 +198,7 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
       </fieldset>
       {!so && <>
         {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
-        <button className="btn primary full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) fechar() }}>Salvar</button>
+        <button className="btn primary full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) { setF.limpar(); fechar() } }}>Salvar</button>
         {inicial && <button className="btn line full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}>Tirar da lista</button>}
       </>}
     </Sheet>

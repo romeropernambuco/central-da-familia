@@ -128,6 +128,6 @@ describe('f25: pagamento explícito usa a coluna existente sem trocar autoria',(
  it('não anuncia sucesso quando a compra foi anotada mas a identificação do pagador falhou',async()=>{
   respostas['rpc:lancar_com_chave']={data:{lancamento:{id:'l',autor:'a'},resumo:{}},error:null}
   respostas['lancamentos:update+select+single']={data:null,error:{message:'pagador recusado'} as any}
-  await expect(api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'})).rejects.toThrow()
+  const r=await api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'});expect(r.avisoPagador).toContain('Gasto salvo, mas o pagador não foi gravado. Informar de novo');expect(r.repetirPagador).toBeTypeOf('function')
  })
 })

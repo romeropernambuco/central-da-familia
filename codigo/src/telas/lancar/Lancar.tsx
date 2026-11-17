@@ -20,7 +20,7 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
-type Rascunho = { txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number; pago_por?: string }
+type Rascunho = { modo?: 'gasto' | 'entrou'; txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number; pago_por?: string }
 function lerRascunho(chave: string): Rascunho | null {
  try {
   const d = rascunhos.get(chave) as Rascunho | undefined
@@ -56,12 +56,12 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
 export function Lancar() {
   const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, alternarOculto, sessao } = useApp()
   const corr = lancarAberto?.corrigir
-  const chaveRascunho = sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho && !lancarAberto?.entrou ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
+  const chaveRascunho = sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
   const [rascunho] = useState(() => chaveRascunho ? lerRascunho(chaveRascunho) : null)
   const [recuperado, setRecuperado] = useState(!!rascunho)
   const concluido = useRef(false)
   const inicio = useRef(performance.now())
-  const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : 'gasto')
+  const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : rascunho?.modo === 'entrou' ? 'entrou' : 'gasto')
   const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? (lancarAberto.atalho ? valorComCentavos(lancarAberto.valor) : String(lancarAberto.valor).replace('.', ',')) : rascunho?.txt || '')
   // B9: ao corrigir, o valor antigo vem selecionado: o 1º número digitado já substitui (sem apagar 4 vezes)
   const [selecionado, setSelecionado] = useState(!!corr)
@@ -76,6 +76,7 @@ export function Lancar() {
   const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || rascunho?.desc || '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const [pagadorPendente, setPagadorPendente] = useState<null | (()=>Promise<void>)>(null)
   const equipe = familia?.papel === 'equipe'
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
@@ -84,9 +85,9 @@ export function Lancar() {
     if (!chaveRascunho || concluido.current) return
     try {
       if (!txt && !desc) { rascunhos.delete(chaveRascunho); return }
-      rascunhos.set(chaveRascunho, { txt, desc, quando, cartao, parcelas, pago_por: pagoPor, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
+      rascunhos.set(chaveRascunho, { modo, txt, desc, quando, cartao, parcelas, pago_por: pagoPor, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
     } catch { /* sem storage */ }
-  }, [chaveRascunho, txt, desc, quando, cartao, parcelas, pagoPor])
+  }, [chaveRascunho, modo, txt, desc, quando, cartao, parcelas, pagoPor])
   const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) rascunhos.delete(chaveRascunho) } catch { /* sem storage */ } }
   const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setPagoPor(''); setParcelas(1); setRecuperado(false); concluido.current = false }
   const atalho = !corr ? lancarAberto?.atalho : undefined
@@ -152,6 +153,7 @@ export function Lancar() {
       const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave, pago_por: pagoPor || null })
       limparRascunho()
       toque.gravou()
+      if(r.avisoPagador && r.repetirPagador) { setErro(r.avisoPagador); setPagadorPendente(()=>r.repetirPagador!); await recarregar().catch(()=>{}); return }
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
@@ -220,7 +222,7 @@ export function Lancar() {
       )}
       {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
       {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{textoPrivado(atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome para salvar.')}{textoPrivado(cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : '')}</span></p>}
-      {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} /> : (
+      {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} confirmar={limparRascunho} /> : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
           {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Camera size={18} />Ler cupom com foto</button>}
@@ -281,13 +283,14 @@ export function Lancar() {
           {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Trash2 size={20} />Apagar este lançamento</button>}
         </>
       )}
+      {pagadorPendente && <button className="btn primary" type="button" onClick={async()=>{try{await pagadorPendente();setPagadorPendente(null);fecharLancar();await recarregar()}catch(e){setErro((e as Error).message)}}}>Informar de novo</button>}
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
     </Sheet>
   )
 }
 
 /** R11+G12: dinheiro que entrou a mais vai pro guardado (E3, conserto 4: "reserva" é só o dinheiro da Casa que nunca se gasta). Não muda o que dá pra gastar (regra do salário). */
-function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNode }) {
+function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: React.ReactNode; confirmar: () => void }) {
   const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
   const { g } = useGuardado()
   const { familia: fam } = useApp()
@@ -307,12 +310,12 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
     // AUTONOMA ideia 2: o que é do trabalho conta como renda deste mês (não é "a mais")
     if (trabalho) {
       const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'renda' }])
-      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados como renda deste mês, do seu trabalho.`) }
+      if (ok) { confirmar(); fecharLancar(); toast(`${reais(valor)} anotados como renda deste mês, do seu trabalho.`) }
       return
     }
     if (alvo === 'combinado') {
       const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'gasto combinado' }])
-      if (ok) { fecharLancar(); toast(`${reais(valor)} anotados para um gasto combinado. Não muda o que você pode gastar.`) }
+      if (ok) { confirmar(); fecharLancar(); toast(`${reais(valor)} anotados para um gasto combinado. Não muda o que você pode gastar.`) }
       return
     }
     const app = apps.find(a => a.id === alvo)
@@ -320,7 +323,7 @@ function EntrouDinheiro({ valor, visor }: { valor: number; visor: React.ReactNod
     const chave = toque.para([app.id, valor, hoje, nota].join('|'))
     const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
     if (!ok) return
-    toque.gravou(); fecharLancar(); await recarregar()
+    confirmar(); toque.gravou(); fecharLancar(); await recarregar()
     toast(`${reais(valor)} foram pro guardado (${app.nome}) e contam para 2029. Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
   })
   return (

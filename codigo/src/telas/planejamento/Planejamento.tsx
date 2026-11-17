@@ -193,7 +193,7 @@ export function Planejamento() {
             // só some da tela se gravou; se falhar, o aviso aparece e a lista volta como estava (a renda do outro continua guardada)
             const nova: Renda = muda ? { id: novoId(), nome, valor: muda.fraco, tipo: 'variavel', fraco: muda.fraco, bom: muda.bom, dono: familia.membroNome } : { id: novoId(), nome, valor, tipo: 'salario', dono: familia.membroNome }
             const ok = form === 'renda' ? await salvarRendas([...todasRendas, nova]) : await salvarMetas([...metas, { id: novoId(), nome, valor, guardado: 0 }])
-            if (ok) setForm(null)
+            if (ok) setForm(null);return ok
           }} />
         </Sheet>
       )}
@@ -202,12 +202,12 @@ export function Planejamento() {
 }
 
 /** Nova renda (rodada 2, AUTONOMA ideia 1): "Valor fixo" ou "Muda todo mês" (mês fraco e mês bom; o teto sai do mês fraco). */
-function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: string, valor: number, muda?: { fraco: number; bom: number }) => void }) {
+function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: string, valor: number, muda?: { fraco: number; bom: number }) => Promise<boolean> }) {
   const [nome, setNome] = useRascunho('cadastro:plano:nome', ''), [v, setV] = useRascunho('cadastro:plano:v', '')
   const [muda, setMuda] = useRascunho('cadastro:plano:muda', false), [fraco, setFraco] = useRascunho('cadastro:plano:fraco', ''), [bom, setBom] = useRascunho('cadastro:plano:bom', '')
   const f = textoParaValor(fraco), b = textoParaValor(bom)
   return (
-    <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (!nome) return; if (tipo === 'renda' && muda) { if (f > 0) salvar(nome, f, { fraco: f, bom: Math.max(b, f) }) } else if (v) salvar(nome, textoParaValor(v)) }}>
+    <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (!nome) return; const ok = tipo === 'renda' && muda ? f>0 && await salvar(nome,f,{fraco:f,bom:Math.max(b,f)}) : !!v && await salvar(nome,textoParaValor(v)); if(ok)[setNome,setV,setMuda,setFraco,setBom].forEach(s=>s.limpar()) }}>
       <label className="campo"><span>Nome</span><CampoPrivado className="inp" placeholder={tipo === 'renda' ? 'Ex.: Salário, meu trabalho' : 'Ex.: Viagem de julho'} value={nome} onChange={e => setNome(e.target.value)} /></label>
       {tipo === 'renda' && (
         <div className="pills" role="group" aria-label="Como é essa renda">

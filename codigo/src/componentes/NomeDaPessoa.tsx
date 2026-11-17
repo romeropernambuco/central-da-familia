@@ -8,7 +8,7 @@ import { Sheet } from './base'
 import { CampoPrivado, textoPrivado } from './privacidade'
 
 /** Folha de identidade compartilhada: nunca contém valores. */
-export function NomeDaPessoa({ pessoa, editar = false, mudou }: { pessoa: PessoaNome; editar?: boolean; mudou?: () => void }) {
+export function NomeDaPessoa({ pessoa, editar = false, mudou, autoria = false }: { pessoa: PessoaNome; autoria?: boolean; editar?: boolean; mudou?: () => void }) {
   const { oculto, familia } = useApp()
   const membros = useMembros()
   const atual = pessoa.tipo === 'membro' ? membros(pessoa.id) ?? pessoa.nome : pessoa.nome
@@ -19,6 +19,7 @@ export function NomeDaPessoa({ pessoa, editar = false, mudou }: { pessoa: Pessoa
   const { permitido, salvar, somenteCadastro } = useEdicaoNome(pessoa)
   if (pessoa.tipo === 'membro' && !tem && membros.carregando) return <span role="status">Carregando identificação</span>
   if (pessoa.tipo === 'membro' && membros.erro) return <span role="status">Não foi possível carregar os nomes. <button className="lnk" type="button" onClick={membros.repetir}>Tentar de novo</button></span>
+  if (autoria && !tem) return <span>{textoPrivado('alguém da família', oculto)}</span>
   return <>
     <span>{tem ? textoPrivado(atual, oculto) : 'Sem nome.'}</span>{' '}
     {(!tem || editar) && (permitido ? <button className="lnk nome-pessoa" type="button" onClick={() => { setNome(tem ? atual!.trim() : ''); setFuncao(pessoa.funcao || ''); setErro(''); abrir(true) }}>{tem ? 'Editar nome' : 'Informar'}</button> : <small>Peça a quem administra a família para informar o nome</small>)}

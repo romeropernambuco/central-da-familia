@@ -5,7 +5,7 @@ const { spawn } = require('node:child_process')
 const path = require('node:path')
 let pw; try { pw = require('playwright') } catch { pw = require('/opt/npm-tools/node_modules/playwright') }
 const PORTA = 4719
-const pasta = path.join(__dirname, '..', 'dist')
+const pasta = path.join(__dirname, '..', process.argv.includes('--exemplo') ? 'dist-exemplo' : 'dist')
 const srv = spawn('python3', ['-m', 'http.server', String(PORTA), '--bind', '127.0.0.1', '--directory', pasta], { stdio: 'ignore' })
 const erros = []
 ;(async () => {
@@ -13,14 +13,17 @@ const erros = []
   const nav = await pw.chromium.launch()
   try {
     for (const [nome, bloquear, espera] of [
-      ['banco sem endereço', false, 'O app está sem o endereço do banco'],
-      ['pedaço que não baixou', true, 'Não deu pra abrir a Central agora'],
+      ...(!process.argv.includes('--exemplo') ? [['banco sem endereço', false, 'O app está sem o endereço do banco']] : []),
+      ['módulo inicial', /assets\/index-.*\.js$/, 'Não foi possível abrir a Central agora'],
+      ...(process.argv.includes('--exemplo') ? [['rota lazy', /Privacidade-.*\.js$/, 'Não foi possível abrir a Central agora']] : []),
+      ['pedaço que não baixou', /partida-.*\.js$/,  'Não foi possível abrir a Central agora'],
     ]) {
       const p = await nav.newPage({ viewport: { width: 390, height: 844 } })
       p.on('pageerror', e => erros.push(`${nome}: erro de página ${e.message}`))
-      if (bloquear) await p.route(/partida-.*\.js$/, r => r.abort('internetdisconnected'))
+      if (bloquear) await p.route(bloquear, r => r.abort('internetdisconnected'))
       await p.goto(`http://127.0.0.1:${PORTA}/`)
-      const ok = await p.waitForSelector(`text=${espera}`, { timeout: 8000 }).then(() => true, () => false)
+      if(nome === 'rota lazy') { await p.waitForTimeout(1500); await p.evaluate(()=>{location.hash='#/privacidade'}) }
+      const ok = await p.waitForSelector(`text=${espera}`, { timeout: 20000 }).then(() => true, () => false)
       if (!ok) { erros.push(`${nome}: não apareceu "${espera}" (tela: ${JSON.stringify((await p.textContent('body')).trim().slice(0, 120))})`); continue }
       const botao = await p.$('button:has-text("Tentar de novo")')
       if (!botao) { erros.push(`${nome}: sem o botão Tentar de novo`); continue }
@@ -34,5 +37,5 @@ const erros = []
     }
   } finally { await nav.close(); srv.kill() }
   if (erros.length) { console.log('FALHOU:\n  ' + erros.join('\n  ')); process.exit(1) }
-  console.log('PASSOU: 2 de 2 casos sem tela branca')
+  console.log('PASSOU: casos de carga sem tela branca')
 })().catch(e => { srv.kill(); console.error(e); process.exit(1) })

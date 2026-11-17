@@ -170,7 +170,7 @@ function NovoCartao({ fechar, salvar }: { fechar: () => void; salvar: (c: Omit<C
         e.preventDefault()
         const f = Number(fe), v = Number(ve)
         if (!nome.trim() || !(f >= 1 && f <= 31) || !(v >= 1 && v <= 31)) { setErro('Preencha o nome e os 2 dias, de 1 a 31.'); return }
-        try { await salvar({ nome: nome.trim(), dia_fechamento: f, dia_vencimento: v }) } catch (x) { setErro((x as Error).message) }
+        try { await salvar({ nome: nome.trim(), dia_fechamento: f, dia_vencimento: v }); [setNome,setFe,setVe].forEach(s=>s.limpar()) } catch (x) { setErro((x as Error).message) }
       }}>
         <label className="campo"><span>Nome do cartão</span><CampoPrivado className="inp" placeholder="Ex.: Inter" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <label className="campo"><span>Dia que a fatura fecha</span><CampoPrivado className="inp" inputMode="numeric" value={fe} onChange={e => setFe(e.target.value.replace(/\D/g, '').slice(0, 2))} /><small>Está no app do banco, como "melhor dia de compra" menos 1.</small></label>
