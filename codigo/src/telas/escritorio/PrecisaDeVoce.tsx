@@ -1,3 +1,4 @@
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
@@ -32,7 +33,7 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   return (
     <section className="card precisa" aria-labelledby="pvT" data-precisa={fila.length}>
       <div className="card-h">
-        <h2 id="pvT">{equipe ? (total === 1 ? '1 coisa da casa precisa de você' : `${total} coisas da casa precisam de você`) : fraseDoDia(total)}</h2>
+        <h2 id="pvT"><Icone nome="salvo" />{equipe ? (total === 1 ? '1 coisa da casa precisa de você' : `${total} coisas da casa precisam de você`) : fraseDoDia(total)}</h2>
         {!equipe && !pessoa && <a className="lnk" href="#/escritorio">Escritório<Icone desenho={ChevronRight} /></a>}
       </div>
       {p ? (
@@ -42,7 +43,7 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
           {fila.length > 1 && !equipe && <p className="sub" style={{ marginTop: 10 }}>Depois desta: {textoPrivado((() => { const nomes = [...new Set(fila.slice(1).map(x => nomeDoDono(x, e.funcionarios)))]; return nomes.slice(0, 2).join(' e ') + (nomes.length > 2 ? ` e mais ${nomes.length - 2}` : '') })())}.</p>}
         </>
       ) : (
-        <>{feito && <p className="todo ok precisa-feito" role="status" style={{ marginBottom: 10 }}><span>{textoPrivado(feito)}</span></p>}<p className="sub">Tudo em ordem. Os {e.funcionarios.length} funcionários do Escritório conferiram os números da família. Quando um deles precisar de uma resposta sua, a pergunta aparece aqui.</p></>
+        <>{feito && <p className="todo ok precisa-feito" role="status" style={{ marginBottom: 10 }}><span>{textoPrivado(feito)}</span></p>}<EstadoVazio ilustracao="TudoEmDia" titulo="Tudo em ordem" frase={`Os ${e.funcionarios.length} funcionários do Escritório conferiram os números da família. Quando um deles precisar de uma resposta sua, a pergunta aparece aqui.`} /></>
       )}
     </section>
   )

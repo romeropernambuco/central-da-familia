@@ -1,3 +1,6 @@
+import { EstadoVazio } from '../../componentes/EstadoVazio'
+import { Icone } from '../../componentes/Icone'
+import './escritorio.css'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Din } from '../../componentes/base'
@@ -33,14 +36,14 @@ export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
     return () => { vivo = false }
   }, [api, familia?.id, familia?.membroId, familia?.envelopeId, sessao?.userId, id, permitido, versao, n])
   if (!membro) return null
-  return <section aria-label="Resumo da aba">
-    <p>{membro.papel}</p>
+  return <section className="numeros-aba" aria-label="Resumo da aba">
+    <h3><Icone nome="painel" />{membro.papel}</h3>
     {!permitido ? <p className="sub">Esta aba está restrita ao perfil autorizado.</p> : <>
       <p className="sub">{resultado?.exemplo ? 'Modo exemplo — estes números não são da sua família.' : 'Números da aba, nas mesmas leituras usadas pelo app.'}</p>
       {!resultado && !erro && <p role="status">Consultando os números…</p>}
-      {erro && <p role="alert">Não foi possível conferir. <button type="button" onClick={() => setN(x => x + 1)}>Tentar de novo</button></p>}
+      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para atualizar este resumo." acao={{ texto: 'Tentar de novo', aoClicar: () => setN(x => x + 1) }} /></div>}
       {resultado && <dl className="rel-ind">{resultado.numeros.map(n => <div key={n.nome}><dt>{textoPrivado(n.nome)}</dt><dd className="txt">{n.valor !== undefined ? <Din v={n.valor} /> : textoPrivado(n.texto)}</dd></div>)}</dl>}
-      <a className="btn line" href={'#/' + membro.rota} onClick={ev => { ev.preventDefault(); fechar(); ir(membro.rota) }}>Abrir aba</a>
+      <a className="btn line" href={'#/' + membro.rota} onClick={ev => { ev.preventDefault(); fechar(); ir(membro.rota) }}><Icone nome="abrir" />Abrir aba</a>
     </>}
   </section>
 }

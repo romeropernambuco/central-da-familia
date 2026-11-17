@@ -379,7 +379,9 @@ it('4: zero literal e atributos monetários ficam protegidos', async()=>{
  try {
   esconderValores(true)
   await act(async()=>root.render(createElement(ContextoApp.Provider,{value:{api,familia,oculto:true,versao:0} as unknown as Ctx},createElement(Cartoes))))
-  expect(container.buscar(n=>n.getAttribute('class')==='fat zeros')).toHaveLength(1)
+  // Olho fechado não distingue meses zerados pela estrutura da lista.
+  expect(container.buscar(n=>n.getAttribute('class')==='fat zeros')).toHaveLength(0)
+  expect(container.buscar(n=>n.getAttribute('class')==='neutra')).toHaveLength(1)
   expect(vazamentos(container)).toEqual([])
   for(const n of container.buscar(n=>n.atributos.size>0)) for(const attr of ['title','aria-label','aria-valuetext']) expect(n.getAttribute(attr)||'').not.toMatch(/R\$\s*\d/)
  } finally {await act(async()=>root.unmount());esconderValores(false);vi.unstubAllGlobals()}

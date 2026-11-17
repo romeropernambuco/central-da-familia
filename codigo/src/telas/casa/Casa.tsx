@@ -1,3 +1,5 @@
+import { EstadoVazio } from '../../componentes/EstadoVazio'
+import './casa.css'
 import { Icone } from '../../componentes/Icone'
 import { desfazer, type AcaoDesfazivel } from '../../app/desfazer'
 import { useRascunho } from '../../app/useRascunho'
@@ -16,7 +18,7 @@ import { LerCupom } from '../../componentes/LerCupom'
 import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { PrecisaDeVoce } from '../escritorio/Escritorio'
-import { Din, Sheet, Vazio } from '../../componentes/base'
+import { Din, Sheet } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
 import type { CasaDaEquipe, Lancamento, MarcaCasa } from '../../api/tipos'
@@ -44,7 +46,7 @@ export function Casa() {
     ...(soCasal ? [['folha', 'Folha', <Icone desenho={FileText} />] as [Aba, string, JSX.Element]] : []),
   ]
   return (
-    <div className="view">
+    <div className="view casa-visual">
       {equipe && <p className="todo"><Icone desenho={Users} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você anota o que comprou para casa e marca a lista. Toque no botão verde para lançar uma compra.</span></p>}
       <div className="segbar"><div className="seg compacta" role="group" aria-label="Parte da casa">
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
@@ -57,7 +59,7 @@ export function Casa() {
   )
 }
 
-const FalhaConfig = ({ m }: { m: string }) => (m ? <p className="aviso-erro" role="alert">Não foi possível abrir o que está salvo: {m} Nada foi apagado. Quando a internet voltar, a tela se atualiza sozinha.</p> : null)
+const FalhaConfig = ({ m }: { m: string }) => (m ? <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível abrir o que está salvo" frase={`${textoPrivado(m)} Nada foi apagado. Quando a internet voltar, a tela se atualiza sozinha.`} /></div> : null)
 
 function Feira() {
   const { api, familia, resumo, versao, tentar, toast, oculto, recarregar } = useApp()
@@ -102,7 +104,7 @@ function Feira() {
               <p className="lbl">Quem veio</p>
               {nomes.length ? (
                 <div className="pills" style={{ marginTop: 8 }}>{nomes.map((n, i) => nomeInformado(n) ? <button key={n} type="button" className="pill" aria-pressed={veio.includes(n)} onClick={() => togglePres(n)}>{veio.includes(n) && <Icone desenho={Check} />}{textoPrivado(n)}</button> : <NomeDaPessoa key={i} pessoa={{ tipo: 'assessor', id: folha.pessoas[i]?.id || '', nome: n }} />)}</div>
-              ) : <p className="sub" style={{ marginTop: 6 }}>Nenhum Assessor da Casa cadastrado.</p>}
+              ) : <p className="sub" style={{ marginTop: 6 }}><Icone nome="assessor" /> Nenhum Assessor da Casa cadastrado.</p>}
               {Object.entries(ponto[hoje] || {}).map(([n, h]) => <p key={textoPrivado(n)} className="sub" style={{ marginTop: 6 }}><NomeDaPessoa pessoa={{ tipo: 'membro', id: `ponto:${hoje}:${n}`, nome: n }} />: chegou {h.chegou || 'sem hora'}{h.saiu ? `, saiu ${h.saiu}` : ''}</p>)}
             </div>
             <div>
@@ -116,15 +118,15 @@ function Feira() {
           <section className="card" aria-labelledby="fSem">
             <div className="card-h"><h2 id="fSem"><Icone nome="casa" />Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
             {/* B8: nunca "livre" e "passou" na mesma tela */}
-            <p className="lbl">{textoPrivado(feira.nome)}: {livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
-            <div className="numrow">{livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}
+            <p className="lbl">{textoPrivado(feira.nome)}: {!oculto && livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
+            <div className="numrow">{!oculto && livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}
               <Qm titulo={textoPrivado(`${feira.nome}: livre nesta semana`)} linhas={feira.teto_semana != null ? [
                 { linha: 'Teto da semana', valor: feira.teto_semana }, { linha: 'Já gasto desde segunda', valor: -(feira.gasto_semana || 0) }, { linha: 'Livre nesta semana', valor: livreSem! },
               ] : [{ linha: 'Combinado do mês', valor: feira.limite_mes }, { linha: 'Já gasto', valor: -feira.gasto_mes }, { linha: 'Livre', valor: feira.livre }]} />
             </div>
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
-            <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
-            {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
+            <div className={'meter ' + (oculto ? 'neutro' : livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: oculto ? '50%' : Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
+            {!oculto && livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
             {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa autoria={id.startsWith('anotou:')} pessoa={{ tipo: 'membro', id: id.slice(id.indexOf(':') + 1), nome: nomeDe(id.slice(id.indexOf(':') + 1)) }} /> {id.startsWith('pagou:') ? 'pagou' : 'anotou'} {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Icone desenho={Camera} />Ler cupom com foto</button>
           </section>
@@ -137,12 +139,12 @@ function Feira() {
           <ul className="list">
             {lista.map(i => (
               <li key={i.id} className="li" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
-                <label className="check" style={{ gridColumn: '1 / 3' }}><input type="checkbox" checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
+                <label className="check casa-item" style={{ gridColumn: '1 / 3' }}><input type="checkbox" aria-label={textoPrivado(i.nome)} checked={i.ok} onChange={() => setLista(lista.map(x => x.id === i.id ? { ...x, ok: !x.ok } : x))} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}><span className="icone-chip"><Icone nome="casa" /></span><span className="m"><b>{textoPrivado(i.nome)}</b><small>{i.ok ? 'Na cesta' : 'Falta comprar'}</small></span></span></label>
                 <button className="iconbtn quieto" type="button" aria-label={`Tirar ${textoPrivado(i.nome)} da lista`} onClick={() => setLista(lista.filter(x => x.id !== i.id))}><Icone desenho={Trash2} /></button>
               </li>
             ))}
           </ul>
-          {!lista.length && !falhaLista && <Vazio ico={<Icone desenho={ShoppingBasket} />}>A lista está vazia. Escreva abaixo o que falta em casa.</Vazio>}
+          {!lista.length && !falhaLista && <EstadoVazio ilustracao="CasaVazia" titulo="A lista está vazia" frase="Escreva abaixo o que falta em casa." />}
           <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await setLista([...lista, { id: novoId(), nome: novo.trim(), ok: false }])) setNovo('') }}>
             <CampoPrivado className="inp" placeholder="Acrescentar item" value={novo} onChange={e => setNovo(e.target.value)} aria-label="Novo item da lista" />
             <button className="btn line" type="submit" aria-label="Acrescentar"><Icone desenho={Plus} /></button>
@@ -155,7 +157,7 @@ function Feira() {
             <p className="sub" style={{ marginBottom: 10 }}>Cada Assessor da Casa entra com um convite e um código de 4 números. O acesso permite cuidar da Casa, sem ver valores de dinheiro.</p>
             {folha.pessoas.length ? folha.pessoas.map(p => (
               <div key={p.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <span className="m"><b><NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} /></b><small>{textoPrivado(p.funcao || 'Função não informada')}{p.celular && <> · {textoPrivado(p.celular)}</>}</small></span>
+                <span className="m"><b><Icone nome="assessor" /> <NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} /></b><small>{textoPrivado(p.funcao || 'Função não informada')}{p.celular && <> · {textoPrivado(p.celular)}</>}</small></span>
                 <button className="btn sm line" type="button" disabled={gerando} onClick={async () => {
                   setGerando(true)
                   await tentar(async () => {
@@ -167,7 +169,7 @@ function Feira() {
                   setGerando(false)
                 }}><Icone desenho={KeyRound} />Gerar código</button>
               </div>
-            )) : <p className="sub">Cadastre um Assessor da Casa para gerar o convite.</p>}
+            )) : <EstadoVazio ilustracao="AssessorDaCasa" titulo="Quem cuida da Casa?" frase="Cadastre um Assessor da Casa para gerar o convite." />}
             <button className="btn line" type="button" onClick={() => setCadastro(true)}><Icone desenho={Plus} />Cadastrar Assessor da Casa</button>
             <p className="sub" style={{ marginTop: 10 }}>Renovação de convite e desligamento de acesso ainda não estão disponíveis.</p>
           </section>
@@ -202,10 +204,10 @@ function Prestadores() {
   const [novo, setNovo] = useState(false)
   const casaMensal = (resumo?.envelopes || []).find(e => e.casa && e.regra === 'mensal')
   return (
-    <div className="view">
+    <div className="view casa-visual">
       <FalhaConfig m={falhaPs} />
       <p className="todo"><Icone desenho={CalendarDays} aria-hidden="true" /><span>Jardineiro, piscineiro, diarista: o app lembra na véspera com a mensagem pronta. Quando a pessoa vier, toque em "Veio hoje" e o pagamento já abre para lançar.</span></p>
-      {!ps.length && !falhaPs && <div className="card"><Vazio ico={<Icone desenho={Wrench} />}>Nenhum serviço cadastrado. Ex.: jardineiro toda sexta, piscineiro toda quarta.</Vazio></div>}
+      {!ps.length && !falhaPs && <div className="card"><EstadoVazio ilustracao="AssessorDaCasa" titulo="Nenhum serviço cadastrado" frase="Ex.: jardineiro toda sexta, piscineiro toda quarta." /></div>}
       <div className="envs">
         {ps.map(p => {
           const prox = proxDia(hoje, p.dia)
@@ -276,7 +278,7 @@ function Gas() {
       <section className="card" aria-labelledby="gH">
         <div className="card-h"><h2 id="gH"><Icone nome="pendente" />Trocas anotadas</h2></div>
         <ul className="list">{[...gas.trocas].sort().reverse().map(d => <li key={d} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{diaSemana(d)}, {dataCurta(d)}</b></span></li>)}</ul>
-        {!gas.trocas.length && <Vazio ico={<Icone desenho={Flame} />}>Nenhuma troca anotada ainda.</Vazio>}
+        {!gas.trocas.length && <EstadoVazio ilustracao="CasaVazia" titulo="Nenhuma troca anotada ainda." frase="As novidades da Casa aparecem aqui." />}
       </section>
     </div>
   )
@@ -290,7 +292,7 @@ function FolhaCasa() {
   const dae = avisoDAE(hoje, !!folha.daePaga?.[mes])
   const total = folha.pessoas.reduce((s, p) => s + reservaFolha(p.salario).total, 0)
   return (
-    <div className="view">
+    <div className="view casa-visual">
       <FalhaConfig m={falhaFolha} />
       {folha.pessoas.length > 0 && (dae.mostrar ? (
         <section className="card" style={{ background: 'var(--warn-soft)' }} aria-label="Guia mensal do governo">
@@ -318,7 +320,7 @@ function FolhaCasa() {
             )
           })}
         </ul>
-        {!folha.pessoas.length && !falhaFolha && <Vazio ico={<Icone desenho={Users} />}>Ninguém cadastrado. Quem trabalha na sua casa?</Vazio>}
+        {!folha.pessoas.length && !falhaFolha && <EstadoVazio ilustracao="AssessorDaCasa" titulo="Ninguém cadastrado. Quem trabalha na sua casa?" frase="As novidades da Casa aparecem aqui." />}
         {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês para férias e 13º.</p>}
         <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Icone desenho={Plus} />Cadastrar pessoa</button>
       </section>
@@ -387,12 +389,12 @@ function CasaEquipe() {
       return true
     } catch (e) { toast((e as Error).message); return false } finally { trava.current = false; setOcupado(false) }
   }
-  if (!casa || erro) return <div className="view">{erro ? <p className="erro" role="alert">{textoPrivado(erro)} <button type="button" onClick={repetir}>Tentar novamente</button></p> : <p className="sub">Abrindo a Casa...</p>}</div>
+  if (!casa || erro) return <div className="view casa-visual">{erro ? <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível abrir a Casa" frase={textoPrivado(erro)} acao={{ texto: 'Tentar novamente', aoClicar: repetir }} /></div> : <p className="sub" role="status">Abrindo a Casa...</p>}</div>
   const ponto = casa.presenca.meu_ponto
   const compradoHoje = casa.comprado.filter(c => c.data === hoje)
   const g = casa.gas
   return (
-    <div className="view">
+    <div className="view casa-visual">
       <p className="todo"><Icone desenho={Users} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você marca a lista, avisa quando chega e quando o gás é trocado. O casal vê tudo na hora.</span></p>
       <button className="btn primary full" type="button" style={{ minHeight: 56 }} disabled={ocupado || !!pendente} onClick={() => setConfirmarGas(true)}><Icone desenho={Flame} />O gás acabou</button>
       {confirmarGas && <div className="card"><p>Avisar que falta gás na lista de compras?</p><button className="btn primary" type="button" onClick={() => { setConfirmarGas(false); agendar('acabou', { nome: 'Gás de cozinha' }, 'Gás posto na lista de compras.') }}>Confirmar que acabou</button><button className="btn line" type="button" onClick={() => setConfirmarGas(false)}>Cancelar</button></div>}
@@ -409,7 +411,7 @@ function CasaEquipe() {
             </div>
             <p className="lbl" style={{ marginTop: 14 }}>Comprado hoje</p>
             {compradoHoje.length ? <ul className="list">{compradoHoje.map((c, i) => <li key={i} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}><span className="m"><b>{textoPrivado(c.nome)}</b></span></li>)}</ul>
-              : <Vazio ico={<Icone desenho={ShoppingBasket} />}>Nenhuma compra anotada hoje.</Vazio>}
+              : <EstadoVazio ilustracao="CasaVazia" titulo="Nenhuma compra anotada hoje." frase="As novidades da Casa aparecem aqui." />}
             {/* C4 (14/11): o "Anotar compra" da equipe é 1 só, o botão grande de baixo (App.tsx); a folha dele não tem valor */}
           </section>
           <section className="card" aria-labelledby="eGas">
@@ -426,7 +428,7 @@ function CasaEquipe() {
                 <span className="m"><b>{textoPrivado(p.servico)}: <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></b><small>{todoDia(p.dia)} · próxima {p.proxima_visita === hoje ? 'hoje' : dataCurta(p.proxima_visita)}{p.ultima_vez ? ` · veio ${p.ultima_vez === hoje ? 'hoje' : dataCurta(p.ultima_vez)}` : ''}</small></span>
                 <button className="btn sm line" type="button" disabled={p.ultima_vez === hoje || ocupado || !!pendente} onClick={() => agendar('prestador_veio', { id: p.id }, `Avisado: ${p.nome} veio hoje.`)}><Icone desenho={Check} />{p.ultima_vez === hoje ? 'Veio' : 'Veio hoje'}</button>
               </li>
-            ))}</ul> : <Vazio ico={<Icone desenho={Wrench} />}>O casal ainda não cadastrou serviços.</Vazio>}
+            ))}</ul> : <EstadoVazio ilustracao="AssessorDaCasa" titulo="O casal ainda não cadastrou serviços." frase="As novidades da Casa aparecem aqui." />}
           </section>
         </div>
         <div className="col">
@@ -436,11 +438,11 @@ function CasaEquipe() {
             <ul className="list">
               {casa.lista.map(i => (
                 <li key={i.id} className="li" style={{ gridTemplateColumns: 'minmax(0,1fr)' }}>
-                  <label className="check"><input type="checkbox" checked={i.ok} disabled={ocupado || !!pendente} onChange={() => agendar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}>{textoPrivado(i.nome)}</span></label>
+                  <label className="check casa-item"><input type="checkbox" aria-label={textoPrivado(i.nome)} checked={i.ok} disabled={ocupado || !!pendente} onChange={() => agendar(i.ok ? 'acabou' : 'comprei', { id: i.id })} /><span style={{ textDecoration: i.ok ? 'line-through' : 'none', color: i.ok ? 'var(--muted)' : 'inherit' }}><span className="icone-chip"><Icone nome="casa" /></span><span className="m"><b>{textoPrivado(i.nome)}</b><small>{i.ok ? 'Na cesta' : 'Falta comprar'}</small></span></span></label>
                 </li>
               ))}
             </ul>
-            {!casa.lista.length && <Vazio ico={<Icone desenho={ShoppingBasket} />}>A lista está vazia. Acabou alguma coisa? Escreva abaixo.</Vazio>}
+            {!casa.lista.length && <EstadoVazio ilustracao="CasaVazia" titulo="A lista está vazia. Acabou alguma coisa? Escreva abaixo." frase="As novidades da Casa aparecem aqui." />}
             <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={async e => { e.preventDefault(); if (novo.trim() && await marcar('acabou', { nome: novo.trim() }, 'Item posto na lista.')) setNovo('') }}>
               <CampoPrivado className="inp" placeholder="Acabou alguma coisa?" value={novo} disabled={ocupado} onChange={e => setNovo(e.target.value)} aria-label="Item que acabou" />
               <button className="btn line" type="submit" disabled={ocupado} aria-label="Pôr na lista"><Icone desenho={Plus} /></button>
