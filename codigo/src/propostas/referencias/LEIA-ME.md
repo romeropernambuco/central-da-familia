@@ -1,0 +1,1 @@
+﻿Referencias de design (sistemas visuais de marcas reais, colecao VoltAgent/awesome-design-md, licenca MIT). Servem de INSPIRACAO de sistema (proporcao, ritmo, cor, tipo). Nao copiar logo, nome, texto nem marca.

@@ -1,0 +1,133 @@
+:root {
+  margin: 0;
+  font-family: 'Figtree Variable', system-ui, sans-serif;
+}
+body { margin: 0; }
+
+.lab {
+  color-scheme: light;
+  --fundo: #f4f3f0;
+  --cartao: #fff;
+  --menu: #ebe9e5;
+  --texto: #242321;
+  --texto-secundario: #5e5b54;
+  --borda: #8b867d;
+  --destaque: #275d50;
+  --sobre-destaque: #fff;
+  --risco: #9b3029;
+  --operacao: #625022;
+  --lembrete: var(--texto-secundario);
+  --sombra: 0 8px 24px rgb(27 22 14 / 9%);
+  --fonte-texto: 'Figtree Variable', system-ui, sans-serif;
+  --fonte-titulo: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  --tipo-xs: .8125rem;
+  --tipo-sm: .875rem;
+  --tipo-base: 1rem;
+  --tipo-titulo: 1.5rem;
+  --tipo-numero-secundario: 1.6875rem;
+  --tipo-numero-principal: 2.1875rem;
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 24px;
+  --espaco-6: 32px;
+  --raio-grande: 12px;
+  --raio-medio: 8px;
+  --raio-pequeno: 6px;
+  min-block-size: 100dvh;
+  background: var(--fundo);
+  color: var(--texto);
+  font: var(--tipo-base)/1.5 var(--fonte-texto);
+}
+
+.lab[data-theme="escuro"] {
+  color-scheme: dark;
+  --fundo: #0c0c0b;
+  --cartao: #131312;
+  --menu: #1a1918;
+  --texto: #f3efe8;
+  --texto-secundario: #bdb6aa;
+  --borda: #827c73;
+  --destaque: #a6dbc9;
+  --sobre-destaque: #142922;
+  --risco: #ffa59d;
+  --operacao: #dfca8b;
+  --sombra: none;
+}
+
+.lab *, .lab *::before, .lab *::after { box-sizing: border-box; }
+.lab :focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+.lab a { color: var(--destaque); }
+.lab :is(button, .lab-barra a) {
+  font: inherit;
+  color: inherit;
+}
+.lab button { cursor: pointer; }
+.lab :is(button, .lab-barra a, .lab-medicao summary) { min-block-size: 44px; }
+.lab-barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2) var(--espaco-5);
+  align-items: center;
+  padding: var(--espaco-3) var(--espaco-4);
+  background: var(--cartao);
+  border-block-end: 1px solid color-mix(in oklch, var(--borda), var(--cartao) 65%);
+}
+.lab-barra strong { font: 700 1.125rem var(--fonte-titulo); }
+.lab-barra nav, .lab-controles { display: flex; gap: var(--espaco-1); flex-wrap: wrap; }
+.lab-barra :is(a, button), .lab-mensagem button {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 44px;
+  padding-inline: var(--espaco-2);
+  border: 1px solid transparent;
+  border-radius: var(--raio-medio);
+  background: var(--menu);
+  text-decoration: none;
+}
+.lab-barra :is([aria-current], [aria-pressed="true"]) {
+  background: var(--destaque);
+  color: var(--sobre-destaque);
+}
+.lab-barra svg { inline-size: 19px; block-size: 19px; }
+.lab-amostras {
+  display: flex;
+  align-items: start;
+  gap: var(--espaco-5);
+  overflow-x: auto;
+  padding: var(--espaco-3);
+}
+.lab-amostras[data-comparacao="false"] .lab-amostra { margin-inline: auto; }
+.lab-amostra { --largura: 375px; --altura: 812px; inline-size: calc(var(--largura) + 2px); flex: none; }
+.lab-amostra[data-dispositivo="desktop"] { --largura: 1280px; --altura: 800px; }
+.lab-contagem { font-size: var(--tipo-sm); margin: 0 0 var(--espaco-2); }
+.lab-medicao { font-size: var(--tipo-sm); }
+.lab-medicao summary { align-content: center; cursor: pointer; }
+.lab-medicao ol { display: flex; gap: var(--espaco-1) var(--espaco-5); flex-wrap: wrap; margin: 0 0 var(--espaco-2); padding-inline-start: var(--espaco-5); }
+.lab-quadro {
+  width: 100%;
+  height: calc(var(--altura) + 2px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-grande);
+  box-shadow: var(--sombra);
+  container: proposta / inline-size;
+}
+.lab-conteudo { min-height: 100%; background: var(--fundo); color: var(--texto); font-family: var(--fonte-texto); display: flow-root; }
+.lab-mensagem { padding: var(--espaco-5); }
+.lab-mensagem h1 { font: 700 var(--tipo-titulo) var(--fonte-titulo); }
+.numero-financeiro { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.numero-simbolo { font-size: .65em; }
+.numero-principal { font-size: var(--tipo-numero-principal); }
+.numero-secundario { font-size: var(--tipo-numero-secundario); }
+.selo-exemplo {
+  display: inline-block;
+  padding: 0 var(--espaco-2);
+  border: 1px dashed var(--borda);
+  border-radius: var(--raio-pequeno);
+  color: var(--texto-secundario);
+  font-size: var(--tipo-xs);
+}

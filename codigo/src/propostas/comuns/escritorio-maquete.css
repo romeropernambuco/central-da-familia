@@ -1,0 +1,51 @@
+.escritorio-maquete {
+  display: block;
+  max-inline-size: 100%;
+  inline-size: 100%;
+  height: auto;
+  --piso: color-mix(in oklch, var(--menu) 80%, var(--destaque));
+  --parede: color-mix(in oklch, var(--menu) 65%, var(--destaque));
+  --movel: color-mix(in oklch, var(--menu) 65%, var(--texto-secundario));
+  --mesa: color-mix(in oklch, var(--cartao) 75%, var(--texto-secundario));
+  --roupa: color-mix(in oklch, var(--destaque) 75%, var(--cartao));
+}
+
+.escritorio-maquete [data-tom="piso"] { --face: var(--piso); }
+.escritorio-maquete [data-destaque="true"] > [data-tom="piso"] {
+  --face: color-mix(in oklch, var(--piso) 65%, var(--destaque));
+  stroke: var(--destaque);
+}
+.escritorio-maquete [data-tom="parede"] { --face: var(--parede); }
+.escritorio-maquete [data-tom="movel"] { --face: var(--movel); }
+.escritorio-maquete [data-tom="mesa"] { --face: var(--mesa); }
+.escritorio-maquete [data-tom="roupa"] { --face: var(--roupa); }
+.escritorio-maquete [data-tom="roupa-clara"] { --face: color-mix(in oklch, var(--roupa) 60%, var(--cartao)); }
+.escritorio-maquete [data-tom="tela"] { --face: var(--texto-secundario); }
+.escritorio-maquete .face-clara { fill: var(--face); }
+.escritorio-maquete .face-media { fill: color-mix(in oklch, var(--face) 86%, #161510); }
+.escritorio-maquete .face-escura { fill: color-mix(in oklch, var(--face) 72%, #161510); }
+.escritorio-maquete .pele { fill: #a96f59; }
+.escritorio-maquete .pele-clara { fill: #dbad91; }
+.escritorio-maquete .cabelo { fill: #463834; }
+.escritorio-maquete .nome-sala { fill: var(--texto); font-size: 15px; font-weight: 700; }
+.maquete-legenda {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.maquete-placa {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  border-radius: var(--raio-pequeno);
+  border: 1px solid var(--borda);
+  padding: 1px var(--espaco-1);
+  color: var(--texto);
+  background: var(--cartao);
+  font-size: 14px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
