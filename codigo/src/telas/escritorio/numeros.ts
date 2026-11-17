@@ -1,6 +1,7 @@
 import { totaisDoMes, gastosRealizados } from '../../lib/resumo/movimentacao'
 import { destaqueOrcamento } from '../../lib/resumo/orcamento'
 import { totaisGuardado } from '../../lib/resumo/guardado'
+import { lerTotaisRecebimentos } from '../../lib/resumo/leituras'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { FUSO } from '../../lib/formato'
 import type { Api, FamiliaMinha } from '../../api/tipos'
@@ -45,8 +46,8 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
     }
     case 'planejamento': {
       if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')
-      const abertos = (await api.recebimentos(id)).filter(r => !r.recebido_em)
-      return [quantidade('Recebimentos previstos em aberto', abertos.length), { nome: 'Total previsto (todos os meses)', valor: abertos.reduce((s, r) => s + r.valor, 0) }]
+      const total = await lerTotaisRecebimentos(api, id)
+      return [quantidade('Recebimentos previstos em aberto', total.ocorrencias), { nome: 'Total previsto (todos os meses)', valor: total.previsto }]
     }
     case 'desejos': {
       if (!api.desejos) throw new Error('Desejos indisponíveis')

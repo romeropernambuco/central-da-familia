@@ -88,7 +88,7 @@ export function normalizaCartao(c: any): Cartao {
   return { id: txt(c.id), nome: txt(c.apelido ?? c.nome), dia_fechamento: numOuNada(c.dia_fecha ?? c.dia_fechamento), dia_vencimento: numOuNada(c.dia_vence ?? c.dia_vencimento), banco: c.banco || null, titular: c.titular_nome || null, titular_id: c.titular_membro || null,
     limite: numOuNada(c.limite), taxa_valor: numOuNada(c.taxa_valor), taxa_periodo: c.taxa_periodo === 'ano' ? 'ano' : c.taxa_periodo === 'mes' ? 'mes' : null, taxa_mes: numOuNada(c.taxa_mes), taxa_isenta_acima: numOuNada(c.taxa_isenta_acima), final4: c.final4 || null, ativo: c.ativo !== false }
 }
-export const normalizaFaturaBanco = (f: any): FaturaBanco => ({ cartao_id: txt(f.cartao_id), mes: txt(f.mes).slice(0, 7), valor_banco: numOuNada(f.valor_banco), paga_em: f.paga_em || null, paga_por: f.paga_por_nome || f.paga_por || null })
+export const normalizaFaturaBanco = (f: any): FaturaBanco => registrarContrato({ cartao_id: txt(f.cartao_id), mes: txt(f.mes).slice(0, 7), valor_banco: numOuNada(f.valor_banco), paga_em: f.paga_em || null, paga_por: f.paga_por_nome || f.paga_por || null }, { ...f, valor_banco: 'valor_banco' in f ? true : undefined, paga_em: 'paga_em' in f ? true : undefined }, ['cartao_id', 'mes', 'valor_banco', 'paga_em'])
 /** Feira: o valor vem do lançamento ligado e só chega pro casal. */
 export function normalizaFeira(f: any, semDinheiro = false): Feira {
   const v = f.valor ?? f.lancamentos?.valor ?? f.lancamento?.valor

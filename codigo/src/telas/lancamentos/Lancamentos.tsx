@@ -211,7 +211,7 @@ export function ResumoDoMes() {
     return { gastos, recebimentos }
   } : null, [api, versao])
   if (!permitido) return null
-  return <section className="card" aria-label="Resumo do mês">
+  return <section className="card" aria-label="Resumo do mês" data-secao="mes" data-periodo={mes}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
       <Botao type="button" variante="secundario" aria-label="Mês anterior" onClick={() => setMes(mesMais(mes, -1))}>←</Botao>
       <h2>{mesCurto(mes + '-01')}</h2>

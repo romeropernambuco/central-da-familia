@@ -1,4 +1,5 @@
 import { Icone } from '../componentes/Icone'
+import { useDestino, focarDestino } from './destinos'
 import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from 'react'
@@ -64,6 +65,11 @@ export { ir } from './rotas'
 export function App() {
   const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto, alternarOculto } = useApp()
   const tituloRef = useRef<HTMLHeadingElement>(null)
+  const destino = useDestino()
+  useEffect(() => {
+    if (!familia || !destino.secao || rotaPermitida(destino.rota, familia.papel) !== destino.rota) return
+    return focarDestino(destino)
+  }, [familia?.papel, destino.rota, destino.secao, destino.entidade, destino.periodo])
   const [rota, setRota] = useState<Rota>(lerRota())
   const [mais, setMais] = useState(false)
   const [carregou, setCarregou] = useState(false)

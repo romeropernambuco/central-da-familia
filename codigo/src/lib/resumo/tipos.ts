@@ -26,18 +26,18 @@ export type CampoResumo<T> = Metadados & (
   { estado: 'pronto'; valor: T } |
   { estado: 'carregando' | 'vazio' | 'erro' | 'indisponivel' | 'restrito'; valor: null; motivo?: string }
 )
-export interface RecebimentosResumo { ocorrencias: number; previsto: Dinheiro }
-export interface CasaResumo { itensAtivos: number; contagens: number }
+export type RecebimentosResumo = ReturnType<typeof import('./recebimentos').recebimentosDoMes>
+export type CasaResumo = ReturnType<typeof import('./casa').situacaoCasa>
 export interface ResumoFamilia {
   saldoConta: CampoResumo<Dinheiro>
-  podeGastarHoje: CampoResumo<{ valor: Dinheiro; escopo: 'pessoal' | 'familia' }>
+  podeGastarHoje: CampoResumo<{ valor: Dinheiro; escopo: 'pessoal' | 'familia'; casa: number; devendo: boolean }>
   movimentacaoMes: CampoResumo<{ unidade: 'reais' } & ReturnType<typeof totaisDoMes>>
   aplicacoes: CampoResumo<{ unidade: 'reais' } & ReturnType<typeof totaisGuardado>>
-  imoveis: CampoResumo<{ valor: Dinheiro; patrimonio: Dinheiro }>
-  faturas: CampoResumo<{ cartao: string; vencimento: string; total: Dinheiro }[]>
+  imoveis: CampoResumo<{ valor: Dinheiro; aluguel: Dinheiro | null }>
+  faturas: CampoResumo<ReturnType<typeof import('./faturas').faturasAConferir>>
   recebimentos: CampoResumo<RecebimentosResumo>
   casa: CampoResumo<CasaResumo>
-  desejos: CampoResumo<{ pensando: number; combinados: number }>
-  pendencias: CampoResumo<number>
+  desejos: CampoResumo<ReturnType<typeof import('./desejos').totaisDesejos>>
+  pendencias: CampoResumo<{ total: number; primeira?: { id: string; assunto: string } }>
   plano2029: CampoResumo<{ unidade: 'centavos' } & ReturnType<typeof numerosRumo2029>>
 }

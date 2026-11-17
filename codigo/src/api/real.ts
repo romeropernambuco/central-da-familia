@@ -9,6 +9,7 @@ import { hojeRecife } from '../lib/formato'
 import { MSG_CUPOM, mensagemCupom } from '../lib/foto'
 import { AVISOS_CONVITE, ErroRede, ErroSessao, TRADUZ, sessaoVale, traduzErro } from './erros'
 import { lancarComChave, normalizaReajuste, normalizaCasa, normalizaCupom, normalizaLancamento, normalizaRecebimento, normalizaResumo } from './normaliza'
+import { registrarContrato } from '../lib/resumo/contrato'
 
 let cli: SupabaseClient<any, any, any> | null = null
 function sb(): SupabaseClient<any, any, any> {
@@ -183,7 +184,7 @@ export const apiReal: Api = {
     const r = await rpc<any>('faturas', { familia, meses })
     const lista: any[] = r?.faturas || []
     const hoje = hojeRecife()
-    return lista.map(f => ({ cartao_id: f.cartao_id, cartao: f.cartao || '', mes: String(f.mes).slice(0, 7), vencimento: f.vence_em, fecha_em: f.fecha_em, total: num(f.total), fechada: !!f.fecha_em && f.fecha_em < hoje })) as Fatura[]
+    return registrarContrato(lista.map(f => registrarContrato({ cartao_id: f.cartao_id, cartao: f.cartao || '', mes: String(f.mes).slice(0, 7), vencimento: f.vence_em, fecha_em: f.fecha_em, total: num(f.total), fechada: !!f.fecha_em && f.fecha_em < hoje }, f, ['cartao_id', 'mes', 'vence_em', 'total'])), r, ['faturas']) as Fatura[]
   },
 
   async config<T>(familia: string, chave: ChaveConfig, padrao: T): Promise<T> {
@@ -340,7 +341,7 @@ export const apiReal: Api = {
     if (error) erro(error)
     const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
     const eu = await meuMembro(familia)
-    return (data || []).map((r: any) => normalizaRecebimento(r, ms, eu))
+    return registrarContrato((data || []).map((r: any) => registrarContrato(normalizaRecebimento(r, ms, eu), r, ['id', 'valor_centavos', 'mes_previsto', 'certo'])), { data }, ['data'])
   },
   async recebimentoCriar(familia, r) {
     const eu = await meuMembro(familia)
@@ -455,12 +456,12 @@ export const apiReal: Api = {
     if (error) erro(error)
     const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
     const eu = await meuMembro(familia)
-    return (data || []).map((i: any) => ({
+    return registrarContrato((data || []).map((i: any) => registrarContrato({
       id: String(i.id), dono_membro: String(i.dono_membro), dono_nome: ms.find(m => m.id === String(i.dono_membro))?.nome ?? null, meu: !!eu && String(i.dono_membro) === eu,
       apelido: String(i.apelido), valor: num(i.valor_estimado_centavos) / 100, uso: i.uso, aluguel: num(i.aluguel_centavos) / 100, custos: num(i.custos_centavos) / 100,
       vacancia: String(i.vacancia ?? '0'), tem_contrato: !!i.tem_contrato, contrato_ate: i.contrato_ate ? String(i.contrato_ate).slice(0, 7) : null,
       venda_valor: i.venda_valor_centavos == null ? null : num(i.venda_valor_centavos) / 100, venda_mes: i.venda_mes ? String(i.venda_mes).slice(0, 7) : null, venda_contrato: !!i.venda_contrato,
-    }))
+    }, i, ['id', 'valor_estimado_centavos'])), { data }, ['data'])
   },
   async imovelSalvar(familia, id, d) {
     const falta = imovelInvalido(d)

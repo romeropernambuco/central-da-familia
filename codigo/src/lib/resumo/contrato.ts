@@ -11,6 +11,11 @@ export function camposAusentes(dado: object): string[] { return contratos.get(da
  * com a API sem cache; a cópia conserva a evidência do contrato original. */
 export function copiarLeitura<T>(dado: T): T {
   const copia = structuredClone(dado)
-  if (dado && typeof dado === 'object' && copia && typeof copia === 'object' && contratos.has(dado)) contratos.set(copia, [...contratos.get(dado)!])
+  const transferir = (de: any, para: any) => {
+    if (!de || typeof de !== 'object' || !para || typeof para !== 'object') return
+    if (contratos.has(de)) contratos.set(para, [...contratos.get(de)!])
+    for (const chave of Object.keys(de)) transferir(de[chave], para[chave])
+  }
+  transferir(dado, copia)
   return copia
 }

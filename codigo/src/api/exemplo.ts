@@ -750,6 +750,18 @@ export const apiExemplo: Api = {
     // igual ao gatilho do banco: quem, quando, antes e depois (o mais novo primeiro)
     db.objetivo.historico.unshift({ quem: membroLogado().nome, quando: new Date().toISOString(), antes: antes ? JSON.parse(JSON.stringify(antes)) : null, depois: JSON.parse(JSON.stringify(p)) })
   },
+  async saldosConta() {
+    soCasal()
+    return structuredClone((db.config.saldos_conta_exemplo || []) as import('../lib/resumo/saldos').SaldoConta[])
+  },
+  async salvarSaldoConta(_f, conta) {
+    soCasal()
+    const { saldoDasContas } = await import('../lib/resumo/saldos')
+    saldoDasContas([conta])
+    if (conta.conferidoEm > hojeRecife()) throw new Error('Informe a data da conferência até hoje.')
+    const contas = (db.config.saldos_conta_exemplo || []) as import('../lib/resumo/saldos').SaldoConta[]
+    db.config.saldos_conta_exemplo = [...contas.filter(c => c.id !== conta.id), structuredClone(conta)]
+  },
   async futuroEntradas() {
     await espera(40)
     if (papelLogado() !== 'casal') throw new Error('Só o casal vê as contas do futuro.')
@@ -764,7 +776,7 @@ export const apiExemplo: Api = {
         aplicada_em: ex2.movimentosEx(a.id)[0]?.data || hoje, resgate_previsto: a.vence_em })),
       cdi_hoje: { pct_ano: g.cdi_usado.pct_ano },
       // f_11: a família de exemplo não anotou dinheiro em conta corrente (soma 0, igual ao banco sem linhas)
-      saldo_caixa: 0,
+      saldo_caixa: (await import('../lib/resumo/saldos')).saldoDasContas((db.config.saldos_conta_exemplo || []) as import('../lib/resumo/saldos').SaldoConta[]).valor * 100,
       recebimentos: db.recebimentos.filter(r => !r.apagado).map(r => ({ id: r.id, dono_nome: membrosTeste().find(x => x.id === r.dono_membro)?.nome ?? null, valor_centavos: Math.round(r.valor * 100), mes_previsto: r.mes_previsto, mes_novo: r.mes_novo, certo: r.certo, recebido_em: r.recebido_em, descricao: r.descricao })),
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
       config: { casa_folha: db.config.casa_folha as any, fontes_receita: db.config.fontes_receita, receitas_controle: db.config.receitas_controle },

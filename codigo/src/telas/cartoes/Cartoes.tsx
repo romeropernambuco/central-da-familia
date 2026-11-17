@@ -1,4 +1,5 @@
 import { useInvalidacao } from '../../app/invalidacao'
+import { ConferenciaFaturas } from '../../componentes/ConferenciasResumo'
 import { proximaFatura } from '../../lib/resumo/faturas'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './cartoes.css'
@@ -57,6 +58,7 @@ export function Cartoes() {
 
   return (
     <div className="view cartoes-visual">
+      <ConferenciaFaturas />
       {carregando && <p role="status">Buscando cartões e faturas…</p>}
       {falha && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível buscar cartões e faturas." frase={dado ? 'Dados desatualizados.' : 'Tente novamente para conferir suas faturas.'} acao={{ texto: 'Tentar novamente', aoClicar: repetir }} /></div>}
       {cartoes.length > 0 && <p className="lbl"><FuncIco id="cartao" size={24} />Analista de Cartão: acompanha as faturas, não paga nada sozinho</p>}

@@ -1,4 +1,6 @@
 import { livreDaSemana } from '../../lib/resumo/orcamento'
+import { useDestino } from '../../app/destinos'
+import { ConferenciaCasa } from '../../componentes/ConferenciasResumo'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './casa.css'
 import { Icone } from '../../componentes/Icone'
@@ -38,7 +40,10 @@ export function Casa() {
   const equipe = familia?.papel === 'equipe'
   // A2: a pessoa da família (filha) vê só a lista e o gás: sem valor, sem Serviços, sem Folha, sem "Gerar código"
   const soCasal = familia?.papel === 'casal'
-  const [aba, setAba] = useState<Aba>('feira')
+  const destino = useDestino()
+  const permitida = (s: string): Aba => s === 'gas' || (soCasal && ['prestadores', 'folha'].includes(s)) ? s as Aba : 'feira'
+  const [aba, setAba] = useState<Aba>(() => permitida(destino.secao))
+  useEffect(() => { if (destino.rota === 'casa') setAba(permitida(destino.secao)) }, [destino.secao, soCasal])
   if (equipe) return <CasaEquipe key={familia.id} />
   const abas: [Aba, string, JSX.Element][] = [
     ['feira', soCasal ? 'Feira' : 'Lista', <Icone desenho={ShoppingBasket} />],
@@ -47,7 +52,8 @@ export function Casa() {
     ...(soCasal ? [['folha', 'Folha', <Icone desenho={FileText} />] as [Aba, string, JSX.Element]] : []),
   ]
   return (
-    <div className="view casa-visual">
+    <div className="view casa-visual" data-secao={aba}>
+      <ConferenciaCasa />
       {equipe && <p className="todo"><Icone desenho={Users} aria-hidden="true" /><span>Olá, <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} />! Aqui você anota o que comprou para casa e marca a lista. Toque no botão verde para lançar uma compra.</span></p>}
       <div className="segbar"><div className="seg compacta" role="group" aria-label="Parte da casa">
         {abas.map(([k, nome, ico]) => <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{ico}{nome}</button>)}
