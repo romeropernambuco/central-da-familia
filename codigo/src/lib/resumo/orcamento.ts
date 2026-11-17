@@ -1,4 +1,4 @@
-import type { Envelope, LinhaExplicacao, ResumoHoje } from '../../api/tipos'
+import type { Envelope, FamiliaMinha, LinhaExplicacao, ResumoHoje } from '../../api/tipos'
 import { centavos, somaDias, fimDoMes } from '../formato'
 import { pesoDia } from '../plano'
 export type EstadoEnv = 'ok' | 'dia_passou' | 'devendo'
@@ -67,8 +67,40 @@ function temFds(n: number, h: string) { for (let i = 0; i < n; i++) if (pesoDia(
 
 
 export const livreDaSemana = (e: Envelope) => e.teto_semana != null ? centavos(e.teto_semana - (e.gasto_semana || 0)) : null
+
+/** O banco já distribui o livre da semana pelos dias até domingo, no campo hoje. */
+export function disponivelHojeCasa(envelopes: Envelope[]): number | null {
+  const valores = envelopes.filter(e => e.casa && e.hoje != null)
+  return valores.length ? centavos(valores.reduce((s, e) => s + e.hoje!, 0)) : null
+}
+
+export function envelopesVisiveis(envelopes: Envelope[], familia: FamiliaMinha) {
+  if (familia.papel === 'casal') return envelopes
+  return familia.papel === 'pessoa' ? envelopes.filter(e => !e.casa && e.id === familia.envelopeId) : []
+}
+
+export function valorPrincipalEnvelope(e: Envelope, n: ReturnType<typeof numeroEnvelope>) {
+  return n.estado === 'devendo' ? n.devendo : e.casa ? n.valor : e.hoje ?? n.valor
+}
+
+export function projecaoCasal(placar: ResumoHoje['placar_casal']) {
+  if (!placar || placar.length < 2) return null
+  const pessoas = placar.map(x => ({
+    ...x,
+    passa: x.fecha > x.limite + 0.005,
+    excessoPrevisto: centavos(x.fecha - x.limite),
+    excessoAtual: (x.gasto ?? 0) > x.limite + 0.005 ? centavos((x.gasto ?? 0) - x.limite) : null,
+  }))
+  const passam = pessoas.filter(x => x.passa)
+  return {
+    pessoas, passam,
+    sobra: centavos(placar.reduce((s, x) => s + x.limite - x.fecha, 0)),
+    excessoTotal: centavos(passam.reduce((s, x) => s + x.fecha - x.limite, 0)),
+  }
+}
+
 export function destaqueOrcamento(r: ResumoHoje, envelopeId: string | null | undefined, hoje: string, fuso: string) {
  const meu = r.envelopes.find(e => e.id === envelopeId && !e.casa)
  const n = meu ? numeroEnvelope(meu, r.dias_restantes, hoje, fuso) : null
- return { meu, numero: n, escopo: meu ? 'pessoal' as const : 'familia' as const, valor: meu && n ? (n.estado === 'devendo' ? n.devendo : meu.hoje ?? n.valor) : r.pode_gastar_hoje, livre: meu ? meu.livre : r.livre_mes }
+ return { meu, numero: n, escopo: meu ? 'pessoal' as const : 'familia' as const, valor: meu && n ? valorPrincipalEnvelope(meu, n) : r.pode_gastar_hoje, livre: meu ? meu.livre : r.livre_mes }
 }

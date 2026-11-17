@@ -16,7 +16,7 @@ const fake = vi.hoisted(() => ({ leitura: { doMes: [], ult: [] } as unknown }))
 vi.mock('../../app/useLeituraRemota', async () => {
   const { destaqueOrcamento } = await import('./orcamento')
   return { useLeituraRemota: (chave: string) => ({ dado: chave.startsWith('resumo-familia:podeGastarHoje')
-    ? { valor: { unidade: 'reais', valor: destaqueOrcamento({ envelopes: [] } as any, null, '2026-11-17', 'America/Recife').valor }, escopo: 'pessoal', casa: 0 }
+    ? { valor: { unidade: 'reais', valor: destaqueOrcamento({ envelopes: [] } as any, null, '2026-11-17', 'America/Recife').valor }, escopo: 'pessoal', casa: null, envelope: null, envelopes: [], placar: null, diasRestantes: 14, devendo: false }
     : chave.startsWith('resumo-familia:') ? null : chave === 'inicio-ultimos' ? [] : fake.leitura, carregando: false, erro: '' }) }
 })
 vi.mock('../../app/useConfig', () => ({ useConfig: (_k: string, padrao: unknown) => [padrao, vi.fn(), '', true] }))

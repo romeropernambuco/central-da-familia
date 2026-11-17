@@ -12,6 +12,7 @@ import { acompanharConferencias, CHAVE_FONTES, useNumerosAtualizados } from '../
 import { AtualizarNumeros, numerosParaConferir } from './AtualizarNumeros'
 import { textoPrivado } from './privacidade'
 import { Din } from './base'
+import { PlanoSemMargem } from './PlanoSemMargem'
 import './RumoA2029.css'
 
 const mesNome = (m: string) => `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(m.slice(5)) - 1]}/${m.slice(0, 4)}`
@@ -71,7 +72,7 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
   const n = c?.numeros
   const saldo = (v: number) => <>{v > 0 ? 'faltam' : 'sobram'} <Din v={Math.abs(v) / 100} /> por mês</>
   const resposta = oculto ? 'Abra o olho para conferir a cobertura e os valores.' : !c || !n || n.cobre_pct === null || n.falta_com_margem === null ? null : <>Em {mesNome(c.referencia)} {saldo(n.falta_com_margem)}, com margem de segurança.</>
-  const semMargem = !oculto && n && n.cobre_pct !== null ? <span className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</span> : null
+  const semMargem = !oculto && n && n.cobre_pct !== null ? <PlanoSemMargem centavos={n.falta_sem_margem} /> : null
   if (compacto) return <a className="card rumo-resumo" href="#/planejamento">
     <b>Rumo a 2029</b><Icone nome="abrir" /><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
     {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}

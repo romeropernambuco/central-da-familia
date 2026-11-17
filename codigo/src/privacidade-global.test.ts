@@ -16,6 +16,7 @@ import { App as AppReal } from './app/App'
 import { Provedor } from './app/contexto'
 import { Cadastro, FichaFuncionario } from './telas/escritorio/Ficha'
 import { CASOS_LIGACAO, contextoLigacao } from './lib/insights/ligacao.dom-teste'
+import { lerOrcamento } from './lib/resumo/leituras'
 
 it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mantém opções/aria legíveis', async (tipo, rota, funcionario, pergunta) => {
   const doc = ambiente(), container = doc.createElement('div'); doc.body.appendChild(container)
@@ -51,7 +52,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant�
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['RitmoOrcamento', 'ResumoFamilia', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['RitmoOrcamento', 'ResumoFamilia', 'OrcamentoResumo', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -202,6 +203,7 @@ describe('regra do olho em cada tela real', () => {
     const props = nome === 'RitmoOrcamento' ? { envelope: resumo.envelopes[0], hoje: '2026-11-15' } : nome.startsWith('Agente:') ? { rota: nome.slice(7) } : nome === 'Cena3D' ? { funcionarios: escritorio.funcionarios, selecionado: null, aoTocar() {} } : nome === 'FichaFuncionario' ? { f: escritorio.funcionarios[0], e: escritorio, responder: async () => true, fechar() {} }
       : nome === 'FolhaImovel' ? { inicial: imoveis[0], fechar() {}, salvar: async () => true, tirar() {} }
       : nome === 'Reajuste' ? { envelopes: resumo.envelopes, mudaLimite: () => true }
+      : nome === 'OrcamentoResumo' ? { hoje: '2026-11-15', aberto: true, campo: { estado: 'pronto', valor: await lerOrcamento(api, familia, '2026-11-15') } }
       : nome === 'NumerosAba' ? { id: 'analista', fechar() {} } : { aplicado: dinheiro }
     let alternar: () => void = () => {}
     function App() {
@@ -217,10 +219,15 @@ describe('regra do olho em cada tela real', () => {
       await act(async () => { await new Promise(r => setTimeout(r, 700)) })
       expect(vazamentos(container), nome).toEqual([])
       if (nome === 'ResumoFamilia' || nome === 'Inicio') {
-        const expandir = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'resumo-expandir')[0]
-        expect(expandir.getAttribute('aria-expanded')).toBe('false')
-        await act(async () => expandir.click())
-        expect(expandir.getAttribute('aria-expanded')).toBe('true')
+        const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'resumo-expandir')
+        expect(botoes.some(n => n.getAttribute('aria-controls') === 'detalhes-podeGastarHoje')).toBe(true)
+        expect(botoes.some(n => n.textContent.trim() === 'Seu orçamento e envelopes')).toBe(true)
+        for (const expandir of botoes) {
+          const aberto = expandir.getAttribute('aria-expanded')
+          if (expandir.getAttribute('aria-controls')?.startsWith('detalhes-')) expect(aberto).toBe('false')
+          if (aberto === 'false') await act(async () => expandir.click())
+          expect(expandir.getAttribute('aria-expanded')).toBe('true')
+        }
         expect(vazamentos(container), nome + ' orçamento expandido').toEqual([])
       }
       if (nome.startsWith('Agente:')) {
