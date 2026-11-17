@@ -1,13 +1,15 @@
+import './inicio.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Conferencia } from '../../componentes/Conferencia'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
-import { ChevronRight, ListChecks } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
-import { Din, Vazio } from '../../componentes/base'
+import { Din } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { EnvelopeCard, comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { escreveNo, rotuloDono } from '../../app/dono'
@@ -36,7 +38,8 @@ export function Inicio() {
     return { doMes, ult: ult.slice(0, 4) }
   } : null, [api, versao])
   const { doMes = [], ult = [] } = leitura.dado || {}
-  if (leitura.carregando || leitura.erro || !leitura.dado) return <Conferencia erro={!!leitura.erro} repetir={leitura.repetir} />
+  if (leitura.erro) return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Seus registros continuam guardados. Vamos tentar de novo?" acao={{ texto: 'Tentar de novo', aoClicar: leitura.repetir }} /></div>
+  if (leitura.carregando || !leitura.dado) return <Conferencia repetir={leitura.repetir} />
 
   if (!resumo) return <div className="card"><p className="sub">Buscando o número de hoje…</p></div>
   const hoje = hojeRecife()
@@ -54,8 +57,8 @@ export function Inicio() {
   const porQue = meu?.mudou ? () => explicar({ cabeca: 'Por que mudou?', titulo: meu.mudou!.motivo, linhas: [{ linha: 'Ontem o dia tinha', valor: meu.mudou!.ontem }, { linha: 'Hoje o dia tem', valor: meu.valor_dia_inteiro ?? meu.hoje ?? 0 }] }) : undefined
 
   return (
-    <div className="view">
-      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento">Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
+    <div className="view inicio-f29">
+      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento"><Icone nome="plano2029" />Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
       <RumoA2029 compacto />
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">
@@ -75,7 +78,7 @@ export function Inicio() {
           {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>}
           <div className="row-btns">
             <Qm texto titulo={n.estado === 'devendo' ? 'Seu mês' : 'Hoje você pode gastar'} linhas={n.linhas} nota={`A mesma conta do banco da família.${meu.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`} />
-            {porQue && <button type="button" className="explica-l" onClick={porQue}>Por que mudou?</button>}
+            {porQue && <button type="button" className="explica-l" onClick={porQue}><Icone nome="ajuda" />Por que mudou?</button>}
           </div>
         </section>
       ) : (
@@ -109,16 +112,16 @@ export function Inicio() {
           <ul className="list">
             {ult.map(l => (
               <li key={l.id} className="li">
-                <span className="tile">{textoPrivado((nomeEnv(l.envelope_id) || '?').charAt(0))}</span>
+                <span className="tile"><Icone nome="gasto" /></span>
                 <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(nomeEnv(l.envelope_id))}{textoPrivado(rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : '')} · pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} /> · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
                 <span className="v"><Din v={l.valor} /></span>
               </li>
             ))}
           </ul>
         ) : (
-          <Vazio ico={<Icone desenho={ListChecks} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum gasto ainda. É só o valor e 1 toque.</Vazio>
+          <SemGastosInicio anotar={() => abrirLancar()} />
         )}
-        {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}>Anotar gasto</button>}
+        {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar gasto</button>}
       </section>
     </div>
   )
@@ -177,3 +180,7 @@ function Placar({ r }: { r: ResumoHoje }) {
   )
 }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+export function SemGastosInicio({ anotar }: { anotar: () => void }) {
+  return <EstadoVazio ilustracao="SemGastos" titulo="Nenhum gasto ainda" frase="É só o valor e 1 toque." acao={{ texto: 'Anotar gasto', aoClicar: anotar }} />
+}

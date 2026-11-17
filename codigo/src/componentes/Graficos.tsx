@@ -1,3 +1,4 @@
+import './dinheiro-f29.css'
 import { useApp } from '../app/contexto'
 import { textoPrivado } from './privacidade'
 // C3 e pacote 2 do design (REFERENCIAS.md, padrões A, B e C): 3 gráficos em SVG feito à mão, sem biblioteca.

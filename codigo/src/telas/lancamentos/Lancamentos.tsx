@@ -1,3 +1,5 @@
+import './lancamentos.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -8,11 +10,11 @@ import { mesCurto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
-import { Trash2, Undo2, CreditCard, ListChecks, History, Pencil } from 'lucide-react'
+import { Trash2, Undo2, CreditCard, History, Pencil } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { cartaoMeu, donoDo, mexeNoLancamento, rotuloDono } from '../../app/dono'
-import { Din, Vazio } from '../../componentes/base'
+import { Din } from '../../componentes/base'
 import type { Cartao, Envelope, FamiliaMinha, Fatura, Lancamento } from '../../api/tipos'
 import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reais, somaDias } from '../../lib/formato'
 
@@ -90,10 +92,10 @@ function LancamentosFamilia() {
   }
 
   return (
-    <div className="view">
+    <div className="view lancamentos-f29">
       <div className="segbar">
         <div className="seg" role="group" aria-label="Mostrar">
-          <button type="button" aria-pressed={!lixeira} onClick={() => setLixeira(false)}>Gastos e entradas</button>
+          <button type="button" aria-pressed={!lixeira} onClick={() => setLixeira(false)}><Icone nome="lancamentos" />Gastos e entradas</button>
           <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Icone desenho={Trash2} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
         </div>
       </div>
@@ -102,11 +104,11 @@ function LancamentosFamilia() {
       {lixeira && <p className="todo"><Icone desenho={Trash2} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
       <div className={casal ? 'tela-larga lanc-larga' : undefined}>
       <section className="card">
-        {falha && <p className="aviso-erro" role="alert">Não foi possível buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
+        {falha && <div className="aviso-erro" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível buscar os lançamentos" frase={`${textoPrivado(falha)}. Eles continuam guardados no banco.`} acao={{ texto: 'Tentar novamente', aoClicar: () => setN(x => x + 1) }} /></div>}
         {!falha && !carregou && <p className="sub">Buscando os lançamentos…</p>}
         {!falha && carregou && !vis.length && (lixeira
-          ? <Vazio ico={<Icone desenho={Trash2} />}>A lixeira está vazia{meses.length > 1 ? ' nos meses abertos' : ' neste mês'}.</Vazio>
-          : <Vazio ico={<Icone desenho={ListChecks} />} acao={<Botao variante="primario" type="button" onClick={() => abrirLancar()}>Anotar gasto</Botao>}>Nenhum lançamento {meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.</Vazio>)}
+          ? <EstadoVazio ilustracao="TudoEmDia" titulo="A lixeira está vazia" frase={meses.length > 1 ? 'Nenhum gasto apagado nos meses abertos.' : 'Nenhum gasto apagado neste mês.'} />
+          : <EstadoVazio ilustracao="SemGastos" titulo={`Nenhum lançamento ${meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.`} frase="Comece pelo próximo gasto. A gente organiza com você." acao={{ texto: 'Anotar gasto', aoClicar: () => abrirLancar() }} />)}
         {dias.map(d => {
           const doDia = vis.filter(l => l.data === d)
           return (
@@ -118,7 +120,7 @@ function LancamentosFamilia() {
                   const mexe = mexeNoLancamento(l, envDe(l.envelope_id), familia), dono = rotuloDono(envDe(l.envelope_id), familia)
                   return (
                   <li key={l.id} className="li" {...(dono ? { 'data-do-outro': textoPrivado((envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família') } : {})}>
-                    <span className="tile">{textoPrivado(nomeEnv(l.envelope_id).charAt(0))}</span>
+                    <span className="tile"><Icone nome="gasto" /></span>
                     <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))} · Anotado por <NomeDaPessoa autoria pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} />{l.pago_por && <> · Pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.pago_por, nome: nomeDe(l.pago_por) }} /></>}{nomeCartao(l.cartao_id) ? <> · <Icone desenho={CreditCard} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
@@ -166,13 +168,13 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
         <p className="sub">Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.</p>
         <ul className="list">
           {envelopes.map(e => (
-            <li key={e.id} className="li" {...(rotuloDono(e, familia) ? { 'data-do-outro': textoPrivado(donoDo(e) || 'família') } : {})}><span className="tile">{textoPrivado(e.nome.charAt(0))}</span><span className="m"><b>{textoPrivado(e.nome)}</b><small>{textoPrivado(rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : '')}de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
+            <li key={e.id} className="li" {...(rotuloDono(e, familia) ? { 'data-do-outro': textoPrivado(donoDo(e) || 'família') } : {})}><span className="tile"><Icone nome="orcamento" /></span><span className="m"><b>{textoPrivado(e.nome)}</b><small>{textoPrivado(rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : '')}de <Din v={e.limite_mes} /> combinados</small></span><span className="v"><Din v={e.gasto_mes} /></span></li>
           ))}
         </ul>
       </section>
       <section className="card" aria-labelledby="ltCart">
         <div className="card-h"><h2 id="ltCart"><Icone nome="cartoes" />Próxima fatura de cada cartão</h2></div>
-        {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
+        {!proxPorCartao.length ? <EstadoVazio ilustracao="TudoEmDia" titulo="Nenhuma fatura com valor pela frente." frase="Você pode conferir os cartões quando precisar." /> : (
           <ul className="list">
             {proxPorCartao.map(f => (
               <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><Icone desenho={CreditCard} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{cartoes.find(c => c.id === f.cartao_id)?.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: cartoes.find(c => c.id === f.cartao_id)!.titular_id!, nome: doOutroCartao(f.cartao_id) }} /> · </>}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
@@ -196,10 +198,10 @@ export function totaisDoMes(mes: string, hoje: string, gastos: Lancamento[], rec
 }
 
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
-  return <><h3>Realizado</h3><div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-    {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome}><p>{nome}</p><Din v={valor} /></div>)}
+  return <><h3>Realizado</h3><div className="mes-indicadores">
+    {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal' : undefined}><p><Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />{nome}</p><Din v={valor} tam="mid" /></div>)}
   </div><h3>Previsto · ainda não recebido</h3><p>Entradas certas pendentes: <Din v={totais.previsto} /></p>
-  <p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês, inclusive atrasados. Incertos ficam fora. Previsto não entra no saldo realizado.</p></>
+  <details className="mes-como"><summary><Icone nome="ajuda" />Como ler este resumo</summary><p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês, inclusive atrasados. Incertos ficam fora. Previsto não entra no saldo realizado.</p></details></>
 }
 
 export function ResumoDoMes() {

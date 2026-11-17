@@ -1,3 +1,4 @@
+import './dinheiro-f29.css'
 import { useApp } from '../app/contexto'
 import { textoPrivado } from './privacidade'
 import type { Envelope } from '../api/tipos'
