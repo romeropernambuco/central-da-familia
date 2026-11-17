@@ -6,13 +6,8 @@ import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Din } from '../../componentes/base'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { textoPrivado } from '../../componentes/privacidade'
-import { centavos, hojeRecife } from '../../lib/formato'
-import type { Lancamento } from '../../api/tipos'
-export function porDiaDe(l: Lancamento[], envelope: string, hoje: string): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const x of l) if (!x.apagado_em && x.envelope_id === envelope && x.data.startsWith(hoje.slice(0, 7)) && x.data <= hoje && !x.parcela && !((x.parcelas || 1) > 1)) out[x.data] = centavos((out[x.data] || 0) + x.valor)
-  return out
-}
+import { hojeRecife } from '../../lib/formato'
+export { porDiaDe } from '../../lib/resumo/porDia'
 export function Inicio() {
   const { familia } = useApp()
   return familia?.papel !== 'equipe' ? <InicioFamilia /> : null

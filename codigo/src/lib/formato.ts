@@ -90,6 +90,12 @@ export function dataBr(iso: string): string {
   return `${dataCurta(iso)}/${a}`
 }
 
+/** Conferência humana: data civil, sem conversão de fuso do timestamp. */
+export function dataConferencia(iso: string, hoje = hojeRecife()): string {
+  const dia = iso.slice(0, 10)
+  return dia.slice(0, 4) === hoje.slice(0, 4) ? dataCurta(dia) : dataBr(dia)
+}
+
 /** "2026-11" ou "2026-11-03" vira "nov/26" */
 export function mesCurto(iso: string): string {
   const { a, m } = partes(iso)

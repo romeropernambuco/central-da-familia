@@ -1,0 +1,9 @@
+.saldo-form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.saldo-form>p{margin:0}
+.saldo-form .campo{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.saldo-form .campo>label{font-size:14px;font-weight:600;color:var(--ink-2)}
+.saldo-form .inp,.saldo-form .inp-rs{width:100%;min-width:0;box-sizing:border-box;min-height:44px}
+.saldo-form .campo>.inp-rs{display:flex;align-items:center;gap:8px;max-width:none;justify-self:stretch}
+.saldo-form .inp-rs input{min-width:0;width:100%}
+.saldo-form :is(input,select,button):focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.saldo-form button[type="submit"]{width:100%;min-height:44px}

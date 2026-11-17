@@ -230,7 +230,7 @@ export function Desejos() {
       <div className="col">
         <section className="card" aria-labelledby="dLista" data-secao="desejo">
           <div className="card-h"><h2 id="dLista"><Icone nome="desejos" />{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
-          {!falha && !carregando && lista && <p>{textoPrivado(`${totaisDesejos(lista).pensando} pensando · ${totaisDesejos(lista).combinados} combinados`)}</p>}
+          {!falha && !carregando && lista && <p>{textoPrivado(`${totaisDesejos(lista).pensando} pensando · ${plural(totaisDesejos(lista).combinados, 'combinado', 'combinados')}`)}</p>}
           {carregando && <p role="status">Buscando desejos…</p>}
           {falha && <p role="alert">Não foi possível buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}><Icone nome="desfazer" />Tentar novamente</button></p>}
           {lista === null ? null : !lista.length ? !falha && !carregando && <><EstadoVazio ilustracao="SemDesejos" titulo="Espaço para os próximos sonhos" frase="Crie seu primeiro desejo no formulário." /></> : (

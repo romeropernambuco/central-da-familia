@@ -1,7 +1,7 @@
 import { useApp } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { lerCasa, lerFaturas } from '../lib/resumo/leituras'
-import { hojeRecife } from '../lib/formato'
+import { hojeRecife, plural } from '../lib/formato'
 import { Din } from './base'
 import { textoPrivado } from './privacidade'
 export function ConferenciaFaturas() {
@@ -14,5 +14,5 @@ export function ConferenciaCasa() {
   const { api, familia, versao, oculto } = useApp()
   const r = useLeituraRemota('casa-conferir', familia?.papel === 'casal' ? () => lerCasa(api, familia.id, hojeRecife()) : null, [api, versao], 'resumo-familia:casa')
   if (familia?.papel !== 'casal') return null
-  return <section className="card"><h2>Conferência da Casa</h2>{r.carregando ? <p>Conferindo...</p> : r.erro ? <p>Não foi possível conferir <button onClick={r.repetir}>Tentar de novo</button></p> : r.dado && <p>{oculto ? '••••' : `${r.dado.feira ? 'Feira ainda sem confirmação' : 'Feira: sem pergunta pendente'} · ${r.dado.nota} notas pendentes · ${r.dado.estoque ? 'Estoque não conferido' : 'Estoque conferido'}${r.dado.falta === null ? '' : ` · ${r.dado.falta} itens em falta`}`}</p>}</section>
+  return <section className="card"><h2>Conferência da Casa</h2>{r.carregando ? <p>Conferindo...</p> : r.erro ? <p>Não foi possível conferir <button onClick={r.repetir}>Tentar de novo</button></p> : r.dado && <p>{oculto ? '••••' : `${r.dado.feira ? 'Feira ainda sem confirmação' : 'Feira em dia'} · ${plural(r.dado.nota, 'nota pendente', 'notas pendentes')} · ${r.dado.estoque ? 'Estoque: contagem pendente' : 'Estoque conferido'}${r.dado.falta === null ? '' : ` · ${plural(r.dado.falta, 'item em falta', 'itens em falta')}`}`}</p>}</section>
 }
