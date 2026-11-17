@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -104,7 +105,7 @@ export function Planejamento() {
       <div className="col col-toda"><RumoA2029 /><Parametros /></div>
       <div className="col">
         <section className="card" aria-labelledby="pLim">
-          <div className="card-h"><h2 id="pLim"><Wallet size={24} aria-hidden="true" />Limites do mês</h2></div>
+          <div className="card-h"><h2 id="pLim"><Icone desenho={Wallet} aria-hidden="true" />Limites do mês</h2></div>
           <p className="sub" style={{ marginBottom: 12 }}>Quanto cada um pode gastar por mês. Mudou aqui, muda o número de hoje.</p>
           <div>
             {resumo.envelopes.map(e => (
@@ -114,18 +115,18 @@ export function Planejamento() {
               </label>
             ))}
             <label className="linha-campo">
-              <span className="n"><span><Shield size={16} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Reserva</span><small>o dinheiro que a família combinou nunca gastar</small></span>
+              <span className="n"><span><Icone desenho={Shield} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Reserva</span><small>o dinheiro que a família combinou nunca gastar</small></span>
               <CampoValor valor={colchao} desligado={!casal} mudar={setColchao} />
             </label>
           </div>
-          {casal && <button className="btn primary" type="button" disabled={salvando} onClick={salvarLimites} style={{ marginTop: 14 }}><Save size={20} />Salvar limites</button>}
+          {casal && <button className="btn primary" type="button" disabled={salvando} onClick={salvarLimites} style={{ marginTop: 14 }}><Icone desenho={Save} />Salvar limites</button>}
           {/* E7 (F8): no mês do reajuste, o teto novo pela inflação; vale com os 2 aprovando */}
           {casal && <Reajuste envelopes={resumo.envelopes} mudaLimite={mudaLimite} />}
         </section>
       </div>
       <div className="col">
         <section className="card" aria-labelledby="pRen">
-          <div className="card-h"><h2 id="pRen">{sozinho ? 'Rendas do mês' : 'Rendas da família'}</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('renda')}><Plus size={16} />Renda</button>}</div>
+          <div className="card-h"><h2 id="pRen"><Icone nome="entrada" />{sozinho ? 'Rendas do mês' : 'Rendas da família'}</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('renda')}><Icone desenho={Plus} />Renda</button>}</div>
           <p className="lbl">{sobra >= 0 ? (sozinho ? 'Sobra prevista no mês' : 'Sobra prevista da família no mês') : 'Os limites passam da renda'}</p>
           <div className="numrow" style={{ marginBottom: 12 }}>
             {sobra >= 0 ? <Din v={sobra} className="s44" /> : <span className="din-warn"><Din v={-sobra} className="s44" /></span>}
@@ -150,24 +151,24 @@ export function Planejamento() {
           })()}
           {/* C17 (BRUNO ideia 2): a regra do salário cumprida, em 1 linha */}
           {extra && (extra.entrou > 0
-            ? <p className={'todo ' + (extra.guardado >= extra.entrou ? 'ok' : 'warn')} style={{ marginTop: 10 }}>{extra.guardado >= extra.entrou ? <CircleCheck size={20} aria-hidden="true" /> : null}<span>{sozinho ? '' : 'A família toda, os 2 juntos. '}Entrou a mais este mês: <b>{reais(extra.entrou)}</b>. Já guardado: <b>{reais(extra.guardado)}</b>. {extra.guardado >= extra.entrou ? 'Regra cumprida: conta para 2029.' : <>Falta guardar: <b>{reais(centavos(extra.entrou - extra.guardado))}</b>.</>}</span></p>
+            ? <p className={'todo ' + (extra.guardado >= extra.entrou ? 'ok' : 'warn')} style={{ marginTop: 10 }}>{extra.guardado >= extra.entrou ? <Icone desenho={CircleCheck} aria-hidden="true" /> : null}<span>{sozinho ? '' : 'A família toda, os 2 juntos. '}Entrou a mais este mês: <b>{reais(extra.entrou)}</b>. Já guardado: <b>{reais(extra.guardado)}</b>. {extra.guardado >= extra.entrou ? 'Regra cumprida: conta para 2029.' : <>Falta guardar: <b>{reais(centavos(extra.entrou - extra.guardado))}</b>.</>}</span></p>
             : <p className="sub" style={{ marginTop: 10 }}>Este mês não entrou dinheiro a mais. Quando entrar, ele vai pro guardado (fora do gasto do mês) e conta para 2029.</p>)}
           {casal && <button className="btn line sm" type="button" style={{ marginTop: 10 }} onClick={() => abrirLancar({ entrou: true })}>+ Entrou dinheiro a mais (vai pro guardado)</button>}
-          {!rendas.length && rendasLidas && <Vazio ico={<Banknote size={24} />} acao={casal ? <button className="btn line" type="button" onClick={() => setForm('renda')}><Plus size={20} />Anotar renda</button> : undefined}>Nenhum salário anotado ainda. Com ele, o app mostra quanto sobra no mês.</Vazio>}
+          {!rendas.length && rendasLidas && <Vazio ico={<Icone desenho={Banknote} />} acao={casal ? <button className="btn line" type="button" onClick={() => setForm('renda')}><Icone desenho={Plus} />Anotar renda</button> : undefined}>Nenhum salário anotado ainda. Com ele, o app mostra quanto sobra no mês.</Vazio>}
         </section>
 
         {/* E5: recebimentos com data, dentro do Planejamento (sem tela nova) */}
         <Recebimentos />
 
         <section className="card" aria-labelledby="pMet">
-          <div className="card-h"><h2 id="pMet"><Target size={24} aria-hidden="true" />Metas</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('meta')}><Plus size={16} />Meta</button>}</div>
+          <div className="card-h"><h2 id="pMet"><Icone desenho={Target} aria-hidden="true" />Metas</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('meta')}><Icone desenho={Plus} />Meta</button>}</div>
           {metas.map(m => (
             <div key={m.id} style={{ padding: '8px 0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{textoPrivado(m.nome)}</b><span className="sub"><Din v={m.guardado} /> de {reais(m.valor)}</span></div>
               <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true"><i style={{ width: (oculto ? 0 : Math.min(100, (m.guardado / (m.valor || 1)) * 100)) + '%' }} /></div>
             </div>
           ))}
-          {!metas.length && metasLidas && <Vazio ico={<Target size={24} />}>Nenhuma meta. Ex.: viagem de julho, material escolar.</Vazio>}
+          {!metas.length && metasLidas && <Vazio ico={<Icone desenho={Target} />}>Nenhuma meta. Ex.: viagem de julho, material escolar.</Vazio>}
         </section>
 
         {meses.length > 0 && (

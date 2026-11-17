@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
@@ -55,12 +57,12 @@ function MudarReceb({ r, fonte: inicial, pronto, fechar, mexer, salvarFonte }: {
       <CamposFonteReceita fonte={fonte} mudar={setFonte} inicio={r.mes_previsto} />
       <div className="campo"><span>Valor de cada recebimento</span><CampoValor valor={valor} mudar={setValor} rotulo="Valor de cada recebimento" /><small>Muda as ocorrências ainda não recebidas. Valores já conferidos são preservados.</small></div>
       {erro && <p role="alert">{erro}</p>}
-      <button className="btn primary full" type="submit" disabled={ocupado || !pronto}>Salvar fonte e valor</button>
+      <Botao variante="primario" className="full" type="submit" disabled={ocupado || !pronto}>Salvar fonte e valor</Botao>
     </form>
     <label className="campo"><span>Vai chegar em</span><CampoPrivado className="inp" type="month" value={mes} min={min} onChange={e => setMes(e.target.value)} /><small>O mês novo tem que ser depois do previsto. Em uma série, muda só a primeira ocorrência.</small></label>
-    <button className="btn line full" type="button" disabled={ocupado || !mesReceitaValido(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar para {mesReceitaValido(mes) ? textoPrivado(mesCurto(mes)) : 'o mês novo'}</button>
+    <Botao variante="secundario" className="full" type="button" disabled={ocupado || !mesReceitaValido(mes) || mes <= r.mes_previsto} onClick={() => mexer({ mes_novo: mes }, `${r.descricao}: agora entra em ${mesCurto(mes)}.`)}>Mudar para {mesReceitaValido(mes) ? textoPrivado(mesCurto(mes)) : 'o mês novo'}</Botao>
     {certeza && <p role="status">Tirar {textoPrivado(r.descricao)} da lista? Deixa de entrar na previsão. O histórico fica guardado.</p>}
-    <button className="btn ghost full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Confirmar: tirar ' + textoPrivado(r.descricao) : 'Não vai mais entrar: tirar da lista'}</button>
+    <Botao variante="fantasma" className="full" type="button" disabled={ocupado} onClick={() => { if (!certeza) { setCerteza(true); return } mexer({ apagar: true }, `${r.descricao} saiu da lista. Nada é apagado de vez.`) }}>{certeza ? 'Confirmar: tirar ' + textoPrivado(r.descricao) : 'Não vai mais entrar: tirar da lista'}</Botao>
   </Sheet>
 }
 
@@ -139,13 +141,13 @@ function RecebimentosCasal() {
   const chegaram = (lista || []).filter(r => r.recebido_em && r.recebido_em.slice(0, 7) >= hoje.slice(0, 7))
   return (
     <section className="card" aria-labelledby="pRec">
-      <div className="card-h"><h2 id="pRec"><CalendarClock size={24} aria-hidden="true" />Recebimentos com data</h2><button className="lnk" type="button" onClick={() => setNovo(true)}><Plus size={16} />Recebimento</button></div>
+      <div className="card-h"><h2 id="pRec"><Icone desenho={CalendarClock} aria-hidden="true" />Recebimentos com data</h2><button className="lnk" type="button" onClick={() => setNovo(true)}><Icone desenho={Plus} />Recebimento</button></div>
       <p className="sub" style={{ marginBottom: 8 }}>Receitas da família, inclusive empresas e novos negócios. Só Garantido entra no número oficial de 2029. Só o dono lança e muda.</p>
       {api.modo === 'exemplo' && <p className="sub">Exemplo: receitas e valores inventados. Nenhuma alteração vai para a família real.</p>}
       {fontes.erro && <p role="alert">Não foi possível abrir o cadastro de fontes. {textoPrivado(fontes.erro)} <button type="button" onClick={() => recarregar()}>Conferir novamente</button></p>}
       {fontes.pronto && <CenariosReceitas fontes={fontes.fontes} controle={fontes.controle} revisao={n} />}
       {!falha && !carregando && lista && fontes.pronto && !lista.some(r => ['empresa', 'negocio_novo'].includes(fontes.fontes[r.id]?.origem)) && <p>Tem uma empresa ou negócio novo que vai gerar receita? <button type="button" className="lnk" onClick={() => setNovo(true)}>Cadastre aqui</button></p>}
-      {!falha && !carregando && lista && !lista.length && <Vazio ico={<CalendarClock size={24} />} acao={<button className="btn line" type="button" onClick={() => setNovo(true)}><Plus size={20} />Anotar recebimento</button>}>Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro.</Vazio>}
+      {!falha && !carregando && lista && !lista.length && <Vazio ico={<Icone desenho={CalendarClock} />} acao={<Botao variante="secundario" type="button" onClick={() => setNovo(true)}><Icone desenho={Plus} />Anotar recebimento</Botao>}>Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro.</Vazio>}
       {carregando && <p role="status">Buscando recebimentos…</p>}
       {falha && <p role="alert">Não foi possível buscar recebimentos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
       <ul className="list">
@@ -166,8 +168,8 @@ function RecebimentosCasal() {
                 {/* atrasado: nunca some; o dono responde quando chega */}
                 {!!meses.length && s.atrasado && certo && <span className="sub" style={{ marginTop: 6 }}>{textoPrivado(`Era para ${mesCurto(previsto)} e ainda não chegou. Na conta, foi para ${mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.${s.pergunta ? ' Você pode conferir quando chegar.' : ''}`)}</span>}
                 {r.meu && <span className="row-btns" style={{ marginTop: 8 }}>
-                  {!!meses.length && <button className="btn sm line" type="button" disabled={!fontes.pronto} onClick={() => { invalidarDados(api, familia.id); setConferir(r) }}><Check size={16} />Chegou</button>}
-                  <button className="btn sm ghost" type="button" onClick={() => setMudar(r)}>Mudar o mês ou tirar</button>
+                  {!!meses.length && <Botao variante="secundario" className="sm" type="button" disabled={!fontes.pronto} onClick={() => { invalidarDados(api, familia.id); setConferir(r) }}><Icone desenho={Check} />Chegou</Botao>}
+                  <Botao variante="fantasma" className="sm" type="button" onClick={() => setMudar(r)}>Mudar o mês ou tirar</Botao>
                 </span>}
               </span>
               <span className="v"><Din v={r.valor} /></span>
@@ -241,7 +243,7 @@ function NovoReceb({ fechar, salvar, salvo }: { fechar: () => void; salvar: (r: 
         <CamposFonteReceita fonte={fonte || fonteInicial(true)} mudar={setFonte} inicio={mes} />
         {aguardando && <p role="status">Aguardando conferência <button type="button" disabled={ocupado} onClick={conferir}>Conferir novamente</button></p>}
         {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-        <button className="btn primary full" type="submit" disabled={ocupado || aguardando}>Anotar</button>
+        <Botao variante="primario" className="full" type="submit" disabled={ocupado || aguardando}>Anotar</Botao>
       </form>
     </Sheet>
   )

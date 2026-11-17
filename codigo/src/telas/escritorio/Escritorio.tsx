@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { useModoFuncionario } from '../../componentes/AgenteDaAba'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { copiarProtegido } from '../../componentes/privacidade'
@@ -61,7 +62,7 @@ function Hoje() {
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
   // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
   const funcs = useEquipeCompleta(e?.funcionarios)
-  if (estado === 'desligado') return <div className="card"><Vazio ico={<ClipboardList size={24} />}>O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia.</Vazio></div>
+  if (estado === 'desligado') return <div className="card"><Vazio ico={<Icone desenho={ClipboardList} />}>O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia.</Vazio></div>
   if (estado === 'erro') return <div className="card"><p className="aviso-erro" role="alert">Não foi possível conferir. <button type="button" onClick={atualizar}>Tentar de novo</button></p></div>
   if (!e) return <div className="card"><p className="sub">Chamando a equipe…</p></div>
 
@@ -77,14 +78,14 @@ function Hoje() {
       <div className="esc-frase">
         <h2>{fraseDoDia(fila.length)}{fila.length ? ' hoje' : ''}</h2>
         <p className="sub">{fila.length ? 'Quem precisa de você está de pé, na frente da sala, acenando. Toque num funcionário pra abrir a ficha dele: a pergunta, o que ele cuida e o que você já respondeu.' : 'Tudo em ordem. Toque num funcionário pra ver o que ele cuida e o que você já respondeu pra ele.'}</p>
-        {primeiro && <button type="button" className="btn primary" onClick={() => setSel(primeiro.id)}>Responder {textoPrivado(primeiro.nome)}<ChevronRight size={18} /></button>}
+        {primeiro && <button type="button" className="btn primary" onClick={() => setSel(primeiro.id)}>Responder {textoPrivado(primeiro.nome)}<Icone desenho={ChevronRight} /></button>}
       </div>
       <div className="esc-grade">
         <section className="card esc-cena-card" aria-label="O escritório da família em 3D">
           {modo === 'completo' && <><button type="button" className="btn line" onClick={() => { window.dispatchEvent(new Event('escritorio3d-abrir')); setMostrarCena(true) }}>Ver o escritório completo em 3D</button>{mostrarCena && <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />}</>}
         </section>
         <section className="card" aria-labelledby="eEq">
-          <div className="card-h"><h2 id="eEq">A equipe, sala por sala</h2></div>
+          <div className="card-h"><h2 id="eEq"><Icone nome="escritorio" />A equipe, sala por sala</h2></div>
           {salas.map(k => (
             <div key={k} className="esc-sala">
               <h3>{SALAS_NOME[k]}</h3>
@@ -94,7 +95,7 @@ function Hoje() {
                     <button className="li" type="button" data-func={f.id} onClick={() => setSel(f.id)} aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir a ficha.`)}>
                       <FuncIco id={f.id} precisa={f.estado === 'precisa_de_voce'} />
                       <span className="m"><b className="quebra">{textoPrivado(f.nome)}</b><small style={{ whiteSpace: 'normal' }}>{textoPrivado(oculto ? '\u2022\u2022\u2022' : f.frase)}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></span>
-                      <ChevronRight size={20} className="muted" aria-hidden="true" />
+                      <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
                     </button>
                   </li>
                 ))}
@@ -154,7 +155,7 @@ function RelatorioPeriodo({ dias }: { dias: number }) {
     <>
 
       <section className="card" aria-labelledby="rNum">
-        <div className="card-h"><h2 id="rNum">Cobrou, respondeu, resolveu</h2></div>
+        <div className="card-h"><h2 id="rNum"><Icone nome="salvo" />Cobrou, respondeu, resolveu</h2></div>
         <dl className="rel-ind">
           <div><dt>Perguntas feitas</dt><dd>{tot.p}</dd></div>
           <div><dt>Respondidas</dt><dd>{tot.r}</dd></div>
@@ -175,9 +176,9 @@ function RelatorioPeriodo({ dias }: { dias: number }) {
         )}
       </section>
       <section className="card" aria-labelledby="rDia">
-        <div className="card-h"><h2 id="rDia">Diário</h2>{r.diario.length > 0 && <button className="lnk" type="button" onClick={copiar}><Copy size={16} />Copiar relatório</button>}</div>
+        <div className="card-h"><h2 id="rDia"><Icone nome="lancamentos" />Diário</h2>{r.diario.length > 0 && <button className="lnk" type="button" onClick={copiar}><Icone desenho={Copy} />Copiar relatório</button>}</div>
         {copiaTentada && <div className="campo"><span>{copiado ? 'Relatório copiado. Se não colar, copie daqui:' : 'Não foi possível copiar. Copie daqui:'}</span><textarea className="inp area" readOnly rows={6} value={texto} aria-label="Texto do relatório" /></div>}
-        {!r.diario.length ? <Vazio ico={<ClipboardList size={24} />}>Nenhuma resposta anotada nesse período. Quando você responder uma pergunta do Escritório, ela aparece aqui.</Vazio> : (
+        {!r.diario.length ? <Vazio ico={<Icone desenho={ClipboardList} />}>Nenhuma resposta anotada nesse período. Quando você responder uma pergunta do Escritório, ela aparece aqui.</Vazio> : (
           Object.keys(porDia).sort().reverse().map(dia => (
             <div key={dia}>
               <p className="dayh">{dia === hojeRecife() ? 'Hoje' : `${diaSemana(dia)}, ${dataCurta(dia)}`}</p>
@@ -221,7 +222,7 @@ function Lembretes() {
     api.lembretes(familia.id).then(l => { if (vivo) { setLista(l); setErro('') } }).catch((x: Error) => { if (vivo) setErro(x.message) })
     return () => { vivo = false }
   }, [api, familia?.id, versao])
-  if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<BellRing size={24} />}>Os lembretes são do casal. Peça pra quem cuida da família criar um pra você.</Vazio></div>
+  if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Icone desenho={BellRing} />}>Os lembretes são do casal. Peça pra quem cuida da família criar um pra você.</Vazio></div>
 
   const criar = () => trava(async () => {
     if (!familia) return
@@ -239,7 +240,7 @@ function Lembretes() {
     <div className="tela-larga">
       <div className="col">
         <section className="card" aria-labelledby="lNovo">
-          <div className="card-h"><h2 id="lNovo">Novo lembrete</h2></div>
+          <div className="card-h"><h2 id="lNovo"><Icone nome="lancar" />Novo lembrete</h2></div>
           <div className="form-l">
             <label className="campo"><span>O quê</span><CampoPrivado className="inp" value={titulo} maxLength={120} placeholder="Ex.: Renovar o seguro do carro" onChange={ev => setTitulo(ev.target.value)} /></label>
             <label className="campo"><span>Quando</span><CampoPrivado className="inp" type="datetime-local" value={quando} onChange={ev => setQuando(ev.target.value)} /></label>
@@ -247,16 +248,16 @@ function Lembretes() {
               <div className="pills" role="group" aria-labelledby="lRep">{REPETE.map(([r, n]) => <button key={r} type="button" className="pill" aria-pressed={repetir === r} onClick={() => setRepetir(r)}>{n}</button>)}</div>
             </div>
             {falta && <p className="erro" role="alert">{textoPrivado(falta)}</p>}
-            <button className="btn primary" type="button" disabled={gravando} onClick={criar}><Plus size={20} />Guardar lembrete</button>
+            <button className="btn primary" type="button" disabled={gravando} onClick={criar}><Icone desenho={Plus} />Guardar lembrete</button>
             <p className="sub">Na hora marcada, a Secretária pergunta no Início e no Escritório. Ela cobra de novo todo dia até você dizer que fez ou marcar outro dia.</p>
           </div>
         </section>
       </div>
       <div className="col">
         <section className="card" aria-labelledby="lLista">
-          <div className="card-h"><h2 id="lLista">Lembretes guardados</h2>{lista && lista.length > 0 && <span className="chip">{lista.length}</span>}</div>
+          <div className="card-h"><h2 id="lLista"><Icone nome="pendente" />Lembretes guardados</h2>{lista && lista.length > 0 && <span className="chip">{lista.length}</span>}</div>
           {erro && !lista ? <p className="aviso-erro" role="alert">Não deu pra buscar os lembretes: {textoPrivado(erro)}</p> : !lista ? <p className="sub">Buscando…</p> : !lista.length ? (
-            <Vazio ico={<BellRing size={24} />}>Nenhum lembrete guardado. Crie o primeiro com os 3 campos {window.innerWidth < 900 ? 'acima' : 'ao lado'}.</Vazio>
+            <Vazio ico={<Icone desenho={BellRing} />}>Nenhum lembrete guardado. Crie o primeiro com os 3 campos {window.innerWidth < 900 ? 'acima' : 'ao lado'}.</Vazio>
           ) : (
             <ul className="list lemb">
               {lista.map(l => {
@@ -271,7 +272,7 @@ function Lembretes() {
                     <div className="lemb-b">
                       <button className="btn sm primary" type="button" onClick={() => agir(() => api.lembreteConcluir(familia!.id, l.id), l.repetir === 'nunca' ? 'Feito. Lembrete encerrado.' : 'Feito. Volta na próxima data.')}>Já fiz</button>
                       <button className="btn sm line" type="button" onClick={() => agir(() => api.lembreteAdiar(familia!.id, l.id, quandoDeRecife(`${somaDias(venceu ? hojeRecife() : dia, 1)}T${localDeRecife(l.quando).slice(11, 16)}`)), 'Adiado 1 dia.')}>Adiar 1 dia</button>
-                      <button className="iconbtn" type="button" aria-label={textoPrivado(`Apagar o lembrete ${mostrar(l.titulo)}`)} onClick={() => agir(() => api.lembreteApagar(familia!.id, l.id), 'Lembrete apagado.')}><Trash2 size={20} /></button>
+                      <button className="iconbtn" type="button" aria-label={textoPrivado(`Apagar o lembrete ${mostrar(l.titulo)}`)} onClick={() => agir(() => api.lembreteApagar(familia!.id, l.id), 'Lembrete apagado.')}><Icone desenho={Trash2} /></button>
                     </div>
                   </li>
                 )

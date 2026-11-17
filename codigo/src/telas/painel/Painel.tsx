@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { CircleCheck, TriangleAlert, Lock } from 'lucide-react'
@@ -11,7 +12,7 @@ export function Painel() {
   const [nums, setNums] = useState<Numero[] | null>(null)
   const [erro, setErro] = useState('')
   useEffect(() => { api.numerosSemana().then(setNums).catch(e => setErro((e as Error).message)) }, [api])
-  if (!sessao?.dono) return <div className="card"><p className="todo"><Lock size={20} aria-hidden="true" />Esta tela é só do dono do produto.</p></div>
+  if (!sessao?.dono) return <div className="card"><p className="todo"><Icone desenho={Lock} aria-hidden="true" />Esta tela é só do dono do produto.</p></div>
   return (
     <div className="view">
       <RumoA2029 oficial />
@@ -20,7 +21,7 @@ export function Painel() {
       <div className="nums">
         {(nums || []).map(n => (
           <section className="card" key={n.chave} aria-label={textoPrivado(n.nome)}>
-            <div className="card-h"><h2>{textoPrivado(n.nome)}</h2><span className={'chip ' + (n.ok ? 'ok' : 'warn')}>{n.ok ? <CircleCheck size={14} /> : <TriangleAlert size={14} />}{n.meta}</span></div>
+            <div className="card-h"><h2>{textoPrivado(n.nome)}</h2><span className={'chip ' + (n.ok ? 'ok' : 'warn')}>{n.ok ? <Icone desenho={CircleCheck} /> : <Icone desenho={TriangleAlert} />}{n.meta}</span></div>
             <p className="din big">{textoPrivado(n.texto)}</p>
             <p className="sub" style={{ marginTop: 6 }}><b>De onde veio esse número?</b> {textoPrivado(n.explicacao)}</p>
           </section>

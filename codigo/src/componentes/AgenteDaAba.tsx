@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { nomeInformado } from '../lib/nomePessoa'
 import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
@@ -183,7 +184,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  {conversa && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome) && <p className="sub">Olá, {textoPrivado(familia!.membroNome, oculto)}.</p>}
  {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
  {modo !== 'desligado' && <button type="button" className="btn line" aria-expanded={conversa} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
- <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<ChevronDown size={18} aria-hidden="true" /></button>
+ <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
  <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>

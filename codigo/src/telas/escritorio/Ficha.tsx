@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { rascunhos } from '../../app/rascunhos'
 import { validarNome } from '../../lib/nomePessoa'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -163,7 +164,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
   )
   return (
     <div className="cad" data-cad={nome}>
-      <div className="cad-h"><b>{nome}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Plus size={16} />{novo}</button>}</div>
+      <div className="cad-h"><b>{nome}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Icone desenho={Plus} />{novo}</button>}</div>
       {aberto === '+' && formulario(null)}
       {!itens.length && aberto !== '+' && <p className="sub">{vazio}</p>}
       <ul className="list">
@@ -172,7 +173,7 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
             <div className="cad-l">
               <span className="m"><b>{typeof titulo(t) === 'string' ? textoPrivado(titulo(t)) : titulo(t)}</b><small>{textoPrivado(sub(t))}</small></span>
               {lado && <span className="v">{lado(t)}</span>}
-              {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Pencil size={18} /></button>}
+              {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Icone desenho={Pencil} /></button>}
             </div>
             {extra && extra(t)}
             {aberto === chave(t) && formulario(t)}
@@ -255,7 +256,7 @@ function CadCartao() {
         titulo={f => { if (oculto) return '\u2022\u2022\u2022'; const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
         sub={f => { const b = doBanco(f); const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
           return <>eu somei {reais(f.total)}{b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco'}{Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : ''} · vence {dataCurta(f.vencimento)}</> }}
-        lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Check size={14} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
+        lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Icone desenho={Check} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
         campos={[{ k: 'valor_banco', rotulo: 'Valor que veio no banco', tipo: 'valor', dica: 'Olhe no app do banco. Se for diferente da minha soma, eu mostro a diferença.' }, { k: 'paga_em', rotulo: 'Paga em (deixe vazio se ainda não pagou)', tipo: 'data' }]}
         paraForm={f => { const b = f ? doBanco(f) : null; return { valor_banco: vt(b?.valor_banco), paga_em: b?.paga_em || '' } }}
         salvar={async (fm, f) => { if (fm.valor_banco && !valorDigitadoValido(fm.valor_banco)) return 'Digite o valor como aparece no banco, por exemplo 2.512,00.'; await api.faturaInformar(familia!.id, f!.cartao_id, f!.mes, { valor_banco: val(fm.valor_banco), paga_em: fm.paga_em || null }) }} />
@@ -285,7 +286,7 @@ function CadFiscal() {
         titulo={f => `Feira de ${dataCurta(f.data)}${f.loja ? ` · ${f.loja}` : ''}`}
         sub={f => <>{f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? <>sem nota: {textoPrivado(f.sem_nota_motivo)}</> : 'falta a nota'} · quem fez: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `feira:${f.id}`, nome: f.feita_por }} /></>}
         lado={f => (!equipe && f.valor != null ? <Din v={f.valor} /> : null)}
-        extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Camera size={16} />Anexar a nota</button> : null)}
+        extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Icone desenho={Camera} />Anexar a nota</button> : null)}
         campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []), { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
         paraForm={f => ({ data: f?.data || hojeRecife(), valor: vt(f?.valor), loja: f?.loja || '', motivo: f?.sem_nota_motivo || '' })}
         salvar={async (fm, f) => {
@@ -294,7 +295,7 @@ function CadFiscal() {
           await api.feiraRegistrar(familia!.id, { data: fm.data, ...(equipe ? {} : { valor: val(fm.valor)! }), loja: fm.loja.trim() })
         }} />
       <div className="cad" data-cad="Contagens">
-        <div className="cad-h"><b>Contagens do estoque</b><button type="button" className="btn line sm" aria-expanded={contando} onClick={() => setContando(!contando)}><Plus size={16} />Contar agora</button></div>
+        <div className="cad-h"><b>Contagens do estoque</b><button type="button" className="btn line sm" aria-expanded={contando} onClick={() => setContando(!contando)}><Icone desenho={Plus} />Contar agora</button></div>
         {contando && <Contagem gravando={gravando} salvar={async itens => { setGravando(true); const ok = await tentar(() => api.estoqueContar(familia!.id, itens)); setGravando(false); if (ok) { setContando(false); toast('Contagem salva.'); await recarregar() } }} />}
         {est && !est.contagens.length && <p className="sub">Nenhuma contagem ainda.</p>}
         <ul className="list">{(est?.contagens || []).slice(0, 4).map(c => { const ac = c.itens.filter(i => i.estado === 'acabou').length, po = c.itens.filter(i => i.estado === 'pouco').length
@@ -361,10 +362,10 @@ function CadGuardado() {
   const g = useBusca<GuardadoHoje>(f => api.guardadoHoje(f))
   return (
     <div className="cad" data-cad="Aplicações">
-      <div className="cad-h"><b>Onde o dinheiro está guardado</b><a className="btn line sm" href="#/guardado?nova=1" onClick={e => abrirAtalhoGuardado(e, 'nova')}><Plus size={16} />Nova aplicação</a></div>
+      <div className="cad-h"><b>Onde o dinheiro está guardado</b><a className="btn line sm" href="#/guardado?nova=1" onClick={e => abrirAtalhoGuardado(e, 'nova')}><Icone desenho={Plus} />Nova aplicação</a></div>
       {g && !g.aplicacoes.length && <p className="sub">Nada guardado ainda. Toque em "Nova aplicação".</p>}
       <ul className="list">{(g?.aplicacoes || []).map(a => <li key={a.id}><div className="cad-l"><span className="m"><b>{textoPrivado(a.nome)}</b><small>{rendeQuanto(a, true)} · rendeu hoje {reais(a.rendeu_hoje_liquido)}</small></span><span className="v"><Din v={a.saldo} /></span></div></li>)}</ul>
-      <div className="row-btns" style={{ marginTop: 8 }}><a className="btn line sm" href="#/guardado?guardar=1" onClick={e => abrirAtalhoGuardado(e, 'aporte')}>Guardar dinheiro</a><a className="btn line sm" href="#/guardado?tirar=1" onClick={e => abrirAtalhoGuardado(e, 'resgate')}>Tirar dinheiro</a><a className="btn ghost sm" href="#/guardado">Abrir o Guardado<ChevronRight size={16} /></a></div>
+      <div className="row-btns" style={{ marginTop: 8 }}><a className="btn line sm" href="#/guardado?guardar=1" onClick={e => abrirAtalhoGuardado(e, 'aporte')}>Guardar dinheiro</a><a className="btn line sm" href="#/guardado?tirar=1" onClick={e => abrirAtalhoGuardado(e, 'resgate')}>Tirar dinheiro</a><a className="btn ghost sm" href="#/guardado">Abrir o Guardado<Icone desenho={ChevronRight} /></a></div>
     </div>
   )
 }

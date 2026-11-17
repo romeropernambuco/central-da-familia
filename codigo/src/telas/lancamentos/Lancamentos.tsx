@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useConfig } from '../../app/useConfig'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
@@ -92,19 +94,19 @@ function LancamentosFamilia() {
       <div className="segbar">
         <div className="seg" role="group" aria-label="Mostrar">
           <button type="button" aria-pressed={!lixeira} onClick={() => setLixeira(false)}>Gastos e entradas</button>
-          <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Trash2 size={18} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
+          <button type="button" aria-pressed={lixeira} onClick={() => setLixeira(true)}><Icone desenho={Trash2} />Lixeira{naLixeira ? ` (${naLixeira})` : ''}</button>
         </div>
       </div>
       {!lixeira && casal && <ResumoDoMes />}
       {!lixeira && api.corrigirLancamento && <p className="sub">Errou o valor ou o limite? Toque no lápis para corrigir ou apagar. O que for apagado fica na lixeira.{familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}</p>}
-      {lixeira && <p className="todo"><Trash2 size={20} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
+      {lixeira && <p className="todo"><Icone desenho={Trash2} aria-hidden="true" /><span>O que está aqui <b>não entra na conta</b>. Toque na setinha de voltar se apagou sem querer.</span></p>}
       <div className={casal ? 'tela-larga lanc-larga' : undefined}>
       <section className="card">
         {falha && <p className="aviso-erro" role="alert">Não foi possível buscar os lançamentos: {falha} Eles continuam guardados no banco.</p>}
         {!falha && !carregou && <p className="sub">Buscando os lançamentos…</p>}
         {!falha && carregou && !vis.length && (lixeira
-          ? <Vazio ico={<Trash2 size={24} />}>A lixeira está vazia{meses.length > 1 ? ' nos meses abertos' : ' neste mês'}.</Vazio>
-          : <Vazio ico={<ListChecks size={24} />} acao={<button className="btn primary" type="button" onClick={() => abrirLancar()}>Anotar gasto</button>}>Nenhum lançamento {meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.</Vazio>)}
+          ? <Vazio ico={<Icone desenho={Trash2} />}>A lixeira está vazia{meses.length > 1 ? ' nos meses abertos' : ' neste mês'}.</Vazio>
+          : <Vazio ico={<Icone desenho={ListChecks} />} acao={<Botao variante="primario" type="button" onClick={() => abrirLancar()}>Anotar gasto</Botao>}>Nenhum lançamento {meses.length > 1 ? 'nos meses abertos' : `em ${mesLongo(meses[0] + '-01')}`}.</Vazio>)}
         {dias.map(d => {
           const doDia = vis.filter(l => l.data === d)
           return (
@@ -117,14 +119,14 @@ function LancamentosFamilia() {
                   return (
                   <li key={l.id} className="li" {...(dono ? { 'data-do-outro': textoPrivado((envDe(l.envelope_id) && donoDo(envDe(l.envelope_id)!)) || 'família') } : {})}>
                     <span className="tile">{textoPrivado(nomeEnv(l.envelope_id).charAt(0))}</span>
-                    <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))} · Anotado por <NomeDaPessoa autoria pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} />{l.pago_por && <> · Pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.pago_por, nome: nomeDe(l.pago_por) }} /></>}{nomeCartao(l.cartao_id) ? <> · <CreditCard size={13} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
+                    <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(dono ? (dono.endsWith(nomeEnv(l.envelope_id)) ? cap(dono) : `${nomeEnv(l.envelope_id)} ${dono}`) : nomeEnv(l.envelope_id))} · Anotado por <NomeDaPessoa autoria pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} />{l.pago_por && <> · Pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.pago_por, nome: nomeDe(l.pago_por) }} /></>}{nomeCartao(l.cartao_id) ? <> · <Icone desenho={CreditCard} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(nomeCartao(l.cartao_id))}</> : null}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}` : ''}</small></span>
                     <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Din v={l.valor} />
                       {l.parcela || !mexe ? null : lixeira
-                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={`Trazer de volta ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Trazer de volta"><Undo2 size={20} /></button>
+                        ? <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => restaurar(l)} aria-label={`Trazer de volta ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Trazer de volta"><Icone desenho={Undo2} /></button>
                         // B14: só o lápis na linha; a lixeira fica dentro do Corrigir (sem o risco de apagar por engano)
-                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={`Corrigir ou apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Corrigir"><Pencil size={19} /></button>
-                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={`Apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`}><Trash2 size={20} /></button>}
+                        : api.corrigirLancamento ? <button className="iconbtn" type="button" onClick={() => abrirLancar({ corrigir: l })} aria-label={`Corrigir ou apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`} title="Corrigir"><Icone desenho={Pencil} /></button>
+                        : <button className="iconbtn" type="button" disabled={ocupado === l.id} onClick={() => apagar(l)} aria-label={`Apagar ${textoPrivado(l.descricao || 'gasto')} de ${reais(l.valor)}`}><Icone desenho={Trash2} /></button>}
                     </span>
                   </li>
                   )
@@ -136,7 +138,7 @@ function LancamentosFamilia() {
         {carregou && maisMeses && (
           <div className="mais-meses">
             <p className="sub">Aparecendo: {meses.length === 1 ? mesLongo(meses[0] + '-01') : `de ${mesLongo(meses[meses.length - 1] + '-01')} a ${mesLongo(meses[0] + '-01')}`}.</p>
-            <button className="btn line" type="button" disabled={buscandoMes} onClick={() => { setBuscandoMes(true); setMeses([...meses, proximo]) }}><History size={20} />{buscandoMes ? 'Buscando…' : `Ver meses anteriores (${mesLongo(proximo + '-01')})`}</button>
+            <Botao variante="secundario" type="button" disabled={buscandoMes} onClick={() => { setBuscandoMes(true); setMeses([...meses, proximo]) }}><Icone desenho={History} />{buscandoMes ? 'Buscando…' : `Ver meses anteriores (${mesLongo(proximo + '-01')})`}</Botao>
           </div>
         )}
       </section>
@@ -160,7 +162,7 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
   return (
     <aside className="col lanc-totais" aria-label="Totais do mês">
       <section className="card" aria-labelledby="ltMes">
-        <div className="card-h"><h2 id="ltMes">Este mês, por limite</h2></div>
+        <div className="card-h"><h2 id="ltMes"><Icone nome="orcamento" />Este mês, por limite</h2></div>
         <p className="sub">Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.</p>
         <ul className="list">
           {envelopes.map(e => (
@@ -169,11 +171,11 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
         </ul>
       </section>
       <section className="card" aria-labelledby="ltCart">
-        <div className="card-h"><h2 id="ltCart">Próxima fatura de cada cartão</h2></div>
+        <div className="card-h"><h2 id="ltCart"><Icone nome="cartoes" />Próxima fatura de cada cartão</h2></div>
         {!proxPorCartao.length ? <p className="sub">Nenhuma fatura com valor pela frente.</p> : (
           <ul className="list">
             {proxPorCartao.map(f => (
-              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><CreditCard size={20} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{cartoes.find(c => c.id === f.cartao_id)?.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: cartoes.find(c => c.id === f.cartao_id)!.titular_id!, nome: doOutroCartao(f.cartao_id) }} /> · </>}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
+              <li key={f.cartao_id + f.mes} className="li" {...(doOutroCartao(f.cartao_id) ? { 'data-do-outro': textoPrivado(doOutroCartao(f.cartao_id)!) } : {})}><span className="tile"><Icone desenho={CreditCard} aria-hidden="true" /></span><span className="m"><b>{textoPrivado(f.cartao)}</b><small>{cartoes.find(c => c.id === f.cartao_id)?.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: cartoes.find(c => c.id === f.cartao_id)!.titular_id!, nome: doOutroCartao(f.cartao_id) }} /> · </>}vence {dataCurta(f.vencimento)}</small></span><span className="v"><Din v={f.total} /></span></li>
             ))}
           </ul>
         )}
@@ -214,13 +216,13 @@ export function ResumoDoMes() {
   if (!permitido) return null
   return <section className="card" aria-label="Resumo do mês">
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      <button type="button" className="btn line" aria-label="Mês anterior" onClick={() => setMes(mesMais(mes, -1))}>←</button>
+      <Botao type="button" variante="secundario" aria-label="Mês anterior" onClick={() => setMes(mesMais(mes, -1))}>←</Botao>
       <h2>{mesCurto(mes + '-01')}</h2>
-      <button type="button" className="btn line" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes(mesMais(mes, 1))}>→</button>
+      <Botao type="button" variante="secundario" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes(mesMais(mes, 1))}>→</Botao>
     </div>
     {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro || falhaEntradas ? <p role="alert">Não foi possível atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
       : carregando || !dado || !leuEntradas ? <p role="status">Buscando resumo…</p> : <><FaixaDoMes totais={totaisDoMes(mes, hoje, dado.gastos, dado.recebimentos, entradas)} /><p className="sub">Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.</p></>}
-    {mes < atual && <><button type="button" className="btn line" onClick={() => setVerFechamento(v => !v)}>{verFechamento ? 'Ocultar fechamento registrado' : 'Ver fechamento registrado'}</button>
+    {mes < atual && <><Botao type="button" variante="secundario" onClick={() => setVerFechamento(v => !v)}>{verFechamento ? 'Ocultar fechamento registrado' : 'Ver fechamento registrado'}</Botao>
       {verFechamento && <FechamentoRegistrado key={`${familia?.id}:${mes}`} mes={mes} />}</>}
   </section>
 }

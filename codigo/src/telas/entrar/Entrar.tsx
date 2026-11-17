@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { prepararAcolhimento } from '../../lib/acolhimento'
 import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
@@ -45,26 +47,26 @@ export function Entrar() {
             <small>Você receberá um código de 6 números neste e-mail. Não é preciso criar uma senha.</small>
           </label>
           {erro && <AvisoConvite mensagem={erro} />}
-          <button className="btn primary full" disabled={ocupado} type="submit"><Mail size={20} />Receber o código</button>
-          <button className="btn line equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Users size={22} aria-hidden="true" /><span><b>Assessor da Casa</b><small>Entrar com o convite da família</small></span></button>
+          <Botao variante="primario" className="full" disabled={ocupado} type="submit" carregando={ocupado}><Icone desenho={Mail} />Receber o código</Botao>
+          <Botao variante="secundario" className="equipe-lnk" type="button" onClick={() => { setErro(''); setCodigo(''); setPasso('equipe') }}><Icone desenho={Users} aria-hidden="true" /><span><b>Assessor da Casa</b><small>Entrar com o convite da família</small></span></Botao>
         </form>
       )}
 
       {passo === 'codigo' && (
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); faz(async () => { if (!codigo6Valido(codigo)) throw new Error('O código tem 6 números.'); const r = await api.confirmarCodigo(email, codigo); await trocarSessao(); if (r && r.aviso) toast(mensagemConvite(r.aviso)) }) }}>
-          <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => setPasso('email')}><ArrowLeft size={18} />Trocar e-mail</button>
+          <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => setPasso('email')}><Icone desenho={ArrowLeft} />Trocar e-mail</button>
           <h2>Digite o código</h2>
           <p className="sub">Mandamos 6 números para <b>{textoPrivado(email)}</b>. Pode levar 1 minuto. Olhe também a caixa de spam.</p>
           <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="Código de 6 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))} />
           {ex && <p className="sub">No exemplo, o código é 123456.</p>}
           {erro && <AvisoConvite mensagem={erro} />}
-          <button className="btn primary full" disabled={ocupado || codigo.length !== 6} type="submit">Entrar</button>
+          <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 6} type="submit" carregando={ocupado}>Entrar</Botao>
         </form>
       )}
 
       {passo === 'equipe' && (
         <form className="card" style={{ display: 'grid', gap: 14 }} onSubmit={e => { e.preventDefault(); if (!convite) return; faz(async () => { if (!codigo4Valido(codigo)) throw new Error('O código do Assessor da Casa tem 4 números.'); await api.entrarEquipe(convite, codigo); prepararAcolhimento(); location.hash = '#/casa'; await trocarSessao() }) }}>
-          <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => { setErro(''); setPasso('email') }}><ArrowLeft size={18} />Voltar</button>
+          <button type="button" className="lnk" style={{ justifySelf: 'start' }} onClick={() => { setErro(''); setPasso('email') }}><Icone desenho={ArrowLeft} />Voltar</button>
           <h2>Assessor da Casa</h2>
           {convite ? (
             <>
@@ -72,11 +74,11 @@ export function Entrar() {
               <CampoPrivado className="inp cod" inputMode="numeric" autoComplete="one-time-code" maxLength={4} aria-label="Código de 4 números" value={codigo} onChange={e => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 4))} />
               {ex && <p className="sub">No exemplo, o código é 2468.</p>}
               {erro && <AvisoConvite mensagem={erro} />}
-              <button className="btn primary full" disabled={ocupado || codigo.length !== 4} type="submit">Entrar na Casa</button>
+              <Botao variante="primario" className="full" disabled={ocupado || codigo.length !== 4} type="submit" carregando={ocupado}>Entrar na Casa</Botao>
             </>
           ) : (
             <>
-              <p className="todo"><Link2 size={20} aria-hidden="true" /><span><b>Peça o link para quem cuida da família.</b> A entrada do Assessor da Casa é pelo link do convite, que chega no WhatsApp junto com um código de 4 números. Abra o link neste celular e digite o código.</span></p>
+              <p className="todo"><Icone desenho={Link2} aria-hidden="true" /><span><b>Peça o link para quem cuida da família.</b> A entrada do Assessor da Casa é pelo link do convite, que chega no WhatsApp junto com um código de 4 números. Abra o link neste celular e digite o código.</span></p>
               <p className="sub">Se o link já chegou e abriu esta tela, ele veio cortado: peça para mandarem de novo.</p>
               {ex && <a className="btn line full" href={'#/equipe?c=' + CONVITE_EXEMPLO}>Abrir o link de exemplo</a>}
             </>

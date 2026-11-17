@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { resumoPrivacidade, VERSAO_PRIVACIDADE } from './resumos'
 import { Backup } from '../../componentes/Backup'
 import { copiarProtegido } from '../../componentes/privacidade'
@@ -48,7 +49,7 @@ export function Privacidade() {
     <div className="tela-larga">
       {familia?.papel === 'equipe' && <button type="button" className="btn line" onClick={async()=>{location.hash='#/inicio';await sair()}}>Sair</button>}
       <section className="card termo" aria-labelledby="tT">
-        <h2 id="tT"><ShieldCheck size={24} aria-hidden="true" />Termo de uso, em 1 tela</h2>
+        <h2 id="tT"><Icone desenho={ShieldCheck} aria-hidden="true" />Termo de uso, em 1 tela</h2>
         <p className="sub">Versão {VERSAO_PRIVACIDADE} · {familia?.papel === 'equipe' ? 'Assessor da Casa' : familia?.papel === 'casal' ? 'Casal' : 'Pessoa da família'}</p>
         {resumoPrivacidade(familia?.papel || null).map(([titulo, texto]) => <div key={titulo}><h3>{titulo}</h3><p>{texto}</p></div>)}
         <h3>Leitura de cupom</h3><p>A foto é enviada para leitura quando você solicita. Confira os dados antes de salvar; o cupom pode conter informações pessoais.</p>
@@ -57,14 +58,14 @@ export function Privacidade() {
         <section className="card" aria-labelledby="bT">
           <h2 id="bT">{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</h2>
           <p className="sub" style={{ margin: '8px 0 12px' }}>{casal ? 'Um arquivo com os dados disponíveis da família. Confira o conteúdo antes de guardar ou compartilhar.' : 'Um arquivo com o seu orçamento e os seus gastos. O resto da família fica de fora.'}</p>
-          <button className="btn line" type="button" onClick={baixar}><Download size={20} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
+          <button className="btn line" type="button" onClick={baixar}><Icone desenho={Download} />{casal ? 'Baixar os dados da família' : 'Baixar meus dados'}</button>
         </section>
         <Backup />
         {!casal && <section className="card"><p className="sub">Quem pode apagar tudo é o casal.</p></section>}
         {casal && <section className="card" aria-labelledby="aT">
           <h2 id="aT">Apagar a família</h2>
           <p className="sub" style={{ margin: '8px 0 12px' }}>Apaga lançamentos, cartões, limites, cadastros de Assessores da Casa e convites. Esta ação é definitiva.</p>
-          <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Trash2 size={20} />Apagar a família</button>
+          <button className="btn danger line" type="button" onClick={() => setApagar(true)} disabled={!casal}><Icone desenho={Trash2} />Apagar a família</button>
         </section>}
       </div>}
       {json != null && !oculto && (
@@ -74,7 +75,7 @@ export function Privacidade() {
           <button className="btn primary full" type="button" onClick={async () => {
             try { if (await copiarProtegido(json, undefined, toast)) toast('Dados copiados.') }
             catch { const t = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Dados da família em texto"]'); t?.select(); toast('Selecionado. Use Copiar do aparelho.') }
-          }}><Copy size={20} />Copiar</button>
+          }}><Icone desenho={Copy} />Copiar</button>
         </Sheet>
       )}
       {apagar && familia && (
@@ -84,7 +85,7 @@ export function Privacidade() {
           {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
           <button className="btn danger on full" type="button" disabled={conf.trim() !== familia.nome} onClick={async () => {
             try { await api.apagarFamilia(familia.id, conf); setApagar(false); await trocarSessao() } catch (e) { setErro((e as Error).message) }
-          }}><Trash2 size={20} />Apagar tudo de vez</button>
+          }}><Icone desenho={Trash2} />Apagar tudo de vez</button>
           <button className="btn ghost full" type="button" onClick={() => setApagar(false)}>Não apagar</button>
         </Sheet>
       )}

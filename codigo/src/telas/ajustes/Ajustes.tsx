@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../../componentes/AgenteDaAba'
@@ -49,7 +50,7 @@ export function Ajustes() {
           <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
             {convidado && convidado.email === email2.trim().toLowerCase()
-              ? <a className="btn primary" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><MessageCircle size={20} />Abrir o WhatsApp com o convite</a>
+              ? <a className="btn primary" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><Icone desenho={MessageCircle} />Abrir o WhatsApp com o convite</a>
               : <button className="btn primary" type="button" disabled={convidando} onClick={async () => {
                 if (!nome2.trim() || !emailValido(email2)) { toast('Escreva o nome e o e-mail de quem você está convidando.'); return }
                 if (!familia) return
@@ -57,8 +58,8 @@ export function Ajustes() {
                 const ok = await tentar(() => api.convidar(familia.id, papelConvite, nome2.trim(), email2))
                 setConvidando(false)
                 if (ok) { setConvidado({ nome: nome2.trim(), email: email2.trim().toLowerCase() }); setN(x => x + 1); toast('Convite guardado. Agora mande a mensagem.') }
-              }}><UserPlus size={20} />Convidar</button>}
-            <a className="btn line" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }))}><MessageCircle size={20} />Chamar família amiga</a>
+              }}><Icone desenho={UserPlus} />Convidar</button>}
+            <a className="btn line" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }))}><Icone desenho={MessageCircle} />Chamar família amiga</a>
           </div>
           </>}
         </section>
@@ -69,7 +70,7 @@ export function Ajustes() {
           <QuemEsta lista={lista} mudou={() => setN(x => x + 1)} />
         </>}
         <section className="card" aria-labelledby="aInst">
-          <h2 id="aInst"><Share size={22} aria-hidden="true" />Pôr na tela do iPhone</h2>
+          <h2 id="aInst"><Icone desenho={Share} aria-hidden="true" />Pôr na tela do iPhone</h2>
           <p className="sub" style={{ marginTop: 6 }}>No Safari, toque em Compartilhar (o quadrado com a seta) e depois em "Adicionar à Tela de Início". O ícone "Central" abre sem a barra do navegador.</p>
         </section>
         {/* E9: o passo a passo literal pra montar a automação "Transação" no app Atalhos do iPhone */}
@@ -79,19 +80,19 @@ export function Ajustes() {
         <section className="card" aria-labelledby="aTema">
           <h2 id="aTema">Aparência</h2><ControleFuncionarios />
           <div className="seg compacta" role="group" aria-label="Tema" style={{ marginTop: 12 }}>
-            <button type="button" aria-pressed={tema === 'auto'} onClick={() => mudaTema('auto')}><Smartphone size={18} />Automático</button>
-            <button type="button" aria-pressed={tema === 'light'} onClick={() => mudaTema('light')}><Sun size={18} />Claro</button>
-            <button type="button" aria-pressed={tema === 'dark'} onClick={() => mudaTema('dark')}><Moon size={18} />Escuro</button>
+            <button type="button" aria-pressed={tema === 'auto'} onClick={() => mudaTema('auto')}><Icone desenho={Smartphone} />Automático</button>
+            <button type="button" aria-pressed={tema === 'light'} onClick={() => mudaTema('light')}><Icone desenho={Sun} />Claro</button>
+            <button type="button" aria-pressed={tema === 'dark'} onClick={() => mudaTema('dark')}><Icone desenho={Moon} />Escuro</button>
           </div>
           <p className="sub" style={{ marginTop: 8 }}>Automático segue o celular: escuro à noite se o celular estiver assim.</p>
         </section>
         <section className="card">
           <ul className="list">
-            <li><a className="li" href="#/privacidade" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><ShieldCheck size={20} /></span><span className="m"><b>Privacidade</b><small>termo, baixar e apagar dados</small></span><ChevronRight size={20} className="muted" /></a></li>
-            {sessao?.dono && <li><a className="li" href="#/painel" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Gauge size={20} /></span><span className="m"><b>Painel dos 4 números</b><small>só para o dono do produto</small></span><ChevronRight size={20} className="muted" /></a></li>}
-            {api.modo === 'exemplo' && casal && <li><a className="li" href="#/primeiro-uso" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><UserPlus size={20} /></span><span className="m"><b>Ver o primeiro uso</b><small>como uma família nova começa</small></span><ChevronRight size={20} className="muted" /></a></li>}
+            <li><a className="li" href="#/privacidade" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Icone desenho={ShieldCheck} /></span><span className="m"><b>Privacidade</b><small>termo, baixar e apagar dados</small></span><Icone desenho={ChevronRight} className="muted" /></a></li>
+            {sessao?.dono && <li><a className="li" href="#/painel" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Icone desenho={Gauge} /></span><span className="m"><b>Painel dos 4 números</b><small>só para o dono do produto</small></span><Icone desenho={ChevronRight} className="muted" /></a></li>}
+            {api.modo === 'exemplo' && casal && <li><a className="li" href="#/primeiro-uso" style={{ color: 'inherit', textDecoration: 'none' }}><span className="tile"><Icone desenho={UserPlus} /></span><span className="m"><b>Ver o primeiro uso</b><small>como uma família nova começa</small></span><Icone desenho={ChevronRight} className="muted" /></a></li>}
           </ul>
-          <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={async () => { location.hash = '#/inicio'; await sair() }}><LogOut size={20} />Sair</button>
+          <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={async () => { location.hash = '#/inicio'; await sair() }}><Icone desenho={LogOut} />Sair</button>
         </section>
       </div>
     </div>
@@ -166,13 +167,13 @@ function AtalhoIphone() {
   const copiar = async () => { try { if (await copiarProtegido(endereco, undefined, toast)) toast('Endereço copiado. Cole no campo da URL, no app Atalhos.') } catch { toast('Não foi possível copiar. Segure o dedo no endereço e escolha Copiar.') } }
   return (
     <section className="card" aria-labelledby="aAtalho">
-      <h2 id="aAtalho"><Zap size={22} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>
+      <h2 id="aAtalho"><Icone desenho={Zap} aria-hidden="true" />Atalho do iPhone (Apple Pay)</h2>
       <p className="sub" style={{ marginTop: 6 }}>Pagou com Apple Pay, o app abre o Anotar com o valor, a loja e o cartão já preenchidos. Você só confere e toca no seu nome. Monta 1 vez só, em uns 3 minutos:</p>
       <ol className="passos-atalho">{PASSOS_ATALHO.map((p, i) => <li key={i}>{p}</li>)}</ol>
       <p className="lbl" style={{ marginTop: 10 }}>O endereço para colar no passo 5</p>
       <p className="atalho-end"><code>{textoPrivado(endereco)}</code></p>
       <p className="sub atalho-montado">Montado, o campo da URL fica assim: {textoPrivado(endereco)}<b>Quantia</b>&amp;loja=<b>Comerciante</b>&amp;cartao=<b>Cartão ou Passe</b> (as palavras em negrito são as que você escolhe em "Entrada do Atalho").</p>
-      <button className="btn line" type="button" style={{ marginTop: 10 }} onClick={copiar}><Copy size={20} />Copiar o endereço</button>
+      <button className="btn line" type="button" style={{ marginTop: 10 }} onClick={copiar}><Icone desenho={Copy} />Copiar o endereço</button>
       <p className="sub" style={{ marginTop: 10 }}>O iPhone abre o endereço no Safari. Na 1ª vez, entre no app pelo Safari também, com o mesmo e-mail. Os nomes dos botões podem mudar um pouco conforme a versão do iPhone.</p>
     </section>
   )

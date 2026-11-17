@@ -1,3 +1,4 @@
+import { Icone } from '../../componentes/Icone'
 import { useMembros } from '../../app/useMembros'
 import { valorForaPadrao } from '../../app/valorForaPadrao'
 import { rascunhos } from '../../app/rascunhos'
@@ -204,7 +205,7 @@ export function Lancar() {
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
           <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
-            {t === 'apagar' ? <Delete size={26} /> : t}
+            {t === 'apagar' ? <Icone desenho={Delete} /> : t}
           </button>
         ))}
       </div>
@@ -212,7 +213,7 @@ export function Lancar() {
   )
   const datas = quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
-    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <EyeOff size={22} /> : <Eye size={22} />}</button>}>
+    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <Icone desenho={EyeOff} /> : <Icone desenho={Eye} />}</button>}>
       {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={descartar}>Descartar</button></p>}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
@@ -225,7 +226,7 @@ export function Lancar() {
       {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} confirmar={limparRascunho} /> : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
-          {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Camera size={18} />Ler cupom com foto</button>}
+          {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Icone desenho={Camera} />Ler cupom com foto</button>}
           {visor}
           {!corr && <label className="campo"><span>Quem pagou? (opcional)</span><select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}><option value="">Não informado</option>{(casal ? membrosPagamento.lista : familia?.membroId ? [{ id: familia.membroId, nome: familia.membroNome }] : []).map(m => <option key={m.id} value={m.id}>{textoPrivado(m.nome)}</option>)}</select><small>Quem anota não é necessariamente quem paga.</small></label>}
           <div className="atrow"><span className="atl">Quando</span>
@@ -280,7 +281,7 @@ export function Lancar() {
           )}
           {!ordem.length && <p className="sub">Nenhum limite criado ainda. Crie em Planejamento.</p>}
           {/* B14: a lixeira mora só dentro do Corrigir (longe do lápis da lista) */}
-          {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Trash2 size={20} />Apagar este lançamento</button>}
+          {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Icone desenho={Trash2} />Apagar este lançamento</button>}
         </>
       )}
       {pagadorPendente && <button className="btn primary" type="button" onClick={async()=>{try{await pagadorPendente();setPagadorPendente(null);fecharLancar();await recarregar()}catch(e){setErro((e as Error).message)}}}>Informar de novo</button>}
@@ -342,7 +343,7 @@ function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: Rea
         </div>
         {!apps.length && <small>Você ainda não tem nada no Guardado. Dá para anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
       </div>}
-      <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}><ArrowDownToLine size={20} />{trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}</button>
+      <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}><Icone desenho={ArrowDownToLine} />{trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}</button>
     </>
   )
 }
@@ -400,18 +401,18 @@ function AnotarCompra() {
       </div>
       <div className="foto-nota">
         <input ref={camera} type="file" accept="image/*" capture="environment" disabled={gravando || preparandoFoto} onChange={ev => { const f = ev.target.files?.[0] || null; ev.target.value = ''; pegarFoto(f) }} />
-        <button type="button" className="btn full line" disabled={gravando || preparandoFoto} onClick={() => camera.current?.click()}>{foto ? <><Camera size={20} />Trocar foto da nota</> : <><Camera size={20} />Tirar foto da nota</>}</button>
+        <button type="button" className="btn full line" disabled={gravando || preparandoFoto} onClick={() => camera.current?.click()}>{foto ? <><Icone desenho={Camera} />Trocar foto da nota</> : <><Icone desenho={Camera} />Tirar foto da nota</>}</button>
         {preparandoFoto && <p role="status">Preparando foto…</p>}
         {foto && <div role="status">
           {!oculto && <img alt="Miniatura da nota" src={foto === 'exemplo' ? 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="120"%3E%3Crect width="100" height="120" fill="white"/%3E%3Ctext x="10" y="60"%3ENota exemplo%3C/text%3E%3C/svg%3E' : `data:image/jpeg;base64,${foto}`} style={{ width: 100, height: 120, objectFit: 'contain', borderRadius: 8 }} />}
-          <p><Check size={18} aria-hidden="true" />Foto recebida</p>
+          <p><Icone desenho={Check} aria-hidden="true" />Foto recebida</p>
           <p className="sub">{gravando ? 'Enviando a compra. Aguarde a confirmação.' : 'Foto neste aparelho. A compara ainda não foi confirmada.'}</p>
         </div>}
         {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
       </div>
       <p className="sub">O casal confere o valor pela foto. Você não precisa digitar nenhum valor.</p>
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <button type="button" className="btn primary full" disabled={gravando || preparandoFoto} onClick={anotar}><Check size={20} />{gravando ? 'Enviando a compra…' : 'Anotar a compra'}</button>
+      <button type="button" className="btn primary full" disabled={gravando || preparandoFoto} onClick={anotar}><Icone desenho={Check} />{gravando ? 'Enviando a compra…' : 'Anotar a compra'}</button>
     </Sheet>
   )
 }

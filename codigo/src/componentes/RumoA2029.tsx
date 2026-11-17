@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Target } from 'lucide-react'
 import { useApp } from '../app/contexto'
@@ -70,12 +71,12 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
   const resposta = !c || !n || n.cobre_pct === null || n.falta_com_margem === null ? null : <>Em {mesNome(c.referencia)} {saldo(n.falta_com_margem)}, com margem de segurança.</>
   const semMargem = n && n.cobre_pct !== null ? <span className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</span> : null
   if (compacto) return <a className="card rumo-resumo" href="#/planejamento">
-    <b>Rumo a 2029</b><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
+    <b>Rumo a 2029</b><Icone nome="abrir" /><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
     {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
     <span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span>
   </a>
   return <section className="card rumo-hero" aria-labelledby={id}>
-    <div className="card-h"><h2 id={id}><Target size={24} aria-hidden="true" />Rumo a 2029</h2>{exemplo && <span className="chip">Modo exemplo</span>}</div>
+    <div className="card-h"><h2 id={id}><Icone desenho={Target} aria-hidden="true" />Rumo a 2029</h2>{exemplo && <span className="chip">Modo exemplo</span>}</div>
     <span className="chip">{CENARIOS_RECEITAS[cenario]}</span>{cenario !== 'garantido' && <p className="sub">Número oficial: Garantido</p>}
     <p className="rumo-pergunta">Já dá para viver só de rendimentos?</p>
     {exemplo && <p className="sub">Simulação de exemplo. Não decide alertas nem grava na família real.</p>}

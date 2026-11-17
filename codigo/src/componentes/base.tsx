@@ -1,10 +1,36 @@
 import { rascunhos } from '../app/rascunhos'
 import { textoPrivado } from '../lib/formato'
-import { createContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useRef, useState, type ReactNode, type ButtonHTMLAttributes } from 'react'
 import { useApp } from '../app/contexto'
 import { X } from 'lucide-react'
 import { milhar, partesDinheiro, reais, valoresOcultos } from '../lib/formato'
 import type { LinhaExplicacao } from '../api/tipos'
+import { Icone, type NomeIcone } from './Icone'
+
+type VarianteBotao = 'primario' | 'secundario' | 'fantasma' | 'perigo' | 'icone-so'
+const variantes = { primario: 'primary', secundario: 'line', fantasma: 'ghost', perigo: 'danger', 'icone-so': 'iconbtn' }
+export function Botao({ variante = 'secundario', carregando = false, icone, children, className = '', disabled, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteBotao; carregando?: boolean; icone?: NomeIcone }) {
+  return <button type="button" {...props} className={`btn ${variantes[variante]} ${className}`} disabled={disabled || carregando} aria-busy={carregando || undefined}>
+    {icone && <Icone nome={icone} />}{children}{carregando && <Icone nome="pendente" />}
+  </button>
+}
+
+export function CabecalhoTela({ titulo, subtitulo, acao }: { titulo: string; subtitulo?: ReactNode; acao?: ReactNode }) {
+  return <header className="top"><div className="tt">{subtitulo && <small>{subtitulo}</small>}<h1>{titulo}</h1></div>{acao}</header>
+}
+
+export function CabecalhoCartao({ titulo, icone, acao }: { titulo: ReactNode; icone: NomeIcone; acao?: ReactNode }) {
+  return <div className="card-h"><h2><span className="icone-chip"><Icone nome={icone} /></span>{titulo}</h2>{acao}</div>
+}
+
+/** Superfície de navegação: o conteúdo deve ser estático, sem controles aninhados. */
+export function CartaoClicavel({ href, children, rotulo }: { href: string; children: ReactNode; rotulo: string }) {
+  return <a href={href} className="card card-clicavel" aria-label={rotulo}><div>{children}</div><Icone nome="abrir" /></a>
+}
+
+export function SeloEstado({ estado, children }: { estado: 'salvo' | 'erro' | 'pendente'; children: ReactNode }) {
+  return <span className={`chip estado-${estado}`}><Icone nome={estado} />{children}</span>
+}
 
 /** Dinheiro: número em Bricolage, "R$" em Figtree cinza, ",00" some. */
 export function Din({ v, tam, className = '', menos }: { v: number; tam?: 'hero' | 'big' | 'mid'; className?: string; /** linha que tira da conta: "menos R$ 970" (nunca o sinal de menos) */ menos?: boolean }) {
@@ -73,7 +99,7 @@ export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho }: { t
       <div className={'sheet' + (lado ? ' lado' : '')} role="dialog" aria-modal="true" aria-label={rotulo || titulo} ref={ref} tabIndex={-1}>
         <div className="sheet-top">
           <h2>{titulo}</h2>{cabecalho}
-          <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><X size={22} /></button>
+          <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><Icone desenho={X} /></button>
         </div>
         <div className="sheet-body">{rascunhos.size > 0 && <p className="sub" role="status">Continuar de onde parou: o rascunho fica nesta sessão ao fechar.</p>}<ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>
       </div>
@@ -100,15 +126,17 @@ export function Explicacao({ linhas, nota }: { linhas: LinhaExplicacao[]; nota?:
 }
 
 /** Estado vazio: ícone num círculo, 1 frase e no máximo 1 botão. Não é legenda cinza: diz o que fazer agora. */
-export function Vazio({ ico, children, acao }: { ico: ReactNode; children: ReactNode; acao?: ReactNode }) {
+export function EstadoVazio({ ico, children, acao, ilustracao }: { ico?: ReactNode; children: ReactNode; acao?: ReactNode; ilustracao?: ReactNode }) {
   return (
     <div className="vazio">
-      <span className="vazio-ico" aria-hidden="true">{ico}</span>
+      {ilustracao ?? <span className="vazio-ico" aria-hidden="true">{ico ?? <Icone nome="casa" size={32} />}</span>}
       <p>{children}</p>
       {acao}
     </div>
   )
 }
+
+export const Vazio = EstadoVazio
 
 /** Campo de dinheiro: "R$" cinza dentro do campo e ponto de milhar ("3.000"). O valor guardado continua sem ponto ("3000"). */
 export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: string; mudar: (v: string) => void; desligado?: boolean; rotulo?: string; id?: string }) {

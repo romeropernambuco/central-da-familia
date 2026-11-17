@@ -1,3 +1,5 @@
+import { Botao } from '../../componentes/base'
+import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Conferencia } from '../../componentes/Conferencia'
@@ -98,24 +100,24 @@ export function MeuOrcamento() {
             <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
             {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />}
             {perguntarOntem && (
-              <div className="todo ontem" style={{ marginTop: 12 }}><CalendarCheck size={20} aria-hidden="true" />
+              <div className="todo ontem" style={{ marginTop: 12 }}><Icone desenho={CalendarCheck} aria-hidden="true" />
                 <span><b>Ontem você não gastou nada?</b> É só para conta ficar certa.
                   <span className="row-btns" style={{ marginTop: 8 }}>
-                    <button className="btn sm line" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}>Não gastei</button>
-                    <button className="btn sm line" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de anotar</button>
+                    <Botao variante="secundario" className="sm" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}>Não gastei</Botao>
+                    <Botao variante="secundario" className="sm" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de anotar</Botao>
                   </span>
                 </span>
               </div>
             )}
             {meu && <div className="row-btns" style={{ marginTop: 14 }}>
-              <button className="btn primary" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Plus size={20} />Anotar em {textoPrivado(env.nome)}</button>
+              <Botao variante="primario" type="button" onClick={() => abrirLancar({ envelope: env.id })}><Icone desenho={Plus} />Anotar em {textoPrivado(env.nome)}</Botao>
               {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
-              <button className="btn line" type="button" onClick={() => setDpc(true)}><ShoppingBag size={20} />Dá para comprar?</button>
+              <Botao variante="secundario" type="button" onClick={() => setDpc(true)}><Icone desenho={ShoppingBag} />Dá para comprar?</Botao>
             </div>}
           </section>
 
           <section className="card" id="oCofrinho" aria-labelledby="oCofT" style={{ scrollMarginTop: 72 }}>
-            <div className="card-h"><h2 id="oCofT"><PiggyBank size={24} aria-hidden="true" />Sobra anotada</h2></div>
+            <div className="card-h"><h2 id="oCofT"><Icone desenho={PiggyBank} aria-hidden="true" />Sobra anotada</h2></div>
             <div className="numrow"><Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
               <Qm titulo="Sobra anotada" linhas={[
                 { linha: 'Valor diário usado para calcular sua sobra', valor: dados.base },
@@ -128,20 +130,20 @@ export function MeuOrcamento() {
               : `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do valor diário de referência de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`)}</p>
             {(() => {
               const m = metas?.[env.id]
-              if (!m) return meu ? <button className="btn sm line" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Target size={18} />Quero juntar pra…</button> : null
+              if (!m) return meu ? <Botao variante="secundario" className="sm" type="button" style={{ marginTop: 10 }} onClick={() => setMetaAberta(true)}><Icone desenho={Target} />Quero juntar pra…</Botao> : null
               return <><ProgressoMeta meta={m} editavel={meu} salvar={m => salvarMetas({ ...metas, [env.id]: m })} />
-                {meu && <button className="btn sm ghost" type="button" onClick={() => { if(window.confirm(textoPrivado('Tirar a meta ' + (m.nome || 'deste envelope') + '? Deixa de aparecer no seu planejamento.'))) void salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id))) }}>Tirar a meta</button>}</>
+                {meu && <Botao variante="fantasma" className="sm" type="button" onClick={() => { if(window.confirm(textoPrivado('Tirar a meta ' + (m.nome || 'deste envelope') + '? Deixa de aparecer no seu planejamento.'))) void salvarMetas(Object.fromEntries(Object.entries(metas || {}).filter(([k]) => k !== env.id))) }}>Tirar a meta</Botao>}</>
             })()}
           </section>
         </div>
 
         <div className="col">
           <section className="card" id="oMais" aria-labelledby="oMaisT" style={{ scrollMarginTop: 72 }}>
-            <div className="card-h"><h2 id="oMaisT"><Trophy size={24} aria-hidden="true" />Conquistas</h2></div>
+            <div className="card-h"><h2 id="oMaisT"><Icone desenho={Trophy} aria-hidden="true" />Conquistas</h2></div>
             <ul className="list">
               {conquistas.map(c => (
                 <li key={c.nome} className="li">
-                  <span className="tile" style={c.ok ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : {}}>{c.ok ? <Trophy size={20} /> : <Lock size={18} />}</span>
+                  <span className="tile" style={c.ok ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : {}}>{c.ok ? <Icone desenho={Trophy} /> : <Icone desenho={Lock} />}</span>
                   <span className="m"><b>{textoPrivado(c.nome)}</b><small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small></span><span />
                 </li>
               ))}
@@ -163,7 +165,7 @@ function DaPraComprar({ livre, fechar }: { livre: number; fechar: () => void }) 
     <Sheet titulo="Dá para comprar?" fechar={fechar}>
       <p className="sub">Simulação: nada é gravado.</p>
       <div className="campo"><span>Quanto custa?</span><CampoValor valor={txt} mudar={setTxt} rotulo="Quanto custa" /></div>
-      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><CircleCheck size={20} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe em {hojeRecife().slice(0, 7)}.</b> O que você ainda pode gastar no mês vai de {reais(livre)} para {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Você pode criar uma meta e anotar quanto conseguir guardar.</>}</span></p>}
+      {v > 0 && <p className={'todo ' + (depois >= 0 ? 'ok' : 'warn')}><Icone desenho={CircleCheck} aria-hidden="true" /><span>{depois >= 0 ? <><b>Cabe em {hojeRecife().slice(0, 7)}.</b> O que você ainda pode gastar no mês vai de {reais(livre)} para {reais(depois)}.</> : <><b>Não cabe neste mês.</b> Faltam {reais(-depois)}. Você pode criar uma meta e anotar quanto conseguir guardar.</>}</span></p>}
     </Sheet>
   )
 }
@@ -175,7 +177,7 @@ function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: strin
       <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0 && await salvar(nome.trim(), textoParaValor(v))) [setNome,setV].forEach(s=>s.limpar()) }}>
         <label className="campo"><span>O que você quer comprar?</span><CampoPrivado className="inp" placeholder="Ex.: Fone" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Quanto custa?</span><CampoValor valor={v} mudar={setV} rotulo="Quanto custa" /></div>
-        <button className="btn primary full" type="submit">Guardar a meta</button>
+        <Botao variante="primario" className="full" type="submit">Guardar a meta</Botao>
       </form>
     </Sheet>
   )
@@ -191,10 +193,10 @@ export function MetaDoDesejo({ desejo }: { desejo: DesejoTela }) {
   if (familia?.papel !== 'pessoa' || !familia.envelopeId || !desejo.meu) return null
   const id = familia.envelopeId, existente = metas[id]
   return <>{falha && <span role="alert">Não foi possível abrir sua meta. Tente quando a conexão voltar.</span>}
-    <button type="button" className="btn line" disabled={!leu || ocupado || existente?.desejo === desejo.id} onClick={async () => {
+    <Botao type="button" variante="secundario" disabled={!leu || ocupado || existente?.desejo === desejo.id} onClick={async () => {
       setOcupado(true)
       try { if (await salvar({ ...metas, [id]: { nome: desejo.nome, valor: desejo.valor, desejo: desejo.id, anotacoes: existente?.anotacoes || [] } })) toast('Meta pronta em Meu orçamento. Anote lá quanto guardou.') } finally { setOcupado(false) }
-    }}>{existente?.desejo === desejo.id ? 'Já é sua meta' : existente ? 'Usar como meta e manter o que anotou' : 'Criar meta em Meu orçamento'}</button></>
+    }}>{existente?.desejo === desejo.id ? 'Já é sua meta' : existente ? 'Usar como meta e manter o que anotou' : 'Criar meta em Meu orçamento'}</Botao></>
 }
 
 export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; salvar: (meta: MetaPessoal) => Promise<boolean>; editavel: boolean }) {
@@ -210,7 +212,7 @@ export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; s
       e.preventDefault(); if (ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return
       setOcupado(true); setFalha('')
       try { if (await salvar({ ...meta, anotacoes: [...(meta.anotacoes || []), { id: String(Date.now()), data: hojeRecife(), valor: textoParaValor(valor) }] })) setValor(''); else setFalha('Não foi possível guardar a anotação. Seu valor continua aqui.') } finally { setOcupado(false) }
-    }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><button type="submit" className="btn line" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}>Anotar valor guardado</button></form>}
+    }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><Botao type="submit" variante="secundario" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}>Anotar valor guardado</Botao></form>}
     {falha && <p role="alert">{falha}</p>}
   </div>
 }
