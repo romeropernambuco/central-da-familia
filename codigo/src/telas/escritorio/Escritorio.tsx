@@ -1,4 +1,5 @@
 import { totalPendencias } from '../../lib/resumo/pendencias'
+import { useDestino } from '../../app/destinos'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
@@ -58,13 +59,19 @@ export function Escritorio() {
 }
 
 function Hoje() {
+  const destino = useDestino()
   const modo = useModoFuncionario()
   const [mostrarCena, setMostrarCena] = useState(false)
   const { familia, oculto } = useApp()
-  const { e, estado, atualizar, responder } = useEscritorio()
+  const { e: previa, perguntas, estado, atualizar, responder } = useEscritorio()
+  const e = useMemo(() => previa ? { ...previa, precisa_de_voce: perguntas } : null, [previa, perguntas])
   const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
   // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
   const funcs = useEquipeCompleta(e?.funcionarios)
+  useEffect(() => {
+    const p = e?.precisa_de_voce.find(p => p.id === destino.entidade)
+    if (destino.secao === 'tarefa' && p && e) setSel(donoDaPergunta(p, e.funcionarios)?.id || p.funcionario)
+  }, [e, destino.entidade, destino.secao])
   if (estado === 'desligado') return <div className="card"><EstadoVazio ilustracao="Carregando" titulo="Preparando o Escritório" frase="O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia." /></div>
   if (estado === 'erro') return <div className="card"><div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para chamar a equipe." acao={{ texto: 'Tentar de novo', aoClicar: atualizar }} /></div></div>
   if (!e) return <div className="card"><p className="sub">Chamando a equipe…</p></div>

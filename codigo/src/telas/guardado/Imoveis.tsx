@@ -83,7 +83,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
   }
 
   return (
-    <section className="card imoveis" aria-labelledby="gImo">
+    <section data-secao="imoveis" className="card imoveis" aria-labelledby="gImo">
       <div className="card-h"><h2 id="gImo"><Icone desenho={Building2} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Icone desenho={Plus} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
       <p className="sub">Gestor do Guardado: quer cadastrar um imóvel?</p><Botao type="button" variante="primario" onClick={() => setFolha('novo')}><Icone nome="lancar" />Cadastrar imóvel</Botao>

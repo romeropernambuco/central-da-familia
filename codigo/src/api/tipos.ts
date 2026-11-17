@@ -315,6 +315,9 @@ export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' |
 
 export interface PessoaNome { tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'; id: string; nome?: string | null; funcao?: string }
 export interface Api {
+  /** Capacidade opcional: só aparece quando há armazenamento implementado. Reais. */
+  saldosConta?(familia: string): Promise<import('../lib/resumo/saldos').SaldoConta[]>
+  salvarSaldoConta?(familia: string, conta: import('../lib/resumo/saldos').SaldoConta): Promise<void>
   /** Ausente no real até existir RPC autorizada. */
   salvarNomePessoa?(familia: string, pessoa: PessoaNome, nome: string, funcao?: string): Promise<void>
   modo: 'real' | 'exemplo'

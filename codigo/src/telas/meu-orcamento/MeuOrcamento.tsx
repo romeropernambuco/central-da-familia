@@ -77,7 +77,7 @@ export function MeuOrcamento() {
   ]
 
   return (
-    <div className="view orcamento-f29">
+    <div className="view orcamento-f29" data-secao="orcamento">
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
           {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{textoPrivado(e.nome)}{escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}</button>)}

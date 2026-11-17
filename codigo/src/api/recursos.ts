@@ -1,8 +1,11 @@
 /** Nomes compartilhados por leituras e mutações; nenhuma regra financeira aqui. */
 export function recursoDaLeitura(nome: string): string | undefined {
+  if (nome === 'saldosConta') return 'saldos'
+  if (nome === 'feiras') return 'feira'
   return ({ resumoHoje: 'resumo', lancamentos: 'lancamentos', guardadoHoje: 'guardado', futuroEntradas: 'projecao', faturas: 'faturas', faturasBanco: 'faturasBanco', recebimentos: 'recebimentos', imoveis: 'imoveis', desejos: 'desejos', cartoes: 'cartoes', estoque: 'estoque', casaDaEquipe: 'casa', config: 'config', escritorioHoje: 'escritorio' } as Record<string, string>)[nome]
 }
 export function recursosDaMutacao(nome: string, args: any[]): string[] | undefined {
+  if (nome === 'salvarSaldoConta') return ['saldos', 'projecao', 'plano2029']
   if (/Lancamento|^lancar$|definirLimite|salvarEnvelope/.test(nome)) return ['lancamentos', 'resumo', 'faturas', 'pendencias', 'escritorio', 'projecao']
   if (nome === 'faturaInformar') return ['faturasBanco', 'pendencias', 'escritorio']
   if (/^recebimento/.test(nome)) return ['recebimentos', 'config', 'controles', 'realizado', 'projecao', 'plano2029', 'pendencias', 'escritorio']

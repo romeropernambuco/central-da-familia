@@ -16,6 +16,7 @@ import { cartaoMeu } from '../../app/dono'
 import { perguntaDaLinha, perguntasVistas } from '../../app/useDados2'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Contagem, FuncIco, PerguntaCard, type Responder } from '../../componentes/Pergunta'
+import { useDestino } from '../../app/destinos'
 import type { Cartao, EscritorioHoje, Estoque, Fatura, FaturaBanco, Feira, FuncionarioEsc, GuardadoHoje, Lembrete, LinhaDiario, PerguntaEsc, Repetir } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { novoUuid } from '../../lib/seguro'
@@ -39,12 +40,13 @@ const diaDe = (iso: string) => hojeRecife(new Date(iso))
  * No celular sobe de baixo; no computador é um painel do lado direito.
  */
 export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void }) {
+  const destino = useDestino()
   const { api, familia, versao, oculto } = useApp()
   const mostrar = textoPrivado
   const fala = (texto: string) => f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
   const nomePublico = EQUIPE.find(m => m.id === f.id)?.nome === f.nome
   const cad = useRef<HTMLElement>(null)
-  const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome))
+  const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome)).sort((a, b) => Number(b.id === destino.entidade) - Number(a.id === destino.entidade))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
   const chaveLeitura = familia?.id + ':' + f.id
   const [diario, setDiario] = useState<{ chave: string; linhas: LinhaDiario[] } | null>(null)
@@ -81,7 +83,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
             </>
           ) : minhas.length ? (
             <>
-              <PerguntaCard key={minhas[0].id} p={minhas[0]} quem={f.nome} responder={responder} semQuem abrirCadastro={() => cad.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />
+              <div data-secao="tarefa" data-entidade={minhas[0].id}><PerguntaCard key={minhas[0].id} p={minhas[0]} quem={f.nome} responder={responder} semQuem abrirCadastro={() => cad.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })} /></div>
               {minhas.length > 1 && <p className="sub" style={{ marginTop: 8 }}>Depois desta eu tenho mais {minhas.length - 1 === 1 ? '1 pergunta' : `${minhas.length - 1} perguntas`}. Uma de cada vez.</p>}
             </>
           ) : (

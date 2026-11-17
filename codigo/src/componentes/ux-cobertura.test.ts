@@ -73,6 +73,13 @@ it.each(abas)('cobertura ajuda: folha fixa em %s, privada, sem rede ou escrita, 
    await act(async () => { location.hash = '#/' + rota; window.dispatchEvent(new Event('hashchange')) })
    // As leituras da nova aba terminam antes de medir os efeitos exclusivos da ajuda.
    await act(async () => { await new Promise(r => setTimeout(r, 400)) })
+   // O Início agora carrega fontes independentes após seu chunk lazy. Aguarda o estado,
+   // em vez de contar leituras ainda pendentes como se tivessem sido disparadas pela ajuda.
+   if (rota === 'inicio') {
+    for (let i = 0; i < 30 && (!a.container.buscar(n => n.getAttribute('data-bloco') === 'plano2029').length || a.container.buscar(n => n.getAttribute('data-estado') === 'carregando').length); i++)
+     await act(async () => { await new Promise(r => setTimeout(r, 50)) })
+    expect(a.container.buscar(n => n.getAttribute('data-estado') === 'carregando')).toHaveLength(0)
+   }
   }
   vi.stubGlobal('localStorage', storage)
   const chamadas = Object.fromEntries(Object.keys(a.api).filter(k => typeof (a.api as any)[k] === 'function').map(k => [k, vi.spyOn(a.api as any, k)]))

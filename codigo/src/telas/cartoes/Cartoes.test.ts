@@ -14,6 +14,8 @@ vi.mock('react', async importOriginal => ({
 }))
 vi.mock('../../app/contexto', () => ({ useApp: mocks.useApp }))
 vi.mock('../../componentes/Qm', () => ({ Qm: () => null }))
+// Sequência de estados congelada do simulador. Conferência coberta pela integração f35.
+vi.mock('../../componentes/ConferenciasResumo', () => ({ ConferenciaFaturas: () => null }))
 
 afterEach(() => { vi.useRealTimers(); vi.resetAllMocks() })
 

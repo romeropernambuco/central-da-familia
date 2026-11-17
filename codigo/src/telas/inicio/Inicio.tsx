@@ -1,189 +1,31 @@
-import { destaqueOrcamento } from '../../lib/resumo/orcamento'
-import { FUSO } from '../../lib/formato'
+﻿import { ResumoFamilia } from './ResumoFamilia'
 import './inicio.css'
-import { EstadoVazio } from '../../componentes/EstadoVazio'
-import { Icone } from '../../componentes/Icone'
-import { useLeituraRemota } from '../../app/useLeituraRemota'
-import { Conferencia } from '../../componentes/Conferencia'
-import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { textoPrivado } from '../../componentes/privacidade'
-import { useEffect, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { lerLancamentosMes } from '../../lib/resumo/leituras'
 import { useApp } from '../../app/contexto'
-import { useMembros } from '../../app/useMembros'
+import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Din } from '../../componentes/base'
-import { Qm } from '../../componentes/Qm'
-import { EnvelopeCard, comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem, tetoDoMes } from '../../componentes/EnvelopeCard'
-import { escreveNo, rotuloDono } from '../../app/dono'
-import { RitmoMes } from '../../componentes/RitmoMes'
-import { PrecisaDeVoce } from '../escritorio/PrecisaDeVoce'
-import { CartaoGuardado } from '../guardado/CartaoGuardado'
-import { RumoA2029 } from '../../componentes/RumoA2029'
-import type { Envelope, Lancamento, ResumoHoje } from '../../api/tipos'
-import { centavos, dataCurta, fimDoMes, hojeRecife, mesAnterior, mesLongo, plural, reais, saudacao, somaDias } from '../../lib/formato'
-
-/** C3: gasto à vista por dia de 1 envelope no mês de hoje (parcelado fica de fora: o gráfico põe no dia 1). Só soma pra desenhar. */
+import { EstadoVazio } from '../../componentes/EstadoVazio'
+import { textoPrivado } from '../../componentes/privacidade'
+import { centavos, hojeRecife } from '../../lib/formato'
+import type { Lancamento } from '../../api/tipos'
 export function porDiaDe(l: Lancamento[], envelope: string, hoje: string): Record<string, number> {
   const out: Record<string, number> = {}
   for (const x of l) if (!x.apagado_em && x.envelope_id === envelope && x.data.startsWith(hoje.slice(0, 7)) && x.data <= hoje && !x.parcela && !((x.parcelas || 1) > 1)) out[x.data] = centavos((out[x.data] || 0) + x.valor)
   return out
 }
-
-/** Início: 1º o número de hoje (o seu, quando você tem limite próprio); depois o Guardado em 1 cartão, o que precisa de você e quanto cada um pode gastar. */
 export function Inicio() {
-  const { resumo, familia, api, versao, abrirLancar, explicar } = useApp()
-  const nomeDe = useMembros()
-  const leitura = useLeituraRemota(familia?.id || '', familia ? async () => {
-    const mes = hojeRecife().slice(0, 7)
-    const doMes = (await api.lancamentos(familia.id, mes)).filter(x => !x.apagado_em)
-    const ult = doMes.length < 4 ? [...doMes, ...(await api.lancamentos(familia.id, mesAnterior(mes))).filter(x => !x.apagado_em)] : doMes
-    return { doMes, ult: ult.slice(0, 4) }
-  } : null, [api, versao])
-  const { doMes = [], ult = [] } = leitura.dado || {}
-  if (leitura.erro) return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Seus registros continuam guardados. Vamos tentar de novo?" acao={{ texto: 'Tentar de novo', aoClicar: leitura.repetir }} /></div>
-  if (leitura.carregando || !leitura.dado) return <Conferencia repetir={leitura.repetir} />
-
-  if (!resumo) return <div className="card"><p className="sub">Buscando o número de hoje…</p></div>
-  const hoje = hojeRecife()
-  const sobra = Math.max(0, resumo.livre_mes - resumo.colchao)
-  const env = (id: string) => resumo.envelopes.find(e => e.id === id)
-  const nomeEnv = (id: string) => env(id)?.nome || ''
-  // R5: quem tem limite próprio vê o número DELE em cima; a Casa vira uma linha menor
-  const destaque = destaqueOrcamento(resumo, familia?.envelopeId, hoje, FUSO)
-  const meu = destaque.meu
-  const temCasa = resumo.envelopes.some(e => e.casa)
-  // E2: o casal vê o limite de cada um, com o nome; o seu vem 1º e o do outro sem botão de mexer
-  const temOutros = resumo.envelopes.some(e => !escreveNo(e, familia))
-  const casaHoje = centavos(resumo.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje || 0), 0))
-  const n = destaque.numero
-  // L2: tocar no número grande diz por que ele mudou desde ontem
-  const porQue = meu?.mudou ? () => explicar({ cabeca: 'Por que mudou?', titulo: meu.mudou!.motivo, linhas: [{ linha: 'Ontem o dia tinha', valor: meu.mudou!.ontem }, { linha: 'Hoje o dia tem', valor: meu.valor_dia_inteiro ?? meu.hoje ?? 0 }] }) : undefined
-
-  return (
-    <div className="view inicio-f29">
-      {meu && n ? (
-        <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
-          <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>{n.estado === 'devendo' ? 'Seu mês passou do combinado' : 'Hoje você pode gastar'}</h2>
-          <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="hero" /></span>
-            : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque para ver o que mexeu no número de hoje"><Din v={destaque.valor} tam="hero" /></button>
-            : <Din v={destaque.valor} tam="hero" />}</div>
-          {n.estado === 'devendo' && <p className="apoio"><b>fica devendo</b> neste mês</p>}
-          {/* E3 (conserto 5): depois de gastar, o número do dia diz quanto já saiu e quanto ainda pode */}
-          {n.estado !== 'devendo' && (meu.gasto_hoje || 0) > 0 && <p className="apoio hoje-saiu">Hoje já saiu <b>{reais(meu.gasto_hoje || 0)}</b>. Ainda pode hoje <b>{reais(meu.hoje ?? n.valor)}</b>.</p>}
-          <Virada e={meu} />
-          {n.estado !== 'devendo' && <ViradaAntes e={meu} />}
-          {fraseEstouro(meu, n) && <p className="todo warn frase-estouro">{fraseEstouro(meu, n)}</p>}
-          {n.estado !== 'devendo' && <RitmoMes e={meu} porDia={porDiaDe(doMes, meu.id, hoje)} />}
-          {n.estado !== 'devendo' && <p className="apoio">{meu.livre < 0 ? <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, passou <b>{reais(-meu.livre)}</b>.</> : <>Do seu combinado de <b>{reais(tetoDoMes(meu))}</b>, sobram <b>{reais(meu.livre)}</b> até {dataCurta(fimDoMes(hoje))}.</>}</p>}
-          {temCasa && <p className="apoio casa-linha">A Casa (feira e contas) pode gastar hoje <b>{reais(casaHoje)}</b>.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>}
-          <div className="row-btns">
-            <Qm texto titulo={n.estado === 'devendo' ? 'Seu mês' : 'Hoje você pode gastar'} linhas={n.linhas} nota={`A mesma conta do banco da família.${meu.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`} />
-            {porQue && <button type="button" className="explica-l" onClick={porQue}><Icone nome="ajuda" />Por que mudou?</button>}
-          </div>
-        </section>
-      ) : (
-        <section className="card hoje-card" aria-labelledby="hHoje">
-          <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
-          <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>Hoje você pode gastar</h2>
-          <div className="numrow"><Din v={destaque.valor} tam="hero" /></div>
-          <p className="apoio">Sobram <b>{reais(sobra)}</b> até {dataCurta(fimDoMes(hoje))}, em {textoPrivado(plural(resumo.dias_restantes, 'dia', 'dias'))}.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>
-          <Qm texto titulo="Hoje você pode gastar" linhas={resumo.explicacao} nota="A conta é feita pelo banco da família, igual para todo mundo da casa. Muda a cada gasto lançado." />
-        </section>
-      )}
-
-      {/* rodada 2 (BRUNO ideia 1): o placar do casal, só o que vem pela frente, sem item de ninguém */}
-      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento"><Icone nome="plano2029" />Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
-      <RumoA2029 compacto />
-      <Placar r={resumo} />
-      {/* logo abaixo do número do dia: quanto o dinheiro guardado rendeu hoje (só o casal) */}
-      <CartaoGuardado />
-      {/* E7: a linha até dez/2028 em 1 linha (só o casal); o desenho fica no Planejamento */}
-      {/* o Escritório: quantas coisas precisam de você, com a 1ª pergunta respondível aqui mesmo (a pessoa só ouve o que é dela) */}
-      <PrecisaDeVoce />
-
-      <section aria-labelledby="hEnv" className="view">
-        <h2 id="hEnv" className="sec-t">{meu && !temOutros ? (temCasa ? 'O seu e o da Casa' : 'O seu') : 'Quanto cada um pode gastar'}</h2>
-        <div className="envs">
-          {resumo.envelopes.map(e => <EnvelopeCard key={e.id} e={e} diasRestantes={resumo.dias_restantes} meu={e.id === meu?.id} />)}
-        </div>
-      </section>
-
-      <section className="card" aria-labelledby="hUlt">
-        <div className="card-h"><h2 id="hUlt"><Icone nome="lancamentos" />Últimos lançamentos</h2><a className="lnk" href="#/lancamentos">Ver todos<Icone desenho={ChevronRight} /></a></div>
-        {ult.length ? (
-          <ul className="list">
-            {ult.map(l => (
-              <li key={l.id} className="li">
-                <span className="tile"><Icone nome="gasto" /></span>
-                <span className="m"><b>{textoPrivado(l.descricao || 'Sem nome')}</b><small>{textoPrivado(nomeEnv(l.envelope_id))}{textoPrivado(rotuloDono(env(l.envelope_id), familia) && !rotuloDono(env(l.envelope_id), familia).endsWith(nomeEnv(l.envelope_id)) ? ` ${rotuloDono(env(l.envelope_id), familia)}` : '')} · pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }} /> · {dataCurta(l.data)}{l.parcela ? ` · parcela ${l.parcela.n} de ${l.parcela.de}` : (l.parcelas || 1) > 1 ? ` · ${l.parcelas}x` : ''}</small></span>
-                <span className="v"><Din v={l.valor} /></span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <SemGastosInicio anotar={() => abrirLancar()} />
-        )}
-        {ult.length > 0 && <button className="btn primary" type="button" style={{ marginTop: 12 }} onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar gasto</button>}
-      </section>
-    </div>
-  )
+  const { familia } = useApp()
+  return familia?.papel !== 'equipe' ? <InicioFamilia /> : null
 }
-
-/** B12 + L3: virada do mês em 1 frase, sem precisar tocar (dias 1 a 3). */
-function Virada({ e }: { e: Envelope }) {
-  const hoje = hojeRecife()
-  const ant = e.mes_anterior
-  if (Number(hoje.slice(8)) > 3 || !ant) return null
-  const falta = e.falta_mes_anterior || 0, parc = e.parcelas_mes || 0
-  const mesAnt = mesLongo(ant.mes + '-01'), esteMes = mesLongo(hoje)
-  // E3 (conserto 2): a mesma conta e a mesma frase do dia 30 (comecoDoMes)
-  const c = comecoDoMes(e.limite_base ?? e.limite_mes, falta, parc, mesAnt)
-  return (
-    <p className={'todo virada ' + (falta ? 'warn' : 'ok')}><span>
-      {cap(mesAnt)}: {reais(ant.gasto)} de {reais(ant.limite)}{falta ? `, passou ${reais(falta)}` : ', dentro'}. {cap(esteMes)} começa com <b>{reais(c.valor)}</b>{c.partes}.
-    </span></p>
-  )
-}
-
-/** E3 (conserto 2): nos 2 últimos dias do mês, o aviso de como o mês que vem começa (com a parcela que já cai nele). */
-function ViradaAntes({ e }: { e: Envelope }) {
-  const hoje = hojeRecife()
-  const parc = e.parcelas_mes_que_vem || 0
-  if (fimDoMes(hoje) > somaDias(hoje, 1) || !parc) return null
-  const prox = primeiroDoMesQueVem()
-  const c = comecoDoMes(e.limite_base ?? e.limite_mes, 0, parc, mesLongo(hoje))
-  return <p className="todo virada ok"><span>{cap(mesLongo(prox))} começa com <b>{reais(c.valor)}</b>{c.partes}.</span></p>
-}
-
-/**
- * C16 + E3 (conserto 3): o placar do casal, visto pelos 2, com cada um pelo nome e o valor. Quem passa aparece em âmbar
- * ("Ana: passou R$ 717, sai de dezembro"). "Juntos, sobram" só quando os 2 fecham dentro: antes a caixa ficava verde com alguém estourado.
- */
-function Placar({ r }: { r: ResumoHoje }) {
-  const p = r.placar_casal
-  if (!p || p.length < 2 || Number(hojeRecife().slice(8)) < 3) return null
-  const passa = (x: { fecha: number; limite: number }) => x.fecha > x.limite + 0.005
-  const passam = p.filter(passa)
-  const sobra = centavos(p.reduce((s, x) => s + x.limite - x.fecha, 0))
-  const prox = mesLongo(primeiroDoMesQueVem())
-  const linha = (x: (typeof p)[number]) => {
-    const nome = `${x.nome}${x.eu ? ' (você)' : ''}`
-    if (!passa(x)) return `${nome}: fecha com ${reais(x.fecha)} de ${reais(x.limite)}`
-    const ja = (x.gasto ?? 0) > x.limite + 0.005
-    return `${nome}: ${ja ? `passou ${reais(centavos((x.gasto ?? 0) - x.limite))}` : `vai passar ${reais(centavos(x.fecha - x.limite))}`}, sai de ${prox}`
-  }
-  return (
-    <section className={'card placar ' + (passam.length ? 'warn' : 'ok')} aria-labelledby="hPlacar">
-      <h2 id="hPlacar" style={{ fontSize: 16 }}>O casal, se continuar assim</h2>
-      <p>{passam.length ? <>{textoPrivado(passam.length === p.length ? 'Os 2 passam do combinado neste mês.' : `${passam[0].eu ? 'Você passa' : `${passam[0].nome} passa`} do combinado neste mês.`)} O que passa sai de {prox}.</> : <>Juntos, sobram <b>{reais(sobra)}</b> no fim do mês.</>}</p>
-      <p className="pes">{p.map(x => <span key={x.nome} className={passa(x) ? 'placar-passa' : ''}>{textoPrivado(linha(x))}</span>)}</p>
-      <p className="sub" style={{ color: 'inherit', opacity: .85 }}>Só a conta do fim do mês. Os gastos de cada um estão em Gastos e entradas, com o nome de quem gastou.</p>
+function InicioFamilia() {
+  const { api, familia, versao, abrirLancar } = useApp()
+  const r = useLeituraRemota('inicio-ultimos', familia ? () => lerLancamentosMes(api, familia.id, hojeRecife().slice(0, 7)) : null, [api, versao], 'lancamentos')
+  return <div className="view inicio-f29"><ResumoFamilia />
+    <section className="card"><div className="card-h"><h2>Últimos lançamentos</h2><a href="#/lancamentos">Ver todos</a></div>
+      {r.carregando ? <p>Conferindo...</p> : r.erro ? <p role="alert">Não foi possível conferir <button onClick={r.repetir}>Tentar de novo</button></p> : r.dado?.filter(x => !x.apagado_em).length ? <ul className="list">{r.dado.filter(x => !x.apagado_em).slice(0, 4).map(l => <li className="li" key={l.id}><span className="m">{textoPrivado(l.descricao)}</span><Din v={l.valor} /></li>)}</ul> : r.dado ? <SemGastosInicio anotar={() => abrirLancar()} /> : null}
     </section>
-  )
+  </div>
 }
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-
 export function SemGastosInicio({ anotar }: { anotar: () => void }) {
   return <EstadoVazio ilustracao="SemGastos" titulo="Nenhum gasto ainda" frase="É só o valor e 1 toque." acao={{ texto: 'Anotar gasto', aoClicar: anotar }} />
 }

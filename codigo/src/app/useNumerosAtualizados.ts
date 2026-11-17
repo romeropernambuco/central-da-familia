@@ -91,7 +91,7 @@ export function useNumerosAtualizados(agora: () => Date = () => new Date()) {
   const { api, familia } = useApp()
   const [config, , erroLeitura, lido] = useConfig<unknown>(CHAVE_NUMEROS, {})
   const fid = familia?.id ?? '', l = loja(api, fid)
-  useSyncExternalStore(f => { l.ouvintes.add(f); return () => { l.ouvintes.delete(f) } }, () => l.versao)
+  useSyncExternalStore(f => { l.ouvintes.add(f); return () => { l.ouvintes.delete(f) } }, () => l.versao, () => l.versao)
   const remoto = lerNumeros(config)
   const dados: NumerosAtualizados = { ...remoto }
   // Confirmações locais só prevalecem quando mais novas que a leitura remota.

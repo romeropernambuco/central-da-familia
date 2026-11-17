@@ -51,7 +51,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant√
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['ResumoFamilia', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -192,6 +192,7 @@ describe('regra do olho em cada tela real', () => {
     const container = doc.createElement('div'); doc.body.appendChild(container)
     const root = createRoot(container as unknown as HTMLElement)
     const api = Object.fromEntries(Object.entries(apiExemplo).map(([k, v]) => [k, typeof v === 'function' ? async (...args: unknown[]) => semear(await (v as Function)(...args)) : v])) as unknown as Api
+    api.saldosConta = async () => [{ id: 'conta-privada', nome: segredo, valor: dinheiro, conferidoEm: '2026-11-14' }]
     const sessao = { ...semear(await apiExemplo.sessao()), dono: true }
     const familia = sessao.familias[0]
     const resumo = semear(await apiExemplo.resumoHoje(familia.id))

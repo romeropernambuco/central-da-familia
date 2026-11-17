@@ -123,7 +123,7 @@ export function Guardado() {
           </section>
         </div>
         <div className="col">
-          <section className="card" aria-labelledby="gApps">
+          <section className="card" aria-labelledby="gApps" data-secao="aplicacoes">
             <div className="card-h"><h2 id="gApps"><Icone nome="guardar" />Onde está guardado</h2>
               {/* B15: as palavras do banco em 1 frase simples cada */}
               <button type="button" className="lnk" onClick={() => explicar({ cabeca: 'O que quer dizer cada palavra?', titulo: 'As palavras do banco, em 1 frase cada', linhas: [], nota: PALAVRAS })}><Icone desenho={HelpCircle} />O que é CDB, CDI, LCA?</button>

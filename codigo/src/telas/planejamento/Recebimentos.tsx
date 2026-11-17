@@ -1,4 +1,5 @@
-import { mesesPendentes, recebimentoAtual } from '../../lib/resumo/recebimentos'
+import { mesesPendentes, recebimentoAtual, recebimentosDoMes } from '../../lib/resumo/recebimentos'
+import { useDestino } from '../../app/destinos'
 import './planejamento.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -76,6 +77,7 @@ export function Recebimentos() {
 }
 
 function RecebimentosCasal() {
+  const destino = useDestino()
   const { api, familia, versao, tentar, toast, recarregar } = useApp()
   const fontes = useFontesReceita()
   const [n, setN] = useState(0)
@@ -143,12 +145,13 @@ function RecebimentosCasal() {
   const abertos = (lista || []).filter(r => pendentes(r).length > 0 || !!fontes.fontes[r.id]).map(valorAtual)
   const chegaram = (lista || []).filter(r => r.recebido_em && r.recebido_em.slice(0, 7) >= hoje.slice(0, 7))
   return (
-    <section className="card" aria-labelledby="pRec">
+    <section className="card" aria-labelledby="pRec" data-secao="recebimentos" data-periodo={destino.periodo}>
       <div className="card-h"><h2 id="pRec"><Icone desenho={CalendarClock} aria-hidden="true" />Recebimentos com data</h2><button className="lnk" type="button" onClick={() => setNovo(true)}><Icone desenho={Plus} />Recebimento</button></div>
       <p className="sub" style={{ marginBottom: 8 }}>Receitas da família, inclusive empresas e novos negócios. Só Garantido entra no número oficial de 2029. Só o dono lança e muda.</p>
       {api.modo === 'exemplo' && <p className="sub">Exemplo: receitas e valores inventados. Nenhuma alteração vai para a família real.</p>}
       {fontes.erro && <p role="alert">Não foi possível abrir o cadastro de fontes. {textoPrivado(fontes.erro)} <button type="button" onClick={() => recarregar()}><Icone nome="desfazer" />Conferir novamente</button></p>}
       {fontes.pronto && <CenariosReceitas fontes={fontes.fontes} controle={fontes.controle} revisao={n} />}
+      {!falha && !carregando && lista && fontes.pronto && <p>Previstos no mês (com atrasados): <Din v={recebimentosDoMes(lista, fontes.fontes, fontes.controle, destino.periodo || hoje.slice(0, 7)).previsto} /></p>}
       {!falha && !carregando && lista && fontes.pronto && !lista.some(r => ['empresa', 'negocio_novo'].includes(fontes.fontes[r.id]?.origem)) && <p>Tem uma empresa ou negócio novo que vai gerar receita? <button type="button" className="lnk" onClick={() => setNovo(true)}><Icone nome="lancar" />Cadastre aqui</button></p>}
       {!falha && !carregando && lista && !lista.length && <><EstadoVazio ilustracao="SemRecebimentos" titulo="Organize o que vem por aí" frase="Nenhum recebimento anotado. Ex.: contrato que paga em março, venda do carro." />{<Botao variante="secundario" type="button" onClick={() => setNovo(true)}><Icone desenho={Plus} />Anotar recebimento</Botao>}</>}
       {carregando && <p role="status">Buscando recebimentos…</p>}

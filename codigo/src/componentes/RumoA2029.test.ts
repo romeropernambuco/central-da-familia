@@ -75,6 +75,12 @@ it.each(['cobre', 'não cobre', 'sobra', 'sem dados'])('fonte única em cartão,
     { resumo: await apiExemplo.resumoHoje('familia-ficticia'), sessao: { dono: true } as Ctx['sessao'] })
   for (let i = 0; i < 4; i++) {
     const texto = a.box.buscar(x => x.getAttribute('data-frente') === String(i))[0].textContent
+    if (i === 2) {
+      const bloco = a.box.buscar(x => x.getAttribute('data-bloco') === 'plano2029')[0]
+      expect(bloco.textContent.replace(/\s/g, '')).toContain((n.renda / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ''))
+      expect(bloco.textContent).toContain('cenário oficial Garantido')
+      continue
+    }
     if (caso === 'sem dados') expect(texto).toContain('Informe o gasto necessário')
     else {
       expect(texto).toContain(`${dinheiroVisivel(n.falta_com_margem!)} por mês, com margem de segurança`)
@@ -146,6 +152,11 @@ it('agente real fala o mesmo Garantido do cartão, Início e Painel; cenário al
   const com = `${dinheiroVisivel(n.falta_com_margem!)} por mês, com margem de segurança`.replace(/\s/g, '')
   const sem = `Sem a margem de segurança: faltam ${dinheiroVisivel(n.falta_sem_margem)} por mês`.replace(/\s/g, '')
   for (const i of ['0', '2', '3', 'agente']) {
+    if (i === '2') {
+      expect(frente(i)).toContain((n.renda / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ''))
+      expect(frente(i)).toContain('cenáriooficialGarantido')
+      continue
+    }
     expect(frente(i)).toContain(com)
     expect(frente(i)).toContain(i === 'agente' ? 'NocenárioGarantidode2029' : sem)
   }

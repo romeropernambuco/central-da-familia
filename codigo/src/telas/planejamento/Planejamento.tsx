@@ -1,4 +1,6 @@
 import './planejamento.css'
+import { SaldoConta } from './SaldoConta'
+import { useDestino } from '../../app/destinos'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
@@ -31,6 +33,7 @@ function lista(v: unknown): any[] {
 
 /** Planejamento: limites dos envelopes, colchão, rendas, metas e previsão dos próximos meses. */
 export function Planejamento() {
+  const destino = useDestino()
   const { api, familia, resumo, recarregar, toast, versao, tentar, abrirLancar, oculto } = useApp()
   const [salvando, setSalvando] = useState(false)
   const [lim, setLim] = useState<Record<string, string>>({})
@@ -104,7 +107,7 @@ export function Planejamento() {
   return (
     <div className="tela-larga f30-planejamento">
       {/* C3 (sim do dono): o Objetivo de 2029, com o gráfico até 12/2028 e os 3 números, sobe pro topo da tela */}
-      <div className="col col-toda"><RumoA2029 /><Parametros /></div>
+      <div className="col col-toda"><SaldoConta /><div data-secao="plano2029"><RumoA2029 oficial={destino.secao === 'plano2029'} /></div><Parametros /></div>
       <div className="col">
         <section className="card" aria-labelledby="pLim">
           <div className="card-h"><h2 id="pLim"><Icone desenho={Wallet} aria-hidden="true" />Limites do mês</h2></div>

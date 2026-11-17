@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { Api, FamiliaMinha } from '../api/tipos'
+import { recursosResumo } from '../lib/resumo/recursos'
 
 export interface EscopoLeitura { sessao: string; familia: string; membro: string; papel: string }
 type Registro = { recurso: string; familia: string; promessa?: Promise<any>; dado?: any; pronto: boolean; pedido: number; estado: 'carregando' | 'pronto' | 'erro'; erro?: Error; consultadoEm: string | null }
@@ -62,20 +63,26 @@ export function lerCompartilhado<T>(api: Api, familia: string, recurso: string, 
   return promessa
 }
 
-const lojas = new WeakMap<Api, Map<string, { versao: number; ouvintes: Set<() => void> }>>()
+const lojas = new WeakMap<Api, Map<string, { versao: number; recursos: Map<string, number>; ouvintes: Set<() => void> }>>()
 function loja(api: Api, familia: string) {
   let familias = lojas.get(api)
   if (!familias) { familias = new Map(); lojas.set(api, familias) }
   let l = familias.get(familia)
-  if (!l) { l = { versao: 0, ouvintes: new Set() }; familias.set(familia, l) }
+  if (!l) { l = { versao: 0, recursos: new Map(), ouvintes: new Set() }; familias.set(familia, l) }
   return l
 }
 export function invalidarDados(api: Api, familia: string, recursos?: readonly string[]) {
+  if (recursos) recursos = [...recursos, ...Object.entries(recursosResumo).filter(([, rs]) => rs.some(r => recursos!.includes(r))).map(([k]) => `resumo-familia:${k}`)]
   const m = memoria(api)
   for (const [chave, r] of m.registros) if (r.familia === familia && (!recursos || recursos.includes(r.recurso))) { r.pedido++; m.registros.delete(chave) }
-  const l = loja(api, familia); l.versao++; l.ouvintes.forEach(f => f())
+  const l = loja(api, familia); l.versao++
+  if (recursos) for (const r of recursos) l.recursos.set(r, (l.recursos.get(r) || 0) + 1)
+  else for (const r of l.recursos.keys()) l.recursos.set(r, (l.recursos.get(r) || 0) + 1)
+  l.ouvintes.forEach(f => f())
 }
-export function useInvalidacao(api: Api, familia: string) {
+export function useInvalidacao(api: Api, familia: string, recurso?: string) {
   const l = loja(api, familia)
-  return useSyncExternalStore(f => { l.ouvintes.add(f); return () => l.ouvintes.delete(f) }, () => l.versao, () => l.versao)
+  if (recurso && !l.recursos.has(recurso)) l.recursos.set(recurso, 0)
+  const snapshot = () => recurso ? l.recursos.get(recurso) || 0 : l.versao
+  return useSyncExternalStore(f => { l.ouvintes.add(f); return () => l.ouvintes.delete(f) }, snapshot, snapshot)
 }

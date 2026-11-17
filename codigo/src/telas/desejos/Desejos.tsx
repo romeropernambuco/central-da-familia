@@ -1,4 +1,5 @@
 import './desejos.css'
+import { totaisDesejos } from '../../lib/resumo/desejos'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
@@ -227,8 +228,9 @@ export function Desejos() {
         </section>
       </div>
       <div className="col">
-        <section className="card" aria-labelledby="dLista">
+        <section className="card" aria-labelledby="dLista" data-secao="desejo">
           <div className="card-h"><h2 id="dLista"><Icone nome="desejos" />{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
+          {!falha && !carregando && lista && <p>{textoPrivado(`${totaisDesejos(lista).pensando} pensando · ${totaisDesejos(lista).combinados} combinados`)}</p>}
           {carregando && <p role="status">Buscando desejos…</p>}
           {falha && <p role="alert">Não foi possível buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}><Icone nome="desfazer" />Tentar novamente</button></p>}
           {lista === null ? null : !lista.length ? !falha && !carregando && <><EstadoVazio ilustracao="SemDesejos" titulo="Espaço para os próximos sonhos" frase="Crie seu primeiro desejo no formulário." /></> : (
@@ -239,7 +241,7 @@ export function Desejos() {
                 const dono = d.meu ? 'seu' : `de ${d.dono_nome || ''}`
                 const volta = d.volta_de === 'nada' ? '' : d.volta_de === 'contrato' ? ` · contrato adiantado: entra ${reais(d.antecipado || 0)} no lugar de ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}` : ` · volta ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}${d.volta_certa ? '' : ', se vier'}`
                 return (
-                  <li key={d.id} className="li desejo" style={{ gridTemplateColumns: '40px minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': textoPrivado(d.dono_nome || '') })}>
+                  <li key={d.id} data-secao="desejo" data-entidade={d.id} className="li desejo" style={{ gridTemplateColumns: '40px minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': textoPrivado(d.dono_nome || '') })}>
                     <span className="tile"><Icone nome="desejo" /></span><span className="m"><b className="quebra">{textoPrivado(d.nome)}</b>
                       <small>{casal && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: d.dono_membro, nome: d.dono_nome }} /> · </>}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
                       {!oculto && r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{textoPrivado(r.titulo)}</b> {textoPrivado([...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' '))}</small>}
