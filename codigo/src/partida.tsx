@@ -5,6 +5,7 @@ import './estilo.css'
 import { carregarApi, modoExemplo } from './api'
 import { Provedor } from './app/contexto'
 import { App } from './app/App'
+import { ProtecaoCarga } from './componentes/Carregando'
 
 // tema: automático pelo celular; "claro" ou "escuro" se a pessoa escolher em Ajustes
 try { const t = localStorage.getItem('tema'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch { /* sem armazenamento */ }
@@ -15,7 +16,7 @@ export async function iniciar(): Promise<void> {
   const raiz = document.getElementById('root')
   if (!raiz) throw new Error('Página sem o lugar do app (#root).')
   createRoot(raiz).render(
-    <StrictMode><Provedor api={api}><App /></Provedor></StrictMode>,
+    <StrictMode><Provedor api={api}><ProtecaoCarga><App /></ProtecaoCarga></Provedor></StrictMode>,
   )
 }
 

@@ -1,29 +1,31 @@
 import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
-import { useEffect, useState, useRef, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from 'react'
 import { Building2, CreditCard, House, ListChecks, Plus, Settings2, ShoppingBasket, Landmark, Wallet, Target, ChevronRight, ShieldCheck, Gauge, FlaskConical, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { Marca } from '../componentes/Marca'
 import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
-import { PrimeiroUso } from '../telas/primeiro-uso/PrimeiroUso'
-import { Inicio } from '../telas/inicio/Inicio'
-import { Lancar } from '../telas/lancar/Lancar'
-import { Lancamentos } from '../telas/lancamentos/Lancamentos'
-import { MeuOrcamento } from '../telas/meu-orcamento/MeuOrcamento'
-import { Cartoes } from '../telas/cartoes/Cartoes'
-import { Casa } from '../telas/casa/Casa'
-import { Escritorio } from '../telas/escritorio/Escritorio'
-import { Guardado } from '../telas/guardado/Guardado'
-import { Planejamento } from '../telas/planejamento/Planejamento'
-import { Painel } from '../telas/painel/Painel'
-import { Privacidade } from '../telas/privacidade/Privacidade'
-import { Ajustes } from '../telas/ajustes/Ajustes'
-import { Desejos } from '../telas/desejos/Desejos'
+const PrimeiroUso = lazy(() => import('../telas/primeiro-uso/PrimeiroUso').then(m => ({ default: m.PrimeiroUso })))
+const Inicio = lazy(() => import('../telas/inicio/Inicio').then(m => ({ default: m.Inicio })))
+const Lancar = lazy(() => import('../telas/lancar/Lancar').then(m => ({ default: m.Lancar })))
+const Lancamentos = lazy(() => import('../telas/lancamentos/Lancamentos').then(m => ({ default: m.Lancamentos })))
+const MeuOrcamento = lazy(() => import('../telas/meu-orcamento/MeuOrcamento').then(m => ({ default: m.MeuOrcamento })))
+const Cartoes = lazy(() => import('../telas/cartoes/Cartoes').then(m => ({ default: m.Cartoes })))
+const Casa = lazy(() => import('../telas/casa/Casa').then(m => ({ default: m.Casa })))
+const Escritorio = lazy(() => import('../telas/escritorio/Escritorio').then(m => ({ default: m.Escritorio })))
+const Guardado = lazy(() => import('../telas/guardado/Guardado').then(m => ({ default: m.Guardado })))
+const Planejamento = lazy(() => import('../telas/planejamento/Planejamento').then(m => ({ default: m.Planejamento })))
+const Painel = lazy(() => import('../telas/painel/Painel').then(m => ({ default: m.Painel })))
+const Privacidade = lazy(() => import('../telas/privacidade/Privacidade').then(m => ({ default: m.Privacidade })))
+const Ajustes = lazy(() => import('../telas/ajustes/Ajustes').then(m => ({ default: m.Ajustes })))
+const Desejos = lazy(() => import('../telas/desejos/Desejos').then(m => ({ default: m.Desejos })))
 import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
 import { podeVerNoMenu, rotaDoHash, rotaPermitida, type Rota } from './rotas'
 import { ehAtalho, lerAtalho } from '../lib/atalho'
 export type { Rota } from './rotas'
+
+import { Carregando } from '../componentes/Carregando'
 
 const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
   { r: 'inicio', nome: 'Início', ico: <House size={22} /> },
@@ -54,7 +56,8 @@ const TITULO: Record<string, [string, string]> = {
 }
 
 function lerRota(): Rota { return rotaDoHash(location.hash) }
-export function ir(r: Rota) { location.hash = '#/' + r }
+import { ir } from './rotas'
+export { ir } from './rotas'
 
 export function App() {
   const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto, alternarOculto } = useApp()
@@ -90,13 +93,13 @@ export function App() {
   useEffect(() => { if (sessao) setCarregou(true) }, [sessao])
 
   if (!sessao) {
-    if (!carregou) return <div className="entrar"><p className="sub">Abrindo…</p></div>
-    return <><Entrar /><AjudaDaAba rota="entrar" /></>
+    if (!carregou) return <Carregando />
+    return <Suspense fallback={<Carregando />}><Entrar /><AjudaDaAba rota="entrar" /></Suspense>
   }
   const equipe = familia?.papel === 'equipe'
   // a equipe nunca vê o primeiro uso (tela de criar família e limites em R$), nem digitando o endereço
   // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
-  if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <PrimeiroUso />
+  if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <Suspense fallback={<Carregando />}><PrimeiroUso /></Suspense>
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const permitidas = MENU.filter(m => podeVerNoMenu(m.r, familia.papel))
   const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
@@ -126,6 +129,7 @@ export function App() {
         {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
         {erro && <p className="todo warn" role="alert">{erro}</p>}
         <AgenteDaAba key={r} rota={r} />
+        <Suspense key={'tela:' + r} fallback={<Carregando />} >
         {r === 'inicio' && <Inicio />}
         {r === 'lancamentos' && <Lancamentos />}
         {r === 'orcamento' && <MeuOrcamento />}
@@ -138,6 +142,7 @@ export function App() {
         {r === 'ajustes' && <Ajustes />}
         {r === 'privacidade' && <Privacidade />}
         {r === 'painel' && <Painel />}
+        </Suspense>
         <AjudaDaAba rota={r} />
       </main>
       {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
@@ -165,7 +170,7 @@ export function App() {
           </ul>
         </Sheet>
       )}
-      {lancarAberto && <Lancar key={JSON.stringify([api.modo, sessao.userId, familia.id])} />}
+      {lancarAberto && <Suspense fallback={<Carregando />}><Lancar key={JSON.stringify([api.modo, sessao.userId, familia.id])} /></Suspense>}
     </>
   )
 }
