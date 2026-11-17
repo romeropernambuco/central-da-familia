@@ -79,13 +79,13 @@ export function AjudaDaAba({ rota }: { rota: string }) {
  </Sheet>}</>
 }
 let liberarRenderer: (() => void) | undefined
-export function AgenteDaAba({ rota }: { rota: Rota }) {
+export function AgenteDaAba({ rota, semCena }: { rota: Rota; semCena?: boolean }) {
  const { familia, sessao, api } = useApp()
  if (familia?.papel === 'equipe' && rota === 'privacidade') return null
  if (!familia || rotaPermitida(rota, familia.papel, sessao?.dono) !== rota || !AGENTE_POR_ABA[rota]) return null
- return <AgenteAutorizado key={[familia.id, rota, api.modo, familia.papel, familia.membroId, sessao?.userId].join(':')} rota={rota} />
+ return <AgenteAutorizado key={[familia.id, rota, api.modo, familia.papel, familia.membroId, sessao?.userId].join(':')} rota={rota} semCena={semCena} />
 }
-function AgenteAutorizado({ rota }: { rota: Rota }) {
+function AgenteAutorizado({ rota, semCena }: { rota: Rota; semCena?: boolean }) {
  const { familia, api, oculto, sessao } = useApp()
  const [subaba, setSubaba] = useState<string>()
  useEffect(() => {
@@ -188,7 +188,7 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  }
  const expandido = expansao?.modo === modo && expansao.pergunta === p?.id ? expansao.valor : null
  const falaPergunta = (texto: string) => textoDeAgente(texto, [...(p?.trechosPrivados || []), ...nomesPrivados([familia, sessao])], oculto)
- const completo = modo === 'completo'
+ const completo = modo === 'completo' && !semCena
  const conversa = falhou || conferindo || !!celebrando || (expandido ?? !(celular && visitaAnterior && (!p || visitaAnterior.perguntas.includes(p.id))))
  const saudar = !visitaAnterior?.saudou && !f?.frase?.includes(familia!.membroNome) && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome)
  useEffect(() => {

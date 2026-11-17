@@ -52,7 +52,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant√
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['RitmoOrcamento', 'ResumoFamilia', 'OrcamentoResumo', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['RitmoOrcamento', 'ResumoFamilia', 'OrcamentoResumo', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'EscritorioIsometrico', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -204,6 +204,7 @@ describe('regra do olho em cada tela real', () => {
       : nome === 'FolhaImovel' ? { inicial: imoveis[0], fechar() {}, salvar: async () => true, tirar() {} }
       : nome === 'Reajuste' ? { envelopes: resumo.envelopes, mudaLimite: () => true }
       : nome === 'OrcamentoResumo' ? { hoje: '2026-11-15', aberto: true, campo: { estado: 'pronto', valor: await lerOrcamento(api, familia, '2026-11-15') } }
+      : nome === 'EscritorioIsometrico' ? { superficie: 'escritorio' }
       : nome === 'NumerosAba' ? { id: 'analista', fechar() {} } : { aplicado: dinheiro }
     let alternar: () => void = () => {}
     function App() {

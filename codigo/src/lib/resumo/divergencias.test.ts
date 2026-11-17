@@ -6,7 +6,7 @@ const arquivos = import.meta.glob('../../telas/escritorio/*.tsx', { query: '?raw
 const familia = { id: 'f', papel: 'casal', envelopeId: 'eu' } as FamiliaMinha
 it('C1: título e prévia usam o mesmo total completo, acima de três', () => {
   expect(totalPendencias({ precisa_de_voce: Array(3).fill({}) as PerguntaEsc[], precisa_total: 8 })).toBe(8)
-  for (const p of ['Escritorio', 'PrecisaDeVoce']) expect(arquivos[`../../telas/escritorio/${p}.tsx`]).toContain('totalPendencias(e)')
+  for (const p of ['EscritorioIsometrico', 'PrecisaDeVoce']) expect(arquivos[`../../telas/escritorio/${p}.tsx`]).toContain('totalPendencias(e)')
 })
 it('C2: funcionário exclui parcelas sintéticas e futuro como Gastos', async () => {
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-17T12:00:00Z'))

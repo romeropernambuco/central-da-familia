@@ -1,27 +1,23 @@
-import { totalPendencias } from '../../lib/resumo/pendencias'
-import { useDestino } from '../../app/destinos'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
-import { useModoFuncionario } from '../../componentes/AgenteDaAba'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
-import { BellRing, ChevronRight, ClipboardList, Copy, Plus, Trash2 } from 'lucide-react'
+import { BellRing, ClipboardList, Copy, Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useEscritorio } from '../../app/useDados2'
 import { Vazio } from '../../componentes/base'
-import { FuncIco, PerguntaCard } from '../../componentes/Pergunta'
+import { FuncIco } from '../../componentes/Pergunta'
 import type { FuncionarioEsc, Lembrete, PerguntaEsc, RelatorioEsc, Repetir } from '../../api/tipos'
-import { FichaFuncionario, donoDaPergunta } from './Ficha'
+import { donoDaPergunta } from './Ficha'
 import { chaveSimples } from '../../api/normaliza2'
 import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/formato'
-import { demoraTexto, fraseDoDia } from '../../lib/guardado'
+import { demoraTexto } from '../../lib/guardado'
+import { EscritorioIsometrico } from './EscritorioIsometrico'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
-import { Cena3D, IcoEstado, ROTULO_ESTADO, salaDe } from './Cena3D.tsx'
-import { abaDoHash, SALAS_NOME } from './cenaBase'
-import { useEquipeCompleta } from './useEquipe'
+import { abaDoHash } from './cenaBase'
 import { DESTINO_SECRETARIA } from './equipe'
 import { umaPorVez } from '../../lib/seguro'
 
@@ -51,71 +47,10 @@ export function Escritorio() {
           {([['hoje', 'Hoje'], ['relatorio', 'Relatório'], ['lembretes', 'Lembretes']] as [Aba, string][]).map(([a, n]) => <button key={a} type="button" aria-pressed={aba === a} onClick={() => setAba(a)}><Icone nome={a === 'hoje' ? 'escritorio' : a === 'relatorio' ? 'folha' : 'recepcao'} />{n}</button>)}
         </div>
       </nav>
-      {aba === 'hoje' && <Hoje />}
+      {aba === 'hoje' && <EscritorioIsometrico superficie="escritorio" />}
       {aba === 'relatorio' && <Relatorio />}
       {aba === 'lembretes' && <Lembretes />}
     </div>
-  )
-}
-
-function Hoje() {
-  const destino = useDestino()
-  const modo = useModoFuncionario()
-  const [mostrarCena, setMostrarCena] = useState(false)
-  const { familia, oculto } = useApp()
-  const { e: previa, perguntas, estado, atualizar, responder } = useEscritorio()
-  const e = useMemo(() => previa ? { ...previa, precisa_de_voce: perguntas } : null, [previa, perguntas])
-  const [sel, setSel] = useState<string | null>(() => /[?&]f=([a-z_]+)/.exec(location.hash)?.[1] || null)
-  // C2: a equipe inteira da lista única (os 8 do banco e os que ainda não têm dado lá)
-  const funcs = useEquipeCompleta(e?.funcionarios)
-  useEffect(() => {
-    const p = e?.precisa_de_voce.find(p => p.id === destino.entidade)
-    if (destino.secao === 'tarefa' && p && e) setSel(donoDaPergunta(p, e.funcionarios)?.id || p.funcionario)
-  }, [e, destino.entidade, destino.secao])
-  if (estado === 'desligado') return <div className="card"><EstadoVazio ilustracao="Carregando" titulo="Preparando o Escritório" frase="O Escritório novo ainda está sendo ligado no banco da família. Assim que ligar, os funcionários aparecem aqui com as perguntas do dia." /></div>
-  if (estado === 'erro') return <div className="card"><div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para chamar a equipe." acao={{ texto: 'Tentar de novo', aoClicar: atualizar }} /></div></div>
-  if (!e) return <div className="card"><p className="sub">Chamando a equipe…</p></div>
-
-  const fila = e.precisa_de_voce
-  const aberto = funcs.find(f => f.id === sel) || null
-  const salas = Object.keys(SALAS_NOME).filter(k => funcs.some(f => salaDe(f.sala) === k))
-  const primeiro = fila[0] && donoDaPergunta(fila[0], e.funcionarios)
-
-  return (
-    <>
-      {funcs.falhou && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para atualizar a equipe." acao={{ texto: 'Tentar de novo', aoClicar: () => funcs.repetir?.() }} /></div>}
-      {funcs.carregando && <p role="status">Conferindo a equipe…</p>}
-      <div className="esc-frase">
-        <h2>{fraseDoDia(totalPendencias(e))}{totalPendencias(e) ? ' hoje' : ''}</h2>
-        <p className="sub">{fila.length ? 'Escolha alguém da equipe para responder, conferir o que cuida e ver seu histórico.' : 'Tudo em ordem. Escolha alguém da equipe para conferir o trabalho e seu histórico.'}</p>
-        {primeiro && <button type="button" className="btn primary" onClick={() => setSel(primeiro.id)}>Responder {textoPrivado(primeiro.nome)}<Icone desenho={ChevronRight} /></button>}
-      </div>
-      <div className="esc-grade">
-        <section hidden={modo !== 'completo'} className="card esc-cena-card" aria-label="O escritório da família em 3D">
-          {modo === 'completo' && <><button type="button" className="btn line" onClick={() => { window.dispatchEvent(new Event('escritorio3d-abrir')); setMostrarCena(true) }}><Icone nome="escritorio" />Ver o escritório completo em 3D</button>{mostrarCena && <Cena3D funcionarios={funcs} selecionado={aberto?.id || null} aoTocar={setSel} />}</>}
-        </section>
-        <section className="card" aria-labelledby="eEq">
-          <div className="card-h"><h2 id="eEq"><Icone nome="escritorio" />A equipe, sala por sala</h2></div>
-          {salas.map(k => (
-            <div key={k} className="esc-sala">
-              <h3>{SALAS_NOME[k]}</h3>
-              <ul className="list">
-                {funcs.filter(f => salaDe(f.sala) === k).map(f => (
-                  <li key={f.id}>
-                    <button className="li" type="button" data-func={f.id} onClick={() => setSel(f.id)} aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir a ficha.`)}>
-                      <FuncIco id={f.id} precisa={f.estado === 'precisa_de_voce'} />
-                      <span className="m"><b className="quebra">{textoPrivado(f.nome)}</b><small style={{ whiteSpace: 'normal' }}>{textoPrivado(oculto ? '\u2022\u2022\u2022' : f.frase)}</small><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')} style={{ marginTop: 6 }}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></span>
-                      <Icone desenho={ChevronRight} className="muted" aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      </div>
-      {aberto && <FichaFuncionario key={familia?.id + ':' + aberto.id} f={aberto} e={e} responder={responder} fechar={() => setSel(null)} />}
-    </>
   )
 }
 

@@ -22,3 +22,6 @@
   .agente-aba:has(~ .inicio-f29) .agente-identidade.com-cena{grid-template-columns:80px minmax(0,1fr)}
   .agente-aba:has(~ .inicio-f29) .cena3d.mini-agente{height:64px}
 }
+
+.iso-reserva{min-height:530px}
+@media(max-width:899px){.iso-reserva{min-height:240px}}
