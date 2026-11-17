@@ -44,7 +44,7 @@ function ambiente(webgl = false) {
     limpar: async () => { await act(async () => eventos.dispatchEvent(new Event('storage'))); await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() },
   }
 }
-function botao(n: NoTeste, texto: string) { const b = n.buscar(n => n.tagName === 'BUTTON' && n.textContent === texto)[0]; expect(b, texto).toBeDefined(); return b }
+function botao(n: NoTeste, texto: string) { const b = n.buscar(n => n.tagName === 'BUTTON' && (n.textContent === texto || n.getAttribute('aria-label') === texto))[0]; expect(b, texto).toBeDefined(); return b }
 const perguntas = (n: NoTeste) => n.buscar(n => n.getAttribute('data-pergunta') !== null)
 function memoria(ctx: Ctx, storage: Map<string, string>) { return lerMemoria(storage.get(chaveArmazenamento(ctx.api.modo, 'u', ctx.familia!.id)) || null) }
 
@@ -103,7 +103,7 @@ it.each(CASOS_LIGACAO)('ligação: %s na aba %s, funcionário %s, uma pergunta e
     expect(a.container.buscar(n => n.getAttribute('data-agente') === funcionario)).toHaveLength(1)
     expect(perguntas(a.container)).toHaveLength(1)
     expect(a.container.textContent).toContain('Precisa de você')
-    expect(a.container.textContent).toContain(funcionario === 'colchao' ? 'Ver resumo desta tela' : 'Ver tarefas e cadastros')
+    expect(a.container.textContent).toContain(funcionario === 'colchao' ? 'Ver resumo' : 'Ver tarefas')
     const antes = Object.values(ctx.api).filter(v => vi.isMockFunction(v)).map(v => vi.mocked(v).mock.calls.length)
     await act(async () => { await vi.advanceTimersByTimeAsync(90000); a.eventos.dispatchEvent(new Event('focus')) })
     expect(Object.values(ctx.api).filter(v => vi.isMockFunction(v)).map(v => vi.mocked(v).mock.calls.length)).toEqual(antes)
@@ -506,5 +506,60 @@ it('Guardado não troca o elenco por pergunta de Usina', async () => {
   await a.render(ctx, 'guardado')
   expect(a.container.textContent).not.toContain('Pergunta fora do elenco')
   expect(cena.montar.mock.calls[0][2].funcionarios.map((f: { id: string }) => f.id)).toEqual(['guardado', 'imoveis'])
+ } finally { await a.limpar() }
+})
+it('f33: identidade integrada, saudação na conversa sem linha extra e ações na mesma faixa', async () => {
+ const a = ambiente(), ctx = contextoLigacao('nenhum')
+ ctx.familia!.membroNome = 'Ana'
+ try {
+  await a.render(ctx, 'cartoes')
+  expect(a.container.buscar(n => n.getAttribute('class') === 'agente-identidade com-cena')).toHaveLength(1)
+  expect(a.container.buscar(n => n.getAttribute('class') === 'agente-acoes')[0].textContent).toContain('Recolher')
+  expect(a.container.buscar(n => n.tagName === 'P' && n.textContent === 'Olá, Ana.')).toHaveLength(0)
+  expect(a.container.textContent).toContain('Olá, Ana.')
+ } finally { await a.limpar() }
+})
+
+it('f33: revisita móvel recolhe pergunta conhecida, Responder revela e pergunta nova reabre', async () => {
+ const a = ambiente(true), ctx = contextoLigacao('nenhum'), visitas = new Map<string, string>()
+ vi.stubGlobal('sessionStorage', { getItem: (k: string) => visitas.get(k) || null, setItem: (k: string, v: string) => visitas.set(k, v) })
+ const pergunta = { id: 'f33-nota', funcionario: 'fiscal', pergunta: 'Ana, guardou a nota?', contexto: 'Mercado particular', trechosPrivados: ['Mercado particular'], opcoes: [{ id: 'sim', rotulo: 'Sim' }] }
+ vi.mocked(ctx.api.escritorioHoje).mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [pergunta] })
+ try {
+  await a.render(ctx, 'casa')
+  expect(perguntas(a.container)).toHaveLength(1)
+  expect(a.container.buscar(n => n.tagName === 'P' && n.textContent === 'Olá, Ana.')).toHaveLength(0)
+  await act(async () => a.root.render(null))
+  await a.render(ctx, 'casa')
+  expect(botao(a.container, 'Responder').getAttribute('aria-expanded')).toBe('false')
+  expect(a.container.textContent).toContain('Ana, guardou a nota?')
+  expect(perguntas(a.container)).toHaveLength(0)
+  await act(async () => botao(a.container, 'Responder').click())
+  expect(perguntas(a.container)).toHaveLength(1)
+  vi.mocked(ctx.api.escritorioHoje).mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [{ ...pergunta, id: 'f33-nova', pergunta: 'Pode contar o estoque?' }] })
+  await act(async () => lojaEscritorio(ctx.api, ctx.familia!.id).ler(ctx.api, ctx.familia!.id))
+  expect(perguntas(a.container).map(n => n.getAttribute('data-pergunta'))).toContain('f33-nova')
+  expect(botao(a.container, 'Recolher').getAttribute('aria-expanded')).toBe('true')
+ } finally { await a.limpar() }
+})
+
+it('f33: revisita sem pergunta recolhe apenas no celular; contexto respeita o olho', async () => {
+ const a = ambiente(), ctx = contextoLigacao('nenhum'), visitas = new Map<string, string>()
+ vi.stubGlobal('sessionStorage', { getItem: (k: string) => visitas.get(k) || null, setItem: (k: string, v: string) => visitas.set(k, v) })
+ try {
+  await a.render(ctx, 'cartoes')
+  await act(async () => a.root.render(null))
+  await a.render(ctx, 'cartoes')
+  expect(botao(a.container, 'Expandir').getAttribute('aria-expanded')).toBe('false')
+  await act(async () => a.root.render(null))
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
+  await a.render(ctx, 'cartoes')
+  expect(botao(a.container, 'Recolher').getAttribute('aria-expanded')).toBe('true')
+  const p = { id: 'f33-privado', funcionario: 'fiscal', pergunta: 'Pode conferir?', contexto: 'Mercado particular R$ 987,65', trechosPrivados: ['Mercado particular'], opcoes: [] }
+  vi.mocked(ctx.api.escritorioHoje).mockResolvedValue({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [p] })
+  await act(async () => lojaEscritorio(ctx.api, ctx.familia!.id).ler(ctx.api, ctx.familia!.id))
+  await a.render({ ...ctx, oculto: true }, 'casa')
+  expect(a.container.textContent).not.toContain('Mercado particular')
+  expect(a.container.textContent).not.toContain('987,65')
  } finally { await a.limpar() }
 })

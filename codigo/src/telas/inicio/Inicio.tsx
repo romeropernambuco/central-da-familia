@@ -58,8 +58,6 @@ export function Inicio() {
 
   return (
     <div className="view inicio-f29">
-      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento"><Icone nome="plano2029" />Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
-      <RumoA2029 compacto />
       {meu && n ? (
         <section className="card hoje-card" aria-labelledby="hHoje">
           <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
@@ -92,6 +90,8 @@ export function Inicio() {
       )}
 
       {/* rodada 2 (BRUNO ideia 1): o placar do casal, só o que vem pela frente, sem item de ninguém */}
+      {familia?.papel === 'casal' && <a className="btn line" href="#/planejamento"><Icone nome="plano2029" />Plano 2029<Icone desenho={ChevronRight} aria-hidden="true" /></a>}
+      <RumoA2029 compacto />
       <Placar r={resumo} />
       {/* logo abaixo do número do dia: quanto o dinheiro guardado rendeu hoje (só o casal) */}
       <CartaoGuardado />

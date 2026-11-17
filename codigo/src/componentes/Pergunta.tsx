@@ -16,6 +16,17 @@ import { reduzirFoto } from '../lib/foto'
 import { hojeRecife, textoParaValor, valorDigitadoValido } from '../lib/formato'
 
 /** Rosto do funcionário nas listas: ícone num círculo (o boneco 3D só existe na tela Escritório). */
+function rotuloCurto(texto: string) {
+  const curtos: Record<string, string> = {
+    'Anexar a nota agora': 'Anexar nota', 'Anexar depois': 'Depois',
+    'Não teve nota': 'Sem nota', 'Vou tirar o dinheiro': 'Retirar', 'Decido depois': 'Depois',
+    'Informar outro dia de pagamento': 'Outro dia', 'Ver compras desta fatura': 'Ver compras',
+    'Confirmar recebimento': 'Recebi', 'Reagendar previsão': 'Reagendar',
+    'Explicar por que não houve nota': 'Sem nota', 'Revisar aportes ou premissas': 'Revisar plano',
+  }
+  return curtos[texto] || texto
+}
+
 export function FuncIco({ id, size = 40, precisa }: { id: string; size?: number; precisa?: boolean }) {
   return <span className={'tile func' + (precisa ? ' precisa' : '')} style={{ width: size, height: size }} aria-hidden="true">{<Icone nome={id in icones ? id as NomeIcone : 'pessoa'} />}</span>
 }
@@ -58,7 +69,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
  * 1 pergunta de 1 funcionário, com os botões de resposta. 1 passo por vez (padrão do Cobrador do app do Michel):
  * resposta simples grava com 1 toque; resposta que pede dia, valor, texto, foto ou contagem abre só esse passo.
  */
-export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder, aoExibir }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; corrige?: boolean; aoResponder?: () => void; aoExibir?: () => void }) {
+export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder, aoExibir, compacto }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; compacto?: boolean; corrige?: boolean; aoResponder?: () => void; aoExibir?: () => void }) {
   const { abrirLancar, familia, api, tentar, oculto, sessao, resumo } = useApp()
   const privados = [...(p.trechosPrivados || []), ...nomesPrivados([familia, sessao, resumo])]
   const fala = (texto: string) => p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)
@@ -153,11 +164,11 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
     <div className="perg" data-pergunta={p.id}>
       {!semQuem && <p className="perg-quem"><FuncIco id={p.funcionario} size={32} precisa /><span><b>{EQUIPE.some(m => m.nome === quem) ? quem : textoPrivado(quem)}</b>{posicao ? ` · ${posicao}` : ''}</span>{(p.espera_dias || 0) > 0 && <span className="chip warn">{p.espera_dias === 1 ? 'esperando há 1 dia' : `esperando há ${p.espera_dias} dias`}</span>}</p>}
       <p className="perg-t">{fala(p.pergunta)}</p>
-      {p.contexto && <p className="perg-c">{fala(p.contexto)}</p>}
+      {p.contexto && !compacto && <p className="perg-c">{fala(p.contexto)}</p>}
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => (
-          <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{!/^copiar/.test(o.id) && o.abre !== 'nota' && <Icone nome="abrir" />}{rotuloDeOpcao(o.rotulo, i, privados, oculto)}
+          <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} title={compacto ? rotuloDeOpcao(o.rotulo, i, privados, oculto) : undefined} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
+            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{!/^copiar/.test(o.id) && o.abre !== 'nota' && <Icone nome="abrir" />}{compacto ? rotuloCurto(rotuloDeOpcao(o.rotulo, i, privados, oculto)) : rotuloDeOpcao(o.rotulo, i, privados, oculto)}
           </button>
         ))}
       </div>

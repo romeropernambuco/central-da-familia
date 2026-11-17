@@ -438,7 +438,7 @@ it('f32: conversa tem painel próprio e recolher preserva o controle acessível'
 it('15: recolher e expandir informam estado acessível', async () => {
  const a=await montar(createElement(AgenteDaAba,{rota:'casa'}))
  try {
-  const botao=()=>a.container.buscar(n=>n.tagName==='BUTTON'&&/^(Recolher|Expandir)$/.test(n.textContent))[0]
+  const botao=()=>a.container.buscar(n=>n.tagName==='BUTTON'&&/^(Recolher|Expandir|Responder)$/.test(n.textContent))[0]
   expect(botao().getAttribute('aria-expanded')).toBe('true')
   await act(async()=>botao().click())
   expect(botao().getAttribute('aria-expanded')).toBe('false')

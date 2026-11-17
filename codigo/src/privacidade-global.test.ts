@@ -34,15 +34,16 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant�
     expect(card).toBeDefined()
     expect(container.buscar(n => n.getAttribute('data-agente') === funcionario)).toHaveLength(1)
     const opcoes = card.buscar(n => n.tagName === 'BUTTON').map(n => n.textContent)
+    const nomesAcessiveis = card.buscar(n => n.tagName === 'BUTTON').map(n => n.getAttribute('aria-label'))
     for (const fechado of [true, false, true]) {
       expect(container.buscar(n => n.getAttribute('data-pergunta') !== null)).toHaveLength(1)
       expect(card.buscar(n => n.tagName === 'BUTTON').map(n => n.textContent)).toEqual(opcoes)
-      expect(card.buscar(n => n.tagName === 'BUTTON').map(n => n.getAttribute('aria-label'))).toEqual(opcoes)
+      expect(card.buscar(n => n.tagName === 'BUTTON').map(n => n.getAttribute('aria-label'))).toEqual(nomesAcessiveis)
       expect(opcoes).toContain('Depois'); expect(opcoes).toContain('Já resolvido')
       expect(opcoes.every(r => !r.includes('•••'))).toBe(true)
       if (fechado) expect(vazamentos(container)).toEqual([])
       else if (['fatura_vencendo', 'fatura_divergente', 'parcelas', 'recebimento', 'aplicacao'].includes(tipo)) {
-        expect(card.textContent).toContain(segredo); expect(card.textContent).toContain('9.876,54')
+        expect(container.textContent).toContain(segredo); expect(container.textContent).toContain('9.876,54')
       }
       await act(async () => alternar())
     }
@@ -99,7 +100,7 @@ for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
       for (const fechado of [inicial, !inicial, inicial]) {
         const botoes = grupo().buscar(n => n.tagName === 'BUTTON')
         const esperados = fechado ? ['Vou renovar', 'Vou tirar o dinheiro', 'Decido depois', 'Renovar por R$ •••', 'Conversar com •••', 'Opção 6', 'Opção 7'] : p.opcoes.map(o => o.rotulo)
-        expect(botoes.map(n => n.textContent)).toEqual(esperados)
+        expect(botoes.map(n => n.textContent)).toEqual(alvo === 'AgenteDaAba' ? esperados.map(r => r === 'Vou tirar o dinheiro' ? 'Retirar' : r === 'Decido depois' ? 'Depois' : r) : esperados)
         expect(botoes.map(n => n.getAttribute('aria-label'))).toEqual(esperados)
         expect(new Set(botoes.map(n => n.getAttribute('aria-label'))).size).toBe(7)
         expect(grupo()).toBe(original)
