@@ -1,0 +1,15 @@
+/* Regras locais dos cartões financeiros compartilhados. */
+.env .env-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.env .env-h>b{flex:1;min-width:0;overflow-wrap:anywhere}
+.env .numrow{margin-block:16px 4px;font-variant-numeric:tabular-nums}
+.env .sub{line-height:1.6}
+.env .btn{min-height:44px;white-space:normal;text-align:start}
+.env .btn:focus-visible,.graf-area:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.env .btn:hover{background:var(--raised)}
+.env .btn:active{box-shadow:inset 0 0 0 2px var(--accent)}
+.graf{min-width:0;max-width:100%}
+.graf-area{min-width:0;max-width:100%;overflow:hidden;border-radius:var(--r-card)}
+.ritmo-t{gap:12px;flex-wrap:wrap}
+.ritmo-t b{font-variant-numeric:tabular-nums}
+.ritmo-b{padding:16px;border:1px solid var(--border);border-radius:var(--r-card)}
+@media(prefers-reduced-motion:reduce){.env .meter i{transition:none}}

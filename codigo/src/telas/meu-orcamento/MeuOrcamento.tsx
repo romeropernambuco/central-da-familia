@@ -1,3 +1,5 @@
+import './meu-orcamento.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
@@ -50,9 +52,10 @@ export function MeuOrcamento() {
     return { porDia, base, fechados, anot, cof: cofrinhoDoMes(porDia, base, fechados, anot) }
   }, [lanc, env?.id, env?.limite_base, env?.limite_mes, hoje, semGasto])
 
-  if (leitura.carregando || leitura.erro || !leitura.dado) return <Conferencia erro={!!leitura.erro} repetir={leitura.repetir} />
+  if (leitura.erro) return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Seus registros continuam guardados. Vamos tentar de novo?" acao={{ texto: 'Tentar de novo', aoClicar: leitura.repetir }} /></div>
+  if (leitura.carregando || !leitura.dado) return <Conferencia repetir={leitura.repetir} />
   if (!resumo) return <div className="card"><p className="sub">Abrindo…</p></div>
-  if (!env) return <div className="card"><p className="sub">Ainda não tem limite de pessoa. Crie em Planejamento.</p></div>
+  if (!env) return <div className="card"><EstadoVazio ilustracao="Plano2029" titulo="Seu orçamento começa aqui" frase="Ainda não tem limite de pessoa. Crie em Planejamento." /></div>
 
   const n = numeroEnvelope(env, resumo.dias_restantes)
   // E2 (regra nova, 13/11): o casal abre o orçamento do outro pra ler, com o nome dele, sem nenhum botão de mexer
@@ -64,7 +67,7 @@ export function MeuOrcamento() {
   const ult3 = [1, 2, 3].map(i => somaDias(hoje, -i)).filter(d => d.startsWith(mes))
   const branco = ult3.filter(d => !dados.anot.has(d)).length
   const dentro = dados.fechados.filter(d => dados.anot.has(d) && (dados.porDia[d] || 0) <= dados.base).length
-  const ir = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const ir = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
   const frase = fraseEstouro(env, n)
   const conquistas = [
     { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0 },
@@ -74,7 +77,7 @@ export function MeuOrcamento() {
   ]
 
   return (
-    <div className="view">
+    <div className="view orcamento-f29">
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
           {pessoais.map(e => <button key={e.id} type="button" className="pill" aria-pressed={e.id === env.id} onClick={() => setEnvId(e.id)}>{textoPrivado(e.nome)}{escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}</button>)}
@@ -82,9 +85,9 @@ export function MeuOrcamento() {
       )}
       <nav className="segbar" aria-label="Ir para">
         <div className="seg">
-          <button type="button" onClick={() => ir('oHoje')}>Hoje</button>
-          <button type="button" onClick={() => ir('oCofrinho')}>Sobra anotada</button>
-          <button type="button" onClick={() => ir('oMais')}>Conquistas</button>
+          <button type="button" onClick={() => ir('oHoje')}><Icone nome="inicio" />Hoje</button>
+          <button type="button" onClick={() => ir('oCofrinho')}><Icone nome="guardar" />Sobra anotada</button>
+          <button type="button" onClick={() => ir('oMais')}><Icone nome="salvo" />Conquistas</button>
         </div>
       </nav>
 
@@ -103,8 +106,8 @@ export function MeuOrcamento() {
               <div className="todo ontem" style={{ marginTop: 12 }}><Icone desenho={CalendarCheck} aria-hidden="true" />
                 <span><b>Ontem você não gastou nada?</b> É só para conta ficar certa.
                   <span className="row-btns" style={{ marginTop: 8 }}>
-                    <Botao variante="secundario" className="sm" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}>Não gastei</Botao>
-                    <Botao variante="secundario" className="sm" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}>Esqueci de anotar</Botao>
+                    <Botao variante="secundario" className="sm" type="button" onClick={async () => { if (await salvarSemGasto([...(semGasto || []), ontem])) toast('Anotado: ontem você não gastou.') }}><Icone nome="salvo" />Não gastei</Botao>
+                    <Botao variante="secundario" className="sm" type="button" onClick={() => abrirLancar({ envelope: env.id, quando: 'ontem' })}><Icone nome="lancar" />Esqueci de anotar</Botao>
                   </span>
                 </span>
               </div>
@@ -177,7 +180,7 @@ function NovaMeta({ fechar, salvar }: { fechar: () => void; salvar: (nome: strin
       <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (nome.trim() && textoParaValor(v) > 0 && await salvar(nome.trim(), textoParaValor(v))) [setNome,setV].forEach(s=>s.limpar()) }}>
         <label className="campo"><span>O que você quer comprar?</span><CampoPrivado className="inp" placeholder="Ex.: Fone" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Quanto custa?</span><CampoValor valor={v} mudar={setV} rotulo="Quanto custa" /></div>
-        <Botao variante="primario" className="full" type="submit">Guardar a meta</Botao>
+        <Botao variante="primario" className="full" type="submit"><Icone nome="desejo" />Guardar a meta</Botao>
       </form>
     </Sheet>
   )
@@ -212,7 +215,7 @@ export function ProgressoMeta({ meta, salvar, editavel }: { meta: MetaPessoal; s
       e.preventDefault(); if (ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return
       setOcupado(true); setFalha('')
       try { if (await salvar({ ...meta, anotacoes: [...(meta.anotacoes || []), { id: String(Date.now()), data: hojeRecife(), valor: textoParaValor(valor) }] })) setValor(''); else setFalha('Não foi possível guardar a anotação. Seu valor continua aqui.') } finally { setOcupado(false) }
-    }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><Botao type="submit" variante="secundario" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}>Anotar valor guardado</Botao></form>}
+    }}><label className="campo"><span>Quanto você guardou de verdade?</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto você guardou de verdade?" /></label><Botao type="submit" variante="secundario" disabled={ocupado || !valorDigitadoValido(valor) || textoParaValor(valor) <= 0}><Icone nome="guardar" />Anotar valor guardado</Botao></form>}
     {falha && <p role="alert">{falha}</p>}
   </div>
 }

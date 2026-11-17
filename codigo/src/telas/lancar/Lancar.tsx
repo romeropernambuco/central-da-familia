@@ -1,3 +1,5 @@
+import './lancar.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useMembros } from '../../app/useMembros'
 import { valorForaPadrao } from '../../app/valorForaPadrao'
@@ -192,7 +194,7 @@ export function Lancar() {
   const [int, dec] = txt.split(',')
   const visor = (
     <>
-      <div className="amount">
+      <div className="amount lancar-f29">
         <span className="lab">{modo === 'entrou' ? 'Quanto entrou?' : corr ? 'Valor certo' : 'Quanto gastou?'}</span>
         <output className={(valor ? '' : 'zero') + (selecionado ? ' selecionado' : '')} aria-live="polite" aria-label={oculto ? 'Valor escondido' : 'Valor ' + reais(valor)}>
           <span className="cur">R$</span><span className="num">{oculto && valor ? '•••' : <>{(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}{dec !== undefined ? ',' + dec : ''}</>}</span>
@@ -217,8 +219,8 @@ export function Lancar() {
       {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={descartar}>Descartar</button></p>}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
-          <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}>Gastei</button>
-          <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}>Entrou dinheiro</button>
+          <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}><Icone nome="gasto" />Gastei</button>
+          <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}><Icone nome="entrada" />Entrou dinheiro</button>
         </div>
       )}
       {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
@@ -234,8 +236,8 @@ export function Lancar() {
           </div>
           {!equipe && cartoes.length > 0 && (
             <div className="atrow"><span className="atl">Pagou</span>
-              <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => { setCartao(null); setParcelas(1) }}>Pix ou dinheiro</button>
-              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}>{textoPrivado(x.nome)}</button>)}
+              <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => { setCartao(null); setParcelas(1) }}><Icone nome="orcamento" />Pix ou dinheiro</button>
+              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}><Icone nome="cartao" />{textoPrivado(x.nome)}</button>)}
             </div>
           )}
           {c && (
@@ -253,7 +255,7 @@ export function Lancar() {
           {/* QA E11 (E8): parcelado que não conta neste mês não mostra o aviso como se fosse gasto de hoje */}
           {casal && !corr && gastoGrande && sim.length <= 1 && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
           <p className="lbl salvar-dica">{corr ? 'Toque no nome para salvar a correção' : valor > 0 ? 'Toque no seu nome para salvar' : 'Digite o valor e toque no seu nome para salvar'}</p>
-          <div className="envbtns">
+          <div className="envbtns lancar-destinos-f29">
             {ordem.map(e => {
               // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
               const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
@@ -265,7 +267,7 @@ export function Lancar() {
               const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
               return (
                 <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}>
-                  <b>Salvar em {textoPrivado(e.nome)}</b>
+                  <Icone nome="salvo" /><b>Salvar em {textoPrivado(e.nome)}</b><Icone nome="abrir" className="destino-seta" />
                   <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
                 </button>
               )
@@ -279,7 +281,7 @@ export function Lancar() {
               </span>
             </div>
           )}
-          {!ordem.length && <p className="sub">Nenhum limite criado ainda. Crie em Planejamento.</p>}
+          {!ordem.length && <EstadoVazio ilustracao="Plano2029" titulo="Nenhum limite criado ainda" frase="Crie em Planejamento." />}
           {/* B14: a lixeira mora só dentro do Corrigir (longe do lápis da lista) */}
           {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Icone desenho={Trash2} />Apagar este lançamento</button>}
         </>
@@ -330,8 +332,8 @@ function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: Rea
   return (
     <>
       <div className="pills" role="group" aria-label="De onde é esse dinheiro">
-        <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}>É do meu trabalho</button>
-        <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}>Entrou a mais</button>
+        <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}><Icone nome="folha" />É do meu trabalho</button>
+        <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}><Icone nome="entrada" />Entrou a mais</button>
       </div>
       <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta para 2029) e <b>não aumenta</b> o que dá para gastar.</>}</p>
       {visor}
@@ -395,8 +397,8 @@ function AnotarCompra() {
       <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
         <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">
-          <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}>Feira da semana</button>
-          <button type="button" className="pill" aria-pressed={tipo === 'casa'} onClick={() => setTipo('casa')}>Coisa da casa</button>
+          <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}><Icone nome="comprador" />Feira da semana</button>
+          <button type="button" className="pill" aria-pressed={tipo === 'casa'} onClick={() => setTipo('casa')}><Icone nome="casa" />Coisa da casa</button>
         </div>
       </div>
       <div className="foto-nota">

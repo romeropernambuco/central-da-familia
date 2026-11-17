@@ -1,3 +1,5 @@
+import './painel.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
@@ -14,10 +16,12 @@ export function Painel() {
   useEffect(() => { api.numerosSemana().then(setNums).catch(e => setErro((e as Error).message)) }, [api])
   if (!sessao?.dono) return <div className="card"><p className="todo"><Icone desenho={Lock} aria-hidden="true" />Esta tela é só do dono do produto.</p></div>
   return (
-    <div className="view">
+    <div className="view painel-f29">
       <RumoA2029 oficial />
       <p className="sub">Os 4 números que dizem se o app está funcionando, olhados toda segunda. Cada card explica de onde vem.</p>
-      {erro && <p className="todo warn">{textoPrivado(erro)}</p>}
+      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível abrir os números" frase={textoPrivado(erro)} /></div>}
+      {!erro && !nums && <div role="status"><EstadoVazio ilustracao="Carregando" titulo="Abrindo o painel" frase="Buscando os números da semana…" /></div>}
+      {!erro && nums?.length === 0 && <EstadoVazio ilustracao="TudoEmDia" titulo="Nenhum número nesta consulta" frase="Os indicadores aparecem quando estiverem disponíveis." />}
       <div className="nums">
         {(nums || []).map(n => (
           <section className="card" key={n.chave} aria-label={textoPrivado(n.nome)}>
