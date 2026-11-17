@@ -1,3 +1,4 @@
+import { useInvalidacao } from './invalidacao'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from './contexto'
 import { criarGuardaConfig } from '../lib/seguro'
@@ -16,6 +17,7 @@ export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promi
   const [lido, setLido] = useState(false)
   const atual = useRef(v); atual.current = v
   const fid = familia?.id
+  const invalidacao = useInvalidacao(api, fid || '')
   const escopo = `${fid}:${chave}`
   const [origem, setOrigem] = useState(escopo)
   const escopoAtual = useRef(escopo); escopoAtual.current = escopo
@@ -26,7 +28,7 @@ export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promi
     let vivo = true
     guarda.carregar().then(r => { if (vivo && r) { setV(r.valor); setFalha(''); setLido(true) } }).catch(e => { if (vivo && !guarda.lido) setFalha((e as Error).message) })
     return () => { vivo = false }
-  }, [guarda, fid, versao])
+  }, [guarda, fid, versao, invalidacao])
   const salvar = async (nv: T) => {
     if (!fid || origem !== escopo || !lido) return false
     const aindaAtual = () => escopoAtual.current === escopo

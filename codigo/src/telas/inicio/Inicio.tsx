@@ -1,3 +1,5 @@
+import { destaqueOrcamento } from '../../lib/resumo/orcamento'
+import { FUSO } from '../../lib/formato'
 import './inicio.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
@@ -47,12 +49,13 @@ export function Inicio() {
   const env = (id: string) => resumo.envelopes.find(e => e.id === id)
   const nomeEnv = (id: string) => env(id)?.nome || ''
   // R5: quem tem limite próprio vê o número DELE em cima; a Casa vira uma linha menor
-  const meu = resumo.envelopes.find(e => e.id === familia?.envelopeId && !e.casa)
+  const destaque = destaqueOrcamento(resumo, familia?.envelopeId, hoje, FUSO)
+  const meu = destaque.meu
   const temCasa = resumo.envelopes.some(e => e.casa)
   // E2: o casal vê o limite de cada um, com o nome; o seu vem 1º e o do outro sem botão de mexer
   const temOutros = resumo.envelopes.some(e => !escreveNo(e, familia))
   const casaHoje = centavos(resumo.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje || 0), 0))
-  const n = meu ? numeroEnvelope(meu, resumo.dias_restantes) : null
+  const n = destaque.numero
   // L2: tocar no número grande diz por que ele mudou desde ontem
   const porQue = meu?.mudou ? () => explicar({ cabeca: 'Por que mudou?', titulo: meu.mudou!.motivo, linhas: [{ linha: 'Ontem o dia tinha', valor: meu.mudou!.ontem }, { linha: 'Hoje o dia tem', valor: meu.valor_dia_inteiro ?? meu.hoje ?? 0 }] }) : undefined
 
@@ -63,8 +66,8 @@ export function Inicio() {
           <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>{n.estado === 'devendo' ? 'Seu mês passou do combinado' : 'Hoje você pode gastar'}</h2>
           <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="hero" /></span>
-            : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque para ver o que mexeu no número de hoje"><Din v={meu.hoje ?? n.valor} tam="hero" /></button>
-            : <Din v={meu.hoje ?? n.valor} tam="hero" />}</div>
+            : porQue ? <button type="button" className="mudou" onClick={porQue} aria-label="Por que mudou? Toque para ver o que mexeu no número de hoje"><Din v={destaque.valor} tam="hero" /></button>
+            : <Din v={destaque.valor} tam="hero" />}</div>
           {n.estado === 'devendo' && <p className="apoio"><b>fica devendo</b> neste mês</p>}
           {/* E3 (conserto 5): depois de gastar, o número do dia diz quanto já saiu e quanto ainda pode */}
           {n.estado !== 'devendo' && (meu.gasto_hoje || 0) > 0 && <p className="apoio hoje-saiu">Hoje já saiu <b>{reais(meu.gasto_hoje || 0)}</b>. Ainda pode hoje <b>{reais(meu.hoje ?? n.valor)}</b>.</p>}
@@ -83,7 +86,7 @@ export function Inicio() {
         <section className="card hoje-card" aria-labelledby="hHoje">
           <p className="sub">{saudacao()}, <NomeDaPessoa pessoa={{ tipo: 'membro', id: familia?.membroId || '', nome: familia?.membroNome }} /></p>
           <h2 id="hHoje" className="lbl" style={{ fontSize: 16 }}>Hoje você pode gastar</h2>
-          <div className="numrow"><Din v={resumo.pode_gastar_hoje} tam="hero" /></div>
+          <div className="numrow"><Din v={destaque.valor} tam="hero" /></div>
           <p className="apoio">Sobram <b>{reais(sobra)}</b> até {dataCurta(fimDoMes(hoje))}, em {textoPrivado(plural(resumo.dias_restantes, 'dia', 'dias'))}.{textoPrivado(resumo.colchao ? <> A reserva de {reais(resumo.colchao)} (o dinheiro que a família combinou nunca gastar) fica de fora.</> : null)}</p>
           <Qm texto titulo="Hoje você pode gastar" linhas={resumo.explicacao} nota="A conta é feita pelo banco da família, igual para todo mundo da casa. Muda a cada gasto lançado." />
         </section>

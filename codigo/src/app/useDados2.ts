@@ -1,9 +1,11 @@
+import { useLeituraRemota } from './useLeituraRemota'
+import { aoLimparLeituras, invalidarDados } from './invalidacao'
 import { lojaEscritorio } from './escritorioCompartilhado'
 import { useInvalidacao } from './invalidacao'
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useApp } from './contexto'
-import type { EscritorioHoje, GuardadoHoje } from '../api/tipos'
+import type { GuardadoHoje } from '../api/tipos'
 import { ErroSessao } from '../api/erros'
 import type { EntradaPronta } from '../api/futuro'
 import { futuro, type FuturoSaida } from '../lib/futuro'
@@ -16,50 +18,30 @@ export const perguntasVistas = new Map<string, import('../api/tipos').PerguntaEs
 export const perguntaDaLinha = new Map<string, string>()
 const semFuncao = (m: string) => /ainda não tem essa função/i.test(m)
 
-function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, limpar: (v: T) => T = v => v) {
+function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, recurso: string) {
   const { api, familia, versao, tentar } = useApp()
-  const invalidacao = useInvalidacao(api, familia?.id || '')
-  const chave = `${familia?.id}:${familia?.papel}:${!!buscar}`
-  const [origem, setOrigem] = useState(chave)
-  const [dado, setDado] = useState<T | null>(null)
-  const [estado, setEstado] = useState<Leitura>('buscando')
-  const [motivo, setMotivo] = useState('')
-  const [n, setN] = useState(0)
-  const pedido = useRef(0)
-  useEffect(() => {
-    setOrigem(chave); setMotivo(''); setEstado('buscando')
-    if (origem !== chave || !buscar) setDado(null)
-    if (!familia || !buscar) return
-    const meu = ++pedido.current
-    buscar(familia.id).then(v => { if (meu !== pedido.current) return; setDado(limpar(v)); setEstado('ok'); setMotivo('') }).catch((e: Error) => {
-      if (meu !== pedido.current) return
-      // sessão vencida: o app volta pra tela de entrar pelo caminho de sempre
-      if (e instanceof ErroSessao) { tentar(async () => { throw e }); return }
-      setMotivo(e.message); setEstado(semFuncao(e.message) ? 'desligado' : 'erro')
-    })
-    return () => { if (pedido.current === meu) pedido.current++ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, chave, versao, n, invalidacao])
-  return { dado: origem === chave && buscar ? dado : null, estado: origem === chave ? estado : 'buscando' as Leitura, motivo: origem === chave ? motivo : '', atualizar: useCallback(() => setN(x => x + 1), []) }
+  const r = useLeituraRemota(recurso, familia && buscar ? () => buscar(familia.id) : null, [api, versao], recurso)
+  return { dado: r.dado, estado: r.carregando ? 'buscando' as Leitura : r.erro ? (semFuncao(r.erro) ? 'desligado' : 'erro') as Leitura : 'ok' as Leitura, motivo: r.erro, atualizar: r.repetir }
 }
 
 /** O dinheiro guardado e quanto rendeu hoje. Só o casal: a equipe e as outras pessoas nem perguntam ao banco. */
 export function useGuardado(): { g: GuardadoHoje | null; estado: Leitura; motivo: string; atualizar: () => void } {
   const { api, familia } = useApp()
   const pode = familia?.papel === 'casal'
-  const r = useLeitura<GuardadoHoje>(pode ? f => api.guardadoHoje(f) : null)
+  const r = useLeitura<GuardadoHoje>(pode ? f => api.guardadoHoje(f) : null, 'guardado')
   return { g: r.dado, estado: r.estado, motivo: r.motivo, atualizar: r.atualizar }
 }
 
 /** Quem precisa de você hoje. A equipe recebe só as perguntas da Casa, sem nenhum valor. */
 export function useEscritorio() {
   const { api, familia, versao, recarregar, tentar, toast } = useApp()
+  const invalidacao = useInvalidacao(api, familia?.id || '')
   const loja = lojaEscritorio(api, familia?.id || '')
   loja.equipe = familia?.papel === 'equipe'
   loja.aoErro = erro => { if (erro instanceof ErroSessao) void tentar(async () => { throw erro }) }
   const r = useSyncExternalStore(loja.assinar, loja.snapshot)
-  useEffect(() => { if (familia) void loja.ler(api, familia.id, versao) }, [loja, api, familia?.id, versao])
-  const atualizar = useCallback(() => { if (familia) void loja.ler(api, familia.id) }, [loja, api, familia?.id])
+  useEffect(() => { if (familia) void loja.ler(api, familia.id, versao + invalidacao) }, [loja, api, familia?.id, versao, invalidacao])
+  const atualizar = useCallback(() => { if (familia) { invalidarDados(api, familia.id, ['escritorio']); void loja.ler(api, familia.id) } }, [loja, api, familia?.id])
   const responder = useCallback(async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
     if (!familia || loja.travas.has(pergunta)) return false
     if (!dados?.corrige && !loja.snapshot().dado?.precisa_de_voce.some(p => p.id === pergunta)) return false
@@ -86,7 +68,9 @@ export function useEscritorio() {
 export function useFuturo(): { ent: EntradaPronta | null; saida: FuturoSaida | null; estado: Leitura; motivo: string; atualizar: () => void } {
   const { api, familia } = useApp()
   const pode = familia?.papel === 'casal' && !!api.futuroEntradas
-  const r = useLeitura<EntradaPronta>(pode ? f => api.futuroEntradas!(f) : null)
+  const r = useLeitura<EntradaPronta>(pode ? f => api.futuroEntradas!(f) : null, 'projecao')
   const saida = useMemo(() => { try { return r.dado?.entrada ? futuro(r.dado.entrada) : null } catch { return null } }, [r.dado])
   return { ent: r.dado, saida, estado: r.estado, motivo: r.motivo, atualizar: r.atualizar }
 }
+
+aoLimparLeituras(() => { perguntasVistas.clear(); perguntaDaLinha.clear() })

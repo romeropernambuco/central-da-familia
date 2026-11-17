@@ -1,3 +1,7 @@
+import { useInvalidacao } from '../../app/invalidacao'
+import { totaisDoMes } from '../../lib/resumo/movimentacao'
+export { totaisDoMes } from '../../lib/resumo/movimentacao'
+import { proximasPorCartao } from '../../lib/resumo/faturas'
 import './lancamentos.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -33,6 +37,7 @@ export function Lancamentos() {
 
 function LancamentosFamilia() {
   const { api, familia, resumo, versao, recarregar, toast, tentar, abrirLancar } = useApp()
+  const invalidacao = useInvalidacao(api, familia?.id || '')
   const [falha, setFalha] = useState('')
   const [carregou, setCarregou] = useState(false)
   const [ocupado, setOcupado] = useState<string | null>(null)
@@ -59,7 +64,7 @@ function LancamentosFamilia() {
     // C5: a 2ª coluna do computador só mostra totais que o app já tem (o resumo do mês e as faturas); o casal lê
     if (familia.papel === 'casal') api.faturas(familia.id, 2).then(f => { if (vivo) setFaturas(f) }).catch(() => {})
     return () => { vivo = false }
-  }, [api, familia?.id, versao, n, meses.join()])
+  }, [api, familia?.id, versao, n, invalidacao, meses.join()])
   const proximo = mesAnterior(meses[meses.length - 1])
   const maisMeses = meses.length < 24
 
@@ -159,8 +164,7 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
   // regra do dono (E2): o casal lê tudo, com o nome do dono escrito no que é do outro adulto
   const doOutroCartao = (id: string) => { const c = cartoes.find(x => x.id === id); return c && !cartaoMeu(c, familia) ? (c.titular || '') : null }
   // a 1ª fatura com valor que ainda vai vencer, de cada cartão
-  const proxPorCartao: Fatura[] = []
-  for (const f of faturas.filter(x => x.vencimento >= hoje && x.total > 0).sort((a, b) => a.vencimento.localeCompare(b.vencimento))) if (!proxPorCartao.some(x => x.cartao_id === f.cartao_id)) proxPorCartao.push(f)
+  const proxPorCartao = proximasPorCartao(faturas, hoje)
   return (
     <aside className="col lanc-totais" aria-label="Totais do mês">
       <section className="card" aria-labelledby="ltMes">
@@ -188,15 +192,6 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 type Entrada = { data: string; valor: number }
-export function totaisDoMes(mes: string, hoje: string, gastos: Lancamento[], recebimentos: RecebimentoTela[], entradas: Entrada[]) {
-  // A compra original é a fonte; parcelas sintéticas do exemplo são só projeções de fatura.
-  const saiu = centavos(gastos.filter(l => !l.parcela && !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje).reduce((s, l) => s + l.valor, 0))
-  const entrou = centavos(entradas.filter(e => e.data.startsWith(mes) && e.data <= hoje).reduce((s, e) => s + e.valor, 0)
-    + recebimentos.filter(r => r.recebido_em?.startsWith(mes) && r.recebido_em.slice(0, 10) <= hoje).reduce((s, r) => s + (r.valor_recebido ?? r.valor), 0))
-  const previsto = centavos(recebimentos.filter(r => !r.recebido_em && r.certo && (r.mes_novo || r.mes_previsto) === mes).reduce((s, r) => s + r.valor, 0))
-  return { entrou, saiu, saldo: centavos(entrou - saiu), previsto }
-}
-
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
   return <><h3>Realizado</h3><div className="mes-indicadores">
     {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal' : undefined}><p><Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />{nome}</p><Din v={valor} tam="mid" /></div>)}

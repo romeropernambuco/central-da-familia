@@ -1,3 +1,4 @@
+import { useInvalidacao } from '../../app/invalidacao'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import './escritorio.css'
@@ -13,6 +14,7 @@ import { numerosDaAba, type Indicador } from './numeros'
 
 export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
   const { api, familia, sessao, versao, tentar } = useApp()
+  const invalidacao = useInvalidacao(api, familia?.id || '')
   const membro = POR_ID[id]
   const [resultado, setResultado] = useState<{ numeros: Indicador[]; exemplo: boolean } | null>(null)
   const [n, setN] = useState(0)
@@ -34,7 +36,7 @@ export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
         setErro(true)
       })
     return () => { vivo = false }
-  }, [api, familia?.id, familia?.membroId, familia?.envelopeId, sessao?.userId, id, permitido, versao, n])
+  }, [api, familia?.id, familia?.membroId, familia?.envelopeId, sessao?.userId, id, permitido, versao, n, invalidacao])
   if (!membro) return null
   return <section className="numeros-aba" aria-label="Resumo da aba">
     <h3><Icone nome="painel" />{membro.papel}</h3>

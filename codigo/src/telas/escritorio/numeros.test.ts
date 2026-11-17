@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { act, createContext, createElement, useContext, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { useApp, type Ctx } from '../../app/contexto'
-import { esconderValores } from '../../lib/formato'
+import { esconderValores, hojeRecife } from '../../lib/formato'
 import { NumerosAba } from './NumerosAba'
 import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 import type { Api, FamiliaMinha } from '../../api/tipos'
@@ -43,7 +43,7 @@ describe('funcionários das abas', () => {
   })
 
   it('não conta lançamentos apagados e não transforma erro de leitura em zero', async () => {
-    const lancamentos = vi.fn().mockResolvedValue([{ valor: 20, apagado_em: null }, { valor: 90, apagado_em: '2026-01-01' }])
+    const lancamentos = vi.fn().mockResolvedValue([{ valor: 20, data: hojeRecife(), apagado_em: null }, { valor: 90, data: hojeRecife(), apagado_em: '2026-01-01' }])
     const api = { lancamentos } as unknown as Api
     const numeros = await numerosDaAba(api, familia, 'lancamentos')
     expect(numeros[0].texto).toBe('1')
