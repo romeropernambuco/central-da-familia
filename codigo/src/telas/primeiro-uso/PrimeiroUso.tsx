@@ -3,7 +3,7 @@ import { textoPrivado, CampoPrivado, CampoValor } from '../../componentes/privac
 import { useState } from 'react'
 import { ArrowRight, MessageCircle, Check, Clock } from 'lucide-react'
 import { useApp } from '../../app/contexto'
-import { ir } from '../../app/App'
+import { ir } from '../../app/rotas'
 import { Marca } from '../../componentes/Marca'
 import { Din } from '../../componentes/base'
 import type { Envelope } from '../../api/tipos'

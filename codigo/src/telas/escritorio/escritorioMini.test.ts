@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os'
 import * as T from 'three'
 // @ts-ignore: Three sem tipos locais.
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { criarCacheModelos } from './modelosEscritorio'
+import { criarCacheModelos, modelosEscritorio } from './modelosEscritorio'
 import { VARIANTES, nomesDaSala, bytesDaSala, caixaReal, montarEscritorioMini, composicaoMini, LIMITES_MINI } from './escritorioMini'
 import { ATIVIDADES_MINI, PERFIL_IMOVEIS } from './atividadesMini'
 import type { SalaEquipe } from './equipe'
@@ -24,6 +24,7 @@ import { gravarSw } from '../../../scripts/sw.mjs'
 const pasta = resolve('public/modelos/escritorio')
 const buffer = (nome: string) => { const b = readFileSync(resolve(pasta, nome + '.glb')); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) }
 beforeEach(() => {
+  modelosEscritorio.esquecerBytes()
   // Nenhum teste deste arquivo pode acessar rede, nem mesmo por acidente.
   vi.stubGlobal('fetch', vi.fn(async (url: string, o?: { signal?: AbortSignal }) => {
     if (o?.signal?.aborted) throw Error('aborted')

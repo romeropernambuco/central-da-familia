@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 type Entrada = { usuarios: number; controller: AbortController; promessa: Promise<any>; modelo?: any }
 function liberarModelo(raiz: any) {
   const recursos = new Set<any>()
-  raiz.traverse((m: any) => { if (m.geometry) recursos.add(m.geometry); if (m.material) for (const mat of [m.material].flat()) recursos.add(mat) })
+  raiz.traverse((m: any) => { if (m.geometry) recursos.add(m.geometry); if (m.material) for (const mat of [m.material].flat()) { recursos.add(mat); for (const v of Object.values(mat)) if ((v as any)?.isTexture) recursos.add(v) } })
   recursos.forEach(r => r.dispose())
 }
 /** Injeção permite testar cache/abort/parse sem sequer criar uma requisição real. */
@@ -16,6 +16,9 @@ export function criarCacheModelos(
   base = import.meta.env.BASE_URL,
 ) {
   const cache = new Map<string, Entrada>()
+  // Somente bytes de assets locais imutáveis (41 nomes no inventário), nunca dados da família.
+  // CPU/GPU decodificadas continuam limitadas aos leases ativos.
+  const bytesProntos = new Map<string, ArrayBuffer>()
   return {
     adquirir(nomes: string[], sinal: AbortSignal) {
       if (sinal.aborted) return { pronto: Promise.resolve(null), liberar() {} }
@@ -27,12 +30,13 @@ export function criarCacheModelos(
           const controller = new AbortController()
           e = { usuarios: 0, controller, promessa: Promise.resolve() }
           const entrada = e
-          e.promessa = buscar(base + 'modelos/escritorio/' + nome + '.glb', { signal: controller.signal })
+          e.promessa = (bytesProntos.has(nome) ? Promise.resolve(bytesProntos.get(nome)!) : buscar(base + 'modelos/escritorio/' + nome + '.glb', { signal: controller.signal })
             .then(r => { if (!r.ok) throw Error('modelo indisponível'); return r.arrayBuffer() })
+            .then(bytes => { bytesProntos.set(nome, bytes); return bytes }))
             .then(decodificar).then(modelo => {
               if (!entrada.usuarios) { liberarModelo(modelo); throw Error('carga cancelada') }
               entrada.modelo = modelo; return modelo
-            })
+            }).catch(erro => { bytesProntos.delete(nome); throw erro })
           cache.set(nome, e)
         }
         e.usuarios++
@@ -55,6 +59,8 @@ export function criarCacheModelos(
       return { pronto, liberar }
     },
     tamanho: () => cache.size,
+    /** Limpeza explícita de bytes sem tocar em cenas ativas; útil também para testes isolados. */
+    esquecerBytes() { if (cache.size) throw Error('modelos ainda em uso'); bytesProntos.clear() },
   }
 }
 export const modelosEscritorio = criarCacheModelos()

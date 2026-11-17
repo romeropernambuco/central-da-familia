@@ -36,3 +36,5 @@ export function conviteDoHash(hash: string): string | null {
 }
 /** O endereço é o da entrada da equipe (com ou sem convite)? */
 export const ehLinkEquipe = (hash: string) => /^#\/?equipe(\?|$)/.test(hash || '')
+
+export function ir(r: Rota) { location.hash = '#/' + r }

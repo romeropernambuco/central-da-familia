@@ -38,7 +38,9 @@ export function useAdultos(): number | null {
   useEffect(() => {
     if (!familia || !pode) return
     // pessoa da família (filho, avó) não conta como adulto do casal; sem o papel na resposta, conta todo mundo
-    api.membros(familia.id).then(ms => setN(Math.max(1, ms.filter(m => !m.papel || m.papel === 'casal').length))).catch(() => setN(2))
+    let vivo = true
+    api.membros(familia.id).then(ms => { if (vivo) setN(Math.max(1, ms.filter(m => !m.papel || m.papel === 'casal').length)) }).catch(() => { if (vivo) setN(2) })
+    return () => { vivo = false }
   }, [api, familia?.id, pode])
   return n
 }

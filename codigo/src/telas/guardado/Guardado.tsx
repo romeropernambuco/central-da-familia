@@ -309,27 +309,7 @@ function Aplicacao({ a, fechar, mover }: { a: GuardadoAplicacao; fechar: () => v
 }
 
 /** Cartão do Início: "Guardado R$ X · rendeu hoje R$ Y". Some se a pessoa não é do casal ou se o banco ainda não ligou. */
-export function CartaoGuardado() {
-  const { familia } = useApp()
-  const { g, estado } = useGuardado()
-  if (familia?.papel !== 'casal' || estado === 'desligado' || !g) return null
-  const vazio = !g.aplicacoes.length
-  return (
-    <a className="card guard-card" href="#/guardado" aria-label={vazio ? 'Guardado: começar a guardar' : `Guardado: ${reais(g.total)}. Rendeu hoje ${reais(g.rendeu_hoje_liquido)}. Abrir.`}>
-      <span className="tile"><Landmark size={20} /></span>
-      {vazio ? (
-        <span className="m"><b>Guardado</b><small>Diga onde o dinheiro está e veja quanto ele rende por dia.</small></span>
-      ) : (
-        <span className="m">
-          <span className="guard-l"><span>Guardado</span><Din v={g.total} /></span>
-          <span className="guard-l dest"><span>Rendeu hoje</span><Din v={g.rendeu_hoje_liquido} /></span>
-          {g.motivo_zero && <small>{textoPrivado(g.motivo_zero)}</small>}
-        </span>
-      )}
-      <ChevronRight size={20} className="muted" aria-hidden="true" />
-    </a>
-  )
-}
+export { CartaoGuardado } from './CartaoGuardado'
 
 /** G10: a linha do saldo subindo nos últimos 30 dias (SVG simples, sem biblioteca). */
 function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
