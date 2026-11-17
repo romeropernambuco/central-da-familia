@@ -40,13 +40,13 @@ function useCampo<K extends keyof ResumoFamilia>(chave: K, hoje: string, conferi
   const meta = { fonte: fontes, consultadoEm: r.consultadoEm ?? null, conferidoEm: datas[0] ?? null, atualizadoEm: bruto?.atualizadoEm ?? null }
   let campo: CampoResumo<unknown>
   if (!permitido) campo = { ...meta, estado: 'restrito', valor: null }
-  else if (chave === 'saldoConta' && !api.saldosConta) campo = { ...meta, estado: 'indisponivel', valor: null, motivo: 'Saldo em conta ainda sem dado' }
+  else if (chave === 'saldoConta' && !api.saldosConta) campo = { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
   else if (r.carregando) campo = { ...meta, estado: 'carregando', valor: null }
   else if (r.erro) campo = { ...meta, estado: 'erro', valor: null }
   else if (!r.dado) campo = { ...meta, estado: 'indisponivel', valor: null }
   else if (chave === 'saldoConta') {
     const s = r.dado as Awaited<ReturnType<typeof leitura.lerSaldo>>
-    campo = s.contas.length ? { ...meta, estado: 'pronto', valor: { unidade: 'reais', valor: s.saldo.valor }, conferidoEm: s.saldo.conferidoEm, atualizadoEm: s.saldo.conferidoEm } : { ...meta, estado: 'indisponivel', valor: null, motivo: 'Saldo em conta ainda sem dado' }
+    campo = s.contas.length ? { ...meta, estado: 'pronto', valor: { unidade: 'reais', valor: s.saldo.valor }, conferidoEm: s.saldo.conferidoEm, atualizadoEm: s.saldo.conferidoEm } : { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
   } else {
     const { idsConferencia: _ids, atualizadoEm: _data, ...valor } = r.dado as Record<string, unknown>
     campo = { ...meta, estado: 'pronto', valor }

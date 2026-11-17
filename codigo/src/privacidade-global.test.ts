@@ -51,7 +51,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant√
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['ResumoFamilia', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['RitmoOrcamento', 'ResumoFamilia', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -199,7 +199,7 @@ describe('regra do olho em cada tela real', () => {
     const escritorio = semear(await apiExemplo.escritorioHoje!(familia.id))
     const imoveis = semear(await apiExemplo.imoveis!(familia.id))
     const Tela = nome.startsWith('Agente:') ? AgenteDaAba : Object.values(modulos).find(m => m[nome])![nome]
-    const props = nome.startsWith('Agente:') ? { rota: nome.slice(7) } : nome === 'Cena3D' ? { funcionarios: escritorio.funcionarios, selecionado: null, aoTocar() {} } : nome === 'FichaFuncionario' ? { f: escritorio.funcionarios[0], e: escritorio, responder: async () => true, fechar() {} }
+    const props = nome === 'RitmoOrcamento' ? { envelope: resumo.envelopes[0], hoje: '2026-11-15' } : nome.startsWith('Agente:') ? { rota: nome.slice(7) } : nome === 'Cena3D' ? { funcionarios: escritorio.funcionarios, selecionado: null, aoTocar() {} } : nome === 'FichaFuncionario' ? { f: escritorio.funcionarios[0], e: escritorio, responder: async () => true, fechar() {} }
       : nome === 'FolhaImovel' ? { inicial: imoveis[0], fechar() {}, salvar: async () => true, tirar() {} }
       : nome === 'Reajuste' ? { envelopes: resumo.envelopes, mudaLimite: () => true }
       : nome === 'NumerosAba' ? { id: 'analista', fechar() {} } : { aplicado: dinheiro }
@@ -216,6 +216,13 @@ describe('regra do olho em cada tela real', () => {
       await act(async () => root.render(createElement(App)))
       await act(async () => { await new Promise(r => setTimeout(r, 700)) })
       expect(vazamentos(container), nome).toEqual([])
+      if (nome === 'ResumoFamilia' || nome === 'Inicio') {
+        const expandir = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('class') === 'resumo-expandir')[0]
+        expect(expandir.getAttribute('aria-expanded')).toBe('false')
+        await act(async () => expandir.click())
+        expect(expandir.getAttribute('aria-expanded')).toBe('true')
+        expect(vazamentos(container), nome + ' or√ßamento expandido').toEqual([])
+      }
       if (nome.startsWith('Agente:')) {
         await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null && (n.getAttribute('class') || '').includes('agente-aba-divulgacao'))[0].click())
         await act(async () => { await new Promise(r => setTimeout(r, 400)) })

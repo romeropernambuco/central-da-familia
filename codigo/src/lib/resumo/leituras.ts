@@ -61,7 +61,7 @@ export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
   const d = destaqueOrcamento(r, f.envelopeId, hoje, FUSO)
   if (f.papel === 'pessoa' && d.escopo !== 'pessoal') throw new Error('Orçamento pessoal indisponível')
   if (!Number.isFinite(d.valor)) throw new Error('Orçamento incompleto')
-  return { valor: { unidade: 'reais' as const, valor: d.valor }, escopo: d.escopo, devendo: d.numero?.estado === 'devendo', casa: r.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje ?? 0), 0) }
+  return { valor: { unidade: 'reais' as const, valor: d.valor }, escopo: d.escopo, devendo: d.numero?.estado === 'devendo', envelope: d.meu ?? null, casa: r.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje ?? 0), 0) }
 }
 export async function lerMes(api: Api, id: string, hoje: string) {
   if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')

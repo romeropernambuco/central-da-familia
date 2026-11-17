@@ -36,9 +36,12 @@ import { Imoveis } from '../../telas/guardado/Imoveis'
 import { PrecisaDeVoce } from '../../telas/escritorio/PrecisaDeVoce'
 import { Desejos } from '../../telas/desejos/Desejos'
 import { desfazer } from '../../app/desfazer'
-import { FUSO, esconderValores } from '../formato'
+import { FUSO, esconderValores, dataConferencia, plural } from '../formato'
+import { RitmoMes } from '../../componentes/RitmoMes'
 import { enderecoDestino, lerDestino, destinoPermitido, focarDestino, type DestinoResumo } from '../../app/destinos'
 import ts from 'typescript'
+// @ts-ignore: Node é usado apenas neste teste, sem @types/node no app.
+import { readFileSync } from 'node:fs'
 
 const roots: Root[] = []
 afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.unstubAllGlobals(); vi.useRealTimers(); esconderValores(false); desfazer.limpar() })
@@ -108,6 +111,142 @@ it.each([1, 2, 3])('cada bloco usa o selector oficial, cenário %s', async n => 
   expect(a.r.saldoConta.conferidoEm).toBe('2026-11-16')
   expect(a.r.aplicacoes.conferidoEm).toBeNull()
   expect(a.bloco('saldoConta').textContent).toContain('Conferido em')
+})
+
+it.each([1, 2, 3])('f36: principal 2029 é a falta oficial com margem e coincide com o compacto, cenário %s', async n => {
+  const a = await montar(mundo(n), createElement(RumoA2029, { compacto: true }))
+  const principal = a.bloco('plano2029').buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent
+  const e = entradaDoCenario({ entrada: a.m.entrada(), confirmar: [] }, 'garantido')!
+  const falta = numerosRumo2029(futuro(e), e).falta_com_margem!
+  const numero = (Math.abs(falta) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  expect(principal).toContain(numero)
+  const normalizar = (s: string) => s.replace(/[\s.]/g, '').replace(/,00/g, '')
+  expect(normalizar(a.origem().textContent).toLowerCase()).toContain(normalizar(principal).toLowerCase().replace(/,00/g, ''))
+  expect(a.bloco('plano2029').textContent).toContain('com margem de segurança')
+  expect(a.bloco('plano2029').textContent).toContain('estimado')
+})
+
+it('f36: expansão local conserva o ritmo da aba, hoje já saiu, Casa e um único principal', async () => {
+  const m = mundo()
+  const base = m.resumo
+  m.resumo = () => { const r = base(); Object.assign(r.envelopes[0], { ate_domingo: 838.12, gasto_hoje: 12.34 }); return r }
+  ;(m.interna.resumoHoje as any).mockImplementation(async () => m.resumo())
+  const a = await montar(m, createElement(RitmoMes, { e: m.resumo().envelopes[0] }))
+  const bloco = a.bloco('podeGastarHoje')
+  const principal = itensResumo(a.r, hoje, false).find(i => i.chave === 'podeGastarHoje')!.numero
+  expect(bloco.textContent).not.toContain('Hoje já saiu')
+  const abrir = bloco.buscar(x => x.tagName === 'BUTTON' && x.getAttribute('aria-expanded') === 'false')[0]
+  expect(abrir).toBeDefined()
+  await act(async () => abrir.click())
+  // Aguarda o chunk do gráfico; mantém a mesma verificação após Suspense.
+  for (let i = 0; i < 30 && !bloco.textContent.includes('Ainda pode gastar até domingo'); i++)
+    await act(async () => { await new Promise(r => setTimeout(r, 10)) })
+  expect(abrir.getAttribute('aria-expanded')).toBe('true')
+  expect(bloco.textContent).toContain('Ainda pode gastar até domingo')
+  expect(bloco.textContent).toContain('838,12')
+  expect(bloco.textContent).toContain('Hoje já saiu')
+  expect(bloco.textContent).toContain('12,34')
+  expect(bloco.textContent).toContain('Ritmo do mês')
+  expect(bloco.textContent).toContain(a.origem().textContent)
+  expect(bloco.textContent).toContain('Casa · disponível hoje')
+  expect(a.box.textContent.split(principal)).toHaveLength(2)
+  await a.ocultar()
+  expect(bloco.textContent).not.toMatch(/838,12|12,34|80,00/)
+  expect(bloco.buscar(x => x.getAttribute('role') === 'img')).toHaveLength(0)
+  await act(async () => abrir.click())
+  expect(bloco.textContent).not.toContain('Hoje já saiu')
+})
+
+it('f36: Rendeu hoje líquido coincide com CartaoGuardado', async () => {
+  const m = mundo(3), base = m.g
+  m.g = () => ({ ...base(), rendeu_hoje_liquido: 3.27 })
+  ;(m.interna.guardadoHoje as any).mockImplementation(async () => m.g())
+  const a = await montar(m, createElement(CartaoGuardado))
+  expect(a.bloco('aplicacoes').textContent).toContain('Rendeu hoje')
+  const normalizar = (s: string) => s.replace(/[\s.]/g, '').replace(/,00/g, '')
+  const esperado = normalizar(`Rendeu hoje ${totaisGuardado(a.m.g()).hoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`)
+  const frase = a.bloco('aplicacoes').buscar(x => x.getAttribute('class') === 'resumo-frase')[0]
+  expect(normalizar(frase.textContent)).toBe(`${esperado}líquido`)
+  const rendimento = a.origem().buscar(x => x.getAttribute('class') === 'guard-l dest')[0]
+  expect(normalizar(rendimento.textContent)).toBe(esperado)
+})
+
+it('f36: nota única de conferência, saldo claro e ícones explícitos nos onze blocos', async () => {
+  const m = mundo(); (m.interna.saldosConta as any).mockResolvedValue([])
+  const a = await montar(m)
+  expect(a.box.textContent.match(/Nenhum número conferido manualmente ainda/g)).toHaveLength(1)
+  expect(a.box.textContent).not.toContain('Sem conferência registrada')
+  expect(a.bloco('saldoConta').textContent).toContain('Ainda sem dado')
+  expect(a.bloco('saldoConta').textContent.match(/Saldo em conta/g)).toHaveLength(1)
+  expect(a.bloco('saldoConta').buscar(x => x.tagName === 'BUTTON')[0].getAttribute('class')).toContain('primary')
+  for (const k of Object.keys(a.r) as (keyof Resumo)[]) {
+    const chip = a.bloco(k).buscar(x => x.getAttribute('class') === 'resumo-icone')[0]
+    const svg = chip.buscar(x => x.tagName === 'SVG')[0]
+    expect(Number(svg.getAttribute('width'))).toBeGreaterThan(0)
+    expect(Number(svg.getAttribute('height'))).toBeGreaterThan(0)
+    const css = readFileSync('src/telas/inicio/resumo.css', 'utf8')
+    expect(css).toContain('min-width:20px;min-height:20px')
+  }
+})
+
+it.each(['2026-11-17', '2025-12-31', '2026-01-01T00:30:00Z'])('f36: data de conferência única no Início e Planejamento: %s', async data => {
+  const m = mundo(); (m.interna.saldosConta as any).mockResolvedValue([{ id: 's', nome: 'Conta', valor: 100, conferidoEm: data.slice(0, 10) }])
+  const a = await montar(m, createElement(SaldoConta))
+  const esperado = data.startsWith('2025') ? '31/12/2025' : data.includes('01-01') ? '01/01' : '17/11'
+  expect(dataConferencia(data, hoje)).toBe(esperado)
+  expect(a.bloco('saldoConta').textContent).toContain(`Conferido em ${esperado}`)
+  expect(a.origem().textContent).toContain(`Conferido em ${esperado}`)
+  expect(a.origem().textContent).not.toContain(data.slice(0, 10))
+})
+
+it.each([0, 1, 2])('f36: plural compartilhado e texto curto nos blocos, quantidade %s', async n => {
+  const a = await montar()
+  const r = structuredClone(a.r)
+  if (r.casa.valor) Object.assign(r.casa.valor, { feira: n === 1, nota: n, estoque: true })
+  if (r.recebimentos.valor) r.recebimentos.valor.atrasados = n
+  if (r.desejos.valor) Object.assign(r.desejos.valor, { pensando: 2, combinados: n })
+  const itens = itensResumo(r, hoje, false)
+  expect(plural(n, 'nota pendente', 'notas pendentes')).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}`)
+  expect(itens.find(i => i.chave === 'casa')!.numero).toBe(n === 1 ? 'Feira ainda sem confirmação' : 'Feira em dia')
+  expect(itens.find(i => i.chave === 'casa')!.frase).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}\nEstoque: contagem pendente`)
+  expect(itens.find(i => i.chave === 'recebimentos')!.frase).toContain(`${n} ${n === 1 ? 'atrasado.' : 'atrasados.'}`)
+  expect(itens.find(i => i.chave === 'desejos')!.numero).toBe(`2 pensando · ${n} ${n === 1 ? 'combinado' : 'combinados'}`)
+})
+
+it('f36: formulário de saldo tem rótulos, exemplo, foco inicial, Esc e devolução de foco', async () => {
+  const a = await montar()
+  const doc = a.box.ownerDocument
+  Object.defineProperty(doc, 'activeElement', { value: null, writable: true, configurable: true })
+  Object.assign(doc, { contains: (n: NoTeste) => doc.buscar(x => x === n).length > 0 })
+  Object.assign(NoTeste.prototype, { focus(this: NoTeste) { Object.assign(doc, { activeElement: this }) } })
+  const teclado = new EventTarget()
+  doc.addEventListener = teclado.addEventListener.bind(teclado) as any
+  doc.removeEventListener = teclado.removeEventListener.bind(teclado) as any
+  const botao = a.bloco('saldoConta').buscar(x => x.tagName === 'BUTTON')[0]
+  ;(botao as any).focus()
+  await act(async () => botao.click())
+  const dialogo = a.box.buscar(x => x.getAttribute('role') === 'dialog')[0]
+  expect(dialogo.getAttribute('aria-modal')).toBe('true')
+  const conta = dialogo.buscar(x => x.tagName === 'INPUT' && x.getAttribute('placeholder') === 'Conta corrente')[0]
+  expect(conta).toBeDefined()
+  expect(conta.parentNode!.buscar(x => x.tagName === 'SPAN')[0].textContent).toBe('Conta')
+  expect(doc.activeElement).toBe(conta)
+  const valor = dialogo.buscar(x => x.tagName === 'INPUT' && x.getAttribute('aria-label') === 'Saldo em conta')[0]
+  expect(dialogo.buscar(x => x.tagName === 'LABEL' && x.getAttribute('for') === valor.getAttribute('id'))[0].textContent).toBe('Saldo em conta')
+  expect(valor.parentNode?.textContent).toBe('R$')
+  expect(dialogo.buscar(x => x.tagName === 'LABEL' && x.textContent === 'Data da conferência')).toHaveLength(1)
+  await act(async () => teclado.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' })))
+  expect(a.box.buscar(x => x.getAttribute('role') === 'dialog')).toHaveLength(0)
+  expect(doc.activeElement).toBe(botao)
+})
+
+it('f36: tarefa tocável e fila completa têm destinos explícitos no Início', async () => {
+  const a = await montar()
+  const links = a.bloco('pendencias').buscar(x => x.tagName === 'A')
+  expect(lerDestino(links[0].getAttribute('href')!)).toMatchObject({ rota: 'escritorio', secao: 'tarefa', entidade: a.m.e().precisa_de_voce[0].id })
+  expect(links[1].textContent).toBe('Ver fila no Escritório')
+  expect(links[1].getAttribute('href')).toBe('#/escritorio')
+  expect(a.bloco('pendencias').textContent).toContain('8 na fila')
 })
 
 const origens = [
@@ -266,7 +405,8 @@ it('sem capacidade real não há saldo inventado nem botão de informar', async 
   const m = mundo(); delete m.interna.saldosConta; delete m.interna.salvarSaldoConta
   const a = await montar(m)
   expect(a.r.saldoConta.estado).toBe('indisponivel')
-  expect(a.bloco('saldoConta').textContent).toContain('Saldo em conta ainda sem dado')
+  expect(a.bloco('saldoConta').textContent).toContain('Ainda sem dado')
+  expect(a.bloco('saldoConta').textContent.match(/Saldo em conta/g)).toHaveLength(1)
   expect(a.bloco('saldoConta').textContent).not.toMatch(/R\$|Informar saldo/)
 })
 

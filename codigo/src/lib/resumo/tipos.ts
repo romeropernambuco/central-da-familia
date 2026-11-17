@@ -30,7 +30,7 @@ export type RecebimentosResumo = ReturnType<typeof import('./recebimentos').rece
 export type CasaResumo = ReturnType<typeof import('./casa').situacaoCasa>
 export interface ResumoFamilia {
   saldoConta: CampoResumo<Dinheiro>
-  podeGastarHoje: CampoResumo<{ valor: Dinheiro; escopo: 'pessoal' | 'familia'; casa: number; devendo: boolean }>
+  podeGastarHoje: CampoResumo<{ valor: Dinheiro; escopo: 'pessoal' | 'familia'; casa: number; devendo: boolean; envelope?: import('../../api/tipos').Envelope | null }>
   movimentacaoMes: CampoResumo<{ unidade: 'reais' } & ReturnType<typeof totaisDoMes>>
   aplicacoes: CampoResumo<{ unidade: 'reais' } & ReturnType<typeof totaisGuardado>>
   imoveis: CampoResumo<{ valor: Dinheiro; aluguel: Dinheiro | null }>

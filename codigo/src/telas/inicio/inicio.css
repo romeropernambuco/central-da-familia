@@ -12,3 +12,8 @@
 .inicio-f29 .placar .pes{display:grid;gap:12px;margin-block:16px}
 .inicio-f29 .placar .pes>span{padding:12px;background:var(--raised);border-radius:var(--r-card)}
 @media(max-width:440px){.inicio-f29 .hoje-card{padding:20px}.inicio-f29 .li{flex-wrap:wrap}.inicio-f29 .li .m{flex:1}.inicio-f29 .li .v{margin-left:auto}}
+/* No Início móvel, a identidade usa a faixa compacta e mantém a pergunta e suas ações. */
+@media(max-width:600px){
+  .agente-aba:has(~ .inicio-f29) .agente-identidade.com-cena{grid-template-columns:80px minmax(0,1fr)}
+  .agente-aba:has(~ .inicio-f29) .cena3d.mini-agente{height:64px}
+}
