@@ -1,0 +1,6 @@
+.f32-privacidade{gap:24px;min-width:0}.f32-privacidade .card{padding:20px;min-width:0;overflow-wrap:anywhere}
+.f32-privacidade .termo>svg{width:112px;height:84px;display:block;margin-bottom:16px}
+.f32-privacidade h2{display:flex;gap:8px;align-items:center;margin-bottom:12px;line-height:1.4}
+.f32-privacidade .termo p{line-height:1.7;margin-block:12px;color:var(--ink-2)}
+.f32-privacidade .btn{min-height:44px;white-space:normal;margin-top:12px}
+.f32-privacidade :is(a,button,input):focus-visible{outline:3px solid var(--accent);outline-offset:3px}

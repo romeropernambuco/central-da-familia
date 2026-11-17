@@ -22,7 +22,7 @@ describe('identidade editável', () => {
     expect(nomeInformado(nome)).toBe(false)
     const html = mostrar(nome)
     expect(html).toContain('Sem nome.')
-    expect(html).toMatch(/<button[^>]+type="button"[^>]*>Informar<\/button>/)
+    expect(html).toMatch(/<button[^>]+type="button"[^>]*>(?:<svg[\s\S]*?<\/svg>)?Informar<\/button>/)
   })
   it('oferece edição e mantém o nome privado com olho fechado', () => {
     expect(mostrar('Bruno')).toContain('Editar nome')

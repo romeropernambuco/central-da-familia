@@ -1,0 +1,18 @@
+.f32-entrada,.f32-primeiro{width:100%;min-width:0;gap:24px;padding-top:max(24px,env(safe-area-inset-top,0px))}
+.entrada-apresentacao{display:grid;gap:12px;text-align:center;justify-items:center}
+.entrada-apresentacao>svg{width:128px;height:96px}
+.entrada-apresentacao h1,.f32-primeiro h1{font-size:clamp(26px,7vw,32px);line-height:1.15;letter-spacing:-.035em;text-wrap:balance}
+.entrada-apresentacao .corpo{font-size:16px;color:var(--muted);line-height:1.6;max-width:36ch}
+.f32-entrada .logo,.f32-primeiro .logo{justify-content:center}
+.f32-entrada .card,.f32-primeiro .card{min-width:0;border-top:3px solid var(--accent);padding:24px}
+.f32-entrada .equipe-lnk{justify-content:flex-start;text-align:left;gap:12px}
+.f32-entrada .equipe-lnk span{display:grid;gap:4px;flex:1}
+.f32-entrada .equipe-lnk small{font-weight:400;color:var(--muted)}
+.f32-entrada .lnk,.f32-primeiro .lnk{min-height:44px}
+.f32-entrada .cod{font-variant-numeric:tabular-nums;font-size:28px;letter-spacing:.18em;text-align:center;min-width:0;width:100%}
+.f32-erro .cf-estado-vazio{padding:16px;background:var(--sunken);border-radius:var(--r-md)}
+.f32-erro .cf-estado-vazio>svg{width:80px;height:60px}
+.f32-erro .cf-estado-vazio h2{font-size:18px}
+.f32-primeiro .passos{gap:8px}.f32-primeiro .passos i{height:6px;border-radius:8px}
+.f32-entrada p,.f32-primeiro p{overflow-wrap:anywhere}
+@media(min-width:900px){.f32-entrada{padding-block:32px;min-height:100dvh;gap:20px}}

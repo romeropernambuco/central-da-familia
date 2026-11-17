@@ -43,7 +43,7 @@ async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equip
   const botao = (texto: string) => container.buscar(n => n.tagName === 'BUTTON' && (n.textContent === texto || n.getAttribute('aria-label') === texto))[0]
   const clicar = async (texto: string) => { expect(botao(texto), texto).toBeDefined(); await act(async () => botao(texto).click()) }
   const abrirTarefas = async () => {
-    const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null)
+    const botoes = container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null && (n.getAttribute('class') || '').includes('agente-aba-divulgacao'))
     expect(botoes, 'Uma divulgacao por agente').toHaveLength(1)
     const botao = botoes[0]
     expect(botao.getAttribute('aria-expanded')).toBe('false')
@@ -417,6 +417,22 @@ it('UX: olho fechado retira link privado de convite e bloqueia compartilhamento'
   await act(async () => link.click())
   expect(reenviar).not.toHaveBeenCalled()
   expect(toast).toHaveBeenCalledWith('Abra o olho para compartilhar este convite.')
+ } finally { await a.fechar() }
+})
+it('f32: conversa tem painel próprio e recolher preserva o controle acessível', async () => {
+ const a = await montar(createElement(AgenteDaAba, { rota: 'casa' }))
+ try {
+  const botao = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Recolher')[0]
+  const id = botao.getAttribute('aria-controls')
+  expect(id).toBeTruthy()
+  const painel = a.container.buscar(n => n.getAttribute('id') === id)[0]
+  expect(painel).toBeDefined()
+  expect(botao.buscar(n => n.tagName.toLowerCase() === 'svg')).toHaveLength(1)
+  await act(async () => botao.click())
+  expect(painel.getAttribute('hidden')).not.toBeNull()
+  expect(botao.getAttribute('aria-expanded')).toBe('false')
+  await act(async () => botao.click())
+  expect(painel.getAttribute('hidden')).toBeNull()
  } finally { await a.fechar() }
 })
 it('15: recolher e expandir informam estado acessível', async () => {

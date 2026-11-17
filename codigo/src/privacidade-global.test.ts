@@ -215,7 +215,7 @@ describe('regra do olho em cada tela real', () => {
       await act(async () => { await new Promise(r => setTimeout(r, 700)) })
       expect(vazamentos(container), nome).toEqual([])
       if (nome.startsWith('Agente:')) {
-        await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null)[0].click())
+        await act(async () => container.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-controls') !== null && (n.getAttribute('class') || '').includes('agente-aba-divulgacao'))[0].click())
         await act(async () => { await new Promise(r => setTimeout(r, 400)) })
         expect(vazamentos(container), nome + ' tarefas abertas').toEqual([])
       }

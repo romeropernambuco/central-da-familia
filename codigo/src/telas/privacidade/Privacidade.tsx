@@ -1,3 +1,5 @@
+import './privacidade.css'
+import { PrivacidadeOlho } from '../../componentes/ilustracoes'
 import { Icone } from '../../componentes/Icone'
 import { resumoPrivacidade, VERSAO_PRIVACIDADE } from './resumos'
 import { Backup } from '../../componentes/Backup'
@@ -46,10 +48,10 @@ export function Privacidade() {
   }
 
   return (
-    <div className="tela-larga">
-      {familia?.papel === 'equipe' && <button type="button" className="btn line" onClick={async()=>{location.hash='#/inicio';await sair()}}>Sair</button>}
+    <div className="tela-larga f32-privacidade">
+      {familia?.papel === 'equipe' && <button type="button" className="btn line" onClick={async()=>{location.hash='#/inicio';await sair()}}><Icone nome="abrir" />Sair</button>}
       <section className="card termo" aria-labelledby="tT">
-        <h2 id="tT"><Icone desenho={ShieldCheck} aria-hidden="true" />Termo de uso, em 1 tela</h2>
+        <PrivacidadeOlho /><h2 id="tT"><Icone desenho={ShieldCheck} aria-hidden="true" />Termo de uso, em 1 tela</h2>
         <p className="sub">Versão {VERSAO_PRIVACIDADE} · {familia?.papel === 'equipe' ? 'Assessor da Casa' : familia?.papel === 'casal' ? 'Casal' : 'Pessoa da família'}</p>
         {resumoPrivacidade(familia?.papel || null).map(([titulo, texto]) => <div key={titulo}><h3>{titulo}</h3><p>{texto}</p></div>)}
         <h3>Leitura de cupom</h3><p>A foto é enviada para leitura quando você solicita. Confira os dados antes de salvar; o cupom pode conter informações pessoais.</p>

@@ -1,4 +1,5 @@
-import { Icone } from './Icone'
+import './agente-cartao.css'
+import { Icone, icones, type NomeIcone } from './Icone'
 import { nomeInformado } from '../lib/nomePessoa'
 import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
@@ -70,7 +71,7 @@ const SOBRE: Record<string, string> = {
 export function AjudaDaAba({ rota }: { rota: string }) {
  const { familia } = useApp()
  const [aberta, setAberta] = useState(false)
- return <><button type="button" className="btn line" onClick={() => setAberta(true)}>Preciso de ajuda</button>{aberta && <Sheet titulo="Preciso de ajuda" fechar={() => setAberta(false)}>
+ return <><button type="button" className="btn ghost" onClick={() => setAberta(true)}><Icone nome="ajuda" />Preciso de ajuda</button>{aberta && <Sheet titulo="Preciso de ajuda" fechar={() => setAberta(false)}>
  <p>{familia?.papel === 'pessoa' && rota === 'inicio' ? 'Aqui você acompanha seu orçamento e seus avisos.' : SOBRE[rota] || 'Entre com seu e-mail ou com o convite do Assessor da Casa.'}</p>
  <p>Para registrar uma compra, use “Anotar gasto” ou “Anotar compra”.</p>
  {familia?.papel === 'equipe' ? <p>Na Casa você acompanha tarefas e anota compras sem valores. Consulte seu resumo em Mais → Privacidade.</p> : familia && <><p>Os números ficam no conteúdo da tela. O botão “?” explica de onde vieram.</p><p>Use o olho para esconder ou mostrar valores. Ele também fica na folha de Anotar gasto.</p></>}
@@ -178,13 +179,13 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const restrito = familia!.papel !== 'casal'
  const papel = restrito && rota === 'casa' ? (m.id === 'presenca' ? 'Acompanha seu próprio ponto.' : 'Acompanha as tarefas da casa, sem valores em dinheiro.') : m.papel
  return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
- {completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small>{papel}</small>
+ {completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small className="agente-papel"><Icone nome={m.id in icones ? m.id as NomeIcone : 'pessoa'} />{papel}</small>
  {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
  {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
- {conversa && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome) && <p className="sub">Olá, {textoPrivado(familia!.membroNome, oculto)}.</p>}
+ <div id={painel + '-conversa'} hidden={!conversa} className="agente-conversa">{conversa && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome) && <p className="sub">Olá, {textoPrivado(familia!.membroNome, oculto)}.</p>}
  {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
- {modo !== 'desligado' && <button type="button" className="btn line" aria-expanded={conversa} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}>{conversa ? 'Recolher' : 'Expandir'}</button>}
- <button type="button" className={p?.opcoes.length ? 'btn ghost agente-aba-divulgacao' : 'btn line'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}>{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
+ </div>{modo !== 'desligado' && <button type="button" className="btn ghost agente-recolher" aria-expanded={conversa} aria-controls={painel + '-conversa'} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}><Icone desenho={ChevronDown} />{conversa ? 'Recolher' : 'Expandir'}</button>}
+ <button type="button" className={'btn ghost agente-aba-divulgacao'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}><Icone nome="escritorio" />{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
  <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>
