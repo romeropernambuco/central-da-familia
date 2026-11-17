@@ -1,3 +1,4 @@
+import './RumoA2029.css'
 import { Icone } from './Icone'
 import { textoPrivado } from './privacidade'
 // E7: a linha do caixa mês a mês até dez/2028 (F4), o "fica devendo até MM/AAAA" (F9) e a folga de 2029 (F5).
@@ -55,6 +56,8 @@ export function frasesCorte(a: NonNullable<FuturoSaida['ajustes_falta']>): { fal
 
 /** Planejamento: a linha mês a mês até dez/2028, as frases do motor e a lista de cada mês (aberta num toque). */
 export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: FuturoEntrada }) {
+  const { oculto } = useApp()
+  if (oculto) return <p className="todo">Gráfico e valores escondidos.</p>
   const f = frasesLinha(saida)
   const pisoMeses = entrada.parametros.piso_meses
   // B3 (revisão): o piso de cada mês vem pronto do motor (LinhaMes.piso); a tela só desenha
@@ -140,6 +143,8 @@ export function frasesRenda(r: RendaDoMes): { rende: string; folga: string; taxa
 
 /** Planejamento depois da virada: o bloco renda no lugar da linha até 2028. */
 export function Renda2029({ saida }: { saida: FuturoSaida }) {
+  const { oculto } = useApp()
+  if (oculto) return <p className="todo">Renda e valores escondidos.</p>
   const r = saida.renda
   if (!r) return null
   const f = frasesRenda(r)

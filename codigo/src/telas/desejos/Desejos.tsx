@@ -1,3 +1,5 @@
+import './desejos.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -13,7 +15,7 @@ import { useApp } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
-import { CampoValor, Din, Vazio } from '../../componentes/base'
+import { CampoValor, Din } from '../../componentes/base'
 import { mesAno } from '../../componentes/Linha2028'
 import { avaliarAntecipacao, cabeDesejo, futuro, type Desejo, type FuturoEntrada } from '../../lib/futuro'
 import { GraficoDesejo } from '../../componentes/Graficos'
@@ -114,7 +116,7 @@ export function fraseDaFilha(valor: number, livre: number, limite: number, mesQu
 const VAZIO = { nome: '', valor: '', mes: '', volta_de: 'nada' as VoltaDe, volta: '', volta_mes: '', antecipado: '', volta_certa: true }
 
 export function Desejos() {
-  const { api, familia, resumo, versao, tentar, toast } = useApp()
+  const { api, familia, resumo, versao, tentar, toast, oculto } = useApp()
   const { ent, saida: saidaF, estado: estFuturo, motivo: motivoFuturo } = useFuturo()
   const casal = familia?.papel === 'casal'
   const adultos = useAdultos()
@@ -155,12 +157,12 @@ export function Desejos() {
   }, [casal, ent, lista])
 
   if (!familia || familia.papel === 'equipe') return null
-  if (!api.desejos) return <div className="card"><Vazio ico={<Icone desenho={Sparkles} />}>Os desejos ainda estão sendo ligados no banco da família.</Vazio></div>
+  if (!api.desejos) return <div className="card"><><EstadoVazio ilustracao="SemDesejos" titulo="Espaço para os próximos sonhos" frase="Os desejos ainda estão sendo ligados no banco da família." /></></div>
 
   const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId)
 
   // o resultado: casal, do motor (cabeDesejo); filha, só o mês dela. QA E11 (E1): nunca fica parado em "Fazendo a conta…"
-  const resposta = falta || !(novo.valor > 0) ? null : casal
+  const resposta = oculto ? <p className="todo desejo-res" role="status">Resultado escondido. Abra o olho para conferir se cabe.</p> : falta || !(novo.valor > 0) ? null : casal
     ? resultado && resultadoPronto ? <div className="desejo-resp">
         {/* C3: a resposta em 1 palavra antes de qualquer conta (o leitor de tela lê a frase inteira logo abaixo) */}
         <p className={'desejo-selo ' + (resultado.ok ? 'ok' : 'warn')} aria-hidden="true">{resultado.selo}</p>
@@ -185,7 +187,7 @@ export function Desejos() {
   const campo = (k: keyof typeof VAZIO) => (v: string) => setF({ ...f, [k]: v })
 
   return (
-    <div className="tela-larga">
+    <div className="tela-larga f30-desejos">
       <div className="col">
         <section className="card" aria-labelledby="dCalc">
           <div className="card-h"><h2 id="dCalc"><Icone desenho={Sparkles} aria-hidden="true" />Quero…</h2></div>
@@ -228,8 +230,8 @@ export function Desejos() {
         <section className="card" aria-labelledby="dLista">
           <div className="card-h"><h2 id="dLista"><Icone nome="desejos" />{casal ? 'Desejos da família' : 'Seus desejos'}</h2></div>
           {carregando && <p role="status">Buscando desejos…</p>}
-          {falha && <p role="alert">Não foi possível buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-          {lista === null ? null : !lista.length ? !falha && !carregando && <Vazio ico={<Icone desenho={Sparkles} />}>Crie seu primeiro desejo no formulário.</Vazio> : (
+          {falha && <p role="alert">Não foi possível buscar desejos. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}><Icone nome="desfazer" />Tentar novamente</button></p>}
+          {lista === null ? null : !lista.length ? !falha && !carregando && <><EstadoVazio ilustracao="SemDesejos" titulo="Espaço para os próximos sonhos" frase="Crie seu primeiro desejo no formulário." /></> : (
             <ul className="list">
               {lista.map(d => {
                 const m = desejoDoMotor(d, d.id, d.dono_membro)
@@ -237,10 +239,10 @@ export function Desejos() {
                 const dono = d.meu ? 'seu' : `de ${d.dono_nome || ''}`
                 const volta = d.volta_de === 'nada' ? '' : d.volta_de === 'contrato' ? ` · contrato adiantado: entra ${reais(d.antecipado || 0)} no lugar de ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}` : ` · volta ${reais(d.volta)} em ${mesCurto((d.volta_mes || d.mes) + '-01')}${d.volta_certa ? '' : ', se vier'}`
                 return (
-                  <li key={d.id} className="li desejo" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': textoPrivado(d.dono_nome || '') })}>
-                    <span className="m"><b className="quebra">{textoPrivado(d.nome)}</b>
+                  <li key={d.id} className="li desejo" style={{ gridTemplateColumns: '40px minmax(0,1fr) auto' }} {...(d.meu ? {} : { 'data-do-outro': textoPrivado(d.dono_nome || '') })}>
+                    <span className="tile"><Icone nome="desejo" /></span><span className="m"><b className="quebra">{textoPrivado(d.nome)}</b>
                       <small>{casal && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: d.dono_membro, nome: d.dono_nome }} /> · </>}{mesCurto(d.mes + '-01')}{volta} · {SITUACAO.find(s => s.v === d.situacao)?.nome.toLowerCase()}</small>
-                      {r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{textoPrivado(r.titulo)}</b> {textoPrivado([...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' '))}</small>}
+                      {!oculto && r && <small className={'desejo-cabe ' + (r.ok ? 'ok' : 'warn')}><b>{textoPrivado(r.titulo)}</b> {textoPrivado([...(r.ok ? [] : r.linhas.filter(x => !x.startsWith('Nenhum') && !x.startsWith('O dinheiro guardado continua') && /piso|Cabe a partir|não cabe/.test(x))), ...r.linhas.filter(x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x)), ...r.linhas.filter(x => /^Adiantar/.test(x))].join(' '))}</small>}
                       {!casal && meuEnv && d.situacao === 'pensando' && <small>{textoPrivado(fraseDaFilha(d.valor, meuEnv.livre, meuEnv.limite_base ?? meuEnv.limite_mes, d.mes > hojeRecife().slice(0, 7)))} Verificado em {mesCurto(d.mes + '-01')}.</small>}
                       {!casal && d.meu && <MetaDoDesejo desejo={d} />}
                       {d.meu ? (

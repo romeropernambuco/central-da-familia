@@ -1,0 +1,5 @@
+﻿@import '../../componentes/patrimonio-plano.css';
+.f30-desejos .desejo-form{display:grid;gap:16px}
+.f30-desejos .desejo-resp{padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--sunken)}
+.f30-desejos .desejo-selo{font-size:32px;line-height:1.2;margin-bottom:12px}
+.f30-desejos .desejo-res{line-height:1.6}

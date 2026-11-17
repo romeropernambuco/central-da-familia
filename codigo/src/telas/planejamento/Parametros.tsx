@@ -1,3 +1,4 @@
+import './planejamento.css'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
@@ -87,7 +88,7 @@ function ParametrosFamilia() {
   if (!familia || familia.papel !== 'casal' || !api.objetivo) return null
   const avisoLeitura = <>
     {carregando && <p role="status">Buscando o objetivo de 2029…</p>}
-    {falha && <p role="alert">{falha} {obj && 'Dados desatualizados.'} <button type="button" onClick={() => setN(x => x + 1)}>Tentar novamente</button></p>}
+    {falha && <p role="alert">{falha} {obj && 'Dados desatualizados.'} <button type="button" onClick={() => setN(x => x + 1)}><Icone nome="desfazer" />Tentar novamente</button></p>}
   </>
   if (!obj) return <section className="card">{avisoLeitura}</section>
   const focus = new Map(obj.focus.map(x => [String(x.ano), x]))

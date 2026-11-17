@@ -1,3 +1,5 @@
+import { EstadoVazio } from './EstadoVazio'
+import { Icone } from './Icone'
 import { useState } from 'react'
 import { useApp } from '../app/contexto'
 import { frescor, type GrupoNumero, type useNumerosAtualizados } from '../app/useNumerosAtualizados'
@@ -37,13 +39,13 @@ export function AtualizarNumeros({ itens, conferencia, fechar, agora = () => new
     <p className="sub">Confira no banco, no contrato ou na sua avaliação. Marcar como conferido muda apenas a data.</p>
     {api.modo === 'exemplo' && <p className="todo">Exemplo: conferências ficam só nesta demonstração.</p>}
     {(conferencia.erro || aviso) && <p role="status">{conferencia.erro || aviso}</p>}
-    <ul className="rumo-conferencia">
+    <div className="f30-conferencia">{!itens.length && <EstadoVazio ilustracao="TudoEmDia" titulo="Tudo pronto por aqui" frase="Nenhum número para conferir agora." />}<ul className="rumo-conferencia">
       {itens.map(item => {
         const chave = `${item.grupo}:${item.id}`
         const data = item.grupo === 'saldo_caixa' ? conferencia.dados.saldo_caixa : conferencia.dados[item.grupo][item.id]
         const estado = frescor(data, agora())
         return <li key={chave}>
-          <div className="rumo-entre"><b>{textoPrivado(item.nome, oculto)}</b><Din v={item.valor / 100} /></div>
+          <div className="rumo-entre"><span className="icone-chip"><Icone nome={item.grupo === 'imoveis' ? 'imovel' : item.grupo === 'recebimentos' ? 'entrada' : 'guardado'} /></span><b>{textoPrivado(item.nome, oculto)}</b><Din v={item.valor / 100} /></div>
           <p className={`rumo-frescor ${oculto ? '' : estado.cor}`}>{textoPrivado(estado.texto, oculto)}</p>
           <p className="sub">{item.ajuda}</p>
           <div className="row-btns">
@@ -56,7 +58,7 @@ export function AtualizarNumeros({ itens, conferencia, fechar, agora = () => new
                 setImovel(existente)
               })
               setOcupado('')
-            }}>Abrir imóvel</button>}
+            }}><Icone nome="abrir" />Abrir imóvel</button>}
             <button className="btn line" type="button" disabled={!!ocupado || !conferencia.lido} onClick={async () => {
               if (ocupado) return
               setOcupado(chave); setAviso('')
@@ -67,6 +69,6 @@ export function AtualizarNumeros({ itens, conferencia, fechar, agora = () => new
           </div>
         </li>
       })}
-    </ul>
+    </ul></div>
   </Sheet>
 }
