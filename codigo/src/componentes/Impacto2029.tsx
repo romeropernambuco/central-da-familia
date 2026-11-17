@@ -1,3 +1,6 @@
+import './RumoA2029.css'
+import { Icone } from './Icone'
+import { textoPrivado } from './privacidade'
 // E7: 1 linha "isso tira R$ X por mês da renda de 2029, pra sempre" (F6). Vai no estouro, no Lançar quando o gasto é
 // grande e no Desejo. A tela NUNCA calcula 2029: só chama impacto2029() de lib/futuro com a entrada de api/futuro.ts.
 import { useApp } from '../app/contexto'
@@ -26,12 +29,12 @@ export function impactoDoMotor(entrada: FuturoEntrada, valorReais: number, mes =
 
 /** `valor` em reais; `mes` 'AAAA-MM' (padrão: o mês de hoje). Some pra quem não é do casal (a filha não vê 2029). */
 export function Impacto2029({ valor, mes, prefixo, className = '' }: { valor: number; mes?: string; prefixo?: string; className?: string }) {
-  const { familia } = useApp()
+  const { familia, oculto } = useApp()
   const { ent } = useFuturo()
   if (familia?.papel !== 'casal' || !ent?.entrada) return null
   const r = impactoDoMotor(ent.entrada, valor, mes)
   if (!r) return null
   const f = fraseImpacto(r.perda, prefixo, r.modo)
   if (!f) return null
-  return <p className={'impacto-2029 ' + className}>{f}</p>
+  return <p className={'impacto-2029 ' + className}><Icone nome="plano2029" />{oculto ? 'Impacto na renda escondido.' : textoPrivado(f, oculto)}</p>
 }

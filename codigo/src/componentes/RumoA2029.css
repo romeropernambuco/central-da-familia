@@ -21,3 +21,15 @@
 :root[data-theme=dark] .rumo-frescor.vermelho{color:#ffaaa4}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .rumo-frescor.vermelho{color:#ffaaa4}}
 .rumo-fala{border-top:1px solid var(--border);padding-top:12px}
+
+/* f30: hierarquia e navegação do plano, sem tamanho derivado de valores. */
+.rumo-hero{border-width:1px;border-top:3px solid var(--accent);padding:clamp(18px,3vw,28px);gap:20px;font-variant-numeric:tabular-nums}
+.rumo-hero h2{display:flex;align-items:center;gap:10px}
+.rumo-fontes>div>.ico{color:var(--accent-ink);padding:8px;box-sizing:content-box;background:var(--accent-soft);border-radius:12px}
+.rumo-resumo{min-height:88px}.rumo-resumo:hover{background:var(--raised)}.rumo-resumo:active{background:var(--accent-soft)}
+:is(.rumo-resumo,.rumo-hero summary,.rumo-hero button):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.rumo-premissas summary{display:flex;align-items:center;gap:10px;font-weight:600}
+.rumo-conferencia .rumo-entre{align-items:center;justify-content:flex-start}.rumo-conferencia .rumo-entre>.din{margin-left:auto}
+.linha-2028 .plan-nums dd{font-variant-numeric:tabular-nums}.linha-2028 summary{min-height:44px;padding-block:12px}
+.impacto-2029{display:flex;align-items:flex-start;gap:10px;line-height:1.5}.impacto-2029>.ico{flex-shrink:0;margin-top:2px}
+@media(max-width:480px){.rumo-entre{display:grid;grid-template-columns:1fr}.rumo-conferencia .rumo-entre{grid-template-columns:40px minmax(0,1fr)}.rumo-conferencia .rumo-entre>.din{grid-column:2;margin:0}.linha-2028 .plan-nums{grid-template-columns:1fr}}

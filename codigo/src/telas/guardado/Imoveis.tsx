@@ -1,3 +1,5 @@
+import './guardado.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
@@ -14,7 +16,7 @@ import { Building2, Home, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
-import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
+import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { imovelInvalido, taxaDoTexto, textoDaTaxa } from '../../api/futuro'
 import { fraseRenova } from '../../componentes/Linha2028'
@@ -83,7 +85,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
     <section className="card imoveis" aria-labelledby="gImo">
       <div className="card-h"><h2 id="gImo"><Icone desenho={Building2} aria-hidden="true" />Imóveis</h2><button className="lnk" type="button" onClick={() => setFolha('novo')}><Icone desenho={Plus} />Imóvel</button></div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
-      <p>Gestor do Guardado: quer cadastrar um imóvel?</p><Botao type="button" variante="secundario" onClick={() => setFolha('novo')}>Cadastrar imóvel</Botao>
+      <p className="sub">Gestor do Guardado: quer cadastrar um imóvel?</p><Botao type="button" variante="primario" onClick={() => setFolha('novo')}><Icone nome="lancar" />Cadastrar imóvel</Botao>
       {lista && <dl className="imo-total">
         <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
@@ -91,8 +93,8 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       </dl>}
       <p className="sub imo-frase">O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas cadastradas.</p>
       {carregando && <p role="status">Buscando imóveis…</p>}
-      {falha && <p role="alert">Não foi possível buscar os imóveis. {lista && 'Dados desatualizados.'} <button type="button" onClick={repetir}>Tentar novamente</button></p>}
-      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <Vazio ico={<Icone desenho={Home} />}>Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.</Vazio> : (
+      {falha && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível buscar os imóveis." frase={lista ? 'Dados desatualizados.' : 'Tente novamente em instantes.'} acao={{ texto: 'Tentar novamente', aoClicar: repetir }} /></div>}
+      {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? <><EstadoVazio ilustracao="SemImoveis" titulo="Seu patrimônio, em um só lugar" frase={'Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.'} /></> : (
         <ul className="list">
           {imoveis.map(i => {
             const m: ImovelSaida | undefined = doMotor.get(i.id)
@@ -109,7 +111,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                     {selo && <small className={'imo-selo ' + (selo.entra ? 'ok' : 'warn')}>{textoPrivado(selo.texto)}</small>}
                   </span>
                   <span className="v"><Din v={i.valor} /></span>
-                </button>
+                <Icone nome="abrir" className="f30-seta" /></button>
                 {!i.meu && <NomeDaPessoa pessoa={{ tipo: 'membro', id: i.dono_membro, nome: i.dono_nome }} />}
               </li>
             )
@@ -200,8 +202,8 @@ export function FolhaImovel({ inicial, fechar, salvar, tirar, entraHoje, renovaH
       </fieldset>
       {!so && <>
         {falta && (f.apelido || f.valor) ? <p className="sub" style={{ marginTop: 8 }}>{textoPrivado(falta)}</p> : null}
-        <Botao variante="primario" className="full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) { setF.limpar(); fechar() } }}>Salvar</Botao>
-        {inicial && <Botao variante="secundario" className="full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}>Tirar da lista</Botao>}
+        <Botao variante="primario" className="full" type="button" disabled={!!falta || gravando} style={{ marginTop: 12 }} onClick={async () => { setGravando(true); const ok = await salvar(inicial?.id ?? null, d); setGravando(false); if (ok) { setF.limpar(); fechar() } }}><Icone nome="salvo" />Salvar</Botao>
+        {inicial && <Botao variante="secundario" className="full" type="button" style={{ marginTop: 8 }} onClick={() => tirar(inicial)}><Icone nome="fechar" />Tirar da lista</Botao>}
       </>}
     </Sheet>
   )

@@ -1,3 +1,4 @@
+import { Icone } from './Icone'
 import { useRef, useState } from 'react'
 import { useApp } from '../app/contexto'
 import type { FonteReceita, RecebimentoTela } from '../api/tipos'
@@ -11,14 +12,14 @@ export const CERTEZAS_RECEITA = { garantido: 'Garantido', provavel: 'Provável',
 export const fonteInicial = (certo: boolean): FonteReceita => ({ origem: 'outro', certeza: certo ? 'garantido' : 'incerto', recorrencia: 'unica' })
 export function CamposFonteReceita({ fonte, mudar, inicio }: { fonte: FonteReceita; mudar: (f: FonteReceita) => void; inicio: string }) {
   return <>
-    <div className="campo"><span id="rfOrigem">De onde vem?</span><div className="pills" role="group" aria-labelledby="rfOrigem">
+    <div className="campo"><span id="rfOrigem"><Icone nome="entrada" />De onde vem?</span><div className="pills" role="group" aria-labelledby="rfOrigem">
       {Object.entries(ORIGENS_RECEITA).map(([v, t]) => <button key={v} className="pill" type="button" aria-pressed={fonte.origem === v} onClick={() => mudar({ ...fonte, origem: v as FonteReceita['origem'] })}>{t}</button>)}
     </div></div>
     <label className="campo"><span>Nome da fonte (opcional)</span><CampoPrivado className="inp" value={fonte.rotulo || ''} maxLength={80} onChange={e => mudar({ ...fonte, rotulo: e.target.value })} /></label>
     <div className="campo"><span id="rfCerteza">Qual a certeza?</span><div className="pills" role="group" aria-labelledby="rfCerteza">
       {Object.entries(CERTEZAS_RECEITA).map(([v, t]) => <button key={v} className="pill" type="button" aria-pressed={fonte.certeza === v} onClick={() => mudar({ ...fonte, certeza: v as FonteReceita['certeza'] })}>{t}</button>)}
     </div><small>Só Garantido entra no número oficial. Previsto não é promessa.</small></div>
-    <div className="campo"><span id="rfRepete">Se repete?</span><div className="pills" role="group" aria-labelledby="rfRepete">
+    <div className="campo"><span id="rfRepete"><Icone nome="pendente" />Se repete?</span><div className="pills" role="group" aria-labelledby="rfRepete">
       {Object.entries({ unica: 'Só uma vez', mensal: 'Todo mês', anual: 'Todo ano' }).map(([v, t]) => <button key={v} className="pill" type="button" aria-pressed={fonte.recorrencia === v} onClick={() => mudar({ ...fonte, recorrencia: v as FonteReceita['recorrencia'] })}>{t}</button>)}
     </div></div>
     {fonte.recorrencia !== 'unica' && <label className="campo"><span>Até quando</span><CampoPrivado className="inp" type="month" min={inicio} max="2031-12" value={fonte.fim || ''} onChange={e => mudar({ ...fonte, fim: e.target.value || undefined })} /><small>Sem fim informado: até dezembro de 2031. Valor igual em cada ocorrência, sem reajuste automático.</small></label>}
@@ -49,7 +50,7 @@ export function ConfirmarReceita({ r, meses, confirmar, fechar }: { r: Recebimen
       <div className="campo"><span>Quanto realmente chegou</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto realmente chegou" /></div>
       <label className="campo"><span>Data em que chegou</span><CampoPrivado className="inp" aria-label="Data em que chegou" type="date" max={hojeRecife()} value={data} onChange={e => setData(e.target.value)} /></label>
       {erro && <p role="alert">{erro}</p>}
-      <button className="btn primary full" type="submit" disabled={ocupado}>Confirmar recebimento</button>
+      <button className="btn primary full" type="submit" disabled={ocupado}><Icone nome="salvo" />Confirmar recebimento</button>
     </form>
   </Sheet>
 }

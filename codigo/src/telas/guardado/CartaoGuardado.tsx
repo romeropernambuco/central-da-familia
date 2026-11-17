@@ -1,3 +1,4 @@
+import './guardado.css'
 import { Icone } from '../../componentes/Icone'
 import { Landmark, ChevronRight } from 'lucide-react'
 import { useApp } from '../../app/contexto'

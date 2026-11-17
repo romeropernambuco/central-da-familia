@@ -1,3 +1,4 @@
+import { EstadoVazio } from './EstadoVazio'
 import { Icone } from './Icone'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Target } from 'lucide-react'
@@ -66,10 +67,11 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
 }) {
   const { oculto } = useApp()
   const id = useId(), privado = (s: string) => textoPrivado(s, oculto)
+  if (oculto) return compacto ? <a className="card rumo-resumo" href="#/planejamento"><Icone nome="plano2029" /><b>Rumo a 2029</b><span>Gráfico e valores escondidos.</span><Icone nome="abrir" /><span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span></a> : <section className="card rumo-hero" aria-labelledby={id}><h2 id={id}><Icone nome="plano2029" />Rumo a 2029</h2><p>Gráfico e valores escondidos.</p><div className="rumo-barra" role="img" aria-label="Cobertura escondida"><i style={{ width: '0%' }} /></div><button className="btn primary" type="button" onClick={abrir}><Icone nome="contador" />Atualizar meus números</button><p className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</p></section>
   const n = c?.numeros
   const saldo = (v: number) => <>{v > 0 ? 'faltam' : 'sobram'} <Din v={Math.abs(v) / 100} /> por mês</>
-  const resposta = !c || !n || n.cobre_pct === null || n.falta_com_margem === null ? null : <>Em {mesNome(c.referencia)} {saldo(n.falta_com_margem)}, com margem de segurança.</>
-  const semMargem = n && n.cobre_pct !== null ? <span className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</span> : null
+  const resposta = oculto ? 'Abra o olho para conferir a cobertura e os valores.' : !c || !n || n.cobre_pct === null || n.falta_com_margem === null ? null : <>Em {mesNome(c.referencia)} {saldo(n.falta_com_margem)}, com margem de segurança.</>
+  const semMargem = !oculto && n && n.cobre_pct !== null ? <span className="sub">Sem a margem de segurança: {saldo(n.falta_sem_margem)}.</span> : null
   if (compacto) return <a className="card rumo-resumo" href="#/planejamento">
     <b>Rumo a 2029</b><Icone nome="abrir" /><span className="chip">Garantido</span>{exemplo && <span>Exemplo</span>}<span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>{semMargem}
     {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
@@ -80,9 +82,9 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
     <span className="chip">{CENARIOS_RECEITAS[cenario]}</span>{cenario !== 'garantido' && <p className="sub">Número oficial: Garantido</p>}
     <p className="rumo-pergunta">Já dá para viver só de rendimentos?</p>
     {exemplo && <p className="sub">Simulação de exemplo. Não decide alertas nem grava na família real.</p>}
-    {resposta ? <p className="rumo-resposta">{resposta}</p> : <p role={erro ? 'alert' : 'status'}>{c ? 'Informe o gasto necessário no objetivo. Gasto zero não permite avaliar a cobertura.' : privado(mensagem)}</p>}
+    {resposta ? <p className="rumo-resposta">{resposta}</p> : <div role={erro ? 'alert' : 'status'}><EstadoVazio ilustracao={erro ? 'Erro' : 'Plano2029'} titulo={erro ? 'Vamos conferir o plano' : 'Seu plano começa pelos números'} frase={c ? 'Informe o gasto necessário no objetivo. Gasto zero não permite avaliar a cobertura.' : privado(mensagem)} /></div>}
     {semMargem}
-    {!c && atualizar && <button className="btn line" type="button" onClick={atualizar}>Tentar novamente</button>}
+    {!c && atualizar && <button className="btn line" type="button" onClick={atualizar}><Icone nome="desfazer" />Tentar novamente</button>}
     {c && <>
       <div className="rumo-barra" role="img" aria-label={oculto ? 'Cobertura escondida' : c.cobertura === null ? 'Gasto necessário não informado' : `Cobertura estimada de ${percentual(c.cobertura)}`}>
         <i style={{ width: `${oculto || c.cobertura === null ? 0 : Math.min(100, Math.max(0, c.cobertura))}%` }} />
@@ -90,9 +92,9 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
       <div className="rumo-entre"><span>Renda mensal <Din v={c.total / 100} /></span><span>Gasto necessário <Din v={c.gasto / 100} /></span></div>
       <p className="sub">Projeção, sem salário nem verba. Aplicações são estimativas; a cobertura depende das premissas abaixo.</p>
       <div className="rumo-fontes">
-        <div><span>Aplicações e caixa projetado</span><Din v={c.aplicacoes / 100} /><small>Previsto · rendimento estimado</small></div>
-        <div><span>Aluguéis líquidos dos imóveis</span><Din v={c.alugueis / 100} /><small>Garantido no cadastro · contrato de pelo menos 12 meses</small></div>
-        <div><span>Receitas recorrentes na renda mensal</span><Din v={c.recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0) / 100} /><small>Entradas até 2028 já compõem as aplicações; não somam renda permanente.</small></div>
+        <div><Icone nome="guardado" /><span>Aplicações e caixa projetado</span><Din v={c.aplicacoes / 100} /><small>Previsto · rendimento estimado</small></div>
+        <div><Icone nome="imovel" /><span>Aluguéis líquidos dos imóveis</span><Din v={c.alugueis / 100} /><small>Garantido no cadastro · contrato de pelo menos 12 meses</small></div>
+        <div><Icone nome="entrada" /><span>Receitas recorrentes na renda mensal</span><Din v={c.recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0) / 100} /><small>Entradas até 2028 já compõem as aplicações; não somam renda permanente.</small></div>
         {!!c.rendaCerta && <div><span>Renda certa do Objetivo</span><Din v={c.rendaCerta / 100} /><small>Origem a confirmar no cadastro; já incluída pelo motor.</small></div>}
       </div>
       <p className="sub">Garantido: consta como certo no cadastro. Previsto: depende de estimativa. Incerto: só entra em Com tudo. Entradas acumuladas já estão nas aplicações.</p>
@@ -108,7 +110,7 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
         <span>Melhora estimada de <Din v={a.efeito / 100} /> por mês em 2029</span><small>{privado(a.premissa)}</small>
       </li>)}</ol> : <p className="sub">Não há alavanca positiva calculável com os dados atuais. Você pode conferir os números sem mudar o plano.</p>}
       <h3>Quando cobre</h3>
-      <p>{privado(c.cobertura === null ? 'Informe o gasto necessário para projetar quando cobre.' : c.cobreEm ? `Cobertura projetada em ${mesNome(c.cobreEm)}.` : c.referencia > '2031-12' ? 'A data atual já passou da janela até dez/2031. A cobertura acima é a do mês atual.' : 'Não cobre até dez/2031 com estas premissas.')}</p>
+      <p>{oculto ? 'Projeção de cobertura escondida.' : privado(c.cobertura === null ? 'Informe o gasto necessário para projetar quando cobre.' : c.cobreEm ? `Cobertura projetada em ${mesNome(c.cobreEm)}.` : c.referencia > '2031-12' ? 'A data atual já passou da janela até dez/2031. A cobertura acima é a do mês atual.' : 'Não cobre até dez/2031 com estas premissas.')}</p>
       <p className="sub">Cada ponto simula começar a viver de rendimentos naquele mês; não garante os meses seguintes.</p>
       {oculto ? <p className="sub">Gráfico e valores escondidos.</p> : c.linha.length > 0 && <figure className="rumo-grafico">
         <svg viewBox="0 0 360 100" role="img" aria-label={`Cenário ${CENARIOS_RECEITAS[cenario]}: cobertura mensal estimada com margem de segurança; valores completos na descrição abaixo`}>
@@ -118,11 +120,11 @@ export function RumoHero({ calculo: c, cenario = 'garantido', compacto = false, 
         <figcaption>Linha pontilhada: 100% do gasto com margem de segurança. {mesNome(c.linha[0].mes)} a {mesNome(c.linha[c.linha.length - 1].mes)}.</figcaption>
       </figure>}
       <details><summary>Ver cobertura mês a mês em texto</summary><ul className="rumo-meses">{c.linha.map(m => <li key={m.mes}>{mesNome(m.mes)}: {privado(m.cobertura === null ? 'gasto não informado' : percentual(m.cobertura))} · renda <Din v={m.renda / 100} /> · gasto <Din v={m.gasto / 100} /></li>)}</ul></details>
-      <div className="rumo-premissas"><h3>Premissas da conta</h3>{c.premissas.map((p, i) => <p className="sub" key={i}>{privado(p)}</p>)}</div>
+      <details className="rumo-premissas"><summary><Icone nome="folha" />Premissas da conta</summary>{c.premissas.map((p, i) => <p className="sub" key={i}>{privado(p)}</p>)}</details>
     </>}
     {!exemplo && velhos && <p className="sub">{privado('Há números com mais de 60 dias.')}</p>}
     {!exemplo && semConferencia && <p className="sub">{privado('Há números sem data de conferência.')}</p>}
-    <button className="btn primary" type="button" onClick={abrir}>Atualizar meus números</button>
+    <button className="btn primary" type="button" onClick={abrir}><Icone nome="desfazer" />Atualizar meus números</button>
     <p className="sub rumo-fala">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</p>
   </section>
 }

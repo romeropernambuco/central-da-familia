@@ -1,3 +1,5 @@
+import './guardado.css'
+import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
@@ -12,7 +14,7 @@ import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
 import { Imoveis } from './Imoveis'
 import { aplicacaoMinha } from '../../app/dono'
-import { CampoValor, Din, Sheet, Vazio } from '../../componentes/base'
+import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { dataBr, dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
@@ -47,9 +49,9 @@ export function Guardado() {
     window.addEventListener('hashchange', abrir)
     return () => { parar(); window.removeEventListener('hashchange', abrir) }
   }, [])
-  if (familia?.papel !== 'casal') return <div className="card"><Vazio ico={<Icone desenho={Landmark} />}>O Guardado mostra o dinheiro da família. Só o casal vê esta tela.</Vazio></div>
-  if (estado === 'desligado') return <div className="card"><Vazio ico={<Icone desenho={Landmark} />}>O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje.</Vazio></div>
-  if (estado === 'erro') return <div className="card"><p className="aviso-erro" role="alert">Não foi possível conferir. {g && 'Dados desatualizados.'} <Botao type="button" variante="secundario" onClick={atualizar}>Tentar de novo</Botao></p></div>
+  if (familia?.papel !== 'casal') return <div className="card"><><EstadoVazio ilustracao="SemAplicacoes" titulo="Vamos cuidar do seu guardado" frase="O Guardado mostra o dinheiro da família. Só o casal vê esta tela." /></></div>
+  if (estado === 'desligado') return <div className="card"><><EstadoVazio ilustracao="SemAplicacoes" titulo="Vamos cuidar do seu guardado" frase="O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje." /></></div>
+  if (estado === 'erro') return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase={g ? 'Dados desatualizados.' : 'Tente novamente em instantes.'} acao={{ texto: 'Tentar de novo', aoClicar: atualizar }} /></div>
   if (!g) return <div className="card"><p className="sub">Buscando quanto rendeu hoje…</p></div>
 
   const abrirConta = () => explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g)} ${TORNEIRA}` })
@@ -71,7 +73,7 @@ export function Guardado() {
   const marco = marcoGuardado(g.saldo_30_seu || g.saldo_30 || [])
   const chaveMarco = marco ? `${familia.membroNome}:${marco.valor}` : ''
   return (
-    <div className="view">
+    <div className="view f30-guardado">
       {marco && marcoVisto !== chaveMarco && (
         <p className="todo ok marco" role="status"><Icone desenho={PartyPopper} aria-hidden="true" /><span><b>{g.saldo_30_seu ? 'Seu guardado' : 'O guardado'} passou de {reais(marco.valor)}</b> no dia {dataCurta(marco.dia)}. Está crescendo.</span>
           <button className="iconbtn" type="button" aria-label="Fechar o aviso" onClick={() => { setMarcoVisto(chaveMarco); try { localStorage.setItem('marco_visto', chaveMarco) } catch { /* sem armazenamento */ } }}><Icone desenho={X} /></button></p>
@@ -103,8 +105,8 @@ export function Guardado() {
           <section className="card" aria-labelledby="g30">
             <div className="card-h"><h2 id="g30"><Icone nome="guardado" />Últimos 30 dias</h2></div>
             <div className="seg compacta" role="group" aria-label="O que mostrar" style={{ marginBottom: 12 }}>
-              <button type="button" aria-pressed={grafico === 'saldo'} onClick={() => setGrafico('saldo')}>Quanto tenho</button>
-              <button type="button" aria-pressed={grafico === 'dia'} onClick={() => setGrafico('dia')}>Rendeu por dia</button>
+              <button type="button" aria-pressed={grafico === 'saldo'} onClick={() => setGrafico('saldo')}><Icone nome="abrir" />Quanto tenho</button>
+              <button type="button" aria-pressed={grafico === 'dia'} onClick={() => setGrafico('dia')}><Icone nome="abrir" />Rendeu por dia</button>
             </div>
             {grafico === 'saldo' && g.saldo_30 ? <LinhaSaldo s={g.saldo_30} /> : <>
             {oculto ? <p className="sub">Gráfico oculto.</p> : <div className="barras30" role="img" aria-label={`Rendimento de cada um dos últimos 30 dias. O maior dia rendeu ${reais(Math.max(...g.por_dia_30.map(d => d.liquido)))}.`}>
@@ -132,7 +134,7 @@ export function Guardado() {
                     <span className="tile"><Icone desenho={Landmark} /></span>
                     <span className="m"><b>{textoPrivado(a.nome)}</b>{a.titular !== undefined && <small className="dono">{a.titular ? textoPrivado(a.titular_nome) : 'do casal'}</small>}<small>{rendeQuanto(a, true)} · {a.liquidez === 'diaria' ? 'tira quando quiser' : a.vence_em ? `vence ${dataCurta(a.vence_em)}` : 'só no vencimento'}</small><small>Tem {reais(a.saldo)}</small></span>
                     <span className="v guard-v"><small>rendeu hoje</small><Din v={a.rendeu_hoje_liquido} /></span>
-                  </button>
+                  <Icone nome="abrir" className="f30-seta" /></button>
                   {a.titular && <NomeDaPessoa pessoa={{ tipo: 'membro', id: a.titular, nome: a.titular_nome }} />}
                 </li>
               ))}
@@ -165,11 +167,11 @@ function taxaTexto(g: GuardadoHoje): string {
 function GuardadoVazio({ g, comecar }: { g: GuardadoHoje; comecar: () => void }) {
   const ex = exemploVazio(g.cdi_usado.pct_ano ? cdiDiaDoAno(g.cdi_usado.pct_ano) : CDI_DIA_PADRAO)
   return (
-    <div className="view">
+    <div className="view f30-guardado">
       <section className="card guard-hoje">
         <h2 className="lbl">Rendeu hoje</h2>
         <div className="numrow"><Din v={0} tam="hero" /></div>
-        <p className="guard-motivo">Ainda não tem nada guardado aqui. Diga onde o dinheiro está e o app mostra, todo dia, quanto ele rendeu.</p>
+        <EstadoVazio ilustracao="SemAplicacoes" titulo="Seu guardado começa aqui" frase="Diga onde o dinheiro está e acompanhe o rendimento de cada dia." />
         <div className="guard-ex">
           <p><b>Exemplo de conta:</b> {reais(ex.valor)} guardados numa caixinha que paga 100% do CDI (a taxa que os bancos usam pra pagar quem guarda dinheiro) rendem perto de <b>{reais(ex.porDia)} por dia útil</b> e <b>{reais(ex.porMes)} por mês</b>, já sem o imposto.</p>
           <p className="sub">{TORNEIRA}</p>
@@ -233,7 +235,7 @@ function NovaAplicacao({ fechar }: { fechar: () => void }) {
       <div className="campo"><span>Quanto tem lá hoje</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto tem lá hoje" /></div>
       {comPrazo && <label className="campo"><span>Vence em (se tiver data)</span><input className="inp" type="date" value={vence} min={hojeRecife()} onChange={e => setVence(e.target.value)} /><small>15 dias antes, o Escritório pergunta se você quer renovar ou resgatar.</small></label>}
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <Botao variante="primario" className="full" type="button" disabled={gravando} onClick={salvar}>Guardar</Botao>
+      <Botao variante="primario" className="full" type="button" disabled={gravando} onClick={salvar}><Icone nome="salvo" />Guardar</Botao>
     </Sheet>
   )
 }
@@ -276,7 +278,7 @@ function Movimentar({ g, tipo, inicial, fechar }: { g: GuardadoHoje; tipo: 'apor
       )}
       <div className="campo"><span>Quanto</span><CampoValor valor={valor} mudar={setValor} rotulo="Quanto" />{app && <small>Hoje tem {reais(app.saldo)} em {textoPrivado(app.nome)}.</small>}</div>
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <Botao variante="primario" className="full" type="button" disabled={gravando || !app} onClick={salvar}>{tipo === 'aporte' ? 'Anotar o que guardei' : 'Anotar o que tirei'}</Botao>
+      <Botao variante="primario" className="full" type="button" disabled={gravando || !app} onClick={salvar}><Icone nome="salvo" />{tipo === 'aporte' ? 'Anotar o que guardei' : 'Anotar o que tirei'}</Botao>
     </Sheet>
   )
 }
@@ -304,7 +306,7 @@ function Aplicacao({ a, fechar, mover }: { a: GuardadoAplicacao; fechar: () => v
         <Botao variante="primario" type="button" onClick={() => mover('aporte')}><Icone desenho={ArrowDownToLine} />Guardar mais</Botao>
         <Botao variante="secundario" type="button" onClick={() => mover('resgate')}><Icone desenho={ArrowUpFromLine} />Tirar</Botao>
       </div>
-      <button className={'btn ghost danger' + (certeza ? ' on' : '')} type="button" onClick={encerrar}>{certeza ? 'Toque de novo pra encerrar' : 'Encerrar esta aplicação'}</button>
+      <button className={'btn ghost danger' + (certeza ? ' on' : '')} type="button" onClick={encerrar}><Icone nome="fechar" />{certeza ? 'Toque de novo pra encerrar' : 'Encerrar esta aplicação'}</button>
       {certeza && <p className="sub">Encerrar tira a aplicação da conta do Guardado. Use quando o dinheiro saiu todo de lá. Nada é apagado.</p>}</>}
     </Sheet>
   )
