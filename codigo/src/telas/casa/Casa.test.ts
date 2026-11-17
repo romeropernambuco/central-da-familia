@@ -35,6 +35,16 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
 }
 
 const casaTeste = (nome: string) => ({ hoje: '2026-11-15', lista: [{ id: nome, nome, ok: false }], comprado: [], prestadores: [], gas: { trocas: [] }, presenca: { hoje: [], meu_ponto: { chegou: nome } } })
+it('lista do Assessor usa linha com ícone, apoio e alvo de seleção acessível', async () => {
+  const familia = { id: 'a', nome: 'Teste', papel: 'equipe' as const, membroNome: 'Pessoa', envelopeId: null }
+  const a = await montar(createElement(Casa), { casaDaEquipe: vi.fn().mockResolvedValue(casaTeste('Arroz')) }, { familia })
+  const linha = a.box.buscar(n => n.tagName === 'LABEL' && !!n.getAttribute('class')?.includes('casa-item'))[0]
+  expect(linha).toBeDefined()
+  expect(linha.textContent).toContain('Falta comprar')
+  expect(linha.buscar(n => n.tagName === 'SVG')).toHaveLength(1)
+  expect(linha.buscar(n => n.tagName === 'INPUT')[0].getAttribute('aria-label')).toBe('Arroz')
+  expect(a.box.textContent).not.toContain('R$')
+})
 it('entrada oferece Assessor da Casa sem lista de profissões', async () => {
   vi.stubGlobal('addEventListener', vi.fn()); vi.stubGlobal('removeEventListener', vi.fn())
   const a = await montar(createElement(Entrar))

@@ -1,3 +1,5 @@
+import { EstadoVazio } from '../../componentes/EstadoVazio'
+import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
 import { rascunhos } from '../../app/rascunhos'
 import { validarNome } from '../../lib/nomePessoa'
@@ -75,7 +77,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
             <>
               <p className="sub">Corrigindo a sua resposta. A antiga continua guardada no diário.</p>
               <PerguntaCard key={'c' + corrigindo.id} p={corrigindo} quem={f.nome} responder={responder} semQuem corrige aoResponder={() => setCorrigindo(null)} />
-              <button type="button" className="btn ghost sm" onClick={() => setCorrigindo(null)}>Deixar como está</button>
+              <button type="button" className="btn ghost sm" onClick={() => setCorrigindo(null)}><Icone nome="fechar" />Deixar como está</button>
             </>
           ) : minhas.length ? (
             <>
@@ -84,8 +86,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
             </>
           ) : (
             <>
-              <p className="perg-t">{f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}</p>
-              <p className="perg-c">{fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando essa informação estiver cadastrada, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)}</p>
+              <EstadoVazio ilustracao={f.semDado ? 'CasaVazia' : 'TudoEmDia'} titulo={f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'} frase={fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando essa informação estiver cadastrada, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)} />
             </>
           )}
         </section>
@@ -97,7 +98,7 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
 
         <section aria-labelledby="fResp" data-parte="respostas">
           <h3 id="fResp">O que você já me respondeu</h3>
-          {!respostas ? <p className="sub">Buscando o que eu anotei…</p> : !respostas.length ? <p className="sub">Ainda não anotei nenhuma resposta sua. Quando você responder, ela aparece aqui com dia e hora.</p> : (
+          {!respostas ? <p className="sub">Buscando o que eu anotei…</p> : !respostas.length ? <EstadoVazio ilustracao="SemRecebimentos" titulo="Ainda não anotei nenhuma resposta sua." frase="Quando você responder, ela aparece aqui com dia e hora." /> : (
             <ul className="list resp">
               {respostas.map((d, i) => {
                 // id da pergunta: vem na linha (exemplo) ou foi guardado quando a resposta saiu deste aparelho. Sem id, não tem Corrigir.
@@ -106,13 +107,13 @@ export function FichaFuncionario({ f, e, responder, fechar }: { f: FuncionarioEs
                 return (
                 <li key={d.id} data-resposta={texto(d.resposta)}>
                   <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)} · <NomeDaPessoa pessoa={{ tipo: 'membro', id: `diario:${d.id}`, nome: d.respondido_por }} /></small><span>{texto(d.assunto || d.pergunta)}</span><b>{texto(d.resposta)}</b></span>
-                  {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}>Corrigir</button>}
+                  {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}><Icone nome="ajustes" />Corrigir</button>}
                 </li>
                 )
               })}
             </ul>
           )}
-          {respostas && respostas.length >= 10 && !tudo && <button type="button" className="btn line sm" style={{ marginTop: 8 }} onClick={verTudo}>Ver tudo</button>}
+          {respostas && respostas.length >= 10 && !tudo && <button type="button" className="btn line sm" style={{ marginTop: 8 }} onClick={verTudo}><Icone nome="abrir" />Ver tudo</button>}
           <p className="sub" style={{ marginTop: 8 }}>Nada é apagado. Corrigir uma resposta guarda a antiga e passa a valer a nova.</p>
         </section>
 
@@ -159,18 +160,18 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
         </div>
       ))}
       {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <div className="row-btns"><button type="button" className="btn primary" disabled={gravando} onClick={() => gravar(t)}>Salvar</button><button type="button" className="btn ghost" onClick={() => setAberto(null)}>Cancelar</button></div>
+      <div className="row-btns"><button type="button" className="btn primary" disabled={gravando} onClick={() => gravar(t)}><Icone nome="salvo" />Salvar</button><button type="button" className="btn ghost" onClick={() => setAberto(null)}><Icone nome="fechar" />Cancelar</button></div>
     </div>
   )
   return (
     <div className="cad" data-cad={nome}>
       <div className="cad-h"><b>{nome}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Icone desenho={Plus} />{novo}</button>}</div>
       {aberto === '+' && formulario(null)}
-      {!itens.length && aberto !== '+' && <p className="sub">{vazio}</p>}
+      {!itens.length && aberto !== '+' && <EstadoVazio ilustracao="CasaVazia" titulo={nome} frase={vazio} />}
       <ul className="list">
         {itens.map(t => (
           <li key={chave(t)}>
-            <div className="cad-l">
+            <div className="cad-l"><span className="icone-chip"><Icone nome="folha" /></span>
               <span className="m"><b>{typeof titulo(t) === 'string' ? textoPrivado(titulo(t)) : titulo(t)}</b><small>{textoPrivado(sub(t))}</small></span>
               {lado && <span className="v">{lado(t)}</span>}
               {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Icone desenho={Pencil} /></button>}
