@@ -12,7 +12,7 @@ it.each(['Conversar e abrir tarefas', 'Abrir composição', 'Envelope não encon
  expect(achados).toEqual([])
 })
 it.each([
- ['src/componentes/AgenteDaAba.tsx', ['Preciso de ajuda', 'Ver tarefas e cadastros', 'Completo', 'Só texto', 'Desligado']],
+ ['src/componentes/AgenteDaAba.tsx', ['Preciso de ajuda', 'Ver tarefas', 'Completo', 'Só texto', 'Desligado']],
  ['src/lib/insights/motor.ts', ['Ver compras desta fatura']],
  ['src/telas/lancar/Lancar.tsx', ['Rascunho recuperado', 'Descartar']],
  ['src/api/exemplo2.ts', ['Não perguntar de novo sobre isso']],

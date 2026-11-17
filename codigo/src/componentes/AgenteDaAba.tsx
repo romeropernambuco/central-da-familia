@@ -3,7 +3,7 @@ import { Icone, icones, type NomeIcone } from './Icone'
 import { nomeInformado } from '../lib/nomePessoa'
 import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
-import { textoDeAgente } from '../lib/textoAgente'
+import { nomesPrivados, textoDeAgente } from '../lib/textoAgente'
 import { memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { useApp } from '../app/contexto'
 import { useEscritorio } from '../app/useDados2'
@@ -105,6 +105,21 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
  const modo = useModoFuncionario()
  const [expansao, setExpansao] = useState<{ modo: ModoFuncionario; pergunta?: string; valor: boolean } | null>(null)
  useEffect(() => setExpansao(null), [modo])
+ const chaveVisita = ['agente:f33', api.modo, familia!.id, familia!.membroId, sessao?.userId, rota].join(':')
+ const [visitaAnterior] = useState<{ perguntas: string[]; saudou: boolean } | null>(() => {
+  try {
+   const vista = JSON.parse(sessionStorage.getItem(chaveVisita) || 'null')
+   return vista && Array.isArray(vista.perguntas) ? vista : null
+  } catch { return null }
+ })
+ const [celular, setCelular] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 600px)').matches)
+ useEffect(() => {
+  if (typeof matchMedia === 'undefined') return
+  const mq = matchMedia('(max-width: 600px)')
+  const atualizar = () => setCelular(mq.matches)
+  mq.addEventListener('change', atualizar)
+  return () => mq.removeEventListener('change', atualizar)
+ }, [])
  const [aberto, setAberto] = useState(false)
  const [celebrando, setCelebrando] = useState<{ funcionario: string } | null>(null)
  const elencoBase = elencoDaAba({ rota, papel: familia!.papel, ehDono: !!sessao?.dono, subaba })
@@ -172,21 +187,31 @@ function AgenteAutorizado({ rota }: { rota: Rota }) {
    finally { fotoTrava.current = false; setGuardandoFoto(false) }
  }
  const expandido = expansao?.modo === modo && expansao.pergunta === p?.id ? expansao.valor : null
+ const falaPergunta = (texto: string) => textoDeAgente(texto, [...(p?.trechosPrivados || []), ...nomesPrivados([familia, sessao])], oculto)
  const completo = modo === 'completo'
- const conversa = expandido ?? true
+ const conversa = falhou || conferindo || !!celebrando || (expandido ?? !(celular && visitaAnterior && (!p || visitaAnterior.perguntas.includes(p.id))))
+ const saudar = !visitaAnterior?.saudou && !f?.frase?.includes(familia!.membroNome) && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome)
+ useEffect(() => {
+  if (conferindo || falhou) return
+  try {
+   const anterior = JSON.parse(sessionStorage.getItem(chaveVisita) || 'null')
+   sessionStorage.setItem(chaveVisita, JSON.stringify({ saudou: true, perguntas: [...new Set([...(anterior?.perguntas || []), ...(p ? [p.id] : [])])] }))
+  } catch { /* storage indisponível: mantém a conversa aberta */ }
+ }, [chaveVisita, p?.id, conferindo, falhou])
  const funcionarios = ids.map(id => ({ id, estado: (id === m.id ? estado : celebrando?.funcionario === id ? 'resolvido' : e?.funcionarios.find(f => f.id === id)?.estado === 'trabalhando' || e?.trabalhando?.some(t => t.funcionario === id) ? 'trabalhando' : 'parado') as EstadoAgente }))
  const descricao = 'Escritório ilustrativo com ' + ids.map(id => EQUIPE.find(m => m.id === id)!.nome).join(' e ') + '. Objetos sem dados pessoais.'
  const restrito = familia!.papel !== 'casal'
  const papel = restrito && rota === 'casa' ? (m.id === 'presenca' ? 'Acompanha seu próprio ponto.' : 'Acompanha as tarefas da casa, sem valores em dinheiro.') : m.papel
- return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
- {completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small className="agente-papel"><Icone nome={m.id in icones ? m.id as NomeIcone : 'pessoa'} />{papel}</small>
- {api.modo === 'exemplo' && <small>Exemplo: nada é gravado na família real</small>}</header>
- {ids.filter(id => id !== m.id).length > 0 && <p className="sub">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}: no escritório desta aba.</p>}
- <div id={painel + '-conversa'} hidden={!conversa} className="agente-conversa">{conversa && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome) && <p className="sub">Olá, {textoPrivado(familia!.membroNome, oculto)}.</p>}
- {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} semQuem /> : <div className="perg"><p>{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
- </div>{modo !== 'desligado' && <button type="button" className="btn ghost agente-recolher" aria-expanded={conversa} aria-controls={painel + '-conversa'} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}><Icone desenho={ChevronDown} />{conversa ? 'Recolher' : 'Expandir'}</button>}
- <button type="button" className={'btn ghost agente-aba-divulgacao'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}><Icone nome="escritorio" />{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas e cadastros' : 'Ver resumo desta tela'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
- <div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
+ return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '') + (!conversa ? ' agente-recolhido' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
+ <div className={'agente-identidade' + (completo ? ' com-cena' : '')}>{completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small className="agente-papel"><Icone nome={m.id in icones ? m.id as NomeIcone : 'pessoa'} />{papel}</small>
+ {ids.filter(id => id !== m.id).length > 0 && <small className="agente-com">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}</small>}
+ {api.modo === 'exemplo' && <small className="agente-exemplo" title="Nada é gravado na família real">Exemplo<span className="sr">: nada é gravado na família real</span></small>}</header></div>
+ {!conversa && p && <p className="agente-pergunta-resumo">{falaPergunta(p.pergunta)}</p>}
+ <div id={painel + '-conversa'} hidden={!conversa} className="agente-conversa">
+ {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} compacto semQuem /> : <div className="perg"><p>{saudar && <>Olá, {textoPrivado(familia!.membroNome, oculto)}. </>}{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase && f.frase !== papel ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
+ </div><div className="agente-acoes">{p?.contexto && <details className="agente-contexto"><summary>Detalhes</summary><p className="perg-c">{falaPergunta(p.contexto)}</p></details>}{modo !== 'desligado' && <button type="button" className="btn ghost agente-recolher" aria-expanded={conversa} aria-controls={painel + '-conversa'} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}><Icone desenho={ChevronDown} />{conversa ? 'Recolher' : p ? 'Responder' : 'Expandir'}</button>}
+ <button type="button" className={'btn ghost agente-aba-divulgacao'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}><Icone nome="escritorio" />{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas' : 'Ver resumo'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
+ </div><div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>
    {guardandoFoto && <p role="status">Guardando a nota…</p>}{fotoErro && <p role="alert">{fotoErro}</p>}

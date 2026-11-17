@@ -141,9 +141,9 @@ function projetar(box: any, camera: any) { return box.clone().applyMatrix4(camer
 
 /** Raster de cobertura dos triângulos REAIS (sem iluminação, materiais, rede ou GPU).
  * A mesma direção nas sete salas evita confundir câmera diferente com planta diferente. */
-function silhueta(raiz: any) {
+function silhueta(raiz: any, w = 303, h = 128) {
   raiz = raiz.clone(true); raiz.position.set(0, 0, 0)
-  const w = 303, h = 128, pixels = new Uint8Array(w * h)
+  const pixels = new Uint8Array(w * h)
   const camera = new T.OrthographicCamera(-2.1, 2.1, .887, -.887, .1, 100)
   camera.position.set(10, 3, 16); camera.lookAt(0, .65, .25); camera.updateMatrixWorld(true)
   const vista = new T.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
@@ -233,7 +233,12 @@ describe('identidades das salas — regressões da frente salas', () => {
     } finally { a.c.destruir() }
   })
 
-  it('as 21 duplas diferem em pelo menos 4% da silhueta monocromática a 303×128', async () => {
+  it.each([[303, 128], [152, 112], [80, 64]])('as 21 duplas diferem em pelo menos 4% da silhueta a %s×%s', async (w, h) => {
+    // Liga as proporções novas ao contêiner real, mantendo o oráculo anterior.
+    if (w !== 303) {
+      const css = readFileSync(resolve('src/componentes/agente-cartao.css'), 'utf8')
+      expect(css).toContain(w === 80 ? 'grid-template-columns:80px minmax(0,1fr)' : 'height:112px;aspect-ratio:auto;min-width:0;width:100%')
+    }
     const imagens: { sala: string; pixels: Uint8Array }[] = []
     for (const sala of Object.keys(VARIANTES)) {
       const a = await mini(EQUIPE.find(e => e.sala === sala)!.id)

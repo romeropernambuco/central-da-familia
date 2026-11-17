@@ -9,3 +9,6 @@
 .qm{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .explica-l{min-height:44px}
 :is(.f32-feedback,.f32-backup,.f32-acolhimento) button:focus-visible,.nome-pessoa:focus-visible,.qm:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+/* O tamanho intrínseco do input de arquivo alargava a coluna do grid em 1px. */
+.f32-backup .campo{min-width:0}
+.f32-backup input[type=file]{width:100%;min-width:0;box-sizing:border-box}
