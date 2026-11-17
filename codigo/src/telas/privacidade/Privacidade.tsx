@@ -7,11 +7,11 @@ import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 
 import { Sheet } from '../../componentes/base'
-import { hojeRecife } from '../../lib/formato'
+import { hojeRecife, valoresOcultos } from '../../lib/formato'
 
 /** Privacidade: termo em 1 tela, baixar os dados da família e apagar a família inteira. */
 export function Privacidade() {
-  const { api, familia, trocarSessao, toast, oculto } = useApp()
+  const { api, familia, trocarSessao, toast, oculto, sair } = useApp()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "vocês dois"
 
   const [apagar, setApagar] = useState(false)
@@ -26,12 +26,15 @@ export function Privacidade() {
   const soOMeu = !casal
   async function baixar() {
     if (!familia) return
-    if (oculto && !window.confirm('Os valores aparecerão no arquivo, mesmo com o olho fechado. Deseja baixar os seus dados?')) return
     if (soOMeu && !api.exportarMeu) { toast('Baixar só os seus dados ainda está sendo ligado no banco da família.'); return }
+    const confirmar = () => window.confirm('Os valores aparecerão no arquivo, mesmo com o olho fechado. Deseja baixar os seus dados?')
+    const confirmado = valoresOcultos() && confirmar()
+    if(valoresOcultos() && !confirmado)return
     let dados: unknown
     try { dados = soOMeu ? await api.exportarMeu!(familia.id) : await api.exportarFamilia(familia.id) } catch (e) { toast((e as Error).message); return }
+    if (valoresOcultos() && !confirmado && !confirmar()) return
     // modo exemplo: o visualizador do demo não deixa baixar arquivo, então mostra o conteúdo na tela pra copiar
-    if (api.modo === 'exemplo' && !oculto) { setJson(JSON.stringify(dados, null, 2)); return }
+    if (api.modo === 'exemplo' && !valoresOcultos()) { setJson(JSON.stringify(dados, null, 2)); return }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -43,6 +46,7 @@ export function Privacidade() {
 
   return (
     <div className="tela-larga">
+      {familia?.papel === 'equipe' && <button type="button" className="btn line" onClick={async()=>{location.hash='#/inicio';await sair()}}>Sair</button>}
       <section className="card termo" aria-labelledby="tT">
         <h2 id="tT"><ShieldCheck size={24} aria-hidden="true" />Termo de uso, em 1 tela</h2>
         <p className="sub">Versão {VERSAO_PRIVACIDADE} · {familia?.papel === 'equipe' ? 'Assessor da Casa' : familia?.papel === 'casal' ? 'Casal' : 'Pessoa da família'}</p>

@@ -1,3 +1,4 @@
+import { validarEstado } from './validarEstado'
 import pacote from '../../package.json'
 import type { Api } from '../api/tipos'
 export const FORMATO = 1
@@ -38,12 +39,14 @@ export function validarCopia(texto: string): Copia {
  const campos: Record<string, Record<string,string>> = {lancamentos:{valor:'number',envelope_id:'string',data:'string'},cartoes:{nome:'string'},aplicacoes:{nome:'string'},imoveis:{apelido:'string',valor:'number'},receitas:{descricao:'string',valor:'number'},desejos:{nome:'string',valor:'number'},pessoas:{nome:'string'},assessores:{nome:'string'}}
  for(const [k,tipos] of Object.entries(campos)) for(const item of c.dados[k]) for(const [campo,tipo] of Object.entries(tipos)) if(typeof item[campo] !== tipo) throw new Error('Campo inválido em '+k+': '+campo)
  if (!c.dados.parametros || !c.dados.config) throw new Error('Cópia sem parâmetros ou configurações.')
+ validarEstado(c.dados)
  return c
 }
 export function previaCopia(antes: Copia, depois: Copia) {
- return colecoes.map(k => {
- const a = antes.dados[k] as {id?: string}[], b = depois.dados[k] as {id?: string}[]
- const ids = new Set(a.map(x => x.id))
- return { colecao: k, substituir: a.length, novos: b.filter(x => !ids.has(x.id)).length, total: b.length }
+ const entradas = (v: any): Map<string,unknown> => new Map(Array.isArray(v) ? v.map((x,i)=>[String(x?.id ?? i),x]) : v && typeof v==='object' ? Object.entries(v) : v===undefined ? [] : [['valor',v]])
+ return [...new Set([...Object.keys(antes.dados),...Object.keys(depois.dados)])].map(colecao=>{
+ const a=entradas(antes.dados[colecao]),b=entradas(depois.dados[colecao])
+ const diferencas=[...new Set([...a.keys(),...b.keys()])].filter(id=>JSON.stringify(a.get(id))!==JSON.stringify(b.get(id))).map(id=>({id,antes:a.get(id),depois:b.get(id),tipo:!a.has(id)?'Incluído':!b.has(id)?'Excluído':'Alterado'}))
+ return {colecao,substituir:a.size,total:b.size,novos:diferencas.filter(x=>x.tipo==='Incluído').length,excluidos:diferencas.filter(x=>x.tipo==='Excluído').length,alterados:diferencas.filter(x=>x.tipo==='Alterado').length,diferencas}
  })
 }

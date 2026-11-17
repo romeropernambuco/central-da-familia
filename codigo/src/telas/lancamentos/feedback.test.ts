@@ -1,3 +1,4 @@
+import { salvamento } from '../../app/salvamento'
 import { desfazer } from '../../app/desfazer'
 import { BarraDesfazer } from '../../componentes/BarraDesfazer'
 import { Fragment } from 'react'
@@ -10,7 +11,7 @@ import { apiExemplo } from '../../api/exemplo'
 import type { Api } from '../../api/tipos'
 import { Casa } from '../casa/Casa'
 const roots: Root[] = []
-afterEach(async () => { await act(async () => desfazer.limpar()); for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
+afterEach(async () => { await act(async () => {desfazer.limpar();salvamento.limpar()}); for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.useRealTimers(); vi.unstubAllGlobals() })
 const pendente = <T,>() => { let resolver!: (v: T) => void; let rejeitar!: (e: Error) => void; const promessa = new Promise<T>((r, j) => { resolver = r; rejeitar = j }); return { promessa, resolver, rejeitar } }
 const props = (n: NoTeste) => Object.entries(n).find(([k]) => k.startsWith('__reactProps'))![1] as any
 async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<Ctx> = {}) {

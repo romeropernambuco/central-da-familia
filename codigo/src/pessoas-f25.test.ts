@@ -51,13 +51,13 @@ import { salvamento } from './app/salvamento'
 import { NomeDaPessoa } from './componentes/NomeDaPessoa'
 afterEach(async () => { await act(async () => salvamento.limpar()); encerrarAcolhimento() })
 it('preserva o pagador diferente de quem anotou, e não inventa pagador ausente', () => {
- expect(normalizaLancamento({id:'l',autor:'a',pago_por:'b'})).toMatchObject({autor:'a',pago_por:'b'})
- expect(normalizaLancamento({id:'l',autor:'a'}).pago_por).toBeNull()
+ expect(normalizaLancamento({id:'l',autor:'auth-ana',pago_por:'b'})).toMatchObject({autor:'auth-ana',pago_por:'b'})
+ expect(normalizaLancamento({id:'l',autor:'auth-ana'}).pago_por).toBeNull()
 })
 it('Quem pagou começa vazio e envia só a escolha explícita', async () => {
  const resumo:any={envelopes:[{id:'e',nome:'Pessoal',escreve:true,regra:'mensal',limite_mes:1000,livre:1000}],dias_restantes:15}
  const lancar=vi.fn(async()=>({lancamento:normalizaLancamento({id:'l'}),resumo}))
- const a=await montar(createElement(Lancar),{lancar,membros:async()=>[{id:'a',nome:'Ana'},{id:'b',nome:'Bia'}]},{familia:{id:'f',papel:'casal',nome:'Família',membroId:'a',membroNome:'Ana',envelopeId:'e'},resumo,lancarAberto:{valor:10},fecharLancar(){}})
+ const a=await montar(createElement(Lancar),{lancar,membros:async()=>[{id:'a',user_id:'auth-ana',nome:'Ana'},{id:'b',nome:'Bia'}]},{familia:{id:'f',papel:'casal',nome:'Família',membroId:'a',membroNome:'Ana',envelopeId:'e'},resumo,lancarAberto:{valor:10},fecharLancar(){}})
  const select=a.box.buscar(n=>n.tagName==='SELECT')[0]
  expect(select).toBeDefined();expect(props(select).value).toBe('')
  await act(async()=>props(select).onChange({target:{value:'b'}}))
@@ -67,7 +67,7 @@ it('Assessor recebe resumo versionado sem baixar, apagar nem consultar finanças
  const baixar=vi.fn(),backup=vi.fn(),membros=vi.fn()
  const a=await montar(createElement(Privacidade),{exportarFamilia:baixar,backupLer:backup,membros},{familia:{id:'f',nome:'Família',membroNome:'Ana',papel:'equipe',envelopeId:null}})
  for(const texto of ['O que você registra','Quem pode ver','O que você pode baixar','Como pedir correção ou encerramento','2026-11-16.1'])expect(a.box.textContent).toContain(texto)
- expect(a.box.buscar(n=>n.tagName==='BUTTON')).toHaveLength(0)
+ expect(a.box.buscar(n=>n.tagName==='BUTTON').map(n=>n.textContent)).toEqual(['Sair'])
  expect(baixar).not.toHaveBeenCalled();expect(backup).not.toHaveBeenCalled();expect(membros).not.toHaveBeenCalled()
 })
 it('ajuda do Assessor não oferece olho, e casal não é mandado a quem convidou',async()=>{
@@ -102,9 +102,9 @@ import { PrimeiroUso } from './telas/primeiro-uso/PrimeiroUso'
 import { esconderValores } from './lib/formato'
 it('Casa soma pagamento explícito separado do valor apenas anotado e mascara com olho fechado',async()=>{
  const env:any={id:'c',casa:true,nome:'Casa',regra:'semanal',livre:1000,teto_semana:1000,gasto_semana:0}
- const ls=[normalizaLancamento({id:'1',envelope_id:'c',autor:'a',pago_por:'b',valor:80}),normalizaLancamento({id:'2',envelope_id:'c',autor:'a',valor:20}),normalizaLancamento({id:'3',envelope_id:'outro',autor:'a',valor:777})]
+ const ls=[normalizaLancamento({id:'1',envelope_id:'c',autor:'auth-ana',pago_por:'b',valor:80}),normalizaLancamento({id:'2',envelope_id:'c',autor:'auth-ana',valor:20}),normalizaLancamento({id:'3',envelope_id:'outro',autor:'auth-ana',valor:777})]
  esconderValores(false)
- const a=await montar(createElement(Casa),{lancamentos:async()=>ls,avisosCasa:async()=>[],membros:async()=>[{id:'a',nome:'Ana'},{id:'b',nome:'Bia'}]},{oculto:false,familia:{id:'f',papel:'casal',nome:'Família',membroId:'a',membroNome:'Ana',envelopeId:null},resumo:{envelopes:[env]} as any})
+ const a=await montar(createElement(Casa),{lancamentos:async()=>ls,avisosCasa:async()=>[],membros:async()=>[{id:'a',user_id:'auth-ana',nome:'Ana'},{id:'b',nome:'Bia'}]},{oculto:false,familia:{id:'f',papel:'casal',nome:'Família',membroId:'a',membroNome:'Ana',envelopeId:null},resumo:{envelopes:[env]} as any})
  const faixa=()=>a.box.buscar(n=>n.tagName==='P'&&n.textContent.startsWith('Este mês na Casa:'))[0].textContent.replace(/\s/g,' ')
  expect(faixa()).toContain('Bia  pagou R$ 80');expect(faixa()).toContain('Ana  anotou R$ 20');expect(faixa()).not.toContain('pôs')
  esconderValores(true);await a.render({oculto:true});expect(faixa()).not.toMatch(/R\$\s*80/);expect(faixa()).not.toContain('Bia');esconderValores(false)

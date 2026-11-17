@@ -13,6 +13,6 @@ export class ProtecaoCarga extends Component<{ children: ReactNode }, { erro: un
  render() {
   if (!this.state.erro) return this.props.children
   const falha = textoDaFalha(this.state.erro)
-  return <div className="abertura" role="alert"><Marca size={48} /><h1>{falha.titulo}</h1><p>{falha.texto}</p><button type="button" onClick={() => location.reload()}>Tentar de novo</button></div>
+  return <div className="abertura" role="alert"><Marca size={48} /><h1>{falha.titulo}</h1><p>{falha.texto}</p><button className="btn primary" style={{minHeight:48}} type="button" onClick={() => location.reload()}>Tentar de novo</button></div>
  }
 }

@@ -335,7 +335,7 @@ export interface Api {
   convidar(familia: string, papel: Papel, nome: string, email?: string): Promise<Convite>
 
   resumoHoje(familia: string): Promise<ResumoHoje>
-  lancar(n: NovoLancamento): Promise<{ lancamento: Lancamento; resumo: ResumoHoje; repetido?: boolean }>
+  lancar(n: NovoLancamento): Promise<{ lancamento: Lancamento; resumo: ResumoHoje; repetido?: boolean; avisoPagador?: string; repetirPagador?: () => Promise<void> }>
   /** Lançamentos de 1 mês (AAAA-MM), vivos e apagados, do mais novo pro mais velho. */
   lancamentos(familia: string, mes: string): Promise<Lancamento[]>
   apagarLancamento(id: string): Promise<void>
@@ -391,7 +391,7 @@ export interface Api {
   /** Diário de 1 funcionário, do mais novo pro mais velho ("ver tudo"). */
   escritorioDiario(familia: string, funcionario: string, limite: number, antes?: string): Promise<LinhaDiario[]>
   /** Quem é da família (casal e pessoas), pra escolher de quem é o cartão. */
-  membros(familia: string): Promise<{ id: string; nome: string; papel?: Papel }[]>
+  membros(familia: string): Promise<{ id: string; user_id?: string; nome: string; papel?: Papel }[]>
   /* Analista de Cartão */
   cartaoSalvar(familia: string, c: Partial<Cartao> & { nome: string }): Promise<void>
   faturasBanco(familia: string): Promise<FaturaBanco[]>

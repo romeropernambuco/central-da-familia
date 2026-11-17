@@ -1,6 +1,7 @@
+import { salvamento } from './salvamento'
 export interface AcaoDesfazivel { rotulo: string; desfazer(): Promise<boolean> }
 export class CentralDesfazer {
- ultimas: AcaoDesfazivel[] = []; atual: AcaoDesfazivel | null = null; ocupado = false; erro = false; concluidas = 0
+ ultimas: AcaoDesfazivel[] = []; atual: AcaoDesfazivel | null = null; ocupado = false; mensagem = ''; erro = false; concluidas = 0
  private geracao = 0
  private ouvintes = new Set<() => void>()
  ouvir = (f: () => void) => { this.ouvintes.add(f); return () => { this.ouvintes.delete(f) } }
@@ -12,7 +13,7 @@ export class CentralDesfazer {
  if (!this.atual || this.ocupado) return false
  const geracao = this.geracao
  const acao = this.atual; this.ocupado = true; this.avisar(); let ok = false
- try { ok = await acao.desfazer() } catch { /* nova tentativa */ }
+ try { ok = await salvamento.acompanhar(() => acao.desfazer(), 'Desfazendo') } catch (e) { this.mensagem = e instanceof Error && e.message.includes('confira antes de desfazer') ? e.message : 'Não foi possível desfazer. Tente de novo.' }
  if (geracao !== this.geracao) return false
  this.ocupado = false
  if (this.atual === acao) { this.erro = !ok; if (ok) { this.atual = null; this.concluidas++ } }

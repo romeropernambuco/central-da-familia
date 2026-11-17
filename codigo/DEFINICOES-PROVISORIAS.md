@@ -173,3 +173,10 @@ Nenhum pedido abaixo foi implementado nesta frente.
 
 
 Validação f25: TypeScript sem erros (npx tsc --noEmit); suíte completa com 66 arquivos, 1.267 testes aprovados e 3 TODO preexistentes. Os 11 testes novos tiveram contraprova vermelha com o comportamento anterior. Dois testes antigos de atualização de nomes receberam relógio fixo, pois dependiam do horário de funcionamento dos personagens. O comando npx vitest run src foi tentado; o carregador de configuração recebeu acesso negado ao percorrer diretórios superiores. A execução completa usou a API do mesmo Vitest, com config false, JSX automático, apenas src/**/*.test.ts, timeout de 30 segundos e sem cache. Scripts e logs temporários foram removidos. Não houve acesso ao banco real nem inspeção visual em navegador nesta frente.
+
+
+## Pedidos ao banco - rodada 2
+
+- Somente o dono deve revogar a RPC antiga produto.entrar_equipe(codigo) e remover o ramo que aceita convite nulo em _equipe_entrar (migração 20261111165537, perto da linha 100). O link precisa ser obrigatório. Nenhum SQL foi alterado nesta rodada.
+- Gravar pago_por na mesma transação de lancar_com_chave. Hoje o app confirma o gasto mesmo se o UPDATE do pagador falhar, informa “Gasto salvo, mas o pagador não foi gravado. Informar de novo” e repete somente o UPDATE pelo ID da compra, sem novo gasto.
+- Disponibilizar o vínculo membros.user_id na API de membros para resolver autor = auth.uid(). O app usa user_id quando recebido; sem vínculo, mostra “Anotado por alguém da família”. O ID de membro continua sendo usado para pagador.

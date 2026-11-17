@@ -208,7 +208,7 @@ function NovaAplicacao({ fechar }: { fechar: () => void }) {
     // C2 (revisão E0): "Do casal" vai explícito (do_casal); "no meu nome" vai sem titular e o banco usa quem está criando
     const ok = await tentar(() => api.guardadoCriar(familia.id, { nome, banco: banco.trim(), tipo, pct_cdi: tipo === 'poupanca' ? 0 : p, valor_inicial: textoParaValor(valor), data: hojeRecife(), vence_em: comPrazo && vence ? vence : null, ...(titular === 'casal' && !sozinho ? { do_casal: true } : {}) }))
     setGravando(false)
-    if (ok) { fechar(); toast(`${nome} guardado. O rendimento aparece aqui todo dia útil.`); await recarregar() }
+    if (ok) { [setTitular,setBanco,setTipo,setRende,setValor,setVence].forEach(s=>s.limpar()); fechar(); toast(`${nome} guardado. O rendimento aparece aqui todo dia útil.`); await recarregar() }
   })
   return (
     <Sheet titulo="Nova aplicação" fechar={fechar}>

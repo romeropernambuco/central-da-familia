@@ -8,4 +8,5 @@ const relogio: Promise<unknown> = import.meta.env.MODE === 'exemplo' || import.m
 relogio
   .then(() => import('./partida'))
   .then(m => m.iniciar())
-  .catch(e => mostrarFalha(document.getElementById('root'), e))
+  .then(() => window.dispatchEvent(new Event('central:aberta')))
+  .catch(e => { window.dispatchEvent(new Event('central:falhou')); mostrarFalha(document.getElementById('root'), e) })

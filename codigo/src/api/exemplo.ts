@@ -1,5 +1,7 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
+import { pendentes } from '../app/pendentes'
+import { validarEstado } from '../app/validarEstado'
 import type { DesejoTela, ImovelTela, FocusAno, HistoricoObjetivo, ParametrosObjetivo, RecebimentoTela, Api, AvisoCasa, Cartao, CasaDaEquipe, ChaveConfig, ConviteFamilia, Envelope, Fatura, Lancamento, NovoLancamento, ResumoHoje, Sessao } from './tipos'
 import { validarNome, podeEditarNome } from '../lib/nomePessoa'
 import * as ex2 from './exemplo2'
@@ -111,7 +113,7 @@ const FOCUS_EXEMPLO: FocusAno[] = [
 let db = criarDados()
 /** Igual a produto.reajuste_situacao (f_12): aprovado só com todos os adultos do casal votando no mesmo teto. */
 function baseReajusteEx(mes: string) {
-  if (papelLogado() !== 'casal') throw new Error('Só o casal vê o reajuste.')
+  if (!logado || papelLogado() !== 'casal') throw new Error('Só o casal vê o reajuste.')
   const adultos = membrosTeste().filter(x => x.papel === 'casal')
   const votos = db.reajusteVotos.filter(v => v.mes === mes).sort((a, b) => a.votou_em.localeCompare(b.votou_em))
   const faltam = adultos.filter(a => !votos.some(v => v.membro_id === a.id))
@@ -393,7 +395,7 @@ const mundo: ex2.Mundo = {
 }
 const nomesAvulsos: { id: string; nome: string }[] = []
 const membrosExemplo = () => membrosTeste().filter(x => x.papel === 'casal').map(x => ({ id: x.id, nome: x.nome, papel: x.papel }))
-const soCasal = () => { if (logado === 'carla') throw new Error('Só o casal vê o dinheiro guardado.') }
+const soCasal = () => { if (!logado || papelLogado() !== 'casal') throw new Error('Só o casal com sessão ativa pode acessar estes dados.') }
 /** E2 (igual a f_02): aplicação no nome do outro é só pra ler. */
 function minhaAplicacao(id: string) {
   const t = ex2.titularDaAplicacaoEx(id)
@@ -871,11 +873,13 @@ export const apiExemplo: Api = {
       imoveis: db.imoveis, receitas: db.recebimentos, desejos: db.desejos, pessoas: membrosTeste(),
       assessores: (db.config.casa_folha as any)?.pessoas || [], parametros: db.objetivo,
       config: db.config, estado: db, estado2: ex2.backupEx2(), nomesAvulsos, assessorNome,
-      convitesAssessores: [...convitesAssessores], familiaExemplo: familiaTeste() }))
+      chavesLancamentos: [...porChave], convitesAssessores: [...convitesAssessores], familiaExemplo: familiaTeste() }))
   },
   async backupRestaurar(_f, dados) {
     soCasal()
+    if(pendentes.itens.size)throw new Error('Há envios pendentes. Conclua ou cancele antes de restaurar.')
     const d = JSON.parse(JSON.stringify(dados))
+    validarEstado(d)
     if (!d.estado || !d.estado2 || !Array.isArray(d.estado2.apps) || !Array.isArray(d.estado2.chaves) || d.familiaExemplo !== familiaTeste()) throw new Error('Cópia de exemplo incompleta ou de outra família.')
     for (const k of Object.keys(db)) if (!(k in d.estado) || typeof d.estado[k] !== typeof (db as any)[k]) throw new Error('Estado de exemplo inválido.')
     for (const [k, campo] of [['lancamentos','lanc'], ['cartoes','cartoes'], ['imoveis','imoveis'], ['receitas','recebimentos'], ['desejos','desejos'], ['config','config'], ['parametros','objetivo']] as const)
@@ -885,6 +889,7 @@ export const apiExemplo: Api = {
     const atual2 = ex2.backupEx2()
     for (const k of Object.keys(atual2)) if (!(k in d.estado2) || Array.isArray(atual2[k]) !== Array.isArray(d.estado2[k]) || typeof atual2[k] !== typeof d.estado2[k]) throw new Error('Estado do Guardado inválido.')
     db = d.estado; ex2.restaurarEx2(d.estado2); porChave.clear()
+    for (const [chave,l] of d.chavesLancamentos) porChave.set(chave,db.lanc.find(x=>x.id===l.id)!)
     for (const m of membrosTeste()) { const salvo = d.pessoas.find((p: any) => p.id === m.id); if (salvo) m.nome = salvo.nome }
     nomesAvulsos.splice(0, nomesAvulsos.length, ...d.nomesAvulsos); assessorNome = d.assessorNome
     convitesAssessores.clear(); for (const [id,nome] of d.convitesAssessores) convitesAssessores.set(id,nome)

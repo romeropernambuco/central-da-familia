@@ -124,7 +124,7 @@ function Feira() {
             <p className="sub">Gasto da semana <b>{reais(feira.gasto_semana || 0)}</b>{feira.teto_semana != null ? ` de ${reais(feira.teto_semana)}` : ''}</p>
             <div className={'meter ' + (livreSem != null && livreSem < 0 ? 'warn' : 'ok')} style={{ marginTop: 10 }} aria-hidden="true"><i style={{ width: Math.min(100, ((feira.gasto_semana || 0) / (feira.teto_semana || 1)) * 100) + '%' }} /></div>
             {livreSem != null && livreSem < 0 && <p className="sub" style={{ marginTop: 8 }}>Na segunda começa uma semana nova.</p>}
-            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa pessoa={{ tipo: 'membro', id: id.slice(id.indexOf(':') + 1), nome: nomeDe(id.slice(id.indexOf(':') + 1)) }} /> {id.startsWith('pagou:') ? 'pagou' : 'anotou'} {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
+            {Object.keys(porQuem).length > 0 && <p className="sub" style={{ marginTop: 10 }}>Este mês na Casa: {Object.entries(porQuem).map(([id, v], i, todos) => <span key={id}><NomeDaPessoa autoria={id.startsWith('anotou:')} pessoa={{ tipo: 'membro', id: id.slice(id.indexOf(':') + 1), nome: nomeDe(id.slice(id.indexOf(':') + 1)) }} /> {id.startsWith('pagou:') ? 'pagou' : 'anotou'} {reais(v)}{i < todos.length - 1 ? '; ' : '.'}</span>)}</p>}
             <button className="btn line" type="button" style={{ marginTop: 14 }} onClick={() => setCupom(true)}><Camera size={20} />Ler cupom com foto</button>
           </section>
         )}
@@ -226,17 +226,17 @@ function Prestadores() {
         })}
       </div>
       <button className="btn line" type="button" style={{ justifySelf: 'start' }} onClick={() => setNovo(true)}><Plus size={20} />Novo serviço</button>
-      {novo && <NovoPrestador fechar={() => setNovo(false)} salvar={async p => { if (await setPs([...ps, p])) setNovo(false) }} />}
+      {novo && <NovoPrestador fechar={() => setNovo(false)} salvar={async p => { const ok=await setPs([...ps,p]); if(ok)setNovo(false);return ok }} />}
     </div>
   )
 }
 function amanhã(d: string, hoje: string) { return d === somaDias(hoje, 1) ? 'amanhã' : `${diaSemana(d)}, ${dataCurta(d)}` }
 
-function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Prestador) => Promise<void> }) {
+function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Prestador) => Promise<boolean> }) {
   const [nome, setNome] = useRascunho('cadastro:prestador:nome', ''), [serv, setServ] = useRascunho('cadastro:prestador:serv', ''), [dia, setDia] = useRascunho('cadastro:prestador:dia', 6), [valor, setValor] = useRascunho('cadastro:prestador:valor', '')
   return (
     <Sheet titulo="Novo serviço da casa" fechar={fechar}>
-      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && serv) salvar({ id: novoId(), nome, servico: serv, dia, valor: textoParaValor(valor) }) }}>
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (nome && serv && await salvar({ id: novoId(), nome, servico: serv, dia, valor: textoParaValor(valor) })) [setNome,setServ,setDia,setValor].forEach(s=>s.limpar()) }}>
         <label className="campo"><span>Serviço</span><CampoPrivado className="inp" placeholder="Ex.: Jardineiro" value={serv} onChange={e => setServ(e.target.value)} /></label>
         <label className="campo"><span>Nome da pessoa</span><CampoPrivado className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <div className="campo"><span>Dia que vem</span><div className="pills">{DIAS.map((d, i) => <button key={d} type="button" className="pill" aria-pressed={dia === i} onClick={() => setDia(i)}>{d.slice(0, 3)}</button>)}</div></div>
@@ -321,16 +321,16 @@ function FolhaCasa() {
         {folha.pessoas.length > 0 && <p className="sub" style={{ marginTop: 8 }}>No total, guardar <b>{reais(total)}</b> por mês para férias e 13º.</p>}
         <button className="btn line" type="button" style={{ marginTop: 12 }} onClick={() => setNova(true)}><Plus size={20} />Cadastrar pessoa</button>
       </section>
-      {nova && <NovaPessoa fechar={() => setNova(false)} salvar={async p => { if (await setFolha({ ...folha, pessoas: [...folha.pessoas, p] })) setNova(false) }} />}
+      {nova && <NovaPessoa fechar={() => setNova(false)} salvar={async p => { const ok=await setFolha({ ...folha, pessoas: [...folha.pessoas, p] });if(ok)setNova(false);return ok }} />}
     </div>
   )
 }
 
-function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: PessoaFolha) => void }) {
+function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: PessoaFolha) => Promise<boolean> }) {
   const [nome, setNome] = useRascunho('cadastro:assessor:nome', ''), [funcao, setFuncao] = useRascunho('cadastro:assessor:funcao', ''), [sal, setSal] = useRascunho('cadastro:assessor:sal', '')
   return (
     <Sheet titulo="Assessores da Casa" fechar={fechar}>
-      <form style={{ display: 'grid', gap: 12 }} onSubmit={e => { e.preventDefault(); if (nome && sal) salvar({ id: novoId(), nome, funcao: funcao || 'Assessor da Casa', salario: textoParaValor(sal) }) }}>
+      <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (nome && sal && await salvar({ id: novoId(), nome, funcao: funcao || 'Assessor da Casa', salario: textoParaValor(sal) })) [setNome,setFuncao,setSal].forEach(s=>s.limpar()) }}>
         <label className="campo"><span>Nome</span><CampoPrivado className="inp" value={nome} onChange={e => setNome(e.target.value)} /></label>
         <label className="campo"><span>Função</span><CampoPrivado className="inp" placeholder="Ex.: Cozinha, transporte, limpeza" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
         <label className="campo"><span>Salário na carteira</span><CampoValor valor={sal} mudar={v => setSal(v.replace(/[^\d,]/g, ''))}  /><small>Fica só com o casal. Os Assessores da Casa nunca veem valor de dinheiro.</small></label>

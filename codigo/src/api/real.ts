@@ -131,13 +131,17 @@ export const apiReal: Api = {
     try { r = await lancarComChave((nome, args) => sb().rpc(nome, args) as any, n) as any } catch (x) { throw traduzErro(x as Error) }
     if (r.error) erro(r.error)
     // Coluna e permissão já previstas na f_04. A chave preserva a compra ao repetir.
+    let avisoPagador: string | undefined, repetirPagador: (()=>Promise<void>) | undefined
     if (n.pago_por) {
-      const { error } = await sb().from('lancamentos').update({ pago_por: n.pago_por }).eq('id', r.data?.lancamento?.id).eq('familia_id', n.familia).select('id').single()
-      if (error) erro(error)
-      r.data.lancamento.pago_por = n.pago_por
+      const informar = async () => {
+        const {error}=await sb().from('lancamentos').update({pago_por:n.pago_por}).eq('id',r.data?.lancamento?.id).eq('familia_id',n.familia).select('id').single()
+        if(error) throw new Error('Gasto salvo, mas o pagador não foi gravado. Informar de novo')
+        r.data.lancamento.pago_por=n.pago_por
+      }
+      try {await informar()} catch {avisoPagador='Gasto salvo, mas o pagador não foi gravado. Informar de novo';repetirPagador=informar}
     }
     // equipe: o banco devolve o lançamento sem `valor` e o resumo com so_nomes
-    return { lancamento: normalizaLancamento(r.data?.lancamento), resumo: normalizaResumo(r.data?.resumo), repetido: !!r.data?.repetido }
+    return { lancamento: normalizaLancamento(r.data?.lancamento), resumo: normalizaResumo(r.data?.resumo), repetido: !!r.data?.repetido, avisoPagador, repetirPagador }
   },
   async lancamentos(familia, mes) {
     // recorte por mês (antes vinham 500 linhas de todos os meses a cada lançamento); mês cheio vem em páginas de 1.000
@@ -255,9 +259,9 @@ export const apiReal: Api = {
 
   // ---------- CONTRATO3: cadastro do Analista de Cartão e do Fiscal da Feira ----------
   async membros(familia) {
-    const { data, error } = await sb().from('membros').select('id, nome, papel').eq('familia_id', familia).eq('ativo', true).in('papel', ['casal', 'pessoa']).order('criado_em')
+    const { data, error } = await sb().from('membros').select('*').eq('familia_id', familia).eq('ativo', true).in('papel', ['casal', 'pessoa']).order('criado_em')
     if (error) erro(error)
-    return (data || []).map((m: any) => ({ id: String(m.id), nome: String(m.nome ?? ''), ...(m.papel ? { papel: m.papel as Papel } : {}) }))
+    return (data || []).map((m: any) => ({ id: String(m.id), ...(m.user_id ? {user_id: String(m.user_id)} : {}), nome: String(m.nome ?? ''), ...(m.papel ? { papel: m.papel as Papel } : {}) }))
   },
   async cartaoSalvar(familia, c) {
     // com `cartao` o banco troca TODOS os campos: a ficha sempre manda o cadastro inteiro. `titular` é o id do membro da família.

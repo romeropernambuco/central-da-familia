@@ -8,11 +8,18 @@ export class FilaPendentes {
  async enviar<T>(chave: string, executar:()=>Promise<T>): Promise<T> {
  const geracao = this.geracao
  const antigo=this.itens.get(chave); if(antigo) return antigo.promessa
- try{const r = await executar(); if(geracao !== this.geracao) throw new Error('Sessão encerrada.'); return r}catch(e){if(geracao !== this.geracao || !(e instanceof ErroRede))throw e}
  let resolver!: (r:T)=>void, rejeitar!: (e:unknown)=>void
  const promessa=new Promise<T>((sim,nao)=>{resolver=sim;rejeitar=nao})
- this.itens.set(chave,{executar,resolver,rejeitar,promessa});this.avisar();return promessa
+ const item = {executar,resolver,rejeitar,promessa}
+ this.itens.set(chave,item)
+ void (async()=>{
+ try { const r=await executar(); if(geracao!==this.geracao)return; this.itens.delete(chave);resolver(r) }
+ catch(e) { if(geracao!==this.geracao)return; if(!(e instanceof ErroRede)){this.itens.delete(chave);rejeitar(e)} }
+ finally {this.avisar()}
+ })()
+ return promessa
  }
+
  async repetir() {
  if(this.ocupado)return
  this.ocupado=true

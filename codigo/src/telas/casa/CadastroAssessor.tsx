@@ -22,7 +22,7 @@ export function CadastroAssessor({ fechar }: { fechar: () => void }) {
       setErro(''); setOcupado(true)
       const ok = await salvar({ ...folha, pessoas: [...folha.pessoas, { id: novoUuid(), nome: nome.trim(), funcao: funcao.trim(), celular: celular.trim(), salario: 0 }] })
       setOcupado(false)
-      if (ok) { toast('Assessor da Casa cadastrado. Você já pode gerar o convite.'); fechar() }
+      if (ok) { [setNome,setFuncao,setCelular].forEach(s=>s.limpar()); toast('Assessor da Casa cadastrado. Você já pode gerar o convite.'); fechar() }
     }}>
       <label className="campo"><span>Nome obrigatório</span><CampoPrivado className="inp" aria-label="Nome do Assessor da Casa" required maxLength={60} value={nome} onChange={e => setNome(e.target.value)} /></label>
       <label className="campo"><span>Função na casa · opcional</span><CampoPrivado className="inp" maxLength={60} placeholder="Cozinha, transporte ou limpeza" value={funcao} onChange={e => setFuncao(e.target.value)} /></label>
