@@ -1,3 +1,4 @@
+import { livreDaSemana } from '../../lib/resumo/orcamento'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './casa.css'
 import { Icone } from '../../componentes/Icone'
@@ -85,7 +86,7 @@ function Feira() {
   const equipe = familia?.papel === 'equipe'
   const nomes = equipe ? [familia!.membroNome] : folha.pessoas.map(p => p.nome)
   const togglePres = (n: string) => setPres({ ...pres, [hoje]: veio.includes(n) ? veio.filter(x => x !== n) : [...veio, n] })
-  const livreSem = feira?.teto_semana != null ? centavos(feira.teto_semana - (feira.gasto_semana || 0)) : null
+  const livreSem = feira ? livreDaSemana(feira) : null
   const casal = familia?.papel === 'casal'
   // Pagamento informado e autoria sem pagamento são grupos distintos.
   const nomeDe = useMembros()

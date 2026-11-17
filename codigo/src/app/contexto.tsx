@@ -1,3 +1,4 @@
+import { invalidarDados, limparLeituras, definirEscopoLeitura, useInvalidacao } from './invalidacao'
 import { encerrarAcolhimento } from '../lib/acolhimento'
 import { salvamento } from './salvamento'
 import { FilaPendentes } from '../componentes/FilaPendentes'
@@ -56,12 +57,22 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const [exp, setExp] = useState<Explicar | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const familia = sessao?.familias[0] || null
+  const chaveResumo = JSON.stringify([api.modo, sessao?.userId, familia?.id, familia?.membroId, familia?.papel])
+  const [origemResumo, setOrigemResumo] = useState('')
+  const guardarResumo = useCallback((r: ResumoHoje) => { setResumo(r); setOrigemResumo(chaveResumo) }, [chaveResumo])
   const [oculto, setOculto] = useState(() => { try { const o = localStorage.getItem('esconder_valores') === '1'; esconderValores(o); return o } catch { return false } })
   const alternarOculto = useCallback(() => setOculto(o => { const n = !o; esconderValores(n); try { localStorage.setItem('esconder_valores', n ? '1' : '0') } catch { /* sem armazenamento */ } return n }), [])
 
   // olho fechado: além do <Din>, esconde todo "R$ 1.234" que vem pronto em frase (Escritório, avisos, fichas)
   esconderValores(oculto)
 
+  const invalidacao = useInvalidacao(api, familia?.id || '')
+  useEffect(() => {
+    if (!familia || familia.papel === 'equipe') return
+    let vivo = true
+    api.resumoHoje(familia.id).then(r => { if (vivo) guardarResumo(r) }).catch(() => {})
+    return () => { vivo = false }
+  }, [api, chaveResumo, invalidacao, guardarResumo])
   const equipe = familia?.papel === 'equipe'
   const [semRede, setSemRede] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false)
   const pedido = useRef(0)
@@ -69,7 +80,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const saindo = useRef(false)
   const trocarSessao = useCallback(async () => {
     setToast(null) // aviso de uma pessoa (pode ter R$) nunca fica na tela pra próxima que entrar no mesmo aparelho
-    try { setSessao(await api.sessao()); setErro(null) } catch (e) {
+    try { const s = await api.sessao(); definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null); setSessao(s); setErro(null) } catch (e) {
+      limparLeituras(api)
       setSessao(null)
       // sessão vencida não é erro pra mostrar: a tela de entrar já explica
       setErro(e instanceof ErroSessao ? null : (e as Error).message)
@@ -78,7 +90,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sessão caiu (token vencido, saiu em outro aparelho): limpa o que está na memória e volta pra tela de entrar. */
   const sessaoCaiu = useCallback(async () => {
-    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
+    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* já estava fora */ } finally { saindo.current = false }
     setSessao(null); setErro(null)
@@ -87,7 +99,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
 
   /** Sair por vontade própria: limpa tudo da memória e volta pra tela de entrar, sem aviso de erro. */
   const sair = useCallback(async () => {
-    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
+    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
     saindo.current = true
     try { await api.sair() } catch { /* sem rede: sai do aparelho do mesmo jeito */ } finally { saindo.current = false }
     await trocarSessao()
@@ -97,12 +109,15 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     if (!familia) return
     // 2 buscas ao mesmo tempo (foco + lançamento, ou 2 celulares): só a última pedida vale, a mais velha é descartada
     const meu = ++pedido.current
+    // Foco/reconexão/virada do dia: sem push entre aparelhos.
+    invalidarDados(api, familia.id)
+    setVersao(v => v + 1)
+    if (equipe) { setResumo(null); return }
     try {
       const r = await api.resumoHoje(familia.id)
       if (meu !== pedido.current) return
       // equipe da casa: nenhum valor em dinheiro fica na memória do aparelho
-      setResumo(equipe ? resumoSemDinheiro(r) : r)
-      setVersao(v => v + 1)
+      guardarResumo(equipe ? resumoSemDinheiro(r) : r)
       setErro(null); setSemRede(false)
     } catch (e) {
       if (meu !== pedido.current) return
@@ -110,7 +125,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       if (e instanceof ErroRede) setSemRede(true)
       setErro((e as Error).message)
     }
-  }, [api, familia?.id, equipe, sessaoCaiu])
+  }, [api, chaveResumo, equipe, sessaoCaiu, guardarResumo])
 
   useEffect(() => { trocarSessao() }, [trocarSessao])
   useEffect(() => {
@@ -120,7 +135,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
   useEffect(() => api.aoSairSessao?.(() => {
     if (saindo.current) return
-    pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
+    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
     setToast({ msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() })
   }), [api])
 
@@ -169,7 +184,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     })
   }, [recarregar, trocarSessao])
   const v: Ctx = {
-    api, sessao, familia, resumo, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
+    api, sessao, familia, resumo: origemResumo === chaveResumo ? resumo : null, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
     // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
     abrirLancar: pre => { if (pre?.corrigir) setToast(null); setLancar(pre || {}) }, lancarAberto, fecharLancar: () => setLancar(null),
     explicar: setExp, oculto, alternarOculto,

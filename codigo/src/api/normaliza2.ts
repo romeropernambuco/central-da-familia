@@ -3,6 +3,7 @@
 import type { Abre, Cartao, Contagem, EstadoItem, FaturaBanco, Feira, ItemEstoque, LinhaDiario, Pede, CustoDoGasto, EscritorioHoje, EstadoFuncionario, GuardadoHoje, Lembrete, PerguntaEsc, RelatorioEsc, Repetir, TipoAplicacao } from './tipos'
 import { hojeRecife } from '../lib/formato'
 import { motivoSemRender } from '../lib/guardado'
+import { registrarContrato } from '../lib/resumo/contrato'
 import { APELIDO_BANCO } from '../telas/escritorio/equipe'
 
 const num = (v: unknown) => Number(v) || 0
@@ -32,7 +33,7 @@ export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
   // o banco diz por que rendeu 0; se o campo não vier, o app deduz pelo calendário (sábado, domingo, feriado)
   const dito = r?.motivo_zero ?? r?.motivo ?? r?.por_que_zero ?? r?.aviso ?? null
   const motivo = dito ? txt(dito) : hojeLiq === 0 && aplicacoes.length ? motivoSemRender(hoje) : null
-  return {
+  return registrarContrato({
     total: num(r?.total), rendeu_hoje_bruto: num(r?.rendeu_hoje_bruto), rendeu_hoje_liquido: hojeLiq, rendeu_mes_liquido: num(r?.rendeu_mes_liquido),
     rendeu_desde_inicio_liquido: num(r?.rendeu_desde_inicio_liquido),
     cdi_usado: { data: txt(r?.cdi_usado?.data), pct_ano: num(r?.cdi_usado?.pct_ano), fonte: txt(r?.cdi_usado?.fonte) },
@@ -40,7 +41,7 @@ export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
     aplicacoes,
     explicacao: (r?.explicacao || []).map((x: any) => ({ linha: semSigla(txt(x.linha)), valor: num(x.valor) })),
     atualizado_em: txt(r?.atualizado_em), motivo_zero: motivo ? motivo.charAt(0).toUpperCase() + motivo.slice(1) : null,
-  }
+  }, r, ['total', 'rendeu_hoje_liquido', 'rendeu_mes_liquido', 'rendeu_desde_inicio_liquido', 'aplicacoes'])
 }
 
 export function normalizaCusto(r: any): CustoDoGasto {
@@ -64,14 +65,14 @@ function normalizaPergunta(p: any, semDinheiro: boolean): PerguntaEsc {
 }
 
 export function normalizaEscritorio(r: any, semDinheiro = false): EscritorioHoje {
-  return {
+  return registrarContrato({
     precisa_de_voce: (r?.precisa_de_voce || []).map((p: any) => normalizaPergunta(p, semDinheiro)),
     trabalhando: (r?.trabalhando || []).map((t: any) => ({ funcionario: idFunc(t.funcionario ?? t.id), resumo: t.resumo ? txt(t.resumo) : undefined })),
     entregue: semDinheiro ? [] : (r?.entregue || []).map((e: any) => ({ funcionario: idFunc(e.funcionario), resumo: txt(e.resumo), numero: e.numero == null ? null : num(e.numero) })),
     funcionarios: (r?.funcionarios || []).map((f: any) => ({ id: idFunc(f.id), nome: txt(f.nome), sala: txt(f.sala), estado: (ESTADOS.includes(f.estado) ? f.estado : 'vai_comecar') as EstadoFuncionario, frase: txt(f.frase || f.fez_hoje || f.sem_pergunta), ...(Array.isArray(f.faz) && f.faz.length ? { faz: f.faz.map(txt) } : {}),
       ...(f.cadastro_resumo && !semDinheiro ? { cadastro_resumo: typeof f.cadastro_resumo === 'string' ? f.cadastro_resumo : txt(f.cadastro_resumo?.titulo ?? f.cadastro_resumo?.texto) } : {}),
       ...(Array.isArray(f.ultimas_respostas) ? { ultimas_respostas: semDinheiro ? [] : f.ultimas_respostas.map(normalizaLinha) } : {}) })),
-  }
+  }, r, ['precisa_de_voce'])
 }
 
 export function normalizaLinha(d: any): LinhaDiario {

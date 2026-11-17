@@ -1,3 +1,5 @@
+import { useInvalidacao } from '../../app/invalidacao'
+import { proximaFatura } from '../../lib/resumo/faturas'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './cartoes.css'
 import { Botao } from '../../componentes/base'
@@ -23,6 +25,7 @@ const MESES_SIMULACAO = 14
 /** Cartões: faturas dos próximos 6 meses e "E se eu comprar?" ligado ao colchão. */
 export function Cartoes() {
   const { api, familia, resumo, versao, recarregar, toast, oculto } = useApp()
+  const invalidacao = useInvalidacao(api, familia?.id || '')
   const [cartoes, setCartoes] = useState<Cartao[]>([])
   const [faturas, setFaturas] = useState<Fatura[]>([])
   const [sim, setSim] = useState(false)
@@ -46,7 +49,7 @@ export function Cartoes() {
       setFaturas(fs); setLeitura({ chave, carregando: false, falha: '', temDado: true })
     }).catch(() => { if (vivo) setLeitura(l => ({ ...l, carregando: false, falha: 'Falha na leitura' })) })
     return () => { vivo = false }
-  }, [api, chave, versao, n])
+  }, [api, chave, versao, n, invalidacao])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
   // "E se eu comprar?" é com o seu cartão: o do outro só aparece pra ler
@@ -65,7 +68,7 @@ export function Cartoes() {
       <div className="envs">
         {(dado ? cartoes : []).map(c => {
           const fs = faturas.filter(f => f.cartao_id === c.id).sort((a, b) => a.mes.localeCompare(b.mes)).slice(0, MESES)
-          const atual = fs.find(f => f.vencimento >= hoje) || fs[0]
+          const atual = proximaFatura(fs, hoje, { exigirTotalPositivo: false, ordem: 'mes', usarPrimeiraVencida: true })
           const max = Math.max(1, ...fs.map(f => f.total))
           const meu = cartaoMeu(c, familia)
           return (

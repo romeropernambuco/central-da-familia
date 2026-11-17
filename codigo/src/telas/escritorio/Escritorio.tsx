@@ -1,3 +1,4 @@
+import { totalPendencias } from '../../lib/resumo/pendencias'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
@@ -78,7 +79,7 @@ function Hoje() {
       {funcs.falhou && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para atualizar a equipe." acao={{ texto: 'Tentar de novo', aoClicar: () => funcs.repetir?.() }} /></div>}
       {funcs.carregando && <p role="status">Conferindo a equipe…</p>}
       <div className="esc-frase">
-        <h2>{fraseDoDia(fila.length)}{fila.length ? ' hoje' : ''}</h2>
+        <h2>{fraseDoDia(totalPendencias(e))}{totalPendencias(e) ? ' hoje' : ''}</h2>
         <p className="sub">{fila.length ? 'Escolha alguém da equipe para responder, conferir o que cuida e ver seu histórico.' : 'Tudo em ordem. Escolha alguém da equipe para conferir o trabalho e seu histórico.'}</p>
         {primeiro && <button type="button" className="btn primary" onClick={() => setSel(primeiro.id)}>Responder {textoPrivado(primeiro.nome)}<Icone desenho={ChevronRight} /></button>}
       </div>

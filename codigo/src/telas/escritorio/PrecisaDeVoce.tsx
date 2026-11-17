@@ -1,3 +1,4 @@
+import { totalPendencias } from '../../lib/resumo/pendencias'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useState } from 'react'
@@ -27,7 +28,7 @@ export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   if (estado === 'desligado' || !e) return null
   const fila = e.precisa_de_voce
   // E3 (conserto 9): o título e o "1 de N" contam tudo (nota, contagem, piscineiro), não só as 3 que aparecem
-  const total = Math.max(fila.length, e.precisa_total ?? 0)
+  const total = totalPendencias(e)
   if ((equipe || pessoa) && !fila.length) return null
   const p = fila[0]
   return (

@@ -1,3 +1,4 @@
+import { totalImoveis, patrimonioTotal } from '../../lib/resumo/imoveis'
 import './guardado.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -67,7 +68,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
   // filha e equipe nunca veem imóveis
   if (!familia || familia.papel !== 'casal' || !api.imoveis) return null
   const imoveis = lista || []
-  const somaImoveis = centavos(imoveis.reduce((s, i) => s + i.valor, 0))
+  const somaImoveis = totalImoveis(imoveis)
   const taxaAplic = saida?.imoveis?.[0]?.taxa_real_aplicacoes
 
   async function salvar(id: string | null, d: NovoImovel) {
@@ -87,7 +88,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
       <p className="sub">Gestor do Guardado: quer cadastrar um imóvel?</p><Botao type="button" variante="primario" onClick={() => setFolha('novo')}><Icone nome="lancar" />Cadastrar imóvel</Botao>
       {lista && <dl className="imo-total">
-        <div className="tot"><dt>Patrimônio total</dt><dd><Din v={centavos(aplicado + somaImoveis)} /></dd></div>
+        <div className="tot"><dt>Patrimônio total</dt><dd><Din v={patrimonioTotal(aplicado, somaImoveis)} /></dd></div>
         <div><dt>Aplicado</dt><dd><Din v={aplicado} /></dd></div>
         <div><dt>Imóveis, à parte</dt><dd><Din v={somaImoveis} /></dd></div>
       </dl>}

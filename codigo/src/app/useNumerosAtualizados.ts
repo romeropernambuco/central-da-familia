@@ -1,3 +1,4 @@
+import { aoLimparLeituras } from './invalidacao'
 import { useEffect, useSyncExternalStore } from 'react'
 import type { Api, ChaveConfig } from '../api/tipos'
 import { hojeRecife } from '../lib/formato'
@@ -29,7 +30,7 @@ export function frescor(data: string | undefined, agora: Date): { dias: number |
 }
 
 interface Loja { dados: NumerosAtualizados; erro: string; versao: number; ouvintes: Set<() => void>; fila: Promise<unknown> }
-const lojas = new WeakMap<Api, Map<string, Loja>>()
+let lojas = new WeakMap<Api, Map<string, Loja>>()
 function loja(api: Api, fid: string) {
   let familias = lojas.get(api)
   if (!familias) { familias = new Map(); lojas.set(api, familias) }
@@ -104,3 +105,5 @@ export function useNumerosAtualizados(agora: () => Date = () => new Date()) {
     marcar: (grupo: GrupoNumero, id = '') => familia?.papel === 'casal' && lido ? marcarConferencia(api, fid, grupo, id, agora()) : Promise.resolve(false),
     avaliar: (grupo: GrupoNumero, id = '') => frescor(grupo === 'saldo_caixa' ? dados.saldo_caixa : dados[grupo][id], agora()) }
 }
+
+aoLimparLeituras(api => { lojas.delete(api); observadores.get(api)?.clear() })

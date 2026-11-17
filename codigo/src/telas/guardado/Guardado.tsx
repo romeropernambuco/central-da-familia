@@ -1,3 +1,4 @@
+import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -80,14 +81,14 @@ export function Guardado() {
       )}
       <section className="card guard-hoje" aria-labelledby="gHoje">
         <h2 id="gHoje" className="lbl">Rendeu hoje</h2>
-        <div className="numrow"><Din v={g.rendeu_hoje_liquido} tam="hero" /></div>
+        <div className="numrow"><Din v={totaisGuardado(g).hoje} tam="hero" /></div>
         {g.motivo_zero
           ? <p className="guard-motivo">{textoPrivado(g.motivo_zero)}</p>
           : <p className="apoio">Já sem o imposto. É o que entrou a mais no seu dinheiro guardado hoje.</p>}
         <dl className="guard-3">
-          <div><dt>Neste mês</dt><dd><Din v={g.rendeu_mes_liquido} /></dd></div>
-          <div><dt>Desde o início</dt><dd><Din v={g.rendeu_desde_inicio_liquido} /></dd></div>
-          <div className="tot"><dt>{doOutro.size ? 'A família tem guardado' : 'Você tem guardado'}</dt><dd><Din v={g.total} /></dd></div>
+          <div><dt>Neste mês</dt><dd><Din v={totaisGuardado(g).mes} /></dd></div>
+          <div><dt>Desde o início</dt><dd><Din v={totaisGuardado(g).desdeInicio} /></dd></div>
+          <div className="tot"><dt>{doOutro.size ? 'A família tem guardado' : 'Você tem guardado'}</dt><dd><Din v={totaisGuardado(g).total} /></dd></div>
         </dl>
         {g.seu_total != null && (doOutro.size > 0 || (g.casal_total || 0) > 0) && <p className="guard-dono"><span>No seu nome <b>{reais(g.seu_total)}</b></span>{[...doOutro].map(([n, v]) => <span key={n} data-do-outro={textoPrivado(n)}>No nome de <NomeDaPessoa pessoa={{ tipo: 'membro', id: n, nome: g.aplicacoes.find(a => a.titular === n)?.titular_nome }} /> <b>{reais(v)}</b></span>)}{(g.casal_total || 0) > 0 && <span>Do casal <b>{reais(g.casal_total || 0)}</b></span>}</p>}
         {meses > 0 && !oculto && <p className="sub guard-meses">O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de {reais(meuLim)}.</p>}

@@ -1,3 +1,6 @@
+import { invalidarDados, lerCompartilhado, familiaDoId, registrarDono, vincularMemoria, limparLeituras, definirEscopoLeitura, escopoLeitura } from '../app/invalidacao'
+import { recursosDaMutacao, recursoDaLeitura } from './recursos'
+import { copiarLeitura } from '../lib/resumo/contrato'
 import { salvamento } from '../app/salvamento'
 import { pendentes } from '../app/pendentes'
 import type { Api } from './tipos'
@@ -6,18 +9,35 @@ const copia = <T,>(v: T): T => structuredClone(v)
 const igual = (a: unknown,b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export function protegerApi(api: Api): Api {
  const mutacoes = /^(salvar|criar|definir|convidar|cancelar|reenviar|lancar$|apagarLancamento|restaurarLancamento|corrigirLancamento|casaMarcar|guardado(Criar|Movimentar|Encerrar)|recebimento(Criar|Mudar)|objetivoSalvar|desejo(Criar|Mudar)|imovel(Salvar|Tirar)|cartaoSalvar|estoqueItemSalvar|backupRestaurar|anotarCompraEquipe|escritorioResponder|faturaInformar|feira(Registrar|AnexarNota|SemNota)|estoqueContar|lembrete(Criar|Concluir|Adiar|Apagar)|reajuste(Votar|Aplicar))/
- return new Proxy(api, { get(alvo, prop: keyof Api) {
+ const publica = new Proxy(api, { get(alvo, prop: keyof Api) {
  const f = alvo[prop]
- if (typeof f !== 'function' || !mutacoes.test(prop)) return f
+ if (typeof f !== 'function') return f
+ if (prop === 'sair') return async () => { limparLeituras(api); return api.sair() }
+ if (prop === 'sessao') return async () => { const s = await api.sessao(); definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null); return s }
+ const recurso = recursoDaLeitura(prop)
+ if (recurso) return (...args: any[]) => lerCompartilhado(api, args[0], prop === 'config' ? `config:${args[1]}` : recurso, args.slice(1), async () => {
+   const resultado = await (f as Function).apply(api, args)
+   return resultado
+ }).then(resultado => {
+   if (prop === 'lancamentos') for (const l of resultado) registrarDono(api, l.id, args[0])
+   if (prop === 'guardadoHoje') for (const a of resultado.aplicacoes) registrarDono(api, a.id, args[0])
+   return copiarLeitura(resultado)
+ })
+ if (!mutacoes.test(prop) && prop !== 'guardadoDesfazer' && prop !== 'cobrirComCasa' && prop !== 'cobrirImprevisto' && prop !== 'apagarFamilia') return f
  return async (...args: any[]) => salvamento.acompanhar(async () => {
  // Inversos chamam explicitamente a API interna; chamadas públicas sempre passam pelas proteções.
  if(prop === 'backupRestaurar' && pendentes.itens.size) throw new Error('Há envios pendentes. Conclua ou cancele antes de restaurar.')
  const geracao = pendentes.geracao
+ const escopoInicial = escopoLeitura(api)
  let inverso: (() => Promise<void>) | undefined
  const [familia, id, dados] = args
+ const soId = /^(apagarLancamento|restaurarLancamento|corrigirLancamento|guardadoMovimentar|guardadoEncerrar|guardadoDesfazer)$/.test(prop)
+ const fid = soId ? familiaDoId(api, familia) : typeof familia === 'string' ? familia : familia?.familia
+ const recursos = recursosDaMutacao(prop, args)
+ const publicar = () => { if (fid) invalidarDados(api, fid, recursos) }
  let snapshot: Record<string,unknown> | undefined
  if(api.modo === 'exemplo' && api.backupLer && prop !== 'backupRestaurar') {
- try { snapshot = await api.backupLer(typeof familia === 'string' ? familia : familia.familia) } catch { /* outro papel não recebe valores */ }
+ try { snapshot = await api.backupLer(fid || (typeof familia === 'string' ? familia : familia.familia)) } catch { /* outro papel não recebe valores */ }
  }
  if (prop === 'salvarConfig') {
  const antes = copia(await api.config(familia, id, null)), depois = copia(dados)
@@ -37,16 +57,21 @@ export function protegerApi(api: Api): Api {
  }
 
  const r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args)
- if(geracao !== pendentes.geracao) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
+ if(geracao !== pendentes.geracao || escopoInicial !== escopoLeitura(api)) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
  if (snapshot && api.backupLer && api.backupRestaurar) {
  const fid = typeof familia === 'string' ? familia : familia.familia
  try { const depois = await api.backupLer(fid), antes = snapshot
  inverso = async () => { if(!igual(await api.backupLer!(fid),depois)) throw new Error('Isso mudou depois; confira antes de desfazer'); await api.backupRestaurar!(fid,antes) }
  } catch { inverso = undefined; salvamento.aviso = 'Salvo. Desfazer indisponível agora.' }
  }
+ publicar()
+ // Algumas ações devolvem o inverso diretamente; ele pertence ao mesmo conjunto de recursos.
+ const resultado = typeof r === 'function' ? async () => { await r(); publicar() } : r
  desfazer.dispensar()
- if (inverso) desfazer.registrar({ rotulo: 'Última alteração', desfazer: async () => { await inverso!(); return true } })
- return r
+ if (inverso) desfazer.registrar({ rotulo: 'Última alteração', desfazer: async () => { await inverso!(); publicar(); return true } })
+ return resultado
  })
  } })
+ vincularMemoria(api, publica)
+ return publica
 }

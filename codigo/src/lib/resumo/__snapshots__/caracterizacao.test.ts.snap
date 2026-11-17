@@ -1,0 +1,152 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixa os resultados antigos antes da extração, inclusive sinais e ausentes 1`] = `
+[
+  {
+    "devendo": 0,
+    "estado": "ok",
+    "linhas": [
+      {
+        "linha": "Combinado pro mês",
+        "valor": 100,
+      },
+      {
+        "linha": "Já gasto neste mês",
+        "valor": -20,
+      },
+      {
+        "linha": "Livre no mês",
+        "valor": 80,
+      },
+    ],
+    "passouHoje": 0,
+    "rotulo": "livre no mês",
+    "usado": 0.2,
+    "valor": 80,
+  },
+  {
+    "devendo": 20,
+    "estado": "devendo",
+    "linhas": [
+      {
+        "linha": "Combinado pro mês",
+        "valor": 150,
+      },
+      {
+        "linha": "Passou no mês passado e saiu deste",
+        "valor": -30,
+      },
+      {
+        "linha": "Parcelas de compras antigas que caem neste mês",
+        "valor": -20,
+      },
+      {
+        "linha": "Já gasto neste mês",
+        "valor": -100,
+      },
+      {
+        "linha": "Passou do combinado (fica devendo)",
+        "valor": -20,
+      },
+    ],
+    "passouHoje": 0,
+    "rotulo": "fica devendo neste mês",
+    "usado": 1.2,
+    "valor": 0,
+  },
+  {
+    "devendo": 5.89,
+    "estado": "devendo",
+    "linhas": [
+      {
+        "linha": "Teto da semana (combinado do mês × 12 ÷ 52 semanas)",
+        "valor": 24.23,
+      },
+      {
+        "linha": "Já gasto desde segunda",
+        "valor": -30.12,
+      },
+      {
+        "linha": "Passou da semana",
+        "valor": -5.89,
+      },
+    ],
+    "passouHoje": 0,
+    "rotulo": "passou nesta semana",
+    "usado": 1.2430870821295914,
+    "valor": 0,
+  },
+  {
+    "devendo": 20,
+    "estado": "devendo",
+    "linhas": [
+      {
+        "linha": "Combinado pro mês",
+        "valor": 100,
+      },
+      {
+        "linha": "Passou no mês passado e saiu deste",
+        "valor": -10,
+      },
+      {
+        "linha": "Já gasto neste mês",
+        "valor": -110,
+      },
+      {
+        "linha": "Passou do combinado (fica devendo)",
+        "valor": -20,
+      },
+      {
+        "linha": "Dividido pelos 14 dias que faltam. Sábado, domingo e feriado valem 1,5 dia, então hoje vale",
+        "valor": 10,
+      },
+      {
+        "linha": "Gasto hoje",
+        "valor": -12,
+      },
+      {
+        "linha": "Ainda pode gastar hoje",
+        "valor": 0,
+      },
+    ],
+    "passouHoje": 2,
+    "rotulo": "fica devendo neste mês",
+    "usado": 1.1,
+    "valor": 0,
+  },
+  {
+    "devendo": 0,
+    "estado": "ok",
+    "linhas": [
+      {
+        "linha": "Combinado pro mês",
+        "valor": 100,
+      },
+      {
+        "linha": "Já gasto neste mês",
+        "valor": -20,
+      },
+      {
+        "linha": "Livre no mês",
+        "valor": 80,
+      },
+      {
+        "linha": "Dividido pelos 14 dias que faltam. Sábado, domingo e feriado valem 1,5 dia, então hoje vale",
+        "valor": 9.45,
+      },
+      {
+        "linha": "Gasto hoje",
+        "valor": -2.11,
+      },
+      {
+        "linha": "Ainda pode gastar hoje",
+        "valor": 7.34,
+      },
+    ],
+    "passouHoje": 0,
+    "rotulo": "pode gastar hoje",
+    "usado": 0.2,
+    "valor": 7.34,
+  },
+]
+`;

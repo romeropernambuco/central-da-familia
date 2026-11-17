@@ -1,17 +1,26 @@
+import { ErroSessao } from '../api/erros'
+import { useApp } from './contexto'
+import { useInvalidacao, lerCompartilhado, invalidarDados } from './invalidacao'
 import { useEffect, useState } from 'react'
 
 /** Estado pertence ao contexto que o carregou; falha conserva o último resultado desse contexto. */
-export function useLeituraRemota<T>(chave: string, buscar: (() => Promise<T>) | null, dependencias: readonly unknown[]) {
+export function useLeituraRemota<T>(chave: string, buscar: (() => Promise<T>) | null, dependencias: readonly unknown[], recurso?: string) {
+  const ctx = useApp()
+  const invalidacao = useInvalidacao(ctx?.api || apiAusente, ctx?.familia?.id || '')
+  const escopo = JSON.stringify([ctx?.api?.modo, ctx?.sessao?.userId, ctx?.familia?.id, ctx?.familia?.membroId, ctx?.familia?.papel, chave])
+  chave = escopo
   const [r, setR] = useState<{ chave: string; dado: T | null; erro: string; carregando: boolean }>({ chave, dado: null, erro: '', carregando: true })
   const [n, setN] = useState(0)
   useEffect(() => {
     let vivo = true
     setR(a => ({ chave, dado: a.chave === chave ? a.dado : null, erro: '', carregando: !!buscar }))
-    if (buscar) buscar().then(dado => { if (vivo) setR({ chave, dado, erro: '', carregando: false }) }).catch((e: Error) => {
-      if (vivo) setR(a => ({ ...a, erro: e.message, carregando: false }))
+    if (buscar) (recurso && ctx?.familia ? lerCompartilhado(ctx.api, ctx.familia.id, recurso, ['hook', chave], buscar) : buscar()).then(dado => { if (vivo) setR({ chave, dado, erro: '', carregando: false }) }).catch((e: Error) => {
+      if (vivo) { if (e instanceof ErroSessao) void ctx?.tentar(async () => { throw e }); setR(a => ({ ...a, erro: e.message, carregando: false })) }
     })
     return () => { vivo = false }
-  }, [chave, n, ...dependencias])
+  }, [chave, n, invalidacao, ...dependencias])
   const atual = r.chave === chave ? r : { dado: null, erro: '', carregando: !!buscar }
-  return { ...atual, repetir: () => setN(x => x + 1) }
+  return { ...atual, repetir: () => { if (ctx?.familia) invalidarDados(ctx.api, ctx.familia.id, recurso ? [recurso] : undefined); setN(x => x + 1) } }
 }
+
+const apiAusente = {} as import('../api/tipos').Api

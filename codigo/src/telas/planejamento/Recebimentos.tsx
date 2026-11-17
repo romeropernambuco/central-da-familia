@@ -1,3 +1,4 @@
+import { mesesPendentes, recebimentoAtual } from '../../lib/resumo/recebimentos'
 import './planejamento.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -85,8 +86,8 @@ function RecebimentosCasal() {
   const { dado: lista, erro: falha, carregando, repetir } = useLeituraRemota(`${familia?.id}:${familia?.papel}`, familia && api.recebimentos ? () => api.recebimentos!(familia.id) : null, [api, versao, n])
   if (!api.recebimentos || familia?.papel !== 'casal') return null
   const hoje = hojeRecife()
-  const pendentes = (r: RecebimentoTela) => mesesDaReceita(r.mes_previsto, fontes.fontes[r.id]).filter((m, i) => !(i === 0 && r.recebido_em) && !fontes.controle[r.id]?.recebidas?.[m])
-  const valorAtual = (r: RecebimentoTela) => ({ ...r, valor: (fontes.controle[r.id]?.valor ?? Math.round(r.valor * 100)) / 100 })
+  const pendentes = (r: RecebimentoTela) => mesesPendentes(r, fontes.fontes, fontes.controle)
+  const valorAtual = (r: RecebimentoTela) => recebimentoAtual(r, fontes.controle)
   const salvarNovo = async (r: NovoRecebimento & { chave: string }, fonte: FonteReceita | null) => {
     // Sem escolha nova mantém a compatibilidade do formulário antigo (uma vez, campo certo).
     if (!fonte) { await api.recebimentoCriar!(familia.id, r); return }
@@ -120,7 +121,7 @@ function RecebimentosCasal() {
     const ok = serie ? await fontes.salvarControle(r.id, { ...anterior, recebidas: { ...anterior.recebidas, [mes]: { valor: Math.round(valor * 100), data } } })
       : await tentar(() => api.recebimentoMudar!(familia.id, r.id, { recebido_em: data, valor_recebido: valor }))
     if (!ok) return false
-    invalidarDados(api, familia.id); setN(x => x + 1)
+    setN(x => x + 1)
     let usado = false
     toast(`Recebimento conferido: ${r.descricao}.`, async () => {
       if (usado) return; usado = true
@@ -133,12 +134,12 @@ function RecebimentosCasal() {
         if (!await fontes.salvarControle(r.id, { ...atual, recebidas })) throw new Error('Não foi possível desfazer. Tente novamente.')
       }) : await tentar(() => api.recebimentoMudar!(familia.id, r.id, { recebido_em: r.recebido_em, valor_recebido: r.valor_recebido }))
       if (!desfeito) { usado = false; throw new Error('Não foi possível desfazer.') }
-      invalidarDados(api, familia.id); setN(x => x + 1)
+      setN(x => x + 1)
     })
     return true
   }
   const mexer = (id: string, m: Parameters<NonNullable<typeof api.recebimentoMudar>>[2], aviso: string) =>
-    tentar(async () => { await api.recebimentoMudar!(familia.id, id, m); invalidarDados(api, familia.id); setN(x => x + 1); toast(aviso) })
+    tentar(async () => { await api.recebimentoMudar!(familia.id, id, m); setN(x => x + 1); toast(aviso) })
   const abertos = (lista || []).filter(r => pendentes(r).length > 0 || !!fontes.fontes[r.id]).map(valorAtual)
   const chegaram = (lista || []).filter(r => r.recebido_em && r.recebido_em.slice(0, 7) >= hoje.slice(0, 7))
   return (
@@ -169,7 +170,7 @@ function RecebimentosCasal() {
                 {/* atrasado: nunca some; o dono responde quando chega */}
                 {!!meses.length && s.atrasado && certo && <span className="sub" style={{ marginTop: 6 }}>{textoPrivado(`Era para ${mesCurto(previsto)} e ainda não chegou. Na conta, foi para ${mesCurto(s.conta_em || proximo(hoje.slice(0, 7)))}.${s.pergunta ? ' Você pode conferir quando chegar.' : ''}`)}</span>}
                 {r.meu && <span className="row-btns" style={{ marginTop: 8 }}>
-                  {!!meses.length && <Botao variante="secundario" className="sm" type="button" disabled={!fontes.pronto} onClick={() => { invalidarDados(api, familia.id); setConferir(r) }}><Icone desenho={Check} />Chegou</Botao>}
+                  {!!meses.length && <Botao variante="secundario" className="sm" type="button" disabled={!fontes.pronto} onClick={() => { invalidarDados(api, familia.id, ['recebimentos', 'config:fontes_receita', 'config:receitas_controle']); setConferir(r) }}><Icone desenho={Check} />Chegou</Botao>}
                   <Botao variante="fantasma" className="sm" type="button" onClick={() => setMudar(r)}><Icone nome="abrir" />Mudar o mês ou tirar</Botao>
                 </span>}
               </span>
@@ -179,7 +180,7 @@ function RecebimentosCasal() {
         })}
       </ul>
       {chegaram.length > 0 && <p className="sub" style={{ marginTop: 8 }}>Já chegou neste mês: {textoPrivado(chegaram.map(r => `${r.descricao} (${r.meu ? 'seu' : r.dono_nome}, ${dataCurta(r.recebido_em!)})`).join('; '))}.</p>}
-      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={salvarNovo} salvo={(r, ja) => { invalidarDados(api, familia.id); setNovo(false); setN(x => x + 1); toast(ja ? 'Já estava salvo' : `${r.descricao} anotado para ${mesCurto(r.mes_previsto)}.`) }} />}
+      {novo && <NovoReceb key={familia.id} fechar={() => setNovo(false)} salvar={salvarNovo} salvo={(r, ja) => { setNovo(false); setN(x => x + 1); toast(ja ? 'Já estava salvo' : `${r.descricao} anotado para ${mesCurto(r.mes_previsto)}.`) }} />}
       {conferir && <ConfirmarReceita r={conferir} meses={pendentes(conferir)} fechar={() => setConferir(null)} confirmar={(m, v, d) => confirmar(conferir, m, v, d)} />}
       {mudar && <MudarReceb r={mudar} fonte={fontes.fontes[mudar.id]} pronto={fontes.pronto} fechar={() => setMudar(null)} salvarFonte={async (f, v) => {
         if (!await fontes.salvarFonte(mudar.id, f)) return false

@@ -1,8 +1,10 @@
+import { totalPendencias } from '../lib/resumo/pendencias'
+import { aoLimparLeituras, escopoLeitura } from './invalidacao'
 import type { Api } from '../api'
 import type { EscritorioHoje } from '../api/tipos'
 import type { Leitura } from './useDados2'
 
-const lojas = new WeakMap<Api, Map<string, ReturnType<typeof criarLoja>>>()
+let lojas = new WeakMap<Api, Map<string, ReturnType<typeof criarLoja>>>()
 const apiAusente = {} as Api
 function criarLoja() {
   let estado: { dado: EscritorioHoje | null; estado: Leitura; motivo: string } = { dado: null, estado: 'buscando', motivo: '' }
@@ -25,7 +27,7 @@ function criarLoja() {
       const respondidas = [...loja.travas].filter(([, s]) => s === 'respondida').map(([id]) => id)
       try {
         const bruto = await api.escritorioHoje(familia)
-        const dado = { ...bruto, precisa_total: bruto.precisa_de_voce.length,
+        const dado = { ...bruto, precisa_total: totalPendencias(bruto),
           ...(loja.equipe ? { entregue: [], precisa_de_voce: bruto.precisa_de_voce.map(({ valor: _v, ...p }) => p) } : {}) }
         if (meu !== pedido) return
         for (const id of respondidas) if (!dado.precisa_de_voce.some(p => p.id === id)) loja.travas.delete(id)
@@ -43,9 +45,12 @@ function criarLoja() {
 }
 export function lojaEscritorio(api: Api, familia: string) {
   api = api || apiAusente
+  familia = JSON.stringify([familia, escopoLeitura(api)])
   let familias = lojas.get(api)
   if (!familias) { familias = new Map(); lojas.set(api, familias) }
   let loja = familias.get(familia)
   if (!loja) { loja = criarLoja(); familias.set(familia, loja) }
   return loja
 }
+
+aoLimparLeituras(() => { lojas = new WeakMap() })
