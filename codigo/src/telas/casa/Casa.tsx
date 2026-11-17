@@ -1,4 +1,5 @@
-import { livreDaSemana } from '../../lib/resumo/orcamento'
+import { disponivelHojeCasa, livreDaSemana } from '../../lib/resumo/orcamento'
+import { CasaDisponivelHoje } from '../../componentes/CasaDisponivelHoje'
 import { useDestino } from '../../app/destinos'
 import { ConferenciaCasa } from '../../componentes/ConferenciasResumo'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
@@ -124,6 +125,7 @@ function Feira() {
         {feira && !equipe && (
           <section className="card" aria-labelledby="fSem">
             <div className="card-h"><h2 id="fSem"><Icone nome="casa" />Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
+            {casal && <CasaDisponivelHoje valor={disponivelHojeCasa(resumo?.envelopes || [])} />}
             {/* B8: nunca "livre" e "passou" na mesma tela */}
             <p className="lbl">{textoPrivado(feira.nome)}: {!oculto && livreSem != null && livreSem < 0 ? 'passou nesta semana' : 'livre nesta semana'}</p>
             <div className="numrow">{!oculto && livreSem != null && livreSem < 0 ? <span className="din-warn"><Din v={-livreSem} tam="big" /></span> : <Din v={Math.max(0, livreSem ?? feira.livre)} tam="big" />}

@@ -28,15 +28,21 @@ import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-test
 import { ConferenciaCasa, ConferenciaFaturas } from '../../componentes/ConferenciasResumo'
 import { SaldoConta } from '../../telas/planejamento/SaldoConta'
 import { MeuOrcamento } from '../../telas/meu-orcamento/MeuOrcamento'
+import { Inicio } from '../../telas/inicio/Inicio'
+import { Casa } from '../../telas/casa/Casa'
+import { projecao } from '../plano'
+import * as orcamento from './orcamento'
 import { CartaoGuardado } from '../../telas/guardado/CartaoGuardado'
 import { ResumoDoMes } from '../../telas/lancamentos/Lancamentos'
 import { RumoA2029 } from '../../componentes/RumoA2029'
+import { Planejamento } from '../../telas/planejamento/Planejamento'
+import * as plano2029 from './plano2029'
 import { Recebimentos } from '../../telas/planejamento/Recebimentos'
 import { Imoveis } from '../../telas/guardado/Imoveis'
 import { PrecisaDeVoce } from '../../telas/escritorio/PrecisaDeVoce'
 import { Desejos } from '../../telas/desejos/Desejos'
 import { desfazer } from '../../app/desfazer'
-import { FUSO, esconderValores, dataConferencia, plural } from '../formato'
+import { FUSO, esconderValores, dataConferencia, plural, reais } from '../formato'
 import { RitmoMes } from '../../componentes/RitmoMes'
 import { enderecoDestino, lerDestino, destinoPermitido, focarDestino, type DestinoResumo } from '../../app/destinos'
 import ts from 'typescript'
@@ -44,7 +50,7 @@ import ts from 'typescript'
 import { readFileSync } from 'node:fs'
 
 const roots: Root[] = []
-afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.unstubAllGlobals(); vi.useRealTimers(); esconderValores(false); desfazer.limpar() })
+afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); esconderValores(false); desfazer.limpar() })
 const hoje = '2026-11-17', mes = '2026-11'
 function mundo(n = 1) {
   let gasto = 20 * n, total = 500 * n, pago = false, recebido = false, contou = false, feira = false, saldo = 100 * n
@@ -72,12 +78,13 @@ function mundo(n = 1) {
   definirEscopoLeitura(api, 'sessao-ficticia', familia)
   return { api, interna, familia, resumo, config, recebimentos, gastos, g, e, fs, banco, estoque, feiras, imoveis, desejos, contas, entrada }
 }
-async function montar(m = mundo(), origem?: ReactNode, papel = 'casal') {
+async function montar(m = mundo(), origem?: ReactNode, papel = 'casal', largura?: number) {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
   const doc = new DocumentoTeste()
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] }, scrollIntoView() {} })
   Object.assign(doc.documentElement, { dataset: {} })
   vi.stubGlobal('document', doc); vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  if (largura !== undefined) window.matchMedia = consulta => Object.assign(new EventTarget(), { matches: largura >= Number(consulta.match(/\d+/)?.[0]) }) as MediaQueryList
   vi.stubGlobal('localStorage', { getItem: () => null, setItem() {} }); vi.stubGlobal('Element', NoTeste)
   vi.stubGlobal('location', { hash: '#/inicio' }); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
@@ -88,7 +95,7 @@ async function montar(m = mundo(), origem?: ReactNode, papel = 'casal') {
   let r!: Resumo
   function Captura() { r = useResumoFamilia().resumo; return null }
   let oculto = false
-  const render = async () => { esconderValores(oculto); await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api: m.api, familia, resumo: m.resumo(), versao: 0, oculto, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, toast() {}, recarregar: async () => {}, abrirLancar() {}, sessao: { userId: 'sessao-ficticia', familias: [familia] } } as unknown as Ctx }, createElement(Fragment, null, papel === 'equipe' ? null : createElement(Captura), createElement(ResumoFamilia), createElement('div', { 'data-origem': true }, origem))))) }
+  const render = async () => { esconderValores(oculto); await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api: m.api, familia, resumo: m.resumo(), versao: 0, oculto, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, toast() {}, recarregar: async () => {}, abrirLancar() {}, sessao: { userId: 'sessao-ficticia', familias: [familia] } } as unknown as Ctx }, createElement(Fragment, null, papel === 'equipe' ? null : createElement(Captura), createElement(largura === undefined ? ResumoFamilia : Inicio), createElement('div', { 'data-origem': true }, origem))))) }
   await render()
   if (m.api.modo === 'exemplo') await act(async () => { await new Promise(r => setTimeout(r, 200)) })
   return { m, box, get r() { return r }, render, ocultar: async () => { oculto = !oculto; await render() }, bloco: (k: keyof Resumo) => box.buscar(x => x.getAttribute('data-bloco') === k)[0], origem: () => box.buscar(x => x.getAttribute('data-origem') === 'true')[0] }
@@ -169,6 +176,202 @@ it('f36: Rendeu hoje líquido coincide com CartaoGuardado', async () => {
   expect(normalizar(frase.textContent)).toBe(`${esperado}líquido`)
   const rendimento = a.origem().buscar(x => x.getAttribute('class') === 'guard-l dest')[0]
   expect(normalizar(rendimento.textContent)).toBe(esperado)
+})
+
+function mundoComEnvelopes() {
+  const m = mundo()
+  const base = m.resumo
+  m.resumo = () => {
+    const r = base()
+    Object.assign(r.envelopes[0], { regra: 'diario', hoje: 101.33, valor_dia: 101.33, limite_mes: 620.18, gasto_mes: 120.12, livre: 500.06 })
+    Object.assign(r.envelopes[1], { nome: 'Feira de teste', regra: 'semanal', teto_semana: 181.51, gasto_semana: 32.37, hoje: 24.86, livre: 305.78 })
+    r.envelopes.push({ id: 'outro', nome: 'Outro titular', regra: 'diario', limite_mes: 740.14, gasto_mes: 346.78, livre: 393.36, hoje: 61.02, valor_dia: 61.02 })
+    r.placar_casal = r.envelopes.filter(e => !e.casa).map(e => ({ nome: e.nome, eu: e.id === 'eu', limite: e.limite_mes, gasto: e.gasto_mes, fecha: projecao(e.gasto_mes, e.limite_mes, hoje).fecha }))
+    return r
+  }
+  vi.mocked(m.interna.resumoHoje).mockImplementation(async () => m.resumo())
+  m.interna.avisosCasa = async () => []
+  return m
+}
+
+const envelope = (box: NoTeste, classe: string) => box.buscar(x => x.getAttribute('class') === `card env ${classe}`)
+const expandir = async (bloco: NoTeste) => {
+  const botao = bloco.buscar(x => x.tagName === 'BUTTON' && x.getAttribute('aria-expanded') === 'false')[0]
+  expect(botao).toBeDefined()
+  await act(async () => botao.click())
+}
+
+it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre vêm do Meu orçamento', async id => {
+  const m = mundoComEnvelopes()
+  const e = m.resumo().envelopes.find(e => e.id === id)!
+  const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
+  if (id === 'outro') {
+    const botao = a.origem().buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(e.nome))[0]
+    expect(botao).toBeDefined()
+    await act(async () => botao.click())
+  }
+  const cartao = envelope(a.box, id === 'eu' ? 'env-destaque' : 'env-compacto').find(x => x.textContent.includes(e.nome))!
+  expect(cartao).toBeDefined()
+  const moeda = (v: number) => reais(v).replace(/\s/g, '')
+  for (const n of [e.limite_mes, e.gasto_mes, e.livre]) {
+    expect(cartao.textContent.replace(/\s/g, '')).toContain(moeda(n))
+    expect(a.origem().textContent.replace(/\s/g, '')).toContain(moeda(n))
+  }
+  const valorInicio = id === 'eu' ? a.bloco('podeGastarHoje') : cartao
+  expect(valorInicio.textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
+  expect(a.origem().buscar(x => x.getAttribute('aria-label') === reais(e.hoje!)).length).toBeGreaterThan(0)
+  if (id === 'eu') {
+    await expandir(a.bloco('podeGastarHoje'))
+    const inicio = a.box.buscar(x => x.getAttribute('class') === 'view inicio-f29')[0]
+    expect(inicio.textContent.match(/101,33/g)).toHaveLength(1)
+    expect(inicio.textContent.match(/Hoje você pode gastar/g)).toHaveLength(1)
+  }
+})
+
+it('f37: placar em Início traz as mesmas projeções dos dois orçamentos', async () => {
+  const m = mundoComEnvelopes()
+  const r = m.resumo()
+  const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
+  const placar = a.box.buscar(x => x.tagName === 'SECTION' && x.getAttribute('class') === 'placar ok')[0]
+  expect(placar.textContent).toContain('O casal, se continuar assim')
+  for (const p of r.placar_casal!) {
+    expect(placar.buscar(x => x.tagName === 'LI' && x.textContent.startsWith(p.nome))[0].buscar(x => x.getAttribute('aria-label') === reais(p.fecha))).toHaveLength(1)
+    const botao = a.origem().buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(p.nome))[0]
+    await act(async () => botao.click())
+    expect(a.origem().textContent).toContain(`${reais(p.fecha)} de ${reais(p.limite)}`)
+  }
+})
+
+it('f37: a linha diária e o livre semanal da Casa coincidem com a aba Casa', async () => {
+  const a = await montar(mundoComEnvelopes(), createElement(Casa), 'casal', 1024)
+  await expandir(a.bloco('podeGastarHoje'))
+  const linha = (no: NoTeste) => no.buscar(x => x.getAttribute('class') === 'resumo-casa')[0].textContent
+  expect(linha(a.bloco('podeGastarHoje'))).toEqual(linha(a.origem()))
+  expect(linha(a.origem())).toContain('24,86')
+  const semanal = reais(149.14)
+  expect(a.origem().buscar(x => x.getAttribute('aria-label') === semanal)).toHaveLength(1)
+  expect(envelope(a.box, 'env-compacto').find(x => x.textContent.includes('Feira de teste'))!.buscar(x => x.getAttribute('aria-label') === semanal)).toHaveLength(1)
+})
+
+it('f37: o Início renderiza os valores sentinela dos seletores de envelope e Casa', async () => {
+  const selecionar = orcamento.numeroEnvelope
+  vi.spyOn(orcamento, 'numeroEnvelope').mockImplementation((e, ...args) => ({ ...selecionar(e, ...args), valor: 8765.43 }))
+  vi.spyOn(orcamento, 'disponivelHojeCasa').mockReturnValue(7654.32)
+  const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
+  await expandir(a.bloco('podeGastarHoje'))
+  const feira = envelope(a.box, 'env-compacto').find(x => x.textContent.includes('Feira de teste'))!
+  expect(feira.textContent).toContain('8.765,43')
+  expect(a.bloco('podeGastarHoje').textContent).toContain('7.654,32')
+})
+
+it('f37: placar e detalhe de 2029 renderizam as projeções sentinela', async () => {
+  const selecionarPlacar = orcamento.projecaoCasal
+  vi.spyOn(orcamento, 'projecaoCasal').mockImplementation(placar => ({ ...selecionarPlacar(placar)!, sobra: 6543.21 }))
+  const numerar = plano2029.numerosRumo2029
+  vi.spyOn(plano2029, 'numerosRumo2029').mockImplementation((...args) => ({ ...numerar(...args), falta_sem_margem: 543210 }))
+  const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
+  expect(a.box.buscar(x => x.getAttribute('class') === 'placar ok')[0].textContent).toContain('6.543,21')
+  const plano = a.bloco('plano2029')
+  await expandir(plano)
+  expect(plano.textContent).toContain('5.432,10')
+})
+
+it('f37: estouro do envelope em Início coincide com Meu orçamento', async () => {
+  const m = mundoComEnvelopes()
+  const base = m.resumo
+  m.resumo = () => {
+    const r = base()
+    const e = r.envelopes.find(e => e.id === 'outro')!
+    Object.assign(e, { gasto_mes: 771.30, livre: -31.16 })
+    return r
+  }
+  const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
+  const botao = a.origem().buscar(x => x.getAttribute('class') === 'pill' && x.textContent.startsWith('Outro titular'))[0]
+  await act(async () => botao.click())
+  const excesso = reais(31.16)
+  const cartao = envelope(a.box, 'env-compacto').find(x => x.textContent.includes('Outro titular'))!
+  expect(cartao.textContent).toMatch(/fica devendo/)
+  expect(cartao.buscar(x => x.getAttribute('aria-label') === excesso)).toHaveLength(1)
+  expect(a.origem().buscar(x => x.getAttribute('aria-label') === excesso).length).toBeGreaterThan(0)
+})
+
+it('f37: Plano expande o valor sem margem da aba Planejamento e preserva o principal', async () => {
+  const a = await montar(mundoComEnvelopes(), createElement(Planejamento), 'casal', 1024)
+  const bloco = a.bloco('plano2029')
+  const principal = bloco.buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent
+  expect(principal).toContain('por mês')
+  expect(bloco.textContent).toContain('com margem de segurança')
+  expect(bloco.textContent).not.toContain('Sem a margem de segurança')
+  await expandir(bloco)
+  const semMargem = (no: NoTeste) => no.buscar(x => x.tagName === 'SPAN' && x.textContent.startsWith('Sem a margem de segurança'))[0].textContent
+  expect(semMargem(bloco)).toEqual(semMargem(a.origem()))
+  expect(bloco.buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent).toBe(principal)
+})
+
+it('f37: o casal vê os cartões, a pessoa só o próprio e o Assessor não consulta o Início', async () => {
+  const casal = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
+  expect(envelope(casal.box, 'env-compacto')).toHaveLength(2)
+  expect(casal.box.textContent).toContain('O casal, se continuar assim')
+  const pessoa = await montar(mundoComEnvelopes(), undefined, 'pessoa', 1024)
+  expect(envelope(pessoa.box, 'env-destaque')).toHaveLength(1)
+  expect(envelope(pessoa.box, 'env-compacto')).toHaveLength(0)
+  await expandir(pessoa.bloco('podeGastarHoje'))
+  expect(pessoa.box.textContent).not.toMatch(/Outro titular|Feira de teste|O casal, se continuar assim|Casa · disponível hoje/)
+  const assessor = await montar(mundoComEnvelopes(), undefined, 'equipe', 1024)
+  expect(assessor.box.textContent).toBe('')
+  for (const consulta of [assessor.m.interna.resumoHoje, assessor.m.interna.config, assessor.m.interna.lancamentos, assessor.m.interna.futuroEntradas]) expect(consulta).not.toHaveBeenCalled()
+})
+
+it('f37: olho fechado remove valores e geometria dos envelopes e do placar', async () => {
+  const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
+  await expandir(a.bloco('podeGastarHoje'))
+  await expandir(a.bloco('plano2029'))
+  expect(a.box.textContent).toContain('O casal, se continuar assim')
+  expect(a.box.buscar(x => x.getAttribute('class')?.startsWith('meter ') ?? false)).toHaveLength(3)
+  await a.ocultar()
+  const orcamento = a.box.buscar(x => x.getAttribute('class') === 'resumo-item resumo-orcamento')[0]
+  expect(orcamento.textContent.match(/Valores escondidos/g)).toHaveLength(4)
+  expect(orcamento.textContent).not.toMatch(/\d|Outro titular|Feira de teste|fecha com|vai passar/)
+  expect(orcamento.buscar(no => [...no.atributos].some(([k, v]) => ['style', 'value', 'data-do-outro'].includes(k) || k.startsWith('aria-') && /%|R\$|101,33|Outro titular/.test(v)))).toHaveLength(0)
+  expect(a.bloco('podeGastarHoje').textContent).not.toMatch(/101,33|24,86/)
+  expect(a.bloco('plano2029').textContent).not.toContain('Sem a margem de segurança')
+})
+
+it.each([[375, false], [799, false], [800, true], [1280, true]])('f37: em %d px o estado inicial da seção é %s', async (largura, aberto) => {
+  const a = await montar(mundoComEnvelopes(), undefined, 'casal', largura)
+  const botao = a.box.buscar(x => x.tagName === 'BUTTON' && x.textContent.trim() === 'Seu orçamento e envelopes')[0]
+  expect(botao.getAttribute('aria-expanded')).toBe(String(aberto))
+  expect(envelope(a.box, 'env-destaque')).toHaveLength(aberto ? 1 : 0)
+})
+
+it('f37: lembra a escolha ao remontar a tela durante a sessão', async () => {
+  const m = mundoComEnvelopes()
+  m.familia.membroId = 'memoria-f37'
+  const a = await montar(m, undefined, 'casal', 375)
+  const botao = (box: NoTeste) => box.buscar(x => x.tagName === 'BUTTON' && x.textContent.trim() === 'Seu orçamento e envelopes')[0]
+  expect(botao(a.box).getAttribute('aria-expanded')).toBe('false')
+  await act(async () => botao(a.box).click())
+  const b = await montar(m, undefined, 'casal', 375)
+  expect(botao(b.box).getAttribute('aria-expanded')).toBe('true')
+})
+
+it('f37: reserva espaço durante a carga e mantém links e expansão em regiões irmãs', async () => {
+  const m = mundoComEnvelopes()
+  let resolver!: (r: ResumoHoje) => void
+  vi.mocked(m.interna.resumoHoje).mockReturnValue(new Promise(r => { resolver = r }))
+  const a = await montar(m, undefined, 'casal', 1024)
+  const bloco = a.bloco('podeGastarHoje')
+  expect(bloco.getAttribute('data-estado')).toBe('carregando')
+  expect(bloco.buscar(x => x.getAttribute('class') === 'resumo-esqueleto')[0].textContent).toContain('Conferindo')
+  const estilos = readFileSync('src/telas/inicio/resumo.css', 'utf8')
+  expect(estilos).toMatch(/\.resumo-item\s*\{[^}]*min-block-size:\s*var\(--resumo-altura\)/)
+  expect(a.box.buscar(x => x.getAttribute('class') === 'resumo-coluna')).toHaveLength(2)
+  await act(async () => resolver(m.resumo()))
+  await expandir(bloco)
+  const controles = bloco.buscar(x => x.tagName === 'A' || x.tagName === 'BUTTON')
+  expect(controles.length).toBeGreaterThanOrEqual(3)
+  for (const no of controles) expect(no.buscar(x => x !== no && controles.includes(x))).toHaveLength(0)
+  expect(controles[0].parentNode).toBe(controles[1].parentNode)
 })
 
 it('f36: nota única de conferência, saldo claro e ícones explícitos nos onze blocos', async () => {

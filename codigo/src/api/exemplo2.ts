@@ -1,5 +1,6 @@
 import { membrosTeste } from './dadosTeste'
 import { privadosNoTexto } from '../lib/textoAgente'
+import { projecaoCasal } from '../lib/resumo/orcamento'
 // Modo exemplo do CONTRATO2 e do CONTRATO3: Guardado, Escritório que fala como gente, Lembretes, cartões e Ajudante da Feira
 // da Família Silva. Imita as funções do banco em memória. Todo número aqui é de exemplo e nada sai do aparelho.
 import type { Cartao, Contagem, CustoDoGasto, EntregaEsc, EscritorioHoje, EstadoFuncionario, EstadoItem, Estoque, Fatura, FaturaBanco, Feira, GuardadoHoje, ItemEstoque, Lembrete, LinhaDiario, NovaAplicacao, NovoLembrete, OpcaoPergunta, PerguntaEsc, RelatorioEsc, ResumoHoje } from './tipos'
@@ -351,12 +352,10 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
 
 /** E3 (conserto 3): o Contador usa o mesmo número do placar do casal (antes dizia "sobram R$ 5.002" contra o placar de R$ 2.103). */
 function contadorDoMes(r: ReturnType<Mundo['resumo']>, sobra: number): EntregaEsc {
-  const p = r.placar_casal
-  if (p && p.length > 1) {
-    const passam = p.filter(x => x.fecha > x.limite + 0.005)
-    const juntos = centavos(p.reduce((t, x) => t + x.limite - x.fecha, 0))
-    if (passam.length) return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, ${passam.map(x => `${x.nome} passa ${rs(centavos(x.fecha - x.limite))}`).join(' e ')} do combinado. Isso sai do mês que vem.`, numero: centavos(passam.reduce((t, x) => t + x.fecha - x.limite, 0)) }
-    return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, juntos vocês fecham com ${rs(juntos)} de sobra.`, numero: juntos }
+  const p = projecaoCasal(r.placar_casal)
+  if (p) {
+    if (p.passam.length) return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, ${p.passam.map(x => `${x.nome} passa ${rs(x.excessoPrevisto)}`).join(' e ')} do combinado. Isso sai do mês que vem.`, numero: p.excessoTotal }
+    return { funcionario: 'contador', resumo: `Conferi o mês: se continuar assim, juntos vocês fecham com ${rs(p.sobra)} de sobra.`, numero: p.sobra }
   }
   return { funcionario: 'contador', resumo: sobra >= 0 ? `Conferi o mês: sobram ${rs(sobra)} até o fim${r.colchao ? ', já sem contar a reserva' : ''}.` : `Conferi o mês: faltam ${rs(-sobra)} para não mexer na reserva.`, numero: sobra }
 }

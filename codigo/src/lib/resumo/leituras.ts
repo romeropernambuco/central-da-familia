@@ -3,7 +3,7 @@ import { lerControleReceitas, lerFontesReceita } from '../../api/futuro'
 import { entradaDoCenario } from '../../app/useCenarioReceitas'
 import { futuro } from '../futuro'
 import { FUSO, hojeRecife, segundaDaSemana, somaDias } from '../formato'
-import { destaqueOrcamento } from './orcamento'
+import { destaqueOrcamento, disponivelHojeCasa, envelopesVisiveis, projecaoCasal } from './orcamento'
 import { totaisDoMes } from './movimentacao'
 import { totaisGuardado } from './guardado'
 import { totalImoveis } from './imoveis'
@@ -61,7 +61,13 @@ export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
   const d = destaqueOrcamento(r, f.envelopeId, hoje, FUSO)
   if (f.papel === 'pessoa' && d.escopo !== 'pessoal') throw new Error('Orçamento pessoal indisponível')
   if (!Number.isFinite(d.valor)) throw new Error('Orçamento incompleto')
-  return { valor: { unidade: 'reais' as const, valor: d.valor }, escopo: d.escopo, devendo: d.numero?.estado === 'devendo', envelope: d.meu ?? null, casa: r.envelopes.filter(e => e.casa).reduce((s, e) => s + (e.hoje ?? 0), 0) }
+  const casal = f.papel === 'casal'
+  return {
+    valor: { unidade: 'reais' as const, valor: d.valor }, escopo: d.escopo, devendo: d.numero?.estado === 'devendo', envelope: d.meu ?? null,
+    envelopes: envelopesVisiveis(r.envelopes, f), diasRestantes: r.dias_restantes,
+    casa: casal ? disponivelHojeCasa(r.envelopes) : null,
+    placar: casal && Number(hoje.slice(8)) >= 3 ? projecaoCasal(r.placar_casal) : null,
+  }
 }
 export async function lerMes(api: Api, id: string, hoje: string) {
   if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')

@@ -23,3 +23,91 @@
 .resumo-fila{margin:0 16px 12px 66px;color:var(--accent-ink)}
 @media(max-width:600px){.resumo-icone{flex-basis:32px}.resumo-informar{display:flex;width:calc(100% - 24px);margin:0 12px 12px;justify-content:center}.resumo-detalhes{padding-inline:12px}}
 @media(max-width:600px){.resumo-informar{margin-bottom:8px}.resumo-item[data-bloco="saldoConta"][data-estado="indisponivel"] .resumo-link{padding-block:6px}}
+
+.resumo-grade, .resumo-coluna { align-items: start; }
+.resumo-coluna { display: grid; gap: 12px; min-width: 0; }
+.resumo-grade { reading-flow: grid-rows; }
+.resumo-item {
+  --resumo-altura: 123px;
+  --resumo-acoes: 0px;
+  min-block-size: var(--resumo-altura);
+}
+.resumo-item[data-bloco="saldoConta"] { --resumo-altura: 136px; }
+.resumo-item[data-bloco="saldoConta"]:has(.resumo-informar) { --resumo-acoes: 56px; }
+.resumo-item[data-bloco="podeGastarHoje"] { --resumo-altura: 183px; }
+.resumo-item[data-bloco="aplicacoes"],
+.resumo-item[data-bloco="faturas"] { --resumo-altura: 139px; }
+.resumo-item[data-bloco="recebimentos"] { --resumo-altura: 157px; }
+.resumo-item[data-bloco="plano2029"] { --resumo-altura: 201px; }
+.resumo-item[data-bloco="casa"] { --resumo-altura: 141px; }
+.resumo-item[data-bloco="pendencias"] { --resumo-altura: 179px; --resumo-acoes: 56px; }
+.resumo-item[data-bloco="desejos"] { --resumo-altura: 104px; }
+.resumo-item[data-estado="carregando"] .resumo-link {
+  min-block-size: calc(var(--resumo-altura) - var(--resumo-acoes) - 2px);
+  align-items: start;
+}
+.resumo-item[data-bloco="saldoConta"] .resumo-esqueleto::after { display: none; }
+.resumo-link, .resumo-expandir { position: relative; }
+.resumo-link > *, .resumo-expandir > svg { pointer-events: none; }
+.resumo-esqueleto {
+  display: block;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.resumo-esqueleto::after {
+  content: '';
+  display: block;
+  height: 8px;
+  width: min(132px, 100%);
+  margin-top: 8px;
+  background: var(--raised);
+  border-radius: 4px;
+}
+.resumo-ritmo { min-block-size: 442px; }
+.resumo-orcamento { min-block-size: 0; }
+.resumo-orcamento h3, .resumo-orcamento h4 { margin: 0; font-size: 15px; }
+.resumo-orcamento > h3 .resumo-expandir { border-top: 0; font-weight: 650; }
+.resumo-envelopes { display: grid; gap: 10px; padding: 12px; min-width: 0; }
+.resumo-envelopes[aria-busy="true"] { min-block-size: 790px; }
+.resumo-envelopes .env { min-width: 0; overflow-wrap: anywhere; }
+.resumo-envelopes .env-h { flex-wrap: wrap; }
+.resumo-envelopes .env-destaque { border-inline-start: 3px solid var(--accent); }
+.resumo-outros, .resumo-envelopes .pes { list-style: none; padding: 0; }
+.resumo-outros { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; margin: 0; }
+.resumo-outros .env-compacto { gap: 6px; padding: 10px 12px; height: 100%; }
+.resumo-outros .env-compacto .numrow { margin: 0; }
+.resumo-envelopes .placar .pes { margin: 0; gap: 6px 16px; }
+.resumo-envelopes .placar .pes > li { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) {
+  .resumo-item[data-bloco="faturas"] { --resumo-altura: 157px; }
+  .resumo-item[data-bloco="plano2029"] { --resumo-altura: 249px; }
+  .resumo-ritmo { min-block-size: 526px; }
+}
+@media (max-width: 799px) {
+  .resumo-grade { grid-template-columns: minmax(0, 1fr); }
+  .resumo-coluna { display: contents; }
+  .resumo-grade [data-bloco="faturas"] { order: 2; }
+  .resumo-grade [data-bloco="aplicacoes"] { order: 3; }
+  .resumo-grade [data-bloco="recebimentos"] { order: 4; }
+  .resumo-grade [data-bloco="plano2029"] { order: 5; }
+}
+@media (max-width: 600px) {
+  .resumo-grade [data-bloco="podeGastarHoje"] { order: -1; }
+  .resumo-item, .resumo-item[data-bloco="casa"] { --resumo-altura: 131px; }
+  .resumo-item[data-bloco="saldoConta"] { --resumo-altura: 110px; }
+  .resumo-item[data-bloco="saldoConta"]:has(.resumo-informar) { --resumo-acoes: 52px; }
+  .resumo-item[data-bloco="saldoConta"][data-estado="carregando"] .resumo-link { padding-block: 6px; }
+  .resumo-item[data-bloco="podeGastarHoje"] { --resumo-altura: 166px; }
+  .resumo-item[data-bloco="faturas"],
+  .resumo-item[data-bloco="recebimentos"] { --resumo-altura: 140px; }
+  .resumo-item[data-bloco="aplicacoes"] { --resumo-altura: 122px; }
+  .resumo-item[data-bloco="plano2029"] { --resumo-altura: 230px; }
+  .resumo-item[data-bloco="pendencias"] { --resumo-altura: 169px; }
+  .resumo-item[data-bloco="desejos"] { --resumo-altura: 96px; }
+  .resumo-orcamento { min-block-size: 0; }
+  .resumo-outros { grid-template-columns: minmax(0, 1fr); }
+  .resumo-envelopes[aria-busy="true"] { min-block-size: 260px; }
+  .resumo-ritmo { min-block-size: 546px; }
+}

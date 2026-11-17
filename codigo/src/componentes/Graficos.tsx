@@ -82,14 +82,14 @@ export function acumuladoDoMes(gasto: number, dia: number, mes: string, porDia?:
   return out
 }
 
-export function GraficoMes({ gasto, limite, fecha, hoje, dias, porDia }: { gasto: number; limite: number; fecha: number; hoje: string; dias: number; porDia?: Record<string, number> | null }) {
+export function GraficoMes({ gasto, limite, fecha, hoje, dias, porDia, semRotulosDeValores }: { gasto: number; limite: number; fecha: number; hoje: string; dias: number; porDia?: Record<string, number> | null; semRotulosDeValores?: boolean }) {
   const dia = Math.min(dias, Number(hoje.slice(8)))
   const mes = hoje.slice(0, 7)
   const acc = acumuladoDoMes(gasto, dia, mes, porDia)
   const passa = fecha > limite + 0.005
   const naProjecao = (k: number) => (k <= dia ? acc[k - 1] : gasto + ((fecha - gasto) * (k - dia)) / Math.max(1, dias - dia))
   return (
-    <Quadro classe="graf-mes" n={dias} altura={w => (w >= 600 ? 160 : 120)} rotulo={`Gasto do mês até hoje: ${reais(gasto)} de ${reais(limite)}. Se continuar assim, fecha em ${reais(fecha)}${passa ? `, passa ${reais(fecha - limite)}` : ''}.`}
+    <Quadro classe="graf-mes" n={dias} altura={w => (w >= 600 ? 160 : 120)} rotulo={semRotulosDeValores ? 'Gasto acumulado e projeção até o fim do mês.' : `Gasto do mês até hoje: ${reais(gasto)} de ${reais(limite)}. Se continuar assim, fecha em ${reais(fecha)}${passa ? `, passa ${reais(fecha - limite)}` : ''}.`}
       leitura={i => i == null ? <span className="graf-dica">Toque na linha para ver cada dia</span>
         : i + 1 <= dia ? <span>Dia {i + 1}: já saíram <b>{reais(naProjecao(i + 1))}</b></span>
         : <span>Dia {i + 1}: se continuar assim, <b>{reais(naProjecao(i + 1))}</b></span>}
@@ -103,13 +103,13 @@ export function GraficoMes({ gasto, limite, fecha, hoje, dias, porDia }: { gasto
         const xc = xh + (xf - xh) * t, yc = yh + (yf - yh) * t
         return <>
           <line x1={x(1)} x2={xf} y1={yt} y2={yt} className="g-teto" />
-          <text x={x(1)} y={yt - 6} className="g-rot">combinado {reais(limite)}</text>
+          <text x={x(1)} y={yt - 6} className="g-rot">combinado{semRotulosDeValores ? '' : ' ' + reais(limite)}</text>
           <polyline points={cheia} className="g-cheia" />
           {dia < dias && <line x1={xh} y1={yh} x2={xc} y2={yc} className="g-pont" />}
           {passa && <line x1={xc} y1={yc} x2={xf} y2={yf} className="g-pont acima" />}
           {dia < dias && <circle cx={xf} cy={yf} r={4} className={'g-fim' + (passa ? ' acima' : '')} />}
           <circle cx={xh} cy={yh} r={4} className="g-hoje" />
-          {dia < dias && <text x={xf - 8} y={passa ? yf - 8 : yf + 16} textAnchor="end" className={'g-rot' + (passa ? ' acima' : '')}>{reais(fecha)}</text>}
+          {dia < dias && !semRotulosDeValores && <text x={xf - 8} y={passa ? yf - 8 : yf + 16} textAnchor="end" className={'g-rot' + (passa ? ' acima' : '')}>{reais(fecha)}</text>}
           {ativo != null && <line x1={x(ativo + 1)} x2={x(ativo + 1)} y1={6} y2={h - 22} className="g-mira" />}
           {ativo != null && <circle cx={x(ativo + 1)} cy={y(naProjecao(ativo + 1))} r={4} className="g-ponto" />}
           <text x={x(1)} y={h - 4} className="g-eixo">1</text>

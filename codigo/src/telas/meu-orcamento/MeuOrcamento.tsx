@@ -14,7 +14,9 @@ import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck,
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
-import { CobrirEstouro, fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
+import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
+import { CobrirEstouro } from '../../componentes/CobrirEstouro'
+import { valorPrincipalEnvelope } from '../../lib/resumo/orcamento'
 import { RitmoMes } from '../../componentes/RitmoMes'
 import { porDiaDe } from '../../lib/resumo/porDia'
 import { useConfig } from '../../app/useConfig'
@@ -97,7 +99,7 @@ export function MeuOrcamento() {
             <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
             {!meu && <p className="sub dono-linha">Orçamento de <NomeDaPessoa pessoa={{ tipo: 'membro', id: env.dono_id || `envelope:${env.id}`, nome: dono }} />: aqui é só para ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
             <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}</p>
-            <div className="numrow">{n.estado === 'devendo' ? <span className="din-warn"><Din v={n.devendo} tam="big" /></span> : <Din v={env.hoje ?? n.valor} tam="big" />}<Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
+            <div className="numrow"><Din v={valorPrincipalEnvelope(env, n)} className={n.estado === 'devendo' ? 'din-warn' : undefined} tam="big" /><Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
