@@ -1,6 +1,6 @@
 .card.agente-aba{position:relative;gap:12px;padding:16px;border-color:var(--border);min-width:0}
-.agente-aba .cena3d.mini-agente{height:112px;border-radius:var(--r-md);overflow:hidden;background:var(--sunken)}
-.agente-aba-cabecalho{gap:8px}.agente-aba-cabecalho>b{font-size:20px;letter-spacing:-.025em}
+.agente-aba .cena3d.mini-agente{height:112px;aspect-ratio:auto;min-width:0;width:100%;border-radius:var(--r-md);overflow:hidden;background:var(--sunken)}
+.agente-aba-cabecalho>b{font-size:20px;letter-spacing:-.025em}
 .agente-aba-cabecalho .agente-papel{display:flex;align-items:center;gap:8px;width:fit-content;max-width:100%;padding:6px 10px;border-radius:12px;background:var(--sunken);color:var(--ink-2);font-size:13px;line-height:1.5}
 .agente-papel .ico{flex:none;width:18px;height:18px}
 .agente-conversa{min-width:0}.agente-conversa[hidden]{display:none}
@@ -20,30 +20,32 @@
 @media(min-width:700px){.card.agente-aba{padding:20px}.agente-aba .cena3d.mini-agente{height:128px}}
 @media(prefers-reduced-motion:reduce){.agente-aba *{transition:none!important;animation:none!important}.agente-aba button:active{transform:none}}
 /* f33: a faixa e a identidade compartilham a primeira linha. A conversa cresce só ao interagir. */
-.card.agente-aba{gap:6px;padding:10px;min-width:0}
 .agente-identidade{min-width:0;position:relative;display:grid}
-.agente-identidade.com-cena{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px}
-.agente-aba .cena3d.mini-agente{height:112px;aspect-ratio:auto;min-width:0;width:100%}
-.agente-aba-cabecalho{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-width:0;overflow-wrap:anywhere}
+.agente-aba-cabecalho{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
+.agente-contexto{font-size:12px;line-height:16px}
+.agente-contexto summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline}
+.agente-acoes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}
+.agente-pergunta-resumo{font-size:14px;line-height:18px;margin:0}
+.agente-contexto summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.agente-identidade.com-cena{grid-template-columns:minmax(140px,240px) minmax(0,1fr);align-items:center;gap:8px}
+.agente-recolhido .cena3d.mini-agente{height:64px}
+@media(max-width:600px){
+.card.agente-aba{gap:6px;padding:10px}
+.agente-identidade.com-cena{grid-template-columns:repeat(2,minmax(0,1fr))}
+.agente-aba-cabecalho{gap:2px 6px}
 .agente-aba-cabecalho>b{font-size:14px;line-height:18px;letter-spacing:0}
 .agente-aba-cabecalho .agente-papel{font-size:12px;line-height:16px;padding:0;background:none;gap:4px}
 .agente-papel .ico{width:14px;height:14px}
 .agente-aba-cabecalho .agente-com,.agente-aba-cabecalho .agente-exemplo{font-size:11px;line-height:14px}
 .agente-aba .perg{padding:0;background:none}
 .agente-aba .perg-t,.agente-aba .perg>p:first-child{font-size:15px;line-height:20px;font-weight:600;text-wrap:initial;letter-spacing:0;margin:0}
-.agente-aba .perg-ops{gap:6px;margin-top:6px;display:flex;flex-wrap:wrap}
+.agente-aba .perg-ops{gap:6px;margin-top:6px}
 .agente-aba .perg-ops .btn{flex:0 1 auto;width:auto;min-width:44px;min-height:44px;padding:6px 8px;font-size:12px;line-height:16px;gap:4px}
 .agente-aba .perg-ops .btn>.ico{display:none}
-.agente-contexto{font-size:12px;line-height:16px}
-.agente-contexto summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline}
-.agente-acoes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}
 .agente-aba .agente-recolher,.agente-aba .agente-aba-divulgacao{width:auto;min-height:44px;padding:4px;font-size:12px;line-height:16px;border:0;border-radius:6px;gap:4px;flex:0 1 auto}
 .agente-aba .agente-aba-divulgacao>.ico:last-child{display:none}
-.agente-pergunta-resumo{font-size:14px;line-height:18px;margin:0}
 .agente-recolhido .agente-identidade.com-cena{grid-template-columns:80px minmax(0,1fr)}
-.agente-recolhido .cena3d.mini-agente{height:64px}
-.agente-contexto summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-@media(min-width:601px){.agente-identidade.com-cena{grid-template-columns:minmax(140px,240px) minmax(0,1fr)}.card.agente-aba{padding:12px}.agente-aba .cena3d.mini-agente{height:112px}.agente-recolhido .cena3d.mini-agente{height:64px}}
 .agente-aba .perg>p:first-child:not(.perg-t){font-size:14px;line-height:18px;font-weight:400}
+}
 .agente-contexto[open]{flex-basis:100%}
 .agente-contexto p{overflow-wrap:anywhere}

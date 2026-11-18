@@ -22,11 +22,13 @@ export async function iniciar(): Promise<void> {
 
 // app instalável: o service worker guarda a casca do app (não guarda dado de família)
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !import.meta.env.VITE_DEMO && !modoExemplo) {
-  addEventListener('load', () => {
+  const registrar = () => {
     // updateViaCache none: o navegador sempre confere se saiu versão nova do sw.js
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
       // app instalado fica aberto por dias sem recarregar: confere versão nova toda vez que volta pra frente
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}) })
     }).catch(() => {})
-  })
+  }
+  if (document.readyState === 'complete') registrar()
+  else addEventListener('load', registrar, { once: true })
 }

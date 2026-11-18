@@ -30,7 +30,7 @@ export function criarCacheModelos(
           const controller = new AbortController()
           e = { usuarios: 0, controller, promessa: Promise.resolve() }
           const entrada = e
-          e.promessa = (bytesProntos.has(nome) ? Promise.resolve(bytesProntos.get(nome)!) : buscar(base + 'modelos/escritorio/' + nome + '.glb', { signal: controller.signal })
+          e.promessa = (bytesProntos.has(nome) ? Promise.resolve(bytesProntos.get(nome)!) : buscar(base + 'modelos/escritorio/' + nome + '.glb' + versaoGlb, { signal: controller.signal })
             .then(r => { if (!r.ok) throw Error('modelo indisponível'); return r.arrayBuffer() })
             .then(bytes => { if (cache.get(nome) === entrada) bytesProntos.set(nome, bytes); return bytes }))
             .then(decodificar).then(modelo => {
@@ -64,3 +64,6 @@ export function criarCacheModelos(
   }
 }
 export const modelosEscritorio = criarCacheModelos()
+
+declare const __VERSAO_GLB__: string
+const versaoGlb = __VERSAO_GLB__ ? "?v=" + __VERSAO_GLB__ : ""

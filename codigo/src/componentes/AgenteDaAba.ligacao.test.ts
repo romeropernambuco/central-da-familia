@@ -278,7 +278,7 @@ it('ligação: propostas concorrentes no Planejamento mostram uma pergunta, com 
     await act(async () => botao(a.container, 'Depois').click())
     expect(perguntas(a.container)).toHaveLength(1)
     expect(a.container.buscar(n => n.getAttribute('data-agente') === 'tesoureiro')).toHaveLength(1)
-    await act(async () => botao(a.container, 'Confirmar recebimento').click())
+    await act(async () => botao(a.container, 'Recebi').click())
     await act(async () => botao(a.container, 'Salvar resposta').click())
     expect(ctx.api.recebimentoMudar).toHaveBeenCalledTimes(1)
     expect(ctx.api.recebimentoMudar).toHaveBeenCalledWith(ctx.familia!.id, 'r', { recebido_em: '2026-12-30', valor_recebido: 9876.54 })

@@ -1,5 +1,5 @@
 import type { ResumoFamilia } from './tipos'
-export type CamposDaFamilia = { [K in keyof ResumoFamilia]: { campo: ResumoFamilia[K]; repetir: () => void } }
+export type CamposDaFamilia = { [K in keyof ResumoFamilia]: { campo: ResumoFamilia[K] } }
 /** Composição sem estado global: cada campo já traz valor, proveniência e estado da sua fonte. */
 export function comporResumoFamilia(campos: CamposDaFamilia): ResumoFamilia {
   return {

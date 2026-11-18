@@ -24,9 +24,7 @@
 @media(max-width:600px){.resumo-icone{flex-basis:32px}.resumo-informar{display:flex;width:calc(100% - 24px);margin:0 12px 12px;justify-content:center}.resumo-detalhes{padding-inline:12px}}
 @media(max-width:600px){.resumo-informar{margin-bottom:8px}.resumo-item[data-bloco="saldoConta"][data-estado="indisponivel"] .resumo-link{padding-block:6px}}
 
-.resumo-grade, .resumo-coluna { align-items: start; }
-.resumo-coluna { display: grid; gap: 12px; min-width: 0; }
-.resumo-grade { reading-flow: grid-rows; }
+.resumo-grade { align-items: start; }
 .resumo-item {
   --resumo-altura: 123px;
   --resumo-acoes: 0px;
@@ -87,14 +85,8 @@
 }
 @media (max-width: 799px) {
   .resumo-grade { grid-template-columns: minmax(0, 1fr); }
-  .resumo-coluna { display: contents; }
-  .resumo-grade [data-bloco="faturas"] { order: 2; }
-  .resumo-grade [data-bloco="aplicacoes"] { order: 3; }
-  .resumo-grade [data-bloco="recebimentos"] { order: 4; }
-  .resumo-grade [data-bloco="plano2029"] { order: 5; }
 }
 @media (max-width: 600px) {
-  .resumo-grade [data-bloco="podeGastarHoje"] { order: -1; }
   .resumo-item, .resumo-item[data-bloco="casa"] { --resumo-altura: 131px; }
   .resumo-item[data-bloco="saldoConta"] { --resumo-altura: 110px; }
   .resumo-item[data-bloco="saldoConta"]:has(.resumo-informar) { --resumo-acoes: 52px; }

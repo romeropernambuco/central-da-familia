@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Check, Clock, Hand, Maximize2, Minus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useDestino } from '../../app/destinos'
@@ -10,7 +10,7 @@ import { Sheet } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { PerguntaCard } from '../../componentes/Pergunta'
 import { totalPendencias } from '../../lib/resumo/pendencias'
-import { FichaFuncionario } from './Ficha'
+import { Carregando } from '../../componentes/Carregando'
 import { SALAS_NOME, tentarCarregarCena } from './cenaBase'
 import type { montarEscritorioIsometrico } from './cenaIsometrica'
 import { dadosIsometricos, type DadosIsometricos } from './dadosIsometricos'
@@ -18,6 +18,8 @@ import type { SalaEquipe } from './equipe'
 import { SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometrica'
 import { useEquipeCompleta } from './useEquipe'
 import './escritorioIsometrico.css'
+
+const FichaFuncionario = lazy(() => import('./Ficha').then(m => ({ default: m.FichaFuncionario })))
 
 const ESTADO = {
   vai_comecar: { rotulo: 'Parado', icone: Minus },
@@ -71,14 +73,24 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
   tocar.current = selecionar
   const [vista, ir] = useState<VistaIsometrica>('tudo')
   const [renderizacao, renderizar] = useState<'carregando' | '3d' | 'lista'>('carregando')
+  const [visivel, marcarVisivel] = useState(() => superficie !== 'inicio' || typeof IntersectionObserver === 'undefined')
   const estados = useMemo(() => Object.fromEntries(dados.postos.map(({ funcionario: f }) => [f.id, f.estado])), [dados.postos])
   const atuais = useRef({ estados, vista })
   atuais.current = { estados, vista }
   const salas = SALAS_ISOMETRICAS.filter(s => dados.postos.some(p => p.membro.sala === s))
 
   useEffect(() => {
+    if (visivel || !comCena || !palco.current) return
+    const observador = new IntersectionObserver(entradas => {
+      if (entradas.some(entrada => entrada.isIntersecting)) marcarVisivel(true)
+    })
+    observador.observe(palco.current)
+    return () => observador.disconnect()
+  }, [comCena, visivel])
+
+  useEffect(() => {
     const el = palco.current
-    if (!comCena || !el) return
+    if (!comCena || !visivel || !el) return
     renderizar('carregando')
     if (typeof window.WebGLRenderingContext === 'undefined' ||
       new URLSearchParams(window.location?.search).has('sem3d') || /[?&]sem3d/.test(window.location?.hash || '')) {
@@ -97,7 +109,7 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
       renderizar('3d')
     }, () => renderizar('lista'))
     return () => { cancelar(); cena.current?.destruir(); cena.current = null }
-  }, [comCena, superficie])
+  }, [comCena, superficie, visivel])
   useEffect(() => { cena.current?.atualizar(estados, vista) }, [estados, vista])
 
   const listar = superficie !== 'inicio' && (superficie === 'escritorio' || !comCena || renderizacao === 'lista')
@@ -113,7 +125,8 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
           {salas.map(s => <button key={s} type="button" aria-pressed={vista === s} onClick={() => ir(s)}>{SALAS_NOME[s]}</button>)}
         </div>}
         <div className="iso-palco" ref={palco} data-renderizacao={renderizacao} aria-describedby={descricao}>
-          {renderizacao === 'carregando' && <p className="iso-aviso" role="status">Abrindo o escritório…</p>}
+          {!visivel ? <p className="iso-aviso">Escritório da família</p>
+            : renderizacao === 'carregando' && <p className="iso-aviso" role="status">Abrindo o escritório…</p>}
           {renderizacao === 'lista' && <p className="iso-aviso" role="status">{superficie === 'inicio' ? 'Abra o escritório para ver a lista da equipe.' : 'A equipe está disponível na lista abaixo.'}</p>}
           <div className="iso-etiquetas" hidden={renderizacao !== '3d'}>
             {salas.map(s => <span key={s} className="iso-placa" aria-hidden="true" hidden={vista !== 'tudo' && vista !== s}
@@ -194,7 +207,7 @@ function EscritorioAutorizado({ superficie, comCena }: { superficie: 'inicio' | 
       <div className="iso-expandido"><PainelIsometrico dados={dados} superficie="folha" comCena={comCena} selecionar={tocar} /></div>
     </Sheet>}
     {aberto && (papel === 'casal' && (aberto.membro.id !== 'analista' || sessao?.dono)
-      ? <FichaFuncionario key={aberto.membro.id} f={aberto.funcionario} e={eFicha} responder={responder} fechar={fechar} perguntaInicial={selecionado?.pergunta} omitirNumeros={aberto.funcionario.semDado} />
+      ? <Suspense fallback={<Carregando />}><FichaFuncionario key={aberto.membro.id} f={aberto.funcionario} e={eFicha} responder={responder} fechar={fechar} perguntaInicial={selecionado?.pergunta} omitirNumeros={aberto.funcionario.semDado} /></Suspense>
       : <Sheet titulo={aberto.membro.nome} fechar={fechar} lado>
           {tarefa ? <PerguntaCard key={tarefa.pergunta.id} p={tarefa.pergunta} quem={aberto.membro.nome} responder={responder} semQuem />
             : <p>{aberto.funcionario.semDado ? 'Ainda sem dado. ' : ''}{aberto.membro.papel}</p>}

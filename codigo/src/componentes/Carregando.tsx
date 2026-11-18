@@ -1,5 +1,6 @@
 import './apoio-f32.css'
-import { EstadoVazio } from './EstadoVazio'
+import { EstadoVazioVisual } from './EstadoVazioVisual'
+import { Erro } from './ilustracoes/figuras'
 import { Component, type ReactNode } from 'react'
 import { textoDaFalha } from '../falha'
 import { Marca } from './Marca'
@@ -15,6 +16,6 @@ export class ProtecaoCarga extends Component<{ children: ReactNode }, { erro: un
  render() {
   if (!this.state.erro) return this.props.children
   const falha = textoDaFalha(this.state.erro)
-  return <div className="abertura" role="alert"><EstadoVazio ilustracao="Erro" titulo={falha.titulo} frase={falha.texto} acao={{ texto: 'Tentar de novo', aoClicar: () => location.reload() }} /></div>
+  return <div className="abertura" role="alert"><EstadoVazioVisual ilustracao={<Erro />} titulo={falha.titulo} frase={falha.texto} acao={{ texto: 'Tentar de novo', aoClicar: () => location.reload() }} /></div>
  }
 }

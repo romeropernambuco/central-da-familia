@@ -19,7 +19,7 @@ import { EQUIPE } from './equipe'
 import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from './elencoPorAba'
 import { rotaPermitida, type Rota } from '../../app/rotas'
 // @ts-ignore: script JS do build.
-import { gravarSw } from '../../../scripts/sw.mjs'
+import { gravarSw, versaoDosModelos } from '../../../scripts/sw.mjs'
 
 const pasta = resolve('public/modelos/escritorio')
 const buffer = (nome: string) => { const b = readFileSync(resolve(pasta, nome + '.glb')); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) }
@@ -460,6 +460,7 @@ it('SW gerado guarda GLB sob demanda, serve offline e muda versão quando o GLB 
     writeFileSync(resolve(temporario, 'index.html'), 'casca')
     writeFileSync(resolve(temporario, 'assets/modelosEscritorio-teste.js'), 'loader tardio')
     const arquivo = resolve(temporario, 'modelos/escritorio/desk.glb'); writeFileSync(arquivo, 'modelo v1')
+    const modeloV1 = versaoDosModelos(resolve(temporario, 'modelos'))
     const v1 = gravarSw(temporario, resolve('src/sw.modelo.js')).versao
     const fonte = readFileSync(resolve(temporario, 'sw.js'), 'utf8')
     expect(fonte.match(/const ARQUIVOS = (.+)/)?.[1]).not.toContain('desk.glb')
@@ -468,13 +469,15 @@ it('SW gerado guarda GLB sob demanda, serve offline e muda versão quando o GLB 
     let offline = false, chamadas = 0
     const resposta = () => ({ ok: true, type: 'basic', clone: resposta, corpo: 'GLB local' })
     const rede = async () => { chamadas++; if (offline) throw Error('offline'); return resposta() }
-    const caches = { open: async () => ({ addAll: async () => {}, put: async (req: any, r: any) => { dados.set(req.url, r) } }), match: async (req: any) => dados.get(req.url) }
+    const caches = { open: async () => ({ addAll: async () => {}, put: async (req: any, r: any) => { dados.set(req.url, r) }, match: async (req: any) => dados.get(req.url) }) }
     const self = { location: { href: raiz + 'sw.js' }, addEventListener: (nome: string, fn: any) => { ouvintes[nome] = fn } }
     new Function('self', 'caches', 'fetch', 'URL', fonte)(self, caches, rede, URL)
     const requisitar = () => { let p!: Promise<any>; ouvintes.fetch({ request: { method: 'GET', mode: 'same-origin', url: raiz + 'modelos/escritorio/desk.glb' }, respondWith: (r: Promise<any>) => { p = r } }); return p }
     expect((await requisitar()).corpo).toBe('GLB local'); offline = true
     expect((await requisitar()).corpo).toBe('GLB local'); expect(chamadas).toBe(1)
-    writeFileSync(arquivo, 'modelo v2'); expect(gravarSw(temporario, resolve('src/sw.modelo.js')).versao).not.toBe(v1)
+    writeFileSync(arquivo, 'modelo v2')
+    expect(versaoDosModelos(resolve(temporario, 'modelos'))).not.toBe(modeloV1)
+    expect(gravarSw(temporario, resolve('src/sw.modelo.js')).versao).not.toBe(v1)
   } finally { rmSync(temporario, { recursive: true }) }
 })
 

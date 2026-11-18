@@ -8,7 +8,7 @@ import { useEscritorio } from '../../app/useDados2'
 import { PerguntaCard } from '../../componentes/Pergunta'
 import { fraseDoDia } from '../../lib/guardado'
 import { textoPrivado } from '../../componentes/privacidade'
-import { donoDaPergunta } from './Ficha'
+import { donoDaPergunta } from './donoDaPergunta'
 import type { PerguntaEsc, FuncionarioEsc } from '../../api/tipos'
 const nomeDoDono = (p: PerguntaEsc, fs: FuncionarioEsc[]) => donoDaPergunta(p, fs)?.nome || p.funcionario
 

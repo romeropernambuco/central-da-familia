@@ -438,9 +438,3 @@ function CadContador() {
   )
   return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena', doOutro)}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
 }
-
-/** Pergunta de quem? Casa pelo id ou pelo nome do funcionário. */
-export function donoDaPergunta(p: PerguntaEsc, fs: FuncionarioEsc[]): FuncionarioEsc | undefined {
-  const k = chaveSimples(p.funcionario)
-  return fs.find(f => f.id === p.funcionario) || fs.find(f => chaveSimples(f.nome) === k || chaveSimples(f.id) === k)
-}

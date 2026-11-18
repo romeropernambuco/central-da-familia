@@ -218,3 +218,4 @@ Validação f25: TypeScript sem erros (npx tsc --noEmit); suíte completa com 66
 - Configuração da família. Expor uma revisão por chave e aceitar atualização ou criação condicional, com retorno de conflito para o app reler e refazer a mescla. A leitura fresca reduz a janela de corrida. O `upsert` atual continua podendo sobrescrever uma edição feita entre a leitura e a gravação.
 - Placar do casal. Expor projeção oficial dos envelopes pessoais do mês somente ao casal, com limite, gasto, fechamento projetado e a identificação do próprio envelope. Até lá, a UI real informa que o placar está indisponível.
 - Saldo em conta. A capacidade real continua vinculada à f_11. Confirmar a regra para cheque especial, a identificação de contas e o armazenamento da data manual de conferência antes de expor a leitura e a gravação reais.
+- f54: nenhuma alteração de banco necessária. A projeção compartilha as leituras de configuração já protegidas pela API da sessão.
