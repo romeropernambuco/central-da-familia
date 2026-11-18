@@ -1,56 +1,56 @@
-# Proposta A · Painel Calmo
+# Proposta A · Painel Calmo · versão 2
 
-O Início abre com uma leitura do dia e um caminho direto para o que precisa de atenção.  
-O valor disponível hoje e o ritmo de gasto ocupam a mesma superfície, com quatro decisões financeiras logo a seguir.  
-O escritório fica junto do orçamento, onde o trabalho dos funcionários ganha contexto antes da fila de tarefas.
+O Início reúne duas decisões na primeira leitura. **Hoje você pode gastar** orienta o dia. **Plano 2029** mostra a diferença mensal com margem e a cobertura estimada, em uma superfície de destaque própria. Aplicações, Faturas e Recebimentos vêm logo abaixo. O escritório ocupa uma faixa inteira, com a equipe em cena e a fila ao lado no desktop.
 
-## Primeira tela
+## Crítica da versão 1 e correções
 
-- **Em dois segundos.** A faixa responde se há algo esperando pela família. O maior número responde quanto a pessoa pode gastar hoje. **Ver fila** leva o foco ao cartão de tarefas.
-- **Em cinco segundos.** O gráfico contextualiza o gasto à vista, e a maquete apresenta quem está trabalhando ou precisa de atenção. Os cartões seguem uma leitura consistente de ícone, valor, significado e atalho.
-- **Depois.** Os indicadores dão contexto aos quatro valores. A fila abre com **Dinheiro em risco**, depois **Operação** e **Lembrete**. Cada linha mostra um aviso representativo, e o Escritório reúne a fila completa.
+1. **O escritório parecia um acessório.** Ganhou a largura da seção. O SVG mede 325 px no celular e 568 px no desktop do laboratório.
+2. **Dois funcionários resumiam uma equipe inteira.** A maquete exibe oito postos com pessoas à mesa e plaquinhas de nome e estado. **Equipe e estados** abre os nomes e estados por extenso, priorizando quem precisa da família.
+3. **A maquete e a fila competiam por atenção em blocos separados.** A fila fica ao lado da cena no desktop e logo abaixo dela no celular. **Ver fila** rola a prévia e leva o foco à seção de tarefas.
+4. **Os balões tinham pouco propósito.** **Total investido** abre o balão do Guardado sob demanda. A leitura padrão fica livre de valores adicionais.
+5. **O traço do mês deixava o valor final em aberto.** A legenda nomeia e formata o total acumulado à vista. No celular, **Ver valores** abre a leitura exata.
+6. **O limite era difícil de interpretar.** A linha tracejada representa o limite do envelope na mesma escala do acumulado. Quando o limite está indisponível, a leitura à vista continua e a legenda informa a ausência.
+7. **O Plano 2029 parecia intercambiável com os outros cartões.** Passou para a primeira faixa, com 36 px, fundo próprio, valor oficial com margem e régua de cobertura.
+8. **O grupo de dinheiro aparecia tarde no celular.** A grade deu lugar a três linhas de leitura com indicador à esquerda e valor à direita. O atalho do orçamento e o controle do gráfico passaram para as linhas que já tinham espaço.
+9. **Aplicações se confundia com um saldo.** O rótulo identifica o rendimento líquido realizado hoje e o minigráfico mostra o histórico diário.
+10. **Faturas dizia quanto, com pouco contexto de quando.** Mostra a próxima data informada e sinaliza a conferência pendente.
+11. **Recebimentos repetia a linguagem visual do Plano.** Um anel indica a parcela garantida do previsto, com descrição acessível e tratamento para previsão vazia.
+12. **A cena escura perdia profundidade.** Piso, parede e mesa se separam por luminosidade. Fundo, cartão e menu usam as três camadas do briefing, com sombra reservada ao claro.
+13. **O percentual herdava o espaçamento dos rótulos.** O símbolo voltou a ficar colado ao valor, em corpo menor. Valores principais e secundários seguem em Geist, 36 e 27 px, tabulares e sem quebra. Os controles e rótulos usam Inter.
+14. **A nova geometria e os balões ampliavam a superfície de privacidade.** O olho fechado desmonta os traços, a linha de limite, a barra, o anel, as legendas numéricas e o balão. A fila usa texto seguro quando fechada. O Assessor da Casa recebe apenas tarefas de casa autorizadas e seus respectivos rótulos.
 
-## Sistema visual
+## Medição da primeira dobra
 
-Geist Variable nos títulos e nos números, Inter Variable no texto e nos controles. A geometria da Geist dá presença aos valores no peso 500, e a Inter preserva o ritmo leve e aberto da Arcadia em corpo pequeno.
+O medidor da casca contou **5 ocorrências em 375 × 812** e **8 em 1280 × 800**, tanto no claro quanto no escuro. A v1 registrava 3 e 5. No celular entram o valor de hoje e os quatro cartões. O desktop acrescenta os dois valores do ritmo e o percentual do Plano. O celular guarda os dois valores do ritmo no detalhe e oferece o percentual do Plano na descrição acessível da barra. O olho fechado zera a contagem.
 
-A escala usa 12/15–18 px para rótulos e legendas, 14/18–21 para navegação e avisos, 16/20–24 para títulos de cartão e corpo, 17/23 para o título do orçamento, 22/26 para seções e 30/33 ou 36/40 para o H1. Os valores usam 36/41 e 27/31, ambos com peso 500, algarismos tabulares e sem quebra. Rótulos usam pesos 500–600 em caixa mista ou baixa. O componente compartilhado de valores preserva o sinal de percentual junto ao número, em corpo menor, caso um percentual textual entre no layout.
+O escritório começa logo após o resumo financeiro. No celular é preciso rolar para ver a cena inteira. No desktop, o título, a fila e parte da maquete já entram na primeira dobra. Em Chromium, as quatro prévias ficaram sem rolagem horizontal e todos os controles medidos na Proposta A tiveram pelo menos 44 × 44 px. Também foram conferidos o foco de **Ver fila**, a abertura do balão e a remoção da geometria financeira com o olho fechado.
 
-- **Claro.** Fundo `#f7f7fa`, cartão `#ffffff`, faixa `#efeff6`, herói `#eeedf9`, texto `#242336` e texto secundário `#55546b`. O índigo `#4849c1` é o único destaque. A navegação usa fundo `#191825` com foco em `#b4afff`, a variante clara do mesmo índigo.
-- **Escuro.** Fundo `#0c0c0b`, cartão `#131312`, menu `#1a1918`, herói `#201e2c`, texto `#f0efed` e secundário `#bcb9c6`. O mesmo destaque passa a `#b4afff`. Trilhos, divisores e fundos suaves misturam esses tokens em OKLCH.
-- **Risco.** `#9c302e` sobre `#faecec` no claro e `#ffaca8` sobre `#322121` no escuro. A pílula por extenso informa o nível em qualquer tema. A ação principal ganha uma cápsula sólida. Cartões e superfícies usam raios de 12, 8 e 6 px e sombra leve só no claro.
+## Autoavaliação do briefing · v1 → v2
 
-## Dobra e escritório
+As notas da v1 foram recalibradas nesta revisão com base no código anterior, nas medidas já registradas e na crítica do dono.
 
-A casca contou **3 números financeiros no celular** (375 × 812) e **5 no desktop** (1280 × 800), nos dois temas. No celular entram o orçamento, o Plano 2029 e Aplicações. Faturas e Recebimentos aparecem na segunda linha da grade. No desktop entram o orçamento e os quatro cartões. O olho fechado zera a medição e retira os gráficos e as barras do HTML.
-
-O escritório ocupa o segundo painel da primeira faixa no desktop e fica logo sob o orçamento no celular. A maquete destaca a sala da primeira pessoa em evidência. Os avatares de 32 px mostram os dois funcionários priorizados por estado, começando por quem precisa da família. A ilustração fica fora da leitura assistiva, e a lista adjacente apresenta nomes e estados em texto. A seta abre o Escritório completo.
-
-## Diferenças em relação ao Início atual
-
-- O orçamento diário ganha o único número de 36 px. Os quatro valores de 27 px ficam em um grupo próprio, com o dinheiro no mesmo lugar em cada cartão.
-- Saldos gerais, envelopes, desejos, imóveis e lançamentos recentes saem da leitura inicial. As abas dão acesso ao detalhe. Aplicações mostra o rendimento líquido de hoje uma única vez, e o Plano 2029 usa a falta oficial com margem.
-- A lista cede espaço a um cartão de tarefas. A faixa amarela dá lugar a um selo cinza tracejado. A navegação mantém quatro abas e **Mais**.
-
-## Autoavaliação
-
-1. **Hierarquia em dois segundos · 9/10.** Valor principal, estado e ação têm níveis distintos. No desktop o olho ainda pode ir primeiro para a maquete.
-2. **Números acima da dobra · 9/10.** O celular mostra três valores na primeira tela e os cinco cabem no limite mesmo se todos ficarem visíveis. Textos livres dos alertas podem carregar valores e exigem tratamento estruturado na integração.
-3. **Ritmo e espaçamento · 8/10.** Faixa, dupla de painéis, grade e fila formam grupos claros. A densidade aumenta na grade de duas colunas do celular.
-4. **Tipografia · 9/10.** Os dois tamanhos numéricos e o peso 500 estabelecem hierarquia. Alguns indicadores precisam do corpo de 12 px na grade compacta.
-5. **Ícones e ilustrações · 9/10.** Lucide identifica áreas, estados e destinos. As figuras do projeto explicam ausência de informação. Os avatares usam ícones de função e oferecem menos individualidade que os personagens do 3D.
-6. **Organização por tarefa · 8/10.** A faixa encaminha para a fila, o herói orienta o gasto e o Plano 2029 tem destino próprio. Responder um aviso exige abrir o Escritório.
-7. **Acessibilidade · 8/10.** Os testes calculam contraste AA, verificam nomes e dimensões mínimas dos controles e checam a semântica. Os gráficos têm rótulos, mas a leitura dos valores de cada ponto ainda depende das telas de detalhe.
-8. **Privacidade · 9/10.** O olho remove números, geometria dos gráficos, larguras dos indicadores e texto livre potencialmente financeiro. Os rótulos dos alertas continuam visíveis. O perfil de equipe recebe apenas tarefas da Casa com texto controlado.
-9. **Temas claro e escuro · 9/10.** A hierarquia passa pela diferença tonal das superfícies. O sistema escuro usa as camadas pedidas e a maquete mantém contraste pelos planos iluminados. A navegação noturna mantém pouco contraste tonal entre itens neutros e ativos.
-10. **Escritório como personagem · 8/10.** A maquete e os estados aparecem antes dos cartões financeiros. O espaço comporta dois destaques e a interação com as demais pessoas acontece depois de abrir a tela do Escritório.
+1. **Hierarquia em dois segundos · 7 → 9.** Hoje e Plano têm a mesma escala numérica, com a cor de superfície reservada ao Plano. A faixa de saúde ainda vem antes da decisão.
+2. **Números acima da dobra · 8 → 9.** Os dois tamanhos cumprem o orçamento no estado inicial, com ocorrências distintas no exemplo. Expandir o ritmo redistribui o espaço no celular.
+3. **Ritmo e espaçamento · 6 → 8.** Duas decisões no topo, três resumos curtos e uma faixa de escritório. A escala tem mais respiro no desktop.
+4. **Tipografia · 8 → 9.** A separação de títulos, valores e legendas se mantém nos quatro contextos. O status das plaquinhas em SVG ainda depende da leitura do ícone ou da lista textual no celular.
+5. **Ícones e ilustrações · 7 → 8.** Lucide marca os destinos e estados. A cena compartilhada mostra pessoas, mesas e salas. A diferenciação visual dos funcionários ainda é limitada.
+6. **Organização por tarefa · 7 → 9.** Hoje, Plano e fila têm caminhos próprios. Para agir numa tarefa individual ainda é preciso abrir a fila completa.
+7. **Acessibilidade · 8 → 9.** O salto da fila recebe foco. Os testes calculam contraste dos pares de tokens e a prévia confirma o tamanho dos alvos. Os gráficos têm rótulos e resumos, com o histórico diário completo nas telas de detalhe.
+8. **Privacidade · 8 → 9.** A máscara cobre HTML, escala dos indicadores, balão, legendas e texto livre. Para manter a fila mais informativa com o olho fechado, o produto precisa de texto público estruturado.
+9. **Temas claro e escuro · 8 → 9.** A prévia de 1280 px foi conferida nos dois temas. Os planos da cena e os estados de navegação permanecem distinguíveis.
+10. **Escritório como personagem · 4 → 8.** A equipe ganhou uma superfície de trabalho e uma relação direta com a fila. A representação atual tem oito pessoas em cena, detalhes menores no celular e um recorte simplificado da referência 3D.
 
 ## Como produtizar
 
-- **Decisão de hoje e ritmo.** Ligar `useResumoFamilia` a `resumo.podeGastarHoje`, preservar estados e metadados da consulta e usar `lib/resumo/porDia` sobre os lançamentos do envelope selecionado. O gráfico soma a série à vista de `DadosInicio` e posiciona os registros pelos dias decorridos. O destino é `orcamento?secao=orcamento`.
-- **Aplicações.** Usar `resumo.aplicacoes` para o líquido realizado de hoje e a série `por_dia_30` de `guardadoHoje` para o traço. Destino `guardado?secao=aplicacoes`. Se o produto passar a exibir aluguel, usar `resumo.imoveis` e o rótulo explícito **Aluguel líquido estimado**.
-- **Faturas.** Ligar `resumo.faturas` a `lib/resumo/faturas`, preservando total previsto, janela de vencimento e conferência com o banco. O indicador sinaliza se a lista ainda tem saldo a conferir. Destino `cartoes`.
-- **Recebimentos.** Usar `recebimentosDoMes` de `lib/resumo/recebimentos`. A barra deriva a parcela garantida sobre o total previsto; denominador zero recebe texto, sem barra. Destino `planejamento?secao=recebimentos`.
-- **Plano 2029.** Usar `resumo.plano2029` e o motor oficial do cenário garantido. A quantidade monetária usa `faltamPorMesComMargem` em centavos e a barra usa `progressao`. Só o desenho satura na meta. Destino `planejamento?secao=plano2029`.
-- **Faixa, fila e escritório.** Consumir a fila autorizada de `escritorioHoje`, suas pendências e os estados de `useEquipeCompleta`. Montar `EscritorioIsometrico` da f38 na prévia compacta e ligar os destaques às fichas. Os destinos são `escritorio` e, para o Assessor, `casa`. Em produção, aplicar a autorização nos hooks e no servidor antes da renderização, e ligar o contexto do olho à preferência real da família.
-- **O que falta no contrato.** Para abrir cada tarefa no ponto certo e manter descrições úteis com o olho fechado, a fila precisa de destino estruturado, texto público separado de detalhes privados, prazo e escopo de papel. A prévia usa a classificação do snapshot e uma lista restrita de tipos da Casa para a equipe. O contrato fornece a série à vista, a projeção e o limite, mas ainda precisa de uma trajetória histórica comparável que inclua parcelas para representar o orçamento completo em um único traço.
+- **Orçamento e ritmo.** Ligar `useResumoFamilia` a `resumo.podeGastarHoje` e `lib/resumo/porDia`, preservando unidade, estado e envelope selecionado. Manter a distinção entre série à vista e limite do envelope. Para comparar o orçamento completo, integrar uma série histórica que inclua parcelas na data de competência. Destino `orcamento?secao=orcamento`.
+- **Plano 2029.** Usar `resumo.plano2029` e o cenário oficial garantido. Exibir `faltamPorMesComMargem` em centavos convertidos para reais e `progressao` como percentual. Saturar apenas o desenho da barra. Destino `planejamento?secao=plano2029`.
+- **Aplicações, faturas e recebimentos.** Usar `resumo.aplicacoes` e `guardadoHoje.por_dia_30`, `resumo.faturas` e `lib/resumo/faturas`, e `recebimentosDoMes` de `lib/resumo/recebimentos`. Destinos `guardado?secao=aplicacoes`, `cartoes` e `planejamento?secao=recebimentos`. Se houver aluguel, usar `resumo.imoveis` com o rótulo **Aluguel líquido estimado**.
+- **Escritório e fila.** Ligar `escritorioHoje` e `useEquipeCompleta` à equipe e à fila autorizada. A tela reserva o espaço de `media` e `grande` e passa a variante à maquete. Nesta revisão, o SVG compartilhado ainda usa a geometria única, dimensionada pelo painel local. A frente compartilhada pode ativar as variantes sem reorganizar a faixa. Manter os balões no contexto do olho e ligar cada tarefa a seu destino.
+- **Papel e privacidade.** Aplicar autorização no servidor e nos hooks antes de montar a tela. Ligar o olho à preferência real e estruturar a fila por escopo, texto público, detalhe privado, prazo e destino. Reservar o selo **Exemplo** ao ambiente de demonstração.
+
+## Verificação da entrega
+
+- TypeScript sem erros e 22 testes da Proposta A aprovados. Os testes cobrem os quatro contextos, presença da equipe, hierarquia e escala do Plano, acumulado e limite do ritmo, quatro indicadores distintos, privacidade, papéis, estados vazios, alvos e contraste.
+- Para contornar o bloqueio de leitura da configuração pelo esbuild, o Vitest carregou a configuração existente via Node e executou sem gravar cache.
+- A suíte completa repetiu três falhas fora da A. A confirmação de valor no teste de rascunho e a leitura aberta da sentinela no teste de privacidade da Proposta B falharam em asserções. No teste de isolamento do laboratório, o esbuild recebeu acesso negado ao carregar `vite.config.ts`. A reexecução também apresentou oscilações de privacidade global, cujo arquivo passou os 23 testes na execução isolada.
+- O Git bloqueou `git add codigo` ao tentar criar `index.lock`. Os quatro arquivos da revisão ficaram na worktree.

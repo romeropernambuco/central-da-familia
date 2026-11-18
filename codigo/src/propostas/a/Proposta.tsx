@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode, type Ref } from 'react'
 import '@fontsource-variable/geist'
 import '@fontsource-variable/inter'
 import { enderecoDestino } from '../../app/destinos'
@@ -13,6 +13,8 @@ import './painel-calmo.css'
 
 type Dinheiro = Campo<number, 'reais' | 'centavos'>
 const semDado = 'Ainda sem dado'
+const semRegistros = 'Sem registros'
+const ausencia = (campo: { estado: string }) => campo.estado === 'vazio' ? semRegistros : semDado
 const app = '../../'
 const secoes = {
   orcamento: app + enderecoDestino({ rota: 'orcamento', secao: 'orcamento' }),
@@ -53,30 +55,31 @@ function Navegacao({ celular, casal, voltar }: { celular: boolean; casal: boolea
 }
 
 type Ponto = { data: string; valor: number }
-function Linha({ pontos, rotulo, mes = false }: { pontos: Ponto[]; rotulo: string; mes?: boolean }) {
+function Linha({ pontos, rotulo, mes = false, limite }: { pontos: Ponto[]; rotulo: string; mes?: boolean; limite?: number | null }) {
   // Escala o eixo horizontal pelos dias decorridos e inclui a origem zero no vertical.
   const dia = (data: string) => Date.parse(data + 'T00:00:00Z')
   const primeiro = dia(pontos[0].data)
   const duracao = dia(pontos[pontos.length - 1].data) - primeiro
-  const maior = Math.max(0, ...pontos.map(p => p.valor))
-  const menor = Math.min(0, ...pontos.map(p => p.valor))
+  const maior = Math.max(0, limite ?? 0, ...pontos.map(p => p.valor))
+  const menor = Math.min(0, limite ?? 0, ...pontos.map(p => p.valor))
   const largura = mes ? 400 : 92
   const altura = mes ? 72 : 26
-  const coords = pontos.map(p => {
-    const x = duracao ? 4 + (largura - 8) * (dia(p.data) - primeiro) / duracao : largura / 2
-    const y = maior === menor ? altura / 2 : 4 + (altura - 8) * (maior - p.valor) / (maior - menor)
-    return [x, y] as const
-  })
+  const yDe = (valor: number) => maior === menor ? altura / 2 : 5 + (altura - 10) * (maior - valor) / (maior - menor)
+  const coords = pontos.map(p => [
+    duracao ? 5 + (largura - 10) * (dia(p.data) - primeiro) / duracao : largura / 2,
+    yDe(p.valor),
+  ] as const)
   const [x, y] = coords[coords.length - 1]
   return <svg className={mes ? 'calmo-linha-mes' : 'calmo-mini-linha'} viewBox={`0 0 ${largura} ${altura}`}
     preserveAspectRatio="none" role="img" aria-label={rotulo} focusable="false">
-    {mes && [12, 36, 60].map(guia => <line key={guia} className="calmo-guia" x1="0" x2={largura} y1={guia} y2={guia} />)}
+    {mes && <line className="calmo-guia" x1="0" x2={largura} y1={yDe(0)} y2={yDe(0)} />}
+    {limite != null && <line className="calmo-limite" x1="0" x2={largura} y1={yDe(limite)} y2={yDe(limite)} />}
     <polyline points={coords.map(par => par.join(',')).join(' ')} />
     <circle cx={x} cy={y} r={mes ? 3.5 : 2.5} />
   </svg>
 }
 
-function Ritmo({ ritmo }: { ritmo: DadosInicio['hojePodeGastar']['ritmoMes'] }) {
+function Ritmo({ ritmo, celular }: { ritmo: DadosInicio['hojePodeGastar']['ritmoMes']; celular: boolean }) {
   const oculto = useValoresOcultos()
   const serie = ritmo.serieDiaria.valor ?? []
   const pontos: Ponto[] = []
@@ -87,78 +90,110 @@ function Ritmo({ ritmo }: { ritmo: DadosInicio['hojePodeGastar']['ritmoMes'] }) 
       pontos.push({ data: ponto.data, valor: acumulado })
     }
   }
-  return <figure className="calmo-ritmo">
-    <figcaption>Ritmo do mês <span>Gastos à vista acumulados</span></figcaption>
-    {oculto ? <div className="calmo-ritmo-vazio"><PrivacidadeOlho />Valores ocultos</div>
-      : pontos.length ? <>
-        <Linha pontos={pontos} rotulo="Gastos à vista acumulados por dia de registro" mes />
-        {pontos.length > 1 && <div className="calmo-eixo" aria-hidden="true"><span>Primeiro registro</span><span>Mais recente</span></div>}
-      </> : <div className="calmo-ritmo-vazio"><SemGastos />{semDado}</div>}
-  </figure>
+  const ultimo = pontos[pontos.length - 1]
+  const limite = ritmo.limite.valor
+  const legenda = <dl className="calmo-legenda-ritmo">
+    <div><dt className={ultimo ? 'calmo-chave-gasto' : undefined}>À vista no mês</dt><dd>{ultimo ? <Valor campo={{ estado: 'pronto', valor: ultimo.valor, unidade: 'reais', natureza: 'realizado' }} /> : ausencia(ritmo.serieDiaria)}</dd></div>
+    <div><dt className={ultimo && limite != null ? 'calmo-chave-limite' : undefined}>Limite do envelope</dt><dd>{limite == null ? ausencia(ritmo.limite) : <Valor campo={ritmo.limite} />}</dd></div>
+  </dl>
+  return <div className="calmo-ritmo">
+    <figure>
+      <figcaption>Ritmo do mês</figcaption>
+      {oculto ? <div className="calmo-ritmo-vazio"><PrivacidadeOlho />Valores ocultos</div>
+        : ultimo ? <>
+          <Linha pontos={pontos} rotulo="Gastos à vista acumulados por dia de registro" limite={limite} mes />
+          <div className="calmo-eixo">
+            <span className="calmo-chave-gasto">Gastos à vista</span>{limite != null && <span className="calmo-chave-limite">Limite do envelope</span>}
+          </div>
+        </> : <div className="calmo-ritmo-vazio"><SemGastos />{ausencia(ritmo.serieDiaria)}</div>}
+    </figure>
+    {!oculto && (celular
+      ? <details className="calmo-ritmo-detalhe"><summary className="calmo-alvo" aria-label="Ver valores do ritmo">Ver valores <Icone nome="abrir" size={14} /></summary>{legenda}</details>
+      : legenda)}
+  </div>
 }
 
-function Resumo({ titulo, descricao, icone, href, campo, indicador, Figura }: {
+function Resumo({ titulo, descricao, icone, href, campo, indicador, Figura, variante }: {
   titulo: string; descricao: string; icone: NomeIcone; href: string; campo: Dinheiro;
-  indicador: ReactNode; Figura: typeof SemGastos;
+  indicador: ReactNode; Figura: typeof SemGastos; variante: 'plano' | 'aplicacoes' | 'faturas' | 'recebimentos';
 }) {
-  return <article className="calmo-resumo">
+  const plano = variante === 'plano'
+  return <article className={`calmo-resumo calmo-resumo-${variante}`}>
     <a className="calmo-cartao-alvo calmo-alvo" href={href} aria-label={`Abrir ${titulo}`}>
       <span className="calmo-icone-quadro"><Icone nome={icone} size={19} /></span>
+      <h3>{titulo}</h3>
       <Icone nome="abrir" size={17} />
     </a>
-    <h3>{titulo}</h3>
     {campo.estado === 'pronto'
-      ? <><Valor campo={campo} className="numero-secundario" /><p>{descricao}</p><div className="calmo-indicador">{indicador}</div></>
-      : <div className="calmo-ausente"><Figura /><span>{semDado}</span></div>}
+      ? <div className="calmo-resumo-leitura"><Valor campo={campo} className={plano ? 'numero-principal' : 'numero-secundario'} /><p>{descricao}</p></div>
+      : <div className="calmo-ausente"><Figura /><span>{ausencia(campo)}</span></div>}
+    <div className="calmo-indicador">{indicador}</div>
   </article>
 }
 
-function Barra({ valor, rotulo }: { valor: number; rotulo: string }) {
+function Barra({ valor, rotulo }: { valor: number; rotulo?: string }) {
   const percentual = valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
-  return <span className="calmo-barra" role="img" aria-label={`${rotulo} · ${percentual}%`}>
+  return <span className="calmo-barra" role={rotulo ? 'img' : undefined}
+    aria-label={rotulo ? `${rotulo} · ${percentual}%` : undefined} aria-hidden={!rotulo || undefined}>
     <span style={{ inlineSize: `${Math.max(0, Math.min(100, valor))}%` }} />
   </span>
 }
 
-function Financeiro({ dados, celular }: { dados: DadosInicio; celular: boolean }) {
+const indicadorOculto = <span><Icone nome="olhoFechado" size={14} />Indicador oculto</span>
+
+function Plano({ plano, celular }: { plano: DadosInicio['plano2029']; celular: boolean }) {
   const oculto = useValoresOcultos()
-  const { aplicacoes, faturas, recebimentos, plano2029 } = dados
+  const faltam = plano.faltamPorMesComMargem.valor
+  const cobertura = plano.progressao.valor
+  const descricao = oculto || faltam == null || faltam > 0 ? 'Falta por mês, com margem'
+    : faltam < 0 ? 'Folga por mês, com margem' : 'Meta mensal com margem coberta'
+  return <Resumo variante="plano" titulo="Plano 2029" descricao={descricao}
+    icone="plano2029" href={secoes.plano} campo={plano.faltamPorMesComMargem} Figura={Plano2029}
+    indicador={oculto ? indicadorOculto : cobertura == null ? <span>Cobertura indisponível</span>
+      : <><span>Cobertura estimada da meta</span>{!celular && <Valor campo={plano.progressao} />}
+        <Barra valor={cobertura} rotulo={celular ? 'Cobertura estimada da meta' : undefined} /></>} />
+}
+
+function Anel({ garantido, previsto }: { garantido: number; previsto: number }) {
+  const parcela = 100 * garantido / previsto
+  return <svg className="calmo-anel" viewBox="0 0 28 28" role="img"
+    aria-label={`${parcela.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% da previsão garantida`}>
+    <circle cx="14" cy="14" r="10" />
+    <circle cx="14" cy="14" r="10" pathLength="100" strokeDasharray={`${Math.max(0, Math.min(100, parcela))} 100`} transform="rotate(-90 14 14)" />
+  </svg>
+}
+
+const diaMes = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' })
+
+function Financeiro({ dados }: { dados: DadosInicio }) {
+  const oculto = useValoresOcultos()
+  const { aplicacoes, faturas, recebimentos } = dados
   const previsto = recebimentos.previsto.valor
   const garantido = recebimentos.garantido.valor
-  const cobertura = plano2029.progressao.valor
   const rendimentos = aplicacoes.serie30Dias.valor
-  const indicadorOculto = <span><Icone nome="olhoFechado" size={14} />Indicador oculto</span>
-  const faltam = plano2029.faltamPorMesComMargem.valor
-  const descricaoPlano = oculto || faltam == null || faltam > 0 ? 'Falta mensal com margem'
-    : faltam < 0 ? 'Folga mensal com margem' : 'Meta mensal com margem coberta'
-  const cartaoPlano = <Resumo titulo="Plano 2029" descricao={descricaoPlano}
-    icone="plano2029" href={secoes.plano} campo={plano2029.faltamPorMesComMargem} Figura={Plano2029}
-    indicador={oculto ? indicadorOculto : cobertura == null ? semDado
-      : <><Barra valor={cobertura} rotulo="Cobertura estimada da meta" /><span>Cobertura da meta</span></>} />
-
-  return <section className="calmo-bloco-resumo" aria-label="Resumo financeiro">
-    <h2>Seu dinheiro</h2>
-    <div className="calmo-grade">
-      {celular && cartaoPlano}
-      <Resumo titulo="Aplicações" descricao="Rendeu hoje, líquido" icone="guardado" href={secoes.aplicacoes}
+  const faturasNaFila = faturas.proximas.valor ?? []
+  const vencimentos = faturasNaFila.flatMap(f => f.vencimento.valor ? [f.vencimento.valor] : []).sort()
+  const proximo = vencimentos[0]
+  return <div className="calmo-grade">
+      <Resumo variante="aplicacoes" titulo="Aplicações" descricao="Rendimento líquido hoje" icone="guardado" href={secoes.aplicacoes}
         campo={aplicacoes.rendeuHoje} Figura={SemAplicacoes}
         indicador={oculto ? indicadorOculto : rendimentos?.length
           ? <><Linha pontos={rendimentos.map(({ data, liquido }) => ({ data, valor: liquido }))} rotulo="Histórico do rendimento líquido das aplicações" /><span>Histórico diário</span></>
-          : semDado} />
-      <Resumo titulo="Faturas a vencer" descricao="Total em aberto" icone="cartoes" href={secoes.faturas}
+          : <span>Histórico indisponível</span>} />
+      <Resumo variante="faturas" titulo="Faturas a vencer" descricao="Total em aberto" icone="cartoes" href={secoes.faturas}
         campo={faturas.total} Figura={SemCartoes}
-        indicador={oculto ? indicadorOculto : faturas.proximas.estado === 'indisponivel' ? semDado
+        indicador={oculto ? indicadorOculto : faturas.proximas.estado === 'indisponivel' ? <span>Agenda indisponível</span>
           : faturas.proximas.estado === 'vazio' ? <span><Icone nome="salvo" size={14} />Sem faturas na lista</span>
-            : faturas.proximas.valor?.some(f => f.conferir) ? <span><Icone nome="pendente" size={14} />A conferir</span>
-              : <span><Icone nome="salvo" size={14} />Valores conferidos</span>} />
-      <Resumo titulo="Recebimentos" descricao="Previstos até este mês" icone="entrada" href={secoes.recebimentos}
+            : <span className="calmo-vencimento"><Icone nome="pendente" size={14} />
+              {proximo ? <>Vence <time dateTime={proximo}>{diaMes.format(new Date(proximo + 'T00:00:00Z'))}</time></> : 'Sem data de vencimento'}
+              {faturasNaFila.some(f => f.conferir) && <span className="calmo-conferencia">A conferir</span>}
+            </span>} />
+      <Resumo variante="recebimentos" titulo="Recebimentos" descricao="Previstos até este mês" icone="entrada" href={secoes.recebimentos}
         campo={recebimentos.previsto} Figura={SemRecebimentos}
-        indicador={oculto ? indicadorOculto : garantido == null || previsto == null ? semDado : previsto > 0
-          ? <><Barra valor={100 * garantido / previsto} rotulo="Parcela garantida da previsão" /><span>Parte garantida</span></>
+        indicador={oculto ? indicadorOculto : garantido == null || previsto == null ? <span>Garantia indisponível</span> : previsto > 0
+          ? <><Anel garantido={garantido} previsto={previsto} /><span>Parte garantida</span></>
           : <span>Sem previsão em aberto</span>} />
-      {!celular && cartaoPlano}
-    </div>
-  </section>
+  </div>
 }
 
 const niveis = [
@@ -211,30 +246,63 @@ const estados: Record<EstadoFuncionario, { texto: string; icone: NomeIcone; prio
   vai_comecar: { texto: 'Vai começar', icone: 'pendente', prioridade: 3 },
 }
 
-function Escritorio({ funcionarios }: { funcionarios: DadosInicio['funcionarios'] }) {
-  const destaque = [...(funcionarios.valor ?? [])]
-    .filter(f => ['caixa', 'casa', 'cartoes', 'patrimonio'].includes(f.sala))
+function Escritorio({ dados, celular, children }: { dados: DadosInicio; celular: boolean; children: ReactNode }) {
+  const { funcionarios, aplicacoes } = dados
+  const oculto = useValoresOcultos()
+  const [mostrarTotal, setMostrarTotal] = useState(false)
+  const equipe = [...(funcionarios.valor ?? [])]
     .sort((a, b) => (a.estadoHoje.valor ? estados[a.estadoHoje.valor].prioridade : Infinity)
       - (b.estadoHoje.valor ? estados[b.estadoHoje.valor].prioridade : Infinity))
-    .slice(0, 2)
-  return <section className="calmo-escritorio" aria-label="Escritório">
+  const destaque = equipe.find(f => f.estadoHoje.valor === 'precisa_de_voce'
+    && ['caixa', 'casa', 'cartoes', 'patrimonio'].includes(f.sala))
+  const podeMostrarTotal = !oculto && aplicacoes.total.estado === 'pronto' && equipe.some(f => f.id === 'guardado')
+  // A frente compartilhada adiciona variante. A prop extra é ignorada pela versão atual.
+  const visual = { variante: celular ? 'media' : 'grande' } as const
+  return <section className="calmo-escritorio" aria-label="Escritório da família">
     <div className="calmo-escritorio-topo">
-      <div><h2>Escritório</h2><p>Equipe de hoje</p></div>
-      <a className="calmo-seta calmo-alvo" href={secoes.escritorio} aria-label="Abrir escritório"><Icone nome="abrir" size={19} /></a>
+      <h2><Icone nome="escritorio" size={21} /> Escritório da família</h2>
     </div>
-    {funcionarios.estado === 'pronto' ? <div className="calmo-escritorio-corpo">
-      <ul className="calmo-equipe">
-        {destaque.map(f => {
-          const estado = f.estadoHoje.valor && estados[f.estadoHoje.valor]
-          const icone = Object.prototype.hasOwnProperty.call(icones, f.id) ? f.id as NomeIcone : 'pessoa'
-          return <li key={f.id}>
-            <span className="calmo-avatar"><Icone nome={icone} size={17} /></span>
-            <div><strong>{f.curto}</strong><span>{estado ? estado.texto : semDado}</span></div>
-          </li>
-        })}
-      </ul>
-      <div className="calmo-maquete" aria-hidden="true"><EscritorioMaquete funcionarios={funcionarios} salaDestacada={destaque[0]?.sala} /></div>
-    </div> : <div className="calmo-estado"><CasaVazia /><p>{semDado}</p></div>}
+    <div className="calmo-escritorio-corpo">
+      <div className="calmo-equipe-painel">
+        {funcionarios.estado === 'pronto' ? <>
+          <div className="calmo-maquete" data-calmo-maquete={visual.variante}>
+            <EscritorioMaquete {...visual} funcionarios={funcionarios} salaDestacada={destaque?.sala} mostrarPlaquinhas
+              valores={podeMostrarTotal && mostrarTotal ? { guardado: aplicacoes.total } : undefined} />
+          </div>
+          <div className="calmo-equipe-controles">
+            <details>
+              <summary className="calmo-alvo"><Icone nome="assessor" size={16} /> Equipe e estados</summary>
+              <ul className="calmo-equipe">
+                {equipe.map(f => {
+                  const estado = f.estadoHoje.valor && estados[f.estadoHoje.valor]
+                  const icone = Object.prototype.hasOwnProperty.call(icones, f.id) ? f.id as NomeIcone : 'pessoa'
+                  return <li key={f.id}>
+                    <span className="calmo-avatar"><Icone nome={icone} size={17} /></span>
+                    <div><strong>{f.curto}</strong><span>{estado ? estado.texto : semDado}</span></div>
+                  </li>
+                })}
+              </ul>
+            </details>
+            {podeMostrarTotal && <button type="button" className="calmo-alvo" aria-pressed={mostrarTotal}
+              onClick={() => setMostrarTotal(!mostrarTotal)}><Icone nome="guardado" size={16} /> Total investido</button>}
+          </div>
+        </> : <div className="calmo-estado"><CasaVazia /><p>{ausencia(funcionarios)}</p></div>}
+      </div>
+      {children}
+    </div>
+  </section>
+}
+
+function Fila({ dados, assessor, casal, alvo }: {
+  dados: DadosInicio; assessor: boolean; casal: boolean; alvo: Ref<HTMLElement>;
+}) {
+  const titulo = useId()
+  return <section className="calmo-alertas" ref={alvo} tabIndex={-1} aria-labelledby={titulo}>
+    {casal ? <h3 id={titulo}>Precisa de você</h3> : <h2 id={titulo}>Precisa de você</h2>}
+    <Alertas alertas={dados.alertas} assessor={assessor} />
+    {(casal || assessor) && <a className="calmo-texto-link calmo-alvo" href={assessor ? secoes.casa : secoes.escritorio}>
+      {assessor ? 'Abrir Casa' : 'Abrir fila completa'} <Icone nome="abrir" size={17} />
+    </a>}
   </section>
 }
 
@@ -242,7 +310,6 @@ export function Proposta({ dados, tema, dispositivo, oculto = false }: PropsProp
   const ocultoNaCasca = useValoresOcultos()
   const inicio = useRef<HTMLHeadingElement>(null)
   const alvo = useRef<HTMLElement>(null)
-  const tituloFila = useId()
   const celular = dispositivo === 'celular'
   const papel = dados.pessoa.papel.valor
   const assessor = papel === 'equipe'
@@ -255,6 +322,7 @@ export function Proposta({ dados, tema, dispositivo, oculto = false }: PropsProp
   const saudacao = dados.saudacao.valor ?? 'Olá'
   const nome = dados.pessoa.nome.valor?.trim().split(/\s+/)[0]
   const navegacao = <Navegacao celular={celular} casal={casal} voltar={() => inicio.current?.focus()} />
+  const fila = <Fila dados={dados} assessor={assessor} casal={casal} alvo={alvo} />
 
   return <PrivacidadePropostas.Provider value={ocultoNaCasca || oculto}>
     <div className="calmo" data-proposta="a" data-calmo-tema={tema} data-calmo-dispositivo={dispositivo}>
@@ -278,32 +346,25 @@ export function Proposta({ dados, tema, dispositivo, oculto = false }: PropsProp
           <p>{saudacao}{nome ? `, ${nome}` : ''}.</p>
         </div>
 
-        {!assessor && <div className={`calmo-primeira ${casal ? 'calmo-com-escritorio' : ''}`}>
-          <section className="calmo-heroi" aria-label="Orçamento de hoje">
-            <div>
-              <span className="calmo-icone-quadro"><Icone nome="orcamento" size={20} /></span>
-              <h2>Hoje você pode gastar</h2>
-              {dados.hojePodeGastar.valor.estado === 'pronto'
-                ? <Valor campo={dados.hojePodeGastar.valor} className="numero-principal" />
-                : <p className="calmo-sem-valor">{semDado}</p>}
-              <a className="calmo-texto-link calmo-alvo" href={secoes.orcamento}>Meu orçamento <Icone nome="abrir" size={16} /></a>
-            </div>
-            <Ritmo ritmo={dados.hojePodeGastar.ritmoMes} />
-          </section>
-          {casal && <Escritorio funcionarios={dados.funcionarios} />}
-        </div>}
-
-        {casal && <Financeiro dados={dados} celular={celular} />}
-
-        <section className="calmo-alertas" ref={alvo} tabIndex={-1} aria-labelledby={tituloFila}>
-          <div className="calmo-alertas-topo">
-            <h2 id={tituloFila}>Precisa de você</h2>
-            {(casal || assessor) && <a className="calmo-texto-link calmo-alvo" href={assessor ? secoes.casa : secoes.escritorio}>
-              {assessor ? 'Abrir Casa' : 'Abrir fila no escritório'} <Icone nome="abrir" size={17} />
-            </a>}
+        {!assessor && <section className="calmo-bloco-resumo" aria-label="Seu dinheiro">
+          <h2>Seu dinheiro</h2>
+          <div className={`calmo-primeira ${casal ? 'calmo-com-plano' : ''}`}>
+            <section className="calmo-heroi" aria-label="Orçamento de hoje">
+              <div className="calmo-orcamento">
+                <h3>Hoje você pode gastar</h3>
+                {dados.hojePodeGastar.valor.estado === 'pronto'
+                  ? <Valor campo={dados.hojePodeGastar.valor} className="numero-principal" />
+                  : <p className="calmo-sem-valor">{ausencia(dados.hojePodeGastar.valor)}</p>}
+                <a className="calmo-texto-link calmo-alvo" href={secoes.orcamento}>Meu orçamento <Icone nome="abrir" size={16} /></a>
+              </div>
+              <Ritmo ritmo={dados.hojePodeGastar.ritmoMes} celular={celular} />
+            </section>
+            {casal && <Plano plano={dados.plano2029} celular={celular} />}
           </div>
-          <Alertas alertas={dados.alertas} assessor={assessor} />
-        </section>
+          {casal && <Financeiro dados={dados} />}
+        </section>}
+
+        {casal ? <Escritorio dados={dados} celular={celular}>{fila}</Escritorio> : fila}
       </div>
       {celular && !assessor && navegacao}
     </div>
