@@ -5,9 +5,21 @@ export function situacaoCasa(e: EscritorioHoje, feiras: Feira[], estoque: Estoqu
   const perguntas = e.precisa_de_voce
   const contagem = estoque.contagens.filter(c => c.semana === semana).sort((a, b) => b.data.localeCompare(a.data))[0]
   const ativos = new Set(estoque.itens.filter(i => i.ativo).map(i => i.id))
-  return { feira: perguntas.some(p => p.id.startsWith('feira_feita:')),
+  const feiraConfirmada = feiras.some(f => f.semana === semana)
+  const cobrarFeira = perguntas.some(p => p.id === `feira_feita:${semana}`)
+  const cobrarEstoque = perguntas.some(p => p.id === `estoque:${semana}`)
+  return { feira: cobrarFeira, estoque: ativos.size > 0 && !contagem,
+    estadoFeira: feiraConfirmada ? 'confirmada' as const : 'nao_iniciada' as const,
+    cobrarEstoque,
     nota: feiras.filter(f => !f.tem_nota && !f.sem_nota_motivo).length,
-    estoque: ativos.size > 0 && !contagem,
-    falta: !contagem && ativos.size > 0 ? null : contagem?.itens.filter(i => ativos.has(i.item_id) && i.estado === 'acabou').length ?? 0,
+    estadoEstoque: !ativos.size ? 'sem_cadastro' as const : contagem ? 'confirmada' as const : 'nao_iniciada' as const,
+    falta: contagem ? contagem.itens.filter(i => ativos.has(i.item_id) && i.estado === 'acabou').length : null,
     tarefa: perguntas.find(p => /^(feira_feita|feira_nota|estoque):/.test(p.id))?.id }
+}
+
+export function rotulosCasa(c: ReturnType<typeof situacaoCasa>) {
+  return {
+    feira: c.estadoFeira === 'confirmada' ? 'Feira em dia' : c.feira ? 'Feira ainda sem confirmação · cobrança pendente' : 'Feira: verificação ainda não iniciada',
+    estoque: c.estadoEstoque === 'confirmada' ? 'Estoque conferido' : c.estadoEstoque === 'sem_cadastro' ? 'Estoque sem cadastro' : c.cobrarEstoque ? 'Estoque: contagem pendente' : 'Estoque: verificação ainda não iniciada',
+  }
 }

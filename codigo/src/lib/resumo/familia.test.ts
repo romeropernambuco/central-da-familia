@@ -2,11 +2,15 @@ import { act, createElement, Fragment, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, it, vi } from 'vitest'
-import { ContextoApp, type Ctx } from '../../app/contexto'
+import { ContextoApp, Provedor, useApp, type Ctx } from '../../app/contexto'
 import { definirEscopoLeitura, invalidarDados, lerCompartilhado } from '../../app/invalidacao'
 import { protegerApi } from '../../api/protegida'
 import type { Api, FamiliaMinha, ResumoHoje } from '../../api/tipos'
 import { ResumoFamilia, ResumoApresentacao, itensResumo } from '../../telas/inicio/ResumoFamilia'
+import { NumerosAba } from '../../telas/escritorio/NumerosAba'
+import { numerosDaAba } from '../../telas/escritorio/numeros'
+import { Guardado } from '../../telas/guardado/Guardado'
+import { normalizaLancamento, normalizaResumo } from '../../api/normaliza'
 import { useResumoFamilia } from '../../app/useResumoFamilia'
 import { saldoDasContas } from './saldos'
 import { totaisRecebimentos, recebimentosDoMes } from './recebimentos'
@@ -26,7 +30,7 @@ import type { ResumoFamilia as Resumo } from './tipos'
 import { normalizaGuardado } from '../../api/normaliza2'
 import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-teste'
 import { ConferenciaCasa, ConferenciaFaturas } from '../../componentes/ConferenciasResumo'
-import { SaldoConta } from '../../telas/planejamento/SaldoConta'
+import { InformarSaldo, SaldoConta } from '../../telas/planejamento/SaldoConta'
 import { MeuOrcamento } from '../../telas/meu-orcamento/MeuOrcamento'
 import { Inicio } from '../../telas/inicio/Inicio'
 import { Casa } from '../../telas/casa/Casa'
@@ -78,14 +82,16 @@ function mundo(n = 1) {
   definirEscopoLeitura(api, 'sessao-ficticia', familia)
   return { api, interna, familia, resumo, config, recebimentos, gastos, g, e, fs, banco, estoque, feiras, imoveis, desejos, contas, entrada }
 }
-async function montar(m = mundo(), origem?: ReactNode, papel = 'casal', largura?: number) {
+async function montar(m = mundo(), origem?: ReactNode, papel = 'casal', largura?: number, storage = { getItem: () => null, setItem() {}, removeItem() {} }) {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
   const doc = new DocumentoTeste()
   Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] }, scrollIntoView() {} })
   Object.assign(doc.documentElement, { dataset: {} })
   vi.stubGlobal('document', doc); vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
   if (largura !== undefined) window.matchMedia = consulta => Object.assign(new EventTarget(), { matches: largura >= Number(consulta.match(/\d+/)?.[0]) }) as MediaQueryList
-  vi.stubGlobal('localStorage', { getItem: () => null, setItem() {} }); vi.stubGlobal('Element', NoTeste)
+  vi.stubGlobal('localStorage', storage);
+  vi.stubGlobal('addEventListener', window.addEventListener.bind(window)); vi.stubGlobal('removeEventListener', window.removeEventListener.bind(window))
+  Object.assign(doc.body, { classList: { toggle() {}, remove() {} } }); vi.stubGlobal('Element', NoTeste)
   vi.stubGlobal('location', { hash: '#/inicio' }); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
   const box = doc.createElement('div'); doc.body.appendChild(box)
@@ -109,12 +115,12 @@ it.each([1, 2, 3])('cada bloco usa o selector oficial, cenário %s', async n => 
   expect(a.r.imoveis.valor?.valor.valor).toBe(totalImoveis(m.imoveis))
   expect(a.r.faturas.valor).toEqual(faturasAConferir(m.fs(), m.banco(), hoje, '2026-12-17'))
   expect(a.r.recebimentos.valor).toEqual(recebimentosDoMes(m.recebimentos(), m.config.fontes_receita, {}, mes))
-  expect(a.r.movimentacaoMes.valor).toEqual({ unidade: 'reais', ...totaisDoMes(mes, hoje, m.gastos(), m.recebimentos(), m.config.entradas) })
+  expect(a.r.movimentacaoMes.valor).toEqual({ unidade: 'reais', ...totaisDoMes(mes, hoje, m.gastos(), m.recebimentos(), m.config.entradas, m.config.fontes_receita, {}) })
   expect(a.r.casa.valor).toEqual(situacaoCasa(m.e() as any, m.feiras(), m.estoque(), '2026-11-16'))
   expect(a.r.desejos.valor).toEqual(totaisDesejos(m.desejos))
   expect(a.r.pendencias.valor?.total).toBe(totalPendencias(m.e() as any))
   const ent = entradaDoCenario({ entrada: m.entrada(), confirmar: [] }, 'garantido')!
-  expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(ent), ent) })
+  expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(ent), ent), confirmar: [], conferenciaAntiga: false })
   expect(a.r.saldoConta.conferidoEm).toBe('2026-11-16')
   expect(a.r.aplicacoes.conferidoEm).toBeNull()
   expect(a.bloco('saldoConta').textContent).toContain('Conferido em')
@@ -405,12 +411,12 @@ it.each(['2026-11-17', '2025-12-31', '2026-01-01T00:30:00Z'])('f36: data de conf
 it.each([0, 1, 2])('f36: plural compartilhado e texto curto nos blocos, quantidade %s', async n => {
   const a = await montar()
   const r = structuredClone(a.r)
-  if (r.casa.valor) Object.assign(r.casa.valor, { feira: n === 1, nota: n, estoque: true })
+  if (r.casa.valor) Object.assign(r.casa.valor, { estadoFeira: n === 1 ? 'nao_iniciada' : 'confirmada', feira: n === 1, nota: n, estadoEstoque: 'nao_iniciada', cobrarEstoque: true })
   if (r.recebimentos.valor) r.recebimentos.valor.atrasados = n
   if (r.desejos.valor) Object.assign(r.desejos.valor, { pensando: 2, combinados: n })
   const itens = itensResumo(r, hoje, false)
   expect(plural(n, 'nota pendente', 'notas pendentes')).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}`)
-  expect(itens.find(i => i.chave === 'casa')!.numero).toBe(n === 1 ? 'Feira ainda sem confirmação' : 'Feira em dia')
+  expect(itens.find(i => i.chave === 'casa')!.numero).toBe(n === 1 ? 'Feira ainda sem confirmação · cobrança pendente' : 'Feira em dia')
   expect(itens.find(i => i.chave === 'casa')!.frase).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}\nEstoque: contagem pendente`)
   expect(itens.find(i => i.chave === 'recebimentos')!.frase).toContain(`${n} ${n === 1 ? 'atrasado.' : 'atrasados.'}`)
   expect(itens.find(i => i.chave === 'desejos')!.numero).toBe(`2 pensando · ${n} ${n === 1 ? 'combinado' : 'combinados'}`)
@@ -562,7 +568,7 @@ it.each([
   await act(async () => { await acao(m.api) })
   expect(a.r[chave].estado).toBe('pronto')
   expect(a.r[chave].valor).not.toEqual(antes)
-  if (chave === 'saldoConta') expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(m.entrada()), m.entrada()) })
+  if (chave === 'saldoConta') expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(m.entrada()), m.entrada()), confirmar: [], conferenciaAntiga: false })
   // Consulta concorrente de outra superfície usa o mesmo cache da borda.
   const extra = await montar(m, origens.find(([k]) => k === chave)![1]())
   expect(extra.r[chave].valor).toEqual(a.r[chave].valor)
@@ -600,6 +606,7 @@ it('foco e rolagem aguardam entidade de uma seção carregada depois (lazy)', ()
   const alvo = { ...outro, dataset: { secao: 'fatura', entidade: 'cartao-2', periodo: mes }, focus: vi.fn(), scrollIntoView: vi.fn() }
   elementos.push(alvo); mudou()
   expect(alvo.focus).toHaveBeenCalledWith({ preventScroll: true }); expect(alvo.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' })
+  expect(disconnect).toHaveBeenCalledOnce()
   mudou(); expect(alvo.focus).toHaveBeenCalledTimes(1)
   parar(); expect(disconnect).toHaveBeenCalledOnce()
 })
@@ -652,6 +659,204 @@ it('saldo no exemplo percorre formulário, estado, resumo e motor; desfazer rest
     expect(depois).toBe(antes)
     expect(a.r.saldoConta.estado).toBe('indisponivel')
   } finally { await act(async () => { await apiExemplo.backupRestaurar!(f.id, snapshot) }) }
+})
+
+it('f53.2: confirmar a recorrência de novembro transfere R$ 500 nas três superfícies', async () => {
+  const m = mundo()
+  m.config.entradas = []
+  m.config.receitas_controle = { r: { valor: 50000 } }
+  const a = await montar(m, createElement(Fragment, null, createElement(ResumoDoMes), createElement(NumerosAba, { id: 'contador', fechar() {} })))
+  await act(async () => { await vi.dynamicImportSettled() })
+  const ficha = () => a.origem().buscar(x => x.getAttribute('aria-label') === 'Resumo da aba')[0].textContent
+  expect(ficha()).toContain('Entradas certas pendentesR$500')
+  expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 0, previsto: 500 })
+  expect(a.origem().textContent).toContain('Entradas certas pendentes: R$500')
+  expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({ nome: 'Entradas certas pendentes', valor: 500 })
+  await act(async () => m.api.salvarConfig(m.familia.id, 'receitas_controle', { r: { valor: 50000, recebidas: { [mes]: { valor: 50000, data: hoje } } } }))
+  expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 500, previsto: 0 })
+  expect(a.bloco('movimentacaoMes').textContent).toMatch(/Entrou R\$\s*500/)
+  expect(a.origem().textContent).toContain('EntrouR$500')
+  expect(a.origem().textContent).toContain('Entradas certas pendentes: R$0')
+  expect(ficha()).toContain('Entrou no mêsR$500')
+  expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({ nome: 'Entrou no mês', valor: 500 })
+})
+
+it('f53.5: o cache conserva a evidência de valores brutos incompletos', async () => {
+  const m = mundo()
+  vi.mocked(m.interna.resumoHoje).mockResolvedValue(normalizaResumo({}))
+  vi.mocked(m.interna.lancamentos).mockResolvedValue([normalizaLancamento({ id: 'g', data: hoje })])
+  vi.mocked(m.interna.guardadoHoje).mockResolvedValue(normalizaGuardado({
+    total: 'inválido', rendeu_hoje_liquido: 0, rendeu_mes_liquido: 0, rendeu_desde_inicio_liquido: 0, aplicacoes: [],
+  }))
+  const a = await montar(m)
+  for (const k of ['podeGastarHoje', 'movimentacaoMes', 'aplicacoes'] as const) {
+    expect(a.r[k]).toMatchObject({ estado: 'erro', valor: null })
+    expect(a.bloco(k).textContent).not.toMatch(/R\$/)
+  }
+})
+
+it('f53.6 e 9: real explicita placar indisponível e o excesso tem título de dívida', async () => {
+  const m = mundo()
+  const r = m.resumo()
+  Object.assign(r.envelopes[0], { gasto_mes: 300, livre: -200, hoje: -200 })
+  vi.mocked(m.interna.resumoHoje).mockResolvedValue(r)
+  const a = await montar(m, undefined, 'casal', 1000)
+  expect(a.bloco('podeGastarHoje').textContent).toContain('Este mês fica devendo')
+  expect(a.bloco('podeGastarHoje').textContent).toMatch(/R\$\s*200/)
+  expect(a.bloco('podeGastarHoje').textContent).not.toContain('Hoje você pode gastar')
+  expect(a.box.textContent).toContain('Placar do casal indisponível')
+})
+
+it('f53.7: segunda antes das 18h sem registro não confirma feira nem estoque', async () => {
+  const m = mundo()
+  vi.mocked(m.interna.escritorioHoje).mockResolvedValue({ ...m.e(), precisa_de_voce: [] } as any)
+  const a = await montar(m, createElement(ConferenciaCasa))
+  await act(async () => {
+    vi.setSystemTime(new Date('2026-11-16T14:00:00-03:00'))
+    invalidarDados(m.api, m.familia.id)
+    await a.render()
+  })
+  expect(a.bloco('casa').textContent).toContain('Feira: verificação ainda não iniciada')
+  expect(a.origem().textContent).toContain('Estoque: verificação ainda não iniciada')
+  expect(a.bloco('casa').textContent).not.toContain('Estoque conferido')
+  vi.mocked(m.interna.escritorioHoje).mockResolvedValue(m.e() as any)
+  await act(async () => {
+    vi.setSystemTime(new Date('2026-11-16T18:01:00-03:00'))
+    invalidarDados(m.api, m.familia.id, ['escritorio'])
+    await a.render()
+  })
+  expect(a.bloco('casa').textContent).toContain('cobrança pendente')
+  await act(async () => { await m.api.feiraRegistrar(m.familia.id, { data: '2026-11-16' }) })
+  expect(a.bloco('casa').textContent).toContain('Feira em dia')
+})
+
+it('f53.8: o Início mostra ressalvas e a conferência do Plano com mais de 60 dias', async () => {
+  const m = mundo()
+  m.config.numeros_atualizados = { saldo_caixa: '2026-09-16' }
+  vi.mocked(m.interna.futuroEntradas!).mockResolvedValue({ entrada: m.entrada(), confirmar: ['Confirme a taxa'] })
+  const a = await montar(m)
+  expect(a.bloco('plano2029').textContent).toContain('Confirme a taxa')
+  expect(a.bloco('plano2029').textContent).toContain('Há números com mais de 60 dias')
+  await act(async () => m.api.salvarConfig(m.familia.id, 'numeros_atualizados', { saldo_caixa: '2026-09-18' }))
+  expect(a.bloco('plano2029').textContent).not.toContain('Há números com mais de 60 dias')
+})
+
+it('f53.10: limite do dia e valor integral da compra parcelada têm rótulos próprios', async () => {
+  const m = mundo()
+  const r = m.resumo()
+  Object.assign(r.envelopes[0], { gasto_hoje: 0, parcelas_mes: 200 })
+  vi.mocked(m.interna.resumoHoje).mockResolvedValue(r)
+  vi.mocked(m.interna.lancamentos).mockResolvedValue([{ ...m.gastos()[0], valor: 1200, parcelas: 6 }])
+  const a = await montar(m, createElement(MeuOrcamento))
+  await act(async () => a.bloco('podeGastarHoje').buscar(x => x.getAttribute('class') === 'resumo-expandir')[0].click())
+  expect(a.bloco('podeGastarHoje').textContent).toMatch(/Hoje já saiu do limite: R\$\s*0/)
+  expect(a.origem().textContent).toMatch(/Compras anotadas hoje \(valor integral\)\s*R\$\s*1\.200/)
+})
+
+const propsF53 = (no: NoTeste) => Object.entries(no).find(([k]) => k.startsWith('__reactProps'))![1] as any
+
+it('f53.12 e 13: formulário espera a lista e preserva saldo negativo, ID e data da conta', async () => {
+  const m = mundo()
+  const salvar = vi.spyOn(m.interna, 'salvarSaldoConta')
+  vi.mocked(m.interna.saldosConta!).mockRejectedValue(new Error('rede'))
+  const a = await montar(m, createElement(InformarSaldo, { fechar() {} }))
+  const form = a.origem().buscar(x => x.tagName === 'FORM')[0]
+  const enviar = () => act(async () => { await propsF53(form).onSubmit({ preventDefault() {} }) })
+  expect(a.origem().textContent).toContain('Não foi possível abrir as contas')
+  const nome = a.origem().buscar(x => x.getAttribute('placeholder') === 'Conta corrente')[0]
+  const valor = a.origem().buscar(x => x.getAttribute('aria-label') === 'Saldo em conta')[0]
+  await act(async () => { propsF53(nome).onChange({ target: { value: 'Corrente' } }); propsF53(valor).onChange({ target: { value: '100' } }) })
+  await enviar()
+  expect(salvar).not.toHaveBeenCalled()
+  vi.mocked(m.interna.saldosConta!).mockResolvedValue(m.contas())
+  await act(async () => a.origem().buscar(x => x.tagName === 'BUTTON' && x.textContent === 'Tentar de novo')[0].click())
+  const select = a.origem().buscar(x => x.tagName === 'SELECT')[0]
+  await enviar()
+  expect(salvar).not.toHaveBeenCalled()
+  expect(a.origem().textContent).toContain('Já existe uma conta com esse nome')
+  await act(async () => propsF53(select).onChange({ target: { value: 's' } }))
+  await act(async () => propsF53(valor).onChange({ target: { value: '−1.234,56' } }))
+  expect(propsF53(valor).value).toBe('-1.234,56')
+  await enviar()
+  expect(salvar).not.toHaveBeenCalled()
+  expect(a.origem().textContent).toContain('O cadastro real ainda não aceita saldo negativo')
+  await act(async () => propsF53(valor).onChange({ target: { value: '120' } }))
+  await enviar()
+  expect(salvar).toHaveBeenCalledWith('f', { id: 's', nome: 'Corrente', valor: 120, conferidoEm: '2026-11-16' })
+})
+
+it('f53.12: exemplo conserva o saldo negativo na edição', async () => {
+  const m = mundo()
+  m.interna.modo = 'exemplo'
+  const salvar = vi.spyOn(m.interna, 'salvarSaldoConta')
+  const a = await montar(m, createElement(InformarSaldo, { fechar() {} }))
+  const select = a.origem().buscar(x => x.tagName === 'SELECT')[0]
+  await act(async () => propsF53(select).onChange({ target: { value: 's' } }))
+  const campo = a.origem().buscar(x => x.getAttribute('aria-label') === 'Saldo em conta')[0]
+  await act(async () => propsF53(campo).onChange({ target: { value: '-25,50' } }))
+  const form = a.origem().buscar(x => x.tagName === 'FORM')[0]
+  await act(async () => { await propsF53(form).onSubmit({ preventDefault() {} }) })
+  expect(salvar).toHaveBeenCalledWith('f', { id: 's', nome: 'Corrente', valor: -25.5, conferidoEm: '2026-11-16' })
+  expect(a.r.saldoConta.valor?.valor).toBe(-25.5)
+})
+
+it('f53.16: período inválido fica fora do destino e do total, Gastos abre no mês válido', async () => {
+  const a = await montar(mundo(), createElement(Fragment, null, createElement(Recebimentos), createElement(ResumoDoMes)))
+  expect(lerDestino('#/guardado?secao=mes&entidade=abc&periodo=2026-11')).toMatchObject({ secao: '' })
+  expect(lerDestino('#/planejamento?secao=recebimentos&entidade=abc&periodo=banana')).toMatchObject({ entidade: undefined, periodo: undefined })
+  const hash = async (novo: string) => act(async () => { location.hash = novo; window.dispatchEvent(new Event('hashchange')) })
+  await hash('#/planejamento?secao=recebimentos&periodo=banana')
+  const alvo = (secao: string) => a.origem().buscar(x => x.getAttribute('data-secao') === secao)[0]
+  expect(alvo('recebimentos').getAttribute('data-periodo')).toBe(mes)
+  expect(alvo('recebimentos').textContent).toMatch(/Previstos no mês.*R\$\s*250/)
+  await hash('#/lancamentos?periodo=2026-10')
+  expect(alvo('mes').getAttribute('data-periodo')).toBe('2026-10')
+  expect(alvo('mes').textContent).toContain('out/26')
+})
+
+it('f53.16 e 19: Guardado vazio tem alvo e mantém o descarte só em memória', async () => {
+  const m = mundo()
+  vi.mocked(m.interna.guardadoHoje).mockResolvedValueOnce({ ...m.g(), aplicacoes: [] })
+  const a = await montar(m, createElement(Guardado))
+  expect(a.origem().buscar(x => x.getAttribute('data-secao') === 'aplicacoes')).toHaveLength(1)
+  const armazenar = vi.fn()
+  const b = mundo()
+  vi.mocked(b.interna.guardadoHoje).mockResolvedValue({ ...b.g(), saldo_30: [{ data: '2026-11-16', saldo: 9000 }, { data: hoje, saldo: 11000 }] })
+  const c = await montar(b, createElement(Guardado), 'casal', undefined, { getItem: () => null, removeItem() {}, setItem: armazenar })
+  const fechar = c.origem().buscar(x => x.getAttribute('aria-label') === 'Fechar o aviso')[0]
+  expect(fechar).toBeDefined()
+  await act(async () => fechar.click())
+  expect(armazenar).not.toHaveBeenCalledWith('marco_visto', expect.anything())
+  expect(c.origem().textContent).not.toContain('passou de')
+  const reaberto = await montar(b, createElement(Guardado))
+  expect(reaberto.origem().textContent).not.toContain('passou de')
+})
+
+it('f53.3, 11 e 19: provedor protege sessão, estado da leitura e privacidade no início', async () => {
+  const m = mundo()
+  let resolver!: (v: Awaited<ReturnType<Api['sessao']>>) => void
+  const antiga = new Promise<Awaited<ReturnType<Api['sessao']>>>(r => { resolver = r })
+  const nova = { userId: 'nova', email: null, dono: false, familias: [m.familia] }
+  m.interna.sessao = vi.fn().mockReturnValueOnce(antiga).mockResolvedValue(nova)
+  m.interna.sair = async () => { throw new Error('rede') }
+  let ctx!: Ctx
+  function Capturar() { ctx = useApp(); return createElement(MeuOrcamento) }
+  const remover = vi.fn()
+  const a = await montar(m, createElement(Provedor, { api: m.api, children: createElement(Capturar) }), 'casal', undefined, { getItem: () => null, setItem() {}, removeItem: remover })
+  expect(remover).toHaveBeenCalledWith('marco_visto')
+  await act(async () => ctx.trocarSessao())
+  await act(async () => resolver({ ...nova, userId: 'antiga' }))
+  expect(ctx.sessao?.userId).toBe('nova')
+  expect(a.origem().textContent).toContain('Pode gastar hoje')
+  vi.mocked(m.interna.resumoHoje).mockRejectedValue(new Error('rede'))
+  await act(async () => ctx.recarregar())
+  expect(a.origem().textContent).toContain('Não foi possível atualizar o orçamento')
+  expect(a.origem().textContent).not.toContain('Pode gastar hoje')
+  vi.mocked(m.interna.resumoHoje).mockResolvedValue(m.resumo())
+  await act(async () => ctx.recarregar())
+  expect(a.origem().textContent).toContain('Pode gastar hoje')
+  await act(async () => ctx.sair())
+  expect(ctx.sessao).toBeNull()
 })
 
 const fontesReais = import.meta.glob(['./leituras.ts', '../../app/useResumoFamilia.ts', '../../telas/inicio/*.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>

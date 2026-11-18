@@ -11,17 +11,17 @@ import type { ChaveConfig } from '../api/tipos'
  * Devolve [valor, salvar, falha da leitura, já leu].
  */
 export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promise<boolean>, string, boolean] {
-  const { api, familia, tentar, versao, toast } = useApp()
+  const { api, familia, sessao, tentar, versao, toast } = useApp()
   const [v, setV] = useState<T>(padrao)
   const [falha, setFalha] = useState('')
   const [lido, setLido] = useState(false)
   const atual = useRef(v); atual.current = v
   const fid = familia?.id
   const invalidacao = useInvalidacao(api, fid || '')
-  const escopo = `${fid}:${chave}`
+  const escopo = JSON.stringify([sessao?.userId, fid, familia?.membroId, familia?.papel, chave])
   const [origem, setOrigem] = useState(escopo)
   const escopoAtual = useRef(escopo); escopoAtual.current = escopo
-  const guarda = useMemo(() => criarGuardaConfig<T>(() => api.config<T>(fid!, chave, padrao), nv => api.salvarConfig(fid!, chave, nv)), [api, fid, chave])
+  const guarda = useMemo(() => criarGuardaConfig<T>(opcoes => api.config<T>(fid!, chave, padrao, opcoes), nv => api.salvarConfig(fid!, chave, nv)), [api, escopo])
   useEffect(() => {
     if (origem !== escopo) { setV(padrao); setFalha(''); setLido(false); setOrigem(escopo) }
     if (!fid) return
@@ -38,7 +38,7 @@ export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promi
     const ok = await tentar(async () => { const r = await guarda.salvar(nv); juntou = r.mudou; if (r.mudou && aindaAtual()) setV(r.valor) })
     if (!aindaAtual()) return ok
     if (!ok) setV(antes)
-    else if (juntou) toast('Outro celular mexeu nisso ao mesmo tempo. Juntei as 2 mudanças: confira.')
+    else if (juntou) toast('Outro aparelho alterou estes dados. Confira como ficaram depois de salvar.')
     return ok
   }
   return [origem === escopo ? v : padrao, salvar, origem === escopo ? falha : '', origem === escopo && lido]

@@ -29,6 +29,10 @@ export function definirEscopoLeitura(api: Api, sessao: string, f: FamiliaMinha |
   const novo = f ? { sessao, familia: f.id, membro: f.membroId || '', papel: f.papel } : null
   if (JSON.stringify(novo) !== JSON.stringify(m.escopo)) { limparLeituras(api); m.escopo = novo }
 }
+export const geracaoLeitura = (api: Api) => memoria(api).geracao
+export class LeituraSubstituida extends Error {
+  constructor() { super('Leitura substituída; consulte novamente') }
+}
 export function escopoLeitura(api: Api) { return memoria(api).escopo }
 export function registrarDono(api: Api, id: string, familia: string) { memoria(api).donos.set(id, familia) }
 export function familiaDoId(api: Api, id: string) { const m = memoria(api); return m.donos.get(id) || m.escopo?.familia }
@@ -40,23 +44,29 @@ export function metadadosLeitura(api: Api, familia: string, recurso: string, par
   return r ? { estado: r.estado, consultadoEm: r.consultadoEm, erro: r.erro?.message || null } : null
 }
 /** Cache só em memória. Foco/reconexão/virada do dia relêem; não há push entre aparelhos. */
-export function lerCompartilhado<T>(api: Api, familia: string, recurso: string, parametros: unknown[], buscar: () => Promise<T>): Promise<T> {
+export function lerCompartilhado<T>(api: Api, familia: string, recurso: string, parametros: unknown[], buscar: () => Promise<T>, opcoes?: { fresco?: boolean }): Promise<T> {
   const m = memoria(api), e = m.escopo
   // A equipe não consulta nem conserva recursos financeiros, mesmo por uma chamada acidental.
   const configDaCasa = (recurso === 'config' || recurso.startsWith('config:')) && ['casa_lista', 'casa_presenca', 'casa_ponto', 'casa_gas'].includes(String(parametros[0]))
-  if (e?.papel === 'equipe' && !configDaCasa && !['casa', 'estoque', 'lista', 'escritorio', 'membros'].includes(recurso)) return Promise.reject(new Error('Leitura restrita ao perfil autorizado'))
+  if (e?.papel === 'equipe' && !configDaCasa && !['casa', 'feira', 'estoque', 'lista', 'escritorio', 'membros'].includes(recurso)) return Promise.reject(new Error('Leitura restrita ao perfil autorizado'))
   const chave = JSON.stringify([api.modo, m.geracao, e, familia, recurso, parametros])
   let r = m.registros.get(chave)
-  if (r?.promessa) return r.promessa
-  if (r?.pronto) return Promise.resolve(r.dado)
+  if (!opcoes?.fresco) {
+    if (r?.promessa) return r.promessa
+    if (r?.pronto) return Promise.resolve(r.dado)
+  }
   r = { familia, recurso, pronto: false, pedido: 0, estado: 'carregando', consultadoEm: null }; m.registros.set(chave, r)
   const registro = r, geracao = m.geracao, pedido = ++r.pedido
   const atual = () => m.geracao === geracao && m.registros.get(chave) === registro && pedido === registro.pedido
-  const promessa = Promise.resolve().then(buscar).then(dado => {
-    if (!atual()) throw new Error('Leitura substituída; consulte novamente')
+  const promessa = Promise.resolve().then(() => {
+    if (!atual()) throw new LeituraSubstituida()
+    return buscar()
+  }).then(dado => {
+    if (!atual()) throw new LeituraSubstituida()
     registro.dado = dado; registro.pronto = true; registro.estado = 'pronto'; registro.consultadoEm = new Date().toISOString(); return dado
   }).catch(erro => {
-    if (atual()) { registro.estado = 'erro'; registro.erro = erro; registro.consultadoEm = new Date().toISOString() }
+    if (!atual()) throw new LeituraSubstituida()
+    registro.estado = 'erro'; registro.erro = erro; registro.consultadoEm = new Date().toISOString()
     throw erro
   }).finally(() => { if (atual()) registro.promessa = undefined })
   registro.promessa = promessa

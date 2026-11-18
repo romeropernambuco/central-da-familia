@@ -139,7 +139,7 @@ export function EstadoVazio({ ico, children, acao, ilustracao }: { ico?: ReactNo
 export const Vazio = EstadoVazio
 
 /** Campo de dinheiro: "R$" cinza dentro do campo e ponto de milhar ("3.000"). O valor guardado continua sem ponto ("3000"). */
-export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: string; mudar: (v: string) => void; desligado?: boolean; rotulo?: string; id?: string }) {
+export function CampoValor({ valor, mudar, desligado, rotulo, id, assinado = false }: { valor: string; mudar: (v: string) => void; desligado?: boolean; rotulo?: string; id?: string; assinado?: boolean }) {
   // Ocultar somente a apresentação: o estado original continua disponível ao salvar e ao abrir o olho.
   const oculto = useApp()?.oculto ?? false
   const [digitandoOculto, setDigitandoOculto] = useState(false)
@@ -149,10 +149,10 @@ export function CampoValor({ valor, mudar, desligado, rotulo, id }: { valor: str
   return (
     <span className={'inp-rs' + (desligado ? ' off' : '')}>
       <span aria-hidden="true">R$</span>
-      <input id={id} inputMode="decimal" disabled={desligado} aria-label={rotulo} readOnly={mascarado} placeholder={mascarado ? '•••' : undefined} value={mascarado ? '' : milhar(valor)} onChange={e => {
+      <input id={id} inputMode={assinado ? 'text' : 'decimal'} disabled={desligado} aria-label={rotulo} readOnly={mascarado} placeholder={mascarado ? '•••' : undefined} value={mascarado ? '' : milhar(valor, assinado)} onChange={e => {
         if (mascarado) return
         setDigitandoOculto(oculto)
-        mudar(e.target.value.replace(/[^\d,]/g, ''))
+        mudar(assinado ? e.target.value.replace(/−/g, '-').replace(/[^\d,-]/g, '') : e.target.value.replace(/[^\d,]/g, ''))
       }} />
     </span>
   )

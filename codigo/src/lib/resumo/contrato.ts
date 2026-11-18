@@ -1,9 +1,13 @@
 /** A normalização tolerante continua atendendo às telas. O resumo consegue saber
  * se havia campos obrigatórios na resposta original, antes de virarem zero. */
 const contratos = new WeakMap<object, string[]>()
-export function registrarContrato<T extends object>(normalizado: T, bruto: unknown, campos: string[]): T {
+export function registrarContrato<T extends object>(normalizado: T, bruto: unknown, campos: string[], numericos: string[] = []): T {
   const r = bruto as Record<string, unknown> | null
-  contratos.set(normalizado, campos.filter(c => !r || r[c] === undefined || r[c] === null))
+  const numeroValido = (v: unknown) => (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '')) && Number.isFinite(Number(v))
+  contratos.set(normalizado, [
+    ...campos.filter(c => r?.[c] == null),
+    ...numericos.filter(c => !numeroValido(r?.[c])),
+  ])
   return normalizado
 }
 export function camposAusentes(dado: object): string[] { return contratos.get(dado) || [] }

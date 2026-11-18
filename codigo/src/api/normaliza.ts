@@ -3,17 +3,19 @@ import type { CasaDaEquipe, CupomLido, Lancamento, NovoLancamento, RecebimentoTe
 import { hojeRecife } from '../lib/formato'
 import { funcaoNaoExiste } from './erros'
 
+import { registrarContrato } from '../lib/resumo/contrato'
+
 const num = (v: unknown) => Number(v) || 0
 
 export function normalizaResumo(r: any): ResumoHoje {
-  return {
+  return registrarContrato({
     pode_gastar_hoje: num(r?.pode_gastar_hoje),
     livre_mes: num(r?.livre_mes),
     colchao: num(r?.colchao),
     dias_restantes: num(r?.dias_restantes),
     // equipe da casa: o banco manda {so_nomes: true} e só id, nome, regra e casa de cada envelope (nenhum número)
     ...(r?.so_nomes ? { so_nomes: true } : {}),
-    envelopes: (r?.envelopes || []).map((e: any) => ({
+    envelopes: (Array.isArray(r?.envelopes) ? r.envelopes : []).map((e: any) => registrarContrato({
       ...e, limite_mes: num(e.limite_mes), gasto_mes: num(e.gasto_mes), livre: num(e.livre),
       // C1 (revisão E2/E3): o banco (f_03) manda dono: {membro_id, nome} ou null; a tela mostra o nome e trava pelo id
       ...('dono' in (e || {}) ? { dono: e.dono == null ? null : typeof e.dono === 'string' ? e.dono : e.dono.nome == null ? null : String(e.dono.nome), dono_id: e.dono && typeof e.dono === 'object' && e.dono.membro_id != null ? String(e.dono.membro_id) : e.dono_id ?? null } : {}),
@@ -25,9 +27,9 @@ export function normalizaResumo(r: any): ResumoHoje {
       valor_dia_inteiro: e.regra === 'diario' && e.valor_dia != null ? num(e.valor_dia) : undefined,
       teto_semana: e.teto_semana == null ? undefined : num(e.teto_semana),
       gasto_semana: e.gasto_semana == null ? undefined : num(e.gasto_semana),
-    })),
+    }, e, [], r.so_nomes ? [] : ['limite_mes', 'gasto_mes', 'livre', ...['hoje', 'valor_dia', 'limite_base', 'colchao_meta', 'teto_semana', 'gasto_semana', 'gasto_hoje', 'parcelas_mes'].filter(c => e[c] != null)])),
     explicacao: (r?.explicacao || []).map((x: any) => ({ linha: String(x.linha), valor: num(x.valor) })),
-  }
+  }, Array.isArray(r?.envelopes) ? r : { ...r, envelopes: undefined }, ['envelopes'], r?.so_nomes ? [] : ['pode_gastar_hoje', 'livre_mes', 'colchao', 'dias_restantes'])
 }
 
 export function normalizaCasa(r: any): CasaDaEquipe {
@@ -43,7 +45,7 @@ export function normalizaCasa(r: any): CasaDaEquipe {
 
 /** Lançamento que volta do banco. Pra equipe ele vem sem `valor` (e sem cartão): fica 0 e a tela da equipe nunca mostra. */
 export function normalizaLancamento(l: any): Lancamento {
-  return { id: String(l?.id), ...(l?.autor != null ? { autor: String(l.autor) } : {}), pago_por: l?.pago_por == null ? null : String(l.pago_por), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || ''), ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}) }
+  return registrarContrato({ id: String(l?.id), ...(l?.autor != null ? { autor: String(l.autor) } : {}), pago_por: l?.pago_por == null ? null : String(l.pago_por), envelope_id: l?.envelope_id, cartao_id: l?.cartao_id ?? null, valor: num(l?.valor), data: String(l?.data || ''), descricao: l?.descricao ?? null, apagado_em: l?.apagado_em ?? null, criado_em: String(l?.criado_em || ''), ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}) }, l, ['data'], ['valor'])
 }
 
 export function normalizaCupom(j: any): CupomLido {
@@ -73,13 +75,13 @@ export async function lancarComChave(rpc: RpcCru, n: NovoLancamento): Promise<{ 
 /** E5: linha de produto.recebimentos (centavos inteiros, mês como data do dia 1) no formato da tela (reais, 'AAAA-MM'). */
 export function normalizaRecebimento(r: any, membros: { id: string; nome: string }[], eu: string | null): RecebimentoTela {
   const mes = (d: unknown) => (d ? String(d).slice(0, 7) : null)
-  return {
+  return registrarContrato({
     id: String(r?.id), dono_membro: String(r?.dono_membro), dono_nome: membros.find(m => m.id === String(r?.dono_membro))?.nome ?? null,
     descricao: String(r?.descricao || ''), valor: num(r?.valor_centavos) / 100, mes_previsto: mes(r?.mes_previsto) || '', mes_novo: mes(r?.mes_novo),
     tipo: (['salario', 'contrato', 'retorno', 'outro'].includes(r?.tipo) ? r.tipo : 'outro'), certo: !!r?.certo,
     recebido_em: r?.recebido_em ?? null, valor_recebido: r?.valor_recebido_centavos == null ? null : num(r.valor_recebido_centavos) / 100,
     meu: !!eu && String(r?.dono_membro) === eu,
-  }
+  }, r, ['id', 'mes_previsto'], ['valor_centavos', ...(r?.valor_recebido_centavos == null ? [] : ['valor_recebido_centavos'])])
 }
 
 /** f_12: o que reajuste_situacao (e reajuste_votar) devolve, no formato da tela. Centavos continuam centavos. */

@@ -21,7 +21,7 @@ const ESTADOS: EstadoFuncionario[] = ['vai_comecar', 'trabalhando', 'entregue', 
 const REPETIR: Repetir[] = ['nunca', 'dia', 'semana', 'mes', 'ano']
 
 export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
-  const aplicacoes = (r?.aplicacoes || []).map((a: any) => ({
+  const aplicacoes = (Array.isArray(r?.aplicacoes) ? r.aplicacoes : []).map((a: any) => ({
     id: txt(a.id), nome: txt(a.nome), banco: txt(a.banco), tipo: (TIPOS.includes(a.tipo) ? a.tipo : 'caixinha') as TipoAplicacao, pct_cdi: num(a.pct_cdi), saldo: num(a.saldo),
     rendeu_hoje_liquido: num(a.rendeu_hoje_liquido), rendeu_mes_liquido: num(a.rendeu_mes_liquido), ir_faixa: num(a.ir_faixa),
     vence_em: a.vence_em || null, liquidez: a.liquidez === 'vencimento' ? 'vencimento' as const : 'diaria' as const, fgc_ok: a.fgc_ok !== false,
@@ -41,7 +41,7 @@ export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
     aplicacoes,
     explicacao: (r?.explicacao || []).map((x: any) => ({ linha: semSigla(txt(x.linha)), valor: num(x.valor) })),
     atualizado_em: txt(r?.atualizado_em), motivo_zero: motivo ? motivo.charAt(0).toUpperCase() + motivo.slice(1) : null,
-  }, r, ['total', 'rendeu_hoje_liquido', 'rendeu_mes_liquido', 'rendeu_desde_inicio_liquido', 'aplicacoes'])
+  }, Array.isArray(r?.aplicacoes) ? r : { ...r, aplicacoes: undefined }, ['aplicacoes'], ['total', 'rendeu_hoje_liquido', 'rendeu_mes_liquido', 'rendeu_desde_inicio_liquido'])
 }
 
 export function normalizaCusto(r: any): CustoDoGasto {

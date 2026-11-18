@@ -207,3 +207,14 @@ Validação f25: TypeScript sem erros (npx tsc --noEmit); suíte completa com 66
 - Metadados de consulta não viram conferência. Aplicações, imóveis e recebimentos só ganham uma data agregada de conferência se todos os IDs lidos tiverem registro em `useNumerosAtualizados`; vale a data mais antiga. Abrir o Início não registra conferência. Erro e releitura retiram o valor do bloco, sem apresentar o dado anterior como atual; repetir invalida só as fontes dependentes daquele campo.
 - Permissões mantidas: casal tem os onze blocos; pessoa da família tem orçamento pessoal, linha permitida da Casa e desejos, sem fontes patrimoniais/Plano 2029. Sem envelope pessoal legível, não recebe o orçamento geral como substituto. Assessor da Casa continua na rota Casa; não monta o resumo nem consulta/retém dinheiro.
 - Não foi alterado o motor `futuro()`, nem as fórmulas existentes. Permanecem os limites declarados na f34: cache em memória da sessão e releitura por foco/reconexão/virada do dia, sem promessa de atualização instantânea entre aparelhos.
+
+## f53 — dados, sessão e lógica
+
+- Saldo em conta. O campo conserva o sinal e a data já conferida ao selecionar uma conta. O exemplo aceita saldo negativo em reais. O formulário real rejeita saldo negativo com mensagem explícita, de acordo com a restrição da f_11. Provisoriamente, cheque especial usado é uma dívida separada do saldo disponível. O dono do banco deve confirmar a regra financeira antes de habilitar a capacidade real.
+- Uma fatura aberta sem compras e sem valor bancário positivo fica fora das pendências. Na Casa, feira e estoque só ficam confirmados com registro da semana. A fila indica cobranças pendentes.
+
+## Pedidos ao banco - rodada 3
+
+- Configuração da família. Expor uma revisão por chave e aceitar atualização ou criação condicional, com retorno de conflito para o app reler e refazer a mescla. A leitura fresca reduz a janela de corrida. O `upsert` atual continua podendo sobrescrever uma edição feita entre a leitura e a gravação.
+- Placar do casal. Expor projeção oficial dos envelopes pessoais do mês somente ao casal, com limite, gasto, fechamento projetado e a identificação do próprio envelope. Até lá, a UI real informa que o placar está indisponível.
+- Saldo em conta. A capacidade real continua vinculada à f_11. Confirmar a regra para cheque especial, a identificação de contas e o armazenamento da data manual de conferência antes de expor a leitura e a gravação reais.

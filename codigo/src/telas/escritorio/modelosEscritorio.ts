@@ -32,11 +32,11 @@ export function criarCacheModelos(
           const entrada = e
           e.promessa = (bytesProntos.has(nome) ? Promise.resolve(bytesProntos.get(nome)!) : buscar(base + 'modelos/escritorio/' + nome + '.glb', { signal: controller.signal })
             .then(r => { if (!r.ok) throw Error('modelo indisponível'); return r.arrayBuffer() })
-            .then(bytes => { bytesProntos.set(nome, bytes); return bytes }))
+            .then(bytes => { if (cache.get(nome) === entrada) bytesProntos.set(nome, bytes); return bytes }))
             .then(decodificar).then(modelo => {
               if (!entrada.usuarios) { liberarModelo(modelo); throw Error('carga cancelada') }
               entrada.modelo = modelo; return modelo
-            }).catch(erro => { bytesProntos.delete(nome); throw erro })
+            }).catch(erro => { if (cache.get(nome) === entrada) bytesProntos.delete(nome); throw erro })
           cache.set(nome, e)
         }
         e.usuarios++

@@ -11,7 +11,7 @@ export function recebimentoAtual(r: RecebimentoTela, controle: ControleReceitas)
 export function totaisRecebimentos(lista: RecebimentoTela[], fontes: FontesReceita, controle: ControleReceitas, mes?: string) {
   if (!Array.isArray(lista) || camposAusentes(lista).length || lista.some(r => camposAusentes(r).length || !Number.isFinite(r.valor) || !r.mes_previsto || !r.id)) throw new Error('Recebimentos incompletos')
   let ocorrencias = 0, previsto = 0
-  for (const r of lista) { const n = mesesPendentes(r, fontes, controle).filter((m, i) => !mes || (i === 0 && m === r.mes_previsto ? r.mes_novo || m : m) <= mes).length; ocorrencias += n; previsto += n * recebimentoAtual(r, controle).valor }
+  for (const r of lista) { const n = mesesPendentes(r, fontes, controle).filter(m => !mes || (m === r.mes_previsto ? r.mes_novo || m : m) <= mes).length; ocorrencias += n; previsto += n * recebimentoAtual(r, controle).valor }
   return { ocorrencias, previsto }
 }
 export function recebimentosDoMes(lista: RecebimentoTela[], fontes: FontesReceita, controle: ControleReceitas, mes: string) {

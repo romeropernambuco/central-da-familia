@@ -1,4 +1,4 @@
-import { invalidarDados, limparLeituras, definirEscopoLeitura, useInvalidacao } from './invalidacao'
+import { invalidarDados, limparLeituras, definirEscopoLeitura, useInvalidacao, LeituraSubstituida, geracaoLeitura } from './invalidacao'
 import { encerrarAcolhimento } from '../lib/acolhimento'
 import { salvamento } from './salvamento'
 import { FilaPendentes } from '../componentes/FilaPendentes'
@@ -11,7 +11,7 @@ import type { Api } from '../api'
 import type { FamiliaMinha, LinhaExplicacao, ResumoHoje, Sessao } from '../api/tipos'
 import { Explicacao, Sheet } from '../componentes/base'
 import { ErroRede, ErroSessao } from '../api/erros'
-import { comIntervalo, resumoSemDinheiro } from '../lib/seguro'
+import { comIntervalo } from '../lib/seguro'
 import { esconderValores, hojeRecife } from '../lib/formato'
 import { textoPrivado } from '../lib/formato'
 
@@ -39,6 +39,7 @@ export interface Ctx {
   fecharLancar: () => void
   explicar: (e: Explicar) => void
   erro: string | null
+  erroResumo?: string | null
   /** N12: valores escondidos neste aparelho */
   oculto: boolean
   alternarOculto: () => void
@@ -59,6 +60,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const familia = sessao?.familias[0] || null
   const chaveResumo = JSON.stringify([api.modo, sessao?.userId, familia?.id, familia?.membroId, familia?.papel])
   const [origemResumo, setOrigemResumo] = useState('')
+  const [falhaResumo, setFalhaResumo] = useState<{ origem: string; motivo: string } | null>(null)
   const guardarResumo = useCallback((r: ResumoHoje) => { setResumo(r); setOrigemResumo(chaveResumo) }, [chaveResumo])
   const [oculto, setOculto] = useState(() => { try { const o = localStorage.getItem('esconder_valores') === '1'; esconderValores(o); return o } catch { return false } })
   const alternarOculto = useCallback(() => setOculto(o => { const n = !o; esconderValores(n); try { localStorage.setItem('esconder_valores', n ? '1' : '0') } catch { /* sem armazenamento */ } return n }), [])
@@ -66,21 +68,28 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   // olho fechado: além do <Din>, esconde todo "R$ 1.234" que vem pronto em frase (Escritório, avisos, fichas)
   esconderValores(oculto)
 
-  const invalidacao = useInvalidacao(api, familia?.id || '')
-  useEffect(() => {
-    if (!familia || familia.papel === 'equipe') return
-    let vivo = true
-    api.resumoHoje(familia.id).then(r => { if (vivo) guardarResumo(r) }).catch(() => {})
-    return () => { vivo = false }
-  }, [api, chaveResumo, invalidacao, guardarResumo])
+  const invalidacao = useInvalidacao(api, familia?.id || '', 'resumo')
   const equipe = familia?.papel === 'equipe'
   const [semRede, setSemRede] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false)
   const pedido = useRef(0)
 
   const saindo = useRef(false)
+  const consultaSessao = useRef(0)
+  useEffect(() => () => { consultaSessao.current++; pedido.current++ }, [api])
   const trocarSessao = useCallback(async () => {
-    setToast(null) // aviso de uma pessoa (pode ter R$) nunca fica na tela pra próxima que entrar no mesmo aparelho
-    try { const s = await api.sessao(); definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null); setSessao(s); setErro(null) } catch (e) {
+    if (saindo.current) return
+    const meu = ++consultaSessao.current
+    setToast(null) // O aviso pertence à pessoa que iniciou esta ação.
+    try {
+      const s = await api.sessao()
+      if (meu !== consultaSessao.current) return
+      const geracao = geracaoLeitura(api)
+      definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null)
+      if (geracao !== geracaoLeitura(api)) pedido.current++
+      setSessao(s); setErro(null)
+    } catch (e) {
+      if (meu !== consultaSessao.current || e instanceof LeituraSubstituida) return
+      pedido.current++
       limparLeituras(api)
       setSessao(null)
       // sessão vencida não é erro pra mostrar: a tela de entrar já explica
@@ -88,56 +97,56 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     }
   }, [api])
 
-  /** Sessão caiu (token vencido, saiu em outro aparelho): limpa o que está na memória e volta pra tela de entrar. */
-  const sessaoCaiu = useCallback(async () => {
-    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
-    saindo.current = true
-    try { await api.sair() } catch { /* já estava fora */ } finally { saindo.current = false }
-    setSessao(null); setErro(null)
-    setToast({ msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() })
+  const encerrarSessao = useCallback((avisar: boolean) => {
+    consultaSessao.current++; pedido.current++
+    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos()
+    setResumo(null); setFalhaResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
+    setToast(avisar ? { msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() } : null)
   }, [api])
-
-  /** Sair por vontade própria: limpa tudo da memória e volta pra tela de entrar, sem aviso de erro. */
-  const sair = useCallback(async () => {
-    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null)
+  const finalizarSessao = useCallback(async (avisar: boolean) => {
+    if (saindo.current) return
     saindo.current = true
-    try { await api.sair() } catch { /* sem rede: sai do aparelho do mesmo jeito */ } finally { saindo.current = false }
-    await trocarSessao()
-  }, [api, trocarSessao])
+    encerrarSessao(avisar)
+    try { await api.sair() } catch { /* a sessão do app já foi limpa */ } finally { saindo.current = false }
+  }, [api, encerrarSessao])
 
-  const recarregar = useCallback(async () => {
+  const sair = useCallback(() => finalizarSessao(false), [finalizarSessao])
+  const lerResumo = useCallback(async () => {
     if (!familia) return
     // 2 buscas ao mesmo tempo (foco + lançamento, ou 2 celulares): só a última pedida vale, a mais velha é descartada
-    const meu = ++pedido.current
-    // Foco/reconexão/virada do dia: sem push entre aparelhos.
-    invalidarDados(api, familia.id)
-    setVersao(v => v + 1)
+    const meu = ++pedido.current, geracao = geracaoLeitura(api)
+    const atual = () => meu === pedido.current && geracao === geracaoLeitura(api)
     if (equipe) { setResumo(null); return }
     try {
       const r = await api.resumoHoje(familia.id)
-      if (meu !== pedido.current) return
-      // equipe da casa: nenhum valor em dinheiro fica na memória do aparelho
-      guardarResumo(equipe ? resumoSemDinheiro(r) : r)
-      setErro(null); setSemRede(false)
+      if (!atual()) return
+      guardarResumo(r)
+      setFalhaResumo(null); setErro(null); setSemRede(false)
     } catch (e) {
-      if (meu !== pedido.current) return
-      if (e instanceof ErroSessao) { await sessaoCaiu(); return }
+      if (!atual() || e instanceof LeituraSubstituida) return
+      if (e instanceof ErroSessao) { await finalizarSessao(true); return }
       if (e instanceof ErroRede) setSemRede(true)
-      setErro((e as Error).message)
+      const motivo = (e as Error).message
+      setFalhaResumo({ origem: chaveResumo, motivo }); setErro(motivo)
     }
-  }, [api, chaveResumo, equipe, sessaoCaiu, guardarResumo])
+  }, [api, chaveResumo, equipe, finalizarSessao, guardarResumo])
+  const recarregar = useCallback(async () => {
+    if (!familia) return
+    invalidarDados(api, familia.id)
+    setVersao(v => v + 1)
+    await lerResumo()
+  }, [api, chaveResumo, lerResumo])
 
+  useEffect(() => { try { localStorage.removeItem('marco_visto') } catch { /* sem armazenamento */ } }, [])
   useEffect(() => { trocarSessao() }, [trocarSessao])
   useEffect(() => {
-    setResumo(null); recarregar()
+    void lerResumo()
     return () => { pedido.current++ }
-  }, [recarregar])
+  }, [lerResumo, invalidacao])
   // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
   useEffect(() => api.aoSairSessao?.(() => {
-    if (saindo.current) return
-    limparLeituras(api); pendentes.limpar(); desfazer.limpar(); salvamento.limpar(); encerrarAcolhimento(); limparRascunhos(); setResumo(null); setLancar(null); setExp(null); setSessao(null); setErro(null)
-    setToast({ msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() })
-  }), [api])
+    if (!saindo.current) encerrarSessao(true)
+  }), [api, encerrarSessao])
 
   // O número de hoje não pode ficar velho: busca de novo quando o app volta pra frente, quando a internet volta
   // e quando vira o dia em Recife (app aberto de um dia pro outro mostrava o "pode gastar" de ontem).
@@ -168,13 +177,15 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }, [toastE])
 
   const tentar = useCallback(async (f: () => Promise<unknown>) => {
-    try { await f(); return true } catch (e) {
-      if (e instanceof ErroSessao) { await sessaoCaiu(); return false }
+    const geracao = geracaoLeitura(api)
+    try { await f(); return geracao === geracaoLeitura(api) } catch (e) {
+      if (geracao !== geracaoLeitura(api) || e instanceof LeituraSubstituida) return false
+      if (e instanceof ErroSessao) { await finalizarSessao(true); return false }
       if (e instanceof ErroRede) setSemRede(true)
       setToast({ msg: (e as Error).message || 'Não deu certo. Tente de novo.', id: Date.now() })
       return false
     }
-  }, [sessaoCaiu])
+  }, [api, finalizarSessao])
 
   useEffect(() => {
     let concluidas = desfazer.concluidas
@@ -184,7 +195,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     })
   }, [recarregar, trocarSessao])
   const v: Ctx = {
-    api, sessao, familia, resumo: origemResumo === chaveResumo ? resumo : null, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, tentar, semRede,
+    api, sessao, familia, resumo: origemResumo === chaveResumo ? resumo : null, versao, nomesMudaram: () => setVersao(v => v + 1), recarregar, trocarSessao, sair, toast, erro, erroResumo: falhaResumo?.origem === chaveResumo ? falhaResumo.motivo : null, tentar, semRede,
     // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
     abrirLancar: pre => { if (pre?.corrigir) setToast(null); setLancar(pre || {}) }, lancarAberto, fecharLancar: () => setLancar(null),
     explicar: setExp, oculto, alternarOculto,

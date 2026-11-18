@@ -40,5 +40,5 @@ export interface ResumoFamilia {
   casa: CampoResumo<CasaResumo>
   desejos: CampoResumo<ReturnType<typeof import('./desejos').totaisDesejos>>
   pendencias: CampoResumo<{ total: number; primeira?: { id: string; assunto: string } }>
-  plano2029: CampoResumo<{ unidade: 'centavos' } & ReturnType<typeof numerosRumo2029>>
+  plano2029: CampoResumo<{ unidade: 'centavos'; confirmar: string[]; conferenciaAntiga: boolean } & ReturnType<typeof numerosRumo2029>>
 }

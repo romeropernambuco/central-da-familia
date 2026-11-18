@@ -311,7 +311,7 @@ export interface NovoImovel {
 export interface ImovelTela extends NovoImovel { id: string; dono_membro: string; dono_nome: string | null; /** quem olha é o dono (só ele muda) */ meu: boolean }
 
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
-export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto' | 'fontes_receita' | 'receitas_controle'
+export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto' | 'fontes_receita' | 'receitas_controle' | 'numeros_atualizados'
 
 export interface PessoaNome { tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'; id: string; nome?: string | null; funcao?: string }
 export interface Api {
@@ -363,7 +363,7 @@ export interface Api {
   criarCartao(familia: string, c: Omit<Cartao, 'id'>): Promise<void>
   faturas(familia: string, meses: number): Promise<Fatura[]>
 
-  config<T>(familia: string, chave: ChaveConfig, padrao: T): Promise<T>
+  config<T>(familia: string, chave: ChaveConfig, padrao: T, opcoes?: { fresco?: boolean }): Promise<T>
   salvarConfig(familia: string, chave: ChaveConfig, valor: unknown): Promise<void>
 
   /** Equipe e casal: a Casa sem dinheiro (lista, compras, prestadores, gás, presença). */
@@ -400,7 +400,7 @@ export interface Api {
   faturasBanco(familia: string): Promise<FaturaBanco[]>
   faturaInformar(familia: string, cartao: string, mes: string, d: { valor_banco?: number | null; paga_em?: string | null }): Promise<void>
   /* Fiscal da Feira */
-  feiras(familia: string): Promise<Feira[]>
+  feiras(familia: string, opcoes?: { semValores?: boolean }): Promise<Feira[]>
   feiraRegistrar(familia: string, f: { data: string; valor?: number; loja?: string }): Promise<void>
   /** Só sobe a foto da nota pro bucket privado e devolve o caminho (a resposta da pergunta leva o caminho e o banco anota). */
   notaSubir(familia: string, feira: string, fotoBase64Jpeg: string): Promise<string>

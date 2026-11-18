@@ -20,7 +20,7 @@ export function umaPorVez<A extends unknown[], R>(f: (...a: A) => Promise<R>): (
  * Sem isso, uma leitura que falhou (sem internet) mostrava a lista vazia e o 1º toque gravava o vazio por cima de tudo.
  * Antes de gravar, relê o banco: se outro celular mexeu na mesma chave, junta as 2 mudanças (mesclar3) e avisa (mudou: true).
  */
-export function criarGuardaConfig<T>(ler: () => Promise<T>, gravar: (v: T) => Promise<void>) {
+export function criarGuardaConfig<T>(ler: (opcoes?: { fresco: boolean }) => Promise<T>, gravar: (v: T) => Promise<void>) {
   let lido = false
   let escritas = 0
   let base: T | undefined
@@ -35,17 +35,18 @@ export function criarGuardaConfig<T>(ler: () => Promise<T>, gravar: (v: T) => Pr
       lido = true; base = valor
       return { valor }
     },
-    /** Grava. `valor` é o que ficou no banco; `mudou` diz se entrou coisa de outro aparelho junto. */
+    /** Grava. `valor` é o que ficou no banco; `mudou` sinaliza que o remoto divergiu da base antes de mesclar. */
     salvar(v: T): Promise<{ valor: T; mudou: boolean }> {
       if (!lido) return Promise.reject(new Error('Ainda não deu para abrir o que já estava salvo. Confira a internet e tente de novo: nada foi mudado.'))
       escritas++
       // 1 gravação por vez nesta chave: a 2ª espera a 1ª e parte do que a 1ª deixou
       const vez = fila.catch(() => {}).then(async () => {
-        const remoto = await ler()
+        const remoto = await ler({ fresco: true })
+        const mudou = !igual(base, remoto)
         const final = mesclar3(base as T, v, remoto)
         await gravar(final)
         base = final
-        return { valor: final, mudou: !igual(final, v) }
+        return { valor: final, mudou }
       })
       fila = vez
       return vez

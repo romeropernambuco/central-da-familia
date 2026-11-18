@@ -27,7 +27,7 @@ import { centavos, dataCurta, diasNoMes, diasRestantes, fimDoMes, hojeRecife, pl
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e conquistas. Abre no limite de quem olha (R2). */
 export function MeuOrcamento() {
-  const { api, familia, resumo, versao, abrirLancar, toast } = useApp()
+  const { api, familia, resumo, erroResumo, recarregar, versao, abrirLancar, toast } = useApp()
   const pessoais = (resumo?.envelopes || []).filter(e => !e.casa)
   const [envId, setEnvId] = useState<string | null>(null)
   const env = pessoais.find(e => e.id === envId) || pessoais.find(e => e.id === familia?.envelopeId) || pessoais[0]
@@ -54,6 +54,7 @@ export function MeuOrcamento() {
     return { porDia, base, fechados, anot, cof: cofrinhoDoMes(porDia, base, fechados, anot) }
   }, [lanc, env?.id, env?.limite_base, env?.limite_mes, hoje, semGasto])
 
+  if (erroResumo) return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível atualizar o orçamento." frase="Seus registros continuam guardados." acao={{ texto: 'Tentar de novo', aoClicar: recarregar }} /></div>
   if (leitura.erro) return <div className="card" role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Seus registros continuam guardados. Vamos tentar de novo?" acao={{ texto: 'Tentar de novo', aoClicar: leitura.repetir }} /></div>
   if (leitura.carregando || !leitura.dado) return <Conferencia repetir={leitura.repetir} />
   if (!resumo) return <div className="card"><p className="sub">Abrindo…</p></div>
@@ -102,7 +103,7 @@ export function MeuOrcamento() {
             <div className="numrow"><Din v={valorPrincipalEnvelope(env, n)} className={n.estado === 'devendo' ? 'din-warn' : undefined} tam="big" /><Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
-            <p className="sub">Já saiu hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
+            <p className="sub">Compras anotadas hoje (valor integral) <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>
             {n.estado !== 'devendo' && <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}><Icone desenho={CalendarCheck} aria-hidden="true" />

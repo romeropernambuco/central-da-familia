@@ -1,6 +1,6 @@
 import { ErroSessao } from '../api/erros'
 import { useApp } from './contexto'
-import { useInvalidacao, lerCompartilhado, invalidarDados } from './invalidacao'
+import { useInvalidacao, lerCompartilhado, invalidarDados, geracaoLeitura, LeituraSubstituida } from './invalidacao'
 import { useEffect, useState } from 'react'
 
 /** Estado pertence ao contexto que o carregou; falha conserva o último resultado desse contexto. */
@@ -13,9 +13,12 @@ export function useLeituraRemota<T>(chave: string, buscar: (() => Promise<T>) | 
   const [n, setN] = useState(0)
   useEffect(() => {
     let vivo = true
+    const api = ctx?.api
+    const geracao = api && geracaoLeitura(api)
+    const atual = () => vivo && (!api || geracao === geracaoLeitura(api))
     setR(a => ({ chave, dado: a.chave === chave ? a.dado : null, erro: '', carregando: !!buscar, consultadoEm: null }))
-    if (buscar) (recurso && ctx?.familia ? lerCompartilhado(ctx.api, ctx.familia.id, recurso, ['hook', chave], buscar) : buscar()).then(dado => { if (vivo) setR({ chave, dado, erro: '', carregando: false, consultadoEm: new Date().toISOString() }) }).catch((e: Error) => {
-      if (vivo) { if (e instanceof ErroSessao) void ctx?.tentar(async () => { throw e }); setR(a => ({ ...a, erro: e.message, carregando: false })) }
+    if (buscar) (recurso && ctx?.familia ? lerCompartilhado(ctx.api, ctx.familia.id, recurso, ['hook', chave], buscar) : buscar()).then(dado => { if (atual()) setR({ chave, dado, erro: '', carregando: false, consultadoEm: new Date().toISOString() }) }).catch((e: Error) => {
+      if (atual() && !(e instanceof LeituraSubstituida)) { if (e instanceof ErroSessao) void ctx?.tentar(async () => { throw e }); setR(a => ({ ...a, erro: e.message, carregando: false })) }
     })
     return () => { vivo = false }
   }, [chave, n, invalidacao, ...dependencias])
