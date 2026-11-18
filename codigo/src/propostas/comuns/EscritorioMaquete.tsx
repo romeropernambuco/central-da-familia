@@ -1,98 +1,140 @@
-import { Check, CircleHelp, Clock, Hand, Keyboard } from 'lucide-react'
+import { BellRing, Keyboard, Pause } from 'lucide-react'
+import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import type { EstadoFuncionario } from '../../api/tipos'
-import type { SalaEquipe } from '../../telas/escritorio/equipe'
+import { Icone } from '../../componentes/Icone'
+import { POR_ID, type SalaEquipe } from '../../telas/escritorio/equipe'
 import type { Campo, DadosInicio } from '../dadosExemplo'
-import { Valor } from './privacidade'
+import { PisoMaquete, PostoMaquete, SalaMaquete, SimbolosMaquete, projetar, salas } from './maquete-desenho'
+import { useValoresOcultos, Valor } from './privacidade'
 import './escritorio-maquete.css'
 
 type Dinheiro = Campo<number, 'reais' | 'centavos'>
-type Ponto = [x: number, y: number, z?: number]
-type Sala = { id: SalaEquipe; nome: string; x: number; y: number; pessoas: [string, string] }
-
-const salas: Sala[] = [
-  { id: 'caixa', nome: 'Caixa', x: 0, y: 0, pessoas: ['contador', 'tesoureiro'] },
-  { id: 'casa', nome: 'Casa', x: 156, y: 0, pessoas: ['folha', 'comprador'] },
-  { id: 'cartoes', nome: 'Cartões', x: 0, y: 148, pessoas: ['cartao', 'assistente'] },
-  { id: 'patrimonio', nome: 'Patrimônio', x: 156, y: 148, pessoas: ['guardado', 'imoveis'] },
-]
+type Funcionario = NonNullable<DadosInicio['funcionarios']['valor']>[number]
+type CaixaVista = readonly [x: number, y: number, largura: number, altura: number]
 
 const estados = {
-  vai_comecar: { Icone: Clock, rotulo: 'Ainda vai começar' },
-  trabalhando: { Icone: Keyboard, rotulo: 'Trabalhando' },
-  entregue: { Icone: Check, rotulo: 'Entregue' },
-  precisa_de_voce: { Icone: Hand, rotulo: 'Precisa de você' },
-} satisfies Record<EstadoFuncionario, { Icone: typeof Check; rotulo: string }>
+  vai_comecar: { desenho: Pause, rotulo: 'Ainda vai começar' },
+  trabalhando: { desenho: Keyboard, rotulo: 'Trabalhando' },
+  entregue: { nome: 'salvo', rotulo: 'Entregue' },
+  precisa_de_voce: { desenho: BellRing, rotulo: 'Precisa de você' },
+  indisponivel: { nome: 'ajuda', rotulo: 'Estado indisponível' },
+} as const satisfies Record<EstadoFuncionario | 'indisponivel', Parameters<typeof Icone>[0] & { rotulo: string }>
 
-function projetar([x, y, z = 0]: Ponto) {
-  return [320 + (x - y) * Math.sqrt(3) / 2, 90 + (x + y) / 2 - z]
-}
+const vistaGeral: CaixaVista = [68, 22, 788, 448]
 
-function Face({ vertices, tinta }: { vertices: Ponto[]; tinta: string }) {
-  return <polygon points={vertices.map(p => projetar(p).join(',')).join(' ')} className={tinta} />
-}
-
-function Bloco({ x, y, l, p, h, base = 0, tom }: {
-  x: number; y: number; l: number; p: number; h: number; base?: number; tom: string
-}) {
-  const z = base + h
-  return <g data-tom={tom}>
-    <Face vertices={[[x, y + p, base], [x + l, y + p, base], [x + l, y + p, z], [x, y + p, z]]} tinta="face-media" />
-    <Face vertices={[[x + l, y, base], [x + l, y + p, base], [x + l, y + p, z], [x + l, y, z]]} tinta="face-escura" />
-    <Face vertices={[[x, y, z], [x + l, y, z], [x + l, y + p, z], [x, y + p, z]]} tinta="face-clara" />
-  </g>
-}
-
-function Posicao({ sala, i }: { sala: Sala; i: number }) {
-  const [x, y] = mesaDe(sala, i)
-  const [rostoX, rostoY] = projetar([x + 13, y + 9, 42])
-  return <g>
-    <Bloco x={x + 4} y={y - 3} l={18} p={17} h={18} tom="movel" />
-    <Bloco x={x + 5} y={y + 3} l={16} p={14} base={16} h={19} tom={i ? 'roupa-clara' : 'roupa'} />
-    <circle cx={rostoX} cy={rostoY} r="8" className={i ? 'pele-clara' : 'pele'} />
-    <path d={`M ${rostoX - 8} ${rostoY} a 8 8 0 1 1 16 0 q -10 -2 -12 -4 z`} className="cabelo" />
-    <Bloco x={x - 4} y={y + 21} l={32} p={17} h={24} tom="movel" />
-    <Bloco x={x - 8} y={y + 17} l={40} p={24} base={24} h={4} tom="mesa" />
-    <Bloco x={x + 2} y={y + 24} l={16} p={11} base={28} h={2} tom="tela" />
-    <Bloco x={x + 2} y={y + 34} l={16} p={2} base={30} h={11} tom="tela" />
-  </g>
-}
-
-const mesaDe = ({ x, y }: Sala, i: number): [number, number] => [x + (i ? 100 : 23), y + (i ? 53 : 38)]
-
+/** As quatro props originais continuam válidas. A variante regula o espaço ocupado.
+ * salaDestacada também aproxima e centraliza a sala. onSelecionar adiciona botões
+ * nativos sobre os postos. oculto soma-se ao olho global. Informe papel ao oferecer
+ * valores para respeitar a permissão de quem usa a tela.
+ */
 export interface PropsEscritorioMaquete {
   funcionarios: DadosInicio['funcionarios']
   salaDestacada?: SalaEquipe
   mostrarPlaquinhas?: boolean
   valores?: Partial<Record<string, Dinheiro>>
+  variante?: 'compacta' | 'media' | 'grande'
+  oculto?: boolean
+  papel?: DadosInicio['pessoa']['papel']['valor']
+  onSelecionar?: (funcionario: Funcionario) => void
 }
 
-export function EscritorioMaquete({ funcionarios, salaDestacada, mostrarPlaquinhas = false, valores }: PropsEscritorioMaquete) {
-  const lista = funcionarios.valor ?? []
-  return <svg className="escritorio-maquete" viewBox="0 0 640 445" role="group" aria-label="Maquete isométrica do escritório">
-    {salas.map(s => {
-      const [x, y] = projetar([s.x + 74, s.y + 120, 0])
-      return <g key={s.id} data-sala={s.id} data-destaque={salaDestacada === s.id} role="group" aria-label={s.nome}>
-        <Bloco x={s.x} y={s.y} l={146} p={138} h={8} base={-8} tom="piso" />
-        <Bloco x={s.x} y={s.y} l={146} p={4} h={25} tom="parede" />
-        <Bloco x={s.x} y={s.y + 4} l={4} p={134} h={25} tom="parede" />
-        {s.pessoas.map((id, i) => <Posicao key={id} sala={s} i={i} />)}
-        <text x={x} y={y} textAnchor="middle" className="nome-sala">{s.nome}</text>
-      </g>
-    })}
-    {salas.flatMap(s => s.pessoas.map((id, i) => {
-      const f = lista.find(p => p.id === id)
-      const v = valores?.[id]
-      if (!f || (!mostrarPlaquinhas && !v)) return null
+export function EscritorioMaquete({
+  funcionarios, salaDestacada, mostrarPlaquinhas = false, valores,
+  variante = 'media', oculto = false, papel, onSelecionar,
+}: PropsEscritorioMaquete) {
+  const id = useId()
+  const olhoFechado = useValoresOcultos()
+  const rolagem = useRef<HTMLDivElement>(null)
+  const interativa = !!onSelecionar
+  const foco = salas.find(sala => sala.id === salaDestacada)
+  const [centroX, centroY] = foco ? projetar(foco.x + 92, foco.y + 73) : [0, 0]
+  const [vx, vy, largura, altura] = foco
+    ? [centroX - 237, centroY - 156, 474, 270] as const
+    : vistaGeral
 
-      const [mx, my] = mesaDe(s, i)
-      const [x, y] = projetar([mx + 13, my + 9, 52])
-      const { Icone, rotulo } = f.estadoHoje.valor ? estados[f.estadoHoje.valor] : { Icone: CircleHelp, rotulo: 'Estado indisponível' }
-      return <foreignObject key={id} x={x - 60} y={y - 51} width="120" height="51">
-        <div className="maquete-legenda">
-          {mostrarPlaquinhas && <span className="maquete-placa" role="img" aria-label={`${f.nome} · ${rotulo}`} title={rotulo}><Icone size={13} aria-hidden />{f.curto}</span>}
-          {v && <span className="maquete-placa"><Valor campo={v} /></span>}
+  useEffect(() => {
+    const area = rolagem.current
+    if (area) area.scrollLeft = foco ? (area.scrollWidth - area.clientWidth) / 2 : 0
+  }, [foco, interativa])
+
+  const planta = salas.map(sala => ({
+    sala,
+    postos: (funcionarios.valor ?? []).filter(f => f.sala === sala.id).map((funcionario, i) => {
+      const membro = POR_ID[funcionario.id]
+      const mesa = membro?.mesa ?? (i - 1) * 2
+      const [x, y] = projetar(sala.x + 92 + 29 * mesa, sala.y + 81)
+      const estado: keyof typeof estados = funcionario.estadoHoje.valor ?? 'indisponivel'
+      return { funcionario, roupa: membro?.roupa, mesa, x, y, estado }
+    }).sort((a, b) => a.y - b.y),
+  }))
+  const valorPermitido = papel !== 'equipe' && papel !== null
+  const focoDa = (sala: SalaEquipe) => ({ destaque: foco?.id === sala, atenuada: !!foco && foco.id !== sala })
+
+  const svg = <svg className="escritorio-maquete" data-variante={variante}
+    width={largura} height={altura} viewBox={`${vx} ${vy} ${largura} ${altura}`} aria-hidden="true" focusable="false">
+    <title>Maquete isométrica do escritório</title>
+    <defs>
+      <SimbolosMaquete id={id} />
+      {Object.entries(estados).map(([estado, { rotulo, ...icone }]) =>
+        <g key={estado} id={`${id}-${estado}`}><Icone {...icone} size={12} strokeWidth={2.3} /></g>)}
+    </defs>
+    {planta.map(({ sala }) => <PisoMaquete key={sala.id} sala={sala} {...focoDa(sala.id)} id={id} />)}
+    {planta.map(({ sala, postos }) => <SalaMaquete key={sala.id} sala={sala} {...focoDa(sala.id)} id={id}>
+      {postos.map(({ funcionario, roupa, x, y, estado }) =>
+        <PostoMaquete key={funcionario.id} funcionario={funcionario.id} {...{ id, roupa, x, y, estado }} />)}
+    </SalaMaquete>)}
+    {planta.map(({ sala, postos }) => {
+      if (mostrarPlaquinhas) {
+        const [x, y] = projetar(sala.x + 92, sala.y + 81)
+        return <foreignObject key={sala.id} className="maquete-legendas" x={x - 105} y={y - 110} width="210" height="94"
+          data-atenuada={focoDa(sala.id).atenuada || undefined}>
+          <div>
+            {postos.map(({ funcionario, mesa, estado }) =>
+              <span key={funcionario.id} className="maquete-placa maquete-rotulo" data-mesa={mesa || undefined} data-estado={estado}
+                title={estados[estado].rotulo}>
+                <svg width="12" height="12"><use href={`#${id}-${estado}`} /></svg>
+                {funcionario.curto}
+              </span>)}
+          </div>
+        </foreignObject>
+      }
+      return (
+        <g key={sala.id} data-atenuada={focoDa(sala.id).atenuada}>
+          {postos.filter(({ estado }) => estado !== 'trabalhando' && estado !== 'indisponivel')
+            .map(({ funcionario, x, y, estado }) =>
+              <g key={funcionario.id} transform={`translate(${x} ${y})`} data-estado={estado}>
+                <g className="maquete-sinal">
+                  <rect x="-12" y="-78" width="20" height="17" rx="6" />
+                  <use href={`#${id}-${estado}`} x="-8" y="-75.5" />
+                </g>
+              </g>)}
+        </g>)
+    })}
+    {(mostrarPlaquinhas || (valores && valorPermitido)) &&
+      <foreignObject className="maquete-legendas" x={vx} y={vy} width={largura} height={altura}>
+        <div>
+          {valorPermitido && valores && planta.flatMap(({ sala, postos }) => postos.map(({ funcionario, x, y, estado }) => {
+            const valor = valores[funcionario.id]
+            return valor && <span key={funcionario.id} className="maquete-balao" data-estado={estado}
+              data-atenuada={focoDa(sala.id).atenuada || undefined} style={{ left: x + 38 - vx, top: y - 102 - vy }}>
+              {oculto || olhoFechado ? <span aria-label="Valor oculto">•••</span> : <Valor campo={valor} />}
+            </span>
+          }))}
         </div>
-      </foreignObject>
-    }))}
+      </foreignObject>}
   </svg>
+
+  if (!onSelecionar) return svg
+
+  return <div ref={rolagem} className="maquete-rolagem" role="group" aria-label="Selecionar funcionário no escritório"
+    data-variante={variante}>
+    <div className="maquete-palco" style={{ '--maquete-largura-toque': `${largura}px` } as CSSProperties}>
+      {svg}
+      {planta.filter(({ sala }) => !foco || sala === foco).flatMap(({ sala, postos }) =>
+        postos.map(({ funcionario, x, y, estado }) => <button key={funcionario.id} type="button"
+          className="maquete-posto" aria-label={`${funcionario.nome} · ${sala.nome} · ${estados[estado].rotulo}`}
+          style={{ left: `${(x - 4 - vx) / largura * 100}%`, top: `${(y - 47 - vy) / altura * 100}%` }}
+          onClick={() => onSelecionar(funcionario)} />))}
+    </div>
+  </div>
 }
