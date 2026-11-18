@@ -42,13 +42,51 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(conteudo).toContain('Rumo a 2029')
     expect(html.match(/>Exemplo</g)).toHaveLength(1)
     expect(oficial.estado).toBe('pronto')
-    expect(conteudo).toContain(`falta por mês · com margem${texto(brl.format(oficial.valor! / 100))}`)
+    expect(conteudo).toContain(`Falta por mês · com margem${texto(brl.format(oficial.valor! / 100))}`)
     expect(semMargem.estado).toBe('pronto')
-    expect(conteudo).toContain(`sem margem${texto(brl.format(semMargem.valor! / 100))}`)
+    expect(html).toMatch(/<details class="rumo-cenario"><summary>Cenário sem margem/)
+    expect(conteudo).not.toContain(texto(brl.format(semMargem.valor! / 100)))
     expect(cobertura.estado).toBe('pronto')
     expect(conteudo).toContain(`${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(cobertura.valor!)}%`)
     expect(html).toContain('Quem trabalha por você')
     expect(html).toContain('escritorio-maquete')
+  })
+
+  it('desenha uma trilha grossa com marcadores de calendário e posição baseada na cobertura oficial', () => {
+    const html = render()
+    expect(html).toContain('Você está aqui')
+    expect(texto(html)).toContain('Viver de rendimentos')
+    expect(html).toMatch(/<ol class="rumo-marcos" aria-label="Marcos do calendário"><li>2026<\/li><li>2027<\/li><li>2028<\/li><li>2029<\/li><\/ol>/)
+    expect(html).toMatch(/class="rumo-posicao" cx="[^"]+" cy="[^"]+"/)
+    expect(html).toContain('class="rumo-haste"')
+    expect(render({ dispositivo: 'desktop' })).toMatch(/class="rumo-trilha"[^>]*viewBox="0 0 640 128"/)
+    expect(css).toMatch(/\.rumo-caminho\s*\{[^}]*stroke-width: 15/)
+    expect(css).toMatch(/\.rumo-valor-principal, \.rumo \.rumo-percentual\s*\{[^}]*font-size: 2.25rem/)
+  })
+
+  it.each([
+    { valor: 0, x: '20.00', y: '94.00', pinta: false },
+    { valor: 50, x: '160.00', y: '77.50', pinta: true },
+    { valor: 125, x: '300.00', y: '28.00', pinta: true },
+  ])('posiciona o ponto para $valor% e preserva o número do contrato', ({ valor, x, y, pinta }) => {
+    const exemplo = structuredClone(dados)
+    exemplo.plano2029.progressao = { ...exemplo.plano2029.progressao, estado: 'pronto', valor }
+    const html = render({ dados: exemplo })
+    expect(html).toContain(`class="rumo-posicao" cx="${x}" cy="${y}"`)
+    expect(html.includes('class="rumo-cobertura"')).toBe(pinta)
+    expect(texto(html)).toContain(`Você está aqui${valor}%`)
+  })
+
+  it('apresenta os três motores ilustrados e liga cada um à pessoa identificada na maquete', () => {
+    const html = render()
+    expect(html.match(/class="rumo-motor-figura"><svg/g)).toHaveLength(3)
+    expect(html.match(/class="rumo-acao rumo-responsavel"/g)).toHaveLength(3)
+    expect(html).toContain('aria-label="Ver Gestor do Guardado no escritório"')
+    expect(html).toMatch(/class="rumo-maquete"><svg[^>]*aria-label="Maquete isométrica do escritório"/)
+    expect(html.match(/class="maquete-placa"/g)).toHaveLength(8)
+    expect(html).toContain('data-sala="patrimonio" data-destaque="true"')
+    expect(css).toMatch(/\.rumo-maquete\s*\{[^}]*min-block-size: 245px/)
+    expect(css).not.toMatch(/\.rumo-maquete[^{}]*\{[^}]*(?:overflow:\s*hidden|margin-block:\s*-)/)
   })
 
   it('reserva até cinco ocorrências para a primeira tela móvel e até oito para todo o desktop', () => {
@@ -61,9 +99,8 @@ describe('Rumo a 2029 no laboratório', () => {
     const fimDaMaximaFaixaMovel = celular.indexOf('<article class="rumo-motor"', celular.indexOf('<article class="rumo-motor"') + 1)
     expect(fimDaMaximaFaixaMovel).toBeGreaterThan(0)
     const faixaMovel = contar(celular.slice(0, fimDaMaximaFaixaMovel))
-    expect(faixaMovel).toBeGreaterThanOrEqual(4)
-    expect(faixaMovel).toBeLessThanOrEqual(5)
-    expect(contar(desktop)).toBeLessThanOrEqual(8)
+    expect(faixaMovel).toBe(4)
+    expect(contar(desktop)).toBe(6)
     const ocorrencias = [...desktop.matchAll(/data-numero-financeiro="true"[^>]*>(.*?)<\/span>/g)].map(m => texto(m[1]))
     expect(new Set(ocorrencias).size).toBe(ocorrencias.length)
   })
@@ -75,10 +112,11 @@ describe('Rumo a 2029 no laboratório', () => {
     ] }
     const aberto = render({ dados: comTextoPrivado })
     expect(aberto).toContain('76543,21')
-    expect(aberto).toContain('rumo-cobertura')
+    expect(aberto).toContain('class="rumo-cobertura"')
     for (const fechado of [render({ dados: comTextoPrivado, oculto: true }), render({ dados: comTextoPrivado }, true)]) {
       expect(contar(fechado)).toBe(0)
-      expect(fechado).not.toMatch(/R\$|\d\s*%|76543|rumo-cobertura|pathLength/)
+      expect(fechado).not.toMatch(/R\$|\d\s*%|76543|class="rumo-(?:cobertura|posicao|haste)"|Você está aqui|pathLength/)
+      expect(fechado).toContain('Marcos do calendário')
       const valores = [...aberto.matchAll(/data-numero-financeiro="true"[^>]*>(.*?)<\/span>/g)]
       for (const [, valor] of valores) {
         const digitos = valor.match(/\d[\d.,]*/)?.[0]
@@ -101,8 +139,9 @@ describe('Rumo a 2029 no laboratório', () => {
     semDados.imoveis.aluguelLiquidoEstimado = { ...dados.imoveis.aluguelLiquidoEstimado, estado: 'pronto', valor: 0 }
     semDados.funcionarios = { ...dados.funcionarios, estado: 'indisponivel', valor: null }
     const html = render({ dados: semDados })
-    expect(html.match(/Ainda sem dado/g)).toHaveLength(5)
-    expect(html).not.toContain('rumo-cobertura')
+    expect(html.match(/Ainda sem dado/g)).toHaveLength(3)
+    expect(texto(html)).toContain('rendeu hojeSem registros')
+    expect(html).not.toMatch(/class="rumo-(?:cobertura|posicao|haste)"/)
     expect(texto(html)).toContain('aluguel líquido estimadoR$ 0,00')
     expect(html.match(/cf-ilustracao\b/g)?.length).toBeGreaterThanOrEqual(3)
   })
@@ -119,6 +158,15 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(texto(html)).toContain('Contar o estoque da casa')
     expect(html.match(/<h1\b/g)).toHaveLength(1)
     expect(html).not.toMatch(/R\$|Tarefa financeira|rumo-heroi|rumo-escritorio|rumo-orcamento/)
+    equipe.pendencias.fila.valor.shift()
+    expect(render({ dados: equipe })).toContain('Nada pendente por aqui.')
+  })
+
+  it('segue a posição visual da navegação na ordem de leitura de cada dispositivo', () => {
+    const celular = render()
+    const desktop = render({ dispositivo: 'desktop' })
+    expect(celular.indexOf('class="rumo-nav"')).toBeGreaterThan(celular.indexOf('class="rumo-corpo"'))
+    expect(desktop.indexOf('class="rumo-nav"')).toBeLessThan(desktop.indexOf('class="rumo-corpo"'))
   })
 
   it('prioriza risco e operação e oferece acesso à fila restante com pílulas nominadas', () => {
@@ -148,10 +196,11 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(regraAlvos).toMatch(/min-block-size: 44px/)
     expect(botoes.length).toBeGreaterThanOrEqual(9)
     for (const [, atributos, corpo] of botoes) {
-      expect(atributos).toMatch(/class="rumo-(?:acao|aba|avatar)"/)
+      expect(atributos).toMatch(/class="rumo-(?:acao|aba|avatar)(?: |")/)
       expect(atributos.match(/aria-label="([^"]+)"/)?.[1] ?? texto(corpo)).not.toBe('')
     }
-    expect(html).toMatch(/class="rumo-maquete" aria-hidden="true"><svg class="escritorio-maquete"/)
+    expect(css).toMatch(/\.rumo-cenario summary\s*\{[^}]*min-block-size: 44px/)
+    expect(css).toMatch(/\.rumo-cenario summary:focus-visible\s*\{[^}]*outline: 2px solid var\(--rumo-verde-heroi\)/)
     const semDados = structuredClone(dados)
     semDados.aplicacoes.rendeuHoje = { ...dados.aplicacoes.rendeuHoje, estado: 'vazio', valor: null }
     const figuras = [...render({ dados: semDados }).matchAll(/<svg\b[^>]*class="(?:cf-ilustracao|rumo-trilha)[^"]*"[^>]*>/g)]
@@ -199,8 +248,10 @@ it.each(['claro', 'escuro'])('alcança contraste AA nos pares de texto do tema %
     ['destaque', 'fundo'], ['destaque', 'menu'], ['destaque', 'cartao'], ['sobre-destaque', 'destaque'],
     ['risco', 'menu'], ['risco', 'cartao'],
     ['rumo-texto-heroi', 'rumo-heroi'], ['rumo-suave-heroi', 'rumo-heroi'], ['rumo-verde-heroi', 'rumo-heroi'],
+    ['rumo-verde-heroi', 'rumo-fundo-trilha'], ['rumo-texto-heroi', 'rumo-fundo-trilha'], ['rumo-suave-heroi', 'rumo-fundo-trilha'],
   ]
   for (const [frente, fundo] of pares) {
     expect(contraste(paleta[frente], paleta[fundo]), `${frente} / ${fundo}`).toBeGreaterThanOrEqual(4.5)
   }
+  expect(contraste(paleta['rumo-piso-trilha'], paleta['rumo-fundo-trilha'])).toBeGreaterThanOrEqual(3)
 })
