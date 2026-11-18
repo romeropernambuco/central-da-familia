@@ -1,7 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import * as T from './tres'
-import { montarEscritorioIsometrico, ORCAMENTO_ISOMETRICO, type EstadosIsometricos } from './cenaIsometrica'
+import { montarEscritorioIsometrico, ORCAMENTO_ISOMETRICO, type EstadosIsometricos, type OpcoesIsometricas } from './cenaIsometrica'
 import { EQUIPE } from './equipe'
+import { SALAS_ISOMETRICAS } from './plantaIsometrica'
 
 class Elemento extends EventTarget {
   dataset: Record<string, string> = {}
@@ -46,8 +47,10 @@ function ambiente(reduz: boolean) {
   }
   const etiquetas = new Map(EQUIPE.map(m => [m.id, new Elemento()]))
   const aoPerderContexto = vi.fn()
-  const montar = (estados: EstadosIsometricos = { contador: 'trabalhando' }) => montarEscritorioIsometrico({ ...T, WebGLRenderer: function () { return renderer } }, new Elemento() as any, {
-    estados, vista: 'tudo', etiqueta: id => etiquetas.get(id) as any,
+  const montar = (estados: EstadosIsometricos = { contador: 'trabalhando' }, palco?: OpcoesIsometricas['palco'],
+    tamanho?: { clientWidth: number; clientHeight: number }) => montarEscritorioIsometrico({ ...T, WebGLRenderer: function () { return renderer } },
+    Object.assign(new Elemento(), tamanho) as any, {
+    estados, palco, vista: 'tudo', etiqueta: id => etiquetas.get(id) as any,
     placa: () => null, aoPerderContexto, aoTocar() {},
   })
   const quadro = (t: number) => {
@@ -61,6 +64,105 @@ function ambiente(reduz: boolean) {
   }
 }
 afterEach(() => vi.unstubAllGlobals())
+
+const variantes = ['compacta', 'media', 'grande'] as const
+const palcoDe = (variante: typeof variantes[number]) => ({
+  variante, elenco: EQUIPE, posicionar: vi.fn<NonNullable<OpcoesIsometricas['palco']>['posicionar']>(),
+  aoApontar() {}, aoDesenhar() {},
+})
+
+it.each(['celular', 'desktop'] as const)('enquadra os três postos inteiros e grandes no %s em cada variante', dispositivo => {
+  const tamanhos = variantes.map(variante => {
+    const largura = dispositivo === 'celular' ? 349 : { compacta: 448, media: 640, grande: 820 }[variante]
+    const a = ambiente(true), palco = palcoDe(variante)
+    const c = a.montar(undefined, palco, { clientWidth: largura, clientHeight: 380 })
+    a.quadro(100)
+    const [postos] = palco.posicionar.mock.lastCall!
+    expect(postos.map(p => p.id)).toEqual(['contador', 'colchao', 'tesoureiro'])
+    expect(postos.every(p => p.x > 28 && p.x < largura - 28 && p.y > 60 && p.y < 320)).toBe(true)
+    const cam = a.renderer.render.mock.lastCall![1]
+    const alturaEmPixels = (new T.Vector3(0, 1.37, -.88).project(cam).y - new T.Vector3(0, .12, -.88).project(cam).y) * 190
+    expect(alturaEmPixels).toBeGreaterThanOrEqual(largura < 400 ? 40 : 60)
+    expect(a.renderer.setPixelRatio).toHaveBeenCalledWith(2)
+    c.destruir()
+    return alturaEmPixels
+  })
+  expect(tamanhos[2]).toBeGreaterThan(tamanhos[1])
+  expect(tamanhos[1]).toBeGreaterThan(tamanhos[0])
+})
+
+it('mantém o orçamento ao paginar todas as salas, inclusive com pedidos simultâneos', () => {
+  const a = ambiente(true), palco = palcoDe('grande')
+  const c = a.montar(undefined, palco)
+  for (const estado of ['trabalhando', 'vai_comecar', 'entregue', 'precisa_de_voce'] as const) {
+    const estados = Object.fromEntries(EQUIPE.map(m => [m.id, estado]))
+    for (const sala of SALAS_ISOMETRICAS) {
+      c.atualizar(estados, 'tudo', sala)
+      a.quadro(100)
+      expect(a.renderer.info.render.calls).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.desenhos)
+      expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+      expect(palco.posicionar.mock.lastCall![0].filter(p => p.chama).map(p => p.id))
+        .toEqual(estado === 'precisa_de_voce' ? EQUIPE.filter(m => m.sala === sala).map(m => m.id) : [])
+    }
+  }
+  c.destruir()
+})
+
+it('aproxima a sala em vários quadros e omite marcadores dos demais estados e páginas', () => {
+  const a = ambiente(false), palco = palcoDe('grande')
+  const estados: EstadosIsometricos = { contador: 'trabalhando', colchao: 'vai_comecar', tesoureiro: 'entregue', guardado: 'precisa_de_voce' }
+  const c = a.montar(estados, palco, { clientWidth: 349, clientHeight: 365 })
+  a.quadro(100)
+  const [scene, cam] = a.renderer.render.mock.lastCall!
+  const marcador = scene.getObjectByName('pedidos de atenção')
+  expect(marcador.count).toBe(0)
+  const escala = () => 349 / (cam.right - cam.left)
+  const geral = escala()
+  c.atualizar(estados, 'patrimonio')
+  a.quadro(116)
+  const primeiro = escala()
+  expect(primeiro).toBeGreaterThan(geral)
+  expect(marcador.count).toBe(2) // miolo e contorno do mesmo pedido
+  expect(palco.posicionar.mock.lastCall![0].filter(p => p.chama).map(p => p.id)).toEqual(['guardado'])
+  for (let i = 1; i <= 22; i++) a.quadro(116 + 16 * i)
+  expect(escala()).toBeGreaterThan(primeiro * 1.3)
+  const altura = (new T.Vector3(0, 1.37, -.88).project(cam).y - new T.Vector3(0, .12, -.88).project(cam).y) * 182.5
+  expect(altura).toBeGreaterThanOrEqual(90)
+  expect(altura).toBeLessThanOrEqual(120)
+  c.atualizar({ ...estados, guardado: 'entregue' }, 'patrimonio')
+  a.quadro(500)
+  expect(marcador.count).toBe(0)
+  expect(a.renderer.info.render.calls).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.desenhos)
+  expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+  c.destruir()
+})
+
+it('com movimento reduzido o palco troca sala, zoom e estados em um único quadro, sem fila de animação', () => {
+  const a = ambiente(true), palco = palcoDe('media')
+  const c = a.montar({ guardado: 'precisa_de_voce' }, palco)
+  a.quadro(100)
+  const [scene, cam] = a.renderer.render.mock.lastCall!
+  const marcador = scene.getObjectByName('pedidos de atenção')
+  expect(marcador.count).toBe(0)
+  const anterior = cam.right - cam.left
+  c.atualizar({ guardado: 'precisa_de_voce' }, 'patrimonio')
+  a.quadro(116)
+  const largura = cam.right - cam.left
+  expect(largura).toBeLessThan(anterior)
+  expect(marcador.count).toBe(2)
+  const matriz = new T.Matrix4()
+  marcador.getMatrixAt(0, matriz)
+  const inicial = matriz.clone()
+  expect(a.frames.size).toBe(0)
+  a.mostrar(false)
+  a.mostrar(true)
+  a.quadro(2400)
+  marcador.getMatrixAt(0, matriz)
+  expect(matriz.equals(inicial)).toBe(true)
+  expect(cam.right - cam.left).toBe(largura)
+  expect(a.frames.size).toBe(0)
+  c.destruir()
+})
 
 it('projeta todos os postos, instancia a sala e aplica foco e estados sem remontar', () => {
   const a = ambiente(true), c = a.montar()

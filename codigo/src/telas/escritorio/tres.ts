@@ -3,4 +3,4 @@
 // @ts-ignore: o pacote three não traz tipos; a cena usa as peças como `any`
 export { WebGLRenderer, PCFSoftShadowMap, Scene, HemisphereLight, DirectionalLight, PointLight, BoxGeometry, SphereGeometry, CylinderGeometry, CircleGeometry, MeshBasicMaterial, ConeGeometry, MeshLambertMaterial, Color, BufferGeometry, BufferAttribute, Mesh, Group, Vector2, Vector3, OrthographicCamera, Raycaster } from 'three'
 // @ts-ignore: Three r160 sem tipos neste projeto.
-export { Box3, InstancedMesh, Matrix4 } from 'three'
+export { Box3, InstancedMesh, Matrix4, RingGeometry } from 'three'

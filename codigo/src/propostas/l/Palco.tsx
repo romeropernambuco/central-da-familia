@@ -54,7 +54,7 @@ export function Palco({ id, funcionarios, papel, celular, oculto, selecionar }: 
 }) {
   const [sala, setSala] = useState<Sala>()
   const pessoas = (funcionarios.valor ?? []).filter(pessoa => !sala || pessoa.sala === sala)
-  const altura = celular ? 528 : 640
+  const altura = celular ? 380 : 456
   return <section className="l-bloco l-escritorio" aria-labelledby={id}>
     <header className="l-secao-topo">
       <span className="l-icone"><DoorOpen size={22} aria-hidden="true" /></span>
@@ -66,7 +66,7 @@ export function Palco({ id, funcionarios, papel, celular, oculto, selecionar }: 
       {(Object.entries(salas) as [Sala, string][]).map(([chave, nome]) =>
         <button key={chave} type="button" aria-pressed={sala === chave} onClick={() => setSala(chave)}>{nome}</button>)}
     </div>
-    <div className="l-palco" style={{ blockSize: altura }}>
+    <div className="l-palco" style={{ minBlockSize: altura }}>
       <Escritorio3D {...{ funcionarios, papel, oculto, altura }} salaDestacada={sala}
         variante="grande" mostrarPlaquinhas onSelecionar={selecionar} />
       <span className="l-panorama"><MoveHorizontal size={15} aria-hidden="true" />Deslize para explorar</span>

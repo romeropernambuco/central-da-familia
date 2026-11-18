@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { SALAS_NOME, tentarCarregarCena } from '../../telas/escritorio/cenaBase'
 import type { EstadosIsometricos, montarEscritorioIsometrico } from '../../telas/escritorio/cenaIsometrica'
 import { POR_ID } from '../../telas/escritorio/equipe'
-import type { VistaIsometrica } from '../../telas/escritorio/plantaIsometrica'
+import { SALAS_ISOMETRICAS, type VistaIsometrica } from '../../telas/escritorio/plantaIsometrica'
 import { EscritorioMaquete, type PropsEscritorioMaquete } from './EscritorioMaquete'
 import { distribuirEtiquetas } from './escritorio3d-etiquetas'
 import { useValoresOcultos, Valor } from './privacidade'
@@ -57,7 +58,6 @@ function Palco3D({
   funcionarios, salaDestacada, valores, variante = 'media',
   oculto, onSelecionar, marcarFalha,
 }: PropsEscritorioMaquete & { marcarFalha: (falhou: boolean) => void }) {
-  const area = useRef<HTMLDivElement>(null)
   const camera = useRef<HTMLDivElement>(null)
   const etiquetas = useRef(new Map<string, HTMLElement>())
   const cena = useRef<ReturnType<typeof montarEscritorioIsometrico> | null>(null)
@@ -65,9 +65,13 @@ function Palco3D({
   const [apontado, apontar] = useState<string | null>(null)
   const [focado, focar] = useState<string | null>(null)
   const [selecionado, selecionar] = useState<string | null>(null)
+  const [pagina, mudarPagina] = useState<PropsEscritorioMaquete['salaDestacada']>()
   const olhoFechado = useValoresOcultos()
   const equipe = (funcionarios.valor ?? []).filter(f => Object.prototype.hasOwnProperty.call(POR_ID, f.id))
-  const visiveis = equipe.filter(f => !salaDestacada || f.sala === salaDestacada)
+  const salas = SALAS_ISOMETRICAS.filter(sala => equipe.some(f => f.sala === sala))
+  const salaDaPagina = pagina && salas.includes(pagina) ? pagina : salas[0]
+  const salaVisivel = salaDestacada ?? salaDaPagina
+  const visiveis = equipe.filter(f => f.sala === salaVisivel)
   const detalhe = [apontado, focado, selecionado].map(id => visiveis.find(f => f.id === id)).find(Boolean)
   const valor = detalhe && valores?.[detalhe.id]
   const elenco = equipe.map(f => ({ ...POR_ID[f.id], sala: f.sala }))
@@ -79,8 +83,8 @@ function Palco3D({
     selecionar(funcionario.id)
     onSelecionar?.(funcionario)
   }
-  const atuais = useRef({ estados, vista, elenco, visiveis, abrir })
-  atuais.current = { estados, vista, elenco, visiveis, abrir }
+  const atuais = useRef({ estados, vista, elenco, visiveis, abrir, pagina: salaDaPagina })
+  atuais.current = { estados, vista, elenco, visiveis, abrir, pagina: salaDaPagina }
 
   useEffect(() => {
     const el = camera.current!
@@ -92,7 +96,7 @@ function Palco3D({
       cancelar = tentarCarregarCena(
         () => Promise.all([import('../../telas/escritorio/tres'), import('../../telas/escritorio/cenaIsometrica')]),
         ([T, modulo]) => {
-          const { estados, vista, elenco } = atuais.current
+          const { estados, vista, elenco, pagina } = atuais.current
           cena.current = modulo.montarEscritorioIsometrico(T, el, {
             estados, vista,
             etiqueta: () => null, placa: () => null,
@@ -102,7 +106,7 @@ function Palco3D({
               if (funcionario) atuais.current.abrir(funcionario)
             },
             palco: {
-              variante, elenco, aoApontar: apontar, aoDesenhar: () => marcarPronto(true),
+              variante, elenco, pagina, aoApontar: apontar, aoDesenhar: () => marcarPronto(true),
               posicionar(postos, largura, altura) {
                 const posicoes = distribuirEtiquetas(postos, largura, altura)
                 for (const [id, no] of etiquetas.current) {
@@ -132,15 +136,21 @@ function Palco3D({
   // Atualiza estados e câmera sem reconstruir as malhas. Nomes, fichas e valores ficam no React.
   const chaveEstados = equipe.map(f => f.estadoHoje.valor ?? '').join(',')
   useEffect(() => {
-    cena.current?.atualizar(atuais.current.estados, vista)
-  }, [chaveEstados, vista])
+    cena.current?.atualizar(atuais.current.estados, vista, salaDaPagina)
+  }, [chaveEstados, vista, salaDaPagina])
   useEffect(() => {
-    if (area.current) area.current.scrollLeft = (area.current.scrollWidth - area.current.clientWidth) / 2
-  }, [vista, pronto])
+    if (salaDestacada) mudarPagina(salaDestacada)
+  }, [salaDestacada])
 
-  return <div className="escritorio3d-cena" data-renderizacao={pronto ? '3d' : 'carregando'} data-focada={!!salaDestacada}>
-    <div className="escritorio3d-rolagem" ref={area} role="group"
-      aria-label={salaDestacada ? `Escritório · ${SALAS_NOME[salaDestacada]}` : 'Postos do escritório'}>
+  const indice = salas.indexOf(salaDaPagina)
+  const virar = (direcao: number) => {
+    apontar(null)
+    mudarPagina(salas[(indice + direcao + salas.length) % salas.length])
+  }
+
+  return <div className="escritorio3d-cena" data-renderizacao={pronto ? '3d' : 'carregando'}>
+    <div className="escritorio3d-quadro" role="group"
+      aria-label={salaVisivel ? `Escritório · ${SALAS_NOME[salaVisivel]}` : 'Postos do escritório'}>
       <div className="escritorio3d-palco">
         <div className="escritorio3d-camera" ref={camera} aria-hidden="true" />
         {!pronto && <div className="escritorio3d-esqueleto" role="status">Carregando escritório…</div>}
@@ -157,6 +167,11 @@ function Palco3D({
         </div>
       </div>
     </div>
+    {!salaDestacada && salas.length > 1 && <div className="escritorio3d-paginas" role="group" aria-label="Salas do escritório">
+      <button type="button" aria-label="Sala anterior" onClick={() => virar(-1)}><ChevronLeft aria-hidden="true" size={20} /></button>
+      <span aria-live="polite">{SALAS_NOME[salaDaPagina]} <small>{indice + 1} de {salas.length}</small></span>
+      <button type="button" aria-label="Próxima sala" onClick={() => virar(1)}><ChevronRight aria-hidden="true" size={20} /></button>
+    </div>}
     <div className="escritorio3d-detalhe" aria-live="polite">
       {pronto && !detalhe && <span>{salaDestacada ? SALAS_NOME[salaDestacada] :
         onSelecionar ? 'Selecione um posto para abrir a ficha.' : 'Equipe do escritório'}</span>}

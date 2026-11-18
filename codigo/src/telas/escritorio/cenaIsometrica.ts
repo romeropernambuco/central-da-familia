@@ -2,7 +2,7 @@ import type * as Tres from './tres'
 import type { EstadoFuncionario } from '../../api/tipos'
 import { EQUIPE, type MembroEquipe, type SalaEquipe } from './equipe'
 import { faseDoId } from './atividadesMini'
-import { montarCadeira, montarMesa, montarPredio } from './mobiliarioIsometrico'
+import { montarCadeira, montarMesa, montarPredio, montarSala } from './mobiliarioIsometrico'
 import { personagemIsometrico, type PecaIsometrica } from './personagemIsometrico'
 import { PLANTA, SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometrica'
 
@@ -26,6 +26,7 @@ export interface OpcoesIsometricas {
   palco?: {
     variante: 'compacta' | 'media' | 'grande'
     elenco: readonly MembroEquipe[]
+    pagina?: SalaEquipe
     posicionar: (postos: readonly PostoProjetado[], largura: number, altura: number) => void
     aoApontar: (id: string | null) => void
     aoDesenhar: () => void
@@ -67,16 +68,28 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
 
   function iniciar() {
     const palco = opcoes.palco
+    let pagina = palco?.pagina ?? palco?.elenco[0]?.sala ?? 'caixa'
+    const salaEmCena = () => vista === 'tudo' ? pagina : vista
     const movimento = window.matchMedia('(prefers-reduced-motion: reduce)')
     let estados = opcoes.estados, vista = opcoes.vista, naTela = true, leve = false
     let largura = 0, altura = 0, precisaRedesenhar = true
     let ultimo = 0, tempo = 0, somaFrames = 0, somaTempos = 0
     const mat = guardar(new T.MeshLambertMaterial())
     const janela = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: .35 }))
-    const mancha = guardar(new T.MeshBasicMaterial({ color: 0, transparent: true, opacity: .085, depthWrite: false }))
+    const mancha = guardar(new T.MeshBasicMaterial({ color: 0, transparent: true,
+      vertexColors: !!palco, opacity: palco ? 1 : .085, depthWrite: false }))
     const cubo = guardar(new T.BoxGeometry(1, 1, 1))
-    const esfera = guardar(new T.SphereGeometry(.5, 8, 4))
-    const circulo = guardar(new T.CircleGeometry(1, 16))
+    const esfera = guardar(new T.SphereGeometry(.5, palco ? 16 : 8, palco ? 10 : 4))
+    const circulo = guardar(palco ? new T.RingGeometry(0, 1, 24, 4) : new T.CircleGeometry(1, 16))
+    if (palco) {
+      const posicao = circulo.attributes.position
+      const rgba = new Float32Array(posicao.count * 4)
+      for (let i = 0; i < posicao.count; i++) {
+        const raio = Math.hypot(posicao.getX(i), posicao.getY(i))
+        rgba[i * 4 + 3] = .21 * Math.max(0, 1 - raio) ** 1.5
+      }
+      circulo.setAttribute('color', new T.BufferAttribute(rgba, 4))
+    }
     const fosforo = guardar(new T.MeshBasicMaterial())
     const externo = new T.Group(), movel = new T.Group()
     const telas = new T.Group(), marcadores = new T.Group(), entregas = new T.Group()
@@ -84,10 +97,12 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     marcadores.name = 'pedidos de atenção'
     entregas.name = 'selos de entrega'
     const cor = new T.Color()
+    let salaDaPeca: SalaEquipe | undefined
     function peca(geo: any): PecaIsometrica {
       return (pai, tinta, d, p) => {
         const objeto = new T.Mesh(geo, mat)
         objeto.userData.cor = tinta
+        objeto.userData.sala = salaDaPeca
         objeto.scale.set(...d)
         objeto.position.set(...p)
         pai.add(objeto)
@@ -95,33 +110,46 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       }
     }
     const basico = peca(cubo), oval = peca(esfera)
+    const direcaoCamera = new T.Vector3(1, palco ? .72 : .86, palco ? 1.2 : 1).normalize()
+    const pontoDeAtencao = palco ? peca(guardar(new T.CircleGeometry(.5, 24))) : oval
     const vidros = new T.Group(), manchas = new T.Group()
-    montarPredio((c, d, p) => basico(externo, c, d, p), (c, d, p) => basico(vidros, c, d, p))
-    const telhado = new T.Mesh(guardar(new T.ConeGeometry(.36, .26, 4)), mat)
-    telhado.userData.cor = 0xA6584A
-    telhado.rotation.y = Math.PI / 4
-    telhado.position.set(4.8, .87, .78)
-    externo.add(telhado)
+    if (palco) {
+      for (const sala of SALAS_ISOMETRICAS) {
+        salaDaPeca = sala
+        montarSala(sala, (c, d, p) => basico(externo, c, d, p), true)
+      }
+    } else {
+      montarPredio((c, d, p) => basico(externo, c, d, p), (c, d, p) => basico(vidros, c, d, p))
+      const telhado = new T.Mesh(guardar(new T.ConeGeometry(.36, .26, 4)), mat)
+      telhado.userData.cor = 0xA6584A
+      telhado.rotation.y = Math.PI / 4
+      telhado.position.set(4.8, .87, .78)
+      externo.add(telhado)
+    }
 
     const personagens = (palco?.elenco ?? EQUIPE).map(m => {
-      const sala = PLANTA[m.sala], x = sala.x + m.mesa, z = sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
+      salaDaPeca = m.sala
+      const sala = PLANTA[m.sala]
+      const x = palco ? m.mesa * .83 : sala.x + m.mesa
+      const z = palco ? -.88 : sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
       montarMesa((c, d, p) => basico(externo, c, d, [x + p[0], p[1], z + p[2]]),
         (c, d, p) => oval(externo, c, d, [x + p[0], p[1], z + p[2]]), m.mesa !== 0)
-      for (const escala of [.53, .39]) {
+      for (const escala of palco ? [.77] : [.53, .39]) {
         const sombra = new T.Mesh(circulo, mancha)
+        sombra.userData.sala = m.sala
         sombra.position.set(x, .047, z + .07)
         sombra.scale.set(escala, escala * .9, 1)
         sombra.rotation.x = -Math.PI / 2
         manchas.add(sombra)
       }
-      const b = personagemIsometrico(T, basico, oval, m)
+      const b = personagemIsometrico(T, basico, oval, m, !!palco)
       b.raiz.position.set(x, 0, z)
       movel.add(b.raiz)
       montarCadeira((c, d, p) => basico(b.raiz, c, d, p), (c, d, p) => oval(b.raiz, c, d, p))
 
       const monitor = new T.Group()
       monitor.position.set(x - .48, 0, z + .805)
-      monitor.rotation.y = 1.61
+      monitor.rotation.y = palco ? 1.29 : 1.61
       externo.add(monitor)
       basico(monitor, 0x50584F, [.45, .327, .06], [0, .897, 0])
       basico(monitor, 0x313833, [.399, .274, .012], [0, .897, .034])
@@ -132,21 +160,32 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       luzes.rotation.copy(monitor.rotation)
       telas.add(luzes)
       const tela = [
-        basico(luzes, 0xBECDAF, [.394, .269, .009], [0, .897, .043]),
-        basico(luzes, 0x5D7559, [.28, .03, .008], [-.013, .971, .05]),
-        basico(luzes, 0x73886B, [.19, .024, .008], [-.059, .917, .05]),
-        basico(luzes, 0x73886B, [.23, .024, .008], [-.038, .874, .05]),
+        basico(luzes, palco ? 0xC8EFE5 : 0xBECDAF, [.394, .269, .009], [0, .897, .043]),
+        basico(luzes, palco ? 0x358778 : 0x5D7559, [.28, .03, .008], [-.013, .971, .05]),
+        basico(luzes, palco ? 0x5CA499 : 0x73886B, [.19, .024, .008], [-.059, .917, .05]),
+        basico(luzes, palco ? 0x5CA499 : 0x73886B, [.23, .024, .008], [-.038, .874, .05]),
       ]
 
-      const marcador = oval(marcadores, 0xB7773C, [.18, .18, .18], [x + .47, 1.48, z - .01])
-      const selo = [basico(entregas, 0xEAE2CB, [.252, .022, .23], [x + .422, .671, z + .65])]
+      const marcador = pontoDeAtencao(marcadores, palco ? 0xFFB33F : 0xB7773C, [.18, .18, .18],
+        [x + .47, palco ? 1.59 : 1.48, z - .01])
+      const contorno = palco ? pontoDeAtencao(marcadores, 0x633917, [.18, .18, .18], [x + .47, 1.59, z - .01]) : null
+      if (contorno) {
+        contorno.quaternion.setFromUnitVectors(new T.Vector3(0, 0, 1), direcaoCamera)
+        marcador.quaternion.copy(contorno.quaternion)
+        marcador.position.addScaledVector(direcaoCamera, .01)
+      }
+      const apoioSelo = new T.Group()
+      entregas.add(apoioSelo)
+      apoioSelo.position.set(x + .422, palco ? .706 : .671, z + .65)
+      apoioSelo.rotation.x = palco ? .36 : 0
+      const selo = [basico(apoioSelo, 0xEAE2CB, [.252, .022, .23], [0, 0, 0])]
       for (const [x1, z1, x2, z2] of [[.352, .676, .413, .713], [.413, .713, .485, .575]]) {
-        const traco = basico(entregas, 0x465D49, [.033, .012, Math.hypot(x2 - x1, z2 - z1) + .014],
-          [x + (x1 + x2) / 2, .687, z + (z1 + z2) / 2])
+        const traco = basico(apoioSelo, 0x465D49, [.033, .012, Math.hypot(x2 - x1, z2 - z1) + .014],
+          [(x1 + x2) / 2 - .422, .016, (z1 + z2) / 2 - .65])
         traco.rotation.y = Math.atan2(x2 - x1, z2 - z1)
         selo.push(traco)
       }
-      return { m, b, x, z, tela, marcador, selo, fase: faseDoId(m.id),
+      return { m, b, x, z, tela, marcador, contorno, selo, fase: faseDoId(m.id),
         estado: null as EstadoFuncionario | undefined | null, entregouEm: 0 }
     })
     // Só os lotes chegam à GPU. A hierarquia original preserva as articulações.
@@ -172,7 +211,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         for (const { lote, pecas } of malhas) {
           let i = 0
           for (const p of pecas) {
-            if (visibilidadeVariavel && !p.visible) continue
+            if ((palco && p.userData.sala !== salaEmCena()) || (visibilidadeVariavel && !p.visible)) continue
             lote.setMatrixAt(i, p.matrixWorld)
             if ((primeiro || visibilidadeVariavel) && pintar) lote.setColorAt(i, cor.setHex(p.userData.cor))
             i++
@@ -183,34 +222,39 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         }
       }
     }
-    instanciar(externo, mat, true)(true)
+    const atualizarMoveis = instanciar(externo, mat, true)
+    atualizarMoveis(true)
     instanciar(vidros, janela, false, false)(true)
-    instanciar(manchas, mancha, false, false)(true)
+    const atualizarManchas = instanciar(manchas, mancha, false, false)
+    atualizarManchas(true)
     const atualizarInstancias = instanciar(movel, mat, false)
     const atualizarTelas = instanciar(telas, fosforo, false, true, true)
     const atualizarMarcadores = instanciar(marcadores, fosforo, false, true, true)
     const atualizarEntregas = instanciar(entregas, mat, false, true, true)
     atualizarInstancias(true)
 
-    scene.add(new T.HemisphereLight(0xFFF8EE, 0xBFAE92, 1.55))
-    const sol = guardar(new T.DirectionalLight(0xFFF2DD, 2.1))
-    sol.position.set(-6, 12, 8)
+    scene.add(new T.HemisphereLight(0xFFF8EE, 0xBFAE92, palco ? 1.75 : 1.55))
+    const sol = guardar(new T.DirectionalLight(0xFFF2DD, palco ? 1.5 : 2.1))
+    sol.position.set(-6, 12, palco ? 4 : 8)
     sol.castShadow = true
-    sol.shadow.mapSize.set(1024, 1024)
-    Object.assign(sol.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 50 })
+    sol.shadow.mapSize.set(palco ? 512 : 1024, palco ? 512 : 1024)
+    const sombraLimite = palco ? 5 : 14
+    Object.assign(sol.shadow.camera, { left: -sombraLimite, right: sombraLimite, top: sombraLimite, bottom: -sombraLimite, near: 1, far: 50 })
     sol.shadow.camera.updateProjectionMatrix()
     sol.shadow.normalBias = .025
     sol.shadow.bias = -.0006
     scene.add(sol, sol.target)
     renderer.shadowMap.enabled = palco?.variante !== 'compacta'
     renderer.shadowMap.type = T.PCFSoftShadowMap
+    renderer.shadowMap.autoUpdate = false
+    renderer.shadowMap.needsUpdate = true
     renderer.info.autoReset = false
     renderer.setClearColor(0, 0)
     canvas.className = 'iso-canvas'
     el.prepend(canvas)
 
     const cam = new T.OrthographicCamera(-10, 10, 10, -10, .1, 100)
-    cam.position.set(1, palco ? 1.04 : .86, palco ? 1.12 : 1).normalize().multiplyScalar(40)
+    cam.position.copy(direcaoCamera).multiplyScalar(40)
     cam.lookAt(0, 0, 0)
     cam.updateMatrixWorld(true)
     const ponto = new T.Vector3()
@@ -227,27 +271,44 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       }
       return { x: (left + right) / 2, y: (bottom + top) / 2, w: (right - left) / 2, h: (top - bottom) / 2 }
     }
-    const geral = palco
-      ? enquadrar([-6.15, 6.15, -10.2, 5.1, 1.3], [-6.15, 6.15, -10.15, -10, 2.12], [-3.2, 3.2, 5.1, 9.28, 1.65])
-      : enquadrar([-6.5, 6.5, -10.5, 5.5, 1.8], [-6.25, 6.25, -10.22, -10, 2.2], [-3.5, 3.5, 5.1, 9.5, 1.8])
+    const geral = enquadrar([-6.5, 6.5, -10.5, 5.5, 1.8], [-6.25, 6.25, -10.22, -10, 2.2], [-3.5, 3.5, 5.1, 9.5, 1.8])
     const salas = Object.fromEntries(SALAS_ISOMETRICAS.map(k => {
       const { x, z, fundo } = PLANTA[k]
-      return [k, enquadrar([x - 3, x + 3, z - fundo / 2, z + fundo / 2, palco ? 1.85 : 2.2])]
+      return [k, enquadrar([x - 3, x + 3, z - fundo / 2, z + fundo / 2, 2.2])]
     }))
-    const alvo = () => vista === 'tudo' ? geral : salas[vista]
-    let atual = { ...alvo() }, passos = 0
+    // Mantém pessoas, mãos levantadas e alvos dentro do quadro mesmo no zoom móvel.
+    const postosDaSala = enquadrar([-2.01, 2.31, -1.19, -.41, 1.72])
+    const pisoDaSala = enquadrar([-3.05, 3.05, -2.1, 2.1, .9])
+    const quadro = palco && {
+      compacta: { geral: 60, foco: 83, larguraMinima: 7.95 },
+      media: { geral: 65, foco: 86, larguraMinima: 7.7 },
+      grande: { geral: 70, foco: 90, larguraMinima: 7.45 },
+    }[palco.variante]
+    function alvo() {
+      const a = largura / altura
+      if (quadro) {
+        const foco = vista !== 'tudo'
+        const centro = foco ? postosDaSala : pisoDaSala
+        const escala = foco ? quadro.foco : Math.min(quadro.geral, largura / quadro.larguraMinima)
+        const folga = foco ? 10 : 24
+        const larguraDosPostos = (postosDaSala.w + Math.abs(centro.x - postosDaSala.x)) * largura / Math.max(1, largura - 2 * folga)
+        const w = Math.max(largura / (2 * escala), larguraDosPostos, centro.h * a)
+        return { x: centro.x, y: centro.y, w }
+      }
+      const centro = vista === 'tudo' ? geral : salas[vista]
+      return { ...centro, w: Math.max(centro.w, centro.h * a) * (vista === 'tudo' ? 1.02 : 1.13) }
+    }
+    let atual: ReturnType<typeof alvo> | undefined, passos = 21
     function camera() {
       const destino = alvo()
-      const curva = movimento.matches || passos >= 20 ? 1 : .22
+      const curva = !atual || movimento.matches || passos >= 20 ? 1 : .22
+      atual ??= destino
       atual = {
         x: atual.x + (destino.x - atual.x) * curva,
         y: atual.y + (destino.y - atual.y) * curva,
         w: atual.w + (destino.w - atual.w) * curva,
-        h: atual.h + (destino.h - atual.h) * curva,
       }
-      const a = largura / altura
-      const margem = palco ? (vista === 'tudo' ? 1 : 1.06) : (vista === 'tudo' ? 1.02 : 1.13)
-      const w = Math.max(atual.w, atual.h * a) * margem, h = w / a
+      const w = atual.w, h = w * altura / largura
       Object.assign(cam, { left: atual.x - w, right: atual.x + w, top: atual.y + h, bottom: atual.y - h })
       cam.updateProjectionMatrix()
       passos = curva === 1 ? 21 : passos + 1
@@ -262,7 +323,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     function posicionarPessoas() {
       const postos: PostoProjetado[] = []
       for (const { m, x, z } of personagens) {
-        if (vista !== 'tudo' && vista !== m.sala) continue
+        if (palco ? salaEmCena() !== m.sala : vista !== 'tudo' && vista !== m.sala) continue
         ponto.set(x, .89, z + .065).project(cam)
         if (palco) postos.push({ id: m.id, x: (ponto.x + 1) * largura / 2, y: (1 - ponto.y) * altura / 2,
           chama: estados[m.id] === 'precisa_de_voce' })
@@ -279,8 +340,10 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     function desenhar(reposicionar: boolean) {
       camera()
       const reduzir = movimento.matches
+      let mudaramAderecos = reposicionar
       for (const posto of personagens) {
-        const { m, b, fase, tela, selo, marcador } = posto
+        const { m, b, fase, tela, selo, marcador, contorno } = posto
+        if (palco && m.sala !== salaEmCena()) continue
         const estado = estados[m.id]
         const trabalha = estado === 'trabalhando'
         const chama = estado === 'precisa_de_voce'
@@ -288,32 +351,37 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         if (estado !== posto.estado) {
           posto.estado = estado
           posto.entregouEm = tempo
+          mudaramAderecos = true
           for (const p of tela) p.visible = trabalha
           for (const p of selo) p.visible = entregue
         }
         marcador.visible = chama
         const t = reduzir ? 0 : tempo + fase
         const idadeEntrega = (tempo - posto.entregouEm - fase * .055) / 1.15
-        const alongar = entregue && !reduzir ? Math.sin(Math.PI * Math.max(0, Math.min(1, idadeEntrega))) ** 2 : 0
+        const alongar = entregue && !reduzir ? Math.sin(Math.PI * Math.max(0, Math.min(1, idadeEntrega))) ** 2 * (palco ? .66 : 1) : 0
         const tecla = trabalha && !reduzir ? Math.sin(t * 13) * .09 : 0
         const ler = trabalha && !reduzir ? Math.sin(t * 1.45) : 0
         const acenar = chama && !reduzir ? Math.sin(t * 3.4) : 0
         b.raiz.rotation.y = chama ? .62 + acenar * .035 : entregue ? .28 + alongar * .28 : trabalha ? -.04 + ler * .075 : .18
         b.quadril.position.y = .319
-        b.tronco.rotation.x = entregue ? -.16 - alongar * .12 : trabalha ? .11 : chama ? -.06 : .035
-        b.cabeca.rotation.x = trabalha ? .16 + ler * .045 : entregue ? -.07 : .02
-        b.cabeca.rotation.y = trabalha ? -.24 + ler * .065 : chama ? .1 : .11
+        b.tronco.rotation.x = entregue ? -.21 - alongar * .12 : trabalha ? .11 : chama ? -.06 : .015
+        b.cabeca.rotation.x = trabalha ? (palco ? .045 : .16) + ler * .045 : entregue ? -.07 : .02
+        b.cabeca.rotation.y = trabalha ? (palco ? .17 : -.24) + ler * .065 : chama ? .1 : .11
         for (const { coxa, joelho } of b.pernas) {
           coxa.rotation.x = -Math.PI / 2 + .06
           joelho.rotation.x = Math.PI / 2 - .16
         }
-        b.esquerda.ombro.rotation.x = trabalha ? -.68 + tecla : entregue ? -.17 - alongar * .6 : -.31
+        b.esquerda.ombro.rotation.x = trabalha ? -.68 + tecla : entregue ? -.17 - alongar * .6 : -.13
         b.esquerda.ombro.rotation.z = trabalha ? .15 : entregue ? -.12 - alongar * 1.17 : -.08
-        b.esquerda.cotovelo.rotation.x = trabalha ? -1.02 : entregue ? -.64 + alongar * .43 : -.91
+        b.esquerda.cotovelo.rotation.x = trabalha ? -1.02 : entregue ? -.64 + alongar * .43 : -.63
         b.direita.ombro.rotation.x = chama ? -2.43 : trabalha ? -.68 - tecla : entregue ? -.2 - alongar * .6 : -.29
         b.direita.ombro.rotation.z = chama ? .53 + acenar * .11 : trabalha ? -.15 : entregue ? .13 + alongar * 1.17 : .1
         b.direita.cotovelo.rotation.x = chama ? -.53 + acenar * .13 : trabalha ? -1.02 : entregue ? -.65 + alongar * .43 : -.9
         marcador.scale.setScalar(.17 + acenar * .022)
+        if (contorno) {
+          contorno.visible = chama
+          contorno.scale.setScalar(.208 + acenar * .022)
+        }
       }
       if (reposicionar) {
         for (const k of SALAS_ISOMETRICAS) {
@@ -324,14 +392,18 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         posicionarPessoas()
       }
       atualizarInstancias()
-      atualizarTelas()
+      if (mudaramAderecos) {
+        atualizarTelas()
+        atualizarEntregas()
+      }
       atualizarMarcadores()
-      atualizarEntregas()
       renderer.info.reset()
       renderer.render(scene, cam)
-      canvas.dataset.desenhos = String(renderer.info.render.calls)
-      canvas.dataset.triangulos = String(renderer.info.render.triangles)
-      canvas.dataset.leve = String(leve)
+      const { calls, triangles } = renderer.info.render
+      for (const [chave, valor] of [['desenhos', calls], ['triangulos', triangles], ['leve', leve]] as const) {
+        const texto = String(valor)
+        if (canvas.dataset[chave] !== texto) canvas.dataset[chave] = texto
+      }
     }
 
     let primeiroQuadro = true
@@ -372,7 +444,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       largura = el.clientWidth
       altura = el.clientHeight
       if (largura && altura) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, leve ? 1 : 1.5))
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, palco ? (leve ? 1.5 : 2) : (leve ? 1 : 1.5)))
         renderer.setSize(largura, altura, false)
       }
       precisaRedesenhar = true
@@ -411,7 +483,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       let menor = Infinity
       let id: string | undefined
       for (const { m, b, x, z } of personagens) {
-        if ((vista !== 'tudo' && vista !== m.sala) || (!palco && !opcoes.etiqueta(m.id))) continue
+        if (palco ? salaEmCena() !== m.sala : (vista !== 'tudo' && vista !== m.sala) || !opcoes.etiqueta(m.id)) continue
         const centro = z
         volume.min.set(x - .32, .3, centro - .28)
         volume.max.set(x + .32, b.quadril.position.y + 1.12, centro + .31)
@@ -439,12 +511,19 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         canvas.removeEventListener('pointerleave', sair)
       })
     }
-    passos = 21
     tamanho()
     return {
-      atualizar(proximos: EstadosIsometricos, proxima: VistaIsometrica) {
+      atualizar(proximos: EstadosIsometricos, proxima: VistaIsometrica, proximaPagina = pagina) {
+        const salaAnterior = salaEmCena()
         estados = proximos
+        pagina = proximaPagina
         if (vista !== proxima) { vista = proxima; passos = 0 }
+        if (palco && salaAnterior !== salaEmCena()) {
+          atualizarMoveis(true)
+          atualizarManchas()
+          atualizarInstancias(true)
+          renderer.shadowMap.needsUpdate = true
+        }
         precisaRedesenhar = true
         agendar()
       },

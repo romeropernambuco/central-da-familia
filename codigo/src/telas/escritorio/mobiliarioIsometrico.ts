@@ -25,10 +25,25 @@ export function montarPredio(cx: Caixa, vidro: Caixa) {
   for (const sala of SALAS_ISOMETRICAS) {
     const p = PLANTA[sala]
     const local: Caixa = (cor, d, [x, y, z]) => cx(cor, d, [p.x + x, y, p.z + z])
-    local(p.piso, [5.9, .04, p.fundo - .1], [0, .02, 0])
-    local(p.tapete, [5.2, .02, p.fundo === 5 ? 1.25 : 1], [-.3, .05, p.fundo === 5 ? 1.45 : 1.2])
-    decorar(sala, local)
+    montarSala(sala, local)
   }
+}
+
+/** Cada página do laboratório mostra uma sala sobre sua própria base. */
+export function montarSala(sala: SalaEquipe, cx: Caixa, isolada = false) {
+  const p = PLANTA[sala]
+  const fundo = isolada ? Math.min(4.15, p.fundo) : p.fundo
+  if (isolada) {
+    cx(0xD1BDA8, [6.02, .24, fundo], [0, -.12, 0])
+    cx(PAREDE, [5.9, .77, .1], [0, .415, -fundo / 2 + .05])
+    cx(0xD1BDA8, [5.9, .06, .13], [0, .83, -fundo / 2 + .05])
+  }
+  cx(p.piso, [5.9, .04, fundo - .1], [0, .02, 0])
+  cx(p.tapete, [5.2, .02, p.fundo === 5 ? 1.25 : 1], [-.3, .05, isolada ? 1.18 : p.fundo === 5 ? 1.45 : 1.2])
+  decorar(sala, isolada
+    ? (cor, [l, a, f], [x, y, z]) => z < 0 ? cx(cor, [l, a, f], [x, y, z * .82])
+      : cx(cor, [l * .78, a * .59, f * .76], [x, y * .59 + .03, z * .74])
+    : cx)
 }
 
 function decorar(sala: SalaEquipe, cx: Caixa) {

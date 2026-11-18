@@ -159,7 +159,7 @@
   display: grid;
   align-items: center;
   isolation: isolate;
-  min-block-size: 448px;
+  min-block-size: 365px;
   margin-block: 14px 10px;
   background-color: var(--menu);
 }
@@ -297,7 +297,7 @@
   }
   .m-central[data-dispositivo="desktop"] .m-menu details { position: relative; }
   .m-central[data-dispositivo="desktop"] .m-mais { inset: calc(100% + 6px) auto auto 0; }
-  .m-central[data-dispositivo="desktop"] .m-palco { min-block-size: 500px; }
+  .m-central[data-dispositivo="desktop"] .m-palco { min-block-size: 440px; }
   .m-central[data-dispositivo="desktop"] .maquete-palco { min-inline-size: 100%; }
   .m-central[data-dispositivo="desktop"] .maquete-rolagem { overflow: visible; }
   .m-central[data-dispositivo="desktop"] .m-escritorio > :not(.m-palco) { margin-inline: 20px; }

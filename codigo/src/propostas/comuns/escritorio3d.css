@@ -1,7 +1,6 @@
 .escritorio3d {
   --escritorio3d-largura: 788px;
-  --escritorio3d-minimo: 580px;
-  --escritorio3d-proporcao: 65cqw;
+  --escritorio3d-proporcao: 53cqw;
   --escritorio3d-chao: 365px;
   inline-size: 100%;
   max-inline-size: var(--escritorio3d-largura);
@@ -11,15 +10,13 @@
 
 .escritorio3d[data-variante="compacta"] {
   --escritorio3d-largura: 448px;
-  --escritorio3d-minimo: 478px;
-  --escritorio3d-proporcao: 67cqw;
+  --escritorio3d-proporcao: 60cqw;
   --escritorio3d-chao: 304px;
 }
 
 .escritorio3d[data-variante="grande"] {
   --escritorio3d-largura: 1060px;
-  --escritorio3d-minimo: 640px;
-  --escritorio3d-proporcao: 62cqw;
+  --escritorio3d-proporcao: 50cqw;
   --escritorio3d-chao: 400px;
 }
 
@@ -31,15 +28,16 @@
   border-radius: var(--raio-medio, 8px);
 }
 
-.escritorio3d-rolagem { overflow: auto; scrollbar-width: thin; }
+.escritorio3d-quadro {
+  overflow: clip;
+  background: radial-gradient(ellipse at 50% 60%, var(--cartao, #fff), transparent 76%);
+}
 
 .escritorio3d-palco {
   position: relative;
-  min-inline-size: var(--escritorio3d-minimo);
   block-size: max(208px, var(--escritorio3d-altura, max(var(--escritorio3d-chao), var(--escritorio3d-proporcao))));
 }
 
-.escritorio3d-cena[data-focada="true"] .escritorio3d-palco { min-inline-size: 0; }
 .escritorio3d-camera, .escritorio3d-etiquetas { position: absolute; inset: 0; }
 .escritorio3d-camera > canvas { display: block; inline-size: 100%; block-size: 100%; }
 .escritorio3d-cena[data-renderizacao="carregando"] .escritorio3d-camera { visibility: hidden; }
@@ -89,6 +87,35 @@ button.escritorio3d-posto { cursor: pointer; touch-action: manipulation; }
   outline: 2px solid var(--destaque, #275d50);
   outline-offset: -2px;
 }
+
+.escritorio3d-paginas {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  text-align: center;
+  font-size: .875rem;
+  font-weight: 700;
+}
+.escritorio3d-paginas small {
+  margin-inline-start: 6px;
+  color: var(--texto-secundario, #5e5b54);
+  font-weight: 500;
+}
+.escritorio3d-paginas button {
+  display: grid;
+  place-items: center;
+  min-block-size: 44px;
+  padding: 0;
+  border: 1px solid var(--borda, #8b867d);
+  border-radius: 50%;
+  background: var(--cartao, #fff);
+  color: inherit;
+  cursor: pointer;
+}
+.escritorio3d-paginas button:hover { background: var(--menu, #ebe9e5); }
+.escritorio3d-paginas button:focus-visible { outline: 2px solid var(--destaque, #275d50); }
 
 .escritorio3d-detalhe {
   display: flex;

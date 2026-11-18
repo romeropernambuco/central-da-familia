@@ -29,7 +29,7 @@ export function Escritorio({ dados, titulo, celular, oculto }: {
   const pessoas = dados.funcionarios.valor ?? []
   const pessoa = pessoas.find(item => item.id === selecionada)
   const emAtividade = pessoas.filter(item => item.estadoHoje.valor === 'trabalhando')
-  const altura = celular ? 448 : 500
+  const altura = celular ? 365 : 440
   useEffect(() => {
     if (pessoa) ficha.current?.focus()
   }, [pessoa])

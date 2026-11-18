@@ -14,7 +14,7 @@ const acessorios: Partial<Record<string, 'gravata' | 'fone' | 'cracha' | 'bolso'
 }
 
 /** Peças de poucas faces mantêm a silhueta arredondada mesmo com o escritório inteiro aberto. */
-export function personagemIsometrico(T: typeof Tres, caixa: PecaIsometrica, oval: PecaIsometrica, membro: MembroEquipe) {
+export function personagemIsometrico(T: typeof Tres, caixa: PecaIsometrica, oval: PecaIsometrica, membro: MembroEquipe, detalhe = false) {
   const raiz = new T.Group()
   const grupo = (pai: any, x = 0, y = 0) => {
     const g = new T.Group()
@@ -35,8 +35,10 @@ export function personagemIsometrico(T: typeof Tres, caixa: PecaIsometrica, oval
     caixa(tronco, TINTA, [.052, .16, .026], [0, .32, .17])
   }
   if (acessorio === 'cracha' || acessorio === 'bolso') {
-    caixa(tronco, LINHO, [.083, .059, .018], [.134, .33, .156]).rotation.z = -.11
-    caixa(tronco, 0x666E58, [.045, .012, .02], [.132, .33, .169])
+    const largura = detalhe ? .11 : .083
+    caixa(tronco, LINHO, [largura, .069, .018], [.124, .35, .161]).rotation.z = -.11
+    caixa(tronco, 0x536950, [.051, .014, .02], [.122, .35, .172])
+    if (detalhe && acessorio === 'cracha') caixa(tronco, LINHO, [.027, .074, .023], [.118, .417, .142]).rotation.z = .18
   }
 
   oval(cabeca, pele, [.53, .49, .45], [0, .25, .025])
@@ -56,20 +58,29 @@ export function personagemIsometrico(T: typeof Tres, caixa: PecaIsometrica, oval
   for (const x of [-.108, .108]) {
     const lado = Math.sign(x)
     oval(cabeca, pele, [.092, .111, .087], [lado * .248, .242, .014])
-    caixa(cabeca, TINTA, [.045, .057, .021], [x, .272, .229])
-    caixa(cabeca, LINHO, [.012, .014, .007], [x + .009, .287, .241])
+    const olho = detalhe ? oval : caixa
+    olho(cabeca, TINTA, [detalhe ? .058 : .045, .063, .024], [x, .272, .232])
+    olho(cabeca, LINHO, [.017, .018, .008], [x + .009, .284, .244])
     caixa(cabeca, cabelo, [.073, .015, .013], [x, .329, .225]).rotation.z = lado * -.12
     if (oculos) {
       for (const y of [.322, .225]) caixa(cabeca, TINTA, [.153, .016, .023], [x, y, .249])
       for (const canto of [-.069, .069]) caixa(cabeca, TINTA, [.017, .101, .023], [x + canto, .273, .249])
+      if (detalhe) caixa(cabeca, TINTA, [.022, .015, .167], [lado * .199, .285, .169]).rotation.y = lado * -.4
     }
-    if (acessorio === 'fone') oval(cabeca, TINTA, [.092, .18, .14], [lado * .263, .245, .019])
+    if (acessorio === 'fone') {
+      oval(cabeca, TINTA, [.104, .18, .154], [lado * .263, .245, .019])
+      if (detalhe) oval(cabeca, 0x80A693, [.026, .11, .093], [lado * .31, .248, .022])
+    }
   }
   if (oculos) caixa(cabeca, TINTA, [.07, .015, .023], [0, .28, .25])
-  if (acessorio === 'fone') caixa(cabeca, TINTA, [.028, .026, .175], [.23, .191, .106]).rotation.y = -.57
+  if (acessorio === 'fone') {
+    caixa(cabeca, TINTA, [.028, .026, .212], [.233, .191, .136]).rotation.y = -.57
+    if (detalhe) oval(cabeca, TINTA, [.062, .05, .045], [.177, .191, .22])
+  }
   oval(cabeca, pele, [.079, .066, .074], [0, .229, .237])
   for (const lado of [-1, 1]) {
-    caixa(cabeca, 0x723F36, [.047, .017, .015], [lado * .02, .161, .224]).rotation.z = lado * .25
+    const boca = detalhe ? oval : caixa
+    boca(cabeca, 0x723F36, [.064, .026, .017], [lado * .023, .159, .227]).rotation.z = lado * .24
   }
 
   const braco = (x: number) => {

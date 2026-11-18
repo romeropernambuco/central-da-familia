@@ -48,7 +48,7 @@ it.each(cenarios)('organiza as seções em $tema para $dispositivo', cenario => 
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
   expect(html.match(/class="l-referencia"/g)).toHaveLength(4)
   expect(html).toMatch(/Estado do dia[\s\S]*l-palco[\s\S]*l-fila[\s\S]*l-rumo[\s\S]*l-bento[\s\S]*Navegação principal/)
-  expect(html).toContain(`block-size:${cenario.dispositivo === 'celular' ? 528 : 640}px`)
+  expect(html).toContain(`min-block-size:${cenario.dispositivo === 'celular' ? 380 : 456}px`)
   expect(html.match(/class="l-estado"/g)).toHaveLength(dados.funcionarios.valor?.length ?? 0)
   expect(html.match(/<svg[^>]*class="cf-ilustracao"[^>]*aria-hidden="true"/g)).toHaveLength(5)
   expect(html).toMatch(/2026<.*2027<.*2028<.*2029</)

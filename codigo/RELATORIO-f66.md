@@ -1,0 +1,11 @@
+# F66 — Câmera do escritório
+
+Na f65, a vista geral espremia os 19 postos na planta inteira. Na M e na L, a f66 mostra uma sala por página, com até três personagens inteiros no enquadramento inicial. Os botões anterior e próximo percorrem as sete salas com toque ou teclado. O filtro de sala aproxima a câmera suavemente. Nas capturas da variante grande, os personagens ficaram com cerca de 60–65 px no celular e 90–100 px no desktop na vista geral, e cerca de 110–130 px em foco, conforme a pose. No foco móvel, partes do mobiliário podem sair do quadro.
+
+O 3D recebeu rostos mais nítidos, óculos, crachás e fones mais legíveis, sombras de contato graduadas e canvas com antialias e DPR de até 2. Conferi olhos, boca e cabelo, os óculos em Caixa, os crachás em Patrimônio e o fone e o coque na Recepção. O monitor aceso e a digitação indicam trabalho, o monitor apagado e a pose de repouso indicam espera, e o check indica entrega. Só quem precisa de você tem mão erguida e ponto âmbar contornado, sem texto e separado dos rostos.
+
+Conferi M e L no Chrome do desktop, em 375×812 com toque emulado e nas prévias de 1280 e 1440 px, em claro e escuro. Abri fichas por toque e passei pelos 19 postos em cada tamanho com Enter. Com movimento reduzido, confirmei o SVG estático e seus 19 postos. Nos quadros medidos das propostas, observei até 8 chamadas e 30.420 triângulos. O Início do próprio app abriu em modo exemplo com 9 chamadas e 34.004 triângulos no quadro medido, dentro dos limites de 32 e 45.000. Os testes cobrem também o orçamento durante as trocas de sala, a pausa fora da tela e o descarte de recursos. Usei apenas dados de exemplo e estados sintéticos. Celular físico e desempenho em GPU móvel ficam por verificar.
+
+**Rodapé da M.** “Sem atividade registrada agora” correspondia ao snapshot original coletado por volta das 14h de Recife. Os 19 representam o total de postos. Os funcionários com turno no exemplo podem trabalhar nas janelas entre 6h e 9h, e pedidos de atenção têm prioridade sobre o estado de trabalho. O teste da M confirma “Trabalhando agora” com um estado ativo.
+
+**Testes.** `npx tsc --noEmit` terminou com zero erros. A suíte completa passou com 104 arquivos, 1.767 testes aprovados e 3 `todo`. Usei a API do Vitest com a configuração do projeto porque o esbuild bloqueou a leitura da configuração pela CLI.

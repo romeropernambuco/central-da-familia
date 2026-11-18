@@ -27,9 +27,9 @@ vi.mock('../../telas/escritorio/cenaIsometrica', () => ({
 
 const dados = await carregarDadosInicio()
 const { funcionarios } = dados
-const funcionario = funcionarios.valor!.find(f => f.id === 'guardado')!
-const valores = { guardado: dados.aplicacoes.total }
-const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valores.guardado.valor!)
+const funcionario = funcionarios.valor!.find(f => f.id === 'contador')!
+const valores = { [funcionario.id]: dados.aplicacoes.total }
+const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valores[funcionario.id].valor!)
 const opcoes = (): OpcoesIsometricas => cena.montar.mock.lastCall![0]
 
 function ambiente({ webGL = true, reduz = false } = {}) {
@@ -162,7 +162,7 @@ it('deixa o palco sem iniciais e usa uma única etiqueta para hover, foco e sele
   await a.render({ mostrarPlaquinhas: true })
   await a.mostrar()
   const postos = a.el.buscar(n => n.getAttribute('data-posto') !== null)
-  expect(postos).toHaveLength(19)
+  expect(postos).toHaveLength(funcionarios.valor!.filter(f => f.sala === 'caixa').length)
   expect(postos.every(p => p.textContent === '')).toBe(true)
   const etiqueta = a.ler('class', 'escritorio3d-detalhe')
   expect(etiqueta.textContent).not.toContain(funcionario.nome)
@@ -177,6 +177,30 @@ it('deixa o palco sem iniciais e usa uma única etiqueta para hover, foco e sele
   await act(async () => a.ler('data-posto', funcionario.id).click())
   expect(etiqueta.textContent).toContain(funcionario.nome)
   expect(a.el.buscar(n => n.getAttribute('class') === 'escritorio3d-detalhe')).toHaveLength(1)
+})
+
+it('pagina as sete salas com botões nativos e mantém os 19 postos acessíveis sem remontar', async () => {
+  const a = ambiente()
+  await a.render()
+  await a.mostrar()
+  const anterior = a.ler('aria-label', 'Sala anterior')
+  const proxima = a.ler('aria-label', 'Próxima sala')
+  for (const botao of [anterior, proxima]) {
+    expect(botao.tagName).toBe('BUTTON')
+    expect(botao.getAttribute('tabindex')).toBeNull()
+  }
+  const ids = new Set<string>()
+  for (let i = 0; i < 7; i++) {
+    const postos = a.el.buscar(n => n.getAttribute('data-posto') !== null)
+    expect(postos.length).toBeGreaterThan(0)
+    expect(postos.every(p => p.tagName === 'BUTTON' && p.textContent === '')).toBe(true)
+    postos.forEach(p => ids.add(p.getAttribute('data-posto')!))
+    await act(async () => proxima.click())
+  }
+  expect(ids).toEqual(new Set(funcionarios.valor!.map(f => f.id)))
+  await act(async () => anterior.click())
+  expect(cena.atualizar).toHaveBeenLastCalledWith(opcoes().estados, 'tudo', 'apoio')
+  expect(cena.montar).toHaveBeenCalledOnce()
 })
 
 it('mantém a identificação sob demanda e o olho no fallback sem as plaquinhas legadas', async () => {
@@ -254,7 +278,7 @@ it('mantém a API da maquete e aplica altura, variante, estados e foco de sala',
   expect(opcoes().palco?.elenco.map(m => m.id)).toEqual(funcionarios.valor!.map(f => f.id))
   expect(opcoes().estados[funcionario.id]).toBe(funcionario.estadoHoje.valor ?? undefined)
   await a.render({ variante: 'compacta', salaDestacada: 'patrimonio' })
-  expect(cena.atualizar).toHaveBeenLastCalledWith(opcoes().estados, 'patrimonio')
+  expect(cena.atualizar).toHaveBeenLastCalledWith(opcoes().estados, 'patrimonio', 'patrimonio')
   expect(a.el.buscar(n => n.getAttribute('data-posto') !== null)).toHaveLength(3)
   expect(cena.montar).toHaveBeenCalledOnce()
 })
