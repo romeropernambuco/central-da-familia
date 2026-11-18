@@ -5,7 +5,7 @@ export function faturasAConferir(fs: Fatura[], banco: FaturaBanco[], hoje: strin
   const lista = fs.filter(f => f.vencimento >= hoje && f.vencimento <= fim).map(f => {
     const b = banco.find(b => b.cartao_id === f.cartao_id && b.mes === f.mes)
     return { ...f, total: b?.valor_banco ?? f.total, paga: !!b?.paga_em, conferir: b?.valor_banco == null }
-  }).filter(f => !f.paga && (f.total > 0 || f.conferir)).sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+  }).filter(f => !f.paga && f.total > 0).sort((a, b) => a.vencimento.localeCompare(b.vencimento))
   return { lista, total: Math.round(lista.reduce((s, f) => s + f.total, 0) * 100) / 100 }
 }
 /** Gastos: por vencimento, positiva, sem fallback. Cartões: por mês, inclusive zero,

@@ -150,13 +150,14 @@ export function tecla(atual: string, t: string): string {
  * Texto digitado vira valor. A ÚLTIMA vírgula é a dos centavos; ponto e vírgulas anteriores são milhar.
  * "1.500,90" = 1500.9; "1,500,90" = 1500.9. Texto que não é número devolve 0 (use valorDigitadoValido pra barrar).
  */
-export function textoParaValor(txt: string): number {
+export function textoParaValor(txt: string, assinado = false): number {
   if (!txt) return 0
   const limpo = String(txt).replace(/[^\d,]/g, '')
   const i = limpo.lastIndexOf(',')
   const int = (i < 0 ? limpo : limpo.slice(0, i)).replace(/,/g, '')
   const dec = i < 0 ? '' : limpo.slice(i + 1)
-  return centavos(Number((int || '0') + '.' + (dec || '0')) || 0)
+  const sinal = assinado && txt.trim().startsWith('-') ? -1 : 1
+  return sinal * centavos(Number((int || '0') + '.' + (dec || '0')) || 0)
 }
 
 /** Valor do banco (1153.85) vira texto de campo ("1153,85"), pronto pra textoParaValor ler de volta igual. */
@@ -166,7 +167,7 @@ export function valorParaTexto(v: number | null | undefined): string {
 }
 
 /** Campo de dinheiro só vale com no máximo 1 vírgula e 2 casas: barra "1,5,3" antes de salvar. */
-export const valorDigitadoValido = (txt: string) => /^\d{1,9}(,\d{0,2})?$/.test(txt.trim())
+export const valorDigitadoValido = (txt: string, assinado = false) => (assinado ? /^-?\d{1,9}(,\d{0,2})?$/ : /^\d{1,9}(,\d{0,2})?$/).test(txt.trim())
 
 /* ---------- códigos ---------- */
 
@@ -287,7 +288,8 @@ export function segundosTexto(s: number): string {
 /* ---------- campo de valor e meses ---------- */
 
 /** "3000" vira "3.000" e "1153,85" vira "1.153,85" pra mostrar no campo. Só mexe na parte inteira. */
-export function milhar(txt: string): string {
+export function milhar(txt: string, assinado = false): string {
+  if (assinado && txt.includes('-')) return /^-[\d,]*$/.test(txt) ? '-' + milhar(txt.slice(1)) : txt
   const limpo = String(txt || '').replace(/[^\d,]/g, '')
   const i = limpo.indexOf(',')
   const int = (i < 0 ? limpo : limpo.slice(0, i)).replace(/^0+(?=\d)/, '')

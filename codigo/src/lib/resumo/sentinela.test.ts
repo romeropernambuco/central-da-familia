@@ -1,69 +1,83 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import { renderToStaticMarkup } from 'react-dom/server'
-import { expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../../app/contexto'
 import { Inicio } from '../../telas/inicio/Inicio'
 import { MeuOrcamento } from '../../telas/meu-orcamento/MeuOrcamento'
 import { Guardado } from '../../telas/guardado/Guardado'
 import { CartaoGuardado } from '../../telas/guardado/CartaoGuardado'
 import { ResumoDoMes } from '../../telas/lancamentos/Lancamentos'
-import { numerosDaAba } from '../../telas/escritorio/numeros'
 import { NumerosAba } from '../../telas/escritorio/NumerosAba'
 import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-teste'
-import type { Api, FamiliaMinha, GuardadoHoje } from '../../api/tipos'
-const fake = vi.hoisted(() => ({ leitura: { doMes: [], ult: [] } as unknown }))
-vi.mock('../../app/useLeituraRemota', async () => {
-  const { destaqueOrcamento } = await import('./orcamento')
-  return { useLeituraRemota: (chave: string) => ({ dado: chave.startsWith('resumo-familia:podeGastarHoje')
-    ? { valor: { unidade: 'reais', valor: destaqueOrcamento({ envelopes: [] } as any, null, '2026-11-17', 'America/Recife').valor }, escopo: 'pessoal', casa: null, envelope: null, envelopes: [], placar: null, diasRestantes: 14, devendo: false }
-    : chave.startsWith('resumo-familia:') ? null : chave === 'inicio-ultimos' ? [] : fake.leitura, carregando: false, erro: '' }) }
-})
-vi.mock('../../app/useConfig', () => ({ useConfig: (_k: string, padrao: unknown) => [padrao, vi.fn(), '', true] }))
-vi.mock('../../app/useMembros', () => ({ useMembros: () => () => 'Pessoa', useAdultos: () => 1 }))
-vi.mock('../../componentes/RumoA2029', () => ({ RumoA2029: () => null }))
-vi.mock('../../telas/escritorio/PrecisaDeVoce', () => ({ PrecisaDeVoce: () => null }))
-vi.mock('../../componentes/RitmoMes', () => ({ RitmoMes: () => null }))
-vi.mock('../../telas/guardado/Imoveis', () => ({ Imoveis: () => null }))
-vi.mock('../../app/useDados2', () => ({ useGuardado: () => ({ estado: 'ok', g: { aplicacoes: [{ id: 'a', saldo: 1 }], por_dia_30: [], cdi_usado: { pct_ano: 10, data: '2026-11-17', fonte: 'teste' }, total: 1, rendeu_hoje_liquido: 1, explicacao: [] } }), useFuturo: () => ({ saida: null }) }))
-vi.mock('./orcamento', async original => ({ ...await original<typeof import('./orcamento')>(), destaqueOrcamento: (r: any) => ({ meu: r.envelopes[0], numero: { valor: 8765, estado: 'ok', linhas: [], usado: 0, devendo: 0, passouHoje: 0 }, valor: 8765, escopo: 'pessoal', livre: 20 }), numeroEnvelope: () => ({ valor: 8765, estado: 'ok', linhas: [], usado: 0, devendo: 0, passouHoje: 0 }) }))
-vi.mock('./guardado', async original => ({ ...await original<typeof import('./guardado')>(), totaisGuardado: () => ({ total: 9876, hoje: 8765, mes: 7654, desdeInicio: 6543 }) }))
-vi.mock('./movimentacao', async original => ({ ...await original<typeof import('./movimentacao')>(), totaisDoMes: () => ({ saiu: 8765, entrou: 9876, saldo: 1111, previsto: 2222 }) }))
+import { protegerApi } from '../../api/protegida'
+import { definirEscopoLeitura } from '../../app/invalidacao'
+import { normalizaGuardado } from '../../api/normaliza2'
+import type { Api, FamiliaMinha, ResumoHoje } from '../../api/tipos'
+
 const familia = { id: 'f', papel: 'casal', envelopeId: 'eu', membroId: 'm' } as FamiliaMinha
-const resumo = { dias_restantes: 10, livre_mes: 20, colchao: 0, envelopes: [{ id: 'eu', nome: 'Meu limite', regra: 'mensal', livre: 20, limite_mes: 30, gasto_mes: 10, meu: true }] }
-const api = { modo: 'real', resumoHoje: async () => resumo, lancamentos: async () => [], recebimentos: async () => [], guardadoHoje: async () => ({ total: 1 } as GuardadoHoje) } as unknown as Api
-function render(componente: typeof Inicio | typeof MeuOrcamento | typeof Guardado | typeof CartaoGuardado | typeof ResumoDoMes) {
-  return renderToStaticMarkup(createElement(ContextoApp.Provider, { value: { api, familia, resumo, versao: 0, oculto: false } as unknown as Ctx }, createElement(componente)))
+const hoje = '2026-11-17'
+const resumo: ResumoHoje = {
+  dias_restantes: 1, livre_mes: 8765, pode_gastar_hoje: 99, colchao: 0, explicacao: [],
+  envelopes: [{ id: 'eu', nome: 'Meu limite', regra: 'mensal', livre: 8765, limite_mes: 9999, gasto_mes: 1234 }],
 }
-async function renderFuncionario(id: string) {
+function fonte() {
+  const lancamento = { id: 'g', envelope_id: 'eu', data: hoje, criado_em: hoje, descricao: 'Compra', valor: 5432, cartao_id: null }
+  const interna = {
+    modo: 'real', resumoHoje: vi.fn(async () => resumo), lancamentos: async () => [lancamento], recebimentos: async () => [],
+    config: async (_f: string, k: string, padrao: unknown) => k === 'entradas' ? [{ data: hoje, valor: 7654 }] : padrao,
+    guardadoHoje: async () => normalizaGuardado({ total: 9876, aplicacoes: [{ id: 'a', saldo: 9876 }], rendeu_hoje_liquido: 8765,
+      rendeu_mes_liquido: 7654, rendeu_desde_inicio_liquido: 6543, por_dia_30: [], cdi_usado: { pct_ano: 10, data: hoje, fonte: 'teste' } }),
+    escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }), membros: async () => [],
+  } as unknown as Api
+  const api = protegerApi(interna)
+  definirEscopoLeitura(api, 'sessao', familia)
+  return { api, interna }
+}
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
+
+async function lerTela(el: ReturnType<typeof createElement>, api: Api, bloco?: string) {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
   const doc = new DocumentoTeste()
+  Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] } })
   vi.stubGlobal('document', doc)
+  Object.assign(doc.documentElement, { dataset: {} })
   vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal('location', { hash: '#/inicio?sem3d', search: '?sem3d' })
+  vi.stubGlobal('localStorage', { getItem() { return null }, removeItem() {} })
+  vi.stubGlobal('Element', NoTeste)
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-  const el = doc.createElement('div'); doc.body.appendChild(el)
-  const root = createRoot(el as unknown as HTMLElement)
+  const elRaiz = doc.createElement('div')
+  doc.body.appendChild(elRaiz)
+  const root = createRoot(elRaiz as unknown as HTMLElement)
   try {
-    await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api, familia, sessao: null, versao: 0, oculto: false } as unknown as Ctx }, createElement(NumerosAba, { id, fechar() {} }))))
-    return el.textContent
-  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals() }
+    await act(async () => root.render(createElement(ContextoApp.Provider, {
+      value: { api, familia, resumo, sessao: null, versao: 0, oculto: false } as unknown as Ctx,
+    }, el)))
+    if (el.type === NumerosAba) await act(async () => { await vi.dynamicImportSettled() })
+    return bloco ? elRaiz.buscar(n => n.getAttribute('data-bloco') === bloco)[0].textContent : elRaiz.textContent
+  } finally { await act(async () => root.unmount()) }
 }
-it('orçamento sentinela chega à aba, Início e cálculo consumido pelo funcionário', async () => {
-  fake.leitura = []
-  expect(render(MeuOrcamento)).toContain('8.765')
-  fake.leitura = { doMes: [], ult: [] }
-  expect(render(Inicio)).toContain('8.765')
-  expect((await numerosDaAba(api, familia, 'inicio'))[0].valor).toBe(8765)
-  expect(await renderFuncionario('anfitriao')).toContain('8.765')
+
+it('orçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário', async () => {
+  const { api, interna } = fonte()
+  expect(await lerTela(createElement(MeuOrcamento), api)).toContain('8.765')
+  expect(interna.resumoHoje).not.toHaveBeenCalled()
+  expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje')).toContain('8.765')
+  expect(interna.resumoHoje).toHaveBeenCalledWith(familia.id)
+  expect(await lerTela(createElement(NumerosAba, { id: 'anfitriao', fechar() {} }), api)).toContain('8.765')
 })
-it('Guardado sentinela chega à aba, cartão do Início e funcionário', async () => {
-  expect(render(Guardado)).toContain('9.876')
-  expect(render(CartaoGuardado)).toContain('9.876')
-  expect((await numerosDaAba(api, familia, 'guardado'))[0].valor).toBe(9876)
-  expect(await renderFuncionario('guardado')).toContain('9.876')
+
+it('Guardado sentinela chega à aba, cartão e funcionário pela leitura real', async () => {
+  const { api } = fonte()
+  expect(await lerTela(createElement(Guardado), api)).toContain('9.876')
+  expect(await lerTela(createElement(CartaoGuardado), api)).toContain('9.876')
+  expect(await lerTela(createElement(NumerosAba, { id: 'guardado', fechar() {} }), api)).toContain('9.876')
 })
-it('movimentação sentinela chega à faixa da aba e ao funcionário', async () => {
-  fake.leitura = { gastos: [], recebimentos: [] }
-  expect(render(ResumoDoMes)).toContain('8.765')
-  expect((await numerosDaAba(api, familia, 'lancamentos'))[1].valor).toBe(8765)
-  expect(await renderFuncionario('contador')).toContain('8.765')
+
+it('movimentação sentinela chega ao Início, à faixa da aba e ao funcionário', async () => {
+  const { api } = fonte()
+  expect(await lerTela(createElement(Inicio), api, 'movimentacaoMes')).toContain('2.222')
+  expect(await lerTela(createElement(ResumoDoMes), api)).toContain('5.432')
+  expect(await lerTela(createElement(NumerosAba, { id: 'contador', fechar() {} }), api)).toContain('5.432')
 })

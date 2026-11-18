@@ -53,6 +53,7 @@ export function OrcamentoResumo({ campo, hoje, repetir, aberto, alternar }: {
         {p && outros.length > 0 && <ul className="resumo-outros">{outros.map(e => <li key={e.id}>
           <EnvelopeCard e={e} diasRestantes={p.diasRestantes} resumo={{ compacto: true }} />
         </li>)}</ul>}
+        {p?.placarIndisponivel && <p className="sub">Placar do casal indisponível.</p>}
         {placar && <section className={`placar${oculto ? '' : placar.passam.length ? ' warn' : ' ok'}`}>
           <h4>O casal, se continuar assim</h4>
           {oculto ? <p>Valores escondidos</p> : <>

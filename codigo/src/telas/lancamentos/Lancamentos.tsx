@@ -7,7 +7,8 @@ import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { useConfig } from '../../app/useConfig'
+import { useDestino } from '../../app/destinos'
+import { lerMes } from '../../lib/resumo/leituras'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import type { RecebimentoTela } from '../../api/tipos'
 import { mesCurto } from '../../lib/formato'
@@ -191,34 +192,34 @@ function TotaisDoMes({ envelopes, faturas, cartoes, familia, hoje }: { envelopes
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
-type Entrada = { data: string; valor: number }
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
   return <><h3>Realizado</h3><div className="mes-indicadores">
     {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal' : undefined}><p><Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />{nome}</p><Din v={valor} tam="mid" /></div>)}
   </div><h3>Previsto · ainda não recebido</h3><p>Entradas certas pendentes: <Din v={totais.previsto} /></p>
-  <details className="mes-como"><summary><Icone nome="ajuda" />Como ler este resumo</summary><p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês, inclusive atrasados. Incertos ficam fora. Previsto não entra no saldo realizado.</p></details></>
+  <details className="mes-como"><summary><Icone nome="ajuda" />Como ler este resumo</summary><p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês. Incertos ficam fora. Previsto não entra no saldo realizado.</p></details></>
 }
 
 export function ResumoDoMes() {
   const { api, familia, versao } = useApp()
   const hoje = hojeRecife(), atual = hoje.slice(0, 7)
-  const [mes, setMes] = useState(atual)
+  const destino = useDestino()
+  const pedido = destino.secao === 'mes' && destino.periodo ? destino.periodo : atual
+  const [escolha, setMes] = useState({ pedido, mes: pedido })
+  const mes = escolha.pedido === pedido ? escolha.mes : pedido
+  if (escolha.pedido !== pedido) setMes({ pedido, mes: pedido })
   const [verFechamento, setVerFechamento] = useState(false)
-  const [entradas, , falhaEntradas, leuEntradas] = useConfig<Entrada[]>('entradas', [])
   const permitido = familia?.papel === 'casal'
-  const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:${mes}`, permitido && api.recebimentos ? async () => {
-    const [gastos, recebimentos] = await Promise.all([api.lancamentos(familia!.id, mes), api.recebimentos!(familia!.id)])
-    return { gastos, recebimentos }
-  } : null, [api, versao])
+  const { dado, erro, carregando, repetir } = useLeituraRemota(`${familia?.id}:${mes}`, permitido && api.recebimentos ? () => lerMes(api, familia.id, hoje, mes) : null,
+    [api, versao], 'resumo-familia:movimentacaoMes')
   if (!permitido) return null
   return <section className="card" aria-label="Resumo do mês" data-secao="mes" data-periodo={mes}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      <Botao type="button" variante="secundario" aria-label="Mês anterior" onClick={() => setMes(mesMais(mes, -1))}>←</Botao>
+      <Botao type="button" variante="secundario" aria-label="Mês anterior" onClick={() => setMes({ pedido, mes: mesMais(mes, -1) })}>←</Botao>
       <h2>{mesCurto(mes + '-01')}</h2>
-      <Botao type="button" variante="secundario" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes(mesMais(mes, 1))}>→</Botao>
+      <Botao type="button" variante="secundario" aria-label="Mês seguinte" disabled={mes >= atual} onClick={() => setMes({ pedido, mes: mesMais(mes, 1) })}>→</Botao>
     </div>
-    {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro || falhaEntradas ? <p role="alert">Não foi possível atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
-      : carregando || !dado || !leuEntradas ? <p role="status">Buscando resumo…</p> : <><FaixaDoMes totais={totaisDoMes(mes, hoje, dado.gastos, dado.recebimentos, entradas)} /><p className="sub">Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.</p></>}
+    {!api.recebimentos ? <p>Resumo indisponível: falta a leitura dos recebimentos.</p> : erro ? <p role="alert">Não foi possível atualizar o resumo. Os registros continuam guardados. <button type="button" onClick={repetir}>Tentar novamente</button></p>
+      : carregando || !dado ? <p role="status">Buscando resumo…</p> : <><FaixaDoMes totais={dado} /><p className="sub">Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.</p></>}
     {mes < atual && <><Botao type="button" variante="secundario" onClick={() => setVerFechamento(v => !v)}>{verFechamento ? 'Ocultar fechamento registrado' : 'Ver fechamento registrado'}</Botao>
       {verFechamento && <FechamentoRegistrado key={`${familia?.id}:${mes}`} mes={mes} />}</>}
   </section>

@@ -1,3 +1,5 @@
+import { protegerApi } from '../api/protegida'
+import { definirEscopoLeitura } from '../app/invalidacao'
 import { act, createElement, type ReactElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -323,7 +325,9 @@ it('folha real mostra cores e limites, destinos existentes e marca apenas o item
 it('folha reutiliza formulário de imóvel real, salva e atualiza conferência', async () => {
   const e = comItens(), i = { id: 'i', meu: true, apelido: 'Imóvel fictício', dono_nome: 'Teste', valor: 400_000, uso: 'parado', aluguel: 0, custos: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: null, venda_mes: null, venda_contrato: false } as ImovelTela
   const salvar = vi.fn(async () => {}), gravar = vi.fn(async () => {})
-  const a = await montar(createElement(RumoA2029), { futuroEntradas: async () => ({ entrada: e, confirmar: [] }), imoveis: async () => [i], imovelSalvar: salvar, salvarConfig: gravar })
+  const api = protegerApi({ ...apiExemplo, modo: 'real', config: async (_f, _c, p) => p, futuroEntradas: async () => ({ entrada: e, confirmar: [] }), imoveis: async () => [i], imovelSalvar: salvar, salvarConfig: gravar })
+  definirEscopoLeitura(api, 'teste', { id: 'familia-ficticia', papel: 'casal' } as NonNullable<Ctx['familia']>)
+  const a = await montar(createElement(RumoA2029), {}, { api })
   await a.click('Atualizar meus números'); await a.click('Abrir imóvel')
   expect(a.box.textContent).toContain('Quanto vale hoje')
   await a.click('Salvar')
@@ -331,7 +335,9 @@ it('folha reutiliza formulário de imóvel real, salva e atualiza conferência',
   expect(gravar).toHaveBeenCalledWith('familia-ficticia', 'numeros_atualizados', expect.objectContaining({ imoveis: { i: expect.any(String) } }))
 })
 it('salvamentos existentes confirmam só depois de sucesso; aporte e falha não conferem', async () => {
-  const salvar = vi.fn(async () => {}), api = { ...apiExemplo, modo: 'real', config: async () => ({}), salvarConfig: salvar, guardadoMovimentar: vi.fn(async () => {}), imovelSalvar: vi.fn(async () => {}), recebimentoMudar: vi.fn(async () => {}) } as unknown as Api
+  const salvar = vi.fn(async () => {}), interna = { ...apiExemplo, modo: 'real', config: async () => ({}), salvarConfig: salvar, guardadoMovimentar: vi.fn(async () => {}), imovelSalvar: vi.fn(async () => {}), recebimentoMudar: vi.fn(async () => {}), imoveis: async () => [] } as unknown as Api
+  const api = protegerApi(interna), familia = { id: 'f', papel: 'casal' } as NonNullable<Ctx['familia']>
+  definirEscopoLeitura(api, 'teste', familia)
   acompanharConferencias(api, 'f', ['a'], () => agora)
   await api.guardadoMovimentar('a', 'aporte', 1, '2026-11-16', 'x')
   expect(salvar).not.toHaveBeenCalled()
@@ -339,10 +345,12 @@ it('salvamentos existentes confirmam só depois de sucesso; aporte e falha não 
   expect(salvar).toHaveBeenLastCalledWith('f', 'numeros_atualizados', expect.objectContaining({ aplicacoes: { a: agora.toISOString() } }))
   await api.recebimentoMudar!('f', 'r', { certo: true })
   expect(salvar).toHaveBeenLastCalledWith('f', 'numeros_atualizados', expect.objectContaining({ recebimentos: { r: agora.toISOString() } }))
-  const falha = { ...api, imovelSalvar: async () => { throw new Error('não salvo') }, salvarConfig: vi.fn() }
+  const gravarFalha = vi.fn()
+  const falha = protegerApi({ ...interna, imovelSalvar: async () => { throw new Error('não salvo') }, salvarConfig: gravarFalha })
+  definirEscopoLeitura(falha, 'teste', familia)
   acompanharConferencias(falha, 'f', [], () => agora)
-  await expect((falha as Api).imovelSalvar!('f', 'i', {} as any)).rejects.toThrow('não salvo')
-  expect(falha.salvarConfig).not.toHaveBeenCalled()
+  await expect(falha.imovelSalvar!('f', 'i', {} as any)).rejects.toThrow('não salvo')
+  expect(gravarFalha).not.toHaveBeenCalled()
 })
 it('gravação de conferência relê dados e mantém datas de outros itens; falha não vira sucesso', async () => {
   const salvar = vi.fn(async () => {}), api = { ...apiExemplo, modo: 'real', config: async () => ({ imoveis: { outro: '2026-01-01' } }), salvarConfig: salvar } as unknown as Api

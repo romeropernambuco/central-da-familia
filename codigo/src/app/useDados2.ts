@@ -38,7 +38,7 @@ export function useEscritorio() {
   const invalidacao = useInvalidacao(api, familia?.id || '')
   const loja = lojaEscritorio(api, familia?.id || '')
   loja.equipe = familia?.papel === 'equipe'
-  loja.aoErro = erro => { if (erro instanceof ErroSessao) void tentar(async () => { throw erro }) }
+  useEffect(() => loja.aoErro(erro => { if (erro instanceof ErroSessao) void tentar(async () => { throw erro }) }), [loja, tentar])
   const r = useSyncExternalStore(loja.assinar, loja.snapshot)
   useEffect(() => { if (familia) void loja.ler(api, familia.id, versao + invalidacao) }, [loja, api, familia?.id, versao, invalidacao])
   const atualizar = useCallback(() => { if (familia) { invalidarDados(api, familia.id, ['escritorio']); void loja.ler(api, familia.id) } }, [loja, api, familia?.id])

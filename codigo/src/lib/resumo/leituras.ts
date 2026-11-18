@@ -12,7 +12,7 @@ import { recebimentosDoMes, totaisRecebimentos } from './recebimentos'
 import { situacaoCasa } from './casa'
 import { totaisDesejos } from './desejos'
 import { totalPendencias } from './pendencias'
-import { numerosRumo2029 } from './plano2029'
+import { conferenciasDoPlano, numerosRumo2029 } from './plano2029'
 import { saldoDasContas } from './saldos'
 import { camposAusentes } from './contrato'
 import { lerCompartilhado } from '../../app/invalidacao'
@@ -44,7 +44,7 @@ export async function lerPlano(api: Api, id: string) {
   const p = await api.futuroEntradas(id)
   const e = entradaDoCenario(p, 'garantido')
   if (!e) throw new Error(p.motivo || 'Projeção incompleta')
-  return { unidade: 'centavos' as const, ...numerosRumo2029(futuro(e), e) }
+  return { unidade: 'centavos' as const, ...numerosRumo2029(futuro(e), e), confirmar: p.confirmar, conferenciaAntiga: false, conferenciasPlano: conferenciasDoPlano(e) }
 }
 export async function lerImoveis(api: Api, id: string) {
   if (!api.imoveis) throw new Error('Imóveis indisponíveis')
@@ -57,7 +57,8 @@ export async function lerImoveis(api: Api, id: string) {
 }
 export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
   const r = await api.resumoHoje(f.id)
-  if (camposAusentes(r).length || !Array.isArray(r.envelopes) || !Number.isFinite(r.pode_gastar_hoje)) throw new Error('Orçamento incompleto')
+  if (camposAusentes(r).length || r.so_nomes || !Array.isArray(r.envelopes) ||
+    r.envelopes.some(e => camposAusentes(e).length) || !Number.isFinite(r.pode_gastar_hoje)) throw new Error('Orçamento incompleto')
   const d = destaqueOrcamento(r, f.envelopeId, hoje, FUSO)
   if (f.papel === 'pessoa' && d.escopo !== 'pessoal') throw new Error('Orçamento pessoal indisponível')
   if (!Number.isFinite(d.valor)) throw new Error('Orçamento incompleto')
@@ -67,14 +68,18 @@ export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
     envelopes: envelopesVisiveis(r.envelopes, f), diasRestantes: r.dias_restantes,
     casa: casal ? disponivelHojeCasa(r.envelopes) : null,
     placar: casal && Number(hoje.slice(8)) >= 3 ? projecaoCasal(r.placar_casal) : null,
+    placarIndisponivel: casal && api.modo === 'real' && !r.placar_casal?.length,
   }
 }
-export async function lerMes(api: Api, id: string, hoje: string) {
-  if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')
-  const mes = hoje.slice(0, 7)
-  const [gastos, recebimentos, entradas] = await Promise.all([lerLancamentosMes(api, id, mes), api.recebimentos(id), api.config<{ data: string; valor: number }[]>(id, 'entradas', [])])
-  if (![gastos, recebimentos, entradas].every(Array.isArray) || gastos.some(l => !Number.isFinite(l.valor)) || entradas.some(e => !e.data || !Number.isFinite(e.valor))) throw new Error('Movimentação incompleta')
-  return { unidade: 'reais' as const, ...totaisDoMes(mes, hoje, gastos, recebimentos, entradas) }
+export async function lerMes(api: Api, id: string, hoje: string, mes = hoje.slice(0, 7)) {
+  const [gastos, receitas, entradas] = await Promise.all([
+    lerLancamentosMes(api, id, mes), lerRecebimentos(api, id), api.config<{ data: string; valor: number }[]>(id, 'entradas', []),
+  ])
+  if (!Array.isArray(gastos) || !Array.isArray(receitas.lista) || !Array.isArray(entradas) ||
+    camposAusentes(gastos).length || gastos.some(l => camposAusentes(l).length || !Number.isFinite(l.valor)) ||
+    receitas.lista.some(r => camposAusentes(r).length || !Number.isFinite(r.valor)) ||
+    entradas.some(e => !e.data || !Number.isFinite(e.valor))) throw new Error('Movimentação incompleta')
+  return { unidade: 'reais' as const, ...totaisDoMes(mes, hoje, gastos, receitas.lista, entradas, receitas.fontes, receitas.controle) }
 }
 export async function lerAplicacoes(api: Api, id: string) {
   const g = await api.guardadoHoje(id)

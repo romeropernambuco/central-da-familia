@@ -49,7 +49,7 @@ import { frasesDesejo } from '../desejos/Desejos'
 it('resumo real separa recebido, pendente certo, incerto e virada de ano', async () => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2027-01-02T12:00:00-03:00'))
   const recebimentos = [{ valor: 100, recebido_em: '2026-12-31', valor_recebido: 90, certo: true, mes_previsto: '2026-12' }, { valor: 40, recebido_em: null, certo: true, mes_previsto: '2026-12', mes_novo: '2027-01' }, { valor: 999, recebido_em: null, certo: false, mes_previsto: '2027-01' }]
-  const api = { lancamentos: vi.fn(async (_f: string, m: string) => [{ valor: 20, data: m + '-01' }, { valor: 500, data: m + '-31' }, { valor: 9, data: m + '-01', apagado_em: 'sim' }]), recebimentos: async () => recebimentos, config: async () => [{ valor: 10, data: '2027-01-01' }] } as unknown as Partial<Api>
+  const api = { lancamentos: vi.fn(async (_f: string, m: string) => [{ valor: 20, data: m + '-01' }, { valor: 500, data: m + '-31' }, { valor: 9, data: m + '-01', apagado_em: 'sim' }]), recebimentos: async () => recebimentos, config: async (_f: string, chave: string, padrao: unknown) => chave === 'entradas' ? [{ valor: 10, data: '2027-01-01' }] : padrao } as unknown as Partial<Api>
   const a = await montar(createElement(ResumoDoMes), api)
   expect(a.box.textContent).toContain('Realizado'); expect(a.box.textContent).toContain('Previsto')
   expect(a.box.textContent).toContain('R$40'); expect(a.box.textContent).not.toContain('999')

@@ -1,7 +1,7 @@
-import { totaisDoMes, gastosRealizados } from '../../lib/resumo/movimentacao'
+import { gastosRealizados, totaisDoMes } from '../../lib/resumo/movimentacao'
 import { destaqueOrcamento } from '../../lib/resumo/orcamento'
 import { totaisGuardado } from '../../lib/resumo/guardado'
-import { lerTotaisRecebimentos } from '../../lib/resumo/leituras'
+import { lerLancamentosMes, lerMes, lerTotaisRecebimentos } from '../../lib/resumo/leituras'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { FUSO } from '../../lib/formato'
 import type { Api, FamiliaMinha } from '../../api/tipos'
@@ -28,9 +28,11 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
     }
     case 'lancamentos': {
       const hoje = hojeRecife(), mes = hoje.slice(0, 7)
-      const linhas = await api.lancamentos(id, mes)
-      const t = totaisDoMes(mes, hoje, linhas, [], [])
-      return [quantidade('Gastos realizados no mês', gastosRealizados(mes, hoje, linhas).length), { nome: 'Saiu no mês', valor: t.saiu }]
+      const [linhas, total] = await Promise.all([api.recebimentos ? lerLancamentosMes(api, id, mes) : api.lancamentos(id, mes), api.recebimentos ? lerMes(api, id, hoje) : null])
+      const t = total ?? totaisDoMes(mes, hoje, linhas, [], [])
+      const numeros = [quantidade('Gastos realizados no mês', gastosRealizados(mes, hoje, linhas).length), { nome: 'Saiu no mês', valor: t.saiu }]
+      if (total) numeros.push({ nome: 'Entrou no mês', valor: t.entrou }, { nome: 'Entradas certas pendentes', valor: t.previsto })
+      return numeros
     }
     case 'cartoes': {
       const [cartoes, faturas] = await Promise.all([api.cartoes(id), api.faturas(id, 1)])

@@ -1,3 +1,4 @@
+import { aoLimparLeituras } from '../../app/invalidacao'
 import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
@@ -16,22 +17,25 @@ import { useAdultos } from '../../app/useMembros'
 import { Imoveis } from './Imoveis'
 import { aplicacaoMinha } from '../../app/dono'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
-import type { GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
+import type { Api, GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { dataBr, dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { CDI_DIA_PADRAO, ROTULO_TIPO, barras30, cdiDiaDoAno, exemploVazio, marcoGuardado, pct, rendeQuanto } from '../../lib/guardado'
+
+const marcosVistos = new WeakMap<Api, Map<string, number>>()
+aoLimparLeituras(api => { marcosVistos.delete(api) })
 
 const TORNEIRA = 'Pense numa torneira pingando numa caixa d\'água. O que você guardou é a água da caixa. O rendimento é o pingo de cada dia útil: pinga pouco, mas pinga todo dia, e o pingo de hoje já rende amanhã. No sábado, no domingo e no feriado a torneira fecha, por isso o dia mostra R$ 0.'
 type Folha = { tipo: 'nova' } | { tipo: 'aporte' | 'resgate'; app?: GuardadoAplicacao } | { tipo: 'app'; app: GuardadoAplicacao } | null
 
 /** Guardado (a caixinha): a resposta de "quanto rendeu hoje?" em 1 número. Só o casal abre. */
 export function Guardado() {
-  const { familia, explicar, resumo, oculto } = useApp()
+  const { api, sessao, familia, explicar, resumo, oculto } = useApp()
   const { g, estado, atualizar } = useGuardado()
   // E7 (F10): o aviso do FGC vem do motor (futuro().avisos_fgc); a tela só escreve
   const { saida } = useFuturo()
   const [grafico, setGrafico] = useState<'dia' | 'saldo'>('saldo')
-  const [marcoVisto, setMarcoVisto] = useState(() => { try { return localStorage.getItem('marco_visto') || '' } catch { return '' } })
+  const [, redesenharMarco] = useState(0)
   const [folha, setFolha] = useState<Folha>(null)
 
   useEffect(() => {
@@ -57,7 +61,7 @@ export function Guardado() {
 
   const abrirConta = () => explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g)} ${TORNEIRA}` })
 
-  if (!g.aplicacoes.length) return <><GuardadoVazio g={g} comecar={() => setFolha({ tipo: 'nova' })} /><Imoveis aplicado={0} />{folha?.tipo === 'nova' && <NovaAplicacao fechar={() => setFolha(null)} />}</>
+  if (!g.aplicacoes.length) return <><div data-secao="aplicacoes"><GuardadoVazio g={g} comecar={() => setFolha({ tipo: 'nova' })} /></div><Imoveis aplicado={0} />{folha?.tipo === 'nova' && <NovaAplicacao fechar={() => setFolha(null)} />}</>
 
   const barras = barras30(g.por_dia_30)
   const temFolga = barras.some(b => !b.util)
@@ -72,12 +76,17 @@ export function Guardado() {
   const minhas = g.aplicacoes.filter(a => aplicacaoMinha(a, familia))
   // G10: 1 aviso só por marco, que some quando a pessoa fecha
   const marco = marcoGuardado(g.saldo_30_seu || g.saldo_30 || [])
-  const chaveMarco = marco ? `${familia.membroNome}:${marco.valor}` : ''
+  const pessoa = JSON.stringify([sessao?.userId, familia.id, familia.membroId])
+  const marcoVisto = marcosVistos.get(api)?.get(pessoa)
   return (
     <div className="view f30-guardado">
-      {marco && marcoVisto !== chaveMarco && (
+      {marco && marcoVisto !== marco.valor && (
         <p className="todo ok marco" role="status"><Icone desenho={PartyPopper} aria-hidden="true" /><span><b>{g.saldo_30_seu ? 'Seu guardado' : 'O guardado'} passou de {reais(marco.valor)}</b> no dia {dataCurta(marco.dia)}. Está crescendo.</span>
-          <button className="iconbtn" type="button" aria-label="Fechar o aviso" onClick={() => { setMarcoVisto(chaveMarco); try { localStorage.setItem('marco_visto', chaveMarco) } catch { /* sem armazenamento */ } }}><Icone desenho={X} /></button></p>
+          <button className="iconbtn" type="button" aria-label="Fechar o aviso" onClick={() => {
+            let vistos = marcosVistos.get(api)
+            if (!vistos) { vistos = new Map(); marcosVistos.set(api, vistos) }
+            vistos.set(pessoa, marco.valor); redesenharMarco(n => n + 1)
+          }}><Icone desenho={X} /></button></p>
       )}
       <section className="card guard-hoje" aria-labelledby="gHoje">
         <h2 id="gHoje" className="lbl">Rendeu hoje</h2>

@@ -43,33 +43,39 @@ async function meuMembro(familia: string): Promise<string | null> {
 }
 /** Papel de quem entrou em cada família: a equipe nunca guarda valor em dinheiro das perguntas do Escritório. */
 const papeis = new Map<string, Papel>()
+let consultaSessao = 0
+function limparPapeis() { consultaSessao++; papeis.clear() }
 
 export const apiReal: Api = {
   modo: 'real',
 
   async sessao(): Promise<Sessao | null> {
+    const pedido = ++consultaSessao
     const { data } = await sb().auth.getSession()
     const u = data.session?.user
-    if (!u) return null
+    if (!u) { if (pedido === consultaSessao) papeis.clear(); return null }
     const buscar = async (): Promise<FamiliaMinha[]> => {
       const { data: membros, error } = await sb().from('membros').select('id, familia_id, papel, nome, envelope_id, familias(nome)').eq('user_id', u.id).eq('ativo', true).order('criado_em')
       if (error) erro(error)
       return (membros || []).map((m: any) => ({ id: m.familia_id, nome: m.familias?.nome || 'Família', papel: m.papel, membroNome: m.nome, envelopeId: m.envelope_id, membroId: m.id ? String(m.id) : null }))
     }
     let familias = await buscar()
-    const lembra = (fs: FamiliaMinha[]) => { papeis.clear(); for (const f of fs) papeis.set(f.id, f.papel) }
+    const lembra = (fs: FamiliaMinha[]) => { if (pedido === consultaSessao) { papeis.clear(); for (const f of fs) papeis.set(f.id, f.papel) } }
     // convidado por e-mail que entrou mas o convite não ligou na hora (internet caiu): tenta de novo antes de mostrar "criar família"
-    if (!familias.length && !(u as any).is_anonymous && u.email) {
-      try { const r = await rpc<{ familias?: unknown[] }>('entrar_por_convite'); if (r?.familias?.length) { prepararAcolhimento(); familias = await buscar() } } catch { /* sem convite ou banco recusou: segue pro primeiro uso */ }
+    if (pedido === consultaSessao && !familias.length && !(u as any).is_anonymous && u.email) {
+      try { const r = await rpc<{ familias?: unknown[] }>('entrar_por_convite'); if (pedido === consultaSessao && r?.familias?.length) { prepararAcolhimento(); familias = await buscar() } } catch { /* sem convite ou banco recusou: segue pro primeiro uso */ }
     }
     // equipe que errou o código fica com login anônimo sem família: não é sessão (senão caía no "criar família")
-    if (!sessaoVale(!!(u as any).is_anonymous, familias.length)) return null
-    lembra(familias)
+    if (!sessaoVale(!!(u as any).is_anonymous, familias.length)) { lembra([]); return null }
     // equipe nunca é dono do produto: nem pergunta ao banco
-    if (familias.length && familias.every(f => f.papel === 'equipe')) return { userId: u.id, email: null, familias, dono: false }
+    if (familias.length && familias.every(f => f.papel === 'equipe')) {
+      lembra(familias)
+      return { userId: u.id, email: null, familias, dono: false }
+    }
     // Painel dos 4 números: só aparece se a função deixar (dono do produto)
     let dono = false
     try { await rpc('numeros_semana'); dono = true } catch { dono = false }
+    lembra(familias)
     return { userId: u.id, email: u.email || null, familias, dono }
   },
   async enviarCodigo(email) {
@@ -101,9 +107,9 @@ export const apiReal: Api = {
       throw new Error(r?.restam != null && r.restam > 0 && /errado/i.test(m) ? `${m} Restam ${r.restam} tentativas.` : m)
     }
   },
-  async sair() { try { await sb().auth.signOut({ scope: 'local' }) } catch { /* sem rede: a sessão local some do mesmo jeito */ } },
+  async sair() { limparPapeis(); try { await sb().auth.signOut({ scope: 'local' }) } catch { /* sem rede: a sessão local some do mesmo jeito */ } },
   aoSairSessao(avisar) {
-    const { data } = sb().auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') avisar() })
+    const { data } = sb().auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { limparPapeis(); avisar() } })
     return () => data.subscription.unsubscribe()
   },
 
@@ -156,7 +162,11 @@ export const apiReal: Api = {
       // D1 (revisão E4 a E6): o comentário ficava no meio desta linha e apagava família, mês, ordem e paginação
       const { data, error } = await sb().from('lancamentos').select('*').eq('familia_id', familia).gte('data', ini).lt('data', fim).order('data', { ascending: false }).order('criado_em', { ascending: false }).order('id').range(p * 1000, p * 1000 + 999)
       if (error) erro(error)
-      out.push(...(data || []).map((l: any) => ({ ...normalizaLancamento(l), ...(eu && l.autor ? { meu: l.autor === eu } : {}) })))
+      out.push(...(data || []).map((l: any) => {
+        const normalizado = normalizaLancamento(l)
+        if (eu && l.autor) normalizado.meu = l.autor === eu
+        return normalizado
+      }))
       if ((data || []).length < 1000) break
     }
     return out
@@ -277,8 +287,8 @@ export const apiReal: Api = {
     // o banco só muda o que vier; tirar a data de pagamento é `desfazer_pagamento`
     await rpc('fatura_informar', { familia, cartao, mes, ...(d.valor_banco != null ? { valor_banco: d.valor_banco } : {}), ...(d.paga_em ? { paga_em: d.paga_em } : d.paga_em === null ? { desfazer_pagamento: true } : {}) })
   },
-  async feiras(familia) {
-    const eq = papeis.get(familia) === 'equipe'
+  async feiras(familia, opcoes) {
+    const eq = opcoes?.semValores || papeis.get(familia) === 'equipe'
     // a equipe não pede o valor (a tranca do banco também não deixa ler lançamentos)
     const { data, error } = await sb().from('feiras').select(eq ? 'id, semana, data, loja, nota_caminho, sem_nota_motivo, feita_por' : 'id, semana, data, loja, nota_caminho, sem_nota_motivo, feita_por, lancamentos(valor)').eq('familia_id', familia).order('data', { ascending: false }).limit(26)
     if (error) erro(error)

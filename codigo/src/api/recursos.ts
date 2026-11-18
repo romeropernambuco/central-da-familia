@@ -10,7 +10,7 @@ export function recursosDaMutacao(nome: string, args: any[]): string[] | undefin
   if (nome === 'faturaInformar') return ['faturasBanco', 'pendencias', 'escritorio']
   if (/^recebimento/.test(nome)) return ['recebimentos', 'config', 'controles', 'realizado', 'projecao', 'plano2029', 'pendencias', 'escritorio']
   if (/^guardado/.test(nome)) return ['guardado', 'projecao', 'pendencias', 'escritorio']
-  if (/^(feira|estoque|casaMarcar|anotarCompraEquipe)/.test(nome)) return ['feira', 'estoque', 'lista', 'casa', 'config', 'escritorio', 'pendencias', 'resumo', 'lancamentos']
+  if (/^(feira|estoque|casaMarcar|anotarCompraEquipe)/.test(nome)) return ['feira', 'estoque', 'lista', 'casa', 'config', 'config:casa_lista', 'config:casa_gas', 'config:casa_ponto', 'config:casa_presenca', 'config:casa_prestadores', 'escritorio', 'pendencias', 'resumo', 'lancamentos']
   if (nome === 'salvarConfig') return ['config', `config:${args[1]}`, 'resumo', 'lancamentos', 'projecao', 'plano2029', 'recebimentos', 'escritorio', 'pendencias']
   if (/^imovel/.test(nome)) return ['imoveis', 'projecao', 'pendencias', 'escritorio']
   if (/^(cartao|criarCartao)/.test(nome)) return ['cartoes', 'faturas', 'faturasBanco', 'projecao', 'escritorio']

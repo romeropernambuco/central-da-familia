@@ -10,7 +10,7 @@ import { ir } from '../../app/rotas'
 import { rotaPermitida } from '../../app/rotas'
 import { ErroSessao } from '../../api/erros'
 import { POR_ID } from './equipe'
-import { numerosDaAba, type Indicador } from './numeros'
+import type { Indicador } from './numeros'
 
 export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
   const { api, familia, sessao, versao, tentar } = useApp()
@@ -24,8 +24,9 @@ export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
     setResultado(null); setErro(false)
     if (!familia || !membro || !permitido) return
     let vivo = true
-    numerosDaAba(api, familia, membro.rota)
-      .then(numeros => { if (vivo) setResultado({ numeros, exemplo: api.modo === 'exemplo' }) })
+    // As leituras da ficha só entram no pacote quando o painel é aberto.
+    import('./numeros').then(({ numerosDaAba }) => vivo ? numerosDaAba(api, familia, membro.rota) : null)
+      .then(numeros => { if (vivo && numeros) setResultado({ numeros, exemplo: api.modo === 'exemplo' }) })
       .catch(async erro => {
         if (!vivo) return
         if (erro instanceof ErroSessao) {

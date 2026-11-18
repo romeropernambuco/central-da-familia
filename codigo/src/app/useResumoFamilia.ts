@@ -6,6 +6,7 @@ import { FUSO, fimDoMes, somaDias } from '../lib/formato'
 import * as leitura from '../lib/resumo/leituras'
 import { recebimentosDoMes } from '../lib/resumo/recebimentos'
 import type { CampoResumo, FonteResumo, ResumoFamilia } from '../lib/resumo/tipos'
+import { planoComConferenciaAntiga } from '../lib/resumo/conferencia'
 import { comporResumoFamilia } from '../lib/resumo/familia'
 
 import { recursosResumo } from '../lib/resumo/recursos'
@@ -49,7 +50,10 @@ function useCampo<K extends keyof ResumoFamilia>(chave: K, hoje: string, conferi
     campo = s.contas.length ? { ...meta, estado: 'pronto', valor: { unidade: 'reais', valor: s.saldo.valor }, conferidoEm: s.saldo.conferidoEm, atualizadoEm: s.saldo.conferidoEm } : { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
   } else {
     const { idsConferencia: _ids, atualizadoEm: _data, ...valor } = r.dado as Record<string, unknown>
-    campo = { ...meta, estado: 'pronto', valor }
+    if (chave === 'plano2029') {
+      const { conferenciasPlano, ...plano } = r.dado as Awaited<ReturnType<typeof leitura.lerPlano>>
+      campo = { ...meta, estado: 'pronto', valor: { ...plano, conferenciaAntiga: api.modo !== 'exemplo' && planoComConferenciaAntiga(conferenciasPlano, conferir, hoje) } }
+    } else campo = { ...meta, estado: 'pronto', valor }
   }
   return { campo: campo as ResumoFamilia[K], repetir: () => { if (familia) invalidarDados(api, familia.id, recursosResumo[chave]); r.repetir() } }
 }

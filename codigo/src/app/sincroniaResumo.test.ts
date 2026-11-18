@@ -42,6 +42,7 @@ it('ação e releitura sincronizam aba, Início e funcionário; falha no resumo 
   }
   try {
     await act(async () => root.render(createElement(Provedor, { api, children: createElement(Tela) })))
+    await act(async () => { await vi.dynamicImportSettled() })
     conferir(100)
     const chamadas = guardadoHoje.mock.calls.length
     await act(async () => { await api.guardadoMovimentar('a', 'aporte', 100, '2026-11-17', 'chave') })

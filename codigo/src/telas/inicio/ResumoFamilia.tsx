@@ -8,6 +8,7 @@ import { InformarSaldo } from '../planejamento/SaldoConta'
 import { CasaDisponivelHoje } from '../../componentes/CasaDisponivelHoje'
 import { PlanoSemMargem } from '../../componentes/PlanoSemMargem'
 import { OrcamentoResumo, useOrcamentoAberto } from './OrcamentoResumo'
+import { rotulosCasa } from '../../lib/resumo/casa'
 import { tetoDoMes } from '../../lib/resumo/orcamento'
 import { lazy, Suspense, useState } from 'react'
 import './resumo.css'
@@ -22,7 +23,7 @@ export function itensResumo(r: Resumo, hoje: string, oculto: boolean): Item[] {
   const privado = (t: string) => oculto ? '••••' : t
   return [
     { chave: 'saldoConta', titulo: 'Saldo em conta', icone: 'orcamento', numero: r.saldoConta.valor ? valor(r.saldoConta.valor, oculto) : '', frase: 'Contas correntes cadastradas.', destino: { rota: 'planejamento', secao: 'saldo' } },
-    { chave: 'podeGastarHoje', titulo: 'Hoje você pode gastar', icone: 'inicio', numero: p ? valor(p.valor, oculto) : '', frase: p ? privado(`${p.escopo === 'pessoal' ? 'Seu orçamento' : 'Orçamento familiar'}${p.devendo ? ' · fica devendo no mês' : ''}`) : '', destino: { rota: 'orcamento', secao: 'orcamento' } },
+    { chave: 'podeGastarHoje', titulo: p?.devendo ? 'Este mês fica devendo' : 'Hoje você pode gastar', icone: 'inicio', numero: p ? valor(p.valor, oculto) : '', frase: p ? privado(`${p.escopo === 'pessoal' ? 'Seu orçamento' : 'Orçamento familiar'}`) : '', destino: { rota: 'orcamento', secao: 'orcamento' } },
     { chave: 'faturas', titulo: 'Faturas a vencer/conferir', icone: 'cartoes', numero: f ? dinheiro(f.total, oculto) : '', frase: f ? privado(f.lista.length ? `${f.lista.length} a vencer ou conferir nos próximos 30 dias.` : 'Nenhuma fatura a conferir nos próximos 30 dias.') : '', destino: { rota: 'cartoes', secao: 'fatura', entidade: f?.lista[0]?.cartao_id, periodo: f?.lista[0]?.mes } },
     { chave: 'aplicacoes', titulo: 'Aplicações', icone: 'guardado', numero: r.aplicacoes.valor ? dinheiro(r.aplicacoes.valor.total, oculto) : '', frase: r.aplicacoes.valor ? `Rendeu hoje ${dinheiro(r.aplicacoes.valor.hoje, oculto)} líquido.` : '', destino: { rota: 'guardado', secao: 'aplicacoes' } },
     { chave: 'recebimentos', titulo: 'Recebimentos previstos', icone: 'lancamentos', numero: rec ? dinheiro(rec.previsto, oculto) : '', frase: rec ? privado([
@@ -31,8 +32,11 @@ export function itensResumo(r: Resumo, hoje: string, oculto: boolean): Item[] {
       rec.incerto ? `Incerto ${dinheiro(rec.incerto, false)}` : '',
       plural(rec.atrasados, 'atrasado', 'atrasados'),
     ].filter(Boolean).join(' · ') + '.') : '', destino: { rota: 'planejamento', secao: 'recebimentos', periodo: hoje.slice(0, 7) } },
-    { chave: 'plano2029', titulo: 'Plano 2029', icone: 'plano2029', numero: r.plano2029.valor ? privado(r.plano2029.valor.falta_com_margem === null || r.plano2029.valor.cobre_pct === null ? 'Informe o gasto necessário no objetivo' : `${r.plano2029.valor.falta_com_margem > 0 ? 'Faltam' : 'Sobram'} ${dinheiro(Math.abs(r.plano2029.valor.falta_com_margem) / 100, false)} por mês`) : '', frase: 'Para viver de rendimentos em 2029, com margem de segurança · cenário oficial Garantido.', destino: { rota: 'planejamento', secao: 'plano2029' } },
-    { chave: 'casa', titulo: 'Casa', icone: 'casa', numero: c ? privado(c.feira ? 'Feira ainda sem confirmação' : 'Feira em dia') : '', frase: c ? privado([plural(c.nota, 'nota pendente', 'notas pendentes'), c.estoque ? 'Estoque: contagem pendente' : 'Estoque conferido', c.falta === null ? '' : plural(c.falta, 'item em falta', 'itens em falta')].filter(Boolean).join('\n')) : '', destino: c?.tarefa ? { rota: 'escritorio', secao: 'tarefa', entidade: c.tarefa } : { rota: 'casa', secao: 'feira' } },
+    { chave: 'plano2029', titulo: 'Plano 2029', icone: 'plano2029', numero: r.plano2029.valor ? privado(r.plano2029.valor.falta_com_margem === null || r.plano2029.valor.cobre_pct === null ? 'Informe o gasto necessário no objetivo' : `${r.plano2029.valor.falta_com_margem > 0 ? 'Faltam' : 'Sobram'} ${dinheiro(Math.abs(r.plano2029.valor.falta_com_margem) / 100, false)} por mês`) : '', frase: ['Para viver de rendimentos em 2029, com margem de segurança · cenário oficial Garantido.',
+      r.plano2029.valor?.confirmar?.length ? `A confirmar: ${privado(r.plano2029.valor.confirmar.join('; '))}.` : '',
+      r.plano2029.valor?.conferenciaAntiga ? 'Há números com mais de 60 dias.' : '',
+    ].filter(Boolean).join('\n'), destino: { rota: 'planejamento', secao: 'plano2029' } },
+    { chave: 'casa', titulo: 'Casa', icone: 'casa', numero: c ? privado(rotulosCasa(c).feira) : '', frase: c ? privado([plural(c.nota, 'nota pendente', 'notas pendentes'), rotulosCasa(c).estoque, c.falta === null ? '' : plural(c.falta, 'item em falta', 'itens em falta')].filter(Boolean).join('\n')) : '', destino: c?.tarefa ? { rota: 'escritorio', secao: 'tarefa', entidade: c.tarefa } : { rota: 'casa', secao: 'feira' } },
     { chave: 'imoveis', titulo: 'Imóveis', icone: 'guardado', numero: r.imoveis.valor ? valor(r.imoveis.valor.valor, oculto) : '', frase: r.imoveis.valor ? privado(`Aluguel líquido ESTIMADO: ${r.imoveis.valor.aluguel ? valor(r.imoveis.valor.aluguel, oculto) : 'não foi possível conferir'}.`) : '', destino: { rota: 'guardado', secao: 'imoveis' } },
     { chave: 'movimentacaoMes', titulo: 'Gastos e entradas do mês', icone: 'lancamentos', numero: m ? dinheiro(m.saldo, oculto) : '', frase: m ? privado(`Entrou ${dinheiro(m.entrou, false)} · saiu ${dinheiro(m.saiu, false)} · saldo realizado.`) : '', destino: { rota: 'lancamentos', secao: 'mes', periodo: hoje.slice(0, 7) } },
     { chave: 'desejos', titulo: 'Desejos', icone: 'desejos', numero: d ? privado(`${d.pensando} pensando · ${plural(d.combinados, 'combinado', 'combinados')}`) : '', frase: '', destino: { rota: 'desejos', secao: 'desejo', entidade: d?.primeiro } },
@@ -72,7 +76,7 @@ export function ResumoApresentacao({ resumo, hoje, oculto, repetir, informarSald
   } : undefined
   const cartaoPrincipal = (item: Item) => {
     const detalhesOrcamento = item.chave === 'podeGastarHoje' && p ? <>
-      {p.envelope ? <><p>Hoje já saiu: {p.envelope.gasto_hoje == null ? 'Ainda sem dado' : dinheiro(p.envelope.gasto_hoje, oculto)}</p><h3>Ritmo do mês</h3>{oculto ? <p>Gráfico e valores escondidos.</p> : <div className="resumo-ritmo"><Suspense fallback={<p className="resumo-esqueleto" role="status">Conferindo o ritmo...</p>}><RitmoOrcamento envelope={p.envelope} hoje={hoje} valoresNoOrcamento={valoresNoOrcamento} /></Suspense></div>}</> : <p>Detalhes do orçamento pessoal ainda sem dado.</p>}
+      {p.envelope ? <><p>Hoje já saiu do limite: {p.envelope.gasto_hoje == null ? 'Ainda sem dado' : dinheiro(p.envelope.gasto_hoje, oculto)}</p><h3>Ritmo do mês</h3>{oculto ? <p>Gráfico e valores escondidos.</p> : <div className="resumo-ritmo"><Suspense fallback={<p className="resumo-esqueleto" role="status">Conferindo o ritmo...</p>}><RitmoOrcamento envelope={p.envelope} hoje={hoje} valoresNoOrcamento={valoresNoOrcamento} /></Suspense></div>}</> : <p>Detalhes do orçamento pessoal ainda sem dado.</p>}
       <CasaDisponivelHoje valor={p.casa} /><a className="lnk" href={enderecoDestino(item.destino)}>Abrir meu orçamento</a>
     </> : undefined
     const detalhesPlano = item.chave === 'plano2029' && plano && plano.cobre_pct !== null
