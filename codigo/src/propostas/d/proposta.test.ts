@@ -82,8 +82,12 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(html.match(/class="rumo-motor-figura"><svg/g)).toHaveLength(3)
     expect(html.match(/class="rumo-acao rumo-responsavel"/g)).toHaveLength(3)
     expect(html).toContain('aria-label="Ver Gestor do Guardado no escritório"')
-    expect(html).toMatch(/class="rumo-maquete"><svg[^>]*aria-label="Maquete isométrica do escritório"/)
-    expect(html.match(/class="maquete-placa"/g)).toHaveLength(8)
+    const maquete = html.match(/<div class="rumo-maquete" role="img" aria-label="Maquete isométrica do escritório">(<svg[\s\S]*?)<\/div><div class="rumo-equipe"/)?.[1] ?? ''
+    expect(maquete).toMatch(/^<svg\b[^>]*data-variante="media"[^>]*aria-hidden="true"/)
+    const nomes = [...maquete.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
+      .map(([, nome]) => nome)
+    expect(nomes.length).toBeGreaterThanOrEqual(8)
+    expect(nomes.sort()).toEqual(dados.funcionarios.valor!.map(f => f.curto).sort())
     expect(html).toContain('data-sala="patrimonio" data-destaque="true"')
     expect(css).toMatch(/\.rumo-maquete\s*\{[^}]*min-block-size: 245px/)
     expect(css).not.toMatch(/\.rumo-maquete[^{}]*\{[^}]*(?:overflow:\s*hidden|margin-block:\s*-)/)

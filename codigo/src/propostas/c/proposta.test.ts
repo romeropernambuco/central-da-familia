@@ -189,12 +189,16 @@ describe('Jornada do Dia', () => {
     ] }
     const aberto = renderizar({ dados })
     expect(aberto).toContain('data-sala="cartoes" data-destaque="true"')
-    expect(aberto).toContain('class="maquete-placa"')
+    const rotulos = (html: string) => [...html.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
+      .map(([, nome]) => nome)
+    const cartoes = dados.funcionarios.valor!.filter(f => f.sala === 'cartoes')
+    expect(cartoes.length).toBeGreaterThan(0)
+    expect(rotulos(aberto)).toEqual(expect.arrayContaining(cartoes.map(f => f.curto)))
     expect(aberto).toContain('A sala destacada cuida do primeiro pedido.')
     expect(aberto.indexOf('Visitar escritório')).toBeLessThan(aberto.indexOf('Maquete isométrica do escritório'))
     const fechado = renderizar({ dados, oculto: true })
     expect(fechado).not.toContain('data-destaque="true"')
-    expect(fechado).not.toContain('class="maquete-placa"')
+    expect(rotulos(fechado)).toEqual([])
     expect(fechado).not.toContain('A sala destacada')
   })
 

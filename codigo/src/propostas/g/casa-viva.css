@@ -123,7 +123,7 @@
   gap: 0 8px;
   padding-block-start: 8px;
 }
-.cv-mapa .casa-viva-cena { grid-area: cena; align-self: center; justify-self: center; inline-size: min(100%, 300px); margin-block: -20px; }
+.cv-mapa .casa-viva-cena { grid-area: cena; align-self: center; justify-self: center; inline-size: min(100%, 320px); margin-block: -12px; }
 .casa-viva-cena > svg { display: block; inline-size: 100%; block-size: auto; }
 .casa-viva-cena[data-interativa="true"] [data-sala] { cursor: pointer; }
 .cv-mapa .casa-viva-cena svg .nome-sala { display: none; }
@@ -302,7 +302,7 @@
   align-items: center;
   padding-block: 2px 0;
 }
-[data-cv-dispositivo="desktop"] .cv-mapa .casa-viva-cena { inline-size: min(100%, 480px); }
+[data-cv-dispositivo="desktop"] .cv-mapa .casa-viva-cena { inline-size: min(100%, 480px); margin-block: -20px; }
 [data-cv-dispositivo="desktop"] .cv-placa { padding: 11px 14px; }
 [data-cv-dispositivo="desktop"] .cv-placa .cv-placa-valor { font-size: 1.6875rem; }
 [data-cv-dispositivo="desktop"] .cv-resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }

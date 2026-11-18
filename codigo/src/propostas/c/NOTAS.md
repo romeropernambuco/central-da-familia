@@ -20,10 +20,10 @@ A abertura diz quanto cabe no dia, **Agora** pede uma decisão e **Sua equipe** 
 
 ## Primeira dobra
 
-Medição da casca do laboratório no Chromium, com fontes carregadas e o snapshot fictício de 18/11/2026. As contagens a seguir são do quadro de prévia, medido pelo retângulo dos textos financeiros.
+Medição da casca do laboratório no Chromium, com fontes carregadas e os snapshots fictícios de 17 e 18/11/2026 às 11h no Recife. As contagens a seguir são do quadro de prévia da integração f55, medido pelo retângulo dos textos financeiros.
 
-- **Celular, 375 × 812, claro e escuro.** 1 número financeiro, o limite do dia. A dobra reserva espaço para o primeiro pedido e a entrada do escritório. A fila do snapshot estava vazia. Um cenário adicional com dois pedidos sintéticos exercitou a resposta rápida.
-- **Desktop, 1280 × 800, claro e escuro.** 4 números financeiros, limite do dia, recebimentos do mês, cobertura e diferença mensal com margem. A frase fica em uma linha de 64 px. Na versão anterior, as notas registravam 1 número no celular e 2 no desktop em outro snapshot.
+- **Celular, 375 × 812, claro e escuro.** 1 número financeiro, o limite do dia. A dobra reserva espaço para o primeiro pedido e a entrada do escritório.
+- **Desktop, 1280 × 800, claro e escuro.** 1 número financeiro, o limite do dia. Os recebimentos do mês, a cobertura e a diferença mensal com margem do Plano 2029, antes medidos na dobra, aparecem após a rolagem.
 - **Olho fechado.** O laboratório mostra “Valores ocultos”. Os marcadores somem e a barra sai do DOM. O Assessor da Casa vê só tarefas operacionais autorizadas, com títulos fixos, sem escritório financeiro, orçamento ou Plano 2029.
 
 Os quatro valores financeiros da página usam o contrato e aparecem uma vez. Datas e o nome Plano 2029 orientam a leitura. Os valores principais e secundários usam respectivamente 36 e 27 px, com algarismos tabulares sem quebra e símbolo de percentual menor.
@@ -33,7 +33,7 @@ Os quatro valores financeiros da página usam o contrato e aparecem uma vez. Dat
 As notas anteriores foram recuperadas da versão 1. As novas notas avaliam as quatro combinações e penalizam os limites que ainda importam.
 
 1. **Hierarquia em dois segundos · 9 → 9.** Limite e ação prioritária têm papéis distintos. O título ainda consome duas linhas a 375 px.
-2. **Números acima da dobra · 9 → 10.** A casca mediu 1 no celular e 4 no desktop, sem repetir valores. No celular, o Plano 2029 continua depois da rolagem.
+2. **Números acima da dobra · 9 → 10.** A casca integrada mediu 1 nos dois tamanhos. O Plano 2029 aparece depois da rolagem.
 3. **Ritmo e espaçamento · 8 → 9.** O filete liga os capítulos, a arte ganhou espaço próprio e a ordem das ações segue a leitura. Pedidos muito longos podem empurrar parte da maquete para a rolagem.
 4. **Tipografia · 9 → 9.** A frase usa 64 px em uma linha no desktop e a escala financeira permanece constante. As plaquinhas do SVG compartilhado ainda são pequenas a 375 px.
 5. **Ícones e ilustrações · 8 → 9.** O desenho conta o começo do dia, Lucide identifica ações e alertas, e as figuras decorativas saem da árvore acessível.
@@ -57,6 +57,6 @@ As notas anteriores foram recuperadas da versão 1. As novas notas avaliam as qu
 Os testes da proposta cobrem ordem dos alertas, avanço da fila, adiamento, desfazer, foco, olho, Assessor, vencimento parcial, maquete, alvos e contraste dos temas.
 
 - **TypeScript e Proposta C.** `npx tsc --noEmit` terminou com zero erros e os 26 testes da proposta passaram.
-- **Chromium.** As quatro combinações ficaram sem transbordamento horizontal. O SVG compartilhado mediu 301 px de largura no celular e 437 px no desktop. O cenário com pedidos confirmou avanço, adiamento, desfazer e foco no retorno. No desktop, os dois valores do Plano 2029 e seus rótulos couberam na dobra do snapshot medido.
+- **Chromium.** As quatro combinações da integração ficaram sem transbordamento horizontal. O SVG compartilhado mediu 301 px de largura no celular e 437 px no desktop. O teste com pedidos cobre avanço, adiamento, desfazer e foco no retorno.
 - **Suíte completa.** 1.578 testes passaram, 3 falharam e 3 ficaram pendentes. O comando direto esbarrou no carregamento do Vite pelo esbuild nesta worktree. A execução programática com a mesma configuração fez a coleta completa. As falhas ficaram em `componentes/ux-cobertura.test.ts` na mensagem ao salvar um rascunho, `propostas/b/proposta.test.ts` na sentinela de privacidade da Proposta B e `propostas/isolamento.test.ts` na leitura de configuração negada ao esbuild.
 - **Commit.** O Git recusou a criação de `index.lock` no diretório compartilhado da worktree. Os arquivos ficaram em `src/propostas/c/`.

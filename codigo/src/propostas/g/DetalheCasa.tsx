@@ -43,7 +43,7 @@ function Sala({ dados, sala }: { dados: DadosInicio; sala: Comodo }) {
   const Figura = figuras[sala]
   return <>
     <div className="cv-cena-detalhe">
-      {pessoas.length ? <Cena dados={dados} variante="media" foco={sala} plaquinhas /> : <Figura />}
+      {pessoas.length ? <Cena dados={dados} foco={sala} plaquinhas /> : <Figura />}
     </div>
     <p className="cv-texto-suave">{tarefa[sala]}</p>
     {pessoas.length ? <ul className="cv-equipe" aria-label="Equipe do cômodo">

@@ -4,14 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../app/contexto'
 import { App } from '../app/App'
-import { apiExemplo } from '../api/exemplo'
+import { apiExemplo, reiniciarExemplo } from '../api/exemplo'
 import type { Api } from '../api/tipos'
 import { AgenteDaAba } from './AgenteDaAba'
 import { Ajustes } from '../telas/ajustes/Ajustes'
 import { Lancar } from '../telas/lancar/Lancar'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { esconderValores, hojeRecife } from '../lib/formato'
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); esconderValores(false) })
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); esconderValores(false) })
 async function montar(elemento: ReactElement, mudancas: Partial<Api> = {}, equipe = false, extra: Partial<Ctx> = {}) {
   const doc = new DocumentoTeste()
   Object.defineProperty(doc, 'activeElement', { value: null, writable: true })
@@ -185,9 +185,13 @@ it.each(['usuario', 'familia'])('cobertura rascunho: não restaura outro %s', as
  } finally { await b.fechar() }
 })
 it.each(['salvar', 'descartar'])('cobertura rascunho: %s apaga e não recupera na próxima montagem', async acao => {
+ // O histórico do exemplo cresce com o dia. Em 17/11, R$ 753,21 dispara a confirmação.
+ vi.useFakeTimers({ toFake: ['Date'] })
+ vi.setSystemTime(new Date('2026-11-17T12:00:00-03:00'))
+ reiniciarExemplo()
  const d = await dadosRascunho(), mapa = storageFalso([[d.chave, d.valor]])
  const lancar = vi.fn().mockResolvedValue({ resumo: d.resumo, lancamento: { id: 'novo' } })
- const extra = { resumo: d.resumo, lancarAberto: {} }
+ const extra = { resumo: d.resumo, lancarAberto: {}, fecharLancar: vi.fn() }
  const lancamentos: Api['lancamentos'] = async () => [{
   id: 'historico-do-limite', envelope_id: d.valor.envelope, cartao_id: null, valor: 30,
   data: d.valor.quando, descricao: 'Gasto habitual', apagado_em: null, criado_em: d.valor.quando + 'T12:00:00Z',
@@ -198,7 +202,13 @@ it.each(['salvar', 'descartar'])('cobertura rascunho: %s apaga e não recupera n
   if (acao === 'descartar') await a.clicar('Descartar')
   else {
    const salvar = a.container.buscar(n => !!n.getAttribute('aria-label')?.startsWith('Salvar em '))[0]
-   await act(async () => salvar.click()); expect(a.container.textContent).toContain('bem acima do seu normal'); const confirmar = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent.startsWith('Confirmar '))[0]; expect(confirmar).toBeDefined(); await act(async () => confirmar.click()); expect(lancar).toHaveBeenCalledTimes(1)
+   await act(async () => salvar.click())
+   expect(a.container.textContent).toContain('bem acima do seu normal')
+   expect(lancar).not.toHaveBeenCalled()
+   const confirmar = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent.startsWith('Confirmar '))[0]
+   expect(confirmar).toBeDefined()
+   await act(async () => confirmar.click())
+   expect(lancar).toHaveBeenCalledTimes(1)
   }
   expect(mapa.has(d.chave)).toBe(false)
  } finally { await a.fechar() }

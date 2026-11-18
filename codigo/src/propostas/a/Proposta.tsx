@@ -246,7 +246,7 @@ const estados: Record<EstadoFuncionario, { texto: string; icone: NomeIcone; prio
   vai_comecar: { texto: 'Vai começar', icone: 'pendente', prioridade: 3 },
 }
 
-function Escritorio({ dados, celular, children }: { dados: DadosInicio; celular: boolean; children: ReactNode }) {
+function Escritorio({ dados, children }: { dados: DadosInicio; children: ReactNode }) {
   const { funcionarios, aplicacoes } = dados
   const oculto = useValoresOcultos()
   const [mostrarTotal, setMostrarTotal] = useState(false)
@@ -256,8 +256,6 @@ function Escritorio({ dados, celular, children }: { dados: DadosInicio; celular:
   const destaque = equipe.find(f => f.estadoHoje.valor === 'precisa_de_voce'
     && ['caixa', 'casa', 'cartoes', 'patrimonio'].includes(f.sala))
   const podeMostrarTotal = !oculto && aplicacoes.total.estado === 'pronto' && equipe.some(f => f.id === 'guardado')
-  // A frente compartilhada adiciona variante. A prop extra é ignorada pela versão atual.
-  const visual = { variante: celular ? 'media' : 'grande' } as const
   return <section className="calmo-escritorio" aria-label="Escritório da família">
     <div className="calmo-escritorio-topo">
       <h2><Icone nome="escritorio" size={21} /> Escritório da família</h2>
@@ -265,8 +263,9 @@ function Escritorio({ dados, celular, children }: { dados: DadosInicio; celular:
     <div className="calmo-escritorio-corpo">
       <div className="calmo-equipe-painel">
         {funcionarios.estado === 'pronto' ? <>
-          <div className="calmo-maquete" data-calmo-maquete={visual.variante}>
-            <EscritorioMaquete {...visual} funcionarios={funcionarios} salaDestacada={destaque?.sala} mostrarPlaquinhas
+          <div className="calmo-maquete">
+            <EscritorioMaquete variante="media" funcionarios={funcionarios} salaDestacada={destaque?.sala} mostrarPlaquinhas
+              papel={dados.pessoa.papel.valor}
               valores={podeMostrarTotal && mostrarTotal ? { guardado: aplicacoes.total } : undefined} />
           </div>
           <div className="calmo-equipe-controles">
@@ -364,7 +363,7 @@ export function Proposta({ dados, tema, dispositivo, oculto = false }: PropsProp
           {casal && <Financeiro dados={dados} />}
         </section>}
 
-        {casal ? <Escritorio dados={dados} celular={celular}>{fila}</Escritorio> : fila}
+        {casal ? <Escritorio dados={dados}>{fila}</Escritorio> : fila}
       </div>
       {celular && !assessor && navegacao}
     </div>

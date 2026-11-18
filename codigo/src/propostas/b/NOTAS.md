@@ -6,7 +6,7 @@ A primeira tela responde quanto dá para gastar hoje, quanto falta por mês para
 
 1. **Título desproporcional.** Reduzi de 32 para 20 px no celular e de 40 para 24 px no desktop. O nome do escritório agora divide a barra com o selo Exemplo.
 2. **Topo com camadas demais antes de chegar ao desenho.** A faixa virou uma linha curta com estado e botão de 44 px. Os controles de sala passaram para o rodapé da própria cena.
-3. **Funcionários pequenos.** Reservei pelo menos 284 px para a área de desenho no celular e 490 px no desktop de 1280. A proposta pede `media` e `grande`. O SVG original aproveita as margens laterais para ganhar escala.
+3. **Funcionários pequenos.** A integração usa a variante `grande` nos dois dispositivos. A cena se ajusta ao painel e mede 337 px no celular e 902 px no desktop de 1280, com os 19 postos na vista geral.
 4. **Pisos roxos chapados.** Piso, paredes e roupa usam tons neutros. Apliquei uma linha discreta no tampo das mesas originais para separar os planos. O violeta identifica ação, foco e sala selecionada.
 5. **Valores com aparência de cartões independentes.** Os quatro indicadores ocupam as bordas da mesma superfície da cena, sem bordas ou fundos próprios. A seleção da sala realça os rótulos associados.
 6. **Plano difícil de localizar.** A lacuna mensal com margem está no topo da cena, junto à disponibilidade de hoje. A cobertura proporcional continua em acompanhamento.
@@ -44,7 +44,7 @@ As notas anteriores são as da v1.
 ## Produtização
 
 - Adaptar `useResumoFamilia` para `DadosInicio`, preservando unidade, natureza e disponibilidade. Obter disponível de hoje em orçamento, lacuna com margem em plano2029, previsão em faturas e saldo em guardado. Manter o aluguel líquido identificado como estimado.
-- Integrar a maquete da frente f44 pelos parâmetros já enviados. Depois da integração, conferir novamente as duas larguras, a seleção por sala e o posicionamento das plaquinhas. A implementação compartilhada presente nesta worktree ainda renderiza a geometria original e ignora variante e oculto como props adicionais. O contexto de privacidade já protege os valores da proposta. A cena 3D existente pode abastecer a exploração em tela inteira depois de ligar a seleção ao foco de câmera e às fichas.
+- A maquete da frente f44 recebe a sala escolhida e mostra as plaquinhas. O contexto de privacidade protege os indicadores da proposta. A cena 3D existente pode abastecer a exploração em tela inteira depois de ligar a seleção ao foco de câmera e às fichas.
 - Ligar a fila ao motor de tarefas ou a `api.escritorioHoje`. Fornecer assunto público para olho fechado, público permitido e destino da tarefa na origem. Para o Assessor da Casa, consultar as tarefas autorizadas no servidor e abrir a rota Casa.
 - Ligar os atalhos de acompanhamento a Planejamento, Lançamentos, Guardado e Desejos via `enderecoDestino`. Aplicar as permissões de `app/rotas` e o contexto de privacidade do aplicativo.
 

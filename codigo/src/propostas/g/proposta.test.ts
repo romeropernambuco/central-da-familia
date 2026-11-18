@@ -134,9 +134,11 @@ it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos
       numeros: string[]; semTransbordo: boolean; valoresInteiros: boolean; orcamentoVisivel: boolean; controles: number[]
     }[]
     expect(medicoes.map(m => m.numeros.length)).toEqual([3, 3, 4, 4])
-    for (const medicao of medicoes) {
+    for (const [i, medicao] of medicoes.entries()) {
       expect(new Set(medicao.numeros).size).toBe(medicao.numeros.length)
-      expect(medicao.semTransbordo && medicao.valoresInteiros && medicao.orcamentoVisivel).toBe(true)
+      expect(medicao, contextos[i].join(' · ')).toMatchObject({
+        semTransbordo: true, valoresInteiros: true, orcamentoVisivel: true,
+      })
       expect(medicao.controles).toHaveLength(12)
       expect(Math.min(...medicao.controles)).toBeGreaterThanOrEqual(44)
     }
@@ -213,7 +215,12 @@ it('abre detalhes com título associado, maquete focada e equipe identificada em
   expect(html).toMatch(/data-sala="caixa"[^>]*data-destaque="true"/)
   expect(html).toContain('aria-label="Equipe do cômodo"')
   expect(html).toContain('Contador')
-  expect(html.match(/<foreignObject/g)).toHaveLength(2)
+  const equipe = dados.funcionarios.valor!.filter(f => f.sala === 'caixa')
+  const postos = [...html.matchAll(/<g data-funcionario="([^"]+)"/g)].map(([, id]) => id)
+  expect(postos.sort()).toEqual(equipe.map(f => f.id).sort())
+  const rotulos = [...html.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
+    .map(([, nome]) => nome)
+  expect(rotulos.sort()).toEqual(equipe.map(f => f.curto).sort())
   expect(html).not.toContain('<h1')
 })
 

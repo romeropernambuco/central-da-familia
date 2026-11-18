@@ -204,10 +204,6 @@ function prioridade(nivel: NivelAlerta | undefined) {
 function Vinheta({ dados, sala }: { dados: DadosInicio; sala: PropsEscritorioMaquete['salaDestacada'] }) {
   const oculto = useValoresOcultos()
   const id = useId()
-  // A revisão compartilhada usa variante e oculto. A base atual já aceita sala e plaquinhas.
-  const maquete: PropsEscritorioMaquete & { variante: 'media'; oculto: boolean } = {
-    funcionarios: dados.funcionarios, salaDestacada: sala, mostrarPlaquinhas: !oculto, variante: 'media', oculto,
-  }
   return <aside className="jc-vinheta" aria-labelledby={id}>
     <div className="jc-vinheta-topo">
       <h2 id={id}>Sua equipe</h2>
@@ -216,7 +212,9 @@ function Vinheta({ dados, sala }: { dados: DadosInicio; sala: PropsEscritorioMaq
         dados.funcionarios.estado === 'vazio' ? 'Nenhum funcionário na lista.' :
         sala ? 'A sala destacada cuida do primeiro pedido.' : 'Quem cuida do dia a dia da família.'}</p>
     </div>
-    {dados.funcionarios.estado === 'pronto' && <div className="jc-maquete"><EscritorioMaquete {...maquete} /></div>}
+    {dados.funcionarios.estado === 'pronto' && <div className="jc-maquete">
+      <EscritorioMaquete funcionarios={dados.funcionarios} salaDestacada={sala} mostrarPlaquinhas={!oculto} variante="media" />
+    </div>}
   </aside>
 }
 

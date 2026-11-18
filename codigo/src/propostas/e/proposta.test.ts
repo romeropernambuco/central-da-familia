@@ -60,7 +60,7 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     const figuras = Array.from(html.matchAll(/<svg\b[^>]*class="cf-ilustracao"[^>]*>/g), m => m[0])
     expect(figuras).toHaveLength(5)
     expect(figuras.every(svg => svg.includes('aria-hidden="true"') && svg.includes('focusable="false"'))).toBe(true)
-    expect(html).toContain('aria-label="Maquete isométrica do escritório"')
+    expect(html).toMatch(/role="img" aria-label="Maquete isométrica do escritório"><svg\b[^>]*data-variante="media"[^>]*aria-hidden="true"/)
     expect(html).toContain('Precisa de você</h3>')
   })
 

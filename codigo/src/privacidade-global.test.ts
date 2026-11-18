@@ -61,6 +61,9 @@ const padrao = /NomeSentinelaPrivado|9876|9\.876|876,54|R\$\s*0(?:[^\d]|$)/
 for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
  for (const inicial of [true, false]) {
   it(`respostas legíveis e privadas em ${alvo}, olho inicial ${inicial}`, async () => {
+    // Os testes de insights restauram o relógio. Esta pergunta tem datas de novembro.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00'))
     const doc = ambiente()
     const container = doc.createElement('div'); doc.body.appendChild(container)
     const root = createRoot(container as unknown as HTMLElement)
@@ -121,7 +124,7 @@ for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
         }
         await act(async () => alternar())
       }
-    } finally { await act(async () => root.unmount()); esconderValores(false); vi.unstubAllGlobals() }
+    } finally { await act(async () => root.unmount()); esconderValores(false); vi.useRealTimers(); vi.unstubAllGlobals() }
   })
  }
 }

@@ -46,9 +46,12 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     expect(html).toContain('Hoje você pode gastar')
     expect(html).toContain('escritorio-maquete')
     const faixa = html.split('<section class="calmo-escritorio"')[1]
-    expect(faixa).toContain(`data-calmo-maquete="${dispositivo === 'celular' ? 'media' : 'grande'}"`)
+    expect(faixa).toMatch(/<svg class="escritorio-maquete" data-variante="media"/)
     expect(faixa).toContain('escritorio-maquete')
-    expect(faixa.match(/<foreignObject\b/gi)?.length).toBeGreaterThanOrEqual(8)
+    const nomes = [...faixa.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
+      .map(([, nome]) => nome)
+    expect(nomes.length).toBeGreaterThanOrEqual(8)
+    expect(nomes.sort()).toEqual(dados.funcionarios.valor!.map(f => f.curto).sort())
     expect(faixa).toContain('Equipe e estados')
     expect(faixa).toContain('class="calmo-alertas"')
     expect(faixa).toContain('Abrir fila completa')
@@ -217,7 +220,7 @@ it('identifica todos os controles e dá a todos o mesmo piso de 44 por 44 px', (
 it('usa ícones e formas sem os tratamentos proibidos', () => {
   const html = render()
   expect(html).toContain('class="lucide')
-  expect(html).toMatch(/class="calmo-maquete"[^>]+><svg/)
+  expect(html).toMatch(/class="calmo-maquete"><svg class="escritorio-maquete"/)
   expect(css).not.toMatch(/backdrop-filter|gradient\s*\(|background-clip:\s*text|text-shadow|border-(?:left|inline-start):\s*[^;]*(?:destaque|risco)/i)
   expect(html).not.toMatch(/<linearGradient|<radialGradient|[\p{Extended_Pictographic}\uFE0F]/u)
 })
