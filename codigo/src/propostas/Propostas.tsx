@@ -12,7 +12,7 @@ export type Tema = 'claro' | 'escuro'
 export type Dispositivo = 'celular' | 'desktop'
 export interface PropsProposta { dados: DadosInicio; tema: Tema; dispositivo: Dispositivo }
 
-const letras = ['a', 'b', 'c', 'd'] as const
+const letras = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
 type Letra = typeof letras[number]
 type Escolha = Letra | 'atual' | 'comparar'
 const abas: { id: Escolha; texto: string }[] = [
@@ -21,11 +21,11 @@ const abas: { id: Escolha; texto: string }[] = [
   { id: 'comparar', texto: 'Comparar' },
 ]
 
-const modulos = import.meta.glob<{ Proposta: ComponentType<PropsProposta> }>('./[abcd]/Proposta.tsx')
+const modulos = import.meta.glob<{ Proposta: ComponentType<PropsProposta> }>('./[a-h]/Proposta.tsx')
 function propostaDe(id: Letra) {
   return lazy(async () => ({ default: (await modulos[`./${id}/Proposta.tsx`]()).Proposta }))
 }
-const propostas = { a: propostaDe('a'), b: propostaDe('b'), c: propostaDe('c'), d: propostaDe('d') }
+const propostas = { a: propostaDe('a'), b: propostaDe('b'), c: propostaDe('c'), d: propostaDe('d'), e: propostaDe('e'), f: propostaDe('f'), g: propostaDe('g'), h: propostaDe('h') }
 
 function lerEscolha(): Escolha {
   return abas.find(aba => location.hash === `#/${aba.id}`)?.id ?? 'a'
