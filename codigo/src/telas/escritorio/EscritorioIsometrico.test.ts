@@ -15,9 +15,9 @@ import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 import { arquivosEssenciais } from '../../../scripts/sw.mjs'
 
 const fake = vi.hoisted(() => ({
-  montar: vi.fn(), atualizar: vi.fn(), destruir: vi.fn(), falhar: false,
+  montar: vi.fn(), atualizar: vi.fn(), destruir: vi.fn(), importarThree: vi.fn(), falhar: false,
 }))
-vi.mock('./tres', () => ({}))
+vi.mock('./tres', () => { fake.importarThree(); return {} })
 vi.mock('./cenaIsometrica', () => ({
   montarEscritorioIsometrico: (_t: unknown, _el: unknown, opcoes: unknown) => {
     fake.montar(opcoes)
@@ -84,6 +84,31 @@ function montar(papel: Papel = 'casal', sem3d = false) {
 }
 afterEach(() => { fake.falhar = false; vi.clearAllMocks(); vi.unstubAllGlobals() })
 
+it('f54: Início fora da área visível mostra o painel estático sem pedir Three', async () => {
+  const a = montar()
+  const observe = vi.fn(), disconnect = vi.fn()
+  let visibilidade!: (entradas: { isIntersecting: boolean }[]) => void
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(notificar: typeof visibilidade) { visibilidade = notificar }
+    observe = observe
+    disconnect = disconnect
+  })
+  try {
+    await a.render(Inicio)
+    await act(async () => vi.dynamicImportSettled())
+    expect(a.el.textContent).toContain('Escritório da família')
+    expect(observe).toHaveBeenCalledOnce()
+    await act(async () => visibilidade([{ isIntersecting: false }]))
+    expect(fake.importarThree).not.toHaveBeenCalled()
+    expect(fake.montar).not.toHaveBeenCalled()
+    await act(async () => visibilidade([{ isIntersecting: true }]))
+    await act(async () => vi.dynamicImportSettled())
+    expect(fake.importarThree).toHaveBeenCalledOnce()
+    expect(fake.montar.mock.calls[0][0]).toMatchObject({ previa: true })
+    expect(disconnect).toHaveBeenCalled()
+  } finally { await a.fechar() }
+})
+
 it('Início antes do Resumo e Escritório com a sala e a lista, usando a fila integral oficial', async () => {
   const a = montar()
   try {
@@ -133,11 +158,13 @@ it('toque na plaquinha abre a ficha certa, filtros movem a cena e o fallback é 
     await act(async () => patrimonio.click())
     expect(fake.atualizar.mock.lastCall?.[1]).toBe('patrimonio')
     await act(async () => a.ler('data-posto', 'guardado').click())
+    await act(async () => vi.dynamicImportSettled())
     expect(a.ler('data-ficha', 'guardado').textContent).toContain('Você confirma guardado-1?')
     await act(async () => a.ler('aria-label', 'Fechar').click())
     await act(async () => fake.montar.mock.calls[0][0].aoPerderContexto())
     expect(a.ler('data-renderizacao', 'lista')).toBeDefined()
     await act(async () => a.ler('data-func', 'imoveis').click())
+    await act(async () => vi.dynamicImportSettled())
     expect(a.ler('data-ficha', 'imoveis').textContent).toContain('Ainda sem dado')
   } finally { await a.fechar() }
 })

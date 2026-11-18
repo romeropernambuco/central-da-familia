@@ -1,3 +1,4 @@
+import './navegacao.css'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
 import { Acolhimento } from '../componentes/Acolhimento'
@@ -120,7 +121,7 @@ export function App() {
         {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
         {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar</button>}
         {permitidas.map(m => (
-          <a data-grupo={m.r === 'desejos' || m.r === 'escritorio' ? 'inicio' : undefined} key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
+          <a data-grupo={m.r === 'desejos' || m.r === 'escritorio' ? 'inicio' : undefined} key={m.r} href={'#/' + m.r} data-grupo-ativo={navAtivo === m.r && r !== m.r || undefined} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
         ))}
         <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
@@ -161,9 +162,9 @@ export function App() {
           <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" aria-hidden="true" />Anotar compra</button>
         ) : (
           <>
-            {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
-            <div className="tabbar-lancar"><button className="plus" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Icone nome="lancar" aria-hidden="true" /></button><span>Anotar</span></div>
-            {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={navAtivo === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
+            {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
+            <button className="plus tabbar-lancar" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Icone nome="lancar" aria-hidden="true" /><span>Anotar</span></button>
+            {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
           </>
         )}
       </nav>
@@ -172,7 +173,7 @@ export function App() {
           <ul className="list">
             {[...MENU.slice(4).filter(m => podeVerNoMenu(m.r, familia.papel)), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <Icone nome="privacidade" /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Icone nome="painel" /> }] : [])].map(m => (
               <li key={m.r}>
-                <button className="li" aria-current={navAtivo === m.r ? 'page' : undefined} type="button" onClick={() => { setMais(false); ir(m.r) }}>
+                <button className="li" aria-current={r === m.r ? 'page' : undefined} type="button" onClick={() => { setMais(false); ir(m.r) }}>
                   <span className="tile">{m.ico}</span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><Icone nome="abrir" className="muted" />
                 </button>
               </li>

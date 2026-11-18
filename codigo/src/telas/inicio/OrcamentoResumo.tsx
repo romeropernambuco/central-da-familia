@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { memo, useCallback, useEffect, useId, useState } from 'react'
 import { useApp } from '../../app/contexto'
 import { Din } from '../../componentes/base'
 import { EnvelopeCard } from '../../componentes/EnvelopeCard'
@@ -28,10 +28,11 @@ export function useOrcamentoAberto() {
     media.addEventListener('change', atualiza)
     return () => media.removeEventListener('change', atualiza)
   }, [])
-  return { aberto, alternar: () => { escolhas.set(chave, !aberto); setEscolha(!aberto) } }
+  const alternar = useCallback(() => { escolhas.set(chave, !aberto); setEscolha(!aberto) }, [chave, aberto])
+  return { aberto, alternar }
 }
 
-export function OrcamentoResumo({ campo, hoje, repetir, aberto, alternar }: {
+export const OrcamentoResumo = memo(function OrcamentoResumo({ campo, hoje, repetir, aberto, alternar }: {
   campo: ResumoFamilia['podeGastarHoje']; hoje: string; repetir: () => void; aberto: boolean; alternar: () => void
 }) {
   const { familia, oculto } = useApp() ?? {}
@@ -69,4 +70,4 @@ export function OrcamentoResumo({ campo, hoje, repetir, aberto, alternar }: {
       </div>}
     </div>
   </section>
-}
+})

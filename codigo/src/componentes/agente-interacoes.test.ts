@@ -412,7 +412,7 @@ it('UX: olho fechado retira link privado de convite e bloqueia compartilhamento'
  const reenviar = vi.fn(), toast = vi.fn()
  const a = await montar(createElement(Ajustes), { convites: vi.fn().mockResolvedValue([{ id: 'convite-ux', nome: 'Convidado de teste', email: 'ux-sentinela@example.invalid', papel: 'pessoa', situacao: 'esperando' }]), reenviarConvite: reenviar }, false, { oculto: true, toast })
  try {
-  const link = a.container.buscar(n => n.tagName === 'A' && n.textContent === 'Reenviar')[0]
+  const link = a.container.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Reenviar')[0]
   expect(link).toBeDefined(); expect(link.getAttribute('href')).toBeNull()
   await act(async () => link.click())
   expect(reenviar).not.toHaveBeenCalled()

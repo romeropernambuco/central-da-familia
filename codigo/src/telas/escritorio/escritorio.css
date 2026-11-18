@@ -31,3 +31,18 @@
 .ficha .cf-estado-vazio svg{max-height:88px}
 @media(max-width:480px){.escritorio-visual .seg{width:100%}.escritorio-visual .seg button{flex:1;padding-inline:8px}.escritorio-visual .rel-ind{grid-template-columns:1fr}.ficha .cad-l{flex-wrap:wrap}.ficha .cad-l .v{flex-basis:100%;padding-left:44px}.escritorio-visual .esc-frase{padding:16px}}
 @media(prefers-reduced-motion:reduce){.escritorio-visual button.li{transition:none}}
+
+.cena3d-tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.cena3d-tags .placa{position:absolute;left:0;top:0;font-size:12px;line-height:18px;font-weight:700;color:var(--ink-2);background:var(--surface);border-radius:var(--r-pill);padding:0 8px;white-space:nowrap;visibility:hidden}
+.cena3d-tags .tag{position:absolute;left:0;top:0;pointer-events:auto;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:var(--r-pill);border:0;background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;visibility:hidden;box-shadow:0 1px 3px rgba(17,17,17,.16)}
+/* alvo de toque de 44 px: a área que recebe o toque cresce pra fora da etiqueta */
+.cena3d-tags .tag::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
+.cena3d-tags .tag.curta{padding:0;width:28px;justify-content:center}
+.cena3d-tags .tag.curta span{display:none}
+.cena3d-tags .tag.precisa{background:var(--accent);color:var(--on-accent)}
+.cena3d-tags .tag.sel{background:var(--ink);color:var(--surface)}
+.cena3d-salas{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cena3d-salas::-webkit-scrollbar{display:none}
+.cena3d-salas .pill{flex:none;height:36px;font-size:14px;padding:0 12px}
+.esc-sala+.esc-sala{margin-top:10px}
+.esc-sala h3{font-size:13px;line-height:18px;font-weight:700;color:var(--muted);padding-top:6px}

@@ -371,7 +371,9 @@ it('f37: reserva espaço durante a carga e mantém links e expansão em regiões
   expect(bloco.buscar(x => x.getAttribute('class') === 'resumo-esqueleto')[0].textContent).toContain('Conferindo')
   const estilos = readFileSync('src/telas/inicio/resumo.css', 'utf8')
   expect(estilos).toMatch(/\.resumo-item\s*\{[^}]*min-block-size:\s*var\(--resumo-altura\)/)
-  expect(a.box.buscar(x => x.getAttribute('class') === 'resumo-coluna')).toHaveLength(2)
+  const grade = a.box.buscar(x => x.getAttribute('class') === 'resumo-grade')[0]
+  expect(grade.childNodes.map(x => x.getAttribute('data-bloco'))).toEqual(['podeGastarHoje', 'saldoConta', 'faturas', 'aplicacoes', 'recebimentos', 'plano2029'])
+  expect(estilos).not.toMatch(/\border:\s*-?\d/)
   await act(async () => resolver(m.resumo()))
   await expandir(bloco)
   const controles = bloco.buscar(x => x.tagName === 'A' || x.tagName === 'BUTTON')
@@ -869,5 +871,61 @@ it('AST: resumo real não importa exemplo/fixtures nem atribui números financei
       ts.forEachChild(no, visitar)
     }
     visitar(arvore)
+  }
+})
+
+it('f54: invalidar desejos preserva as referências dos outros campos', async () => {
+  const m = mundo()
+  const a = await montar(m)
+  const anterior = a.r
+  const icone = (chave: keyof Resumo) => itensResumo(a.r, hoje, false).find(item => item.chave === chave)!.icone
+  expect(icone('imoveis')).toBe('imoveis')
+  expect(icone('imoveis')).not.toBe(icone('aplicacoes'))
+  await act(async () => invalidarDados(m.api, m.familia.id, ['resumo-familia:desejos']))
+  expect(a.r.desejos).not.toBe(anterior.desejos)
+  for (const chave of Object.keys(anterior) as (keyof Resumo)[]) {
+    if (chave !== 'desejos') expect(a.r[chave], chave).toBe(anterior[chave])
+  }
+})
+
+it('f59: mantém os avisos da f53 e recompõe só Faturas ao tentar de novo', async () => {
+  const m = mundo()
+  const orcamento = m.resumo()
+  Object.assign(orcamento.envelopes[0], { gasto_mes: 300, livre: -200, hoje: -200, gasto_hoje: 0 })
+  vi.mocked(m.interna.resumoHoje).mockResolvedValue(orcamento)
+  vi.mocked(m.interna.escritorioHoje).mockImplementation(async () => ({ ...m.e(), precisa_de_voce: [] }))
+  vi.mocked(m.interna.estoque).mockResolvedValue({ itens: [], contagens: [] })
+  vi.mocked(m.interna.faturas).mockRejectedValue(new Error('rede'))
+  m.config.numeros_atualizados = { saldo_caixa: '2026-09-16' }
+  vi.mocked(m.interna.futuroEntradas!).mockImplementation(async () => ({ entrada: m.entrada(), confirmar: ['Confirme a taxa'] }))
+  const a = await montar(m)
+  const blocoOrcamento = a.bloco('podeGastarHoje')
+  expect(blocoOrcamento.textContent).toContain('Este mês fica devendo')
+  await act(async () => blocoOrcamento.buscar(x => x.getAttribute('class') === 'resumo-expandir')[0].click())
+  expect(blocoOrcamento.textContent).toMatch(/Hoje já saiu do limite: R\$\s*0/)
+  expect(a.bloco('casa').textContent).toContain('Feira: verificação ainda não iniciada')
+  expect(a.bloco('casa').textContent).toContain('Estoque sem cadastro')
+  const plano = a.bloco('plano2029')
+  expect(plano.textContent).toContain('A confirmar: Confirme a taxa.')
+  expect(plano.textContent).toContain('Há números com mais de 60 dias.')
+
+  const campos = Object.keys(a.r) as (keyof Resumo)[]
+  const propsDoLink = (chave: keyof Resumo) => propsF53(a.bloco(chave).buscar(x => x.getAttribute('class') === 'resumo-link')[0])
+  const anteriores = campos.map(chave => ({ chave, campo: a.r[chave], props: propsDoLink(chave) }))
+  const faturas = a.bloco('faturas')
+  expect(faturas.textContent).toContain('Não foi possível conferir')
+  vi.mocked(m.interna.faturas).mockResolvedValue(m.fs())
+  await act(async () => faturas.buscar(x => x.tagName === 'BUTTON' && x.textContent === 'Tentar de novo')[0].click())
+  expect(a.r.faturas.estado).toBe('pronto')
+  expect(faturas.textContent).toContain('1 a vencer ou conferir')
+  for (const { chave, campo, props } of anteriores) {
+    if (chave === 'faturas') {
+      expect(a.r[chave]).not.toBe(campo)
+      expect(propsDoLink(chave)).not.toBe(props)
+    } else {
+      expect(a.r[chave], chave).toBe(campo)
+      // O cartão gera novas props para o link em cada renderização, mesmo com o mesmo texto.
+      expect(propsDoLink(chave), chave).toBe(props)
+    }
   }
 })

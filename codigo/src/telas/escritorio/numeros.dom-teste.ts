@@ -48,6 +48,7 @@ export class NoTeste {
   removeEventListener(tipo: string, ouvir: (evento: object) => void) {
     this.ouvintes.set(tipo, (this.ouvintes.get(tipo) ?? []).filter(f => f !== ouvir))
   }
+  focus() {}
   click() {
     const evento = { type: 'click', target: this, button: 0, bubbles: true }
     for (let no: NoTeste | null = this; no; no = no.parentNode)

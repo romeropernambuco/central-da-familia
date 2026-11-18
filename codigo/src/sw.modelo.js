@@ -1,45 +1,58 @@
-// Service worker da Central: guarda só a casca do app (HTML, JS, CSS, fontes, ícones).
-// Dado de família nunca fica no cache: tudo que vai pro supabase.co passa direto pela rede.
-// Este arquivo é um modelo: o build troca VERSAO e ARQUIVOS (ver vite.config.ts) e grava sw.js na pasta publicada.
+// Guarda a casca pública do app. Requisições de dados ao Supabase passam direto pela rede.
 const VERSAO = '__VERSAO__'
 const ARQUIVOS = __ARQUIVOS__
-const PREFIXO = 'central-'
-const CACHE = PREFIXO + VERSAO
-// pasta onde o app mora (ex.: /central-da-familia/app/). Nada fora dela entra no cache.
 const PASTA = new URL('./', self.location.href).href
 const INDEX = PASTA + 'index.html'
+const PREFIXO = 'central-' + encodeURIComponent(PASTA) + ':'
+const CACHE = PREFIXO + VERSAO
 
 self.addEventListener('install', e => {
-  // casca inteira já na 1ª visita: abre sem internet mesmo sem ter passado pela 2ª visita
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS.map(a => new Request(PASTA + a, { cache: 'reload' })))))
 })
-// A nova versão espera as abas antigas fecharem. Não toma controle nem apaga assets em uso.
-self.addEventListener('activate', e => { e.waitUntil(Promise.resolve()) })
+
+// Sem skipWaiting: só remove a casca anterior quando essa versão fica ativa.
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    for (const nome of await caches.keys()) {
+      if (nome === CACHE) continue
+      const legado = /^central-[a-f0-9]{12}$/.test(nome) && await (await caches.open(nome)).match(INDEX)
+      if (nome.startsWith(PREFIXO) || legado) await caches.delete(nome)
+    }
+  })())
+})
+
+async function lerCache(req) {
+  try { return await (await caches.open(CACHE)).match(req) }
+  catch { return undefined }
+}
+
+async function guardar(req, resposta) {
+  try { await (await caches.open(CACHE)).put(req, resposta.clone()) }
+  catch { /* quota ou cache indisponível: a resposta da rede continua válida */ }
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request
   if (req.method !== 'GET' || !req.url.startsWith(PASTA)) return
-  // página: rede primeiro (versão nova); cache se estiver sem internet ou se o servidor devolver erro
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
-      try {
-        const r = await fetch(req)
-        // só resposta boa entra no cache: página de erro (404 do GitHub, portal do wi-fi) nunca vira a casca
-        if (r.ok && !r.redirected) { const c = await caches.open(CACHE); await c.put(INDEX, r.clone()); return r }
-        return (await caches.match(INDEX)) || r
-      } catch (x) {
-        const m = await caches.match(INDEX)
-        if (m) return m
-        throw x
+      let resposta
+      try { resposta = await fetch(req) }
+      catch (erro) {
+        const casca = await lerCache(INDEX)
+        if (casca) return casca
+        throw erro
       }
+      if (resposta.ok && !resposta.redirected) return resposta
+      return (await lerCache(INDEX)) || resposta
     })())
     return
   }
-  // arquivos com nome versionado: cache primeiro
   e.respondWith((async () => {
-    const m = await caches.match(req)
-    if (m) return m
+    const guardado = await lerCache(req)
+    if (guardado) return guardado
     const r = await fetch(req)
-    if (r.ok && r.type === 'basic') { const c = await caches.open(CACHE); await c.put(req, r.clone()) }
+    if (r.ok && r.type === 'basic' && !r.redirected) await guardar(req, r)
     return r
   })())
 })

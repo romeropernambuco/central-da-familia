@@ -32,7 +32,8 @@ export function protegerApi(api: Api): Api {
        const feiras = await api.feiras(args[0], { semValores: true })
        return feiras.map(({ valor: _valor, ...feira }) => feira)
      }
-     return (f as Function).apply(api, args)
+     // A projeção lê as mesmas configurações que a tela, no mesmo cache de sessão.
+     return (f as Function).apply(prop === 'futuroEntradas' ? publica : api, args)
    }, prop === 'config' ? args[3] : undefined).then(resultado => {
    if (prop === 'lancamentos') for (const l of resultado) registrarDono(api, l.id, args[0])
    if (prop === 'guardadoHoje') for (const a of resultado.aplicacoes) registrarDono(api, a.id, args[0])

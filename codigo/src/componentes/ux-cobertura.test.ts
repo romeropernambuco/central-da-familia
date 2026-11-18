@@ -188,7 +188,11 @@ it.each(['salvar', 'descartar'])('cobertura rascunho: %s apaga e não recupera n
  const d = await dadosRascunho(), mapa = storageFalso([[d.chave, d.valor]])
  const lancar = vi.fn().mockResolvedValue({ resumo: d.resumo, lancamento: { id: 'novo' } })
  const extra = { resumo: d.resumo, lancarAberto: {} }
- const a = await montar(createElement(Lancar), { lancar }, false, extra)
+ const lancamentos: Api['lancamentos'] = async () => [{
+  id: 'historico-do-limite', envelope_id: d.valor.envelope, cartao_id: null, valor: 30,
+  data: d.valor.quando, descricao: 'Gasto habitual', apagado_em: null, criado_em: d.valor.quando + 'T12:00:00Z',
+ }]
+ const a = await montar(createElement(Lancar), { lancar, lancamentos }, false, extra)
  try {
   expect(a.container.textContent).toContain('Rascunho recuperado')
   if (acao === 'descartar') await a.clicar('Descartar')
