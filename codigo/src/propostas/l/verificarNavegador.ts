@@ -31,6 +31,7 @@ async function montarPagina(snapshots: DadosInicio[]) {
       name: 'previa-l',
       resolveId(id, origem) {
         if (id === entrada || estilo.test(id)) return id
+        if (id === 'three') return resolve('node_modules/three/build/three.module.js')
         if (!origem || !id.startsWith('.')) return null
         const caminho = resolve(dirname(origem), id)
         return [caminho + '.tsx', caminho + '.ts', join(caminho, 'index.ts')].find(existsSync)
@@ -53,9 +54,12 @@ async function montarPagina(snapshots: DadosInicio[]) {
     }],
   })
   try {
-    const { output } = await pacote.generate({ format: 'iife', name: 'Previa', globals: { react: 'React', 'lucide-react': 'LucideReact' } })
+    const { output } = await pacote.generate({
+      format: 'iife', inlineDynamicImports: true, name: 'Previa',
+      globals: { react: 'React', 'lucide-react': 'LucideReact' },
+    })
     const ler = (arquivo: string) => readFileSync(arquivo, 'utf8')
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css',
+    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/propostas/comuns/escritorio3d.css',
       'src/componentes/ilustracoes/ilustracoes.css', pasta + '/proposta.css'].map(ler)
     for (const [pacoteFonte, nome] of [['bricolage-grotesque', 'Bricolage Grotesque'], ['inter', 'Inter']]) {
       const bytes = readFileSync(`node_modules/@fontsource-variable/${pacoteFonte}/files/${pacoteFonte}-latin-wght-normal.woff2`)

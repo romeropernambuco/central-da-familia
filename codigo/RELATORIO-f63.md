@@ -1,0 +1,6 @@
+# Integração f63
+
+- **Proposta L.** Os imports dinâmicos da cena 3D faziam o Rollup tentar dividir a prévia em vários arquivos, o que é incompatível com IIFE. A prévia agora resolve o módulo ESM do Three.js e incorpora os imports dinâmicos em um único script. Ela inclui também o CSS do escritório 3D nas medições de layout.
+- **Proposta M.** A única divergência era `passos.cena`. O Chromium encontrava o botão 3D enquanto a cena ainda estava em `carregando`. O ancestral `hidden` impedia o foco, embora o botão em si não tivesse esse atributo. O teste usa a preferência de movimento reduzido para acionar o fallback SVG e continua verificando o foco no posto e a abertura da ficha.
+- **Validação.** `npx tsc --noEmit` terminou com zero erros. A CLI do Vitest recebeu acesso negado ao carregar `vite.config.ts`. Pela API, a suíte completa teve 1.756 testes aprovados, três pendentes e uma falha. As duas integrações passaram no Chromium.
+- **Falha restante.** Em `src/componentes/ux-cobertura.test.ts:137`, o exemplo gera uma pergunta sobre a próxima anuidade. O agente mantém o botão “Recolher” no modo “Desligado” enquanto houver uma pergunta pendente, mas o teste espera zero botões. A falha também ocorre isoladamente e sua correção fica fora do escopo de edição.

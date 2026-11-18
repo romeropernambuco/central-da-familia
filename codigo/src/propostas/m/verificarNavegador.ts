@@ -95,7 +95,8 @@ async function rodar() {
   clicar(achar('.m-mais button', 'Plano 2029'));
   passos.mais = !mais.open && document.activeElement.textContent === 'Rumo a 2029' &&
     mais.querySelector('summary').getAttribute('aria-current') === 'location';
-  const posto = quadro.querySelector('.m-palco button:not([hidden])');
+  const posto = quadro.querySelector('.m-palco [data-renderizacao="svg"] button.maquete-posto');
+  if (!posto) throw new Error('A maquete SVG não mostrou um posto interativo.');
   posto.focus();
   passos.cena = document.activeElement === posto && posto.tabIndex === 0;
   clicar(posto);
@@ -182,7 +183,8 @@ export async function verificarNavegador(dados: DadosInicio) {
     writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${folha}">
       <pre></pre><script src="${script}"></script>`)
     const processo = spawnSync(chromium!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu',
-      '--disable-background-networking', '--user-data-dir=' + join(pasta, 'perfil'), '--window-size=1480,960',
+      '--disable-background-networking', '--force-prefers-reduced-motion',
+      '--user-data-dir=' + join(pasta, 'perfil'), '--window-size=1480,960',
       '--virtual-time-budget=5000', '--dump-dom', pathToFileURL(arquivo).href],
     { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 })
     if (processo.status !== 0) throw new Error(processo.error?.message ?? processo.stderr)
