@@ -125,9 +125,19 @@ it.each(['INPUT', 'TEXTAREA', 'SELECT'])('cobertura foco: navegação foca títu
 })
 
 it('cobertura modos: Ajustes muda o agente vivo sem remontar página', async () => {
- const a = await montar(createElement(Fragment, null, createElement(Ajustes), createElement(AgenteDaAba, { rota: 'cartoes' })))
+ vi.useFakeTimers({ toFake: ['Date'] })
+ vi.setSystemTime(new Date('2026-11-18T11:24:00-03:00'))
+ vi.stubGlobal('sessionStorage', { getItem: () => null, setItem() {} })
+ // Desligado mantém o acesso a perguntas. Exercita a troca de modo sem fila nem sugestões de fatura.
+ const a = await montar(createElement(Fragment, null, createElement(Ajustes), createElement(AgenteDaAba, { rota: 'cartoes' })), {
+  escritorioHoje: async () => ({ precisa_de_voce: [], funcionarios: [], entregue: [], trabalhando: [] }),
+  cartoes: async () => [],
+  faturas: async () => [],
+  faturasBanco: async () => [],
+ })
  try {
   const pagina = a.container.childNodes[0]
+  expect(a.container.textContent).toContain('Quer conferir a fatura?')
   for (const rotulo of ['Completo', 'Desligado', 'Só texto']) {
    await a.clicar(rotulo)
    expect(a.container.childNodes[0]).toBe(pagina)
@@ -137,7 +147,10 @@ it('cobertura modos: Ajustes muda o agente vivo sem remontar página', async () 
    expect(agente.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Recolher').length).toBe(rotulo !== 'Desligado' ? 1 : 0)
    if (rotulo === 'Desligado') expect(agente.buscar(n => n.getAttribute('class') === 'cena3d mini-agente')).toHaveLength(0)
   }
- } finally { await a.fechar(); window.dispatchEvent(new Event('storage')) }
+ } finally {
+  // Limpa a preferência em memória enquanto os assinantes ainda escutam o evento.
+  try { await act(async () => window.dispatchEvent(new Event('storage'))) } finally { await a.fechar() }
+ }
 })
 
 async function dadosRascunho() {
