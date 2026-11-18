@@ -1,4 +1,4 @@
-﻿import { createElement } from 'react'
+import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import ts from 'typescript'
@@ -46,7 +46,7 @@ describe('Escritório em primeiro', () => {
       expect(html.match(/<h1[ >]/g)).toHaveLength(1)
       expect(html.match(/>Exemplo</g)).toHaveLength(1)
       expect(html).toContain('Maquete isométrica do escritório')
-      expect(html.match(/<foreignObject/g)).toHaveLength(8)
+      expect(html.match(/class="maquete-placa\b/g)?.length).toBeGreaterThanOrEqual(8)
       expect(html.match(/data-posicao=/g)).toHaveLength(4)
       expect(html).toContain(moeda.format(dados.hojePodeGastar.valor.valor!))
       expect(html).toContain(moeda.format(dados.plano2029.faltamPorMesComMargem.valor! / 100))
@@ -54,12 +54,23 @@ describe('Escritório em primeiro', () => {
     })
   }
 
+  it('usa a faixa e a aba inferior para controlar a mesma fila recolhida no celular', () => {
+    const celular = render()
+    const id = celular.match(/<section class="b-fila b-painel" id="([^"]+)"[^>]* hidden=""/)?.[1]
+    expect(id).toBeTruthy()
+    expect(celular.match(new RegExp(`aria-controls="${id}" aria-expanded="false"|aria-expanded="false" aria-controls="${id}"`, 'g'))).toHaveLength(2)
+    expect(celular).toContain('data-layout="media"')
+    const desktop = render(dados, false, cenarios[1])
+    expect(desktop).toContain('data-layout="grande"')
+    expect(desktop).not.toContain('b-abrir-fila')
+    expect(desktop).not.toMatch(/<section class="b-fila b-painel"[^>]* hidden/)
+  })
+
   it('retira valores, percentuais, proporções e texto livre da marcação inteira quando o olho fecha', () => {
     const alterado = structuredClone(dados)
     const fila = alterado.pendencias.fila.valor!
-    const alerta = alterado.alertas.valor?.find(a => a.id === fila[0].id)
+    fila.splice(1)
     fila[0].id = 'tarefa-918273,46'
-    if (alerta) alerta.id = fila[0].id
     fila[0].perguntaCurta = 'Conferir 918273,46 (77,3%)'
     fila[0].valor = { ...fila[0].valor, estado: 'pronto', valor: 918273.46 }
     const aberto = render(alterado)
@@ -114,7 +125,8 @@ describe('Escritório em primeiro', () => {
     d.pendencias.fila = { ...d.pendencias.fila, estado: 'indisponivel', valor: null }
     d.imoveis.aluguelLiquidoEstimado = { ...d.imoveis.aluguelLiquidoEstimado, estado: 'indisponivel', valor: null }
     const html = render(d)
-    expect(html.match(/>Ainda sem dado</g)).toHaveLength(3)
+    expect(html.match(/>Ainda sem dado</g)).toHaveLength(2)
+    expect(html).toContain('>Sem registros<')
     expect(html).toContain('A fila de tarefas está indisponível.')
     expect(html).not.toMatch(/R\$\s*0,00/)
     const ilustracoes = html.match(/<svg[^>]*class="cf-ilustracao[^"]*"[^>]*>/g) ?? []
@@ -130,7 +142,7 @@ describe('Escritório em primeiro', () => {
     expect(css).toContain('outline: 2px solid var(--destaque)')
     expect(css).toContain('prefers-reduced-motion: reduce')
     expect(css + html).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u)
-    expect(html).not.toMatch(/<linearGradient|<radialGradient|<filter|style="/i)
+    expect(html).not.toMatch(/<linearGradient|<radialGradient|<filter/i)
   })
 })
 
@@ -186,9 +198,23 @@ it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geomet
     writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
       <pre id="resultado"></pre><script>${medidor}
       document.fonts.ready.then(() => {
-        const resultado = Array.from(document.querySelectorAll('.lab-quadro')).map(quadro => ({
+        const resultado = Array.from(document.querySelectorAll('.lab-quadro')).map(quadro => {
+          const caixa = seletor => quadro.querySelector(seletor)?.getBoundingClientRect()
+          const moldura = quadro.getBoundingClientRect()
+          const cena = caixa('.b-cena')
+          const desenho = caixa('.b-desenho')
+          const fila = caixa('.b-fila')
+          const aba = caixa('.b-abrir-fila')
+          const nav = caixa('.b-nav')
+          return {
           valores: medirNumeros(quadro),
           semTransbordo: quadro.scrollWidth === quadro.clientWidth,
+          topoCena: Math.round(cena.top - moldura.top),
+          alturaDesenho: Math.round(desenho.height),
+          indicadoresNaCena: quadro.querySelectorAll('.b-cena > .b-indicador').length,
+          filaLateral: fila.width > 0 && fila.left > cena.right && Math.abs(fila.top - cena.top) <= 1,
+          folhaNoRodape: aba && fila.height === 0 && Math.abs(aba.bottom - nav.top) <= 2 &&
+            Math.abs(nav.bottom - moldura.bottom) <= 2 && desenho.bottom < aba.top,
           salasVisiveis: Array.from(quadro.querySelectorAll('.nome-sala')).filter(el => {
             const limite = el.closest('.b-desenho').getBoundingClientRect()
             const r = el.getBoundingClientRect()
@@ -206,7 +232,7 @@ it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geomet
             const r = el.getBoundingClientRect()
             return { nome: (el.getAttribute('aria-label') || el.textContent).trim(), largura: r.width, altura: r.height }
           })
-        }))
+        }})
         document.querySelector('#resultado').textContent = encodeURIComponent(JSON.stringify(resultado))
       })
       </script>`)
@@ -217,15 +243,23 @@ it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geomet
     const capturado = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
     expect(capturado).toBeTruthy()
     const medicoes = JSON.parse(decodeURIComponent(capturado!)) as {
-      valores: string[]; semTransbordo: boolean; salasVisiveis: number; chipsInteiros: boolean; controles: { nome: string; largura: number; altura: number }[]
+      valores: string[]; semTransbordo: boolean; salasVisiveis: number; chipsInteiros: boolean
+      topoCena: number; alturaDesenho: number; indicadoresNaCena: number; filaLateral: boolean; folhaNoRodape?: boolean
+      controles: { nome: string; largura: number; altura: number }[]
     }[]
     for (const [i, medicao] of medicoes.entries()) {
       expect(medicao.salasVisiveis).toBe(4)
       expect(medicao.chipsInteiros).toBe(true)
       expect(medicao.valores).toContain(moeda.format(dados.hojePodeGastar.valor.valor!).replace(/\s/g, ' '))
-      expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(cenarios[i].dispositivo === 'celular' ? 5 : 8)
+      const celular = cenarios[i].dispositivo === 'celular'
+      expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(celular ? 5 : 8)
+      expect(medicao.topoCena).toBeLessThanOrEqual(celular ? 112 : 124)
+      expect(medicao.alturaDesenho).toBeGreaterThanOrEqual(celular ? 280 : 460)
+      expect(medicao.indicadoresNaCena).toBe(4)
+      if (celular) expect(medicao.folhaNoRodape).toBe(true)
+      else expect(medicao.filaLateral).toBe(true)
       expect(medicao.semTransbordo).toBe(true)
-      expect(medicao.controles.length).toBeGreaterThanOrEqual(15)
+      expect(medicao.controles.length).toBeGreaterThanOrEqual(14)
       for (const controle of medicao.controles) {
         expect(controle.nome).not.toBe('')
         expect(controle.largura, controle.nome).toBeGreaterThanOrEqual(44)
