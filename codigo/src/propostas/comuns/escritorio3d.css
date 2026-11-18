@@ -1,0 +1,146 @@
+.escritorio3d {
+  --escritorio3d-largura: 788px;
+  --escritorio3d-minimo: 580px;
+  --escritorio3d-proporcao: 65cqw;
+  --escritorio3d-chao: 365px;
+  inline-size: 100%;
+  max-inline-size: var(--escritorio3d-largura);
+  margin-inline: auto;
+  container-type: inline-size;
+}
+
+.escritorio3d[data-variante="compacta"] {
+  --escritorio3d-largura: 448px;
+  --escritorio3d-minimo: 478px;
+  --escritorio3d-proporcao: 67cqw;
+  --escritorio3d-chao: 304px;
+}
+
+.escritorio3d[data-variante="grande"] {
+  --escritorio3d-largura: 1060px;
+  --escritorio3d-minimo: 640px;
+  --escritorio3d-proporcao: 62cqw;
+  --escritorio3d-chao: 400px;
+}
+
+.escritorio3d[data-renderizacao="svg"] { min-block-size: var(--escritorio3d-altura, 0px); }
+
+.escritorio3d-cena {
+  color: var(--texto, #242321);
+  background: var(--menu, #ebe9e5);
+  border-radius: var(--raio-medio, 8px);
+}
+
+.escritorio3d-rolagem { overflow: auto; scrollbar-width: thin; }
+
+.escritorio3d-palco {
+  position: relative;
+  min-inline-size: var(--escritorio3d-minimo);
+  block-size: max(208px, var(--escritorio3d-altura, max(var(--escritorio3d-chao), var(--escritorio3d-proporcao))));
+}
+
+.escritorio3d-cena[data-focada="true"] .escritorio3d-palco { min-inline-size: 0; }
+.escritorio3d-camera, .escritorio3d-etiquetas { position: absolute; inset: 0; }
+.escritorio3d-camera > canvas { display: block; inline-size: 100%; block-size: 100%; }
+.escritorio3d-cena[data-renderizacao="carregando"] .escritorio3d-camera { visibility: hidden; }
+.escritorio3d-etiquetas { pointer-events: none; }
+.escritorio3d-hastes {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  stroke: var(--borda, #8b867d);
+  stroke-width: 1.25px;
+}
+
+.escritorio3d-esqueleto {
+  position: sticky;
+  inset-inline-start: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  inline-size: 100cqw;
+  block-size: 100%;
+  color: var(--texto-secundario, #5e5b54);
+  font-size: .875rem;
+}
+
+.escritorio3d-esqueleto::before {
+  content: '';
+  inline-size: min(50%, 236px);
+  block-size: 72px;
+  border-radius: var(--raio-medio, 8px);
+  background: color-mix(in oklch, var(--menu, #ebe9e5) 78%, var(--borda, #8b867d));
+}
+
+.escritorio3d-posto {
+  position: absolute;
+  visibility: hidden;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: var(--raio-medio, 8px);
+  padding: 0;
+  background: transparent;
+  color: var(--texto, #242321);
+  font: 750 .75rem/1 var(--fonte-texto, system-ui);
+  pointer-events: auto;
+}
+
+button.escritorio3d-posto { cursor: pointer; touch-action: manipulation; }
+button.escritorio3d-posto:active .escritorio3d-selo {
+  background: color-mix(in oklch, var(--cartao, white) 88%, var(--destaque, #275d50));
+}
+.escritorio3d-posto:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--destaque, #275d50);
+  outline-offset: -2px;
+}
+
+.escritorio3d-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-block-size: 22px;
+  padding-inline: 4px;
+  border: 1px solid var(--borda, #8b867d);
+  border-radius: var(--raio-pequeno, 6px);
+  background: var(--cartao, #fff);
+}
+
+.escritorio3d-posto:is([data-estado="precisa_de_voce"], [data-estado="entregue"]) svg {
+  color: var(--destaque, #275d50);
+}
+
+.escritorio3d-posto:is([data-ativo="true"], [data-estado="precisa_de_voce"]) .escritorio3d-selo {
+  border-color: var(--destaque, #275d50);
+}
+
+.escritorio3d-detalhe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  gap: 0 10px;
+  min-block-size: 52px;
+  padding: 4px 12px;
+  border-block-start: 1px solid var(--borda, #8b867d);
+  background: var(--cartao, #fff);
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+  font-size: .8125rem;
+  line-height: 1.4;
+}
+
+.escritorio3d-detalhe > span { color: var(--texto-secundario, #5e5b54); }
+.escritorio3d-detalhe .escritorio3d-valor {
+  color: var(--texto, #242321);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

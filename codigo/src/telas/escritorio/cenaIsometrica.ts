@@ -1,6 +1,6 @@
 import type * as Tres from './tres'
 import type { EstadoFuncionario } from '../../api/tipos'
-import { EQUIPE, type SalaEquipe } from './equipe'
+import { EQUIPE, type MembroEquipe, type SalaEquipe } from './equipe'
 import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
 import { montarMesa, montarPredio } from './mobiliarioIsometrico'
 import { personagemIsometrico, type CaixaIsometrica } from './personagemIsometrico'
@@ -8,6 +8,13 @@ import { PLANTA, SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometr
 
 export const ORCAMENTO_ISOMETRICO = { desenhos: 32, triangulos: 45000 }
 export type EstadosIsometricos = Readonly<Partial<Record<string, EstadoFuncionario>>>
+export interface PostoProjetado {
+  id: string
+  x: number
+  y: number
+  chama: boolean
+}
+
 export interface OpcoesIsometricas {
   estados: EstadosIsometricos
   vista: VistaIsometrica
@@ -16,6 +23,14 @@ export interface OpcoesIsometricas {
   placa: (sala: SalaEquipe) => HTMLElement | null
   aoTocar: (id: string) => void
   aoPerderContexto: () => void
+  /** Composição mais próxima usada no laboratório. */
+  palco?: {
+    variante: 'compacta' | 'media' | 'grande'
+    elenco: readonly MembroEquipe[]
+    posicionar: (postos: readonly PostoProjetado[], largura: number, altura: number) => void
+    aoApontar: (id: string | null) => void
+    aoDesenhar: () => void
+  }
 }
 
 /** A cena só recebe estados e referências de posição. Valores ficam na interface React. */
@@ -52,6 +67,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
   }
 
   function iniciar() {
+    const palco = opcoes.palco
     const movimento = window.matchMedia('(prefers-reduced-motion: reduce)')
     let estados = opcoes.estados, vista = opcoes.vista, naTela = true, leve = false
     let largura = 0, altura = 0, precisaRedesenhar = true
@@ -78,7 +94,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     telhado.position.set(4.8, .87, .78)
     externo.add(telhado)
 
-    const personagens = EQUIPE.map(m => {
+    const personagens = (palco?.elenco ?? EQUIPE).map(m => {
       const sala = PLANTA[m.sala], x = sala.x + m.mesa, z = sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
       const emPe = !!ATIVIDADES_MINI[m.id]?.emPe
       montarMesa((c, d, p) => basico(externo, c, d, [x + p[0], p[1], z + p[2]]), !emPe)
@@ -92,13 +108,34 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       movel.add(posto)
       const b = personagemIsometrico(T, basico, m.roupa)
       posto.add(b.raiz)
+      if (palco) b.cabeca.scale.setScalar(1.14)
       const cores = new Map<number, any>()
-      const atividade = montarAtividade(m.id, { T, pai: posto, geo: cubo, guardar, mat(c) {
+      // Estes postos trabalham diante de uma tela. Os demais conservam os objetos de ofício.
+      const digital = !!palco && ['contador', 'cartao', 'assistente', 'analista'].includes(m.id)
+      const atividade = digital ? montarEstacaoDigital(posto) : montarAtividade(m.id, { T, pai: posto, geo: cubo, guardar, mat(c) {
         if (!cores.has(c)) cores.set(c, guardar(new T.MeshLambertMaterial({ color: c })))
         return cores.get(c)
       } })
       return { m, b, atividade, emPe, x, z, fase: faseDoId(m.id) }
     })
+
+    function montarEstacaoDigital(posto: any) {
+      basico(posto, 0x555751, [.7, .41, .065], [0, .98, .83])
+      basico(posto, 0xD9DBCE, [.61, .33, .012], [0, .98, .791])
+      basico(posto, 0x555751, [.08, .22, .08], [0, .74, .83])
+      basico(posto, 0x555751, [.48, .032, .19], [0, .647, .49])
+      const cursor = basico(posto, 0x555751, [.18, .036, .014], [-.15, 1.06, .78])
+      return {
+        animar(t: number) { cursor.position.y = 1.06 - Math.floor(t * 2 % 4) * .055 },
+        pose(t: number) {
+          return {
+            cx: .23 + Math.sin(t * 1.6) * .12, cy: -.08 + Math.sin(t * 1.3) * .09,
+            lx: -.81, rx: -.81, lz: .16, rz: -.16,
+            le: -1.08 + Math.sin(t * 16) * .21, re: -1.08 - Math.sin(t * 16) * .21,
+          }
+        },
+      }
+    }
 
     // As peças do rig e das atividades preservam as articulações, mas só os lotes chegam à GPU.
     function instanciar(raiz: any, material: any, sombra: boolean, pintar = true) {
@@ -154,7 +191,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     sol.shadow.normalBias = .025
     sol.shadow.bias = -.0006
     scene.add(sol, sol.target)
-    renderer.shadowMap.enabled = true
+    renderer.shadowMap.enabled = palco?.variante !== 'compacta'
     renderer.shadowMap.type = T.PCFSoftShadowMap
     renderer.info.autoReset = false
     renderer.setClearColor(0, 0)
@@ -162,7 +199,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     el.prepend(canvas)
 
     const cam = new T.OrthographicCamera(-10, 10, 10, -10, .1, 100)
-    cam.position.set(1, .86, 1).normalize().multiplyScalar(40)
+    cam.position.set(1, palco ? 1.04 : .86, palco ? 1.12 : 1).normalize().multiplyScalar(40)
     cam.lookAt(0, 0, 0)
     cam.updateMatrixWorld(true)
     const ponto = new T.Vector3()
@@ -179,10 +216,12 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       }
       return { x: (left + right) / 2, y: (bottom + top) / 2, w: (right - left) / 2, h: (top - bottom) / 2 }
     }
-    const geral = enquadrar([-6.5, 6.5, -10.5, 5.5, 1.8], [-6.25, 6.25, -10.22, -10, 2.2], [-3.5, 3.5, 5.1, 9.5, 1.8])
+    const geral = palco
+      ? enquadrar([-6.15, 6.15, -10.2, 5.1, 1.3], [-6.15, 6.15, -10.15, -10, 2.12], [-3.2, 3.2, 5.1, 9.28, 1.65])
+      : enquadrar([-6.5, 6.5, -10.5, 5.5, 1.8], [-6.25, 6.25, -10.22, -10, 2.2], [-3.5, 3.5, 5.1, 9.5, 1.8])
     const salas = Object.fromEntries(SALAS_ISOMETRICAS.map(k => {
       const { x, z, fundo } = PLANTA[k]
-      return [k, enquadrar([x - 3, x + 3, z - fundo / 2, z + fundo / 2, 2.2])]
+      return [k, enquadrar([x - 3, x + 3, z - fundo / 2, z + fundo / 2, palco ? 1.85 : 2.2])]
     }))
     const alvo = () => vista === 'tudo' ? geral : salas[vista]
     let atual = { ...alvo() }, passos = 0
@@ -195,7 +234,8 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         w: atual.w + (destino.w - atual.w) * curva,
         h: atual.h + (destino.h - atual.h) * curva,
       }
-      const a = largura / altura, margem = vista === 'tudo' ? 1.02 : 1.13
+      const a = largura / altura
+      const margem = palco ? (vista === 'tudo' ? 1 : 1.06) : (vista === 'tudo' ? 1.02 : 1.13)
       const w = Math.max(atual.w, atual.h * a) * margem, h = w / a
       Object.assign(cam, { left: atual.x - w, right: atual.x + w, top: atual.y + h, bottom: atual.y - h })
       cam.updateProjectionMatrix()
@@ -210,6 +250,17 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
 
     /** Como no painel original, pendências têm prioridade quando duas plaquinhas se cruzam. */
     function posicionarPessoas() {
+      if (palco) {
+        const postos: PostoProjetado[] = []
+        for (const { m, b, x, z } of personagens) {
+          if (vista !== 'tudo' && vista !== m.sala) continue
+          ponto.set(x, b.quadril.position.y + 1.16, z + b.raiz.position.z).project(cam)
+          postos.push({ id: m.id, x: (ponto.x + 1) * largura / 2, y: (1 - ponto.y) * altura / 2 - 11,
+            chama: estados[m.id] === 'precisa_de_voce' })
+        }
+        palco.posicionar(postos, largura, altura)
+        return
+      }
       const compacto = opcoes.previa && window.innerWidth < 900
       const ocupadas: { esquerda: number; direita: number; topo: number; base: number }[] = []
       for (const prioridade of [true, false]) for (const { m, b, x, z } of personagens) {
@@ -248,7 +299,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         const gesto = trabalha ? atividade.pose(t) : {}
         atividade.animar(trabalha && !leve ? t : 0)
         b.raiz.position.z = chama ? 2.25 : 0
-        b.raiz.rotation.y = chama ? Math.PI / 4 : .17
+        b.raiz.rotation.y = chama ? Math.PI / 4 : palco && trabalha ? 0 : .17
         b.quadril.position.y = emPe || chama ? .555 : .325
         for (const { coxa, joelho } of b.pernas) {
           coxa.rotation.x = emPe || chama ? 0 : -Math.PI / 2
@@ -256,9 +307,9 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         }
         b.cabeca.rotation.x = gesto.cx ?? (chama ? -.08 : .13)
         b.cabeca.rotation.y = gesto.cy ?? (movimento.matches ? 0 : Math.sin(t * .8) * .045)
-        b.esquerda.ombro.rotation.x = gesto.lx ?? (chama ? -1.75 : -.73)
+        b.esquerda.ombro.rotation.x = gesto.lx ?? (chama ? (palco ? -2.55 : -1.75) : -.73)
         b.esquerda.ombro.rotation.z = gesto.lz ?? (chama ? -.32 : -.05)
-        b.esquerda.cotovelo.rotation.x = gesto.le ?? (chama ? -.95 + Math.sin(t * 4) * .18 : -1.17)
+        b.esquerda.cotovelo.rotation.x = gesto.le ?? (chama ? (palco ? -.45 : -.95) + Math.sin(t * 4) * .18 : -1.17)
         b.direita.ombro.rotation.x = gesto.rx ?? -.73
         b.direita.ombro.rotation.z = gesto.rz ?? .05
         b.direita.cotovelo.rotation.x = gesto.re ?? -1.17
@@ -279,6 +330,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       canvas.dataset.leve = String(leve)
     }
 
+    let primeiroQuadro = true
     const ativo = () => !parado && naTela && !document.hidden && largura > 0 && altura > 0
     function agendar() {
       if (frame === null && ativo() && (precisaRedesenhar || !movimento.matches || passos <= 20)) frame = requestAnimationFrame(tick)
@@ -305,6 +357,10 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         const reposicionar = precisaRedesenhar || passos <= 20
         precisaRedesenhar = false
         desenhar(reposicionar)
+        if (primeiroQuadro) {
+          primeiroQuadro = false
+          palco?.aoDesenhar()
+        }
       }
       agendar()
     }
@@ -344,14 +400,14 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     canvas.addEventListener('webglcontextlost', perdeu)
     limpar.add(() => canvas.removeEventListener('webglcontextlost', perdeu))
     const raio = new T.Raycaster(), cursor = new T.Vector2(), volume = new T.Box3()
-    const clicar = (e: MouseEvent) => {
+    const acertar = (e: MouseEvent) => {
       const r = canvas.getBoundingClientRect()
       cursor.set(2 * (e.clientX - r.left) / r.width - 1, 1 - 2 * (e.clientY - r.top) / r.height)
       raio.setFromCamera(cursor, cam)
       let menor = Infinity
       let id: string | undefined
       for (const { m, b, x, z } of personagens) {
-        if ((vista !== 'tudo' && vista !== m.sala) || !opcoes.etiqueta(m.id)) continue
+        if ((vista !== 'tudo' && vista !== m.sala) || (!palco && !opcoes.etiqueta(m.id))) continue
         const centro = z + b.raiz.position.z
         volume.min.set(x - .37, .1, centro - .28)
         volume.max.set(x + .37, b.quadril.position.y + 1.12, centro + .38)
@@ -359,10 +415,26 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         const d = ponto.distanceToSquared(raio.ray.origin)
         if (d < menor) { menor = d; id = m.id }
       }
+      return id
+    }
+    const clicar = (e: MouseEvent) => {
+      const id = acertar(e)
       if (id) opcoes.aoTocar(id)
     }
     canvas.addEventListener('click', clicar)
     limpar.add(() => canvas.removeEventListener('click', clicar))
+    if (palco) {
+      const apontar = (e: PointerEvent) => {
+        if (e.pointerType !== 'touch') palco.aoApontar(acertar(e) ?? null)
+      }
+      const sair = () => palco.aoApontar(null)
+      canvas.addEventListener('pointermove', apontar)
+      canvas.addEventListener('pointerleave', sair)
+      limpar.add(() => {
+        canvas.removeEventListener('pointermove', apontar)
+        canvas.removeEventListener('pointerleave', sair)
+      })
+    }
     passos = 21
     tamanho()
     return {
