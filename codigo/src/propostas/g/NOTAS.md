@@ -16,7 +16,7 @@ O claro combina marfim `#fdfaf6`, branco `#ffffff` e palco areia `#f2e5da`. O de
 
 ## Primeira dobra medida na casca
 
-- **Celular, 375 × 812.** 3 em claro e 3 em escuro. A casca encontrou próximas faturas, aplicações e o orçamento de hoje. O valor do dia começa por volta de 710 px e a navegação fixa por volta de 758 px. A estimativa do Plano aparece na sequência da rolagem.
+- **Celular, 375 × 812.** 3 em claro e 3 em escuro. A casca encontrou próximas faturas, aplicações e o orçamento de hoje. Na integração f55, a largura do palco passou de 300 para 320 px e a margem vertical negativa diminuiu de 20 para 12 px. A estimativa do Plano volta a aparecer na sequência da rolagem, com o orçamento inteiro acima da navegação fixa.
 - **Desktop, 1280 × 800.** 4 em claro e 4 em escuro. Aos três números do celular soma-se a falta estimada por mês do Plano 2029. Os três cartões de resumo e seus controles ficam visíveis.
 - **Olho fechado.** A casca remove a lista de medição. Na tela e nos detalhes, a marcação exclui a cifra, o percentual, a barra de cobertura e textos livres que podem conter valores. Neste exemplo, saldo em conta e itens em falta estão indisponíveis. Com as quatro plaquinhas preenchidas, o orçamento de conteúdo é de cinco números antes do Plano e seis no total.
 

@@ -97,11 +97,10 @@ function Equipe({ dados, alvo, casal }: { dados: DadosInicio; alvo: RefObject<HT
       : null
   const valorBalao = !oculto && casal && interagiu && balao?.campo.estado === 'pronto' &&
     funcionarios.some(f => f.id === balao.id) ? balao.campo : null
-  // A maquete instalada já recebe sala e plaquinhas. As props adicionais preparam a variante média.
   const maquete = {
     funcionarios: dados.funcionarios, salaDestacada: sala, mostrarPlaquinhas: true,
     valores: balao && valorBalao ? { [balao.id]: valorBalao } : undefined,
-    variante: 'media' as const, oculto,
+    variante: 'media' as const, oculto, papel: dados.pessoa.papel.valor,
   }
 
   return <section className="h-equipe" ref={alvo} tabIndex={-1} aria-label="Escritório">

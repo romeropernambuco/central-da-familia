@@ -59,9 +59,9 @@ describe('Escritório em primeiro', () => {
     const id = celular.match(/<section class="b-fila b-painel" id="([^"]+)"[^>]* hidden=""/)?.[1]
     expect(id).toBeTruthy()
     expect(celular.match(new RegExp(`aria-controls="${id}" aria-expanded="false"|aria-expanded="false" aria-controls="${id}"`, 'g'))).toHaveLength(2)
-    expect(celular).toContain('data-layout="media"')
+    expect(celular).toMatch(/<svg class="escritorio-maquete" data-variante="grande"/)
     const desktop = render(dados, false, cenarios[1])
-    expect(desktop).toContain('data-layout="grande"')
+    expect(desktop).toMatch(/<svg class="escritorio-maquete" data-variante="grande"/)
     expect(desktop).not.toContain('b-abrir-fila')
     expect(desktop).not.toMatch(/<section class="b-fila b-painel"[^>]* hidden/)
   })

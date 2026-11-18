@@ -1,10 +1,11 @@
 import { expect, it, vi } from 'vitest'
-import { build, loadConfigFromFile, type Plugin } from 'vite'
+import { build, type Plugin } from 'vite'
+import configurar from '../../vite.config'
 // @ts-ignore: os testes rodam em Node, sem @types/node no TypeScript do app.
 import { realpathSync } from 'node:fs'
 
 it('exclui o laboratório do grafo do build real e da entrada direta em produção', async () => {
-  const { config } = (await loadConfigFromFile({ command: 'build', mode: 'production' }))!
+  const config = await configurar({ command: 'build', mode: 'production' })
   // Mantém a configuração real e suprime somente a gravação em disco do service worker.
   const plugins = (config.plugins as Plugin[]).filter(p => p.name !== 'central-sw')
   // O Rollup usa o caminho físico do index.html ao resolver o CSS inline.

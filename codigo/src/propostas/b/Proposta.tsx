@@ -102,13 +102,10 @@ const indicadores = [
   { id: 'aplicacoes', titulo: 'Em aplicações', sala: 'patrimonio', icone: 'guardado', figura: SemAplicacoes },
 ] as const
 
-function Maquete({ dados, casal, dispositivo }: Pick<PropsProposta, 'dados' | 'dispositivo'> & { casal: boolean }) {
+function Maquete({ dados, casal }: Pick<PropsProposta, 'dados'> & { casal: boolean }) {
   const [sala, setSala] = useState<Sala>()
   const oculto = useValoresOcultos()
   const cenaId = useId()
-  const variante = dispositivo === 'celular' ? 'media' as const : 'grande' as const
-  // A versão anterior da maquete ignora as props adicionais.
-  const desenho = { funcionarios: dados.funcionarios, salaDestacada: sala, mostrarPlaquinhas: true, variante, oculto }
   const campos = {
     hoje: dados.hojePodeGastar.valor,
     plano: dados.plano2029.faltamPorMesComMargem,
@@ -119,7 +116,7 @@ function Maquete({ dados, casal, dispositivo }: Pick<PropsProposta, 'dados' | 'd
   const salaAtual = salas.find(s => s.id === sala)
   const equipe = membros?.filter(m => m.sala === sala) ?? []
   return <section className="b-maquete b-painel" aria-label="Salas do escritório">
-    <div className="b-cena" data-layout={variante}>
+    <div className="b-cena">
       {indicadores.filter(i => casal || i.id === 'hoje').map(i => {
         const campo = campos[i.id]
         return <div className="b-indicador" key={i.id} data-posicao={i.id} data-focado={sala === i.sala || undefined}>
@@ -130,7 +127,7 @@ function Maquete({ dados, casal, dispositivo }: Pick<PropsProposta, 'dados' | 'd
         </div>
       })}
       <div className="b-desenho" id={cenaId}>
-        <EscritorioMaquete {...desenho} />
+        <EscritorioMaquete funcionarios={dados.funcionarios} salaDestacada={sala} mostrarPlaquinhas variante="grande" />
       </div>
     </div>
     <div className="b-salas" role="group" aria-label="Focar uma sala">
@@ -293,7 +290,7 @@ function InicioB({ dados, tema, dispositivo }: PropsProposta) {
         </button>
       </div>
       <div className="b-principal" data-so-tarefas={soTarefas || undefined}>
-        {!soTarefas && <Maquete dados={dados} casal={casal} dispositivo={dispositivo} />}
+        {!soTarefas && <Maquete dados={dados} casal={casal} />}
         {!temFolha && painel}
       </div>
       {!soTarefas && <Acompanhamento dados={dados} papel={papel} />}

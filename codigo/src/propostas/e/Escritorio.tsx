@@ -117,8 +117,9 @@ export function Escritorio({ dados, tarefas, titulo, tituloFila }: {
     </header>
     <div className="bento-escritorio-corpo">
       <div className="bento-cena">
-        <div className="bento-palco" data-maquete="media">
-          <EscritorioMaquete funcionarios={dados.funcionarios} salaDestacada={sala} mostrarPlaquinhas valores={valores} />
+        <div className="bento-palco" role="img" aria-label="Maquete isométrica do escritório">
+          <EscritorioMaquete funcionarios={dados.funcionarios} salaDestacada={sala} variante="media"
+            mostrarPlaquinhas valores={valores} papel={dados.pessoa.papel.valor} />
         </div>
         <div className="bento-salas" role="group" aria-label="Destacar sala">
           {Object.entries(salas).map(([id, nome]) => <button type="button" className="bento-alvo" key={id} aria-pressed={id === sala}

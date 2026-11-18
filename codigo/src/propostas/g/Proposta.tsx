@@ -68,7 +68,7 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
             <p>Escolha um cômodo para entrar.</p>
           </div>
           <div className="cv-mapa">
-            <Cena dados={dados} variante={dispositivo === 'desktop' ? 'grande' : 'media'} aoTocar={sala => {
+            <Cena dados={dados} aoTocar={sala => {
               document.getElementById(id + '-' + sala)?.focus({ preventScroll: true })
               abrir(sala)
             }} />

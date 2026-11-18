@@ -241,9 +241,9 @@ function Escritorio({ dados, escolhido, escolher }: { dados: DadosInicio; escolh
 
   return <div className="rumo-escritorio">
     <h2>Quem trabalha por você</h2>
-    <div className="rumo-maquete">
+    <div className="rumo-maquete" role="img" aria-label="Maquete isométrica do escritório">
       <EscritorioMaquete funcionarios={funcionarios} salaDestacada={ativo?.pessoa.sala}
-        mostrarPlaquinhas valores={valores} />
+        variante="media" mostrarPlaquinhas valores={valores} papel={dados.pessoa.papel.valor} />
     </div>
     <div className="rumo-equipe">
       {ativo ? <>
