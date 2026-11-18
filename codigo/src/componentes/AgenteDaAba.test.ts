@@ -6,8 +6,8 @@ import { expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
-const ciclo = vi.hoisted(() => ({ destruir: vi.fn(), montar: vi.fn() }))
-vi.mock('../telas/escritorio/tres', () => ({}))
+const ciclo = vi.hoisted(() => ({ destruir: vi.fn(), montar: vi.fn(), importarThree: vi.fn() }))
+vi.mock('../telas/escritorio/tres', () => { ciclo.importarThree(); return {} })
 vi.mock('../telas/escritorio/cena3d', () => ({ montarCena: ciclo.montar }))
 vi.mock('../telas/escritorio/cenaBase', async original => ({ ...await original<object>(), temWebGL: () => true }))
 import { MiniAgente } from './AgenteDaAba'
@@ -27,7 +27,7 @@ it('carrega Three somente pelo import tardio do mini agente e libera o renderer'
     const codigo = readFileSync(arquivo, 'utf8')
     for (const match of codigo.matchAll(/(?:^|\n)\s*(?:import|export)\s+(?!type\b)[^;\n]*?\sfrom\s*['"]([^'"]+)['"]/g)) {
       const origem = match[1]
-      expect(origem, arquivo).not.toMatch(/^three(?:\/|$)/)
+      expect(origem, arquivo).not.toMatch(/^three(?:\/|$)|\/Ficha$|\/NumerosAba$/)
       if (!origem.startsWith('.')) continue
       const alvo = resolve(dirname(arquivo), origem)
       const dependencia = (extname(alvo) ? [alvo] : [alvo + '.ts', alvo + '.tsx', alvo + '/index.ts']).find(existsSync)
@@ -36,6 +36,40 @@ it('carrega Three somente pelo import tardio do mini agente e libera o renderer'
   }
   visitar(resolve('src/main.tsx')); visitar(resolve('src/partida.tsx'))
   expect([...vistos].some(p => /AgenteDaAba\.tsx$/.test(p))).toBe(true)
+})
+
+it('f54: não importa Three para a cena fora da área visível', async () => {
+  const doc = new DocumentoTeste()
+  Object.assign(doc.documentElement, { dataset: {} })
+  vi.stubGlobal('document', doc)
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal('location', { hash: '', search: '' })
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
+  vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const observar = vi.fn(), desconectar = vi.fn()
+  let atualizar!: (entradas: { isIntersecting: boolean }[]) => void
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(f: typeof atualizar) { atualizar = f }
+    observe = observar
+    disconnect = desconectar
+  })
+  ciclo.montar.mockReset()
+  ciclo.montar.mockReturnValue({ destruir() {}, definirEstado() {}, irPara() {} })
+  const box = doc.createElement('div'); doc.body.appendChild(box)
+  const root = createRoot(box as unknown as HTMLElement)
+  try {
+    await act(async () => { root.render(createElement(MiniAgente, { id: 'cartao', sala: 'cartoes' })); await vi.dynamicImportSettled() })
+    expect(observar).toHaveBeenCalled()
+    await act(async () => atualizar([{ isIntersecting: false }]))
+    expect(ciclo.importarThree).not.toHaveBeenCalled()
+    expect(ciclo.montar).not.toHaveBeenCalled()
+    await act(async () => atualizar([{ isIntersecting: true }]))
+    await act(async () => vi.dynamicImportSettled())
+    expect(ciclo.importarThree).toHaveBeenCalledOnce()
+    expect(ciclo.montar).toHaveBeenCalledOnce()
+    expect(desconectar).toHaveBeenCalled()
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals() }
 })
 
 it('trocar de aba e desmontar libera a cena; sem3d não importa nem monta renderer', async () => {
@@ -71,7 +105,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { ContextoApp, type Ctx } from '../app/contexto'
 import { App } from '../app/App'
 import { Lancar } from '../telas/lancar/Lancar'
-import { AgenteDaAba } from './AgenteDaAba'
+import { AgenteDaAba, definirModoFuncionario } from './AgenteDaAba'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 
 const contextoDesign = () => ({
@@ -104,7 +138,7 @@ it('design: foco apos reset e borda exclusiva dos campos', () => {
  expect((Math.max(a, b) + .05) / (Math.min(a, b) + .05)).toBeGreaterThanOrEqual(3)
  }
  expect(css).toMatch(/\.envbtn\{[^}]*min-height:60px/)
- expect(css).toMatch(/\.tabbar-lancar\{[^}]*font-size:12px;line-height:16px/)
+ expect(readFileSync('src/app/navegacao.css', 'utf8')).toMatch(/\.tabbar-lancar\{[^}]*font-size:12px;line-height:16px/)
 
 })
 
@@ -130,7 +164,9 @@ it('design: barra real tem rotulo visivel para lancar', async () => {
  const ctx = contextoDesign(); ctx.lancarAberto = null
  await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(App))))
  const barra = container.buscar(n => n.tagName === 'NAV' && n.getAttribute('class') === 'tabbar')[0]
- expect(barra.buscar(n => n.tagName === 'SPAN' && n.textContent === 'Anotar')).toHaveLength(1)
+ const anotar = barra.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Anotar gasto')[0]
+ expect(anotar.buscar(n => n.tagName === 'SPAN' && n.textContent === 'Anotar')).toHaveLength(1)
+ expect(anotar.buscar(n => n.tagName === 'SVG')).toHaveLength(1)
  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals() }
 })
 
@@ -205,4 +241,53 @@ it('design: mini segue tema automatico, explicito e remove observadores', async 
  expect(remover).toHaveBeenCalledWith('change', expect.any(Function))
  expect(desconectar).toHaveBeenCalledTimes(1)
  } finally { vi.unstubAllGlobals() }
+})
+
+it.each(['completo', 'compacto', 'desligado'] as const)('f54: revisita móvel (%s) abre respostas e devolve foco ao recolher', async modo => {
+  const doc = new DocumentoTeste()
+  let foco: NoTeste | undefined
+  const criar = doc.createElement.bind(doc)
+  doc.createElement = nome => {
+    const no = criar(nome)
+    return Object.assign(no, {
+      focus: () => { foco = no },
+    })
+  }
+  vi.stubGlobal('document', doc)
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal('location', { hash: '', search: '?sem3d' })
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+  vi.stubGlobal('addEventListener', vi.fn())
+  vi.stubGlobal('removeEventListener', vi.fn())
+  vi.stubGlobal('sessionStorage', { getItem: () => JSON.stringify({ saudou: true, perguntas: ['feira-design'] }), setItem() {} })
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const ctx = contextoDesign()
+  const escritorio = await ctx.api.escritorioHoje(ctx.familia!.id)
+  ctx.api.escritorioHoje = async () => ({
+    ...escritorio,
+    precisa_de_voce: [{ id: 'feira-design', funcionario: 'fiscal', pergunta: 'Fez a feira?', contexto: '', opcoes: [{ id: 'sim', rotulo: 'Anexar a nota agora' }] }],
+  })
+  await lojaEscritorio(ctx.api, ctx.familia!.id).ler(ctx.api, ctx.familia!.id)
+  const box = doc.createElement('div'); doc.body.appendChild(box)
+  const root = createRoot(box as unknown as HTMLElement)
+  try {
+    definirModoFuncionario(modo)
+    await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(AgenteDaAba, { rota: 'casa' }))))
+    const abrir = box.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Responder')[0]
+    expect(abrir).toBeDefined()
+    expect(abrir.getAttribute('aria-expanded')).toBe('false')
+    await act(async () => abrir.click())
+    const resposta = box.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Anexar nota')[0]
+    expect(resposta).toBeDefined()
+    expect(resposta.getAttribute('aria-label') ?? resposta.textContent).toBe('Anexar nota')
+    expect(foco).toBe(resposta)
+    expect(abrir.textContent).toBe('Recolher')
+    await act(async () => abrir.click())
+    expect(foco).toBe(abrir)
+    expect(abrir.getAttribute('aria-expanded')).toBe('false')
+  } finally {
+    await act(async () => root.unmount())
+    definirModoFuncionario('completo')
+    vi.unstubAllGlobals()
+  }
 })

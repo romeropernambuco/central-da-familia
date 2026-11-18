@@ -92,7 +92,7 @@ export function Cartoes() {
                   <p className="sub" style={{ margin: '6px 0 14px' }}>{atual.fechada ? 'Pague no app do banco. Aqui é só para acompanhar: o app não paga nada sozinho.' : 'Ainda entra compra nesta fatura até o dia do fechamento.'}</p>
                 </>
               )}
-              <h3 className="dayh">Próximas {fs.length} faturas</h3>
+              {fs.length ? <h3 className="dayh">Próximas {fs.length} faturas</h3> : <p className="sub">Nenhuma fatura neste cartão ainda.</p>}
               {/* mês zerado não ganha linha com barra vazia: meses zerados seguidos viram 1 linha só */}
               {(oculto ? fs.map(f => ({ tipo: 'fatura' as const, f })) : agruparFaturas(fs)).map(g => g.tipo === 'zeros' ? (
                 <p key={g.de} className="fat zeros">{g.de === g.ate ? mesCurto(g.de) : `${mesCurto(g.de)} a ${mesCurto(g.ate)}`}: <Din v={0} /></p>

@@ -1,12 +1,13 @@
 import './agente-cartao.css'
-import { EstadoVazio } from './EstadoVazio'
-import { Icone, icones, type NomeIcone } from './Icone'
+import { EstadoVazioVisual } from './EstadoVazioVisual'
+import { CasaVazia, Erro } from './ilustracoes/figuras'
+import { Icone, desenhoFuncionario } from './Icone'
 import { EQUIPE } from '../telas/escritorio/equipe'
 import { nomesPrivados, textoDeAgente, rotuloDeOpcao } from '../lib/textoAgente'
 import { lojaEscritorio } from '../app/escritorioCompartilhado'
 import { copiarProtegido } from './privacidade'
 import { textoPrivado, CampoPrivado } from './privacidade'
-import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from 'react'
 import { Camera, Check, Copy } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
 import { useApp } from '../app/contexto'
@@ -28,7 +29,7 @@ function rotuloCurto(texto: string) {
 }
 
 export function FuncIco({ id, size = 40, precisa }: { id: string; size?: number; precisa?: boolean }) {
-  return <span className={'tile func' + (precisa ? ' precisa' : '')} style={{ width: size, height: size }} aria-hidden="true">{<Icone nome={id in icones ? id as NomeIcone : 'pessoa'} />}</span>
+  return <span className={'tile func' + (precisa ? ' precisa' : '')} style={{ width: size, height: size }} aria-hidden="true">{<Icone desenho={desenhoFuncionario(id)} />}</span>
 }
 
 /** Devolve false se não gravou; a mensagem pronta quando a opção é copiar. */
@@ -45,9 +46,9 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
   const [marca, setMarca] = useState<Record<string, EstadoItem>>({})
   const [erro, setErro] = useState('')
   useEffect(() => { if (familia) api.estoque(familia.id).then(x => setItens(x.itens.filter(i => i.ativo))).catch((x: Error) => setErro(x.message)) }, [api, familia?.id])
-  if (erro) return <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível buscar os itens" frase={textoPrivado(erro)} /></div>
+  if (erro) return <div role="alert"><EstadoVazioVisual ilustracao={<Erro />} titulo="Não foi possível buscar os itens" frase={textoPrivado(erro)} /></div>
   if (!itens) return <p className="sub">Buscando os itens da casa…</p>
-  if (!itens.length) return <EstadoVazio ilustracao="CasaVazia" titulo="Ainda não tem item cadastrado." frase={'O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".'} />
+  if (!itens.length) return <EstadoVazioVisual ilustracao={<CasaVazia />} titulo="Ainda não tem item cadastrado." frase={'O casal cadastra na ficha do Ajudante da Feira, em "O que eu cuido".'} />
   return (
     <div className="contagem">
       <ul className="list">
@@ -69,7 +70,7 @@ export function Contagem({ salvar, gravando }: { salvar: (itens: { item_id: stri
  * 1 pergunta de 1 funcionário, com os botões de resposta. 1 passo por vez (padrão do Cobrador do app do Michel):
  * resposta simples grava com 1 toque; resposta que pede dia, valor, texto, foto ou contagem abre só esse passo.
  */
-export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder, aoExibir, compacto }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; compacto?: boolean; corrige?: boolean; aoResponder?: () => void; aoExibir?: () => void }) {
+export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQuem, corrige, aoResponder, aoExibir, compacto, primeiraResposta }: { p: PerguntaEsc; quem: string; responder: Responder; posicao?: string; abrirCadastro?: () => void; semQuem?: boolean; compacto?: boolean; corrige?: boolean; aoResponder?: () => void; aoExibir?: () => void; primeiraResposta?: Ref<HTMLButtonElement> }) {
   const { abrirLancar, familia, api, tentar, oculto, sessao, resumo } = useApp()
   const privados = [...(p.trechosPrivados || []), ...nomesPrivados([familia, sessao, resumo])]
   const fala = (texto: string) => p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)
@@ -166,11 +167,15 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
       <p className="perg-t">{fala(p.pergunta)}</p>
       {p.contexto && !compacto && <p className="perg-c">{fala(p.contexto)}</p>}
       <div className="perg-ops" role="group" aria-label="Respostas">
-        {p.opcoes.map((o, i) => (
-          <button key={o.id} type="button" className={'btn' + (i === 0 ? ' primary' : ' line')} title={compacto ? rotuloDeOpcao(o.rotulo, i, privados, oculto) : undefined} disabled={gravando} aria-label={rotuloDeOpcao(o.rotulo, i, privados, oculto)} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
-            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{!/^copiar/.test(o.id) && o.abre !== 'nota' && <Icone nome="abrir" />}{compacto ? rotuloCurto(rotuloDeOpcao(o.rotulo, i, privados, oculto)) : rotuloDeOpcao(o.rotulo, i, privados, oculto)}
+        {p.opcoes.map((o, i) => {
+          const rotulo = rotuloDeOpcao(o.rotulo, i, privados, oculto)
+          const visivel = compacto ? rotuloCurto(rotulo) : rotulo
+          return <button key={o.id} ref={i === 0 ? primeiraResposta : undefined} type="button"
+            className={'btn' + (i === 0 ? ' primary' : ' line')} title={compacto ? rotulo : undefined} disabled={gravando}
+            aria-label={visivel} aria-expanded={o.pede ? aberta?.id === o.id : undefined} onClick={() => tocar(o)}>
+            {/^copiar/.test(o.id) && <Icone desenho={Copy} />}{o.abre === 'nota' && <Icone desenho={Camera} />}{!/^copiar/.test(o.id) && o.abre !== 'nota' && <Icone nome="abrir" />}{visivel}
           </button>
-        ))}
+        })}
       </div>
       {copiado && <p className="perg-msg" role="status"><Icone desenho={Check} aria-hidden="true" /><span>Copiado. Cole no WhatsApp: "{textoPrivado(copiado)}"</span></p>}
       {aberta?.abre === 'nota' && (
@@ -194,7 +199,7 @@ export function PerguntaCard({ p, quem, responder, posicao, abrirCadastro, semQu
           <button type="button" className="btn primary" disabled={gravando} onClick={salvar}><Icone nome="salvo" />Salvar resposta</button>
         </div>
       )}
-      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível responder" frase={textoPrivado(erro)} /></div>}
+      {erro && <div role="alert"><EstadoVazioVisual ilustracao={<Erro />} titulo="Não foi possível responder" frase={textoPrivado(erro)} /></div>}
     </div>
   )
 }

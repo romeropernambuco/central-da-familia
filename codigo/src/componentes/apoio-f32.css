@@ -12,3 +12,5 @@
 /* O tamanho intrínseco do input de arquivo alargava a coluna do grid em 1px. */
 .f32-backup .campo{min-width:0}
 .f32-backup input[type=file]{width:100%;min-width:0;box-sizing:border-box}
+
+.toast.f32-feedback button:focus-visible{outline-color:var(--toast-ink)}

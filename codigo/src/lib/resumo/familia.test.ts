@@ -365,7 +365,9 @@ it('f37: reserva espaço durante a carga e mantém links e expansão em regiões
   expect(bloco.buscar(x => x.getAttribute('class') === 'resumo-esqueleto')[0].textContent).toContain('Conferindo')
   const estilos = readFileSync('src/telas/inicio/resumo.css', 'utf8')
   expect(estilos).toMatch(/\.resumo-item\s*\{[^}]*min-block-size:\s*var\(--resumo-altura\)/)
-  expect(a.box.buscar(x => x.getAttribute('class') === 'resumo-coluna')).toHaveLength(2)
+  const grade = a.box.buscar(x => x.getAttribute('class') === 'resumo-grade')[0]
+  expect(grade.childNodes.map(x => x.getAttribute('data-bloco'))).toEqual(['podeGastarHoje', 'saldoConta', 'faturas', 'aplicacoes', 'recebimentos', 'plano2029'])
+  expect(estilos).not.toMatch(/\border:\s*-?\d/)
   await act(async () => resolver(m.resumo()))
   await expandir(bloco)
   const controles = bloco.buscar(x => x.tagName === 'A' || x.tagName === 'BUTTON')
@@ -664,5 +666,19 @@ it('AST: resumo real não importa exemplo/fixtures nem atribui números financei
       ts.forEachChild(no, visitar)
     }
     visitar(arvore)
+  }
+})
+
+it('f54: invalidar desejos preserva as referências dos outros campos', async () => {
+  const m = mundo()
+  const a = await montar(m)
+  const anterior = a.r
+  const icone = (chave: keyof Resumo) => itensResumo(a.r, hoje, false).find(item => item.chave === chave)!.icone
+  expect(icone('imoveis')).toBe('imoveis')
+  expect(icone('imoveis')).not.toBe(icone('aplicacoes'))
+  await act(async () => invalidarDados(m.api, m.familia.id, ['resumo-familia:desejos']))
+  expect(a.r.desejos).not.toBe(anterior.desejos)
+  for (const chave of Object.keys(anterior) as (keyof Resumo)[]) {
+    if (chave !== 'desejos') expect(a.r[chave], chave).toBe(anterior[chave])
   }
 })

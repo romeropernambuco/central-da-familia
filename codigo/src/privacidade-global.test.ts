@@ -101,8 +101,9 @@ for (const alvo of ['PerguntaCard', 'AgenteDaAba', 'FichaFuncionario']) {
       for (const fechado of [inicial, !inicial, inicial]) {
         const botoes = grupo().buscar(n => n.tagName === 'BUTTON')
         const esperados = fechado ? ['Vou renovar', 'Vou tirar o dinheiro', 'Decido depois', 'Renovar por R$ •••', 'Conversar com •••', 'Opção 6', 'Opção 7'] : p.opcoes.map(o => o.rotulo)
-        expect(botoes.map(n => n.textContent)).toEqual(alvo === 'AgenteDaAba' ? esperados.map(r => r === 'Vou tirar o dinheiro' ? 'Retirar' : r === 'Decido depois' ? 'Depois' : r) : esperados)
-        expect(botoes.map(n => n.getAttribute('aria-label'))).toEqual(esperados)
+        const visiveis = alvo === 'AgenteDaAba' ? esperados.map(r => r === 'Vou tirar o dinheiro' ? 'Retirar' : r === 'Decido depois' ? 'Depois' : r) : esperados
+        expect(botoes.map(n => n.textContent)).toEqual(visiveis)
+        expect(botoes.map(n => n.getAttribute('aria-label'))).toEqual(visiveis)
         expect(new Set(botoes.map(n => n.getAttribute('aria-label'))).size).toBe(7)
         expect(grupo()).toBe(original)
         const fala = container.buscar(n => n.getAttribute('class') === 'perg-t')[0]

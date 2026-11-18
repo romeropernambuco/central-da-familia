@@ -1,10 +1,10 @@
 import './agente-cartao.css'
-import { Icone, icones, type NomeIcone } from './Icone'
+import { Icone, desenhoFuncionario } from './Icone'
 import { nomeInformado } from '../lib/nomePessoa'
 import { Conferencia } from './Conferencia'
 import { ChevronDown } from 'lucide-react'
 import { nomesPrivados, textoDeAgente } from '../lib/textoAgente'
-import { memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { useApp } from '../app/contexto'
 import { useEscritorio } from '../app/useDados2'
 import { useInsightsDaAba } from '../app/useInsightsDaAba'
@@ -14,12 +14,15 @@ import { rotaPermitida } from '../app/rotas'
 import { composicaoMini, elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
 import { APELIDO_BANCO, EQUIPE, type SalaEquipe } from '../telas/escritorio/equipe'
 import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../telas/escritorio/cenaBase'
-import { Cadastro, donoDaPergunta } from '../telas/escritorio/Ficha'
-import { NumerosAba } from '../telas/escritorio/NumerosAba'
+import { donoDaPergunta } from '../telas/escritorio/donoDaPergunta'
 import { PerguntaCard, respostasConfirmadas } from './Pergunta'
 import { textoPrivado } from './privacidade'
 import { Sheet } from './base'
+import { Carregando } from './Carregando'
 import { reduzirFoto } from '../lib/foto'
+const Cadastro = lazy(() => import('../telas/escritorio/Ficha').then(m => ({ default: m.Cadastro })))
+const NumerosAba = lazy(() => import('../telas/escritorio/NumerosAba').then(m => ({ default: m.NumerosAba })))
+
 export const AGENTE_POR_ABA = PRINCIPAL_POR_ABA
 const CONVITE: Record<string, string> = {
  cartao: 'Quer conferir a fatura?',
@@ -189,7 +192,28 @@ function AgenteAutorizado({ rota, semCena }: { rota: Rota; semCena?: boolean }) 
  const expandido = expansao?.modo === modo && expansao.pergunta === p?.id ? expansao.valor : null
  const falaPergunta = (texto: string) => textoDeAgente(texto, [...(p?.trechosPrivados || []), ...nomesPrivados([familia, sessao])], oculto)
  const completo = modo === 'completo' && !semCena
- const conversa = falhou || conferindo || !!celebrando || (expandido ?? !(celular && visitaAnterior && (!p || visitaAnterior.perguntas.includes(p.id))))
+ const conversa = expandido ?? Boolean(falhou || conferindo || celebrando || !(celular && visitaAnterior && (!p || visitaAnterior.perguntas.includes(p.id))))
+ const mostraConferencia = (falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida')
+ const areaConversa = useRef<HTMLDivElement>(null)
+ const botaoConversa = useRef<HTMLButtonElement>(null)
+ const moverFoco = useRef<{ expandir: boolean; pergunta?: string } | null>(null)
+ const focarResposta = useCallback((botao: HTMLButtonElement | null) => {
+  if (!botao || botao.disabled || !moverFoco.current?.expandir || moverFoco.current.pergunta !== p?.id) return
+  moverFoco.current = null
+  botao.focus()
+ }, [p?.id])
+ useEffect(() => {
+  if (moverFoco.current?.expandir !== conversa) return
+  if (!conversa || mostraConferencia || !p?.opcoes.length) {
+   moverFoco.current = null
+   const alvo = conversa ? areaConversa.current : botaoConversa.current
+   alvo?.focus()
+  }
+ }, [conversa, mostraConferencia, p?.id, p?.opcoes.length])
+ const alternarConversa = () => {
+  moverFoco.current = { expandir: !conversa, pergunta: p?.id }
+  setExpansao({ modo, pergunta: p?.id, valor: !conversa })
+ }
  const saudar = !visitaAnterior?.saudou && !f?.frase?.includes(familia!.membroNome) && nomeInformado(familia?.membroNome) && !/R\$|[0-9]/.test(familia!.membroNome)
  useEffect(() => {
   if (conferindo || falhou) return
@@ -203,15 +227,15 @@ function AgenteAutorizado({ rota, semCena }: { rota: Rota; semCena?: boolean }) 
  const restrito = familia!.papel !== 'casal'
  const papel = restrito && rota === 'casa' ? (m.id === 'presenca' ? 'Acompanha seu próprio ponto.' : 'Acompanha as tarefas da casa, sem valores em dinheiro.') : m.papel
  return <section className={'card agente-aba' + (!completo && !p ? ' agente-compacto' : '') + (!conversa ? ' agente-recolhido' : '')} data-agente={m.id} data-principal={elenco.principal} aria-label={descricao}>
- <div className={'agente-identidade' + (completo ? ' com-cena' : '')}>{completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small className="agente-papel"><Icone nome={m.id in icones ? m.id as NomeIcone : 'pessoa'} />{papel}</small>
+ <div className={'agente-identidade' + (completo ? ' com-cena' : '')}>{completo && <MiniAgente conferencia={celebrando ? undefined : falhou ? 'erro' : conferindo ? 'buscando' : undefined} id={elenco.principal} sala={elenco.sala} estado={estado} funcionarios={funcionarios} />}<header className="agente-aba-cabecalho"><b>{m.nome}</b><small className="agente-papel"><Icone desenho={desenhoFuncionario(m.id)} />{papel}</small>
  {ids.filter(id => id !== m.id).length > 0 && <small className="agente-com">Com {ids.filter(id => id !== m.id).map(id => EQUIPE.find(m => m.id === id)!.nome).join(', ')}</small>}
  {api.modo === 'exemplo' && <small className="agente-exemplo" title="Nada é gravado na família real">Exemplo<span className="sr">: nada é gravado na família real</span></small>}</header></div>
  {!conversa && p && <p className="agente-pergunta-resumo">{falaPergunta(p.pergunta)}</p>}
- <div id={painel + '-conversa'} hidden={!conversa} className="agente-conversa">
- {conversa && ((falhou || conferindo) && !(p && loja.travas.get(p.id) === 'respondida') ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} compacto semQuem /> : <div className="perg"><p>{saudar && <>Olá, {textoPrivado(familia!.membroNome, oculto)}. </>}{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase && f.frase !== papel ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
- </div><div className="agente-acoes">{p?.contexto && <details className="agente-contexto"><summary>Detalhes</summary><p className="perg-c">{falaPergunta(p.contexto)}</p></details>}{modo !== 'desligado' && <button type="button" className="btn ghost agente-recolher" aria-expanded={conversa} aria-controls={painel + '-conversa'} onClick={() => setExpansao({ modo, pergunta: p?.id, valor: !conversa })}><Icone desenho={ChevronDown} />{conversa ? 'Recolher' : p ? 'Responder' : 'Expandir'}</button>}
+ <div ref={areaConversa} tabIndex={-1} id={painel + '-conversa'} hidden={!conversa} className="agente-conversa">
+ {conversa && (mostraConferencia ? <Conferencia erro={falhou} repetir={() => { atualizar(); insights.atualizar() }} /> : p ? <PerguntaCard key={p.id} p={p} quem={m.nome} responder={pendente ? responder : insights.responder} aoExibir={proposta ? marcarVista : undefined} primeiraResposta={focarResposta} compacto semQuem /> : <div className="perg"><p>{saudar && <>Olá, {textoPrivado(familia!.membroNome, oculto)}. </>}{(m.id === 'analista' ? insights.falaDoAnalista : null) || CONVITE[m.id] || (!restrito && f?.frase && f.frase !== papel ? fala(f.frase) : 'Confira os avisos e escolha por onde começar.')}</p></div>)}
+ </div><div className="agente-acoes">{p?.contexto && <details className="agente-contexto"><summary>Detalhes</summary><p className="perg-c">{falaPergunta(p.contexto)}</p></details>}{(modo !== 'desligado' || p) && <button ref={botaoConversa} type="button" className="btn ghost agente-recolher" aria-expanded={conversa} aria-controls={painel + '-conversa'} onClick={alternarConversa}><Icone desenho={ChevronDown} />{conversa ? 'Recolher' : p ? 'Responder' : 'Expandir'}</button>}
  <button type="button" className={'btn ghost agente-aba-divulgacao'} aria-expanded={aberto} aria-controls={painel} onClick={() => setAberto(!aberto)}><Icone nome="escritorio" />{['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? 'Ver tarefas' : 'Ver resumo'}<Icone desenho={ChevronDown} aria-hidden="true" /></button>
- </div><div id={painel} hidden={!aberto}>{aberto && (restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />)}</div>
+ </div><div id={painel} hidden={!aberto}>{aberto && <Suspense fallback={<Carregando />}>{restrito && rota === 'casa' && m.id !== 'fiscal' ? <p>Consulte suas tarefas na Casa. A lista e o gás ficam nas opções desta tela.</p> : ['cartao', 'fiscal', 'guardado', 'tesoureiro', 'secretaria', 'contador'].includes(m.id) ? <Cadastro id={m.id} /> : <NumerosAba id={m.id} fechar={() => setAberto(false)} />}</Suspense>}</div>
  {insights.notaPendente && <Sheet titulo="Guardar a nota da feira" fechar={insights.fecharNota}>
    <label className="campo"><span>Foto da nota</span><input type="file" accept="image/*" capture="environment" disabled={guardandoFoto} onChange={ev => { const arquivo = ev.target.files?.[0]; ev.target.value = ''; if (arquivo) void anexarFoto(arquivo) }} /></label>
    {guardandoFoto && <p role="status">Guardando a nota…</p>}{fotoErro && <p role="alert">{fotoErro}</p>}
@@ -226,11 +250,22 @@ export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalh
  const estados = JSON.stringify(pessoas)
  const estadoAtual = useRef(pessoas); estadoAtual.current = pessoas
  const [lista, setLista] = useState(false)
+ const [visivel, setVisivel] = useState(() => typeof IntersectionObserver === 'undefined')
+ useEffect(() => {
+  if (visivel || lista || !caixa.current) return
+  const observer = new IntersectionObserver(entradas => {
+   if (entradas.some(e => e.isIntersecting)) setVisivel(true)
+  })
+  observer.observe(caixa.current)
+  return () => observer.disconnect()
+ }, [visivel, lista])
  useEffect(() => { estadoAtual.current.forEach(p => cenaAtual.current?.definirEstado(p.id, p.estado)) }, [estados])
  useEffect(() => {
  const el = caixa.current
  if (!el) return
- if (new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash) || !temWebGL()) { setLista(true); return }
+ if (new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash)) { setLista(true); return }
+ if (!visivel) return
+ if (!temWebGL()) { setLista(true); return }
  const escuroAgora = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches }
  let cena: Cena | undefined
  const falhar = () => { cena?.destruir(); cena = undefined; cenaAtual.current = undefined; setLista(true) }
@@ -252,6 +287,6 @@ export const MiniAgente = memo(function MiniAgente({ id, sala, estado = 'trabalh
  window.addEventListener('escritorio3d-abrir', abrirEscritorio)
  liberarRenderer = destruir
  return () => { window.removeEventListener('escritorio3d-abrir', abrirEscritorio); destruir(); if (liberarRenderer === destruir) liberarRenderer = undefined }
- }, [chave, sala])
- return lista ? <span className="sub">Em lista · {conferencia ? (conferencia === 'erro' ? 'Não foi possível conferir' : 'Conferindo…') : ({ chamando: 'Precisa de você', resolvido: 'Respondido', parado: 'Sem pendências', trabalhando: 'Trabalhando' })[estado]}</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true" />
+ }, [chave, sala, visivel])
+ return lista ? <span className="sub">Em lista · {conferencia ? (conferencia === 'erro' ? 'Não foi possível conferir' : 'Conferindo…') : ({ chamando: 'Precisa de você', resolvido: 'Respondido', parado: 'Sem pendências', trabalhando: 'Trabalhando' })[estado]}</span> : <div className="cena3d mini-agente" ref={caixa} aria-hidden="true">{!visivel && <span className="cena3d-espera"><Icone nome="escritorio" /></span>}</div>
 })

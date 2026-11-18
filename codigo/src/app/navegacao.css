@@ -1,0 +1,5 @@
+.tabbar .plus.tabbar-lancar{transform:none;font-size:12px;line-height:16px;font-weight:600;align-content:center;gap:2px}
+.tabbar .plus.tabbar-lancar:active{transform:scale(.95)}
+.rail a[data-grupo-ativo]{background:var(--accent-soft);color:var(--accent-ink);box-shadow:inset 3px 0 var(--accent)}
+.rail a[data-grupo-ativo] svg{color:var(--accent)}
+@media(prefers-reduced-motion:reduce){.tabbar .plus.tabbar-lancar:active{transform:none}}

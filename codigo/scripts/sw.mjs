@@ -1,6 +1,6 @@
-// Monta o sw.js da pasta publicada: lista todos os arquivos do build e carimba a versão (muda a cada build).
+// Monta o sw.js da pasta publicada, com a casca inicial e a versão do build.
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join, relative, sep, posix } from 'node:path'
 
 function listar(pasta, raiz = pasta) {
@@ -19,15 +19,55 @@ export function montarSw(modelo, arquivos, versao) {
   return modelo.replace("'__VERSAO__'", JSON.stringify(versao)).replace('__ARQUIVOS__', JSON.stringify(arquivos))
 }
 
-export function gravarSw(pastaBuild, modeloPath) {
+export function versaoDosModelos(pasta) {
+  const hash = createHash('sha256')
+  for (const arquivo of listar(pasta).filter(a => a.endsWith('.glb')).sort()) {
+    hash.update(arquivo).update(readFileSync(join(pasta, arquivo)))
+  }
+  return hash.digest('hex').slice(0, 12)
+}
+
+export function cascaDoManifesto(manifesto, entradas) {
+  const casca = new Set(['index.html'])
+  const visitados = new Set()
+  function incluir(chave) {
+    if (visitados.has(chave)) return
+    visitados.add(chave)
+    const item = manifesto[chave]
+    if (!item) throw new Error('Entrada ausente no manifesto: ' + chave)
+    casca.add(item.file)
+    for (const arquivo of [...(item.css || []), ...(item.assets || [])]) casca.add(arquivo)
+    for (const importado of item.imports || []) incluir(importado)
+  }
+  for (const entrada of entradas) incluir(entrada)
+  return [...casca]
+}
+
+export function gravarSw(pastaBuild, modeloPath, entradasDinamicas) {
+  let casca
+  if (entradasDinamicas) {
+    const caminho = join(pastaBuild, '.vite/manifest.json')
+    const manifesto = JSON.parse(readFileSync(caminho, 'utf8'))
+    // Vite pode dar ao chunk de uma entrada dinâmica uma chave baseada no arquivo emitido.
+    const entradas = ['index.html']
+    for (const nome of entradasDinamicas) {
+      const entrada = Object.entries(manifesto).find(([, item]) => item.isDynamicEntry && item.name === nome)
+      if (entrada) entradas.push(entrada[0])
+      // Builds sem configuração do Supabase eliminam o backend real.
+      else if (nome !== 'real') throw new Error('Entrada dinâmica ausente no manifesto: ' + nome)
+    }
+    casca = cascaDoManifesto(manifesto, entradas)
+    unlinkSync(caminho)
+  }
   const arquivos = listar(pastaBuild).filter(a => a !== 'sw.js' && !a.endsWith('.map')).sort()
+  casca ??= arquivosEssenciais(arquivos, a => readFileSync(join(pastaBuild, a), 'utf8'))
   const h = createHash('sha256')
   for (const a of arquivos) { h.update(a); h.update(readFileSync(join(pastaBuild, a))) }
+  const modelo = readFileSync(modeloPath, 'utf8')
+  h.update(modelo).update(JSON.stringify(casca))
   const versao = h.digest('hex').slice(0, 12)
-  // o 3D do Escritório (Three.js) não entra na casca: só é baixado quando a pessoa abre essa tela, e aí o próprio sw guarda
-  const casca = arquivosEssenciais(arquivos, a => readFileSync(join(pastaBuild,a),'utf8'))
-  writeFileSync(join(pastaBuild, 'sw.js'), montarSw(readFileSync(modeloPath, 'utf8'), casca, versao))
-  return { versao, arquivos }
+  writeFileSync(join(pastaBuild, 'sw.js'), montarSw(modelo, casca, versao))
+  return { versao, arquivos, casca }
 }
 
 export function arquivosEssenciais(arquivos, ler) {

@@ -6,7 +6,7 @@ import { useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../../componentes/AgenteDaAba'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
 import { MessageCircle, Sun, Moon, Smartphone, LogOut, ShieldCheck, Gauge, ChevronRight, UserPlus, Share, Copy, Zap } from 'lucide-react'
 import { enderecoDoAtalho } from '../../lib/atalho'
@@ -14,6 +14,13 @@ import { useApp } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Sheet } from '../../componentes/base'
 import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from '../../lib/formato'
+
+function AcaoConvite({ classe, oculto, url, aoAbrir, children }: { classe: string; oculto: boolean; url: () => string; aoAbrir?: () => void; children: ReactNode }) {
+  const { toast } = useApp()
+  return oculto
+    ? <button className={classe} type="button" onClick={() => toast('Abra o olho para compartilhar este convite.')}>{children}</button>
+    : <a className={classe} target="_blank" rel="noreferrer" href={url()} onClick={aoAbrir}>{children}</a>
+}
 
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
@@ -52,7 +59,7 @@ export function Ajustes() {
           <label className="campo" style={{ marginTop: 10 }}><span>E-mail de quem você está convidando</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="pessoa@email.com" value={email2} onChange={e => setEmail2(e.target.value)} /><small>{convidado && convidado.email === email2.trim().toLowerCase() ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.' : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}</small></label>
           <div className="row-btns" style={{ marginTop: 10 }}>
             {convidado && convidado.email === email2.trim().toLowerCase()
-              ? <a className="btn primary" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.') } }}><Icone desenho={MessageCircle} />Abrir o WhatsApp com o convite</a>
+              ? <AcaoConvite classe="btn primary" oculto={oculto} url={() => linkWhatsApp(mensagemConvite('pessoa', { familia: familia?.nome || '', quem: convidado.nome, link, email: convidado.email }))}><Icone desenho={MessageCircle} />Abrir o WhatsApp com o convite</AcaoConvite>
               : <button className="btn primary" type="button" disabled={convidando} onClick={async () => {
                 if (!nome2.trim() || !emailValido(email2)) { toast('Escreva o nome e o e-mail de quem você está convidando.'); return }
                 if (!familia) return
@@ -123,13 +130,13 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
         {lista.map(c => (
           <li key={c.id} className="li quem">
             <span className="tile"><Icone nome="pessoa" /></span>
-            <span className="m"><b><NomeDaPessoa editar mudou={mudou} pessoa={{ tipo: c.situacao === 'entrou' ? 'membro' : 'convite', id: c.membroId || c.id, nome: c.nome }} />{c.nome === familia.membroNome ? ' (você)' : ''}</b><small>{textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
+            <span className="m"><span className="quem-nome"><NomeDaPessoa editar mudou={mudou} pessoa={{ tipo: c.situacao === 'entrou' ? 'membro' : 'convite', id: c.membroId || c.id, nome: c.nome }} />{c.nome === familia.membroNome ? ' (você)' : ''}</span><small>{textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}</small>
               {c.situacao === 'entrou'
                 ? <span className="chip ok" style={{ marginTop: 6 }}>entrou{c.entrou_em ? ` em ${dataCurta(c.entrou_em)}` : ''}</span>
                 : <span className="chip warn" style={{ marginTop: 6, whiteSpace: 'normal', height: 'auto' }}>esperando entrar{c.enviado_em ? ` desde ${dataCurta(c.enviado_em)}, vale até ${dataCurta(somaDias(c.enviado_em, 14))}` : ''}</span>}
               {c.situacao === 'esperando' && (
                 <span className="row-btns quem-btns">
-                  <a className="btn sm line" target="_blank" rel="noreferrer" href={oculto ? undefined : linkWhatsApp(mensagemConvite('pessoa', { familia: familia.nome, quem: c.nome, link, email: c.email || undefined }))} onClick={ev => { if (oculto) { ev.preventDefault(); toast('Abra o olho para compartilhar este convite.'); return } tentar(async () => { await api.reenviarConvite?.(familia.id, c.id); setN(x => x + 1); toast(`Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`) }) }}><Icone nome="email" />Reenviar</a>
+                  <AcaoConvite classe="btn sm line" oculto={oculto} url={() => linkWhatsApp(mensagemConvite('pessoa', { familia: familia.nome, quem: c.nome, link, email: c.email || undefined }))} aoAbrir={() => { void tentar(async () => { await api.reenviarConvite?.(familia.id, c.id); setN(x => x + 1); toast(`Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`) }) }}><Icone nome="email" />Reenviar</AcaoConvite>
                   <button className="btn sm ghost" type="button" onClick={() => setCancelar(c)}><Icone nome="fechar" />Cancelar convite</button>
                 </span>
               )}

@@ -2,13 +2,14 @@
 import { describe, expect, it } from 'vitest'
 import modelo from './sw.modelo.js?raw'
 // @ts-ignore: script de build em JS puro
-import { montarSw } from '../scripts/sw.mjs'
+import { montarSw, cascaDoManifesto } from '../scripts/sw.mjs'
 
 const PASTA = 'https://exemplo.github.io/central-da-familia/app/'
+const central = (versao: string) => 'central-' + encodeURIComponent(PASTA) + ':' + versao
 type Resp = { ok: boolean; type: string; redirected: boolean; corpo: string; clone(): Resp }
 const resp = (corpo: string, ok = true): Resp => ({ ok, type: 'basic', redirected: false, corpo, clone() { return resp(corpo, ok) } })
 
-function ligar(versao: string, rede: (url: string) => Resp | Error, cachesAntigos: Record<string, Map<string, Resp>> = {}) {
+function ligar(versao: string, rede: (url: string) => Resp | Error, cachesAntigos: Record<string, Map<string, Resp>> = {}, quota = false) {
   const fonte = montarSw(modelo, ['index.html', 'assets/index-abc.js', 'assets/index-abc.css'], versao)
   const guardados = new Map<string, Map<string, Resp>>(Object.entries(cachesAntigos))
   const url = (r: any) => (typeof r === 'string' ? r : r.url)
@@ -16,7 +17,7 @@ function ligar(versao: string, rede: (url: string) => Resp | Error, cachesAntigo
     async open(n: string) {
       if (!guardados.has(n)) guardados.set(n, new Map())
       const m = guardados.get(n)!
-      return { async put(r: any, v: Resp) { m.set(url(r), v) }, async addAll(rs: any[]) { for (const r of rs) { const x = rede(url(r)); if (x instanceof Error || !x.ok) throw new Error('falhou ' + url(r)); m.set(url(r), x) } } }
+      return { async match(r: any) { return m.get(url(r)) }, async put(r: any, v: Resp) { if (quota) throw new Error('QuotaExceededError'); m.set(url(r), v) }, async addAll(rs: any[]) { for (const r of rs) { const x = rede(url(r)); if (x instanceof Error || !x.ok) throw new Error('falhou ' + url(r)); m.set(url(r), x) } } }
     },
     async keys() { return [...guardados.keys()] },
     async delete(n: string) { return guardados.delete(n) },
@@ -38,12 +39,31 @@ function ligar(versao: string, rede: (url: string) => Resp | Error, cachesAntigo
 }
 
 describe('service worker', () => {
-  it('instala a casca inteira (abre sem internet já depois da 1ª visita) e preserva o cache da versão ainda em uso', async () => {
-    const sw = ligar('v2', u => resp('novo ' + u), { 'central-v1': new Map([[PASTA + 'assets/index-velho.js', resp('velho')]]), 'outro-site': new Map() })
-    await sw.dispara('install'); await sw.dispara('activate')
-    expect([...sw.guardados.keys()].sort()).toEqual(['central-v1', 'central-v2', 'outro-site'])
-    expect((await sw.pede('assets/index-velho.js'))!.corpo).toBe('velho')
-    expect([...sw.guardados.get('central-v2')!.keys()]).toEqual([PASTA + 'index.html', PASTA + 'assets/index-abc.js', PASTA + 'assets/index-abc.css'])
+  it('preserva a casca em uso até a ativação e lê somente da versão ativa', async () => {
+    let offline = false
+    const glb = 'modelos/escritorio/desk.glb?v=2'
+    const legado = 'central-0123456789ab'
+    const sw = ligar('v2', u => offline ? new Error('Offline') : resp('v2 ' + u), {
+      [central('v1')]: new Map([[PASTA + glb, resp('GLB v1')]]),
+      [legado]: new Map([[PASTA + 'index.html', resp('HTML v1')]]),
+      'outro-site': new Map(),
+    })
+    await sw.dispara('install')
+    expect(sw.guardados.has(central('v1'))).toBe(true)
+    expect((await sw.pede(glb))!.corpo).toBe('v2 ' + PASTA + glb)
+    offline = true
+    expect((await sw.pede('', 'navigate'))!.corpo).toBe('v2 ' + PASTA + 'index.html')
+    await sw.dispara('activate')
+    expect([...sw.guardados.keys()].sort()).toEqual([central('v2'), 'outro-site'])
+    expect((await sw.pede(glb))!.corpo).toBe('v2 ' + PASTA + glb)
+    expect([...sw.guardados.get(central('v2'))!.keys()]).toEqual([PASTA + 'index.html', PASTA + 'assets/index-abc.js', PASTA + 'assets/index-abc.css', PASTA + glb])
+  })
+  it('entrega a resposta válida mesmo se cache.put falhar por quota', async () => {
+    const sw = ligar('v2', u => resp('rede ' + u), {}, true)
+    await sw.dispara('install')
+    expect((await sw.pede('assets/tardio.js'))!.corpo).toBe('rede ' + PASTA + 'assets/tardio.js')
+    expect((await sw.pede('', 'navigate'))!.corpo).toBe('rede ' + PASTA)
+    expect(sw.guardados.get(central('v2'))!.has(PASTA + 'assets/tardio.js')).toBe(false)
   })
   it('página de erro (404, portal do wi-fi) nunca substitui a casca guardada', async () => {
     let fora = false
@@ -52,9 +72,9 @@ describe('service worker', () => {
     fora = true
     const r = await (await sw.pede('', 'navigate'))!
     expect(r.corpo).toContain('casca boa')
-    expect(sw.guardados.get('central-v2')!.get(PASTA + 'index.html')!.corpo).toContain('casca boa')
+    expect(sw.guardados.get(central('v2'))!.get(PASTA + 'index.html')!.corpo).toContain('casca boa')
   })
-  it('sem internet: a página e os arquivos saem do cache; com internet a página nova atualiza a casca', async () => {
+  it('sem internet: a página e os arquivos saem do cache; com internet entrega a página nova sem misturar as duas cascas', async () => {
     let modo: 'ok' | 'fora' | 'novo' = 'ok'
     const sw = ligar('v2', u => (modo === 'fora' ? new Error('Failed to fetch') : resp((modo === 'novo' ? 'casca nova ' : 'casca ') + u)))
     await sw.dispara('install')
@@ -63,7 +83,7 @@ describe('service worker', () => {
     expect((await (await sw.pede('assets/index-abc.js'))!).corpo).toContain('index-abc.js')
     modo = 'novo'
     expect((await (await sw.pede('', 'navigate'))!).corpo).toContain('casca nova')
-    expect(sw.guardados.get('central-v2')!.get(PASTA + 'index.html')!.corpo).toContain('casca nova')
+    expect(sw.guardados.get(central('v2'))!.get(PASTA + 'index.html')!.corpo).toBe('casca ' + PASTA + 'index.html')
   })
   it('não mexe no que está fora da pasta do app (o painel antigo na mesma conta do GitHub) nem em gravação', async () => {
     const sw = ligar('v2', u => resp(u))
@@ -71,4 +91,18 @@ describe('service worker', () => {
     expect(await sw.pede('https://kcwaxvvivdckebjmjbkb.supabase.co/rest/v1/lancamentos')).toBeUndefined()
     expect(await sw.dispara('fetch', { request: { method: 'POST', url: PASTA + 'x', mode: 'cors' } })).toBeUndefined()
   })
+})
+
+it('precache segue imports estáticos de Inicio e do backend, sem as arestas das rotas pesadas', () => {
+  const manifesto = {
+    'index.html': { file: 'assets/index.js', dynamicImports: ['partida'] },
+    partida: { file: 'assets/partida.js', css: ['assets/partida.css'], dynamicImports: ['Inicio', 'real', 'Escritorio'] },
+    real: { file: 'assets/real.js', imports: ['comum'] },
+    Inicio: { file: 'assets/Inicio.js', css: ['assets/Inicio.css'], imports: ['comum'], dynamicImports: ['Three'] },
+    comum: { file: 'assets/comum.js', assets: ['assets/fonte.woff2'] },
+  }
+  expect(cascaDoManifesto(manifesto, ['index.html', 'partida', 'real', 'Inicio'])).toEqual([
+    'index.html', 'assets/index.js', 'assets/partida.js', 'assets/partida.css',
+    'assets/real.js', 'assets/comum.js', 'assets/fonte.woff2', 'assets/Inicio.js', 'assets/Inicio.css',
+  ])
 })

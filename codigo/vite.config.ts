@@ -3,23 +3,29 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 // @ts-ignore: script em JS puro, usado só no build
-import { gravarSw } from './scripts/sw.mjs'
+import { gravarSw, versaoDosModelos } from './scripts/sw.mjs'
 
 /** Depois do build, grava o sw.js com a lista dos arquivos e a versão deste build (cache velho some sozinho). */
-const swDoBuild = (pasta: string) => ({
+const swDoBuild = (pasta: string, exemplo: boolean) => ({
   name: 'central-sw',
   apply: 'build' as const,
-  closeBundle() { const r = gravarSw(pasta, 'src/sw.modelo.js'); console.log(`sw.js versão ${r.versao}, ${r.arquivos.length} arquivos`) },
+  writeBundle() {
+    const backend = exemplo ? ['relogio', 'exemplo'] : ['real']
+    const r = gravarSw(pasta, 'src/sw.modelo.js', ['partida', 'Inicio', 'EscritorioIsometrico', ...backend])
+    console.log(`sw.js versão ${r.versao}, ${r.casca.length} arquivos na casca`)
+  },
 })
 
 // base './' deixa o app funcionar em qualquer pasta do GitHub Pages
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const demo = mode === 'demo'
   const pasta = demo ? 'dist-demo' : mode === 'exemplo' ? 'dist-exemplo' : 'dist'
   return {
     base: './',
-    plugins: demo ? [react(), viteSingleFile()] : [react(), swDoBuild(pasta)],
+    plugins: demo ? [react(), viteSingleFile()] : [react(), swDoBuild(pasta, mode === 'exemplo')],
+    define: { __VERSAO_GLB__: JSON.stringify(command === 'build' && !demo ? versaoDosModelos('public/modelos/escritorio') : '') },
     build: {
+      manifest: !demo,
       outDir: pasta,
       assetsInlineLimit: demo ? 100000000 : 4096,
       copyPublicDir: !demo,

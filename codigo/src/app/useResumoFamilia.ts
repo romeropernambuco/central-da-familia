@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react'
 import { useApp } from './contexto'
 import { invalidarDados } from './invalidacao'
 import { useLeituraRemota } from './useLeituraRemota'
@@ -12,7 +13,7 @@ import { recursosResumo } from '../lib/resumo/recursos'
 const soCasal = new Set<keyof ResumoFamilia>(['saldoConta', 'faturas', 'aplicacoes', 'recebimentos', 'plano2029', 'imoveis', 'movimentacaoMes', 'casa', 'pendencias'])
 const natureza: Record<keyof ResumoFamilia, FonteResumo['natureza']> = { saldoConta: 'cadastrado', podeGastarHoje: 'previsto', faturas: 'previsto', aplicacoes: 'cadastrado', recebimentos: 'previsto', plano2029: 'estimado', casa: 'cadastrado', imoveis: 'cadastrado', movimentacaoMes: 'realizado', desejos: 'cadastrado', pendencias: 'cadastrado' }
 /** Uma fonte de apresentação por campo. Leituras da API continuam deduplicadas na borda f34. */
-function useCampo<K extends keyof ResumoFamilia>(chave: K, hoje: string, conferir: NumerosAtualizados): { campo: ResumoFamilia[K]; repetir: () => void } {
+function useCampo<K extends keyof ResumoFamilia>(chave: K, hoje: string, conferir: NumerosAtualizados): { campo: ResumoFamilia[K] } {
   const { api, familia, versao } = useApp()
   const permitido = !!familia && familia.papel !== 'equipe' && (!soCasal.has(chave) || familia.papel === 'casal')
   const buscar = async (): Promise<unknown> => {
@@ -32,26 +33,28 @@ function useCampo<K extends keyof ResumoFamilia>(chave: K, hoje: string, conferi
     }
   }
   const r = useLeituraRemota(`resumo-familia:${chave}:${hoje}`, permitido && !(chave === 'saldoConta' && !api.saldosConta) ? buscar : null, [api, versao, hoje], `resumo-familia:${chave}`)
-  const fontes = recursosResumo[chave].map(recurso => ({ recurso, natureza: natureza[chave], escopo: { familia: familia?.id || '', membro: familia?.membroId || undefined, papel: familia?.papel || '' }, periodo: { inicio: chave === 'faturas' ? hoje : hoje.slice(0, 7) + '-01', fim: chave === 'faturas' ? somaDias(hoje, 30) : chave === 'plano2029' ? '2029-01-01' : fimDoMes(hoje), fuso: FUSO } }))
+  const familiaId = familia?.id, membro = familia?.membroId, papel = familia?.papel
+  const fontes = useMemo(() => recursosResumo[chave].map(recurso => ({ recurso, natureza: natureza[chave], escopo: { familia: familiaId || '', membro: membro || undefined, papel: papel || '' }, periodo: { inicio: chave === 'faturas' ? hoje : hoje.slice(0, 7) + '-01', fim: chave === 'faturas' ? somaDias(hoje, 30) : chave === 'plano2029' ? '2029-01-01' : fimDoMes(hoje), fuso: FUSO } })), [chave, hoje, familiaId, membro, papel])
   const grupo = chave === 'aplicacoes' ? conferir.aplicacoes : chave === 'imoveis' ? conferir.imoveis : chave === 'recebimentos' ? conferir.recebimentos : null
   const bruto = r.dado as { idsConferencia?: string[]; atualizadoEm?: string | null } | null
   const ids = bruto?.idsConferencia
-  const datas = grupo && ids?.length && ids.every(id => grupo[id]) ? ids.map(id => grupo[id]).sort() : []
-  const meta = { fonte: fontes, consultadoEm: r.consultadoEm ?? null, conferidoEm: datas[0] ?? null, atualizadoEm: bruto?.atualizadoEm ?? null }
-  let campo: CampoResumo<unknown>
-  if (!permitido) campo = { ...meta, estado: 'restrito', valor: null }
-  else if (chave === 'saldoConta' && !api.saldosConta) campo = { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
-  else if (r.carregando) campo = { ...meta, estado: 'carregando', valor: null }
-  else if (r.erro) campo = { ...meta, estado: 'erro', valor: null }
-  else if (!r.dado) campo = { ...meta, estado: 'indisponivel', valor: null }
-  else if (chave === 'saldoConta') {
-    const s = r.dado as Awaited<ReturnType<typeof leitura.lerSaldo>>
-    campo = s.contas.length ? { ...meta, estado: 'pronto', valor: { unidade: 'reais', valor: s.saldo.valor }, conferidoEm: s.saldo.conferidoEm, atualizadoEm: s.saldo.conferidoEm } : { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
-  } else {
+  const conferidoEm = useMemo(() => grupo && ids?.length && ids.every(id => grupo[id]) ? ids.map(id => grupo[id]).sort()[0] : null, [grupo, ids])
+  const temSaldo = !!api.saldosConta
+  const campo = useMemo((): CampoResumo<unknown> => {
+    const meta = { fonte: fontes, consultadoEm: r.consultadoEm ?? null, conferidoEm, atualizadoEm: bruto?.atualizadoEm ?? null }
+    if (!permitido) return { ...meta, estado: 'restrito', valor: null }
+    if (chave === 'saldoConta' && !temSaldo) return { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
+    if (r.carregando) return { ...meta, estado: 'carregando', valor: null }
+    if (r.erro) return { ...meta, estado: 'erro', valor: null }
+    if (!r.dado) return { ...meta, estado: 'indisponivel', valor: null }
+    if (chave === 'saldoConta') {
+      const s = r.dado as Awaited<ReturnType<typeof leitura.lerSaldo>>
+      return s.contas.length ? { ...meta, estado: 'pronto', valor: { unidade: 'reais', valor: s.saldo.valor }, conferidoEm: s.saldo.conferidoEm, atualizadoEm: s.saldo.conferidoEm } : { ...meta, estado: 'indisponivel', valor: null, motivo: 'Ainda sem dado' }
+    }
     const { idsConferencia: _ids, atualizadoEm: _data, ...valor } = r.dado as Record<string, unknown>
-    campo = { ...meta, estado: 'pronto', valor }
-  }
-  return { campo: campo as ResumoFamilia[K], repetir: () => { if (familia) invalidarDados(api, familia.id, recursosResumo[chave]); r.repetir() } }
+    return { ...meta, estado: 'pronto', valor }
+  }, [chave, fontes, conferidoEm, permitido, temSaldo, r.dado, r.erro, r.carregando, r.consultadoEm, bruto])
+  return { campo: campo as ResumoFamilia[K] }
 }
 export function useResumoFamilia() {
   const { api, familia } = useApp()
@@ -63,7 +66,10 @@ export function useResumoFamilia() {
   const recebimentos = useCampo('recebimentos', hoje, conferencia.dados), plano2029 = useCampo('plano2029', hoje, conferencia.dados)
   const casa = useCampo('casa', hoje, conferencia.dados), imoveis = useCampo('imoveis', hoje, conferencia.dados)
   const movimentacaoMes = useCampo('movimentacaoMes', hoje, conferencia.dados), desejos = useCampo('desejos', hoje, conferencia.dados), pendencias = useCampo('pendencias', hoje, conferencia.dados)
+  const familiaId = familia?.id
+  const repetir = useCallback((chave: keyof ResumoFamilia) => {
+    if (familiaId) invalidarDados(api, familiaId, [...recursosResumo[chave], 'resumo-familia:' + chave])
+  }, [api, familiaId])
   const campos = { saldoConta, podeGastarHoje, faturas, aplicacoes, recebimentos, plano2029, casa, imoveis, movimentacaoMes, desejos, pendencias }
-  return { resumo: comporResumoFamilia(campos),
-    repetir: (k: keyof ResumoFamilia) => campos[k].repetir(), hoje, api, familia }
+  return { resumo: comporResumoFamilia(campos), repetir, hoje, api, familia }
 }

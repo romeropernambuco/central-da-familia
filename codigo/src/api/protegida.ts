@@ -16,7 +16,8 @@ export function protegerApi(api: Api): Api {
  if (prop === 'sessao') return async () => { const s = await api.sessao(); definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null); return s }
  const recurso = recursoDaLeitura(prop)
  if (recurso) return (...args: any[]) => lerCompartilhado(api, args[0], prop === 'config' ? `config:${args[1]}` : recurso, args.slice(1), async () => {
-   const resultado = await (f as Function).apply(api, args)
+   // A projeção lê as mesmas configurações que a tela, no mesmo cache de sessão.
+   const resultado = await (f as Function).apply(prop === 'futuroEntradas' ? publica : api, args)
    return resultado
  }).then(resultado => {
    if (prop === 'lancamentos') for (const l of resultado) registrarDono(api, l.id, args[0])

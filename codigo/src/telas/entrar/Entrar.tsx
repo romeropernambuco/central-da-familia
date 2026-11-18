@@ -1,5 +1,6 @@
 import './entrar.css'
-import { EstadoVazio } from '../../componentes/EstadoVazio'
+import { EstadoVazioVisual } from '../../componentes/EstadoVazioVisual'
+import { AssessorDaCasa, Erro } from '../../componentes/ilustracoes/figuras'
 import { Bemvindo } from '../../componentes/ilustracoes'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
@@ -81,7 +82,7 @@ export function Entrar() {
             </>
           ) : (
             <>
-              <EstadoVazio ilustracao="AssessorDaCasa" titulo="Peça o link para quem cuida da família." frase="O convite chega no WhatsApp com um código de 4 números. Abra o link neste celular e digite o código." />
+              <EstadoVazioVisual ilustracao={<AssessorDaCasa />} titulo="Peça o link para quem cuida da família." frase="O convite chega no WhatsApp com um código de 4 números. Abra o link neste celular e digite o código." />
               <p className="sub">Se o link já chegou e abriu esta tela, ele veio cortado: peça para mandarem de novo.</p>
               {ex && <a className="btn line full" href={'#/equipe?c=' + CONVITE_EXEMPLO}>Abrir o link de exemplo</a>}
             </>
@@ -104,5 +105,5 @@ export function mensagemConvite(mensagem: string): string {
 }
 
 export function AvisoConvite({ mensagem }: { mensagem: string }) {
-  return <div className="f32-erro" role="alert"><EstadoVazio ilustracao="Erro" titulo="Vamos tentar de novo?" frase={textoPrivado(mensagemConvite(mensagem))} /></div>
+  return <div className="f32-erro" role="alert"><EstadoVazioVisual ilustracao={<Erro />} titulo="Vamos tentar de novo?" frase={textoPrivado(mensagemConvite(mensagem))} /></div>
 }

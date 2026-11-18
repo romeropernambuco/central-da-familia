@@ -207,3 +207,7 @@ Validação f25: TypeScript sem erros (npx tsc --noEmit); suíte completa com 66
 - Metadados de consulta não viram conferência. Aplicações, imóveis e recebimentos só ganham uma data agregada de conferência se todos os IDs lidos tiverem registro em `useNumerosAtualizados`; vale a data mais antiga. Abrir o Início não registra conferência. Erro e releitura retiram o valor do bloco, sem apresentar o dado anterior como atual; repetir invalida só as fontes dependentes daquele campo.
 - Permissões mantidas: casal tem os onze blocos; pessoa da família tem orçamento pessoal, linha permitida da Casa e desejos, sem fontes patrimoniais/Plano 2029. Sem envelope pessoal legível, não recebe o orçamento geral como substituto. Assessor da Casa continua na rota Casa; não monta o resumo nem consulta/retém dinheiro.
 - Não foi alterado o motor `futuro()`, nem as fórmulas existentes. Permanecem os limites declarados na f34: cache em memória da sessão e releitura por foco/reconexão/virada do dia, sem promessa de atualização instantânea entre aparelhos.
+
+## Pedidos ao banco - rodada 3
+
+- f54: nenhuma alteração de banco necessária. A projeção compartilha as leituras de configuração já protegidas pela API da sessão.
