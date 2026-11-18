@@ -1,4 +1,5 @@
-﻿import { useId, useRef, useState, type RefObject } from 'react'
+import { ChevronUp } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { Icone, icones, type NomeIcone } from '../../componentes/Icone'
 import { AssessorDaCasa, Erro, Plano2029, SemAplicacoes, SemCartoes, SemDesejos, SemGastos, SemImoveis, TudoEmDia } from '../../componentes/ilustracoes'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
@@ -91,19 +92,23 @@ function Navegacao({ inicio, papel }: { inicio: RefObject<HTMLElement>; papel: P
 function Quantia({ campo, principal }: { campo: Financeiro; principal?: boolean }) {
   return campo.estado === 'pronto'
     ? <Valor campo={campo} className={principal ? 'numero-principal' : 'numero-secundario'} />
-    : <span className="b-sem-dado">Ainda sem dado</span>
+    : <span className="b-sem-dado">{campo.estado === 'vazio' ? 'Sem registros' : 'Ainda sem dado'}</span>
 }
 
 const indicadores = [
-  { id: 'hoje', titulo: 'pode gastar hoje', sala: 'caixa', icone: 'orcamento', figura: SemGastos },
+  { id: 'hoje', titulo: 'Pode gastar hoje', sala: 'caixa', icone: 'orcamento', figura: SemGastos },
   { id: 'plano', titulo: 'Plano 2029', sala: 'caixa', icone: 'planejamento', figura: Plano2029 },
-  { id: 'faturas', titulo: 'faturas previstas', sala: 'cartoes', icone: 'cartoes', figura: SemCartoes },
-  { id: 'aplicacoes', titulo: 'em aplicações', sala: 'patrimonio', icone: 'guardado', figura: SemAplicacoes },
+  { id: 'faturas', titulo: 'Faturas previstas', sala: 'cartoes', icone: 'cartoes', figura: SemCartoes },
+  { id: 'aplicacoes', titulo: 'Em aplicações', sala: 'patrimonio', icone: 'guardado', figura: SemAplicacoes },
 ] as const
 
-function Maquete({ dados, casal }: { dados: DadosInicio; casal: boolean }) {
+function Maquete({ dados, casal, dispositivo }: Pick<PropsProposta, 'dados' | 'dispositivo'> & { casal: boolean }) {
   const [sala, setSala] = useState<Sala>()
+  const oculto = useValoresOcultos()
   const cenaId = useId()
+  const variante = dispositivo === 'celular' ? 'media' as const : 'grande' as const
+  // A versão anterior da maquete ignora as props adicionais.
+  const desenho = { funcionarios: dados.funcionarios, salaDestacada: sala, mostrarPlaquinhas: true, variante, oculto }
   const campos = {
     hoje: dados.hojePodeGastar.valor,
     plano: dados.plano2029.faltamPorMesComMargem,
@@ -114,28 +119,25 @@ function Maquete({ dados, casal }: { dados: DadosInicio; casal: boolean }) {
   const salaAtual = salas.find(s => s.id === sala)
   const equipe = membros?.filter(m => m.sala === sala) ?? []
   return <section className="b-maquete b-painel" aria-label="Salas do escritório">
-    <div className="b-maquete-barra">
-      <h2><Icone nome="escritorio" size={18} /> Salas do escritório</h2>
-      <div className="b-salas" role="group" aria-label="Focar uma sala">
-        {salas.map(s => <button key={s.id} className="b-controle" type="button" aria-controls={cenaId}
-          aria-pressed={sala === s.id} onClick={() => setSala(sala === s.id ? undefined : s.id)}>
-          <Icone nome={s.icone} size={15} />{s.nome}
-        </button>)}
-      </div>
-    </div>
-    <div className="b-cena" id={cenaId}>
-      <div className="b-desenho">
-        <EscritorioMaquete funcionarios={dados.funcionarios} salaDestacada={sala} mostrarPlaquinhas />
-      </div>
+    <div className="b-cena" data-layout={variante}>
       {indicadores.filter(i => casal || i.id === 'hoje').map(i => {
         const campo = campos[i.id]
         return <div className="b-indicador" key={i.id} data-posicao={i.id} data-focado={sala === i.sala || undefined}>
           <span className="b-rotulo"><Icone nome={i.icone} size={15} />{i.titulo}</span>
           {campo.estado !== 'pronto' && <i.figura className="b-figura-indicador" />}
           <Quantia campo={campo} principal={i.id === 'hoje'} />
-          {i.id === 'plano' && <small>falta estimada por mês, com margem</small>}
+          {i.id === 'plano' && <small>Falta por mês, com margem</small>}
         </div>
       })}
+      <div className="b-desenho" id={cenaId}>
+        <EscritorioMaquete {...desenho} />
+      </div>
+    </div>
+    <div className="b-salas" role="group" aria-label="Focar uma sala">
+      {salas.map(s => <button key={s.id} className="b-controle" type="button" aria-controls={cenaId}
+        aria-pressed={sala === s.id} onClick={() => setSala(sala === s.id ? undefined : s.id)}>
+        <Icone nome={s.icone} size={15} />{s.nome}
+      </button>)}
     </div>
     <div className="b-legenda" aria-live="polite">
       <span><Icone nome="pessoa" size={15} />{salaAtual?.nome ?? 'Visão geral da equipe'}</span>
@@ -155,21 +157,23 @@ const tarefasDaCasa: Readonly<Record<string, string>> = {
   estoque: 'Conferir o estoque',
 }
 
-function Fila({ lista, campo, equipe, casal, soTarefas, tituloRef }: {
+function Fila({ lista, campo, equipe, casal, soTarefas, tituloRef, id, recolhida }: {
   lista: { tarefa: Tarefa; nivel: NivelAlerta | 'desconhecido' }[]
   campo: DadosInicio['pendencias']['fila']
   equipe: Funcionario[]
   casal: boolean
   soTarefas: boolean
   tituloRef: RefObject<HTMLHeadingElement>
+  id: string
+  recolhida?: boolean
 }) {
   const oculto = useValoresOcultos()
   const tituloId = useId()
   const destino = casal ? 'escritorio' : soTarefas ? 'casa' : 'lancamentos'
-  return <section className="b-fila b-painel" aria-labelledby={tituloId}>
+  return <section className="b-fila b-painel" id={id} aria-labelledby={tituloId} hidden={recolhida}>
     <header className="b-fila-topo">
       <span className="b-quadrado"><Icone nome="recepcao" size={18} /></span>
-      <h2 ref={tituloRef} id={tituloId} tabIndex={-1}>Precisa de você</h2>
+      <h2 ref={tituloRef} id={tituloId} tabIndex={-1}>{recolhida === undefined ? 'Precisa de você' : 'Tarefas da equipe'}</h2>
     </header>
     {lista.length ? <ul className="b-tarefas">{lista.slice(0, 3).map(({ tarefa, nivel }) => {
       const estilo = niveis[nivel]
@@ -188,7 +192,7 @@ function Fila({ lista, campo, equipe, casal, soTarefas, tituloRef }: {
               <span className="b-nivel" data-risco={nivel === 'dinheiro em risco' || undefined}>
                 <Icone nome={estilo.icone} size={13} />{estilo.rotulo}
               </span>
-              {!soTarefas && tarefa.valor.estado === 'pronto' && <Valor campo={tarefa.valor} />}
+              {!soTarefas && tarefa.valor.estado === 'pronto' && <Quantia campo={tarefa.valor} />}
             </span>
           </span>
           <Icone nome="abrir" size={16} className="b-seta" />
@@ -207,7 +211,7 @@ function Fila({ lista, campo, equipe, casal, soTarefas, tituloRef }: {
 
 function Acompanhamento({ dados, papel }: { dados: DadosInicio; papel: Papel }) {
   const cards = [
-    { titulo: 'Plano 2029', legenda: 'cobertura estimada da meta', icone: 'planejamento', figura: Plano2029,
+    { titulo: 'Cobertura da meta', legenda: 'estimativa do Plano 2029', icone: 'planejamento', figura: Plano2029,
       destino: { rota: 'planejamento', secao: 'plano2029' }, campo: dados.plano2029.progressao },
     { titulo: 'Gastos do mês', legenda: 'saídas registradas', icone: 'gasto', figura: SemGastos,
       destino: { rota: 'lancamentos', secao: 'mes' }, campo: dados.movimentacaoMes.saiu },
@@ -234,9 +238,29 @@ function Acompanhamento({ dados, papel }: { dados: DadosInicio; papel: Papel }) 
 function InicioB({ dados, tema, dispositivo }: PropsProposta) {
   const inicio = useRef<HTMLHeadingElement>(null)
   const fila = useRef<HTMLHeadingElement>(null)
+  const botaoFaixa = useRef<HTMLButtonElement>(null)
+  const origemFolha = useRef<HTMLButtonElement | null>(null)
+  const filaId = useId()
+  const [folhaAberta, setFolhaAberta] = useState(false)
   const papel = dados.pessoa.papel.valor
   const casal = papel === 'casal'
   const soTarefas = papel == null || papel === 'equipe'
+  const temFolha = dispositivo === 'celular' && !soTarefas
+  useEffect(() => {
+    if (!temFolha) setFolhaAberta(false)
+    else if (folhaAberta) fila.current?.focus({ preventScroll: true })
+  }, [temFolha, folhaAberta])
+
+  function abrirFolha(origem: HTMLButtonElement) {
+    origemFolha.current = origem
+    setFolhaAberta(true)
+  }
+
+  function fecharFolha(destino: HTMLButtonElement | null) {
+    setFolhaAberta(false)
+    destino?.focus({ preventScroll: true })
+  }
+
   const campo = dados.pendencias.fila
   const equipe = dados.funcionarios.valor ?? []
   const alertas = new Map(dados.alertas.valor?.map(a => [a.id, a.nivel]))
@@ -244,31 +268,62 @@ function InicioB({ dados, tema, dispositivo }: PropsProposta) {
     .map(tarefa => ({ tarefa, nivel: soTarefas ? 'operacao' as const : alertas.get(tarefa.id) ?? 'desconhecido' as const }))
     .sort((a, b) => niveis[a.nivel].prioridade - niveis[b.nivel].prioridade)
   const risco = lista[0]?.nivel === 'dinheiro em risco'
-  const estado = risco ? 'Há dinheiro em risco.' : lista.length ? 'A equipe precisa da sua atenção.'
+  const estado = risco ? 'Há dinheiro em risco.' : lista.length ? 'A equipe aguarda você.'
     : campo.estado === 'indisponivel' ? 'A fila está indisponível.' : 'A fila está em dia.'
+  const painel = <Fila lista={lista} campo={campo} equipe={equipe} casal={casal} soTarefas={soTarefas}
+    tituloRef={fila} id={filaId} recolhida={temFolha ? !folhaAberta : undefined} />
   return <div className="b-inicio" data-tema={tema} data-dispositivo={dispositivo}>
     <header className="b-topo">
-      <span className="b-marca"><span className="b-quadrado"><Icone nome="inicio" size={17} /></span>Central da Família</span>
+      <div className="b-marca">
+        <span className="b-quadrado"><Icone nome={soTarefas ? 'casa' : 'escritorio'} size={17} /></span>
+        <h1 ref={inicio} tabIndex={-1}>{soTarefas ? 'Tarefas da Casa' : 'Escritório da família'}</h1>
+      </div>
       <span className="selo-exemplo">Exemplo</span>
     </header>
-    {!soTarefas && <Navegacao inicio={inicio} papel={papel} />}
     <div className="b-conteudo">
-      <div className="b-cabecalho">
-        <h1 ref={inicio} tabIndex={-1}>{soTarefas ? 'Tarefas da Casa' : 'Escritório da família'}</h1>
-        {!soTarefas && <p>{dados.saudacao.valor ? `${dados.saudacao.valor.replace(/[!.]$/, '')}.` : 'Bem-vindo.'} Veja o que a equipe está cuidando hoje.</p>}
-      </div>
       <div className="b-saude">
         <span data-risco={risco || undefined}><Icone nome={risco ? 'erro' : lista.length ? 'pendente' : campo.estado === 'indisponivel' ? 'ajuda' : 'salvo'} size={18} />{estado}</span>
-        <button className="b-controle b-acao" type="button" onClick={() => focar(fila)}>
+        <button className="b-controle b-acao" type="button" aria-controls={filaId} ref={botaoFaixa}
+          aria-expanded={temFolha ? folhaAberta : undefined} onClick={e => {
+            if (!temFolha) focar(fila)
+            else if (folhaAberta) fila.current?.focus({ preventScroll: true })
+            else abrirFolha(e.currentTarget)
+          }}>
           Ver tarefas<Icone nome="abrir" size={15} />
         </button>
       </div>
       <div className="b-principal" data-so-tarefas={soTarefas || undefined}>
-        {!soTarefas && <Maquete dados={dados} casal={casal} />}
-        <Fila lista={lista} campo={campo} equipe={equipe} casal={casal} soTarefas={soTarefas} tituloRef={fila} />
+        {!soTarefas && <Maquete dados={dados} casal={casal} dispositivo={dispositivo} />}
+        {!temFolha && painel}
       </div>
       {!soTarefas && <Acompanhamento dados={dados} papel={papel} />}
     </div>
+    {!soTarefas && <div className="b-dock">
+      {temFolha && <div className="b-reserva">
+        <div className="b-folha" data-aberta={folhaAberta}
+          onBlur={e => {
+            if (folhaAberta && e.relatedTarget && e.relatedTarget !== botaoFaixa.current && !e.currentTarget.contains(e.relatedTarget)) {
+              setFolhaAberta(false)
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Escape' && folhaAberta) {
+              e.stopPropagation()
+              fecharFolha(origemFolha.current)
+            }
+          }}>
+          <button className="b-controle b-abrir-fila" type="button" aria-expanded={folhaAberta}
+            aria-controls={filaId} onClick={e => folhaAberta ? fecharFolha(e.currentTarget) : abrirFolha(e.currentTarget)}>
+            <Icone nome="recepcao" size={17} />
+            <span>Precisa de você</span>
+            {lista.length > 0 && <span className="b-total-tarefas" aria-label={`${lista.length} ${lista.length === 1 ? 'tarefa' : 'tarefas'}`}>{lista.length}</span>}
+            <Icone desenho={ChevronUp} className="b-folha-seta" size={18} />
+          </button>
+          {painel}
+        </div>
+      </div>}
+      <Navegacao inicio={inicio} papel={papel} />
+    </div>}
   </div>
 }
 

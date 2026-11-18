@@ -1,51 +1,55 @@
-﻿# Proposta B · Escritório em primeiro
+# Proposta B · Escritório em primeiro · v2
 
-## Conceito
+A primeira tela responde quanto dá para gastar hoje, quanto falta por mês para o Plano 2029 e quem está esperando uma ação. Os funcionários, a sala e o estado de cada posto dão contexto a essas decisões.
 
-O escritório da família é o primeiro lugar onde se entende o dia.\
-Cada sala aproxima o trabalho da equipe dos números que ajudam a decidir.\
-A folha **Precisa de você** concentra o que depende de uma ação da família.
+## Crítica da v1 e correções
 
-## Ordem de leitura
+1. **Título desproporcional.** Reduzi de 32 para 20 px no celular e de 40 para 24 px no desktop. O nome do escritório agora divide a barra com o selo Exemplo.
+2. **Topo com camadas demais antes de chegar ao desenho.** A faixa virou uma linha curta com estado e botão de 44 px. Os controles de sala passaram para o rodapé da própria cena.
+3. **Funcionários pequenos.** Reservei pelo menos 284 px para a área de desenho no celular e 490 px no desktop de 1280. A proposta pede `media` e `grande`. O SVG original aproveita as margens laterais para ganhar escala.
+4. **Pisos roxos chapados.** Piso, paredes e roupa usam tons neutros. Apliquei uma linha discreta no tampo das mesas originais para separar os planos. O violeta identifica ação, foco e sala selecionada.
+5. **Valores com aparência de cartões independentes.** Os quatro indicadores ocupam as bordas da mesma superfície da cena, sem bordas ou fundos próprios. A seleção da sala realça os rótulos associados.
+6. **Plano difícil de localizar.** A lacuna mensal com margem está no topo da cena, junto à disponibilidade de hoje. A cobertura proporcional continua em acompanhamento.
+7. **Fila importante longe do polegar.** O celular tem uma folha recolhida com acesso pela faixa e pelo rodapé. A aba traz a contagem de tarefas, que é operacional.
+8. **Abrir e fechar a fila precisava funcionar pelo teclado.** O foco vai ao título da fila ao abrir. Escape devolve o foco ao acionador. A folha recolhe ao tabular para fora e ao trocar de dispositivo.
+9. **Fila e escritório disputavam espaço.** No desktop, a fila tem até 312 px e abre visível ao lado da cena. Mostra até três tarefas ordenadas por urgência e o link para a fila completa.
+10. **Nomes de sala se confundiam com plaquinhas.** Ajustei a posição dos rótulos Caixa e Casa no SVG original. A seleção mantém uma legenda textual com nomes e estados.
+11. **Pouca separação entre superfícies no escuro.** Fundo, painel, cena e menu usam #0C0C0B, #131312, #171715 e #1A1918. Divisórias em OKLCH preservam os contornos sem sombra.
+12. **Estados incompletos pouco específicos.** A proposta diferencia registro vazio de informação indisponível. O olho mascara números, percentuais e texto livre que possa conter valores. A vista do Assessor da Casa renderiza apenas os tipos domésticos permitidos.
 
-- **Em 2 segundos.** o título, o recado da faixa de saúde e a ação **Ver tarefas**. Na cena, o maior número responde quanto pode gastar hoje.
-- **Em 5 segundos.** no desktop, a pessoa cruza as quatro salas com a fila ao lado. No celular, vê a maquete e o que falta por mês para o Plano 2029, com acesso direto à fila pelo mesmo botão.
-- **Depois.** as pílulas destacam a sala e mostram os estados dos funcionários na legenda. O painel apresenta até três tarefas, ordenadas por risco, operação e lembrete. A fileira rolável dá acesso ao Plano 2029, aos gastos do mês, aos imóveis e aos desejos.
+## Dobra medida no laboratório
 
-## Tipografia e cor
+Medição em Chromium, com fontes locais e o retrato fictício de 17/11/2026 às 11h no Recife. O quadro do laboratório usa 375 × 812 no celular e 1280 × 800 no desktop.
 
-**Geist Variable para títulos e números, Inter Variable para texto.** A dupla preserva o desenho compacto da referência Linear, com hierarquia pelo espaçamento e boa leitura nos rótulos pequenos.
+- **Celular, claro e escuro, folha recolhida.** A v1 registrou 4. A v2 registra **5** pelo medidor. São os quatro indicadores da cena e o início da cobertura da meta, que o medidor inclui pelo retângulo do texto mesmo quando o rodapé sobrepõe o cartão. O escritório e seus quatro indicadores ficam inteiros acima da folha.
+- **Desktop, claro e escuro.** A v1 registrou 7. A v2 registra **7**, com quatro indicadores na cena e três valores nas tarefas. A cobertura fica abaixo.
+- **Celular, folha aberta.** A fila passa à frente da cena. O medidor soma 8 porque inclui os textos atrás da folha. Na captura, ficam visíveis os dois indicadores superiores e os três valores da fila.
+- **Olho fechado.** A contagem zera e os valores deixam de aparecer na marcação, inclusive na fila.
 
-- **Escala.** Rótulos 12 px / 650 / 1,5, texto funcional 14 px / 400–550 / 1,5, texto corrido 16 px / 400 / 1,5, subtítulos 20 px / 600 / 1,2, H1 de 32 px no celular e 40 px no desktop / 600 / 1,08. Valores de 35 e 27 px / 600 / 1,12, com números tabulares, sem quebra e símbolo percentual a 65%.
-- **Claro.** Fundo e cena #F5F5F3, painel #FFFFFF, menu #EFEFED, texto #19191B e texto secundário #56545B. Borda #77747E, violeta #5145A8, texto do botão #FFFFFF, risco #A1302E.
-- **Escuro.** Fundo #0C0C0B, painel #131312, menu #1A1918, cena #151514, texto #F2F1F3 e texto secundário #B4B1BA. Borda #89858E, violeta #B4A8FA, texto do botão #161127, risco #FFA6A0.
-- **Acabamento.** Violeta é o único destaque, concentrado no botão, na seleção e no foco. Vermelho serve a dinheiro em risco. As divisórias, o piso e a parede usam misturas em OKLCH. As sombras ficam no claro, com raios de 12, 8 e 6 px. Da Stripe vêm a disciplina dos algarismos tabulares e as legendas de estimativas.
+## Notas por critério
 
-## Dobra e escritório
+As notas anteriores são as da v1.
 
-O medidor da casca, em Chromium, contou **4 no celular (375 × 812)** e **7 no desktop (1280 × 800)** em claro e escuro, com o exemplo de 17/11/2026 pela manhã no Recife. São quatro valores da cena e, no desktop, os três valores das tarefas. A cobertura percentual do Plano fica na fileira abaixo da dobra. O valor do Plano na cena é o oficial mensal com margem.
-
-A maquete compartilhada ocupa a maior superfície. As plaquinhas identificam oito postos com nome curto e ícone de estado. As pílulas destacam visualmente uma sala e abrem uma legenda legível com os estados dessa equipe. Os quatro chips fazem parte do mesmo quadro e ficam em volta do desenho no desktop. No celular, o orçamento fica acima da maquete e os demais valores ficam logo abaixo. Avatares Lucide de 32 px ligam as tarefas aos papéis da equipe.
-
-O Início anterior dava peso parecido a dezenas de leituras simultâneas. Aqui a equipe, o orçamento de hoje e a fila dão a ordem de leitura. As demais áreas ganham atalhos curtos, o exemplo recebe um selo e os blocos sem informação dizem **Ainda sem dado**. A visão do Assessor da Casa tem apenas tarefas domésticas de uma lista de tipos permitidos.
-
-## Autoavaliação
-
-1. **Hierarquia em dois segundos — 9/10.** Título, recado e orçamento têm pesos distintos. No celular, o painel de tarefas exige rolar ou tocar no botão.
-2. **Números acima da dobra — 9/10.** Quatro de cinco no celular e sete de oito no desktop no snapshot medido. A quantidade de tarefas com valores depende do dia.
-3. **Ritmo e espaçamento — 8/10.** A moldura reúne mapa e chips, com fila e cartões em superfícies próprias. O corpo da fila pode ficar bem mais curto que a maquete.
-4. **Tipografia — 9/10.** H1, rótulos, numerais primários e secundários têm escala e pesos definidos. Os rótulos SVG continuam mais compactos no celular.
-5. **Ícones e ilustrações — 8/10.** Lucide nas salas, na prioridade e nos funcionários, com SVG do projeto para estados vazios. Avatares representam funções, sem retratos individuais.
-6. **Organização por tarefa — 8/10.** A faixa leva à fila, o orçamento orienta gastos e a lacuna mensal informa o Plano. A resolução da tarefa acontece na ficha do app.
-7. **Acessibilidade — 8/10.** Contraste dos tokens calculado, alvos medidos, um H1, SVG decorativo fora da árvore e indicação textual da prioridade. Falta validar com leitor de tela em uso prolongado.
-8. **Privacidade — 9/10.** O olho remove valores e percentuais da marcação, inclusive identificadores de destino das tarefas e texto livre. O assunto fica menos específico enquanto o olho está fechado.
-9. **Temas — 9/10.** A hierarquia e os alvos se mantêm nos dois modos. As bordas no escuro são discretas e a seleção depende do foco em violeta e do estado pressionado.
-10. **Escritório como personagem — 9/10.** O mapa orienta a exploração por sala e a fila mantém vínculo com os funcionários. A maquete SVG tem oito postos e estados estáticos.
+1. **Hierarquia em dois segundos, 9 → 9.** Orçamento e próximo passo aparecem no topo. A cena ocupa a maior superfície. Escalas de títulos e valores se distinguem mesmo no escuro.
+2. **Números acima da dobra, 9 → 9.** Cinco e sete pelo medidor, dentro dos limites. A sobreposição do rodapé ainda afeta a leitura da contagem móvel.
+3. **Ritmo e espaçamento, 8 → 9.** A cena começa perto de 105 px no celular e de 119 px no desktop. Acompanhamento vem depois do escritório.
+4. **Tipografia, 9 → 9.** Geist nos títulos e numerais. Inter nos textos. Valores de 35 e 27 px com algarismos tabulares, sem quebra e símbolo percentual a 65%. As plaquinhas seguem pequenas no SVG original para acomodar todos os postos.
+5. **Ícones e ilustrações, 8 → 8.** Lucide indica salas, avatares e níveis de alerta. As ilustrações do projeto reforçam estados vazios. A geometria simplificada continua limitada ao desenho disponível nesta worktree.
+6. **Organização por tarefa, 8 → 9.** Faixa, folha e link da fila resolvem a descoberta de pendências. Orçamento e Plano estão na cena. A ação final acontece na ficha do aplicativo.
+7. **Acessibilidade, 8 → 9.** Foco visível, contraste dos tokens verificado, controles com pelo menos 44 × 44 px e suporte a movimento reduzido. Falta uma sessão manual com leitor de tela.
+8. **Privacidade, 9 → 9.** Valores, percentuais e identificadores de tarefa potencialmente financeiros saem da marcação com o olho fechado. Texto genérico preserva a instrução, com menos detalhe.
+9. **Temas claro e escuro, 9 → 9.** A mesma hierarquia funciona em superfícies claras e escuras. O destaque é discreto e os níveis de alerta também têm texto.
+10. **Escritório como personagem, 9 → 9.** A cena é o centro da navegação por sala. Legendas e fila ligam as funções a trabalho concreto. A maquete atual ainda mostra postos e poses estáticos.
 
 ## Produtização
 
-- **Indicadores da cena.** Adaptar os campos de `useResumoFamilia` ao contrato de apresentação, preservando unidade, natureza e disponibilidade. Em `lib/resumo`, usar `orcamento` para o disponível de hoje, `plano2029` para a lacuna com margem, `faturas` para a soma prevista e `guardado` para o total das aplicações.
-- **Equipe.** Integrar `EscritorioIsometrico` da f38 na superfície Início, usando `useEquipeCompleta` e os estados de presença do escritório. Ligar a sala selecionada à câmera e às fichas. Manter a maquete SVG como apresentação estática quando a cena 3D estiver indisponível.
-- **Fila e faixa de saúde.** Usar `useResumoFamilia` para a leitura resumida de pendências e `api.escritorioHoje` ou o motor de tarefas atual para prioridade, respostas e invalidação após resolver. Os links do laboratório já levam a `escritorio?secao=tarefa&entidade=…` no exemplo. Para o Assessor, usar a consulta do próprio papel e o destino Casa.
-- **Fileira.** Mapear cobertura em `lib/resumo/plano2029` para Planejamento / `plano2029`, saídas em `movimentacao` para Lançamentos / `mes`, aluguel líquido estimado em `imoveis` para Guardado / `imoveis`, e combinados em `desejos` para Desejos / `desejo`. Usar `enderecoDestino` e as permissões de `app/rotas` no aplicativo.
-- **Lacunas do contrato.** A família precisa de um assunto público por tarefa para o olho fechado e de público, seção e valor aplicável explícitos por tipo de tarefa. A proposta usa o nível recebido para texto genérico no modo privado e identifica os tipos domésticos pelo prefixo do ID. Em produção, derivar essas propriedades na origem evita depender dessa convenção. Ligar o olho ao contexto de privacidade do aplicativo.
+- Adaptar `useResumoFamilia` para `DadosInicio`, preservando unidade, natureza e disponibilidade. Obter disponível de hoje em orçamento, lacuna com margem em plano2029, previsão em faturas e saldo em guardado. Manter o aluguel líquido identificado como estimado.
+- Integrar a maquete da frente f44 pelos parâmetros já enviados. Depois da integração, conferir novamente as duas larguras, a seleção por sala e o posicionamento das plaquinhas. A implementação compartilhada presente nesta worktree ainda renderiza a geometria original e ignora variante e oculto como props adicionais. O contexto de privacidade já protege os valores da proposta. A cena 3D existente pode abastecer a exploração em tela inteira depois de ligar a seleção ao foco de câmera e às fichas.
+- Ligar a fila ao motor de tarefas ou a `api.escritorioHoje`. Fornecer assunto público para olho fechado, público permitido e destino da tarefa na origem. Para o Assessor da Casa, consultar as tarefas autorizadas no servidor e abrir a rota Casa.
+- Ligar os atalhos de acompanhamento a Planejamento, Lançamentos, Guardado e Desejos via `enderecoDestino`. Aplicar as permissões de `app/rotas` e o contexto de privacidade do aplicativo.
+
+## Validação nesta worktree
+
+- TypeScript com zero erros. Os 12 testes da proposta passaram, incluindo geometria em Chromium, dobra, contraste, alvos de 44 px e privacidade.
+- O Vitest rodou com a configuração do projeto carregada pelo Node porque o sandbox negou a leitura do caminho absoluto ao esbuild. A execução completa registrou 1.572 aprovações, 3 testes pendentes e 2 falhas fora da proposta B.
+- O teste de rascunho em `ux-cobertura.test.ts` voltou a falhar isolado. Ele espera a etapa de confirmação de gasto, mas o formulário segue para salvar e mostra `Lancar is not a function`. O teste `isolamento.test.ts` para ao carregar a configuração do Vite pelo esbuild, com acesso negado.
