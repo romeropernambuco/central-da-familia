@@ -9,6 +9,7 @@ import { carregarDadosInicio } from '../dadosExemplo'
 import { Escritorio3D, type PropsEscritorio3D } from './Escritorio3D'
 import type { PropsEscritorioMaquete } from './EscritorioMaquete'
 import { distribuirEtiquetas } from './escritorio3d-etiquetas'
+import { POR_ID } from '../../telas/escritorio/equipe'
 import { PrivacidadePropostas } from './privacidade'
 
 const cena = vi.hoisted(() => ({
@@ -147,13 +148,53 @@ it('usa botão nativo para a ativação por teclado e entrega o mesmo registro p
   expect(posto.getAttribute('type')).toBe('button')
   expect(posto.getAttribute('tabindex')).toBeNull()
   expect(posto.getAttribute('aria-label')).toContain(funcionario.nome)
-  expect(posto.textContent).toBe(funcionario.curto[0])
+  expect(posto.textContent).toBe('')
   await act(async () => Simulate.focus(posto as unknown as HTMLElement))
   expect(a.el.textContent).toContain(funcionario.nome)
   // Enter e Espaço acionam click no botão nativo. O DOM mínimo entrega esse evento ao React.
   await act(async () => posto.click())
   await act(async () => opcoes().aoTocar(funcionario.id))
   expect(selecionar.mock.calls).toEqual([[funcionario], [funcionario]])
+})
+
+it('deixa o palco sem iniciais e usa uma única etiqueta para hover, foco e seleção', async () => {
+  const a = ambiente()
+  await a.render({ mostrarPlaquinhas: true })
+  await a.mostrar()
+  const postos = a.el.buscar(n => n.getAttribute('data-posto') !== null)
+  expect(postos).toHaveLength(19)
+  expect(postos.every(p => p.textContent === '')).toBe(true)
+  const etiqueta = a.ler('class', 'escritorio3d-detalhe')
+  expect(etiqueta.textContent).not.toContain(funcionario.nome)
+  await a.apontar()
+  expect(etiqueta.textContent).toContain(funcionario.nome)
+  expect(etiqueta.textContent).toContain(POR_ID[funcionario.id].papel)
+  const outro = postos.find(p => p.getAttribute('data-posto') !== funcionario.id)!
+  await act(async () => Simulate.focus(outro as unknown as HTMLElement))
+  expect(etiqueta.textContent).not.toContain(funcionario.nome)
+  await act(async () => Simulate.blur(outro as unknown as HTMLElement))
+  expect(etiqueta.textContent).not.toContain(funcionario.nome)
+  await act(async () => a.ler('data-posto', funcionario.id).click())
+  expect(etiqueta.textContent).toContain(funcionario.nome)
+  expect(a.el.buscar(n => n.getAttribute('class') === 'escritorio3d-detalhe')).toHaveLength(1)
+})
+
+it('mantém a identificação sob demanda e o olho no fallback sem as plaquinhas legadas', async () => {
+  const a = ambiente({ reduz: true })
+  const selecionar = vi.fn()
+  await a.render({ mostrarPlaquinhas: true, valores, onSelecionar: selecionar }, true)
+  expect(a.ler('class', 'maquete-placa maquete-rotulo')).toBeUndefined()
+  expect(a.el.textContent).not.toContain(funcionario.nome)
+  const posto = a.el.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label')?.includes(funcionario.nome) === true)[0]
+  await act(async () => Simulate.focus(posto as unknown as HTMLElement))
+  expect(a.el.textContent).toContain(POR_ID[funcionario.id].papel)
+  expect(a.ler('aria-label', 'Valor oculto')).toBeDefined()
+  expect(a.el.textContent).not.toContain(moeda)
+  await act(async () => posto.click())
+  expect(selecionar.mock.calls).toEqual([[funcionario]])
+  await a.render({ mostrarPlaquinhas: true, valores, papel: 'equipe', onSelecionar: selecionar }, true)
+  expect(a.ler('aria-label', 'Valor oculto')).toBeUndefined()
+  expect(a.el.textContent).not.toContain(moeda)
 })
 
 it('encerra a observação e descarta a cena ao desmontar', async () => {

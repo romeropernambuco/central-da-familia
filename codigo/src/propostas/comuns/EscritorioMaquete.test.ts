@@ -45,6 +45,23 @@ it('usa o estado atual do snapshot, inclusive quando indisponível', () => {
   expect(html).toContain('Estado indisponível')
 })
 
+it('desenha os sinais nos próprios postos, com marcador exclusivo de quem pede atenção', () => {
+  const funcionarios = structuredClone(dados.funcionarios)
+  const amostra = funcionarios.valor!.slice(0, 4)
+  const estados = ['trabalhando', 'vai_comecar', 'entregue', 'precisa_de_voce'] as const
+  amostra.forEach((f, i) => { f.estadoHoje = { ...f.estadoHoje, estado: 'pronto', valor: estados[i] } })
+  const html = render({ funcionarios: { ...funcionarios, estado: 'pronto', valor: amostra } })
+  const postos = [...html.matchAll(/<g data-funcionario="[^"]+"[^>]*>[\s\S]*?<\/g>/g)].map(m => m[0])
+  expect(postos).toHaveLength(amostra.length)
+  const desenho = (estado: string) => postos.find(p => p.includes(`data-estado="${estado}"`))!
+  expect(desenho('trabalhando')).toContain('class="maquete-maos"')
+  expect(desenho('vai_comecar')).toMatch(/href="[^"]+-cafe"/)
+  expect(desenho('entregue')).toContain('class="maquete-entrega"')
+  expect(desenho('precisa_de_voce')).toContain('class="maquete-alerta"')
+  expect(html.match(/class="maquete-alerta"/g)).toHaveLength(1)
+  expect(html).not.toContain('maquete-sinal')
+})
+
 it('aproxima e centra qualquer sala, preserva os 19 postos e atenua as demais', () => {
   const vista = (html: string) => html.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number)
   const [, , larguraGeral] = vista(render())

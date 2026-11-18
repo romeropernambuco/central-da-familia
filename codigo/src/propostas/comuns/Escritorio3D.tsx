@@ -1,4 +1,3 @@
-import { Check, CircleHelp, Hand, Keyboard, Pause } from 'lucide-react'
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { SALAS_NOME, tentarCarregarCena } from '../../telas/escritorio/cenaBase'
 import type { EstadosIsometricos, montarEscritorioIsometrico } from '../../telas/escritorio/cenaIsometrica'
@@ -14,11 +13,11 @@ export interface PropsEscritorio3D extends PropsEscritorioMaquete {
 }
 
 const ESTADOS = {
-  vai_comecar: { rotulo: 'Ainda vai começar', Icone: Pause },
-  trabalhando: { rotulo: 'Trabalhando', Icone: Keyboard },
-  entregue: { rotulo: 'Entregue', Icone: Check },
-  precisa_de_voce: { rotulo: 'Precisa de você', Icone: Hand },
-  indisponivel: { rotulo: 'Estado indisponível', Icone: CircleHelp },
+  vai_comecar: 'Ainda vai começar',
+  trabalhando: 'Trabalhando',
+  entregue: 'Entregue',
+  precisa_de_voce: 'Precisa de você',
+  indisponivel: 'Estado indisponível',
 }
 const REDUZIR = '(prefers-reduced-motion: reduce)'
 
@@ -47,7 +46,7 @@ export function Escritorio3D({ altura, valores, ...props }: PropsEscritorio3D) {
   return <div className="escritorio3d" data-variante={props.variante ?? 'media'}
     style={altura === undefined ? undefined : { '--escritorio3d-altura': `${altura}px` } as CSSProperties}
     data-renderizacao={reduzir || falhou ? 'svg' : undefined}>
-    {reduzir || falhou ? <EscritorioMaquete {...props} valores={valoresPermitidos} />
+    {reduzir || falhou ? <EscritorioMaquete {...props} mostrarPlaquinhas={false} detalhesSobDemanda valores={valoresPermitidos} />
       : <Palco3D {...props} valores={valoresPermitidos} marcarFalha={marcarFalha} />}
   </div>
 }
@@ -55,13 +54,12 @@ export function Escritorio3D({ altura, valores, ...props }: PropsEscritorio3D) {
 type Funcionario = NonNullable<PropsEscritorio3D['funcionarios']['valor']>[number]
 
 function Palco3D({
-  funcionarios, salaDestacada, mostrarPlaquinhas = true, valores, variante = 'media',
+  funcionarios, salaDestacada, valores, variante = 'media',
   oculto, onSelecionar, marcarFalha,
 }: PropsEscritorioMaquete & { marcarFalha: (falhou: boolean) => void }) {
   const area = useRef<HTMLDivElement>(null)
   const camera = useRef<HTMLDivElement>(null)
   const etiquetas = useRef(new Map<string, HTMLElement>())
-  const hastes = useRef(new Map<string, SVGLineElement>())
   const cena = useRef<ReturnType<typeof montarEscritorioIsometrico> | null>(null)
   const [pronto, marcarPronto] = useState(false)
   const [apontado, apontar] = useState<string | null>(null)
@@ -115,15 +113,6 @@ function Palco3D({
                     no.style.top = `${p.y}px`
                   }
                 }
-                for (const posto of postos) {
-                  const p = posicoes.get(posto.id)
-                  const haste = hastes.current.get(posto.id)
-                  if (!haste || !p) continue
-                  haste.setAttribute('x1', String(p.x))
-                  haste.setAttribute('y1', String(p.y))
-                  haste.setAttribute('x2', String(posto.x))
-                  haste.setAttribute('y2', String(posto.y + 11))
-                }
               },
             },
           })
@@ -156,34 +145,14 @@ function Palco3D({
         <div className="escritorio3d-camera" ref={camera} aria-hidden="true" />
         {!pronto && <div className="escritorio3d-esqueleto" role="status">Carregando escritório…</div>}
         <div className="escritorio3d-etiquetas" hidden={!pronto}>
-          <svg className="escritorio3d-hastes" aria-hidden="true" focusable="false">
-            {visiveis.map(f => <line key={f.id} ref={no => {
-              if (no) hastes.current.set(f.id, no)
-              else hastes.current.delete(f.id)
-            }} />)}
-          </svg>
           {visiveis.map(f => {
             const estado = f.estadoHoje.valor ?? 'indisponivel'
-            const { rotulo, Icone } = ESTADOS[estado]
-            const comuns = {
-              className: 'escritorio3d-posto',
-              'data-posto': f.id,
-              'data-estado': estado,
-              'data-ativo': detalhe?.id === f.id,
-              ref: (no: HTMLElement | null) => {
-                if (no) etiquetas.current.set(f.id, no)
-                else etiquetas.current.delete(f.id)
-              },
-              onPointerEnter: (e: PointerEvent) => { if (e.pointerType !== 'touch') apontar(f.id) },
-              onPointerLeave: () => apontar(null),
-            }
-            const selo = <span className="escritorio3d-selo" aria-hidden="true">
-              <Icone size={14} />{mostrarPlaquinhas && f.curto.slice(0, 1)}
-            </span>
-            return onSelecionar
-              ? <button {...comuns} key={f.id} type="button" aria-label={`${f.nome} · ${SALAS_NOME[f.sala]} · ${rotulo}`}
-                onFocus={() => { apontar(null); focar(f.id) }} onBlur={() => focar(null)} onClick={() => abrir(f)}>{selo}</button>
-              : <span {...comuns} key={f.id} aria-hidden="true">{selo}</span>
+            return <button key={f.id} type="button" className="escritorio3d-posto" data-posto={f.id} data-estado={estado}
+              aria-label={`${f.nome} · ${SALAS_NOME[f.sala]} · ${ESTADOS[estado]}`}
+              ref={no => { if (no) etiquetas.current.set(f.id, no); else etiquetas.current.delete(f.id) }}
+              onPointerEnter={(e: PointerEvent) => { if (e.pointerType !== 'touch') apontar(f.id) }}
+              onPointerLeave={() => apontar(null)}
+              onFocus={() => { apontar(null); focar(f.id) }} onBlur={() => focar(null)} onClick={() => abrir(f)} />
           })}
         </div>
       </div>
@@ -193,7 +162,7 @@ function Palco3D({
         onSelecionar ? 'Selecione um posto para abrir a ficha.' : 'Equipe do escritório'}</span>}
       {pronto && detalhe && <>
         <strong>{detalhe.nome}</strong>
-        <span>{ESTADOS[detalhe.estadoHoje.valor ?? 'indisponivel'].rotulo}</span>
+        <span>{POR_ID[detalhe.id].papel} · {ESTADOS[detalhe.estadoHoje.valor ?? 'indisponivel']}</span>
         {valor && <span className="escritorio3d-valor">
           {oculto || olhoFechado ? <span aria-label="Valor oculto">•••</span> : <Valor campo={valor} />}
         </span>}

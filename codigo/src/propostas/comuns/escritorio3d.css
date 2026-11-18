@@ -44,15 +44,6 @@
 .escritorio3d-camera > canvas { display: block; inline-size: 100%; block-size: 100%; }
 .escritorio3d-cena[data-renderizacao="carregando"] .escritorio3d-camera { visibility: hidden; }
 .escritorio3d-etiquetas { pointer-events: none; }
-.escritorio3d-hastes {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  stroke: var(--borda, #8b867d);
-  stroke-width: 1.25px;
-}
-
 .escritorio3d-esqueleto {
   position: sticky;
   inset-inline-start: 0;
@@ -93,32 +84,10 @@
 }
 
 button.escritorio3d-posto { cursor: pointer; touch-action: manipulation; }
-button.escritorio3d-posto:active .escritorio3d-selo {
-  background: color-mix(in oklch, var(--cartao, white) 88%, var(--destaque, #275d50));
-}
 .escritorio3d-posto:focus-visible {
   z-index: 1;
   outline: 2px solid var(--destaque, #275d50);
   outline-offset: -2px;
-}
-
-.escritorio3d-selo {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  min-block-size: 22px;
-  padding-inline: 4px;
-  border: 1px solid var(--borda, #8b867d);
-  border-radius: var(--raio-pequeno, 6px);
-  background: var(--cartao, #fff);
-}
-
-.escritorio3d-posto:is([data-estado="precisa_de_voce"], [data-estado="entregue"]) svg {
-  color: var(--destaque, #275d50);
-}
-
-.escritorio3d-posto:is([data-ativo="true"], [data-estado="precisa_de_voce"]) .escritorio3d-selo {
-  border-color: var(--destaque, #275d50);
 }
 
 .escritorio3d-detalhe {

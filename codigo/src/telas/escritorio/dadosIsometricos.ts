@@ -10,7 +10,6 @@ import { SALAS_NOME } from './cenaBase'
 export interface PostoIsometrico {
   membro: MembroEquipe
   funcionario: FuncionarioEsc
-  balao: string | null
 }
 
 export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: Papel; oculto: boolean; dono?: boolean }) {
@@ -49,7 +48,6 @@ export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: P
     const semDado = !pendencia && estado === 'vai_comecar' && (!f || !!f.semDado || !observavel)
     return {
       membro,
-      balao: pendencia ? pendencia.valor ?? 'Precisa de você' : null,
       funcionario: {
         ...(papel === 'casal' && observavel ? f : undefined),
         id: membro.id, nome: membro.nome, sala: SALAS_NOME[membro.sala], estado, semDado,

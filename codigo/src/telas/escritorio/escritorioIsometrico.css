@@ -40,7 +40,7 @@
 .iso-etiqueta, .iso-placa { position: absolute; transform: translate(-50%, -50%); }
 .iso-etiqueta { color: var(--iso-tinta); pointer-events: auto; min-height: 44px; min-width: 44px; z-index: 1; }
 .iso-etiqueta:hover, .iso-etiqueta:focus-visible, .iso-etiqueta[data-estado="precisa_de_voce"] { z-index: 2; }
-.iso-plaquinha, .iso-placa, .iso-balao {
+.iso-placa {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -56,23 +56,16 @@
   font-weight: 700;
   box-shadow: 0 1px 3px #48321d26;
 }
-.iso-etiqueta[data-estado="entregue"] svg { color: #226044; }
-.iso-etiqueta[data-estado="trabalhando"] svg { color: #225678; }
-.iso-etiqueta[data-estado="precisa_de_voce"] .iso-plaquinha, .iso-balao { background: var(--iso-aviso); color: #523915; }
-.iso-plaquinha svg, .iso-placa svg { width: 12px; height: 12px; }
+.iso-placa svg { width: 12px; height: 12px; }
 .iso-placa { background: #eee6d5; font-size: 10px; z-index: 0; }
-.iso-balao {
-  position: absolute;
-  bottom: 33px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 22px;
-  width: 86px;
-  padding-inline: 5px;
-  border-radius: 7px 7px 7px 2px;
-  font-variant-numeric: tabular-nums;
+.iso-toque { display: none; }
+.iso-detalhe {
+  min-height: 48px;
+  padding: 4px 10px;
+  font-size: .8125rem;
 }
-.iso-inicial, .iso-toque { display: none; }
+.iso-detalhe strong { margin-inline-end: .65em; }
+.iso-detalhe span { color: var(--muted); }
 .iso-filtros { display: flex; gap: 6px; overflow-x: auto; padding: 3px; }
 .iso-filtros button {
   border: 1px solid var(--border);
@@ -142,7 +135,6 @@
 @media (max-width: 899px) {
   .iso-escritorio:not(.iso-folha) .iso-palco { height: 360px; }
   .iso-escritorio:not(.iso-folha) .iso-palco[data-renderizacao="lista"] { height: auto; }
-  .iso-plaquinha { font-size: 10px; }
 }
 
 @media(max-width:899px){
@@ -150,12 +142,7 @@
   .iso-inicio:has(.iso-vista) .iso-fila,.iso-inicio .iso-filtros{display:none}
   .iso-inicio.iso-escritorio .iso-palco{height:194px}
   .iso-inicio.iso-escritorio .iso-palco[data-renderizacao="lista"]{height:auto}
-  .iso-inicio .iso-curto,.iso-inicio .iso-placa{display:none}
-  .iso-inicio .iso-inicial{display:inline}
-  .iso-inicio .iso-plaquinha{gap:2px;font-size:9px;padding:1px 3px}
-  .iso-inicio .iso-plaquinha svg{width:9px;height:9px}
+  .iso-inicio .iso-placa{display:none}
   .iso-inicio .iso-etiqueta{pointer-events:none}
   .iso-inicio .iso-toque{display:block;z-index:3}
-  .iso-inicio .iso-balao{height:16px;width:72px;font-size:9px;bottom:30px}
 }
-

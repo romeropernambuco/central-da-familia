@@ -104,7 +104,9 @@ it('f54: Início fora da área visível mostra o painel estático sem pedir Thre
     await act(async () => visibilidade([{ isIntersecting: true }]))
     await act(async () => vi.dynamicImportSettled())
     expect(fake.importarThree).toHaveBeenCalledOnce()
-    expect(fake.montar.mock.calls[0][0]).toMatchObject({ previa: true })
+    expect(fake.montar).toHaveBeenCalledOnce()
+    expect(fake.montar.mock.calls[0][0].etiqueta('contador')).toBe(a.ler('data-posto', 'contador'))
+    expect(a.ler('data-posto', 'contador').textContent).toBe('')
     expect(disconnect).toHaveBeenCalled()
   } finally { await a.fechar() }
 })
@@ -126,30 +128,32 @@ it('Início antes do Resumo e Escritório com a sala e a lista, usando a fila in
   } finally { await a.fechar() }
 })
 
-it('sentinela da leitura chega aos balões e à lista, e a invalidação atualiza sem remontar', async () => {
+it('sentinela da leitura chega à fila, e a invalidação atualiza sem remontar', async () => {
   const a = montar()
   try {
     await a.render(EscritorioIsometrico)
     await act(async () => vi.dynamicImportSettled())
-    expect(a.ler('data-posto', 'guardado').textContent).toContain('78.432,19')
-    expect(a.el.textContent.match(/78\.432,19/g)).toHaveLength(2)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('78.432,19')
+    expect(a.el.textContent.match(/78\.432,19/g)).toHaveLength(1)
     expect(a.el.textContent).toContain('9.321,01')
     expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('trabalhando')
     expect(a.ler('data-posto', 'cartao').getAttribute('data-estado')).toBe('entregue')
     expect(fake.montar).toHaveBeenCalledOnce()
     await a.atualizar({ ...fonte(), trabalhando: [], precisa_de_voce: [pergunta('novo', 'guardado', 651.83)] })
-    expect(a.ler('data-posto', 'guardado').textContent).toContain('651,83')
+    expect(a.ler('data-posto', 'guardado').textContent).toBe('')
+    expect(a.ler('data-posto', 'guardado').getAttribute('data-estado')).toBe('precisa_de_voce')
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('651,83')
     expect(fake.atualizar.mock.lastCall?.[0].contador).toBe('vai_comecar')
     expect(fake.montar).toHaveBeenCalledOnce()
     await a.render(EscritorioIsometrico, true)
     expect(a.el.textContent).not.toContain('651,83')
-    expect(a.ler('data-posto', 'guardado').getAttribute('aria-label')).toContain('••••')
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('••••')
     expect(a.ler('data-posto', 'guardado').getAttribute('aria-label')).not.toContain('651,83')
   } finally { await a.fechar() }
   expect(fake.destruir).toHaveBeenCalledOnce()
 })
 
-it('toque na plaquinha abre a ficha certa, filtros movem a cena e o fallback é acionável', async () => {
+it('toque no posto abre a ficha certa, filtros movem a cena e o fallback é acionável', async () => {
   const a = montar()
   try {
     await a.render(EscritorioIsometrico)
@@ -197,7 +201,7 @@ it('papéis preservam a fila autorizada e para o Assessor retiram dinheiro até 
   expect(equipe.fila).toHaveLength(1)
   expect(equipe.fila[0].valor).toBeNull()
   expect(equipe.fila[0].pergunta).not.toHaveProperty('valor')
-  expect(equipe.postos.find(p => p.membro.id === 'fiscal')?.balao).toBe('Precisa de você')
+  expect(equipe.postos.find(p => p.membro.id === 'fiscal')?.funcionario.estado).toBe('precisa_de_voce')
   expect(equipe.fila[0].texto).toBe('Tarefa feira')
   expect(dadosIsometricos(e, { papel: 'casal', oculto: false }).fila.find(p => p.pergunta.id === 'recado')?.valor).toBe('Ainda sem dado')
 })

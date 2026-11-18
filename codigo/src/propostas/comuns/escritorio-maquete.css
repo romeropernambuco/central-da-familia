@@ -72,8 +72,8 @@
 .maquete-haste { stroke: var(--metal); stroke-width: 2; fill: none; }
 .maquete-sombra { fill: light-dark(rgb(52 39 24 / .13), transparent); }
 .maquete-brilho { fill: var(--ouro); opacity: .26; filter: blur(7px); }
-.maquete-tela { fill: var(--vidro); }
-.escritorio-maquete [data-estado="trabalhando"] { --vidro: color-mix(in oklch, var(--papel) 71%, var(--maquete-foco)); }
+.maquete-tela { fill: var(--tela, #313833); }
+.escritorio-maquete [data-estado="trabalhando"] { --tela: #becdaf; }
 .escritorio-maquete .maquete-nome-sala {
   fill: currentColor;
   stroke: var(--piso);
@@ -83,20 +83,11 @@
   font-weight: 800;
 }
 
-.escritorio-maquete .maquete-sinal rect {
-  fill: var(--cartao, white);
-  stroke: var(--borda, #8b867d);
-  stroke-width: .7;
-}
-.escritorio-maquete :is(
-  [data-estado="precisa_de_voce"] .maquete-sinal,
-  [data-estado="entregue"] .maquete-sinal,
-  .maquete-rotulo[data-estado="precisa_de_voce"],
-  .maquete-rotulo[data-estado="entregue"]
-) use {
+.maquete-alerta { fill: #b7773c; }
+.maquete-check { fill: none; stroke: #465d49; stroke-width: 1.65; }
+.escritorio-maquete .maquete-rotulo:is([data-estado="precisa_de_voce"], [data-estado="entregue"]) use {
   color: var(--maquete-foco);
 }
-.escritorio-maquete [data-estado="precisa_de_voce"] .maquete-sinal rect { stroke: var(--maquete-foco); }
 .escritorio-maquete .maquete-legendas { pointer-events: none; }
 .escritorio-maquete .maquete-legendas > div { position: relative; }
 .escritorio-maquete :is(.maquete-placa, .maquete-balao) {
@@ -149,7 +140,7 @@
     animation: maquete-digitar .85s ease-in-out 4;
   }
   .escritorio-maquete :is(
-    [data-estado="precisa_de_voce"] .maquete-sinal,
+    .maquete-alerta,
     :is(.maquete-placa, .maquete-balao)[data-estado="precisa_de_voce"]
   ) {
     transform-box: fill-box;

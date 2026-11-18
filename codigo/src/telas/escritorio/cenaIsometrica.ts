@@ -1,9 +1,9 @@
 import type * as Tres from './tres'
 import type { EstadoFuncionario } from '../../api/tipos'
 import { EQUIPE, type MembroEquipe, type SalaEquipe } from './equipe'
-import { ATIVIDADES_MINI, faseDoId, montarAtividade } from './atividadesMini'
-import { montarMesa, montarPredio } from './mobiliarioIsometrico'
-import { personagemIsometrico, type CaixaIsometrica } from './personagemIsometrico'
+import { faseDoId } from './atividadesMini'
+import { montarCadeira, montarMesa, montarPredio } from './mobiliarioIsometrico'
+import { personagemIsometrico, type PecaIsometrica } from './personagemIsometrico'
 import { PLANTA, SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometrica'
 
 export const ORCAMENTO_ISOMETRICO = { desenhos: 32, triangulos: 45000 }
@@ -18,7 +18,6 @@ export interface PostoProjetado {
 export interface OpcoesIsometricas {
   estados: EstadosIsometricos
   vista: VistaIsometrica
-  previa?: boolean
   etiqueta: (id: string) => HTMLElement | null
   placa: (sala: SalaEquipe) => HTMLElement | null
   aoTocar: (id: string) => void
@@ -74,18 +73,28 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     let ultimo = 0, tempo = 0, somaFrames = 0, somaTempos = 0
     const mat = guardar(new T.MeshLambertMaterial())
     const janela = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: .35 }))
-    const mancha = guardar(new T.MeshBasicMaterial({ color: 0, transparent: true, opacity: .14, depthWrite: false }))
-    const cubo = guardar(new T.BoxGeometry(1, 1, 1)), circulo = guardar(new T.CircleGeometry(1, 16))
+    const mancha = guardar(new T.MeshBasicMaterial({ color: 0, transparent: true, opacity: .085, depthWrite: false }))
+    const cubo = guardar(new T.BoxGeometry(1, 1, 1))
+    const esfera = guardar(new T.SphereGeometry(.5, 8, 4))
+    const circulo = guardar(new T.CircleGeometry(1, 16))
+    const fosforo = guardar(new T.MeshBasicMaterial())
     const externo = new T.Group(), movel = new T.Group()
-    const cor = new T.Color(), matriz = new T.Matrix4(), local = new T.Matrix4()
-    const basico: CaixaIsometrica = (pai, tinta, d, p) => {
-      const objeto = new T.Mesh(cubo, mat)
-      objeto.userData.cor = tinta
-      objeto.scale.set(...d)
-      objeto.position.set(...p)
-      pai.add(objeto)
-      return objeto
+    const telas = new T.Group(), marcadores = new T.Group(), entregas = new T.Group()
+    telas.name = 'telas acesas'
+    marcadores.name = 'pedidos de atenção'
+    entregas.name = 'selos de entrega'
+    const cor = new T.Color()
+    function peca(geo: any): PecaIsometrica {
+      return (pai, tinta, d, p) => {
+        const objeto = new T.Mesh(geo, mat)
+        objeto.userData.cor = tinta
+        objeto.scale.set(...d)
+        objeto.position.set(...p)
+        pai.add(objeto)
+        return objeto
+      }
     }
+    const basico = peca(cubo), oval = peca(esfera)
     const vidros = new T.Group(), manchas = new T.Group()
     montarPredio((c, d, p) => basico(externo, c, d, p), (c, d, p) => basico(vidros, c, d, p))
     const telhado = new T.Mesh(guardar(new T.ConeGeometry(.36, .26, 4)), mat)
@@ -96,49 +105,52 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
 
     const personagens = (palco?.elenco ?? EQUIPE).map(m => {
       const sala = PLANTA[m.sala], x = sala.x + m.mesa, z = sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
-      const emPe = !!ATIVIDADES_MINI[m.id]?.emPe
-      montarMesa((c, d, p) => basico(externo, c, d, [x + p[0], p[1], z + p[2]]), !emPe)
-      const sombra = new T.Mesh(circulo, mancha)
-      sombra.position.set(x, .046, z + .29)
-      sombra.scale.set(.73, .69, 1)
-      sombra.rotation.x = -Math.PI / 2
-      manchas.add(sombra)
-      const posto = new T.Group()
-      posto.position.set(x, 0, z)
-      movel.add(posto)
-      const b = personagemIsometrico(T, basico, m.roupa)
-      posto.add(b.raiz)
-      if (palco) b.cabeca.scale.setScalar(1.14)
-      const cores = new Map<number, any>()
-      // Estes postos trabalham diante de uma tela. Os demais conservam os objetos de ofício.
-      const digital = !!palco && ['contador', 'cartao', 'assistente', 'analista'].includes(m.id)
-      const atividade = digital ? montarEstacaoDigital(posto) : montarAtividade(m.id, { T, pai: posto, geo: cubo, guardar, mat(c) {
-        if (!cores.has(c)) cores.set(c, guardar(new T.MeshLambertMaterial({ color: c })))
-        return cores.get(c)
-      } })
-      return { m, b, atividade, emPe, x, z, fase: faseDoId(m.id) }
-    })
-
-    function montarEstacaoDigital(posto: any) {
-      basico(posto, 0x555751, [.7, .41, .065], [0, .98, .83])
-      basico(posto, 0xD9DBCE, [.61, .33, .012], [0, .98, .791])
-      basico(posto, 0x555751, [.08, .22, .08], [0, .74, .83])
-      basico(posto, 0x555751, [.48, .032, .19], [0, .647, .49])
-      const cursor = basico(posto, 0x555751, [.18, .036, .014], [-.15, 1.06, .78])
-      return {
-        animar(t: number) { cursor.position.y = 1.06 - Math.floor(t * 2 % 4) * .055 },
-        pose(t: number) {
-          return {
-            cx: .23 + Math.sin(t * 1.6) * .12, cy: -.08 + Math.sin(t * 1.3) * .09,
-            lx: -.81, rx: -.81, lz: .16, rz: -.16,
-            le: -1.08 + Math.sin(t * 16) * .21, re: -1.08 - Math.sin(t * 16) * .21,
-          }
-        },
+      montarMesa((c, d, p) => basico(externo, c, d, [x + p[0], p[1], z + p[2]]),
+        (c, d, p) => oval(externo, c, d, [x + p[0], p[1], z + p[2]]), m.mesa !== 0)
+      for (const escala of [.53, .39]) {
+        const sombra = new T.Mesh(circulo, mancha)
+        sombra.position.set(x, .047, z + .07)
+        sombra.scale.set(escala, escala * .9, 1)
+        sombra.rotation.x = -Math.PI / 2
+        manchas.add(sombra)
       }
-    }
+      const b = personagemIsometrico(T, basico, oval, m)
+      b.raiz.position.set(x, 0, z)
+      movel.add(b.raiz)
+      montarCadeira((c, d, p) => basico(b.raiz, c, d, p), (c, d, p) => oval(b.raiz, c, d, p))
 
-    // As peças do rig e das atividades preservam as articulações, mas só os lotes chegam à GPU.
-    function instanciar(raiz: any, material: any, sombra: boolean, pintar = true) {
+      const monitor = new T.Group()
+      monitor.position.set(x - .48, 0, z + .805)
+      monitor.rotation.y = 1.61
+      externo.add(monitor)
+      basico(monitor, 0x50584F, [.45, .327, .06], [0, .897, 0])
+      basico(monitor, 0x313833, [.399, .274, .012], [0, .897, .034])
+      basico(monitor, 0x50584F, [.063, .161, .06], [0, .718, -.01])
+      basico(monitor, 0x50584F, [.211, .022, .13], [0, .647, -.01])
+      const luzes = new T.Group()
+      luzes.position.copy(monitor.position)
+      luzes.rotation.copy(monitor.rotation)
+      telas.add(luzes)
+      const tela = [
+        basico(luzes, 0xBECDAF, [.394, .269, .009], [0, .897, .043]),
+        basico(luzes, 0x5D7559, [.28, .03, .008], [-.013, .971, .05]),
+        basico(luzes, 0x73886B, [.19, .024, .008], [-.059, .917, .05]),
+        basico(luzes, 0x73886B, [.23, .024, .008], [-.038, .874, .05]),
+      ]
+
+      const marcador = oval(marcadores, 0xB7773C, [.18, .18, .18], [x + .47, 1.48, z - .01])
+      const selo = [basico(entregas, 0xEAE2CB, [.252, .022, .23], [x + .422, .671, z + .65])]
+      for (const [x1, z1, x2, z2] of [[.352, .676, .413, .713], [.413, .713, .485, .575]]) {
+        const traco = basico(entregas, 0x465D49, [.033, .012, Math.hypot(x2 - x1, z2 - z1) + .014],
+          [x + (x1 + x2) / 2, .687, z + (z1 + z2) / 2])
+        traco.rotation.y = Math.atan2(x2 - x1, z2 - z1)
+        selo.push(traco)
+      }
+      return { m, b, x, z, tela, marcador, selo, fase: faseDoId(m.id),
+        estado: null as EstadoFuncionario | undefined | null, entregouEm: 0 }
+    })
+    // Só os lotes chegam à GPU. A hierarquia original preserva as articulações.
+    function instanciar(raiz: any, material: any, sombra: boolean, pintar = true, visibilidadeVariavel = false) {
       const lotes = new Map<any, any[]>()
       raiz.traverse((obj: any) => {
         if (!obj.isMesh) return
@@ -147,8 +159,8 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         else lotes.set(obj.geometry, [obj])
       })
       const malhas = [...lotes].map(([geo, pecas]) => {
-        const quantidade = pecas.reduce((n, p) => n + (p.isInstancedMesh ? p.count : 1), 0)
-        const lote = guardar(new T.InstancedMesh(geo, material, quantidade))
+        const lote = guardar(new T.InstancedMesh(geo, material, pecas.length))
+        lote.name = raiz.name
         lote.frustumCulled = false
         lote.castShadow = sombra
         lote.receiveShadow = sombra
@@ -160,25 +172,24 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         for (const { lote, pecas } of malhas) {
           let i = 0
           for (const p of pecas) {
-            const n = p.isInstancedMesh ? p.count : 1
-            for (let j = 0; j < n; j++, i++) {
-              matriz.copy(p.matrixWorld)
-              if (p.isInstancedMesh) {
-                p.getMatrixAt(j, local)
-                matriz.multiply(local)
-              }
-              lote.setMatrixAt(i, matriz)
-              if (primeiro && pintar) lote.setColorAt(i, p.userData.cor === undefined ? p.material.color : cor.setHex(p.userData.cor))
-            }
+            if (visibilidadeVariavel && !p.visible) continue
+            lote.setMatrixAt(i, p.matrixWorld)
+            if ((primeiro || visibilidadeVariavel) && pintar) lote.setColorAt(i, cor.setHex(p.userData.cor))
+            i++
           }
+          lote.count = i
           lote.instanceMatrix.needsUpdate = true
+          if (lote.instanceColor && (primeiro || visibilidadeVariavel)) lote.instanceColor.needsUpdate = true
         }
       }
     }
     instanciar(externo, mat, true)(true)
     instanciar(vidros, janela, false, false)(true)
     instanciar(manchas, mancha, false, false)(true)
-    const atualizarInstancias = instanciar(movel, mat, true)
+    const atualizarInstancias = instanciar(movel, mat, false)
+    const atualizarTelas = instanciar(telas, fosforo, false, true, true)
+    const atualizarMarcadores = instanciar(marcadores, fosforo, false, true, true)
+    const atualizarEntregas = instanciar(entregas, mat, false, true, true)
     atualizarInstancias(true)
 
     scene.add(new T.HemisphereLight(0xFFF8EE, 0xBFAE92, 1.55))
@@ -248,71 +259,61 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       no.style.top = `${(1 - ponto.y) * 50}%`
     }
 
-    /** Como no painel original, pendências têm prioridade quando duas plaquinhas se cruzam. */
     function posicionarPessoas() {
-      if (palco) {
-        const postos: PostoProjetado[] = []
-        for (const { m, b, x, z } of personagens) {
-          if (vista !== 'tudo' && vista !== m.sala) continue
-          ponto.set(x, b.quadril.position.y + 1.16, z + b.raiz.position.z).project(cam)
-          postos.push({ id: m.id, x: (ponto.x + 1) * largura / 2, y: (1 - ponto.y) * altura / 2 - 11,
-            chama: estados[m.id] === 'precisa_de_voce' })
+      const postos: PostoProjetado[] = []
+      for (const { m, x, z } of personagens) {
+        if (vista !== 'tudo' && vista !== m.sala) continue
+        ponto.set(x, .89, z + .065).project(cam)
+        if (palco) postos.push({ id: m.id, x: (ponto.x + 1) * largura / 2, y: (1 - ponto.y) * altura / 2,
+          chama: estados[m.id] === 'precisa_de_voce' })
+        else {
+          const no = opcoes.etiqueta(m.id)
+          if (!no) continue
+          no.style.left = `${(ponto.x + 1) * 50}%`
+          no.style.top = `${(1 - ponto.y) * 50}%`
         }
-        palco.posicionar(postos, largura, altura)
-        return
       }
-      const compacto = opcoes.previa && window.innerWidth < 900
-      const ocupadas: { esquerda: number; direita: number; topo: number; base: number }[] = []
-      for (const prioridade of [true, false]) for (const { m, b, x, z } of personagens) {
-        const alerta = estados[m.id] === 'precisa_de_voce'
-        if (alerta !== prioridade || (vista !== 'tudo' && vista !== m.sala)) continue
-        const no = opcoes.etiqueta(m.id)
-        if (!no) continue
-        ponto.set(x, b.quadril.position.y + 1.22, z + b.raiz.position.z).project(cam)
-        const px = (ponto.x + 1) * largura / 2, py = (1 - ponto.y) * altura / 2
-        const meia = (alerta ? (compacto ? 72 : Math.max(86, 22 + m.curto.length * 6)) : compacto ? 23 : 22 + m.curto.length * 6) / 2
-        const acima = alerta ? (compacto ? 24 : 33) : 9
-        const limitarX = (v: number) => Math.max(meia + 2, Math.min(largura - meia - 2, v))
-        let left = limitarX(px), top = py
-        for (const [dx, dy] of [[0, 0], [0, -14], [0, 14], [18, -10], [-18, -10], [18, 14], [-18, 14], [0, -27]]) {
-          const x = limitarX(px + dx), y = py + dy
-          const caixa = { esquerda: x - meia, direita: x + meia, topo: y - acima, base: y + 9 }
-          if (caixa.topo < 1 || caixa.base > altura || ocupadas.some(o =>
-            caixa.esquerda < o.direita && caixa.direita > o.esquerda && caixa.topo < o.base && caixa.base > o.topo)) continue
-          ocupadas.push(caixa)
-          left = x
-          top = y
-          break
-        }
-        no.style.left = `${left * 100 / largura}%`
-        no.style.top = `${top * 100 / altura}%`
-      }
+      palco?.posicionar(postos, largura, altura)
     }
 
     function desenhar(reposicionar: boolean) {
       camera()
-      for (const { m, b, atividade, emPe, fase } of personagens) {
+      const reduzir = movimento.matches
+      for (const posto of personagens) {
+        const { m, b, fase, tela, selo, marcador } = posto
         const estado = estados[m.id]
         const trabalha = estado === 'trabalhando'
         const chama = estado === 'precisa_de_voce'
-        const t = movimento.matches ? 0 : tempo + fase
-        const gesto = trabalha ? atividade.pose(t) : {}
-        atividade.animar(trabalha && !leve ? t : 0)
-        b.raiz.position.z = chama ? 2.25 : 0
-        b.raiz.rotation.y = chama ? Math.PI / 4 : palco && trabalha ? 0 : .17
-        b.quadril.position.y = emPe || chama ? .555 : .325
-        for (const { coxa, joelho } of b.pernas) {
-          coxa.rotation.x = emPe || chama ? 0 : -Math.PI / 2
-          joelho.rotation.x = emPe || chama ? 0 : Math.PI / 2
+        const entregue = estado === 'entregue'
+        if (estado !== posto.estado) {
+          posto.estado = estado
+          posto.entregouEm = tempo
+          for (const p of tela) p.visible = trabalha
+          for (const p of selo) p.visible = entregue
         }
-        b.cabeca.rotation.x = gesto.cx ?? (chama ? -.08 : .13)
-        b.cabeca.rotation.y = gesto.cy ?? (movimento.matches ? 0 : Math.sin(t * .8) * .045)
-        b.esquerda.ombro.rotation.x = gesto.lx ?? (chama ? (palco ? -2.55 : -1.75) : -.73)
-        b.esquerda.ombro.rotation.z = gesto.lz ?? (chama ? -.32 : -.05)
-        b.esquerda.cotovelo.rotation.x = gesto.le ?? (chama ? (palco ? -.45 : -.95) + Math.sin(t * 4) * .18 : -1.17)
-        b.direita.ombro.rotation.x = gesto.rx ?? -.73
-        b.direita.ombro.rotation.z = gesto.rz ?? .05
-        b.direita.cotovelo.rotation.x = gesto.re ?? -1.17
+        marcador.visible = chama
+        const t = reduzir ? 0 : tempo + fase
+        const idadeEntrega = (tempo - posto.entregouEm - fase * .055) / 1.15
+        const alongar = entregue && !reduzir ? Math.sin(Math.PI * Math.max(0, Math.min(1, idadeEntrega))) ** 2 : 0
+        const tecla = trabalha && !reduzir ? Math.sin(t * 13) * .09 : 0
+        const ler = trabalha && !reduzir ? Math.sin(t * 1.45) : 0
+        const acenar = chama && !reduzir ? Math.sin(t * 3.4) : 0
+        b.raiz.rotation.y = chama ? .62 + acenar * .035 : entregue ? .28 + alongar * .28 : trabalha ? -.04 + ler * .075 : .18
+        b.quadril.position.y = .319
+        b.tronco.rotation.x = entregue ? -.16 - alongar * .12 : trabalha ? .11 : chama ? -.06 : .035
+        b.cabeca.rotation.x = trabalha ? .16 + ler * .045 : entregue ? -.07 : .02
+        b.cabeca.rotation.y = trabalha ? -.24 + ler * .065 : chama ? .1 : .11
+        for (const { coxa, joelho } of b.pernas) {
+          coxa.rotation.x = -Math.PI / 2 + .06
+          joelho.rotation.x = Math.PI / 2 - .16
+        }
+        b.esquerda.ombro.rotation.x = trabalha ? -.68 + tecla : entregue ? -.17 - alongar * .6 : -.31
+        b.esquerda.ombro.rotation.z = trabalha ? .15 : entregue ? -.12 - alongar * 1.17 : -.08
+        b.esquerda.cotovelo.rotation.x = trabalha ? -1.02 : entregue ? -.64 + alongar * .43 : -.91
+        b.direita.ombro.rotation.x = chama ? -2.43 : trabalha ? -.68 - tecla : entregue ? -.2 - alongar * .6 : -.29
+        b.direita.ombro.rotation.z = chama ? .53 + acenar * .11 : trabalha ? -.15 : entregue ? .13 + alongar * 1.17 : .1
+        b.direita.cotovelo.rotation.x = chama ? -.53 + acenar * .13 : trabalha ? -1.02 : entregue ? -.65 + alongar * .43 : -.9
+        marcador.scale.setScalar(.17 + acenar * .022)
       }
       if (reposicionar) {
         for (const k of SALAS_ISOMETRICAS) {
@@ -323,6 +324,9 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         posicionarPessoas()
       }
       atualizarInstancias()
+      atualizarTelas()
+      atualizarMarcadores()
+      atualizarEntregas()
       renderer.info.reset()
       renderer.render(scene, cam)
       canvas.dataset.desenhos = String(renderer.info.render.calls)
@@ -408,9 +412,9 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       let id: string | undefined
       for (const { m, b, x, z } of personagens) {
         if ((vista !== 'tudo' && vista !== m.sala) || (!palco && !opcoes.etiqueta(m.id))) continue
-        const centro = z + b.raiz.position.z
-        volume.min.set(x - .37, .1, centro - .28)
-        volume.max.set(x + .37, b.quadril.position.y + 1.12, centro + .38)
+        const centro = z
+        volume.min.set(x - .32, .3, centro - .28)
+        volume.max.set(x + .32, b.quadril.position.y + 1.12, centro + .31)
         if (!raio.ray.intersectBox(volume, ponto)) continue
         const d = ponto.distanceToSquared(raio.ray.origin)
         if (d < menor) { menor = d; id = m.id }

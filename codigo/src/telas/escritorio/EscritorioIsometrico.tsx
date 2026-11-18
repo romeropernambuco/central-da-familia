@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, Check, Clock, Hand, Maximize2, Minus } from 'lucide-react'
+import { ArrowUpRight, Hand, Maximize2 } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useDestino } from '../../app/destinos'
 import { useInvalidacao } from '../../app/invalidacao'
@@ -22,11 +22,11 @@ import './escritorioIsometrico.css'
 const FichaFuncionario = lazy(() => import('./Ficha').then(m => ({ default: m.FichaFuncionario })))
 
 const ESTADO = {
-  vai_comecar: { rotulo: 'Parado', icone: Minus },
-  trabalhando: { rotulo: 'Trabalhando', icone: Clock },
-  entregue: { rotulo: 'Entregue', icone: Check },
-  precisa_de_voce: { rotulo: 'Precisa de você', icone: Hand },
-} satisfies Record<EstadoFuncionario, { rotulo: string; icone: typeof Check }>
+  vai_comecar: 'Parado',
+  trabalhando: 'Trabalhando',
+  entregue: 'Entregue',
+  precisa_de_voce: 'Precisa de você',
+} satisfies Record<EstadoFuncionario, string>
 const ICONES_SALA = {
   caixa: 'orcamento', casa: 'casa', cartoes: 'cartoes', patrimonio: 'guardado', recepcao: 'recepcao', gestao: 'painel', apoio: 'ajustes',
 } as const
@@ -47,7 +47,7 @@ function EquipeIsometrica({ dados, selecionar }: { dados: DadosIsometricos; sele
           <ul>{postos.map(({ membro, funcionario }) => <li key={membro.id}>
             <button type="button" data-func={membro.id} onClick={() => selecionar(membro.id)}>
               <img src={retrato(membro.id)} width={36} height={36} alt="" loading="lazy" />
-              <span><b>{membro.nome}</b><small>{funcionario.semDado ? 'Ainda sem dado' : ESTADO[funcionario.estado].rotulo}</small></span>
+              <span><b>{membro.nome}</b><small>{funcionario.semDado ? 'Ainda sem dado' : ESTADO[funcionario.estado]}</small></span>
               <Icone desenho={ArrowUpRight} />
             </button>
           </li>)}</ul>
@@ -57,11 +57,12 @@ function EquipeIsometrica({ dados, selecionar }: { dados: DadosIsometricos; sele
   </section>
 }
 
-function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
+function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado, ampliar }: {
   dados: DadosIsometricos
   superficie: Superficie
   comCena: boolean
   selecionar: Selecionar
+  selecionado?: string
   ampliar?: () => void
 }) {
   const titulo = useId(), descricao = useId()
@@ -71,6 +72,8 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
   const cena = useRef<CenaIsometrica | null>(null)
   const tocar = useRef(selecionar)
   tocar.current = selecionar
+  const [apontado, apontar] = useState<string | null>(null)
+  const [focado, focar] = useState<string | null>(null)
   const [vista, ir] = useState<VistaIsometrica>('tudo')
   const [renderizacao, renderizar] = useState<'carregando' | '3d' | 'lista'>('carregando')
   const [visivel, marcarVisivel] = useState(() => superficie !== 'inicio' || typeof IntersectionObserver === 'undefined')
@@ -79,6 +82,8 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
   atuais.current = { estados, vista }
   const salas = SALAS_ISOMETRICAS.filter(s => dados.postos.some(p => p.membro.sala === s))
 
+  const detalhe = [apontado, focado, selecionado].map(id => dados.postos.find(({ membro }) =>
+    membro.id === id && (vista === 'tudo' || vista === membro.sala))).find(Boolean)
   useEffect(() => {
     if (visivel || !comCena || !palco.current) return
     const observador = new IntersectionObserver(entradas => {
@@ -100,7 +105,6 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
     const cancelar = tentarCarregarCena(() => Promise.all([import('./tres'), import('./cenaIsometrica')]), ([T, m]) => {
       cena.current = m.montarEscritorioIsometrico(T, el, {
         ...atuais.current,
-        previa: superficie === 'inicio',
         etiqueta: id => etiquetas.current.get(id) ?? null,
         placa: sala => placas.current.get(sala) ?? null,
         aoTocar: id => tocar.current(id),
@@ -133,19 +137,22 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, ampliar }: {
               ref={el => { if (el) placas.current.set(s, el); else placas.current.delete(s) }}>
               <Icone nome={ICONES_SALA[s]} />{SALAS_NOME[s]}
             </span>)}
-            {dados.postos.map(({ membro: m, funcionario: f, balao }) => {
-              const status = ESTADO[f.estado]
-              return <button key={m.id} data-posto={m.id} data-estado={f.estado} type="button" className="iso-etiqueta"
+            {dados.postos.map(({ membro: m, funcionario: f }) =>
+              <button key={m.id} data-posto={m.id} data-estado={f.estado} type="button" className="iso-etiqueta"
                 hidden={vista !== 'tudo' && vista !== m.sala} onClick={() => selecionar(m.id)}
                 ref={el => { if (el) etiquetas.current.set(m.id, el); else etiquetas.current.delete(m.id) }}
-                aria-label={`${m.nome}. ${f.semDado ? 'Ainda sem dado' : status.rotulo}.${balao ? ' ' + balao : ''} Abrir ficha.`}>
-                {balao && <span className="iso-balao">{balao}</span>}
-                <span className="iso-plaquinha"><Icone desenho={status.icone} /><span className="iso-curto">{m.curto}</span><span className="iso-inicial">{m.curto[0]}</span></span>
-              </button>
-            })}
+                onPointerEnter={e => { if (e.pointerType !== 'touch') apontar(m.id) }} onPointerLeave={() => apontar(null)}
+                onFocus={() => { apontar(null); focar(m.id) }} onBlur={() => focar(null)}
+                aria-label={`${m.nome}. ${f.semDado ? 'Ainda sem dado' : ESTADO[f.estado]}. Abrir ficha.`} />)}
           </div>
           {ampliar && <button type="button" className="iso-toque" aria-label="Abrir escritório em tela cheia" onClick={ampliar} />}
         </div>
+        {renderizacao === '3d' && <div className="iso-detalhe" aria-live="polite">
+          {detalhe && <>
+            <strong>{detalhe.membro.nome}</strong>
+            <span>{detalhe.membro.papel} · {detalhe.funcionario.semDado ? 'Ainda sem dado' : ESTADO[detalhe.funcionario.estado]}</span>
+          </>}
+        </div>}
       </div>}
       <aside className="iso-fila" aria-label="Precisa de você">
         <h3><Icone desenho={Hand} />Precisa de você{dados.total > 0 && <span className="iso-total">{dados.total}</span>}</h3>
@@ -201,7 +208,7 @@ function EscritorioAutorizado({ superficie, comCena }: { superficie: 'inicio' | 
   return <>
     {superficie === 'escritorio' && estado === 'erro' && <p role="alert">Não foi possível conferir a equipe. <button type="button" className="lnk" onClick={atualizar}>Tentar de novo</button></p>}
     {superficie === 'escritorio' && estado === 'ok' && funcs.falhou && <p role="alert">Não foi possível conferir toda a equipe. <button type="button" className="lnk" onClick={funcs.repetir}>Tentar de novo</button></p>}
-    {!amplo ? <PainelIsometrico {...{ dados, superficie, comCena }} selecionar={tocar} ampliar={superficie === 'inicio' ? () => ampliar(true) : undefined} />
+    {!amplo ? <PainelIsometrico {...{ dados, superficie, comCena }} selecionar={tocar} selecionado={selecionado?.id} ampliar={superficie === 'inicio' ? () => ampliar(true) : undefined} />
       : <div className={comCena ? 'iso-reserva' : undefined} aria-hidden="true" />}
     {amplo && !aberto && <Sheet titulo="Escritório da família" fechar={() => ampliar(false)}>
       <div className="iso-expandido"><PainelIsometrico dados={dados} superficie="folha" comCena={comCena} selecionar={tocar} /></div>

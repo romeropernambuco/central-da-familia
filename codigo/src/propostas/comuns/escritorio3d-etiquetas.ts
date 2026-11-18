@@ -2,7 +2,7 @@ import type { PostoProjetado } from '../../telas/escritorio/cenaIsometrica'
 
 interface Posicao { x: number; y: number }
 
-/** Reserva o alvo inteiro, inclusive a área transparente em torno do ícone. */
+/** Distribui os alvos transparentes sem sobrepor as áreas de toque. */
 export function distribuirEtiquetas(postos: readonly PostoProjetado[], largura: number, altura: number) {
   const passo = 46
   const margem = passo / 2

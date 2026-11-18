@@ -69,11 +69,18 @@ export function PostoMaquete({ id, funcionario, roupa, x, y, estado }: {
 }) {
   return <g data-funcionario={funcionario} data-estado={estado} transform={`translate(${x} ${y})`}
     color={roupa && tinta(roupa.pele)}>
-    <use href={`#${id}-corpo`} fill={roupa && tinta(roupa.camisa)} />
+    <use href={`#${id}-corpo`} fill={roupa && tinta(roupa.camisa)}
+      transform={estado === 'entregue' ? 'rotate(-8 -8 -23)' : undefined} />
     <use href={`#${id}-${roupa?.estilo ?? 'curto'}`} fill={roupa ? tinta(roupa.cabelo) : 'var(--texto)'} />
     {roupa?.oculos && <use href={`#${id}-oculos`} />}
     <use href={`#${id}-mesa`} />
-    <use className="maquete-maos" href={`#${id}-maos`} />
+    {estado === 'trabalhando' && <use className="maquete-maos" href={`#${id}-maos`} />}
+    {estado === 'vai_comecar' && <use href={`#${id}-cafe`} />}
+    {estado === 'entregue' && <use className="maquete-entrega" href={`#${id}-entrega`} />}
+    {estado === 'precisa_de_voce' && <>
+      <path fill="currentColor" d="m12-37 9-9 3-6q4-3 6 1l-4 10-9 9Z" />
+      <circle className="maquete-alerta" cx="30" cy="-61" r="3.5" />
+    </>}
   </g>
 }
 
@@ -188,6 +195,15 @@ export function SimbolosMaquete({ id }: { id: string }) {
       <path className="maquete-metal" d="M9-47 31-36v15L9-32Z" />
       <path className="maquete-tela" d="m11-44 18 9v11l-18-9Z" />
       <path className="maquete-juntas" d="m14-39 11 5m-11-2 7 3" />
+    </g>
+    <g id={`${id}-cafe`}>
+      <path className="maquete-friso" strokeWidth="1.4" d="M-16-25q5-2 4 1t-4 2" />
+      <path className="maquete-papel" d="M-25-27h9l-1 6q-3 2-7 0Z" />
+      <ellipse fill="#645040" cx="-20.5" cy="-27" rx="4" ry="1.6" />
+    </g>
+    <g id={`${id}-entrega`}>
+      <path className="maquete-papel" d="m-26-29 10-4 14 7-10 5Z" />
+      <path className="maquete-check" d="m-19-27 3 2 6-2" />
     </g>
     <path id={`${id}-maos`} fill="currentColor" d="m-12-34 8 5q3 3 0 4l-10-5Zm20 3 6 5q2 4-2 4l-8-6Z" />
   </>

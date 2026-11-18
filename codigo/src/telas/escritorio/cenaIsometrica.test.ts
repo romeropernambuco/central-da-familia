@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import * as T from './tres'
-import { montarEscritorioIsometrico, ORCAMENTO_ISOMETRICO } from './cenaIsometrica'
+import { montarEscritorioIsometrico, ORCAMENTO_ISOMETRICO, type EstadosIsometricos } from './cenaIsometrica'
 import { EQUIPE } from './equipe'
 
 class Elemento extends EventTarget {
@@ -36,7 +36,7 @@ function ambiente(reduz: boolean) {
     render: vi.fn((scene, _camera) => {
       const custo = { calls: 0, triangles: 0 }
       scene.traverseVisible((obj: any) => {
-        if (!obj.isInstancedMesh) return
+        if (!obj.isInstancedMesh || obj.count === 0) return
         const passes = obj.castShadow && renderer.shadowMap.enabled ? 2 : 1
         custo.calls += passes
         custo.triangles += (obj.geometry.index?.count ?? obj.geometry.attributes.position.count) / 3 * obj.count * passes
@@ -46,8 +46,8 @@ function ambiente(reduz: boolean) {
   }
   const etiquetas = new Map(EQUIPE.map(m => [m.id, new Elemento()]))
   const aoPerderContexto = vi.fn()
-  const montar = () => montarEscritorioIsometrico({ ...T, WebGLRenderer: function () { return renderer } }, new Elemento() as any, {
-    estados: { contador: 'trabalhando' }, vista: 'tudo', etiqueta: id => etiquetas.get(id) as any,
+  const montar = (estados: EstadosIsometricos = { contador: 'trabalhando' }) => montarEscritorioIsometrico({ ...T, WebGLRenderer: function () { return renderer } }, new Elemento() as any, {
+    estados, vista: 'tudo', etiqueta: id => etiquetas.get(id) as any,
     placa: () => null, aoPerderContexto, aoTocar() {},
   })
   const quadro = (t: number) => {
@@ -79,6 +79,43 @@ it('projeta todos os postos, instancia a sala e aplica foco e estados sem remont
   expect(conteudo()).toBeLessThan(largura)
   expect(a.etiquetas.get('guardado')?.style.top).not.toBe(anterior)
   expect(a.frames.size).toBe(0)
+  c.destruir()
+})
+
+it('troca monitor, selo e marcador pelo estado e mantém a pose reduzida sem loop', () => {
+  const a = ambiente(false)
+  const c = a.montar({ contador: 'trabalhando', fiscal: 'vai_comecar', cartao: 'entregue', guardado: 'precisa_de_voce' })
+  a.quadro(100)
+  const scene = a.renderer.render.mock.calls[0][0]
+  const telas = scene.getObjectByName('telas acesas')
+  const selos = scene.getObjectByName('selos de entrega')
+  const marcadores = scene.getObjectByName('pedidos de atenção')
+  expect(telas.count).toBe(4)
+  expect(selos.count).toBe(3)
+  expect(marcadores.count).toBe(1)
+  const matriz = new T.Matrix4()
+  const pulso = () => { marcadores.getMatrixAt(0, matriz); return matriz.elements[0] }
+  const tamanhoInicial = pulso()
+  a.quadro(170)
+  expect(pulso()).not.toBe(tamanhoInicial)
+  a.movimento.matches = true
+  a.movimento.dispatchEvent(new Event('change'))
+  a.quadro(185)
+  expect(pulso()).toBeCloseTo(.17)
+  expect(a.frames.size).toBe(0)
+  c.atualizar({ guardado: 'trabalhando', contador: 'vai_comecar' }, 'tudo')
+  a.quadro(202)
+  expect(telas.count).toBe(4)
+  expect(selos.count).toBe(0)
+  expect(marcadores.count).toBe(0)
+  expect(a.frames.size).toBe(0)
+
+  for (const estado of ['trabalhando', 'entregue', 'precisa_de_voce'] as const) {
+    c.atualizar(Object.fromEntries(EQUIPE.map(m => [m.id, estado])), 'tudo')
+    a.quadro(220)
+    expect(a.renderer.info.render.calls).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.desenhos)
+    expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+  }
   c.destruir()
 })
 

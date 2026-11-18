@@ -1,7 +1,7 @@
 import { PLANTA, SALAS_ISOMETRICAS } from './plantaIsometrica'
 import type { SalaEquipe } from './equipe'
 
-type Caixa = (cor: number, dimensoes: number[], posicao: number[]) => void
+type Caixa = (cor: number, dimensoes: number[], posicao: number[]) => { rotation: { y: number; z: number } }
 const PAREDE = 0xF1EADF, MEIA = 0xE6DCCD, RODAPE = 0xD9CFBF
 const MADEIRA = 0xB88D62, ESCURA = 0x8A6645, CADEIRA = 0x4C525B
 
@@ -53,16 +53,16 @@ function decorar(sala: SalaEquipe, cx: Caixa) {
       cx(0xE0B040, [.16, .16, .16], [2.42, .46, 2.2])
       break
     case 'cartoes':
-      cx(ESCURA, [.6, .24, 1.5], [2.4, .12, -1.5])
-      cx(0x2E3440, [.06, .7, 1.1], [2.3, .75, -1.75])
-      cx(0xC9B27A, [.02, .1, 1.1], [2.335, .9, -1.75])
-      cx(0x7A5C8A, [.06, .7, 1.1], [2.55, .6, -1.2])
-      cx(0xE9E2D4, [.02, .1, 1.1], [2.585, .75, -1.2])
+      cx(ESCURA, [.6, .24, 1.5], [2.63, .12, .43])
+      cx(0x2E3440, [.06, .7, 1.1], [2.53, .75, .18])
+      cx(0xC9B27A, [.02, .1, 1.1], [2.565, .9, .18])
+      cx(0x7A5C8A, [.06, .7, 1.1], [2.77, .6, .73])
+      cx(0xE9E2D4, [.02, .1, 1.1], [2.805, .75, .73])
       break
     case 'patrimonio':
-      cx(ESCURA, [1.3, .4, .9], [2.1, .2, -1.7])
-      cx(PAREDE, [.42, .34, .42], [1.8, .57, -1.72])
-      cx(0xD8D2C6, [.36, .7, .36], [2.42, .75, -1.78])
+      cx(ESCURA, [1.3, .4, .9], [2.26, .2, .41])
+      cx(PAREDE, [.42, .34, .42], [1.95, .57, .39])
+      cx(0xD8D2C6, [.36, .7, .36], [2.57, .75, .33])
       ;[.25, .45, .7].forEach((h, i) => cx(0x7E9A86, [.2, h, .2], [2 + i * .28, h / 2 + .04, 1.95]))
       break
     case 'recepcao':
@@ -82,13 +82,34 @@ function decorar(sala: SalaEquipe, cx: Caixa) {
   }
 }
 
-export function montarMesa(cx: Caixa, cadeira: boolean) {
-  cx(MADEIRA, [1.37, .06, .68], [0, .6, .58])
-  for (const x of [-.62, .62]) for (const z of [.28, .87]) cx(ESCURA, [.06, .57, .06], [x, .285, z])
-  cx(0xF1EADF, [.09, .11, .09], [.59, .685, .42])
-  if (!cadeira) return
-  cx(CADEIRA, [.44, .06, .44], [0, .21, 0])
-  cx(CADEIRA, [.44, .5, .06], [0, .5, -.22])
-  cx(0x33373D, [.07, .18, .07], [0, .09, 0])
-  cx(0x33373D, [.4, .03, .4], [0, .015, 0])
+export function montarMesa(cx: Caixa, oval: Caixa, comPlanta: boolean) {
+  cx(MADEIRA, [1.44, .073, .76], [0, .6, .65])
+  cx(ESCURA, [1.38, .07, .05], [0, .55, .99])
+  for (const x of [-.64, .64]) for (const z of [.34, .97]) cx(ESCURA, [.07, .57, .07], [x, .285, z])
+  cx(CADEIRA, [.49, .032, .198], [0, .649, .44])
+  for (const z of [.392, .443, .494]) cx(0xA5AB9B, [.418, .009, .015], [0, .667, z])
+  cx(0xEDE6D7, [.196, .012, .21], [.437, .646, .7]).rotation.y = -.17
+  cx(0xA6A896, [.117, .009, .012], [.43, .655, .703]).rotation.y = -.17
+  // Caneca com a boca e o fundo do café visíveis na vista superior.
+  oval(0xF5EADB, [.143, .157, .143], [.545, .713, .376])
+  oval(0x645040, [.097, .025, .097], [.545, .785, .376])
+  cx(0xF5EADB, [.053, .067, .025], [.62, .724, .376])
+  if (comPlanta) {
+    cx(0xA49178, [.143, .132, .143], [.58, .703, .923])
+    oval(0x667A53, [.163, .245, .143], [.58, .833, .923]).rotation.z = .31
+    oval(0x849173, [.132, .177, .123], [.627, .807, .91]).rotation.z = -.55
+  }
+}
+
+export function montarCadeira(cx: Caixa, oval: Caixa) {
+  cx(0x464B43, [.08, .2, .08], [0, .142, 0])
+  cx(0x464B43, [.52, .045, .065], [0, .045, 0])
+  cx(0x464B43, [.065, .045, .51], [0, .045, 0])
+  oval(CADEIRA, [.562, .115, .504], [0, .265, 0])
+  cx(0x464B43, [.065, .35, .067], [0, .42, -.225])
+  oval(0x637063, [.57, .416, .126], [0, .526, -.243])
+  for (const x of [-.272, .272]) {
+    cx(0x464B43, [.055, .16, .055], [x, .346, -.037])
+    oval(CADEIRA, [.085, .062, .29], [x, .423, -.045])
+  }
 }
