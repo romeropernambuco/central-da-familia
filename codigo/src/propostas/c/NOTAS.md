@@ -1,61 +1,62 @@
-﻿# Proposta C · Jornada do Dia
+# Proposta C · Jornada do Dia · versão 2
 
-## Conceito
+A abertura diz quanto cabe no dia, **Agora** pede uma decisão e **Sua equipe** mostra quem trabalha por trás dos pedidos. **Esta semana** e **O caminho até 2029** completam a leitura. Fraunces Variable mantém a voz editorial da referência Oura e DM Sans Variable sustenta ações e dados.
 
-A Central recebe a família pelo nome e responde, em uma frase, quanto cabe no dia.
-A jornada liga três momentos em uma linha de leitura vertical. Agora, Esta semana e O caminho até 2029.
-Uma vinheta de escritório mostra o trabalho da equipe e dá acesso aos pedidos que ela precisa resolver com a família.
+## As 13 fraquezas que a revisão corrigiu
 
-## Hierarquia da primeira tela
+1. **A porta dizia apenas “bem-vindo”.** A janela ao nascer do sol, o café e o cofrinho contam o começo de um dia que envolve cuidar da casa e do dinheiro.
+2. **A ilustração competia com a frase pequena.** No celular, o desenho ganhou uma área própria ao lado do botão do orçamento e o recorte eliminou margem vazia do SVG.
+3. **A frase de 64 px quebrava mal no desktop.** A coluna do título comporta “Hoje você pode gastar” em uma linha a 1280 px. O valor tem linha própria de 36 px. A arte se aproxima do bloco de texto sem invadi-lo.
+4. **O botão de orçamento dominava todas as decisões.** Continua ao lado da saúde do dia, em contorno. O preenchimento azul dá precedência a **Já fiz** quando há pedido.
+5. **Era preciso sair do Início para responder.** O primeiro pedido elegível tem **Já fiz** e **Depois**. Dinheiro em risco vem antes de Operação e Lembrete. As pílulas usam ícone e nome do nível.
+6. **Pedidos secundários tomavam o espaço do primeiro.** No celular há um pedido acionável e o caminho para a fila completa. No desktop, até dois outros pedidos aparecem como contexto.
+7. **Sumir com o pedido apagaria o contexto do teclado.** A resposta avança a fila, anuncia o que aconteceu, leva o foco à mensagem e permite desfazer da última resposta para a primeira.
+8. **Fila vazia parecia falha de carregamento.** “Nenhum pedido para agora” representa uma fila sem itens elegíveis. “Ainda sem dado sobre as tarefas” cobre a indisponibilidade.
+9. **O cartão grafite interrompia o papel quente.** A vinheta usa a camada areia do menu no claro e o terceiro nível de superfície no escuro. Seu atalho fica no cabeçalho do cartão, junto do título.
+10. **O escritório parecia uma miniatura decorativa.** O SVG ocupa toda a largura interna da vinheta, com quatro salas, oito postos e plaquinhas de nome e estado. A sala do primeiro pedido ganha destaque quando o contrato informa o vínculo.
+11. **Contagens de equipe competiam com os dados que ajudam a decidir.** A vinheta fala pelos estados das pessoas. A semana mostra a próxima data disponível até domingo e distingue dados parciais. O total mensal é explicitamente de recebimentos, e o Plano 2029 usa a diferença oficial com margem.
+12. **O olho precisava controlar também pistas visuais e textos livres.** Fechado, remove vencimentos, plaquinhas, destaque de sala e a geometria da barra. Os pedidos da casa usam títulos fixos e os demais recebem um rótulo seguro. A privacidade da casca prevalece sobre a prop local.
+13. **O escuro precisava de acabamento próprio.** Fundo, cartão e menu partem de #0c0c0b, #131312 e #1a1918. O azul ganha luminosidade e mantém contraste com o texto do botão. Filetes e tintas de ilustração usam mistura em OKLCH. Foco continua visível e alvos têm 44 px.
 
-- **Em 2 segundos.** Saudação, limite de hoje e ação para abrir o orçamento. O valor do snapshot medido foi R$ 101,33.
-- **Em 5 segundos.** Agora resume até dois pedidos no celular e três no desktop. Os avatares representam quem pediu e as pílulas distinguem Dinheiro em risco, Operação e Lembrete. A equipe aparece logo abaixo da fila no celular e ao lado no desktop.
-- **Depois.** A semana reúne os cartões a vencer e o total previsto para entrar no mês. O caminho até 2029 mostra a cobertura e a diferença mensal oficial com margem. Os destinos abrem as telas de exemplo correspondentes.
+## Primeira dobra
 
-## Tipografia e paleta
+Medição da casca do laboratório no Chromium, com fontes carregadas e o snapshot fictício de 18/11/2026. As contagens a seguir são do quadro de prévia, medido pelo retângulo dos textos financeiros.
 
-Fraunces Variable dá aos títulos a voz editorial da referência Oura, e DM Sans Variable mantém a leitura e os valores tabulares claros em tamanhos pequenos.
+- **Celular, 375 × 812, claro e escuro.** 1 número financeiro, o limite do dia. A dobra reserva espaço para o primeiro pedido e a entrada do escritório. A fila do snapshot estava vazia. Um cenário adicional com dois pedidos sintéticos exercitou a resposta rápida.
+- **Desktop, 1280 × 800, claro e escuro.** 4 números financeiros, limite do dia, recebimentos do mês, cobertura e diferença mensal com margem. A frase fica em uma linha de 64 px. Na versão anterior, as notas registravam 1 número no celular e 2 no desktop em outro snapshot.
+- **Olho fechado.** O laboratório mostra “Valores ocultos”. Os marcadores somem e a barra sai do DOM. O Assessor da Casa vê só tarefas operacionais autorizadas, com títulos fixos, sem escritório financeiro, orçamento ou Plano 2029.
 
-A escala usa 12 px/1,15–1,5 para rótulos 700 e legendas, 14 px/1,3–1,5 para ações 700 e texto de apoio 400, e 16 px/1,5 como base. A vinheta móvel usa 20 px/1,12, os capítulos móveis 28 px/1,12 e a frase de abertura 36 px/1,05 no celular e 64 px/1,05 no desktop, com pesos 430–460. O valor principal tem 36 px/1,15 e os secundários 27 px/1,2, ambos em peso 650 com algarismos tabulares sem quebra. O símbolo de percentual usa 65% do corpo do valor.
+Os quatro valores financeiros da página usam o contrato e aparecem uma vez. Datas e o nome Plano 2029 orientam a leitura. Os valores principais e secundários usam respectivamente 36 e 27 px, com algarismos tabulares sem quebra e símbolo de percentual menor.
 
-- **Claro.** Papel #f7f1e8, superfície #fffbf5, areia #ede4d8, texto #28231f e apoio #595147. Azul acinzentado #385c81 como único destaque, com texto branco. A vinheta usa grafite #24211e.
-- **Escuro.** Fundo #0c0c0b, superfície #131312, menu #1a1918, texto #f5eee4 e apoio #c3b8aa. O mesmo azul ganha luminosidade #a9c7e8, com texto #172738. A vinheta usa grafite quente #211e1a.
-- Filetes e tintas suaves usam mistura OKLCH. O vermelho semântico #8f332b / #ffa89e fica reservado para Dinheiro em risco. Os traços decorativos e focos usam tons do mesmo azul. Os blocos usam raios 12/8/6 px e as ações principais têm formato de pílula. A sombra da vinheta aparece no claro.
+## Nota por critério do briefing
 
-## Primeira dobra e privacidade
+As notas anteriores foram recuperadas da versão 1. As novas notas avaliam as quatro combinações e penalizam os limites que ainda importam.
 
-Medição da casca no Chromium, com o snapshot de exemplo de 17/11/2026 e fontes carregadas.
-
-- **Celular, 375 × 812.** 1 número financeiro nos dois temas. A dobra prioriza o limite e os pedidos. A vinheta mostra duas contagens operacionais, num total de três indicadores de valor na tela, além de datas contextuais.
-- **Desktop, 1280 × 800.** 2 números financeiros nos dois temas. A dobra inclui o previsto a receber do mês. Nenhuma fatura do snapshot vencia até domingo. A projeção completa fica na sequência da jornada.
-- **Olho fechado.** A casca retorna “Valores ocultos”. O HTML perde os marcadores, os vencimentos e a barra, inclusive sua largura. A lista troca descrições livres por um rótulo seguro. Também são ocultadas as contagens da equipe. O papel de Assessor da Casa só recebe a superfície de tarefas operacionais da casa, com títulos controlados. O papel de pessoa da família usa apenas o orçamento pessoal e as rotas permitidas.
-
-O teste SSR limita os marcadores financeiros da tela inteira. O navegador mede os retângulos do texto de cada ocorrência com a função da casca. A contagem pode variar com a data de exemplo, o número de faturas dentro da semana e o tamanho dos textos.
-
-## Escritório e diferenças para o Início atual
-
-A maquete isométrica compartilhada ocupa uma vinheta de grafite. Ela liga visualmente os avatares dos pedidos ao lugar onde a equipe trabalha. O bloco conta quem está trabalhando ou, quando ninguém está nessa situação entre os estados conhecidos, quem entregou. Em seguida, indica quem espera a família. Uma frase informa quando só parte dos estados está disponível. A maquete é decorativa para leitores de tela, pois a informação de estado e o link estão no texto.
-
-A jornada substitui a sequência de resumos, envelopes, ritmo mensal e lançamentos recentes por uma frase com ação e três capítulos. Os dados detalhados continuam acessíveis pelas rotas correspondentes. O selo Exemplo aparece uma vez no cabeçalho. A linha da jornada é um filete neutro. A navegação usa quatro abas e Mais, no topo do desktop e na base do celular.
-
-## Autoavaliação
-
-1. **Hierarquia em dois segundos · 9/10.** A frase e o limite dominam a abertura. Em 375 px a frase ocupa duas linhas, o que toma espaço do capítulo seguinte.
-2. **Números acima da dobra · 9/10.** A casca confirmou 1 financeiro no celular e 2 no desktop em ambos os temas. O celular tem menos valores financeiros que a ambição de três a quatro. A diferença abre espaço para tarefas e equipe.
-3. **Ritmo e espaçamento · 8/10.** Filetes e intervalos separam os momentos. Títulos longos de pedidos consomem linhas no celular.
-4. **Tipografia · 9/10.** A serifa abre e pontua a jornada. A sans sustenta os dados e ações. Nomes longos de tarefas podem dividir a leitura em mais de uma linha.
-5. **Ícones e ilustrações · 8/10.** Lucide diferencia as ações e os autores. As figuras do projeto pontuam os capítulos. O celular reduz a maquete e omite as legendas das salas.
-6. **Organização por tarefa · 8/10.** Orçamento, fila e Plano 2029 têm destinos claros. A resolução de um pedido acontece no Escritório. O Plano 2029 pede rolagem no celular.
-7. **Acessibilidade · 8/10.** H1 único, foco na cor de destaque, rótulos visíveis, contraste AA calculado e alvos de pelo menos 44 × 44 px medidos no Chromium. A verificação assistiva foi estrutural, sem sessão com leitor de tela.
-8. **Privacidade · 9/10.** O olho remove valores internos, descrições livres dos pedidos e a geometria de progresso. A disponibilidade de dados continua comunicada.
-9. **Temas claro e escuro · 9/10.** A hierarquia foi verificada nas quatro combinações. As ilustrações pequenas têm menos presença no escuro para preservar o foco no texto.
-10. **Escritório como personagem · 8/10.** A equipe aparece na primeira tela, com resumo do trabalho e entrada própria. A maquete cobre quatro salas e depende dos dados de estado disponíveis.
+1. **Hierarquia em dois segundos · 9 → 9.** Limite e ação prioritária têm papéis distintos. O título ainda consome duas linhas a 375 px.
+2. **Números acima da dobra · 9 → 10.** A casca mediu 1 no celular e 4 no desktop, sem repetir valores. No celular, o Plano 2029 continua depois da rolagem.
+3. **Ritmo e espaçamento · 8 → 9.** O filete liga os capítulos, a arte ganhou espaço próprio e a ordem das ações segue a leitura. Pedidos muito longos podem empurrar parte da maquete para a rolagem.
+4. **Tipografia · 9 → 9.** A frase usa 64 px em uma linha no desktop e a escala financeira permanece constante. As plaquinhas do SVG compartilhado ainda são pequenas a 375 px.
+5. **Ícones e ilustrações · 8 → 9.** O desenho conta o começo do dia, Lucide identifica ações e alertas, e as figuras decorativas saem da árvore acessível.
+6. **Organização por tarefa · 8 → 9.** A primeira resposta acontece em Agora e o destino da fila completa continua explícito. Confirmação e adiamento são locais ao exemplo.
+7. **Acessibilidade · 8 → 9.** H1 único, contraste dos tokens verificado por tema, controle de 44 px, foco e status após resposta. A checagem assistiva foi estrutural e pelo foco do navegador.
+8. **Privacidade · 9 → 10.** Testes passam tanto pelo olho da casca quanto pela prop local. A checagem cobre dados livres, proporções e a restrição do Assessor.
+9. **Temas claro e escuro · 9 → 9.** Superfícies, hierarquia e ações foram conferidas nas quatro combinações. As legendas pequenas da maquete ainda merecem revisão quando chegar o SVG compartilhado novo.
+10. **Escritório como personagem · 8 → 9.** A vinheta ficou ampla, com acesso próprio e relação entre sala e pedido. Na versão compartilhada desta worktree, a maquete cobre quatro salas e oito postos. A proposta já envia a variante média e o estado do olho para a revisão em paralelo.
 
 ## Como produtizar
 
-- **Limite de hoje.** Adaptar o campo podeGastarHoje de app/useResumoFamilia.ts, calculado em lib/resumo/orcamento.ts e lib/resumo/leituras.ts. Usar a saudação e o relógio local já compartilhados. Enviar o botão para #/orcamento.
-- **Agora.** Compartilhar a leitura de escritorioHoje com a superfície do escritório. O hook de resumo expõe o total de pendências, enquanto a fila vem de precisa_de_voce. Usar lib/resumo/pendencias.ts para o total quando necessário. O resumo leva a #/escritorio. No produto, a origem da tarefa pode permitir entrada direta na ficha ou em PrecisaDeVoce. Para Assessor, usar somente a leitura autorizada de Casa e o destino #/casa, sem montar o hook financeiro.
-- **Esta semana.** Ligar useResumoFamilia aos campos faturas e recebimentos, com lib/resumo/faturas.ts e lib/resumo/recebimentos.ts. Filtrar faturas abertas de hoje a domingo, com destino #/cartoes. O previsto do mês leva a #/planejamento, que monta Recebimentos. Uma previsão semanal exigiria no contrato as datas previstas por recebimento e o total calculado para o intervalo.
-- **O caminho até 2029.** Usar plano2029 do mesmo hook e os números oficiais de lib/resumo/plano2029.ts, com cobertura e falta mensal com margem no cenário garantido. Preservar a cobertura oficial acima de 100% e saturar somente a barra. O destino de produto é #/planejamento.
-- **Escritório.** Usar a leitura de escritorioHoje e useEquipeCompleta para os estados, sem presumir que “entregue” ou “trabalhando” significa “em dia”. Integrar EscritorioIsometrico da frente f38 sob carregamento adiado, com a maquete SVG como opção leve. Preservar a vinheta e o link #/escritorio.
-- **Casca e privacidade.** Integrar o olho do contexto do app, as permissões de app/rotas.ts e o menu do App. Levar os estados de carregamento, falta de dados e nova tentativa do useResumoFamilia ao adaptador de apresentação. Para preservar títulos úteis no modo privado, o contrato precisaria oferecer o tipo da tarefa e um título explicitamente seguro. Hoje o estado de Assessor usa os tipos de tarefa reconhecidos pelo prefixo do ID.
+- **Limite de hoje.** Adaptar o campo podeGastarHoje de app/useResumoFamilia.ts e os resultados de lib/resumo/orcamento.ts e lib/resumo/leituras.ts. Preservar saudação, relógio local e o destino #/orcamento.
+- **Agora.** Usar escritorioHoje.precisa_de_voce como leitura da fila. Para **Já fiz**, mapear a operação de domínio de cada tipo autorizado, validar a permissão na API e repetir pedidos com a mesma chave de idempotência. Para **Depois**, persistir o adiamento pelo mecanismo de lembretes existente, com retorno no prazo definido para aquele tipo. Atualizar a fila após confirmação e oferecer reversão quando a operação permitir. Para Assessor, carregar somente a leitura autorizada de Casa.
+- **Esta semana.** Consumir faturas e recebimentos do resumo compartilhado. Filtrar faturas abertas de hoje a domingo e encaminhar a #/cartoes. O previsto mensal leva a #/planejamento. Uma previsão semanal precisa de datas por recebimento no contrato.
+- **Plano 2029.** Usar a cobertura e a diferença mensal oficial com margem do cenário garantido em lib/resumo/plano2029.ts. Preservar a cobertura oficial acima de 100% e saturar apenas a barra.
+- **Escritório.** Integrar a variante média da maquete compartilhada com os estados de escritorioHoje e useEquipeCompleta. Manter o vínculo com o pedido, o atalho #/escritorio e a alternativa SVG ao escritório 3D. Conferir tamanho e contraste das plaquinhas na nova maquete.
+- **Casca e privacidade.** Integrar olho, menu e permissões do app. Expor no contrato um tipo de tarefa e um título seguro para o modo privado e para Casa. Levar ao adaptador os estados de carregamento, indisponibilidade e nova tentativa do resumo.
+
+## Verificação
+
+Os testes da proposta cobrem ordem dos alertas, avanço da fila, adiamento, desfazer, foco, olho, Assessor, vencimento parcial, maquete, alvos e contraste dos temas.
+
+- **TypeScript e Proposta C.** `npx tsc --noEmit` terminou com zero erros e os 26 testes da proposta passaram.
+- **Chromium.** As quatro combinações ficaram sem transbordamento horizontal. O SVG compartilhado mediu 301 px de largura no celular e 437 px no desktop. O cenário com pedidos confirmou avanço, adiamento, desfazer e foco no retorno. No desktop, os dois valores do Plano 2029 e seus rótulos couberam na dobra do snapshot medido.
+- **Suíte completa.** 1.578 testes passaram, 3 falharam e 3 ficaram pendentes. O comando direto esbarrou no carregamento do Vite pelo esbuild nesta worktree. A execução programática com a mesma configuração fez a coleta completa. As falhas ficaram em `componentes/ux-cobertura.test.ts` na mensagem ao salvar um rascunho, `propostas/b/proposta.test.ts` na sentinela de privacidade da Proposta B e `propostas/isolamento.test.ts` na leitura de configuração negada ao esbuild.
+- **Commit.** O Git recusou a criação de `index.lock` no diretório compartilhado da worktree. Os arquivos ficaram em `src/propostas/c/`.
