@@ -165,8 +165,6 @@
 .j-palco { min-inline-size: 0; }
 .j-palco-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 1px; }
 .j-palco-topo h2 { font-size: 20px; font-weight: 650; letter-spacing: -.024em; }
-.j-palco-topo span { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--texto-secundario); }
-.j-palco .maquete-rolagem { min-block-size: 458px; max-inline-size: 860px; }
 .j-palco .escritorio-maquete {
   --piso: color-mix(in oklch, var(--menu) 66%, #a89f86);
   --parede: color-mix(in oklch, var(--menu) 64%, #c2c2b0);
@@ -175,15 +173,7 @@
   --ouro: color-mix(in oklch, var(--menu) 35%, var(--destaque));
 }
 .j-palco .maquete-brilho { filter: none; }
-.j-palco .maquete-balao { border-color: var(--destaque); }
-.j-palco .maquete-balao .numero-financeiro { font-size: 16px; letter-spacing: 0; }
-.j-salas { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 12px 12px; }
-.j-salas button { padding-inline: 12px; border-radius: 999px; background: var(--menu); border-color: var(--j-divisa); font-weight: 600; }
-.j-ficha:has(h3) { margin: 0 12px 12px; padding: 9px 12px; border: 1px solid var(--j-divisa); border-radius: 8px; background: var(--cartao); }
-.j-ficha-topo { display: flex; min-block-size: 28px; align-items: center; justify-content: space-between; gap: 6px; }
-.j-ficha h3 { font-size: 20px; }
-.j-ficha p, .j-ficha ul { color: var(--texto-secundario); }
-.j-ficha ul { padding-inline-start: 18px; }
+.j-inicio .j-remetente-posto { padding: 0; font-weight: 700; text-align: start; }
 
 .j-folha {
   min-inline-size: 0;
@@ -304,20 +294,6 @@
 .j-inicio[data-dispositivo="celular"] .j-chip > span:first-child svg { inline-size: 13px; block-size: 13px; }
 .j-inicio[data-dispositivo="celular"] .j-palco-topo { padding: 9px 10px 2px; }
 .j-inicio[data-dispositivo="celular"] .j-cena-corpo { display: block; }
-.j-inicio[data-dispositivo="celular"] .maquete-rolagem {
-  min-block-size: 0;
-  block-size: 274px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--borda) var(--j-cena);
-}
-.j-inicio[data-dispositivo="celular"] .j-salas {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding: 5px 10px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--borda) var(--j-cena);
-}
-.j-inicio[data-dispositivo="celular"] .j-salas button { flex: none; padding-inline: 11px; font-size: 12px; }
 .j-inicio[data-dispositivo="celular"] .j-folha { padding: 0 10px; border-radius: 0 0 var(--raio-grande) var(--raio-grande); border: 0; border-block-start: 1px solid var(--j-divisa); }
 .j-inicio[data-dispositivo="celular"] .j-folha-gatilho { inline-size: 100%; font: inherit; font-weight: 680; min-block-size: 48px; }
 .j-folha-gatilho svg:last-child { margin-inline-start: auto; }

@@ -1,7 +1,8 @@
 import { ArrowUpRight, Bell, Check, Clock, TriangleAlert, UserRound, Wrench } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { TudoEmDia } from '../../componentes/ilustracoes'
 import type { DadosInicio } from '../dadosExemplo'
+import { responsavelDaTarefa, type PessoaDoEscritorio } from '../comuns/modeloPosto'
 import { Medida } from './Financeiro'
 
 const niveis = {
@@ -13,14 +14,14 @@ const niveis = {
 export function organizarFila(dados: DadosInicio) {
   const alertas = new Map(dados.alertas.valor?.map(item => [item.id, item.nivel]))
   return (dados.pendencias.fila.valor ?? [])
-    .map(tarefa => ({ ...tarefa, nivel: alertas.get(tarefa.id) ?? 'operacao' as const }))
+    .map(tarefa => ({ ...tarefa, pessoa: responsavelDaTarefa(dados, tarefa), nivel: alertas.get(tarefa.id) ?? 'operacao' as const }))
     .sort((a, b) => niveis[a.nivel].ordem - niveis[b.nivel].ordem)
 }
 
 type Tarefa = ReturnType<typeof organizarFila>[number]
 export type Resposta = 'feita' | 'adiada'
 
-export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, responder }: {
+export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, responder, selecionar, tarefaAlvo }: {
   dados: DadosInicio
   tarefas: Tarefa[]
   titulo: string
@@ -28,6 +29,8 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, resp
   respostas: Partial<Record<string, Resposta>>
   completa: boolean
   responder: (id: string, resposta: Resposta | undefined) => void
+  selecionar: (pessoa: PessoaDoEscritorio, tarefa: string) => void
+  tarefaAlvo?: { id: string }
 }) {
   const [alteracao, setAlteracao] = useState<{ id: string; texto: string; desfazer: boolean }>()
   const [aba, setAba] = useState<'agora' | 'depois'>('agora')
@@ -37,6 +40,19 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, resp
   const existemAdiadas = tarefas.some(tarefa => respostas[tarefa.id] === 'adiada')
   const lista = tarefas.filter(tarefa => aba === 'depois' ? respostas[tarefa.id] === 'adiada' : !respostas[tarefa.id])
   const filaIndisponivel = dados.pendencias.fila.estado === 'indisponivel'
+  const botaoAlvo = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!tarefaAlvo) return
+    setAba(respostas[tarefaAlvo.id] === 'adiada' ? 'depois' : 'agora')
+    setVerTudo(true)
+    abrir(tarefaAlvo.id)
+  }, [tarefaAlvo])
+  useEffect(() => {
+    if (tarefaAlvo && aberta === tarefaAlvo.id) {
+      botaoAlvo.current?.focus({ preventScroll: true })
+      botaoAlvo.current?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [tarefaAlvo, aberta, aba, verTudo])
 
   function mover(id: string, resposta: Resposta | undefined, texto: string) {
     responder(id, resposta)
@@ -62,7 +78,7 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, resp
     {lista.length ? <ul className="m-tarefas">
       {(completa || verTudo ? lista : lista.slice(0, 3)).map(tarefa => {
         const nivel = niveis[tarefa.nivel]
-        const pessoa = dados.funcionarios.valor?.find(item => item.id === tarefa.funcionario || item.nome === tarefa.funcionario)
+        const pessoa = tarefa.pessoa
         const expandida = aberta === tarefa.id
         const valor = tarefa.valor.valor
         const repetido = valor !== null && (camposDoPainel.some(campo => campo.valor === valor) ||
@@ -72,7 +88,7 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, resp
           <div className="m-conteudo-tarefa">
             <span className="m-nivel" data-nivel={tarefa.nivel}><nivel.Icone aria-hidden="true" size={14} />{nivel.nome}</span>
             <h3>{oculto ? 'Tarefa pendente' : tarefa.perguntaCurta}</h3>
-            {pessoa && <p className="m-legenda">{pessoa.nome}</p>}
+            {pessoa && <button type="button" className="m-alvo m-remetente" onClick={() => selecionar(pessoa, tarefa.id)}>{pessoa.nome}</button>}
             <div className="m-acoes">
               {aba === 'agora' ? <>
                 <button className="m-alvo" type="button" onClick={() => mover(tarefa.id, 'feita', 'Marcada como feita nesta prévia.')}>
@@ -82,7 +98,7 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, resp
                   <Clock aria-hidden="true" size={16} />Depois
                 </button>
               </> : <button className="m-alvo" type="button" onClick={() => mover(tarefa.id, undefined, 'Tarefa retomada.')}>Retomar</button>}
-              <button className="m-alvo m-abrir" type="button" aria-expanded={expandida}
+              <button className="m-alvo m-abrir" type="button" ref={tarefaAlvo?.id === tarefa.id ? botaoAlvo : undefined} aria-expanded={expandida}
                 onClick={() => abrir(expandida ? undefined : tarefa.id)}>
                 <ArrowUpRight aria-hidden="true" size={16} />{expandida ? 'Fechar' : 'Abrir'}
               </button>

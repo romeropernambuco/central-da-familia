@@ -162,7 +162,7 @@ it('deixa o palco sem iniciais e usa uma única etiqueta para hover, foco e sele
   await a.render({ mostrarPlaquinhas: true })
   await a.mostrar()
   const postos = a.el.buscar(n => n.getAttribute('data-posto') !== null)
-  expect(postos).toHaveLength(funcionarios.valor!.filter(f => f.sala === 'caixa').length)
+  expect(postos).toHaveLength(19)
   expect(postos.every(p => p.textContent === '')).toBe(true)
   const etiqueta = a.ler('class', 'escritorio3d-detalhe')
   expect(etiqueta.textContent).not.toContain(funcionario.nome)
@@ -181,7 +181,7 @@ it('deixa o palco sem iniciais e usa uma única etiqueta para hover, foco e sele
 
 it('pagina as sete salas com botões nativos e mantém os 19 postos acessíveis sem remontar', async () => {
   const a = ambiente()
-  await a.render()
+  await a.render({ completo: false })
   await a.mostrar()
   const anterior = a.ler('aria-label', 'Sala anterior')
   const proxima = a.ler('aria-label', 'Próxima sala')

@@ -6,7 +6,8 @@ import type { PropsProposta } from '../Propostas'
 import { useValoresOcultos } from '../comuns/privacidade'
 import { Bento, medidasDosMotores, Referencia, reservarMedidas, Rumo, type Motor } from './Financeiro'
 import { Fila, organizarFila } from './Fila'
-import { FichaPessoa, Palco, type Pessoa } from './Palco'
+import { Palco, type Pessoa } from './Palco'
+import { resumoDaEquipe } from '../comuns/modeloPosto'
 import './proposta.css'
 
 type Destino = Motor | 'inicio' | 'escritorio' | 'fila' | 'plano'
@@ -62,7 +63,8 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
   const oculto = useValoresOcultos()
   const prefixo = useId()
   const [ativo, setAtivo] = useState<Destino>('inicio')
-  const [selecionada, selecionar] = useState<Pessoa>()
+  const [selecao, setSelecao] = useState<{ pessoa: Pessoa; tarefa?: string }>()
+  const [tarefaAlvo, setTarefaAlvo] = useState<{ id: string }>()
   const [pasta, setPasta] = useState<Pasta>('agora')
   const [movidas, setMovidas] = useState<Partial<Record<string, Pasta>>>({})
   const papel = dados.pessoa.papel.valor
@@ -70,6 +72,11 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
   const pessoal = papel === 'pessoa'
   const casa = papel === 'equipe'
   const itens = familiar || casa ? organizarFila(dados, familiar) : []
+  const tarefaDaFicha = selecao && (itens.find(({ tarefa, pessoa }) => tarefa.id === selecao.tarefa && pessoa?.id === selecao.pessoa.id) ??
+    itens.find(({ tarefa, pessoa }) => pessoa?.id === selecao.pessoa.id && (movidas[tarefa.id] ?? 'agora') === 'agora'))?.tarefa
+  function selecionar(pessoa?: Pessoa, tarefa?: string) {
+    setSelecao(pessoa ? { pessoa, tarefa } : undefined)
+  }
   const proxima = itens.find(({ tarefa }) => (movidas[tarefa.id] ?? 'agora') === 'agora')
   const risco = proxima?.nivel === 'dinheiro em risco'
   const estado = dados.pendencias.fila.estado
@@ -115,7 +122,8 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
       </section>}
 
       {(familiar || casa) && <section className="l-saude" aria-label="Estado do dia">
-        <p data-risco={risco || undefined}>{risco ? <ShieldAlert size={17} aria-hidden="true" /> : <ClipboardList size={17} aria-hidden="true" />}{frase}</p>
+        <div><p data-risco={risco || undefined}>{risco ? <ShieldAlert size={17} aria-hidden="true" /> : <ClipboardList size={17} aria-hidden="true" />}{frase}</p>
+          {familiar && <p className="l-legenda">{resumoDaEquipe(dados.funcionarios)}</p>}</div>
         <button type="button" onClick={() => { setPasta('agora'); ir('fila') }}>Ver fila <ArrowDown size={16} aria-hidden="true" /></button>
       </section>}
   </>
@@ -123,15 +131,14 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
   return <div className="l-inicio" data-tema={tema} data-dispositivo={dispositivo}>
     <div className="l-conteudo">
       {dispositivo === 'celular' && familiar ? <div className="l-abertura">{abertura}</div> : abertura}
-      {familiar && <Palco id={id('escritorio')} funcionarios={dados.funcionarios} celular={dispositivo === 'celular'}
-        papel={papel} oculto={oculto} selecionar={selecionar} />}
+      {familiar && <Palco id={id('escritorio')} {...{ dados, oculto, selecionar }} celular={dispositivo === 'celular'}
+        pessoa={selecao?.pessoa} tarefa={tarefaDaFicha} tarefaDaFila={selecao?.tarefa} verTarefa={id => setTarefaAlvo({ id })} />}
       {(familiar || casa) && <Fila id={id('fila')} {...{ itens, estado, familiar, pasta, setPasta, movidas, setMovidas }}
-        medidas={medidas.slice(visiveis.length, inicioMotores)} selecionar={selecionar} />}
+        medidas={medidas.slice(visiveis.length, inicioMotores)} {...{ selecionar, tarefaAlvo }} />}
       {familiar && <Rumo id={id('plano')} progressao={dados.plano2029.progressao} />}
       {(familiar || pessoal) && <Bento id={id} medidas={medidas.slice(inicioMotores)} pessoal={pessoal} />}
       {!papel && <p className="l-legenda">Perfil · Ainda sem dado</p>}
     </div>
     <Menu {...{ ativo, familiar, pessoal, casa, ir }} />
-    {familiar && selecionada && <FichaPessoa pessoa={selecionada} fechar={() => selecionar(undefined)} />}
   </div>
 }

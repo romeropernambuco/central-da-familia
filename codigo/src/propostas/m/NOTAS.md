@@ -1,5 +1,13 @@
 # Proposta M · Central da Família
 
+## F68 · Escritório completo
+
+**Todas** abre com os 19 postos no celular e no desktop. As pílulas dão foco por sala e o palco compartilhado oferece pinça, arraste, zoom e **Ampliar**. A cena ocupa uma tela no celular. A navegação lateral e as duas colunas do desktop permanecem.
+
+A folha da pessoa mostra função, atividade, último resultado e atalhos para a área e o histórico. O remetente da tarefa leva à ficha e **Ver tarefa na fila** abre o item correspondente. O expediente fictício do laboratório contabiliza oito pessoas trabalhando. O olho protege os valores e textos livres. A área do Assessor fica restrita à Casa.
+
+## Registro da proposta f67
+
 A M mantém no desktop a composição em duas colunas. O escritório e a fila ficam na coluna principal. Rumo a 2029, orçamento, faturas e referências ficam na coluna secundária. A navegação usa a barra lateral nos quadros de 1280 e 1440 px.
 
 ## Celular em cinco telas

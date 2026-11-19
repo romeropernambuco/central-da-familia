@@ -4,6 +4,7 @@ import '@fontsource-variable/bricolage-grotesque'
 import '@fontsource-variable/inter'
 import type { PropsProposta } from '../Propostas'
 import { useValoresOcultos } from '../comuns/privacidade'
+import { resumoDaEquipe, type PessoaDoEscritorio } from '../comuns/modeloPosto'
 import { Escritorio } from './Escritorio'
 import { Fila, organizarFila, type Resposta } from './Fila'
 import { Bento, Financeiro, Referencias, Rumo } from './Financeiro'
@@ -23,6 +24,8 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
   const mais = useRef<HTMLDetailsElement>(null)
   const [ativo, setAtivo] = useState<Destino>('inicio')
   const [respostas, setRespostas] = useState<Partial<Record<string, Resposta>>>({})
+  const [selecao, setSelecao] = useState<{ pessoa: PessoaDoEscritorio; tarefa?: string }>()
+  const [tarefaAlvo, setTarefaAlvo] = useState<{ id: string }>()
   const oculto = useValoresOcultos()
   const celular = dispositivo === 'celular'
   const papel = dados.pessoa.papel.valor
@@ -46,6 +49,11 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
 
   const tarefas = organizarFila(dados)
   const pendentes = tarefas.filter(tarefa => !respostas[tarefa.id])
+  const tarefaDaFicha = selecao && (tarefas.find(t => t.id === selecao.tarefa && t.pessoa?.id === selecao.pessoa.id) ??
+    pendentes.find(t => t.pessoa?.id === selecao.pessoa.id))
+  function selecionar(pessoa?: PessoaDoEscritorio, tarefa?: string) {
+    setSelecao(pessoa ? { pessoa, tarefa } : undefined)
+  }
   const risco = pendentes.some(tarefa => tarefa.nivel === 'dinheiro em risco')
   const estado = risco ? 'Há um vencimento que pede atenção.'
     : pendentes.length ? 'A equipe tem decisões esperando por você.'
@@ -59,15 +67,18 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
       <span className="selo-exemplo">Exemplo</span>
     </div>
     <section className="m-saude" aria-label="Estado do dia" data-risco={risco}>
-      <p><span className="m-sinal" aria-hidden="true" />{estado}</p>
+      <div><p><span className="m-sinal" aria-hidden="true" />{estado}</p>
+        <p className="m-legenda">{resumoDaEquipe(dados.funcionarios)}</p></div>
       <button className="m-alvo" type="button" onClick={() => focar(pendentes.length ? 'fila' : 'escritorio')}>
         {pendentes.length ? 'Ver fila' : 'Ver equipe'}<ArrowDown aria-hidden="true" size={16} />
       </button>
     </section>
   </header>
-  const escritorio = <Escritorio dados={dados} titulo={alvo('escritorio')} celular={celular} oculto={oculto} />
+  const escritorio = <Escritorio dados={dados} titulo={alvo('escritorio')} {...{ celular, oculto, selecionar }}
+    pessoa={selecao?.pessoa} tarefa={tarefaDaFicha} tarefaDaFila={selecao?.tarefa} verTarefa={id => setTarefaAlvo({ id })} />
   const fila = <Fila dados={dados} tarefas={tarefas} titulo={alvo('fila')} oculto={oculto} respostas={respostas}
-    completa={celular} responder={(id, resposta) => setRespostas(anteriores => ({ ...anteriores, [id]: resposta }))} />
+    completa={celular} {...{ selecionar, tarefaAlvo }}
+    responder={(id, resposta) => setRespostas(anteriores => ({ ...anteriores, [id]: resposta }))} />
 
   return <div className="m-central" data-tema={tema} data-dispositivo={dispositivo} ref={painel}>
     <div className="m-miolo">

@@ -1,4 +1,5 @@
 import type { Campo, DadosInicio, NivelAlerta } from '../dadosExemplo'
+import { responsavelDaTarefa } from '../comuns/modeloPosto'
 
 export type Dinheiro = Campo<number, 'reais' | 'centavos'>
 export type Funcionario = NonNullable<DadosInicio['funcionarios']['valor']>[number]
@@ -20,14 +21,11 @@ export const prioridades = {
   lembrete: { texto: 'Lembrete', icone: 'pendente', ordem: 2 },
 } as const
 
-const chave = (texto: string) => texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
-
 export function organizarFila(dados: DadosInicio) {
   const niveis = new Map(dados.alertas.valor?.map(a => [a.id, a.nivel]))
   return (dados.pendencias.fila.valor ?? []).map(tarefa => ({
     ...tarefa,
-    responsavel: dados.funcionarios.valor?.find(f => f.id === tarefa.funcionario ||
-      chave(f.nome) === chave(tarefa.funcionario) || chave(f.curto) === chave(tarefa.funcionario)),
+    responsavel: responsavelDaTarefa(dados, tarefa),
     nivel: niveis.get(tarefa.id) ?? ('operacao' satisfies NivelAlerta),
   })).sort((a, b) => prioridades[a.nivel].ordem - prioridades[b.nivel].ordem)
 }

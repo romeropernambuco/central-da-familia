@@ -148,3 +148,111 @@ button.escritorio3d-posto { cursor: pointer; touch-action: manipulation; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.escritorio3d-visor { min-inline-size: 0; color: var(--texto); }
+.escritorio3d-comandos, .escritorio3d-salas, .escritorio3d-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.escritorio3d-comandos { justify-content: space-between; padding: 8px; }
+.escritorio3d-visor :is(.escritorio3d-comandos button, .escritorio3d-ficha button, .escritorio3d-ficha a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--linha, var(--borda));
+  border-radius: 999px;
+  background: var(--cartao);
+  color: var(--texto);
+  font: inherit;
+  font-size: .8125rem;
+  font-weight: 650;
+}
+.escritorio3d-visor .escritorio3d-comandos button[aria-pressed="true"] {
+  background: var(--destaque);
+  color: var(--sobre-destaque, var(--fundo));
+}
+.escritorio3d-comandos button:disabled { opacity: .55; }
+.escritorio3d-visor :is(button, a):focus-visible { outline: 2px solid var(--destaque); }
+.escritorio3d-gestos { touch-action: pan-y; }
+.escritorio3d-gestos[data-zoom] { touch-action: none; }
+.escritorio3d-gestos[data-zoom] .escritorio3d-camera { cursor: grab; }
+.escritorio3d[data-completo] { max-inline-size: none; }
+.escritorio3d[data-completo] .escritorio3d-palco {
+  min-inline-size: 0;
+  block-size: max(var(--escritorio3d-altura, 0px), 55cqw, 510px);
+}
+.escritorio3d[data-completo][data-celular] .escritorio3d-palco { block-size: var(--altura, 100dvh); }
+.escritorio3d[data-completo] .escritorio3d-quadro,
+.escritorio3d[data-completo] .maquete-rolagem {
+  background: radial-gradient(ellipse at 50% 43%, var(--escritorio3d-luz, #eae7dd), var(--escritorio3d-fundo, #b9c1b3));
+  border-radius: 12px;
+  overflow: clip;
+}
+[data-tema="escuro"] .escritorio3d-visor {
+  --escritorio3d-luz: #2e3730;
+  --escritorio3d-fundo: #111613;
+}
+.escritorio3d[data-completo] .maquete-rolagem {
+  display: grid;
+  align-items: center;
+  max-inline-size: none;
+  min-block-size: max(var(--escritorio3d-altura, 0px), 55cqw, 510px);
+}
+.escritorio3d[data-completo][data-celular] .maquete-rolagem { min-block-size: var(--altura, 100dvh); }
+.escritorio3d[data-completo] .maquete-palco {
+  min-inline-size: 0;
+  transform: translate(var(--escritorio3d-x, 0%), var(--escritorio3d-y, 0%)) scale(var(--escritorio3d-zoom, 1));
+}
+.escritorio3d[data-completo] .maquete-nome-sala { display: none; }
+.escritorio3d :is(.escritorio3d-posto, .maquete-posto)[aria-pressed="true"] {
+  z-index: 1;
+  outline: 2px solid #bcdfaa;
+  box-shadow: inset 0 0 0 3px #2d4c38;
+}
+
+.escritorio3d-visor[data-ampliado], .escritorio3d-visor:fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  block-size: 100%;
+  background: var(--fundo);
+  overflow: auto;
+}
+.escritorio3d-visor[data-ampliado] .escritorio3d-gestos { flex: 1; }
+.escritorio3d-visor[data-ampliado] .escritorio3d[data-completo] :is(.escritorio3d-palco, .maquete-rolagem) {
+  min-block-size: 0;
+  block-size: max(300px, 100dvh - 104px);
+}
+
+.escritorio3d-ficha {
+  position: fixed;
+  inset: auto 16px 16px auto;
+  box-sizing: border-box;
+  margin: 0;
+  inline-size: min(420px, calc(100% - 32px));
+  max-block-size: min(85dvh, 640px);
+  padding: 18px;
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  background: var(--cartao);
+  color: var(--texto);
+  box-shadow: 0 16px 48px #0006;
+}
+.escritorio3d-ficha[data-celular] { inset: auto 0 0; margin-inline: auto; inline-size: min(100%, 450px); }
+.escritorio3d-ficha::backdrop { background: rgb(10 15 12 / 35%); }
+.escritorio3d-ficha header { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.escritorio3d-ficha h3 { margin: 2px 0 0; font-size: 1.375rem; }
+.escritorio3d-ficha :is(header p, dt) { margin: 0; color: var(--texto-secundario); font-size: .875rem; }
+.escritorio3d-ficha dl { margin: 16px 0; }
+.escritorio3d-ficha dt { font-weight: 700; }
+.escritorio3d-ficha dd { margin: 2px 0 10px; overflow-wrap: anywhere; }
+.escritorio3d-ficha-acoes { display: flex; flex-wrap: wrap; gap: 6px; }

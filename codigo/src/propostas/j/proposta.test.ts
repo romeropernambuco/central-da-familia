@@ -2,19 +2,21 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, expect, it, vi } from 'vitest'
 import ts from 'typescript'
+import { build } from 'vite'
+import react from '@vitejs/plugin-react'
 // @ts-ignore APIs do Node usadas só pelos testes.
-import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 // @ts-ignore APIs do Node usadas só pelos testes.
 import { spawnSync } from 'node:child_process'
 // @ts-ignore APIs do Node usadas só pelos testes.
 import { tmpdir } from 'node:os'
 // @ts-ignore APIs do Node usadas só pelos testes.
-import { dirname, join } from 'node:path'
+import { basename, join } from 'node:path'
 // @ts-ignore APIs do Node usadas só pelos testes.
 import { pathToFileURL } from 'node:url'
 // @ts-ignore APIs do Node usadas só pelos testes.
 import { env } from 'node:process'
-import { carregarDadosInicio, type DadosInicio } from '../dadosExemplo'
+import { carregarDadosInicio, comExpedienteExemplo, type DadosInicio } from '../dadosExemplo'
 import { PrivacidadePropostas } from '../comuns/privacidade'
 import { Proposta } from './Proposta'
 
@@ -43,7 +45,9 @@ it.each(cenarios)('renderiza o escritório no centro em $tema no $dispositivo', 
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
   expect(html).toContain('Maquete isométrica do escritório')
   expect(html.match(/class="maquete-posto"/g)).toHaveLength(19)
-  expect(html.match(/class="maquete-placa maquete-rotulo"/g)).toHaveLength(19)
+  expect(html).not.toContain('maquete-placa maquete-rotulo')
+  expect(html).toContain('data-completo="true"')
+  expect(html).toContain('aria-pressed="true">Todas</button>')
   expect(html.match(/<svg[^>]*class="cf-ilustracao"[^>]*aria-hidden="true"/g)).toHaveLength(4)
   expect(html).toContain('Rumo a 2029')
   expect(html).toContain('Viver de rendimentos')
@@ -152,43 +156,7 @@ const chrome = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
-// Executa a mesma proposta React no Chrome local, sem servidor nem rede. Só os módulos da interface
-// entram no HTML temporário. O snapshot chega por serialização do contrato de exemplo.
-function modulosDoNavegador(entradas: string[]) {
-  const modulos = new Map<string, string>()
-  function coletar(arquivo: string) {
-    if (modulos.has(arquivo)) return
-    const js = ts.transpile(ts.sys.readFile(arquivo)!, {
-      target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React, module: ts.ModuleKind.CommonJS,
-    })
-    modulos.set(arquivo, js)
-    for (const [, caminho] of js.matchAll(/require\("([^"]+)"\)/g)) {
-      if (caminho.startsWith('.') && !caminho.endsWith('.css')) {
-        const base = join(dirname(arquivo), caminho).replace(/\\/g, '/')
-        const resolvido = ['.ts', '.tsx'].map(ext => base + ext).find(existsSync)
-        if (!resolvido) throw new Error(`Módulo da prévia ausente: ${base}`)
-        coletar(resolvido)
-      }
-    }
-  }
-  for (const entrada of entradas) coletar(entrada)
-  return `const modulos = {${[...modulos].map(([arquivo, js]) => `${JSON.stringify(arquivo)}:(React,require,exports)=>{${js}\n}`).join(',')}};
-    const cache = {};
-    function carregar(id) {
-      if (cache[id]) return cache[id];
-      const exports = cache[id] = {};
-      modulos[id](React, caminho => {
-        if (caminho === 'react') return React;
-        if (caminho === 'lucide-react') return LucideReact;
-        if (caminho.endsWith('.css') || caminho.startsWith('@fontsource-variable/')) return {};
-        const base = new URL(caminho, 'https://local/' + id).pathname.slice(1);
-        return carregar(modulos[base + '.ts'] ? base + '.ts' : base + '.tsx');
-      }, exports);
-      return exports;
-    }`
-}
-
-const roteiroNavegador = `
+const roteiroNavegador = String.raw`
 async ({ cenarios, dados, tarefas }) => {
   const raizes = Array.from(document.querySelectorAll('.lab-conteudo')).map(el => ReactDOM.createRoot(el));
   function montar(i, snapshot, oculto = false) {
@@ -197,7 +165,8 @@ async ({ cenarios, dados, tarefas }) => {
   const clicar = (el) => ReactDOM.flushSync(() => el.click());
   cenarios.forEach((_, i) => montar(i, dados));
   await document.fonts.ready;
-  return Array.from(document.querySelectorAll('.lab-quadro')).map((quadro, i) => {
+  const resultados = [];
+  for (const [i, quadro] of Array.from(document.querySelectorAll('.lab-quadro')).entries()) {
     const obter = (seletor) => quadro.querySelector(seletor);
     const texto = (seletor) => obter(seletor)?.textContent.trim();
     const botao = (seletor, nome) => [...quadro.querySelectorAll(seletor)].find(el => el.textContent.trim() === nome);
@@ -214,7 +183,7 @@ async ({ cenarios, dados, tarefas }) => {
       controles: medidas(),
       folhaRecolhida: obter('.j-fila-corpo').hidden,
       folhaAntesDoMenu: !obter('.j-folha-gatilho') ||
-        obter('.j-folha-gatilho').getBoundingClientRect().bottom <= obter('.j-nav').getBoundingClientRect().top,
+        Boolean(obter('.j-folha-gatilho').compareDocumentPosition(obter('.j-nav')) & Node.DOCUMENT_POSITION_FOLLOWING),
     };
     clicar(botao('.j-nav button', 'Orçamento'));
     const menu = document.activeElement === obter('[data-cartao="orcamento"] h3') &&
@@ -227,19 +196,28 @@ async ({ cenarios, dados, tarefas }) => {
     posto.focus();
     const postoNativo = posto instanceof HTMLButtonElement && posto.tabIndex === 0 && document.activeElement === posto;
     clicar(posto);
-    const ficha = texto('.j-ficha h3');
-    const balao = texto('.maquete-balao');
+    const ficha = texto('dialog[open] h3');
+    const balao = texto('dialog[open] dd:last-child');
+    const rota = obter('dialog[open] a').getAttribute('href');
     montar(i, tarefas, true);
-    const balaoOculto = texto('.maquete-balao');
+    const balaoOculto = texto('dialog[open] dd:last-child');
+    const fichaSemTextoPrivado = !/731876|17\/19|77,3/.test(texto('dialog[open]'));
     const semMedidasOcultas = medirNumeros(quadro).length === 0 && !obter('.j-cobertura') && !obter('.j-aqui');
     montar(i, tarefas);
-    clicar(obter('.j-ficha button'));
-    clicar(botao('.j-salas button', 'Caixa'));
-    const sala = obter('.escritorio-maquete [data-sala="caixa"][data-destaque="true"]') && texto('.j-ficha h3') === 'Caixa';
-    clicar(botao('.j-salas button', 'Todas'));
-    if (obter('.j-folha-gatilho')) clicar(obter('.j-folha-gatilho'));
+    clicar(botao('dialog button', 'Ver tarefa na fila'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const daFichaParaFila = document.activeElement?.closest('li')?.textContent.includes('731876') &&
+      document.activeElement.getAttribute('aria-expanded') === 'true';
+    clicar(obter('.j-remetente-posto'));
+    const daFilaParaFicha = texto('dialog[open] h3') === 'Contador' && texto('dialog[open]').includes('731876') &&
+      posto.ariaPressed === 'true';
+    clicar(obter('dialog button[aria-label="Fechar ficha"]'));
+    clicar(botao('.escritorio3d-salas button', 'Caixa'));
+    const sala = obter('.escritorio-maquete [data-sala="caixa"][data-destaque="true"]') &&
+      quadro.querySelectorAll('.maquete-posto').length === 3;
+    clicar(botao('.escritorio3d-salas button', 'Todas'));
+    const todos = quadro.querySelectorAll('.maquete-posto').length === 19;
     const prioridade = texto('.j-nivel');
-    clicar(botao('.j-acoes button', 'Abrir'));
     const abriu = Boolean(obter('.j-decisao-detalhe:not([hidden]) a[href*="entidade="]'));
     const alvosComFila = medidas();
     clicar(botao('.j-acoes button', 'Depois'));
@@ -255,39 +233,52 @@ async ({ cenarios, dados, tarefas }) => {
     clicar(botao('.j-paginacao button', 'Próxima'));
     if (obter('.j-folha-gatilho')) clicar(botao('.j-paginacao button', 'Próxima'));
     const lembrete = [...quadro.querySelectorAll('.j-nivel')].map(e => e.textContent);
-    return { ...inicial, menu, mais, postoNativo, ficha, balao, balaoOculto, semMedidasOcultas, sala: !!sala,
-      prioridade, abriu, alvosComFila, operacao, guardada, desfez, feita, lembrete };
-  });
+    resultados.push({ ...inicial, menu, mais, postoNativo, ficha, balao, balaoOculto, semMedidasOcultas, sala: !!sala,
+      prioridade, abriu, alvosComFila, operacao, guardada, desfez, feita, lembrete,
+      todos, rota, fichaSemTextoPrivado, daFilaParaFicha, daFichaParaFila });
+  }
+  return resultados;
 }`
 
-it.skipIf(!chrome)('mede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium', () => {
+it.skipIf(!chrome)('mede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'proposta-j-'))
   try {
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/componentes/ilustracoes/ilustracoes.css', pasta + '/proposta.css']
-      .map(arq => ts.sys.readFile(arq)).join('\n')
-    const fontes = ['geist', 'inter'].map(nome => {
-      const fonte = readFileSync(`node_modules/@fontsource-variable/${nome}/files/${nome}-latin-wght-normal.woff2`).toString('base64')
-      return `@font-face { font-family: '${nome[0].toUpperCase() + nome.slice(1)} Variable'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900 }`
-    }).join('\n')
-    const biblioteca = (arq: string) => `<script>${ts.sys.readFile('node_modules/' + arq)}</script>`
-    const bibliotecas = biblioteca('react/umd/react.production.min.js') +
-      biblioteca('react-dom/umd/react-dom.production.min.js') + '<script>window.react = React;</script>' +
-      biblioteca('lucide-react/dist/umd/lucide-react.min.js')
     const quadros = cenarios.map(c => `<div class="lab" data-theme="${c.tema}"><div class="lab-amostra" data-dispositivo="${c.dispositivo}">
       <div class="lab-quadro"><div class="lab-conteudo" data-proposta="j"></div></div></div></div>`).join('')
+    const entrada = '\0verificar-proposta-j'
+    const bundle = await build({
+      configFile: false, logLevel: 'silent', base: './', plugins: [react(), {
+        name: 'verificar-proposta-j',
+        resolveId: id => id === entrada ? id : undefined,
+        load: id => id === entrada ? `
+          import * as React from 'react';
+          import { createRoot } from 'react-dom/client';
+          import { flushSync } from 'react-dom';
+          import { Proposta } from '/src/propostas/j/Proposta.tsx';
+          import { medirNumeros } from '/src/propostas/medicao.ts';
+          import '/src/propostas/base.css';
+          const ReactDOM = { createRoot, flushSync };
+          const saida = document.querySelector('#resultado');
+          (${roteiroNavegador})(${JSON.stringify({ cenarios, dados, tarefas: comDecisoes() })})
+            .then(dados => saida.textContent = encodeURIComponent(JSON.stringify(dados)))
+            .catch(erro => saida.textContent = 'erro: ' + erro.stack);
+        ` : undefined,
+      }],
+      build: {
+        write: false, copyPublicDir: false, assetsInlineLimit: 100_000, minify: false, cssCodeSplit: false,
+        rollupOptions: { input: entrada, output: { format: 'iife', inlineDynamicImports: true } },
+      },
+    })
+    if (!('output' in bundle)) throw new Error('O Vite não devolveu a prévia da J.')
+    for (const item of bundle.output) writeFileSync(join(dir, basename(item.fileName)), item.type === 'chunk' ? item.code : item.source)
+    const cssDaPrevia = basename(bundle.output.find(item => item.fileName.endsWith('.css'))!.fileName)
+    const jsDaPrevia = basename(bundle.output.find(item => item.type === 'chunk')!.fileName)
     const arquivo = join(dir, 'medicao.html')
-    const modulos = modulosDoNavegador([pasta + '/Proposta.tsx', 'src/propostas/medicao.ts'])
-    const fixture = JSON.stringify({ cenarios, dados, tarefas: comDecisoes() }).replace(/</g, '\\u003c')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>
-      ${quadros}<pre id="resultado"></pre>${bibliotecas}<script>${modulos}
-      const saida = document.querySelector('#resultado');
-      const { Proposta } = carregar('${pasta}/Proposta.tsx');
-      const { medirNumeros } = carregar('src/propostas/medicao.ts');
-      (${roteiroNavegador})(${fixture}).then(dados => saida.textContent = encodeURIComponent(JSON.stringify(dados)))
-        .catch(erro => saida.textContent = 'erro: ' + erro.stack);
-      </script>`)
+    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${cssDaPrevia}">
+      ${quadros}<pre id="resultado"></pre><script src="${jsDaPrevia}"></script>`)
     const execucao = spawnSync(chrome!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu', '--disable-background-networking',
-      '--user-data-dir=' + join(dir, 'perfil'), '--window-size=1400,900', '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
+      '--force-prefers-reduced-motion', '--user-data-dir=' + join(dir, 'perfil'), '--window-size=1400,900',
+      '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
     { encoding: 'utf8', timeout: 20000, maxBuffer: 12_000_000 })
     expect(execucao.status, execucao.error?.message ?? execucao.stderr).toBe(0)
     const capturado = execucao.stdout.match(/<pre id="resultado">([^<]*)<\/pre>/)?.[1]
@@ -309,6 +300,7 @@ it.skipIf(!chrome)('mede a casca e exercita navegação, teclado nativo, fila e 
       expect(new Set(m.total).size).toBe(m.total.length)
       expect(m).toMatchObject({
         semTransbordo: true, encaixe: true, menu: true, mais: true, postoNativo: true, ficha: 'Contador',
+        todos: true, rota: '../../#/lancamentos', fichaSemTextoPrivado: true, daFilaParaFicha: true, daFichaParaFila: true,
         balao: moeda.format(918273.46), balaoOculto: '•••', semMedidasOcultas: true, sala: true,
         prioridade: 'Dinheiro em risco', abriu: true, operacao: 'Operação', guardada: true, desfez: true, feita: true,
         folhaRecolhida: c.dispositivo === 'celular', folhaAntesDoMenu: true,
@@ -325,3 +317,14 @@ it.skipIf(!chrome)('mede a casca e exercita navegação, teclado nativo, fila e 
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   }
 }, 30000)
+
+it('mostra no resumo o mesmo expediente de exemplo que aparece nos 19 postos', () => {
+  const snapshot = comExpedienteExemplo(dados)
+  const html = render(cenarios[0], snapshot)
+  expect(html).toContain('8 pessoas trabalhando')
+  expect(html.match(/class="maquete-posto"[^>]*data-estado="trabalhando"/g)).toHaveLength(8)
+  expect(snapshot.pendencias.fila.valor).toHaveLength(3)
+  expect(new Set(snapshot.pendencias.fila.valor?.map(t => t.funcionario))).toEqual(
+    new Set(snapshot.funcionarios.valor?.filter(f => f.estadoHoje.valor === 'precisa_de_voce').map(f => f.id)),
+  )
+})

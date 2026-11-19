@@ -1,5 +1,13 @@
 # Proposta L · Escritório 3D em palco
 
+## F68 · Escritório completo
+
+O palco em largura total abre com os 19 postos nos dois dispositivos, com pílulas para aproximar uma sala, pinça, arraste, zoom e **Ampliar**. Os blocos longos do celular e a lista de equipe abaixo da cena seguem disponíveis.
+
+A mesma folha da J liga função, atividade e último resultado aos destinos do app. A tarefa abre a ficha pelo remetente e a ficha reencontra a decisão na fila. No laboratório, as oito pessoas trabalhando correspondem aos estados da cena. Valores e texto livre seguem a privacidade e o Assessor recebe a fila doméstica.
+
+## Registro da proposta original
+
 O Início apresenta quatro referências e leva direto à equipe. O escritório tem a largura útil da página, com 528 px de altura no celular e 640 px no desktop. A fila inteira, o Rumo a 2029 e os cinco motores seguem em seções independentes.
 
 ## O que veio das referências

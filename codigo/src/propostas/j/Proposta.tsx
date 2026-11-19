@@ -1,17 +1,20 @@
-import { createRef, useEffect, useId, useRef, useState } from 'react'
+import { createRef, useId, useRef, useState } from 'react'
 import '@fontsource-variable/geist'
 import '@fontsource-variable/inter'
-import { ArrowLeftRight, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { Icone } from '../../componentes/Icone'
 import {
   AssessorDaCasa, SemAplicacoes, SemCartoes, SemGastos, SemImoveis,
 } from '../../componentes/ilustracoes/figuras'
-import { EscritorioMaquete } from '../comuns/EscritorioMaquete'
+import { Escritorio3D } from '../comuns/Escritorio3D'
+import { FichaPosto } from '../comuns/FichaPosto'
+import { resumoDaEquipe } from '../comuns/modeloPosto'
+import { VisorEscritorio } from '../comuns/VisorEscritorio'
 import { PrivacidadePropostas, useValoresOcultos } from '../comuns/privacidade'
 import type { PropsProposta } from '../Propostas'
 import { Decisoes } from './Decisoes'
 import { abrirFoco, Navegacao, Quantia, type Destino } from './interface'
-import { diferenca, estados, salas, type Dinheiro, type Funcionario, type Sala } from './modelo'
+import { diferenca, organizarFila, type Funcionario, type Sala } from './modelo'
 import { Trilha } from './Trilha'
 import './proposta.css'
 
@@ -24,6 +27,9 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
   const [destino, setDestino] = useState<Destino>('inicio')
   const [sala, setSala] = useState<Sala>()
   const [posto, setPosto] = useState<string>()
+  const [tarefaSelecionada, selecionarTarefa] = useState<string>()
+  const [tarefaAlvo, setTarefaAlvo] = useState<{ id: string }>()
+  const [movidas, setMovidas] = useState<Partial<Record<string, 'agora' | 'depois' | 'feitas'>>>({})
   const [filaAberta, setFilaAberta] = useState(false)
   const [alvos] = useState(() => ({
     inicio: createRef<HTMLHeadingElement>(), escritorio: createRef<HTMLHeadingElement>(),
@@ -32,30 +38,25 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
     plano: createRef<HTMLHeadingElement>(),
   }))
   const fila = useRef<HTMLDivElement>(null)
-  const ficha = useRef<HTMLDivElement>(null)
-  const gatilhoPosto = useRef<HTMLElement | null>(null)
   const margem = useRef<HTMLButtonElement>(null)
   const idFicha = useId()
   const equipe = dados.funcionarios.valor ?? []
   const pessoa = equipe.find(f => f.id === posto)
-  const pessoasNaSala = equipe.filter(f => f.sala === sala)
+  const tarefas = organizarFila(dados)
+  const tarefa = pessoa && (tarefas.find(t => t.id === tarefaSelecionada && t.responsavel?.id === pessoa.id) ??
+    tarefas.find(t => t.responsavel?.id === pessoa.id && (movidas[t.id] ?? 'agora') === 'agora'))
   const oficiais = diferenca(dados.plano2029.faltamPorMesComMargem, oculto)
   const navegacao = <Navegacao atual={destino} navegar={navegar} />
-
-  useEffect(() => {
-    if (posto) abrirFoco(ficha.current)
-  }, [posto])
 
   function navegar(para: Destino) {
     setDestino(para)
     abrirFoco(alvos[para].current)
   }
 
-  function mostrarPosto(p: Funcionario) {
-    gatilhoPosto.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  function mostrarPosto(p: Funcionario, idTarefa?: string) {
     setPosto(p.id)
+    selecionarTarefa(idTarefa)
     if (sala && sala !== p.sala) setSala(p.sala)
-    if (posto === p.id) abrirFoco(ficha.current)
   }
 
   function escolherSala(alvo?: Sala) {
@@ -68,15 +69,6 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
     fila.current?.focus({ preventScroll: true })
     fila.current?.scrollIntoView({ block: celular ? 'start' : 'nearest', inline: 'nearest' })
   }
-
-  const baloes: Partial<Record<string, Dinheiro>> = {
-    contador: dados.saldoConta,
-    tesoureiro: dados.recebimentos.garantido,
-    imoveis: dados.imoveis.valorCadastrado,
-  }
-  const balao = pessoa && baloes[pessoa.id]
-  // Só o posto selecionado revela um indicador próprio. Ausência não cria balão.
-  const valores = pessoa && balao && balao.estado === 'pronto' ? { [pessoa.id]: balao } : undefined
 
   if (papel !== 'casal' && papel !== 'pessoa') return <>
     <header className="j-barra"><span className="j-marca">Central da Família</span><span className="selo-exemplo">Exemplo</span></header>
@@ -107,15 +99,8 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
     { destino: 'faturas', titulo: 'Faturas', legenda: 'Faturas previstas na lista', campo: quantidadeFaturas,
       Figura: SemCartoes, rota: 'cartoes' },
     { destino: 'imoveis', titulo: 'Imóveis', legenda: 'Aluguel líquido estimado', campo: dados.imoveis.aluguelLiquidoEstimado,
-      Figura: SemImoveis, rota: 'imoveis' },
+      Figura: SemImoveis, rota: 'guardado?secao=imoveis' },
   ] as const
-  const trabalhando = equipe.some(f => f.estadoHoje.valor === 'trabalhando')
-  const pedindoAtencao = equipe.some(f => f.estadoHoje.valor === 'precisa_de_voce')
-  const filtros = <div className="j-salas" role="group" aria-label="Foco por sala">
-    <button type="button" aria-pressed={!sala} onClick={() => escolherSala()}>Todas</button>
-    {(Object.entries(salas) as [Sala, string][]).map(([id, nome]) => <button type="button" key={id}
-      aria-pressed={sala === id} onClick={() => escolherSala(id)}>{nome}</button>)}
-  </div>
 
   return <>
     <header className="j-barra">
@@ -127,9 +112,7 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
       <header className="j-abertura">
         <h1 ref={alvos.inicio} tabIndex={-1}>Escritório da família</h1>
         <div className="j-saude">
-          <p>{dados.funcionarios.estado !== 'pronto' ? 'Equipe · Ainda sem dado' :
-            pedindoAtencao ? 'Há postos pedindo atenção.' :
-              trabalhando ? 'Tem gente trabalhando agora.' : 'Veja o estado de cada posto.'}</p>
+          <p>{resumoDaEquipe(dados.funcionarios)}</p>
           <button type="button" onClick={mostrarDecisoes}>Ver decisões <ChevronRight size={16} aria-hidden="true" /></button>
         </div>
       </header>
@@ -147,35 +130,22 @@ function EscritorioNoCentro({ dados, dispositivo }: PropsProposta) {
         <div className="j-cena-corpo">
           <div className="j-palco">
             <div className="j-palco-topo">
-              <h2 ref={alvos.escritorio} tabIndex={-1}>Equipe de hoje</h2>
-              {celular && <span><Icone desenho={ArrowLeftRight} size={14} /> Deslize para explorar</span>}
+              <h2 ref={alvos.escritorio} tabIndex={-1}>Equipe da família</h2>
             </div>
-            {celular && filtros}
-            <EscritorioMaquete funcionarios={dados.funcionarios} variante="grande" salaDestacada={sala} mostrarPlaquinhas
-              valores={valores} papel={papel} oculto={oculto} onSelecionar={mostrarPosto} />
-            {!celular && filtros}
-            {(pessoa || sala) && <div className="j-ficha" ref={ficha} tabIndex={-1} role="region" aria-labelledby={idFicha}>
-                <div className="j-ficha-topo">
-                  <h3 id={idFicha}>{pessoa ? oculto ? pessoa.curto : pessoa.nome : salas[sala!]}</h3>
-                  {pessoa && <button type="button" aria-label="Fechar ficha do posto" onClick={() => {
-                    setPosto(undefined)
-                    abrirFoco(gatilhoPosto.current?.isConnected ? gatilhoPosto.current : alvos.escritorio.current)
-                  }}><Icone nome="fechar" size={18} /></button>}
-                </div>
-                {pessoa ? <p>{salas[pessoa.sala]} · {pessoa.estadoHoje.valor ? estados[pessoa.estadoHoje.valor] : 'Ainda sem dado'}
-                  {valores && <> · {pessoa.id === 'contador' ? 'Saldo em conta' : pessoa.id === 'tesoureiro'
-                    ? 'Receita garantida' : 'Valor cadastrado dos imóveis'} na maquete</>}</p>
-                  : pessoasNaSala.length ? <ul>{pessoasNaSala.map(f => <li key={f.id}>
-                    {f.curto} · {f.estadoHoje.valor ? estados[f.estadoHoje.valor] : 'Ainda sem dado'}
-                  </li>)}</ul> : <p>Ainda sem dado</p>}
-            </div>}
+            <VisorEscritorio sala={sala} aoMudarSala={escolherSala} celular={celular} tarefaDaFila={posto ? tarefaSelecionada : undefined}
+              folha={pessoa && <FichaPosto key={pessoa.id} {...{ dados, pessoa, tarefa, celular }} fechar={() => setPosto(undefined)}
+                verTarefa={id => { setFilaAberta(true); setTarefaAlvo({ id }) }} />}>
+              {navegacao => <Escritorio3D completo {...{ celular, navegacao, papel, oculto }}
+                funcionarios={dados.funcionarios} variante="grande" salaDestacada={sala}
+                postoSelecionado={posto ?? null} onSelecionar={mostrarPosto} />}
+            </VisorEscritorio>
           </div>
           <div className="j-folha" ref={fila} tabIndex={-1} role="group" aria-label="Decisões do escritório">
             <Decisoes dados={dados} celular={celular} aberta={filaAberta}
               alternar={() => {
                 setFilaAberta(!filaAberta)
                 if (!filaAberta) fila.current?.scrollIntoView({ block: 'start', inline: 'nearest' })
-              }} mostrarPosto={mostrarPosto} />
+              }} {...{ mostrarPosto, tarefaAlvo, movidas, setMovidas }} />
           </div>
         </div>
       </section>

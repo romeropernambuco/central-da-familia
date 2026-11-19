@@ -113,7 +113,7 @@ it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () =>
   const codigo = String(readFileSync(new URL('./Escritorio.tsx', import.meta.url), 'utf8'))
   expect(codigo).toContain("from '../comuns/Escritorio3D'")
   expect(codigo).not.toMatch(/EscritorioMaquete|\bvalores=/)
-  expect(codigo).toMatch(/altura=\{altura\}.*variante="grande"/)
+  expect(codigo).toMatch(/<Escritorio3D completo[\s\S]*variante="grande"/)
   const html = renderizar('claro', 'desktop')
   expect(html).toContain('class="m-palco"')
   const equipe = html.match(/<ul class="m-equipe">(.*?)<\/ul>/)?.[1] ?? ''
@@ -121,12 +121,13 @@ it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () =>
     expect(equipe).toContain(funcionario.nome)
   }
   const dados = structuredClone(exemplo)
-  const pessoa = dados.funcionarios.valor![0]
-  pessoa.estadoHoje = { ...pessoa.estadoHoje, estado: 'pronto', valor: 'trabalhando' }
-  expect(renderizar('claro', 'desktop', dados)).toMatch(/<strong>Trabalhando agora<\/strong>[^<]+/)
+  for (const [i, pessoa] of dados.funcionarios.valor!.entries()) {
+    pessoa.estadoHoje = { ...pessoa.estadoHoje, estado: 'pronto', valor: i === 0 ? 'trabalhando' : 'entregue' }
+  }
+  expect(renderizar('claro', 'desktop', dados)).toContain('1 pessoa trabalhando')
 })
 
-it('entrega a fila inteira e o controle de panorama exclusivamente no celular', () => {
+it('entrega a fila inteira no celular e abre com a planta toda nos dois dispositivos', () => {
   const dados = comTarefaPrivada()
   const tarefa = dados.pendencias.fila.valor![0]
   dados.pendencias.fila.valor = Array.from({ length: 6 }, (_, indice) => ({
@@ -136,12 +137,14 @@ it('entrega a fila inteira e o controle de panorama exclusivamente no celular', 
   const desktop = renderizar('claro', 'desktop', dados)
   expect(celular.match(/class="m-tarefa"/g)).toHaveLength(6)
   expect(celular).toContain('Decisão 6')
-  expect(celular).toMatch(/aria-pressed="false"[^>]*>.*?<\/svg>Ver todos<\/button>/)
+  for (const html of [celular, desktop]) {
+    expect(html).toContain('aria-pressed="true">Todas</button>')
+    expect(html.match(/class="maquete-posto"/g)).toHaveLength(19)
+  }
   expect(celular).not.toContain('Ver fila completa')
   expect(desktop.match(/class="m-tarefa"/g)).toHaveLength(3)
   expect(desktop).toContain('Ver fila completa')
-  expect(desktop).toContain('--escritorio3d-altura:440px')
-  expect(desktop).not.toMatch(/Ver todos|m-abertura|m-motores/)
+  expect(desktop).not.toMatch(/m-abertura|m-motores/)
 })
 
 it('tem alvo mínimo, destaque verde, tipografia tabular, ilustrações escondidas e movimento reduzido', () => {
@@ -171,13 +174,13 @@ it.skipIf(!chromium)('mede o layout e aciona menu, funcionário e fila no Chromi
     if (medida.largura < 400) {
       expect(medida.secoes).toHaveLength(5)
       expect(Math.min(...medida.secoes)).toBeGreaterThanOrEqual(medida.altura * .85)
-      expect(medida.cena).toBeGreaterThanOrEqual(medida.altura * .60)
+      expect(medida.cena).toBeGreaterThanOrEqual(medida.altura)
       expect(medida.contrasteTrilha).toBeGreaterThanOrEqual(3)
       expect(medida.fimVisivel).toBe(true)
       expect(medida.numeros).toHaveLength(3)
       expect(medida.referenciasNaDobra).toBe(4)
     } else {
-      expect(medida.cena).toBeCloseTo(medida.largura === 1280 ? 440 : 463.61, 0)
+      expect(medida.cena).toBeGreaterThanOrEqual(510)
       expect(medida.numeros).toHaveLength(3)
     }
     console.info(`M · ${i < 4 ? 'claro' : 'escuro'} · ${medida.largura}px · ${medida.numeros.length} acima da dobra`)
@@ -185,6 +188,6 @@ it.skipIf(!chromium)('mede o layout e aciona menu, funcionário e fila no Chromi
   expect(passos).toEqual({
     Orçamento: true, Faturas: true, Escritório: true, Início: true, mais: true, cena: true, postoFocavel: true, ficha: true,
     fechar: true, detalhe: true, olho: true, feita: true, desfeita: true, adiada: true, retomada: true,
-    sala: true, panorama: true, fichaOculta: true,
+    sala: true, panorama: true, fichaOculta: true, idaEVolta: true,
   })
 }, 30000)

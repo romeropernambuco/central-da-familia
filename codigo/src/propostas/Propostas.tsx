@@ -1,10 +1,10 @@
 import { Eye, EyeOff, Monitor, Moon, Smartphone, Sun } from 'lucide-react'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/figtree'
 import '@fontsource-variable/bricolage-grotesque'
 import './base.css'
-import { carregarDadosInicio, type DadosInicio } from './dadosExemplo'
+import { carregarDadosInicio, comExpedienteExemplo, type DadosInicio } from './dadosExemplo'
 import { PrivacidadePropostas } from './comuns/privacidade'
 import { medirNumeros } from './medicao'
 
@@ -26,6 +26,7 @@ function propostaDe(id: Letra) {
   return lazy(async () => ({ default: (await modulos[`./${id}/Proposta.tsx`]()).Proposta }))
 }
 const propostas = { a: propostaDe('a'), b: propostaDe('b'), c: propostaDe('c'), d: propostaDe('d'), e: propostaDe('e'), f: propostaDe('f'), g: propostaDe('g'), h: propostaDe('h'), i: propostaDe('i'), j: propostaDe('j'), k: propostaDe('k'), l: propostaDe('l'), m: propostaDe('m') }
+const comEscritorioCompleto = (id: Escolha) => id === 'j' || id === 'l' || id === 'm'
 
 function lerEscolha(): Escolha {
   return abas.find(aba => location.hash === `#/${aba.id}`)?.id ?? 'a'
@@ -87,7 +88,7 @@ function Atual() {
 
 export function Propostas() {
   const [escolha, setEscolha] = useState(lerEscolha)
-  const [tema, setTema] = useState<Tema>('claro')
+  const [tema, setTema] = useState<Tema>(() => comEscritorioCompleto(escolha) ? 'escuro' : 'claro')
   const [dispositivo, setDispositivo] = useState<Dispositivo>('celular')
   const [oculto, setOculto] = useState(false)
   const [dados, setDados] = useState<DadosInicio>()
@@ -110,6 +111,7 @@ export function Propostas() {
   }, [tentativa])
 
   const visiveis = escolha === 'comparar' ? letras : [escolha]
+  const expediente = useMemo(() => dados && comExpedienteExemplo(dados), [dados])
   return <div className="lab" data-theme={tema}>
     <header className="lab-barra">
       <strong>Laboratório de propostas</strong>
@@ -131,7 +133,7 @@ export function Propostas() {
           const Tela = id === 'atual' ? null : propostas[id]
           return <Quadro key={id} escolha={id} dispositivo={dispositivo} oculto={oculto}>
             {Tela ? dados ? <Suspense fallback={<p className="lab-mensagem" role="status">Carregando proposta…</p>}>
-              <Tela dados={dados} tema={tema} dispositivo={dispositivo} />
+              <Tela dados={expediente && comEscritorioCompleto(id) ? expediente : dados} tema={tema} dispositivo={dispositivo} />
             </Suspense> : erro ? <div className="lab-mensagem">
               <p role="alert">Não foi possível carregar os dados de exemplo.</p>
               <button type="button" onClick={() => { setErro(false); setTentativa(n => n + 1) }}>Tentar de novo</button>

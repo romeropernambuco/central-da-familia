@@ -204,9 +204,12 @@ export async function carregarDadosInicio() {
     },
     funcionarios: campo(EQUIPE.map(m => {
       const f = equipe.find(f => f.id === m.id)
+      const entrega = escritorio.entregue.find(item => item.funcionario === m.id || item.funcionario === f?.nome)
       return {
         id: m.id, nome: f?.nome ?? m.nome, curto: m.curto, sala: m.sala,
         estadoHoje: campo<EstadoFuncionario, 'texto'>(f?.semDado ? null : f?.estado, 'texto', 'realizado'),
+        atividadeAtual: texto(f?.estado === 'trabalhando' && !f.semDado ? f.frase : null),
+        ultimoResultado: texto(entrega?.resumo || f?.ultimas_respostas?.find(linha => linha.resposta && !linha.adiado_ate)?.resposta),
       }
     }), 'indicador', 'cadastrado'),
     alertas: campo(perguntas.map(q => {
@@ -218,3 +221,40 @@ export async function carregarDadosInicio() {
 }
 
 export type DadosInicio = Awaited<ReturnType<typeof carregarDadosInicio>>
+
+/** Expediente fictício do laboratório, independente da hora e da API do aplicativo. */
+export function comExpedienteExemplo(dados: DadosInicio): DadosInicio {
+  const perguntas = [
+    { id: 'exemplo-cartao', funcionario: 'cartao', perguntaCurta: 'Conferir a descrição de uma compra na fatura.' },
+    { id: 'exemplo-feira', funcionario: 'fiscal', perguntaCurta: 'Confirmar se a nota da feira já foi guardada.' },
+    { id: 'exemplo-lembrete', funcionario: 'secretaria', perguntaCurta: 'Confirmar o horário da próxima revisão da rotina.' },
+  ]
+  const atividades: Record<string, string> = {
+    contador: 'Revisando os lançamentos do dia.', tesoureiro: 'Conferindo as receitas previstas.',
+    folha: 'Conferindo os registros da folha da casa.', assistente: 'Revisando o orçamento diário.',
+    guardado: 'Conferindo as aplicações cadastradas.', imoveis: 'Revisando os contratos cadastrados.',
+    auditor: 'Conferindo a lista de itens com pouco estoque.', analista: 'Revisando os indicadores de uso.',
+  }
+  const entregas: Record<string, string> = {
+    comprador: 'Lista da feira revisada.', presenca: 'Presenças registradas conferidas.',
+    anfitriao: 'Resumo do dia organizado.',
+  }
+  return {
+    ...dados,
+    funcionarios: campo((dados.funcionarios.valor ?? []).map(pessoa => {
+      const atividade = atividades[pessoa.id]
+      const resultado = entregas[pessoa.id]
+      const estado: EstadoFuncionario = perguntas.some(tarefa => tarefa.funcionario === pessoa.id) ? 'precisa_de_voce'
+        : atividade ? 'trabalhando' : resultado ? 'entregue' : 'vai_comecar'
+      return { ...pessoa, estadoHoje: campo(estado, 'texto', 'realizado'),
+        atividadeAtual: texto(atividade), ultimoResultado: resultado ? texto(resultado) : pessoa.ultimoResultado }
+    }), 'indicador', 'cadastrado'),
+    pendencias: {
+      total: contagem(perguntas.length, 'cadastrado'),
+      fila: campo(perguntas.map(tarefa => ({ ...tarefa, valor: real(null, 'previsto') })), 'indicador', 'cadastrado'),
+    },
+    alertas: campo(perguntas.map(tarefa => ({
+      id: tarefa.id, nivel: tarefa.funcionario === 'secretaria' ? 'lembrete' as const : 'operacao' as const, texto: tarefa.perguntaCurta,
+    })), 'indicador', 'cadastrado'),
+  }
+}

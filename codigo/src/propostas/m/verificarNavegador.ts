@@ -127,33 +127,35 @@ async function rodar() {
   posto.focus();
   passos.cena = document.activeElement === posto && posto.tabIndex === 0;
   clicar(posto);
-  passos.cena = passos.cena && document.activeElement.matches('.m-ficha h3') && !!quadro.querySelector('.m-ficha');
+  passos.cena = passos.cena && document.activeElement.matches('.escritorio3d-ficha h3') &&
+    posto.ariaPressed === 'true';
   clicar(quadro.querySelector('[aria-label="Fechar ficha"]'));
-  const original = quadro.querySelector('.m-controles-sala span').textContent;
-  clicar(quadro.querySelector('[aria-label="Próxima sala"]'));
-  passos.sala = quadro.querySelector('.m-controles-sala span').textContent !== original;
-  const todos = achar('.m-controles-sala button', 'Ver todos');
+  const todos = achar('.escritorio3d-salas button', 'Todas');
+  const total = () => quadro.querySelectorAll('.maquete-posto').length;
+  passos.panorama = todos.ariaPressed === 'true' && total() === 19;
+  clicar(achar('.escritorio3d-salas button', 'Casa'));
+  passos.sala = achar('.escritorio3d-salas button', 'Casa').ariaPressed === 'true' && total() === 3;
   clicar(todos);
-  const rolagem = quadro.querySelector('[data-panorama] .maquete-rolagem');
-  rolagem.scrollLeft = rolagem.scrollWidth;
-  passos.panorama = todos.getAttribute('aria-pressed') === 'true' && rolagem.scrollLeft > 0 &&
-    rolagem.querySelectorAll('.maquete-posto').length === dados.funcionarios.valor.length;
-  clicar(todos);
-  passos.panorama = passos.panorama && !quadro.querySelector('[data-panorama]');
+  passos.panorama = passos.panorama && total() === 19;
   quadro.querySelector('.m-escritorio details').open = true;
   const trabalho = quadro.querySelector('.m-equipe button');
   trabalho.focus();
   passos.postoFocavel = document.activeElement === trabalho && trabalho.tabIndex === 0 && trabalho.type === 'button';
   clicar(trabalho);
-  passos.ficha = quadro.querySelector('dialog.m-ficha').open &&
-    document.activeElement.matches('.m-ficha h3') && document.activeElement.textContent === trabalho.textContent;
+  passos.ficha = quadro.querySelector('dialog.escritorio3d-ficha').open &&
+    document.activeElement.matches('.escritorio3d-ficha h3') && document.activeElement.textContent === trabalho.textContent;
   render(true);
-  passos.fichaOculta = quadro.querySelector('dialog.m-ficha')?.open &&
-    !quadro.querySelector('.m-ficha [data-numero-financeiro], .m-posicao, .m-avanco, [data-numero-financeiro]');
+  passos.fichaOculta = quadro.querySelector('dialog.escritorio3d-ficha')?.open &&
+    !quadro.querySelector('.m-posicao, .m-avanco, [data-numero-financeiro]');
   render(false);
   clicar(quadro.querySelector('[aria-label="Fechar ficha"]'));
-  passos.fechar = !quadro.querySelector('.m-ficha') && document.activeElement === trabalho;
-  clicar(achar('.m-acoes button', 'Abrir'));
+  passos.fechar = !quadro.querySelector('.escritorio3d-ficha') && document.activeElement === trabalho;
+  clicar(quadro.querySelector('.m-remetente'));
+  passos.idaEVolta = quadro.querySelector('[data-posto][aria-pressed="true"]')?.dataset.posto === dados.funcionarios.valor[0].id &&
+    quadro.querySelector('dialog[open] a').getAttribute('href') === '../../#/lancamentos';
+  clicar(achar('dialog button', 'Ver tarefa na fila'));
+  await new Promise(resolve => setTimeout(resolve, 0));
+  passos.idaEVolta = passos.idaEVolta && document.activeElement.matches('.m-abrir[aria-expanded="true"]');
   passos.detalhe = quadro.querySelector('.m-detalhe')?.textContent.includes('98.765,43');
   render(true);
   passos.olho = quadro.querySelector('.m-detalhe')?.textContent === 'Detalhes financeiros ocultos' &&

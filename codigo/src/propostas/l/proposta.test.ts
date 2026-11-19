@@ -48,10 +48,9 @@ it.each(cenarios)('organiza as seções em $tema para $dispositivo', cenario => 
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
   expect(html.match(/class="l-referencia"/g)).toHaveLength(4)
   expect(html).toMatch(/Estado do dia[\s\S]*l-palco[\s\S]*l-fila[\s\S]*l-rumo[\s\S]*l-bento[\s\S]*Navegação principal/)
-  if (cenario.dispositivo === 'celular') {
-    expect(html).toContain('class="l-abertura"')
-    expect(html).not.toContain('min-block-size:380px')
-  } else expect(html).toContain('min-block-size:456px')
+  if (cenario.dispositivo === 'celular') expect(html).toContain('class="l-abertura"')
+  expect(html).toContain('aria-pressed="true">Todas</button>')
+  expect(html.match(/class="maquete-posto"/g)).toHaveLength(19)
   expect(html.match(/class="l-estado"/g)).toHaveLength(dados.funcionarios.valor?.length ?? 0)
   expect(html.match(/<svg[^>]*class="cf-ilustracao"[^>]*aria-hidden="true"/g)).toHaveLength(5)
   expect(html).toMatch(/2026<.*2027<.*2028<.*2029</)
@@ -111,7 +110,7 @@ it('usa somente a API do escritório 3D e mantém as restrições visuais locais
   const fonte = ['Proposta.tsx', 'Palco.tsx', 'Financeiro.tsx', 'Fila.tsx'].map(arquivo => ts.sys.readFile('src/propostas/l/' + arquivo)).join('\n')
   const css = ts.sys.readFile('src/propostas/l/proposta.css')!
   expect(fonte).toContain("from '../comuns/Escritorio3D'")
-  expect(fonte).toMatch(/<Escritorio3D[\s\S]*mostrarPlaquinhas[\s\S]*onSelecionar/)
+  expect(fonte).toMatch(/<Escritorio3D completo[\s\S]*onSelecionar/)
   expect(fonte).not.toMatch(/EscritorioMaquete|from .*api\//u)
   expect(fonte).not.toMatch(/\p{Extended_Pictographic}/u)
   expect(css).not.toMatch(/gradient\(|backdrop-filter:|border-(?:left|inline-start):|text-shadow:|neon/i)
@@ -169,15 +168,15 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
         if (dispositivo === 'celular') {
           expect(medida.blocos).toHaveLength(5)
           expect(Math.min(...medida.blocos)).toBeGreaterThanOrEqual(medida.altura * .85)
-          expect(medida.palco).toBeGreaterThanOrEqual(medida.altura * .60)
+          expect(medida.palco).toBeGreaterThanOrEqual(medida.altura)
         }
       }
     }
-    await rodar("montar('escuro', 'celular', 375); q('.l-salas button:last-child').focus()")
+    await rodar("montar('escuro', 'celular', 375); q('.escritorio3d-zoom button:last-child').focus()")
     await tecla('Tab')
     expect(await rodar("document.activeElement.matches('.l-palco button')")).toBe(true)
     await tecla('Enter')
-    expect(await rodar("q('dialog')?.open && texto(document.activeElement.closest('dialog').querySelector('h2')).length > 0")).toBe(true)
+    expect(await rodar("q('dialog')?.open && document.activeElement.matches('dialog h3')")).toBe(true)
     await tecla('Escape')
     expect(await rodar("!q('dialog') && document.activeElement.matches('.l-palco button')")).toBe(true)
     await tecla(' ')
@@ -189,8 +188,8 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
         botao('.l-menu button', 'Orçamento').getAttribute('aria-current') === 'location';
       click(q('.l-mais summary')); click(botao('.l-mais button', 'Rumo a 2029'));
       const mais = texto(document.activeElement) === 'Rumo a 2029' && !q('.l-mais').open;
-      click(botao('.l-menu button', 'Escritório')); click(botao('.l-salas button', 'Casa'));
-      const escritorio = q('.l-salas button[aria-pressed="true"]').textContent === 'Casa' &&
+      click(botao('.l-menu button', 'Escritório')); click(botao('.escritorio3d-salas button', 'Casa'));
+      const escritorio = q('.escritorio3d-salas button[aria-pressed="true"]').textContent === 'Casa' &&
         texto(q('.l-equipe h3')) === 'Equipe · Casa' && todos('.l-pessoas button').length < 19;
       click(botao('.l-menu button', 'Faturas'));
       const faturas = texto(document.activeElement) === 'Faturas';

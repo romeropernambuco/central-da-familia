@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BellRing, ChevronDown } from 'lucide-react'
 import { Icone } from '../../componentes/Icone'
 import { useValoresOcultos } from '../comuns/privacidade'
@@ -10,23 +10,41 @@ const pastas = { agora: 'Agora', depois: 'Depois', feitas: 'Feitas' } as const
 type Pasta = keyof typeof pastas
 type Tarefa = ReturnType<typeof organizarFila>[number]
 
-export function Decisoes({ dados, celular, aberta, alternar, mostrarPosto }: {
+export function Decisoes({ dados, celular, aberta, alternar, mostrarPosto, tarefaAlvo, movidas, setMovidas }: {
   dados: DadosInicio; celular: boolean; aberta: boolean; alternar: () => void
-  mostrarPosto: (pessoa: Funcionario) => void
+  mostrarPosto: (pessoa: Funcionario, tarefa: string) => void
+  tarefaAlvo?: { id: string }
+  movidas: Partial<Record<string, Pasta>>
+  setMovidas: Dispatch<SetStateAction<Partial<Record<string, Pasta>>>>
 }) {
   const oculto = useValoresOcultos()
   const painel = useId()
   const titulo = useId()
   const foco = useRef<HTMLButtonElement>(null)
   const [pasta, setPasta] = useState<Pasta>('agora')
-  const [movidas, setMovidas] = useState<Partial<Record<string, Pasta>>>({})
   const [ultima, setUltima] = useState<{ id: string; origem: Pasta; destino: Pasta }>()
   const [detalhe, setDetalhe] = useState<string>()
   const [pagina, setPagina] = useState(0)
-  const lista = organizarFila(dados).filter(t => (movidas[t.id] ?? 'agora') === pasta)
+  const tarefas = organizarFila(dados)
+  const lista = tarefas.filter(t => (movidas[t.id] ?? 'agora') === pasta)
   const porPagina = celular ? 1 : 2
   const ultimaPagina = Math.max(0, Math.ceil(lista.length / porPagina) - 1)
   const atual = Math.min(pagina, ultimaPagina)
+  const botaoAlvo = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!tarefaAlvo) return
+    const destino = movidas[tarefaAlvo.id] ?? 'agora'
+    const indice = tarefas.filter(t => (movidas[t.id] ?? 'agora') === destino).findIndex(t => t.id === tarefaAlvo.id)
+    if (indice < 0) return
+    setPasta(destino)
+    setPagina(Math.floor(indice / porPagina))
+    setDetalhe(tarefaAlvo.id)
+    // Uma solicitação de ficha navega à tarefa uma vez.
+  }, [tarefaAlvo])
+  useEffect(() => {
+    if (tarefaAlvo && detalhe === tarefaAlvo.id) abrirFoco(botaoAlvo.current)
+  }, [tarefaAlvo, detalhe, atual, pasta])
 
   function irPara(destino: Pasta, indice = 0) {
     setPasta(destino)
@@ -74,7 +92,9 @@ export function Decisoes({ dados, celular, aberta, alternar, mostrarPosto }: {
                 ? tarefa.responsavel.curto.trim().slice(0, 2).toUpperCase()
                 : <Icone nome="pessoa" size={16} />}</span>
               <div>
-                <span>{oculto ? 'Equipe do escritório' : tarefa.responsavel?.nome ?? 'Equipe do escritório'}</span>
+                {tarefa.responsavel ? <button type="button" className="j-remetente-posto"
+                  onClick={() => mostrarPosto(tarefa.responsavel!, tarefa.id)}>{tarefa.responsavel.nome}</button>
+                  : <span>Equipe do escritório</span>}
                 <span className="j-nivel" data-risco={tarefa.nivel === 'dinheiro em risco'}>
                   <Icone nome={prioridade.icone} size={13} />{prioridade.texto}
                 </span>
@@ -86,12 +106,12 @@ export function Decisoes({ dados, celular, aberta, alternar, mostrarPosto }: {
               {pasta !== 'feitas' && <button type="button" onClick={() => mover(tarefa, 'feitas')}>Já fiz</button>}
               {pasta === 'agora' ? <button type="button" onClick={() => mover(tarefa, 'depois')}>Depois</button>
                 : <button type="button" onClick={() => mover(tarefa, 'agora')}>Retomar</button>}
-              <button type="button" aria-expanded={aberto} aria-controls={idDetalhe}
+              <button type="button" ref={tarefaAlvo?.id === tarefa.id ? botaoAlvo : undefined} aria-expanded={aberto} aria-controls={idDetalhe}
                 onClick={() => setDetalhe(aberto ? undefined : tarefa.id)}>{aberto ? 'Fechar' : 'Abrir'}</button>
             </div>
             <div className="j-decisao-detalhe" id={idDetalhe} hidden={!aberto}>
               {aberto && <>
-                {tarefa.responsavel && <button type="button" onClick={() => mostrarPosto(tarefa.responsavel!)}>
+                {tarefa.responsavel && <button type="button" onClick={() => mostrarPosto(tarefa.responsavel!, tarefa.id)}>
                   Ver posto <Icone nome="escritorio" size={16} />
                 </button>}
                 <a href={oculto ? '../../#/escritorio' :

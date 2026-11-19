@@ -1,5 +1,15 @@
 # J · Escritório no centro
 
+## Versão f68
+
+O resumo, a sala de decisões e a planta inteira compõem o mesmo painel. No desktop, a fila acompanha o palco na lateral. No celular, ela vem logo depois da cena, em uma folha expansível. O palco WebGL abre nos 19 postos. As sete pílulas aproximam as salas e **Todas** recupera a vista geral. Pinça, arraste, zoom por botões e **Ampliar** usam a câmera compartilhada. O SVG fica disponível em movimento reduzido ou sem WebGL.
+
+Selecionar um posto abre função, estado, atividade atual, último resultado e atalhos do cadastro. **Ver tarefa na fila** abre a decisão correspondente. O remetente na fila abre a mesma ficha e destaca o posto. O olho protege os valores e o texto livre. O Assessor da Casa recebe somente a área doméstica.
+
+O laboratório abre em escuro e mostra oito pessoas trabalhando e três pedidos de atenção na amostra. Os resultados e ações da fila são da prévia. A J é a candidata ao Início por reunir equipe, resumo e decisões no mesmo painel.
+
+## Registro da proposta original
+
 A família entra pelo escritório. O palco reúne sete salas, 19 postos e os quatro valores que orientam o dia. A fila fica na lateral do palco no desktop e abre como folha a partir da base da cena no celular. As rotinas e o horizonte de 2029 vêm na sequência.
 
 ## O que veio de cada proposta

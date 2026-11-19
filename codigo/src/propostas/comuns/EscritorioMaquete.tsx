@@ -40,8 +40,8 @@ export interface PropsEscritorioMaquete {
 
 export function EscritorioMaquete({
   funcionarios, salaDestacada, mostrarPlaquinhas = false, valores,
-  variante = 'media', oculto = false, papel, onSelecionar, detalhesSobDemanda = false,
-}: PropsEscritorioMaquete & { detalhesSobDemanda?: boolean }) {
+  variante = 'media', oculto = false, papel, onSelecionar, detalhesSobDemanda = false, postoSelecionado,
+}: PropsEscritorioMaquete & { detalhesSobDemanda?: boolean; postoSelecionado?: string | null }) {
   const id = useId()
   const olhoFechado = useValoresOcultos()
   const rolagem = useRef<HTMLDivElement>(null)
@@ -76,7 +76,8 @@ export function EscritorioMaquete({
   const visiveis = planta.filter(({ sala }) => !foco || sala === foco)
     .flatMap(({ sala, postos }) => postos.map(posto => ({ ...posto, sala })))
   const detalhe = detalhesSobDemanda
-    ? [apontado, focado, selecionado].map(id => visiveis.find(p => p.funcionario.id === id)).find(Boolean)
+    ? [apontado, focado, postoSelecionado === undefined ? selecionado : postoSelecionado]
+      .map(id => visiveis.find(p => p.funcionario.id === id)).find(Boolean)
     : undefined
   const valorDetalhe = detalhe && valorPermitido && valores?.[detalhe.funcionario.id]
   const svg = <svg className="escritorio-maquete" data-variante={variante}
@@ -129,6 +130,8 @@ export function EscritorioMaquete({
         {svg}
         {visiveis.map(({ funcionario, x, y, estado, sala }) => <button key={funcionario.id} type="button"
           className="maquete-posto" aria-label={`${funcionario.nome} · ${sala.nome} · ${estados[estado].rotulo}`}
+          data-posto={funcionario.id} data-estado={estado}
+          aria-pressed={postoSelecionado === undefined ? undefined : postoSelecionado === funcionario.id}
           style={{ left: `${(x - 4 - vx) / largura * 100}%`, top: `${(y - 47 - vy) / altura * 100}%` }}
           onPointerEnter={e => { if (detalhesSobDemanda && e.pointerType !== 'touch') apontar(funcionario.id) }}
           onPointerLeave={() => apontar(null)}

@@ -71,6 +71,34 @@ const palcoDe = (variante: typeof variantes[number]) => ({
   aoApontar() {}, aoDesenhar() {},
 })
 
+it.each([[341, 812], [356, 844], [628, 510], [984, 541]])(
+  'enquadra os mesmos 19 postos e mantém o orçamento em %i × %i',
+  (clientWidth, clientHeight) => {
+    const a = ambiente(true)
+    const palco = { ...palcoDe('grande'), completo: true, celular: clientWidth < 400 }
+    const estados = Object.fromEntries(EQUIPE.map(m => [m.id, 'trabalhando' as const]))
+    const c = a.montar(estados, palco, { clientWidth, clientHeight })
+    a.quadro(100)
+    const postos = () => palco.posicionar.mock.lastCall![0]
+    expect(postos().map(p => p.id)).toEqual(EQUIPE.map(m => m.id))
+    expect(postos().every(p => p.x > 0 && p.x < clientWidth && p.y > 0 && p.y < clientHeight)).toBe(true)
+    expect(a.renderer.info.render.calls).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.desenhos)
+    expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+    const distancia = () => Math.abs(postos().find(p => p.id === 'contador')!.x - postos().find(p => p.id === 'tesoureiro')!.x)
+    const naVistaCompleta = distancia()
+    c.atualizar(estados, 'caixa')
+    a.quadro(116)
+    expect(distancia()).toBeGreaterThan(naVistaCompleta * 1.4)
+    c.atualizar(estados, 'tudo')
+    a.quadro(132)
+    expect(postos()).toHaveLength(19)
+    c.navegar({ zoom: 1.4, x: 0, y: 0 })
+    a.quadro(148)
+    expect(distancia()).toBeCloseTo(naVistaCompleta * 1.4)
+    c.destruir()
+  },
+)
+
 it.each(['celular', 'desktop'] as const)('enquadra os três postos inteiros e grandes no %s em cada variante', dispositivo => {
   const tamanhos = variantes.map(variante => {
     const largura = dispositivo === 'celular' ? 349 : { compacta: 448, media: 640, grande: 820 }[variante]

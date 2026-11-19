@@ -1,6 +1,7 @@
 import { ArrowUpRight, Bell, Check, Clock, ClipboardList, ShieldAlert, Undo2, UserRound } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useValoresOcultos } from '../comuns/privacidade'
+import { responsavelDaTarefa } from '../comuns/modeloPosto'
 import type { DadosInicio } from '../dadosExemplo'
 import { Medida, type reservarMedidas } from './Financeiro'
 import type { Pessoa } from './Palco'
@@ -22,26 +23,23 @@ const operacoesDaCasa = new Map([
   ['gas', 'Conferir a troca do gás'],
 ])
 
-const normalizar = (nome: string) => nome.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase()
-
 export function organizarFila(dados: DadosInicio, familiar: boolean) {
   const alertas = new Map(dados.alertas.valor?.map(alerta => [alerta.id, alerta.nivel]))
-  const equipe = dados.funcionarios.valor ?? []
   return (dados.pendencias.fila.valor ?? []).flatMap(tarefa => {
     const casa = operacoesDaCasa.get(tarefa.id.split(':', 1)[0])
     if (!familiar && !casa) return []
     const nivel: keyof typeof niveis = familiar ? alertas.get(tarefa.id) ?? 'semDado' : 'operacao'
-    const pessoa = familiar ? equipe.find(f => f.id === tarefa.funcionario ||
-      normalizar(f.nome) === normalizar(tarefa.funcionario) || normalizar(f.curto) === normalizar(tarefa.funcionario)) : undefined
+    const pessoa = familiar ? responsavelDaTarefa(dados, tarefa) : undefined
     return [{ tarefa, nivel, pessoa, casa }]
   }).sort((a, b) => niveis[a.nivel].ordem - niveis[b.nivel].ordem)
 }
 
-export function Fila({ id, itens, medidas, estado, familiar, selecionar, pasta, setPasta, movidas, setMovidas }: {
+export function Fila({ id, itens, medidas, estado, familiar, selecionar, pasta, setPasta, movidas, setMovidas, tarefaAlvo }: {
   id: string; itens: ReturnType<typeof organizarFila>; medidas: ReturnType<typeof reservarMedidas>;
-  estado: DadosInicio['pendencias']['fila']['estado']; familiar: boolean; selecionar: (pessoa: Pessoa) => void;
+  estado: DadosInicio['pendencias']['fila']['estado']; familiar: boolean; selecionar: (pessoa: Pessoa, tarefa: string) => void;
   pasta: Pasta; setPasta: (pasta: Pasta) => void; movidas: Partial<Record<string, Pasta>>;
   setMovidas: (movidas: Partial<Record<string, Pasta>>) => void;
+  tarefaAlvo?: { id: string }
 }) {
   const oculto = useValoresOcultos()
   const prefixo = useId()
@@ -49,6 +47,18 @@ export function Fila({ id, itens, medidas, estado, familiar, selecionar, pasta, 
   const [aberta, setAberta] = useState<string>()
   const [ultima, setUltima] = useState<{ id: string; origem: Pasta; mensagem: string }>()
   const atuais = itens.map((item, indice) => ({ ...item, indice })).filter(({ tarefa }) => (movidas[tarefa.id] ?? 'agora') === pasta)
+  const botaoAlvo = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!tarefaAlvo) return
+    setPasta(movidas[tarefaAlvo.id] ?? 'agora')
+    setAberta(tarefaAlvo.id)
+  }, [tarefaAlvo])
+  useEffect(() => {
+    if (tarefaAlvo && aberta === tarefaAlvo.id) {
+      botaoAlvo.current?.focus({ preventScroll: true })
+      botaoAlvo.current?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [tarefaAlvo, aberta, pasta])
 
   function mover(idTarefa: string, destino: Pasta) {
     const mensagem = { agora: 'Decisão retomada.', depois: 'Decisão adiada.', feitas: 'Decisão marcada como feita.' }
@@ -87,7 +97,8 @@ export function Fila({ id, itens, medidas, estado, familiar, selecionar, pasta, 
           <div className="l-decisao-assunto">
             <span className="l-avatar"><UserRound size={16} aria-hidden="true" /></span>
             <div>
-              <span className="l-legenda">{pessoa?.nome ?? (familiar ? 'Remetente · Ainda sem dado' : 'Rotina da casa')}</span>
+              {pessoa ? <button className="l-remetente" type="button" onClick={() => selecionar(pessoa, tarefa.id)}>{pessoa.nome}</button>
+                : <span className="l-legenda">{familiar ? 'Remetente · Ainda sem dado' : 'Rotina da casa'}</span>}
               <h3>{assunto}</h3>
               <span className="l-nivel" data-risco={nivel === 'dinheiro em risco' || undefined}><Icone size={14} aria-hidden="true" />{rotulo}</span>
             </div>
@@ -98,13 +109,14 @@ export function Fila({ id, itens, medidas, estado, familiar, selecionar, pasta, 
             {pasta === 'agora'
               ? <button type="button" onClick={() => mover(tarefa.id, 'depois')}><Clock size={16} aria-hidden="true" />Depois</button>
               : <button type="button" onClick={() => mover(tarefa.id, 'agora')}><Undo2 size={16} aria-hidden="true" />Retomar</button>}
-            <button className="l-acao-abrir" type="button" aria-controls={detalhe} aria-expanded={expandida}
+            <button className="l-acao-abrir" type="button" ref={tarefaAlvo?.id === tarefa.id ? botaoAlvo : undefined}
+              aria-controls={detalhe} aria-expanded={expandida}
               onClick={() => setAberta(expandida ? undefined : tarefa.id)}>{expandida ? 'Recolher' : 'Abrir'}<ArrowUpRight size={16} aria-hidden="true" /></button>
           </div>
           <div className="l-decisao-detalhe" id={detalhe} hidden={!expandida}>
             {expandida && <>
               <p>{acao}</p>
-              {pessoa && <button type="button" onClick={() => selecionar(pessoa)}>Ver ficha de {pessoa.nome}<ArrowUpRight size={16} aria-hidden="true" /></button>}
+              {pessoa && <button type="button" onClick={() => selecionar(pessoa, tarefa.id)}>Ver ficha de {pessoa.nome}<ArrowUpRight size={16} aria-hidden="true" /></button>}
             </>}
           </div>
         </li>
