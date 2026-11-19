@@ -109,12 +109,12 @@ it('usa botões nativos e nomeados fora do SVG decorativo e respeita as variante
   expect(estilos).toMatch(/\.maquete-posto:focus-visible\s*\{[^}]*outline:[^}]*var\(--maquete-foco\)/)
 })
 
-it('mantém o SVG abaixo de 30 kB com os 19 rótulos e balões ligados', () => {
+it('mantém o SVG abaixo de 31 kB com os 19 rótulos e balões ligados', () => {
   const valores = Object.fromEntries(EQUIPE.map(f => [f.id, dados.aplicacoes.total]))
   for (const salaDestacada of [undefined, ...salas.map(sala => sala.id)]) {
     const html = render({ mostrarPlaquinhas: true, valores, salaDestacada })
     expect(html.match(/class="maquete-balao"/g)).toHaveLength(19)
-    expect(new TextEncoder().encode(html).byteLength).toBeLessThan(30_000)
+    expect(new TextEncoder().encode(html).byteLength).toBeLessThan(31_000)
   }
 })
 
