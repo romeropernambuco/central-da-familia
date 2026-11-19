@@ -138,7 +138,7 @@ it('design: foco apos reset e borda exclusiva dos campos', () => {
  expect((Math.max(a, b) + .05) / (Math.min(a, b) + .05)).toBeGreaterThanOrEqual(3)
  }
  expect(css).toMatch(/\.envbtn\{[^}]*min-height:60px/)
- expect(readFileSync('src/app/navegacao.css', 'utf8')).toMatch(/\.tabbar-lancar\{[^}]*font-size:12px;line-height:16px/)
+ expect(readFileSync('src/app/navegacao.css', 'utf8')).toMatch(/\.tabbar-lancar\s*\{[^}]*font-size:\s*12px;\s*line-height:\s*16px/)
 
 })
 
@@ -163,7 +163,7 @@ it('design: barra real tem rotulo visivel para lancar', async () => {
  try {
  const ctx = contextoDesign(); ctx.lancarAberto = null
  await act(async () => root.render(createElement(ContextoApp.Provider, { value: ctx }, createElement(App))))
- const barra = container.buscar(n => n.tagName === 'NAV' && n.getAttribute('class') === 'tabbar')[0]
+ const barra = container.buscar(n => n.tagName === 'NAV' && n.getAttribute('aria-label') === 'Telas no celular')[0]
  const anotar = barra.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === 'Anotar gasto')[0]
  expect(anotar.buscar(n => n.tagName === 'SPAN' && n.textContent === 'Anotar')).toHaveLength(1)
  expect(anotar.buscar(n => n.tagName === 'SVG')).toHaveLength(1)

@@ -22,7 +22,7 @@ beforeEach(async () => {
   doc = new DocumentoTeste()
   Object.assign(doc.documentElement, { dataset: {} })
   vi.stubGlobal('document', doc)
-  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {}, scrollTo() {} }))
   vi.stubGlobal('location', { origin: 'https://teste.local', pathname: '/app/', protocol: 'https:', search: '?sem3d', hash: '#/privacidade' })
   vi.stubGlobal('localStorage', { getItem: () => null, setItem() {} })
   aoCarregar = vi.fn()
@@ -107,16 +107,81 @@ it('6: foco do aviso e contorno do segmento atingem 3:1 em ambos os temas', () =
   }
 })
 
-it('7: o agrupamento de Privacidade não marca Ajustes como página atual', async () => {
+it('7: Privacidade tem pílula própria na lateral e no Mais, sem ativar Ajustes', async () => {
   await montar(createElement(App))
   const ajustes = box.buscar(n => n.getAttribute('href') === '#/ajustes')[0]
-  expect(ajustes.getAttribute('data-grupo-ativo')).toBe('true')
   expect(ajustes.getAttribute('aria-current')).toBeNull()
+  const privacidade = box.buscar(n => n.getAttribute('href') === '#/privacidade')[0]
+  expect(privacidade.getAttribute('aria-current')).toBe('page')
   const mais = box.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Mais')[0]
+  expect(mais.getAttribute('data-ativo')).toBe('true')
   await act(async () => mais.click())
-  const atuais = box.buscar(n => n.getAttribute('aria-current') === 'page')
+  const atuais = box.buscar(n => n.getAttribute('role') === 'dialog')[0].buscar(n => n.getAttribute('aria-current') === 'page')
   expect(atuais).toHaveLength(1)
   expect(atuais[0].textContent).toContain('Privacidade')
+})
+
+const telasDoCasal = ['inicio', 'lancamentos', 'orcamento', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'escritorio', 'ajustes', 'privacidade']
+const telasDaPessoa = ['inicio', 'lancamentos', 'orcamento', 'casa', 'desejos', 'ajustes', 'privacidade']
+const rotulos: Record<string, string> = {
+  inicio: 'Início', lancamentos: 'Gastos e entradas', orcamento: 'Meu orçamento', cartoes: 'Cartões', casa: 'Casa',
+  desejos: 'Desejos', guardado: 'Guardado', planejamento: 'Planejamento', escritorio: 'Escritório', ajustes: 'Família e ajustes',
+  privacidade: 'Privacidade', painel: 'Painel do dono',
+}
+const papeis = [
+  ['casal', true, [...telasDoCasal, 'painel']],
+  ['casal', false, telasDoCasal],
+  ['pessoa', false, telasDaPessoa],
+  ['equipe', false, ['casa', 'privacidade']],
+] as const
+
+it.each(papeis)('as rotas do menu funcionam no desktop e no celular para %s (dono: %s)', async (papel, dono, esperadas) => {
+  ctx.familia = { ...ctx.familia!, papel }
+  ctx.sessao = { ...ctx.sessao!, dono }
+  await montar(createElement(App))
+  const navegar = () => {
+    for (const [evento, fn] of aoCarregar.mock.calls) if (evento === 'hashchange') fn()
+  }
+  const links = (rotulo: string) => box.buscar(n => n.tagName === 'NAV' && n.getAttribute('aria-label') === rotulo)[0]
+    .buscar(n => n.tagName === 'A')
+  const rota = (n: NoTeste) => n.getAttribute('href')!.slice(2)
+  const conferirTela = (r: string) =>
+    expect(box.buscar(n => n.getAttribute('id') === 'titulo-tela')[0].textContent).toBe(r === 'painel' ? 'Os 4 números' : rotulos[r])
+  const lateral = links('Telas no computador')
+  expect(lateral.map(rota)).toEqual(esperadas)
+  for (const link of lateral) {
+    await act(async () => { location.hash = link.getAttribute('href')!; navegar(); await vi.dynamicImportSettled() })
+    expect(link.getAttribute('aria-current')).toBe('page')
+    conferirTela(rota(link))
+  }
+  if (papel === 'equipe') {
+    expect(box.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Mais')).toHaveLength(0)
+    expect(box.buscar(n => n.getAttribute('aria-label') === 'Anotar').map(n => n.textContent)).toEqual(['Anotar compra'])
+    await act(async () => { location.hash = '#/guardado'; navegar() })
+    conferirTela('casa')
+    expect(box.buscar(n => n.getAttribute('data-referencia') !== null)).toHaveLength(0)
+    return
+  }
+  const inferior = links('Telas no celular')
+  for (const link of inferior) {
+    await act(async () => { location.hash = link.getAttribute('href')!; navegar(); await vi.dynamicImportSettled() })
+    conferirTela(rota(link))
+  }
+  const mais = () => box.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Mais')[0]
+  const extras = () => box.buscar(n => n.getAttribute('class') === 'list central-extras')[0].buscar(n => n.tagName === 'BUTTON')
+  await act(async () => mais().click())
+  const restantes = esperadas.filter(r => !inferior.some(n => rota(n) === r))
+  expect(extras().map(n => n.buscar(m => m.tagName === 'B')[0].textContent)).toEqual(restantes.map(r => rotulos[r]))
+  for (const r of restantes) {
+    await act(async () => {
+      if (mais().getAttribute('aria-expanded') === 'false') mais().click()
+    })
+    await act(async () => { extras().find(n => n.textContent.startsWith(rotulos[r]))!.click(); navegar(); await vi.dynamicImportSettled() })
+    expect(location.hash).toBe('#/' + r)
+    conferirTela(r)
+  }
+  await act(async () => box.buscar(n => n.getAttribute('aria-label') === 'Anotar gasto')[0].click())
+  expect(ctx.abrirLancar).toHaveBeenCalledOnce()
 })
 
 it('8: últimos lançamentos usa botão compartilhado e cartão sem fatura tem texto próprio', async () => {

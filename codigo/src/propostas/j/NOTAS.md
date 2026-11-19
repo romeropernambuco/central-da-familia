@@ -1,5 +1,13 @@
 # J · Escritório no centro
 
+## F69 · Início do aplicativo
+
+A J virou o Início em `telas/inicio/Inicio.tsx`. A faixa, os cartões e a trilha usam `useResumoFamilia`. Os detalhes mantêm o resumo anterior, o ritmo, os envelopes, o placar e os últimos lançamentos. A trilha usa o cenário oficial Garantido, com a estimativa sem margem recolhida.
+
+`EscritorioInicio` adapta a equipe e a fila compartilhadas ao `VisorEscritorio` e ao `Escritorio3D`. A ficha abre a aba da pessoa ou seu diário e oferece as opções de resposta que a API devolve para aquela tarefa. O Assessor continua em Casa. O menu do app reúne as dez abas e as áreas autorizadas de conta, com Anotar no centro no celular e na lateral no desktop. O Início acompanha a aparência escolhida em Ajustes, inclusive a opção automática.
+
+O clássico abre pelo hash `#/inicio-classico` para o dono no exemplo. A verificação das rotas, dos papéis, do olho e da cena está no [relatório f69](../../../RELATORIO-f69.md).
+
 ## Versão f68
 
 O resumo, a sala de decisões e a planta inteira compõem o mesmo painel. No desktop, a fila acompanha o palco na lateral. No celular, ela vem logo depois da cena, em uma folha expansível. O palco WebGL abre nos 19 postos. As sete pílulas aproximam as salas e **Todas** recupera a vista geral. Pinça, arraste, zoom por botões e **Ampliar** usam a câmera compartilhada. O SVG fica disponível em movimento reduzido ou sem WebGL.
@@ -52,7 +60,7 @@ Medição no Chromium com `medirNumeros`, as dimensões da casca, Geist e Inter 
 9. **Temas claro e escuro · 9/10.** Ambos mantêm áreas e controles, e o escuro dá mais separação à cena. Os testes calcularam contraste nos dois conjuntos de tokens.
 10. **Escritório como personagem · 9/10.** Os 19 postos têm estado, ficha e foco por sala. No celular, a panorâmica revela a planta por partes para preservar o tamanho dos postos.
 
-## Como levar ao produto
+## Plano de integração registrado na f68
 
 - Adaptar `useResumoFamilia` para um modelo de apresentação com os seletores de `lib/resumo`. Usar orçamento para o valor de hoje e o gasto registrado, aplicações para saldo e rendimento de hoje, faturas para previsão e lista, plano para diferença oficial e cobertura, e imóveis para aluguel estimado e valor cadastrado. A quantidade do cartão de faturas deriva de `faturas.proximas.valor.length` quando a lista está pronta. Preservar escopo por papel, unidade, natureza, falhas recuperáveis e `repetir`.
 - Obter equipe autorizada por `useEquipeCompleta` e fila por `lerPendencias` ou `escritorioHoje`. Usar IDs estáveis de funcionário, assunto seguro para o olho fechado, estado persistido, prazo para Depois e destino estruturado por decisão no contrato do produto. Na prévia, a ligação entre tarefa e posto usa ID, nome ou apelido disponíveis e o estado da fila é local. No produto, ligar **Já fiz**, **Depois** e **Desfazer** às mutações autorizadas e refazer a leitura após confirmação.

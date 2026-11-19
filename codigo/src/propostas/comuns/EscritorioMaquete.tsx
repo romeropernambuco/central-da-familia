@@ -9,7 +9,7 @@ import { useValoresOcultos, Valor } from './privacidade'
 import './escritorio-maquete.css'
 
 type Dinheiro = Campo<number, 'reais' | 'centavos'>
-type Funcionario = NonNullable<DadosInicio['funcionarios']['valor']>[number]
+type Funcionario = Pick<NonNullable<DadosInicio['funcionarios']['valor']>[number], 'id' | 'nome' | 'curto' | 'sala' | 'estadoHoje'>
 type CaixaVista = readonly [x: number, y: number, largura: number, altura: number]
 
 const estados = {
@@ -27,21 +27,21 @@ const vistaGeral: CaixaVista = [68, 22, 788, 448]
  * nativos sobre os postos. oculto soma-se ao olho global. Informe papel ao oferecer
  * valores para respeitar a permissão de quem usa a tela.
  */
-export interface PropsEscritorioMaquete {
-  funcionarios: DadosInicio['funcionarios']
+export interface PropsEscritorioMaquete<T extends Funcionario = Funcionario> {
+  funcionarios: Campo<T[], 'indicador'>
   salaDestacada?: SalaEquipe
   mostrarPlaquinhas?: boolean
   valores?: Partial<Record<string, Dinheiro>>
   variante?: 'compacta' | 'media' | 'grande'
   oculto?: boolean
   papel?: DadosInicio['pessoa']['papel']['valor']
-  onSelecionar?: (funcionario: Funcionario) => void
+  onSelecionar?: (funcionario: T) => void
 }
 
-export function EscritorioMaquete({
+export function EscritorioMaquete<T extends Funcionario>({
   funcionarios, salaDestacada, mostrarPlaquinhas = false, valores,
   variante = 'media', oculto = false, papel, onSelecionar, detalhesSobDemanda = false, postoSelecionado,
-}: PropsEscritorioMaquete & { detalhesSobDemanda?: boolean; postoSelecionado?: string | null }) {
+}: PropsEscritorioMaquete<T> & { detalhesSobDemanda?: boolean; postoSelecionado?: string | null }) {
   const id = useId()
   const olhoFechado = useValoresOcultos()
   const rolagem = useRef<HTMLDivElement>(null)

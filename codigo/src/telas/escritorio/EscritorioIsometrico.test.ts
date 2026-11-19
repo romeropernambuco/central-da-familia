@@ -6,6 +6,7 @@ import { invalidarDados } from '../../app/invalidacao'
 import type { Api, EscritorioHoje, FamiliaMinha, Papel, PerguntaEsc } from '../../api/tipos'
 import { definirModoFuncionario } from '../../componentes/AgenteDaAba'
 import { Inicio } from '../inicio/Inicio'
+import { InicioClassico } from '../inicio/InicioClassico'
 import { Escritorio } from './Escritorio'
 import { EscritorioIsometrico } from './EscritorioIsometrico'
 import { EQUIPE } from './equipe'
@@ -22,10 +23,13 @@ vi.mock('./cenaIsometrica', () => ({
   montarEscritorioIsometrico: (_t: unknown, _el: unknown, opcoes: unknown) => {
     fake.montar(opcoes)
     if (fake.falhar) throw new Error('WebGL indisponível')
-    return { atualizar: fake.atualizar, destruir: fake.destruir }
+    return { atualizar: fake.atualizar, destruir: fake.destruir, navegar() {} }
   },
 }))
-vi.mock('../inicio/ResumoFamilia', () => ({ ResumoFamilia: () => createElement('h2', null, 'Resumo da família') }))
+vi.mock('../inicio/ResumoFamilia', () => {
+  const Resumo = () => createElement('h2', null, 'Resumo da família')
+  return { ResumoFamilia: Resumo, ResumoApresentacao: Resumo }
+})
 
 const pergunta = (id: string, funcionario: string, valor?: number): PerguntaEsc => ({
   id, funcionario, valor, assunto: `Tarefa ${id}`, pergunta: `Você confirma ${id}?`, contexto: '', opcoes: [{ id: 'feito', rotulo: 'Confirmar' }],
@@ -56,7 +60,9 @@ function montar(papel: Papel = 'casal', sem3d = false) {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   let dado = fonte()
   const familia = { id: 'f38', papel, membroId: 'm', envelopeId: 'e' } as FamiliaMinha
-  const responder = vi.fn(async () => undefined)
+  const responder = vi.fn(async (_familia: string, id: string, _opcao: string) => {
+    dado = { ...dado, precisa_de_voce: dado.precisa_de_voce.filter(p => p.id !== id) }
+  })
   const api = {
     modo: 'real', escritorioHoje: async () => dado, escritorioResponder: responder, escritorioDiario: async () => [],
     lancamentos: async () => [], guardadoHoje: async () => ({ total: 1, aplicacoes: [] }),
@@ -72,7 +78,7 @@ function montar(papel: Papel = 'casal', sem3d = false) {
   definirModoFuncionario('completo')
   return {
     el, responder,
-    render: async (Tela: typeof Inicio | typeof Escritorio | typeof EscritorioIsometrico, oculto = false) =>
+    render: async (Tela: typeof Inicio | typeof InicioClassico | typeof Escritorio | typeof EscritorioIsometrico, oculto = false) =>
       act(async () => root.render(createElement(ContextoApp.Provider, { value: { ...ctx, oculto } }, createElement(Tela, { superficie: 'escritorio' })))),
     ler: (attr: string, valor: string) => el.buscar(n => n.getAttribute(attr) === valor)[0],
     atualizar: async (outro: EscritorioHoje) => {
@@ -84,7 +90,7 @@ function montar(papel: Papel = 'casal', sem3d = false) {
 }
 afterEach(() => { fake.falhar = false; vi.clearAllMocks(); vi.unstubAllGlobals() })
 
-it('f54: Início fora da área visível mostra o painel estático sem pedir Three', async () => {
+it('f54: Início clássico fora da área visível mostra o painel estático sem pedir Three', async () => {
   const a = montar()
   const observe = vi.fn(), disconnect = vi.fn()
   let visibilidade!: (entradas: { isIntersecting: boolean }[]) => void
@@ -94,7 +100,7 @@ it('f54: Início fora da área visível mostra o painel estático sem pedir Thre
     disconnect = disconnect
   })
   try {
-    await a.render(Inicio)
+    await a.render(InicioClassico)
     await act(async () => vi.dynamicImportSettled())
     expect(a.el.textContent).toContain('Escritório da família')
     expect(observe).toHaveBeenCalledOnce()
@@ -125,6 +131,62 @@ it('Início antes do Resumo e Escritório com a sala e a lista, usando a fila in
     expect(a.el.textContent).toContain('Precisa de você9')
     expect(a.el.textContent).toContain('A equipe, sala por sala')
     expect(a.ler('data-posto', 'imoveis').getAttribute('aria-label')).toContain('Ainda sem dado')
+  } finally { await a.fechar() }
+})
+
+it('Início J usa o SVG sem WebGL, tem todos os postos e abre o destino real da ficha', async () => {
+  const a = montar()
+  try {
+    await a.render(Inicio)
+    expect(a.ler('data-renderizacao', 'svg')).toBeDefined()
+    expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
+    expect(fake.montar).not.toHaveBeenCalled()
+    await act(async () => a.ler('data-posto', 'cartao').click())
+    expect(a.ler('data-ficha', 'cartao').textContent).toContain('Conferido')
+    await act(async () => a.ler('aria-label', 'Abrir Cartões').click())
+    expect(location.hash).toBe('#/cartoes')
+  } finally { await a.fechar() }
+})
+
+it('Início J só monta o 3D quando a câmera entra na área visível', async () => {
+  const a = montar()
+  let visibilidade!: (entradas: { isIntersecting: boolean }[]) => void
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(notificar: typeof visibilidade) { visibilidade = notificar }
+    observe() {}
+    disconnect() {}
+  })
+  vi.stubGlobal('ResizeObserver', class {})
+  vi.stubGlobal('requestAnimationFrame', vi.fn())
+  Object.assign(window, { HTMLCanvasElement: class {}, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) })
+  try {
+    await a.render(Inicio)
+    expect(a.ler('data-renderizacao', 'carregando')).toBeDefined()
+    await act(async () => visibilidade([{ isIntersecting: false }]))
+    expect(fake.montar).not.toHaveBeenCalled()
+    await act(async () => visibilidade([{ isIntersecting: true }]))
+    await act(async () => vi.dynamicImportSettled())
+    expect(fake.montar).toHaveBeenCalledOnce()
+    expect(fake.montar.mock.lastCall?.[0].palco.elenco).toHaveLength(19)
+  } finally { await a.fechar() }
+})
+
+it.each([['feito', 'Já fiz'], ['depois', 'Depois']])('fila da J usa a opção da API %s, releitura e máscara na ficha', async (id, rotulo) => {
+  const a = montar()
+  try {
+    const p = { ...pergunta('sentinela', 'guardado', 45678.91), opcoes: [{ id, rotulo }] }
+    await a.atualizar({ ...fonte(), precisa_de_voce: [p], precisa_total: 1 })
+    await a.render(Inicio)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('45.678,91')
+    await act(async () => a.ler('data-posto', 'guardado').click())
+    expect(a.ler('data-ficha', 'guardado').textContent).toContain(p.pergunta)
+    await a.render(Inicio, true)
+    expect(a.ler('data-ficha', 'guardado').textContent).not.toContain(p.pergunta)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).not.toContain('45.678,91')
+    await act(async () => a.ler('aria-label', rotulo).click())
+    expect(a.responder).toHaveBeenCalledOnce()
+    expect(a.responder).toHaveBeenCalledWith('f38', 'sentinela', id, undefined)
+    expect(a.ler('data-pergunta', 'sentinela')).toBeUndefined()
   } finally { await a.fechar() }
 })
 

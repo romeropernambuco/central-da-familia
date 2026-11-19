@@ -1,9 +1,10 @@
 import './navegacao.css'
+import '@fontsource-variable/inter'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
 import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
-import { lazy, Suspense, useEffect, useState, useRef, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, useRef } from 'react'
 import { FlaskConical } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
@@ -12,6 +13,8 @@ import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
 const PrimeiroUso = lazy(() => import('../telas/primeiro-uso/PrimeiroUso').then(m => ({ default: m.PrimeiroUso })))
 const Inicio = lazy(() => import('../telas/inicio/Inicio').then(m => ({ default: m.Inicio })))
+const InicioClassico = import.meta.env.MODE === 'exemplo' || import.meta.env.MODE === 'demo'
+  ? lazy(() => import('../telas/inicio/InicioClassico').then(m => ({ default: m.InicioClassico }))) : null
 const Lancar = lazy(() => import('../telas/lancar/Lancar').then(m => ({ default: m.Lancar })))
 const Lancamentos = lazy(() => import('../telas/lancamentos/Lancamentos').then(m => ({ default: m.Lancamentos })))
 const MeuOrcamento = lazy(() => import('../telas/meu-orcamento/MeuOrcamento').then(m => ({ default: m.MeuOrcamento })))
@@ -25,25 +28,12 @@ const Privacidade = lazy(() => import('../telas/privacidade/Privacidade').then(m
 const Ajustes = lazy(() => import('../telas/ajustes/Ajustes').then(m => ({ default: m.Ajustes })))
 const Desejos = lazy(() => import('../telas/desejos/Desejos').then(m => ({ default: m.Desejos })))
 import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
-import { podeVerNoMenu, rotaDoHash, rotaPermitida, type Rota } from './rotas'
+import { rotaDoHash, rotaPermitida, type Rota } from './rotas'
 import { ehAtalho, lerAtalho } from '../lib/atalho'
 export type { Rota } from './rotas'
 
 import { Carregando } from '../componentes/Carregando'
-
-const MENU: { r: Rota; nome: string; ico: ReactNode }[] = [
-  { r: 'inicio', nome: 'Início', ico: <Icone nome="inicio" /> },
-  { r: 'lancamentos', nome: 'Gastos e entradas', ico: <Icone nome="lancamentos" /> },
-  { r: 'orcamento', nome: 'Meu orçamento', ico: <Icone nome="orcamento" /> },
-  { r: 'casa', nome: 'Casa', ico: <Icone nome="casa" /> },
-  // E8: a calculadora de desejos (a filha também abre: vê só os dela, sem 2029)
-  { r: 'desejos', nome: 'Desejos', ico: <Icone nome="desejos" /> },
-  { r: 'guardado', nome: 'Guardado', ico: <Icone nome="guardado" /> },
-  { r: 'cartoes', nome: 'Cartões', ico: <Icone nome="cartoes" /> },
-  { r: 'planejamento', nome: 'Planejamento', ico: <Icone nome="planejamento" /> },
-  { r: 'escritorio', nome: 'Escritório', ico: <Icone nome="escritorio" /> },
-  { r: 'ajustes', nome: 'Família e ajustes', ico: <Icone nome="ajustes" /> },
-]
+import { GRUPOS, menuDoPapel } from './menu'
 
 const TITULO: Record<string, [string, string]> = {
   lancamentos: ['gastos e entradas que vocês anotaram', 'Gastos e entradas'],
@@ -59,7 +49,7 @@ const TITULO: Record<string, [string, string]> = {
   painel: ['painel do dono do produto', 'Os 4 números'],
 }
 
-function lerRota(): Rota { return rotaDoHash(location.hash) }
+const hashClassico = (hash: string) => /^#\/?inicio-classico(?:\?|$)/.test(hash)
 import { ir } from './rotas'
 export { ir } from './rotas'
 
@@ -71,11 +61,12 @@ export function App() {
     if (!familia || !destino.secao || rotaPermitida(destino.rota, familia.papel) !== destino.rota) return
     return focarDestino(destino)
   }, [familia?.papel, destino.rota, destino.secao, destino.entidade, destino.periodo])
-  const [rota, setRota] = useState<Rota>(lerRota())
+  const [hash, setHash] = useState(() => location.hash)
+  const rota = rotaDoHash(hash)
   const [mais, setMais] = useState(false)
   const [carregou, setCarregou] = useState(false)
   useEffect(() => {
-    const f = () => { setRota(lerRota()); window.scrollTo(0, 0) }
+    const f = () => { setHash(location.hash); setMais(false); window.scrollTo(0, 0) }
     addEventListener('hashchange', f)
     return () => removeEventListener('hashchange', f)
   }, [])
@@ -87,7 +78,7 @@ export function App() {
       if (!familia || !ehAtalho(location.hash)) return
       const a = lerAtalho(location.hash)
       history.replaceState(null, '', location.pathname + location.search + '#/inicio')
-      setRota('inicio')
+      setHash('#/inicio')
       if (!a || familia.papel === 'equipe') return
       abrirLancar({ valor: a.valor, descricao: a.loja, atalho: { cartao: a.cartao, erro: a.erro } })
     }
@@ -110,19 +101,23 @@ export function App() {
   // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
   if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <Suspense fallback={<Carregando />}><PrimeiroUso /></Suspense>
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
-  const permitidas = [...MENU.filter(m => podeVerNoMenu(m.r, familia.papel)), ...(equipe ? [{ r: 'privacidade' as Rota, nome: 'Privacidade', ico: <Icone nome="privacidade" /> }] : [])]
-  const [subt, titulo] = r === 'inicio' ? [textoPrivado(familia.nome, oculto), cap(mesLongo(hojeRecife()))] : equipe && r !== 'privacidade' ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
-  const navAtivo = r === 'privacidade' || r === 'painel' ? 'ajustes' : r
+  const { lateral, inferior, mais: extras } = menuDoPapel(familia.papel, !!sessao.dono)
+  const Classico = r === 'inicio' && api.modo === 'exemplo' && sessao.dono && hashClassico(hash) ? InicioClassico : null
+  const [subt, titulo] = r === 'inicio'
+    ? [textoPrivado(familia.nome, oculto), Classico ? cap(mesLongo(hojeRecife())) : 'Início']
+    : equipe && r !== 'privacidade' ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
+  const link = (m: (typeof lateral)[number], curto = m.nome) =>
+    <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}><Icone nome={m.icone} />{curto}</a>
 
   return (
     <>
-      <nav className="rail" aria-label="Telas">
+      <nav className="rail central-rail" aria-label="Telas no computador">
         <div className="brand"><Marca /><span><b>Central da Família</b><small>{textoPrivado(familia.nome, oculto)}</small></span></div>
-        {/* C4: a equipe anota pelo botão grande de baixo (1 só na tela, também no computador) */}
         {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar</button>}
-        {permitidas.map(m => (
-          <a data-grupo={m.r === 'desejos' || m.r === 'escritorio' ? 'inicio' : undefined} key={m.r} href={'#/' + m.r} data-grupo-ativo={navAtivo === m.r && r !== m.r || undefined} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>
-        ))}
+        {GRUPOS.map(grupo => {
+          const itens = lateral.filter(m => m.grupo === grupo)
+          return itens.length > 0 && <div className="rail-grupo" role="group" key={grupo} aria-label={grupo}><span>{grupo}</span>{itens.map(m => link(m))}</div>
+        })}
         <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
       <main id="main">
@@ -130,7 +125,7 @@ export function App() {
           <div className="tt"><small>{subt}</small><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1></div>
           <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><Icone nome={semRede ? 'erro' : api.modo === 'exemplo' ? 'ajuda' : 'salvo'} />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'Sem internet' : 'Conectado'}</span>
           {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <Icone nome="olhoFechado" /> : <Icone nome="olho" />}</button>}
-          {<button className="btn line mais" type="button" onClick={() => setMais(true)} aria-label={equipe ? 'Mais: privacidade' : familia.papel === 'casal' ? 'Mais telas: desejos, guardado, cartões, planejamento, escritório e ajustes' : 'Mais telas: desejos, ajustes e privacidade'}><Icone nome="mais" aria-hidden="true" />Mais</button>}
+          {equipe && <a className="btn line central-privacidade" href="#/privacidade"><Icone nome="privacidade" />Privacidade</a>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
           <p className="exemplo-faixa"><Icone desenho={FlaskConical} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
@@ -139,8 +134,8 @@ export function App() {
         {erro && <p className="todo warn" role="alert">{erro}</p>}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
         {r !== 'inicio' && r !== 'escritorio' && <AgenteDaAba key={r} rota={r} />}
-        <Suspense key={'tela:' + r} fallback={<Carregando />} >
-        {r === 'inicio' && <Inicio />}
+        <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />} >
+        {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
         {r === 'lancamentos' && <Lancamentos />}
         {r === 'orcamento' && <MeuOrcamento />}
         {r === 'casa' && <Casa />}
@@ -156,25 +151,26 @@ export function App() {
         {(r === 'inicio' || r === 'escritorio') && <AgenteDaAba key={r} rota={r} semCena />}
         <AjudaDaAba rota={r} />
       </main>
-      {/* C4 (decisão do dono, 14/11): a equipe da casa só tem 1 tela; no lugar da barra de 1 aba, 1 botão grande */}
-      <nav className={'tabbar' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas'}>
+      <nav className={'tabbar central-mobile' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas no celular'}>
         {equipe ? (
           <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" aria-hidden="true" />Anotar compra</button>
         ) : (
           <>
-            {MENU.slice(0, 2).map(m => <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.nome}</a>)}
+            {inferior.filter(m => m.r !== 'cartoes').map(m => link(m, m.r === 'orcamento' ? 'Orçamento' : m.nome))}
             <button className="plus tabbar-lancar" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Icone nome="lancar" aria-hidden="true" /><span>Anotar</span></button>
-            {MENU.slice(2, 4).map(m => <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}>{m.ico}{m.r === 'orcamento' ? 'Orçamento' : m.nome}</a>)}
+            {inferior.filter(m => m.r === 'cartoes').map(m => link(m))}
+            <button className="central-mais" type="button" onClick={() => setMais(true)} aria-expanded={mais}
+              data-ativo={extras.some(m => m.r === r) || undefined}><Icone nome="mais" />Mais</button>
           </>
         )}
       </nav>
-      {mais && (
+      {mais && !equipe && (
         <Sheet titulo="Mais telas" fechar={() => setMais(false)}>
-          <ul className="list">
-            {[...MENU.slice(4).filter(m => podeVerNoMenu(m.r, familia.papel)), { r: 'privacidade' as Rota, nome: 'Privacidade', ico: <Icone nome="privacidade" /> }, ...(sessao.dono ? [{ r: 'painel' as Rota, nome: 'Painel dos 4 números', ico: <Icone nome="painel" /> }] : [])].map(m => (
+          <ul className="list central-extras">
+            {extras.map(m => (
               <li key={m.r}>
                 <button className="li" aria-current={r === m.r ? 'page' : undefined} type="button" onClick={() => { setMais(false); ir(m.r) }}>
-                  <span className="tile">{m.ico}</span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><Icone nome="abrir" className="muted" />
+                  <span className="tile"><Icone nome={m.icone} /></span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><Icone nome="abrir" className="muted" />
                 </button>
               </li>
             ))}

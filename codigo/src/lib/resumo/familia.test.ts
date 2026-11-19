@@ -228,9 +228,10 @@ it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre v
   expect(a.origem().buscar(x => x.getAttribute('aria-label') === reais(e.hoje!)).length).toBeGreaterThan(0)
   if (id === 'eu') {
     await expandir(a.bloco('podeGastarHoje'))
-    const inicio = a.box.buscar(x => x.getAttribute('class') === 'view inicio-f29')[0]
+    const inicio = a.box.buscar(x => x.getAttribute('class')?.split(' ').includes('inicio-j-detalhes') === true)[0]
     expect(inicio.textContent.match(/101,33/g)).toHaveLength(1)
     expect(inicio.textContent.match(/Hoje você pode gastar/g)).toHaveLength(1)
+    expect(a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0].textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
   }
 })
 

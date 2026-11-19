@@ -23,7 +23,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   podeGastarHoje: (campo, _hoje, oculto) => {
     const p = campo.valor
     const privado = (t: string) => oculto ? '••••' : t
-    return { chave: 'podeGastarHoje', titulo: p?.devendo ? 'Este mês fica devendo' : 'Hoje você pode gastar', icone: 'inicio', numero: p ? valor(p.valor, oculto) : '', frase: p ? privado(p.escopo === 'pessoal' ? 'Seu orçamento' : 'Orçamento familiar') : '', destino: { rota: 'orcamento', secao: 'orcamento' } }
+    return { chave: 'podeGastarHoje', titulo: !oculto && p?.devendo ? 'Este mês fica devendo' : 'Hoje você pode gastar', icone: 'inicio', numero: p ? valor(p.valor, oculto) : '', frase: p ? privado(p.escopo === 'pessoal' ? 'Seu orçamento' : 'Orçamento familiar') : '', destino: { rota: 'orcamento', secao: 'orcamento' } }
   },
   faturas: (campo, _hoje, oculto) => {
     const f = campo.valor

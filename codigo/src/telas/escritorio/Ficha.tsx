@@ -99,7 +99,7 @@ export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omi
           <Cadastro id={f.id} />
         </section>
 
-        <section aria-labelledby="fResp" data-parte="respostas">
+        <section aria-labelledby="fResp" data-parte="respostas" data-secao="historico">
           <h3 id="fResp">O que você já me respondeu</h3>
           {!respostas ? <p className="sub">Buscando o que eu anotei…</p> : !respostas.length ? <EstadoVazio ilustracao="SemRecebimentos" titulo="Ainda não anotei nenhuma resposta sua." frase="Quando você responder, ela aparece aqui com dia e hora." /> : (
             <ul className="list resp">

@@ -9,13 +9,16 @@ import { distribuirEtiquetas } from './escritorio3d-etiquetas'
 import { useValoresOcultos, Valor } from './privacidade'
 import './escritorio3d.css'
 
-export interface PropsEscritorio3D extends PropsEscritorioMaquete {
+type Funcionario = NonNullable<PropsEscritorioMaquete['funcionarios']['valor']>[number]
+
+export interface PropsEscritorio3D<T extends Funcionario = Funcionario> extends PropsEscritorioMaquete<T> {
   altura?: number
   panorama?: boolean
   completo?: boolean
   celular?: boolean
   postoSelecionado?: string | null
   navegacao?: NavegacaoIsometrica
+  forcarSvg?: boolean
 }
 
 const ESTADOS = {
@@ -35,7 +38,7 @@ function podeMontarCena() {
     typeof ResizeObserver === 'function' && typeof requestAnimationFrame === 'function'
 }
 
-export function Escritorio3D({ altura, valores, panorama = false, completo = !panorama, celular, navegacao, postoSelecionado, ...props }: PropsEscritorio3D) {
+export function Escritorio3D<T extends Funcionario>({ altura, valores, panorama = false, completo = !panorama, celular, navegacao, postoSelecionado, forcarSvg, ...props }: PropsEscritorio3D<T>) {
   const [reduzir, reduzirMovimento] = useState(() => !podeMontarCena() || window.matchMedia(REDUZIR).matches)
   const [falhou, marcarFalha] = useState(false)
   const valoresPermitidos = props.papel === 'equipe' || props.papel === null ? undefined : valores
@@ -58,20 +61,18 @@ export function Escritorio3D({ altura, valores, panorama = false, completo = !pa
       '--escritorio3d-zoom': navegacao?.zoom, '--escritorio3d-x': `${(navegacao?.x ?? 0) * 100}%`,
       '--escritorio3d-y': `${(navegacao?.y ?? 0) * 100}%`,
     } as CSSProperties}
-    data-renderizacao={reduzir || falhou ? 'svg' : undefined}>
-    {reduzir || falhou ? <EscritorioMaquete {...props} salaDestacada={salaDestacada} mostrarPlaquinhas={false}
+    data-renderizacao={forcarSvg || reduzir || falhou ? 'svg' : undefined}>
+    {forcarSvg || reduzir || falhou ? <EscritorioMaquete {...props} salaDestacada={salaDestacada} mostrarPlaquinhas={false}
       detalhesSobDemanda valores={valoresPermitidos} postoSelecionado={postoSelecionado} />
       : <Palco3D {...props} salaDestacada={salaDestacada} valores={valoresPermitidos}
         {...{ panorama, completo, celular, navegacao, postoSelecionado, marcarFalha }} />}
   </div>
 }
 
-type Funcionario = NonNullable<PropsEscritorio3D['funcionarios']['valor']>[number]
-
-function Palco3D({
+function Palco3D<T extends Funcionario>({
   funcionarios, salaDestacada, valores, variante = 'media',
   oculto, onSelecionar, panorama, completo, celular, navegacao, postoSelecionado, marcarFalha,
-}: PropsEscritorio3D & { marcarFalha: (falhou: boolean) => void }) {
+}: PropsEscritorio3D<T> & { marcarFalha: (falhou: boolean) => void }) {
   const camera = useRef<HTMLDivElement>(null)
   const etiquetas = useRef(new Map<string, HTMLElement>())
   const cena = useRef<ReturnType<typeof montarEscritorioIsometrico> | null>(null)
@@ -94,7 +95,7 @@ function Palco3D({
   const estados: EstadosIsometricos = Object.fromEntries(equipe.map(f => [f.id, f.estadoHoje.valor ?? undefined]))
   const vista: VistaIsometrica = salaDestacada ?? 'tudo'
 
-  function abrir(funcionario: Funcionario) {
+  function abrir(funcionario: T) {
     selecionar(funcionario.id)
     onSelecionar?.(funcionario)
   }

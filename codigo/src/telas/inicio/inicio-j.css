@@ -1,0 +1,49 @@
+.j-inicio.inicio-j { --fonte-titulo: 'Bricolage Grotesque', system-ui, sans-serif; }
+:root[data-theme="light"] .inicio-j {
+  color-scheme: light;
+  --fundo: #f5f4ef; --cartao: #fffefa; --menu: #eeeee6; --j-cena: #e7e9df;
+  --texto: #24291f; --texto-secundario: #4d5748; --borda: #6e7966;
+  --destaque: #40582d; --sobre-destaque: #fffefa; --risco: #9b3029; --j-trilho: #a0a792;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .inicio-j {
+    color-scheme: light;
+    --fundo: #f5f4ef; --cartao: #fffefa; --menu: #eeeee6; --j-cena: #e7e9df;
+    --texto: #24291f; --texto-secundario: #4d5748; --borda: #6e7966;
+    --destaque: #40582d; --sobre-destaque: #fffefa; --risco: #9b3029; --j-trilho: #a0a792;
+  }
+}
+.inicio-j .j-resumo .j-chip { align-content: center; }
+.inicio-j .escritorio3d-visor {
+  --escritorio3d-luz: color-mix(in oklch, var(--j-cena) 82%, var(--destaque));
+  --escritorio3d-fundo: color-mix(in oklch, var(--j-cena) 70%, var(--fundo));
+}
+.inicio-j .j-cena-corpo { grid-template-columns: minmax(0, 1fr) minmax(225px, 27%); }
+.inicio-j .j-palco-topo { flex-wrap: wrap; }
+.inicio-j .j-palco-topo p { color: var(--texto-secundario); }
+.inicio-j .j-fila-titulo { flex-wrap: wrap; }
+.inicio-j .j-contagem { border-radius: 999px; background: var(--accent-soft); color: var(--destaque); padding: 2px 9px; font: 650 14px/1.4 var(--fonte-texto); }
+.inicio-j .j-decisoes .j-nivel { justify-self: start; font-size: 12px; }
+.inicio-j .j-folha .lnk, .inicio-j .j-plano .lnk { color: var(--destaque); }
+.inicio-j .j-paginacao { justify-content: space-between; }
+.inicio-j .j-paginacao button { padding-inline: 6px; }
+.inicio-j .inicio-postos-texto { display: flex; flex-wrap: wrap; gap: 4px 10px; list-style: none; padding: 12px; }
+.inicio-j .inicio-posto { display: grid; gap: 14px; }
+.inicio-j .inicio-posto dl { margin: 0; }
+.inicio-j .inicio-posto dt { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.inicio-j .inicio-posto dd { margin: 2px 0; }
+.inicio-j .inicio-posto .btn { border: 1px solid var(--control); background: var(--surface); color: var(--ink); }
+.inicio-j .inicio-posto .btn.primary { background: var(--accent); color: var(--on-accent); }
+.inicio-j .inicio-posto .j-acoes button { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.inicio-j-detalhes { margin-top: 30px; }
+@media (max-width: 899px) {
+  #main:has(.inicio-j) > .top { min-height: 64px; margin-bottom: 8px; }
+  .inicio-j .escritorio3d-salas {
+    flex-wrap: nowrap; overflow-x: auto; max-inline-size: 100%; padding: 2px;
+  }
+  .inicio-j .escritorio3d-salas button { flex: none; }
+}
+@media (max-width: 420px) {
+  .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip .numero-principal { font-size: clamp(21px, 7.25vw, 34px); }
+  .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip:is(:first-child, :nth-child(2)) { grid-column: span 6; }
+}

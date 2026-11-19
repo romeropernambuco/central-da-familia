@@ -7,7 +7,7 @@ import { diferenca } from './modelo'
 const anos = [2026, 2027, 2028, 2029]
 
 export function Trilha({ plano, celular, consultarMargem }: {
-  plano: DadosInicio['plano2029']; celular: boolean; consultarMargem: () => void
+  plano: Pick<DadosInicio['plano2029'], 'progressao' | 'faltamPorMesComMargem' | 'faltamPorMesSemMargem'>; celular: boolean; consultarMargem: () => void
 }) {
   const oculto = useValoresOcultos()
   const { progressao, faltamPorMesComMargem: oficial, faltamPorMesSemMargem } = plano

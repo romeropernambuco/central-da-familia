@@ -79,9 +79,18 @@ it.each(['cobre', 'não cobre', 'sobra', 'sem dados'])('fonte única em cartão,
     const texto = a.box.buscar(x => x.getAttribute('data-frente') === String(i))[0].textContent
     if (i === 2) {
       const bloco = a.box.buscar(x => x.getAttribute('data-bloco') === 'plano2029')[0]
-      if (caso === 'sem dados') expect(bloco.textContent).toContain('Informe o gasto necessário')
+      const trilha = a.box.buscar(x => x.getAttribute('data-trilha') === 'plano2029')[0]
+      const referencia = a.box.buscar(x => x.getAttribute('data-referencia') === 'plano2029')[0]
+      if (caso === 'sem dados') {
+        expect(bloco.textContent).toContain('Informe o gasto necessário')
+        expect(trilha.textContent).toContain('Ainda sem dado')
+        expect(referencia.textContent).toContain('Ainda sem dado')
+      }
       else {
-        expect(bloco.textContent.replace(/\s/g, '')).toContain((Math.abs(n.falta_com_margem!) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ''))
+        const valor = (Math.abs(n.falta_com_margem!) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '')
+        expect(bloco.textContent.replace(/\s/g, '')).toContain(valor)
+        expect(referencia.textContent.replace(/\s/g, '')).toContain(valor)
+        expect(trilha.textContent).toContain(new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(n.cobre_pct!) + '%')
         expect(bloco.textContent).toContain(n.falta_com_margem! > 0 ? 'Faltam' : 'Sobram')
         expect(bloco.textContent).toContain('com margem de segurança')
       }

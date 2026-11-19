@@ -11,7 +11,7 @@ export function enderecoDestino(d: DestinoResumo) {
 const secoes: Partial<Record<Rota, string[]>> = {
   orcamento: ['orcamento'], lancamentos: ['mes'], planejamento: ['saldo', 'plano2029', 'recebimentos'],
   cartoes: ['fatura'], guardado: ['aplicacoes', 'imoveis'], casa: ['feira', 'gas', 'prestadores', 'folha'],
-  desejos: ['desejo'], escritorio: ['tarefa'],
+  desejos: ['desejo'], escritorio: ['tarefa', 'historico'],
 }
 export function lerDestino(hash: string): DestinoResumo {
   const rota = rotaDoHash(hash)

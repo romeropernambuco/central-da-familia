@@ -6,7 +6,9 @@ export class NoTeste {
   readonly nodeName: string
   readonly tagName: string
   readonly namespaceURI = 'http://www.w3.org/1999/xhtml'
-  readonly style = {}
+  readonly style = {
+    setProperty(nome: string, valor: string) { Object.assign(this, { [nome]: valor }) },
+  }
   readonly atributos = new Map<string, string>()
   readonly childNodes: NoTeste[] = []
   parentNode: NoTeste | null = null

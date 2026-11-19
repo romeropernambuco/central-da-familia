@@ -14,7 +14,7 @@ export function responsavelDaTarefa(dados: DadosInicio, tarefa: TarefaDoEscritor
     normalizar(f.nome) === nome || normalizar(f.curto) === nome)
 }
 
-export function resumoDaEquipe(equipe: DadosInicio['funcionarios']) {
+export function resumoDaEquipe(equipe: import('./EscritorioMaquete').PropsEscritorioMaquete['funcionarios']) {
   if (equipe.estado !== 'pronto' || !equipe.valor.some(f => f.estadoHoje.estado === 'pronto')) return 'Equipe · Ainda sem dado'
   const n = equipe.valor.filter(f => f.estadoHoje.valor === 'trabalhando').length
   return n === 1 ? '1 pessoa trabalhando' : `${n} pessoas trabalhando`
@@ -30,11 +30,11 @@ const secoes: Partial<Record<string, string>> = {
   folha: 'folha', comprador: 'feira', fiscal: 'feira',
 }
 
-export function destinoDoPosto(id: string, papel: DadosInicio['pessoa']['papel']['valor']) {
+export function destinoDoPosto(id: string, papel: DadosInicio['pessoa']['papel']['valor'], dono = false) {
   const membro = Object.prototype.hasOwnProperty.call(POR_ID, id) ? POR_ID[id] : undefined
-  if (!membro || !papel || rotaPermitida(membro.rota, papel) !== membro.rota) return
+  if (!membro || !papel || rotaPermitida(membro.rota, papel, dono) !== membro.rota) return
   const secao = secoes[id]
   const hash = id === 'secretaria' ? DESTINO_SECRETARIA
     : '#/' + membro.rota + (secao ? '?' + new URLSearchParams({ secao }) : '')
-  return { url: '../../' + hash, rotulo: id === 'imoveis' ? 'Imóveis' : rotulos[membro.rota] }
+  return { url: '../../' + hash, hash, rota: membro.rota, rotulo: id === 'imoveis' ? 'Imóveis' : rotulos[membro.rota] }
 }
