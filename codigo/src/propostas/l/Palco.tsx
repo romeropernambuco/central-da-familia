@@ -54,7 +54,7 @@ export function Palco({ id, funcionarios, papel, celular, oculto, selecionar }: 
 }) {
   const [sala, setSala] = useState<Sala>()
   const pessoas = (funcionarios.valor ?? []).filter(pessoa => !sala || pessoa.sala === sala)
-  const altura = celular ? 380 : 456
+  const altura = celular ? undefined : 456
   return <section className="l-bloco l-escritorio" aria-labelledby={id}>
     <header className="l-secao-topo">
       <span className="l-icone"><DoorOpen size={22} aria-hidden="true" /></span>

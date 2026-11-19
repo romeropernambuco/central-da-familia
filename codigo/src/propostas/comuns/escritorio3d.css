@@ -38,6 +38,14 @@
   block-size: max(208px, var(--escritorio3d-altura, max(var(--escritorio3d-chao), var(--escritorio3d-proporcao))));
 }
 
+.escritorio3d[data-panorama] .escritorio3d-quadro {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--borda) var(--menu);
+}
+
+.escritorio3d[data-panorama] .escritorio3d-palco { min-inline-size: 940px; }
+
 .escritorio3d-camera, .escritorio3d-etiquetas { position: absolute; inset: 0; }
 .escritorio3d-camera > canvas { display: block; inline-size: 100%; block-size: 100%; }
 .escritorio3d-cena[data-renderizacao="carregando"] .escritorio3d-camera { visibility: hidden; }

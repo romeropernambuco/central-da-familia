@@ -27,6 +27,7 @@ export interface OpcoesIsometricas {
     variante: 'compacta' | 'media' | 'grande'
     elenco: readonly MembroEquipe[]
     pagina?: SalaEquipe
+    panorama?: boolean
     posicionar: (postos: readonly PostoProjetado[], largura: number, altura: number) => void
     aoApontar: (id: string | null) => void
     aoDesenhar: () => void
@@ -68,8 +69,10 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
 
   function iniciar() {
     const palco = opcoes.palco
+    const aproximado = !!palco && !palco.panorama
     let pagina = palco?.pagina ?? palco?.elenco[0]?.sala ?? 'caixa'
     const salaEmCena = () => vista === 'tudo' ? pagina : vista
+    const emCena = (sala: SalaEquipe) => !aproximado || sala === salaEmCena()
     const movimento = window.matchMedia('(prefers-reduced-motion: reduce)')
     let estados = opcoes.estados, vista = opcoes.vista, naTela = true, leve = false
     let largura = 0, altura = 0, precisaRedesenhar = true
@@ -77,11 +80,11 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     const mat = guardar(new T.MeshLambertMaterial())
     const janela = guardar(new T.MeshLambertMaterial({ color: 0xBFD8E6, emissive: 0x9CC4DA, emissiveIntensity: .35 }))
     const mancha = guardar(new T.MeshBasicMaterial({ color: 0, transparent: true,
-      vertexColors: !!palco, opacity: palco ? 1 : .085, depthWrite: false }))
+      vertexColors: aproximado, opacity: aproximado ? 1 : .085, depthWrite: false }))
     const cubo = guardar(new T.BoxGeometry(1, 1, 1))
-    const esfera = guardar(new T.SphereGeometry(.5, palco ? 16 : 8, palco ? 10 : 4))
-    const circulo = guardar(palco ? new T.RingGeometry(0, 1, 24, 4) : new T.CircleGeometry(1, 16))
-    if (palco) {
+    const esfera = guardar(new T.SphereGeometry(.5, aproximado ? 16 : 8, aproximado ? 10 : 4))
+    const circulo = guardar(aproximado ? new T.RingGeometry(0, 1, 24, 4) : new T.CircleGeometry(1, 16))
+    if (aproximado) {
       const posicao = circulo.attributes.position
       const rgba = new Float32Array(posicao.count * 4)
       for (let i = 0; i < posicao.count; i++) {
@@ -113,7 +116,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     const direcaoCamera = new T.Vector3(1, palco ? .72 : .86, palco ? 1.2 : 1).normalize()
     const pontoDeAtencao = palco ? peca(guardar(new T.CircleGeometry(.5, 24))) : oval
     const vidros = new T.Group(), manchas = new T.Group()
-    if (palco) {
+    if (aproximado) {
       for (const sala of SALAS_ISOMETRICAS) {
         salaDaPeca = sala
         montarSala(sala, (c, d, p) => basico(externo, c, d, p), true)
@@ -130,8 +133,8 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     const personagens = (palco?.elenco ?? EQUIPE).map(m => {
       salaDaPeca = m.sala
       const sala = PLANTA[m.sala]
-      const x = palco ? m.mesa * .83 : sala.x + m.mesa
-      const z = palco ? -.88 : sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
+      const x = aproximado ? m.mesa * .83 : sala.x + m.mesa
+      const z = aproximado ? -.88 : sala.z - (sala.fundo === 4 ? 1.4 : 1.67)
       montarMesa((c, d, p) => basico(externo, c, d, [x + p[0], p[1], z + p[2]]),
         (c, d, p) => oval(externo, c, d, [x + p[0], p[1], z + p[2]]), m.mesa !== 0)
       for (const escala of palco ? [.77] : [.53, .39]) {
@@ -142,7 +145,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         sombra.rotation.x = -Math.PI / 2
         manchas.add(sombra)
       }
-      const b = personagemIsometrico(T, basico, oval, m, !!palco)
+      const b = personagemIsometrico(T, basico, oval, m, aproximado)
       b.raiz.position.set(x, 0, z)
       movel.add(b.raiz)
       montarCadeira((c, d, p) => basico(b.raiz, c, d, p), (c, d, p) => oval(b.raiz, c, d, p))
@@ -211,7 +214,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         for (const { lote, pecas } of malhas) {
           let i = 0
           for (const p of pecas) {
-            if ((palco && p.userData.sala !== salaEmCena()) || (visibilidadeVariavel && !p.visible)) continue
+            if (!emCena(p.userData.sala) || (visibilidadeVariavel && !p.visible)) continue
             lote.setMatrixAt(i, p.matrixWorld)
             if ((primeiro || visibilidadeVariavel) && pintar) lote.setColorAt(i, cor.setHex(p.userData.cor))
             i++
@@ -238,13 +241,13 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     sol.position.set(-6, 12, palco ? 4 : 8)
     sol.castShadow = true
     sol.shadow.mapSize.set(palco ? 512 : 1024, palco ? 512 : 1024)
-    const sombraLimite = palco ? 5 : 14
+    const sombraLimite = aproximado ? 5 : 14
     Object.assign(sol.shadow.camera, { left: -sombraLimite, right: sombraLimite, top: sombraLimite, bottom: -sombraLimite, near: 1, far: 50 })
     sol.shadow.camera.updateProjectionMatrix()
     sol.shadow.normalBias = .025
     sol.shadow.bias = -.0006
     scene.add(sol, sol.target)
-    renderer.shadowMap.enabled = palco?.variante !== 'compacta'
+    renderer.shadowMap.enabled = palco?.variante !== 'compacta' && !palco?.panorama
     renderer.shadowMap.type = T.PCFSoftShadowMap
     renderer.shadowMap.autoUpdate = false
     renderer.shadowMap.needsUpdate = true
@@ -286,7 +289,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     }[palco.variante]
     function alvo() {
       const a = largura / altura
-      if (quadro) {
+      if (aproximado && quadro) {
         const foco = vista !== 'tudo'
         const centro = foco ? postosDaSala : pisoDaSala
         const escala = foco ? quadro.foco : Math.min(quadro.geral, largura / quadro.larguraMinima)
@@ -323,7 +326,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
     function posicionarPessoas() {
       const postos: PostoProjetado[] = []
       for (const { m, x, z } of personagens) {
-        if (palco ? salaEmCena() !== m.sala : vista !== 'tudo' && vista !== m.sala) continue
+        if (palco ? !emCena(m.sala) : vista !== 'tudo' && vista !== m.sala) continue
         ponto.set(x, .89, z + .065).project(cam)
         if (palco) postos.push({ id: m.id, x: (ponto.x + 1) * largura / 2, y: (1 - ponto.y) * altura / 2,
           chama: estados[m.id] === 'precisa_de_voce' })
@@ -343,7 +346,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       let mudaramAderecos = reposicionar
       for (const posto of personagens) {
         const { m, b, fase, tela, selo, marcador, contorno } = posto
-        if (palco && m.sala !== salaEmCena()) continue
+        if (!emCena(m.sala)) continue
         const estado = estados[m.id]
         const trabalha = estado === 'trabalhando'
         const chama = estado === 'precisa_de_voce'
@@ -444,7 +447,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       largura = el.clientWidth
       altura = el.clientHeight
       if (largura && altura) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, palco ? (leve ? 1.5 : 2) : (leve ? 1 : 1.5)))
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, aproximado ? (leve ? 1.5 : 2) : (leve ? 1 : 1.5)))
         renderer.setSize(largura, altura, false)
       }
       precisaRedesenhar = true
@@ -483,7 +486,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
       let menor = Infinity
       let id: string | undefined
       for (const { m, b, x, z } of personagens) {
-        if (palco ? salaEmCena() !== m.sala : (vista !== 'tudo' && vista !== m.sala) || !opcoes.etiqueta(m.id)) continue
+        if (palco ? !emCena(m.sala) : (vista !== 'tudo' && vista !== m.sala) || !opcoes.etiqueta(m.id)) continue
         const centro = z
         volume.min.set(x - .32, .3, centro - .28)
         volume.max.set(x + .32, b.quadril.position.y + 1.12, centro + .31)
@@ -518,7 +521,7 @@ export function montarEscritorioIsometrico(T: typeof Tres, el: HTMLElement, opco
         estados = proximos
         pagina = proximaPagina
         if (vista !== proxima) { vista = proxima; passos = 0 }
-        if (palco && salaAnterior !== salaEmCena()) {
+        if (aproximado && salaAnterior !== salaEmCena()) {
           atualizarMoveis(true)
           atualizarManchas()
           atualizarInstancias(true)

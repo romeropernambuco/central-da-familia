@@ -48,7 +48,10 @@ it.each(cenarios)('organiza as seções em $tema para $dispositivo', cenario => 
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
   expect(html.match(/class="l-referencia"/g)).toHaveLength(4)
   expect(html).toMatch(/Estado do dia[\s\S]*l-palco[\s\S]*l-fila[\s\S]*l-rumo[\s\S]*l-bento[\s\S]*Navegação principal/)
-  expect(html).toContain(`min-block-size:${cenario.dispositivo === 'celular' ? 380 : 456}px`)
+  if (cenario.dispositivo === 'celular') {
+    expect(html).toContain('class="l-abertura"')
+    expect(html).not.toContain('min-block-size:380px')
+  } else expect(html).toContain('min-block-size:456px')
   expect(html.match(/class="l-estado"/g)).toHaveLength(dados.funcionarios.valor?.length ?? 0)
   expect(html.match(/<svg[^>]*class="cf-ilustracao"[^>]*aria-hidden="true"/g)).toHaveLength(5)
   expect(html).toMatch(/2026<.*2027<.*2028<.*2029</)
@@ -123,7 +126,7 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
     for (const { tema, dispositivo } of cenarios) {
       for (const largura of dispositivo === 'celular' ? [375] : [1280, 1440]) {
         await rodar(`montar('${tema}', '${dispositivo}', ${largura}, false, 1); document.fonts.ready.then(() => true)`)
-        const medida = await rodar<{ alvos: string[]; cortes: string[]; largura: boolean; menu: boolean; dobra: string[]; contraste: number; movimento: boolean }>(String.raw`
+        const medida = await rodar<{ alvos: string[]; cortes: string[]; largura: boolean; menu: boolean; dobra: string[]; contraste: number; movimento: boolean; blocos: number[]; palco: number; altura: number }>(String.raw`
           (() => {
             const visiveis = seletor => todos(seletor).filter(el => el.getClientRects().length);
             const alvos = visiveis('button, summary').filter(el => {
@@ -150,6 +153,9 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
             return { alvos, cortes, contraste, largura: quadro.scrollWidth === quadro.clientWidth,
               menu: q('nav').getBoundingClientRect().bottom <= quadro.getBoundingClientRect().bottom,
               movimento: todos('.l-palco *').every(el => getComputedStyle(el).animationName === 'none'),
+              blocos: todos('.l-abertura, .l-conteudo > .l-bloco').map(el => el.getBoundingClientRect().height),
+              palco: q('.l-palco').getBoundingClientRect().height,
+              altura: quadro.clientHeight,
               dobra: Previa.medirNumeros(quadro) };
           })()
         `)
@@ -160,6 +166,11 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
         expect(medida.dobra).toHaveLength(4)
         expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
         expect(medida.movimento).toBe(true)
+        if (dispositivo === 'celular') {
+          expect(medida.blocos).toHaveLength(5)
+          expect(Math.min(...medida.blocos)).toBeGreaterThanOrEqual(medida.altura * .85)
+          expect(medida.palco).toBeGreaterThanOrEqual(medida.altura * .60)
+        }
       }
     }
     await rodar("montar('escuro', 'celular', 375); q('.l-salas button:last-child').focus()")

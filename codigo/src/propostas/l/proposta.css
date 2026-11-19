@@ -414,6 +414,22 @@
     border-radius: 16px 0 0 16px;
   }
 }
+.l-inicio[data-dispositivo="celular"] {
+  --l-capitulo: calc(var(--altura, 100svh) * .88);
+  --escritorio3d-altura: calc(var(--altura, 100svh) * .68);
+
+  .l-abertura { display: grid; align-content: center; min-block-size: var(--l-capitulo); }
+  .l-abertura .l-resumo { gap: 10px; }
+  .l-abertura .l-referencia { min-block-size: 148px; align-content: center; }
+  .l-bloco { min-block-size: var(--l-capitulo); }
+  .l-secao-topo h2 { font-size: 2.125rem; }
+  .l-palco .escritorio3d[data-renderizacao="svg"] { display: grid; align-content: center; }
+  .l-decisao { padding-block: 24px; }
+  .l-rumo { display: grid; align-content: center; }
+  .l-rumo .l-trilha { block-size: calc(var(--l-capitulo) * .45); }
+  .l-motor { min-block-size: 224px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .l-inicio *, .l-inicio *::before, .l-inicio *::after {
     animation: none !important;
