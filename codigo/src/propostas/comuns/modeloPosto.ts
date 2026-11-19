@@ -15,9 +15,12 @@ export function responsavelDaTarefa(dados: DadosInicio, tarefa: TarefaDoEscritor
 }
 
 export function resumoDaEquipe(equipe: import('./EscritorioMaquete').PropsEscritorioMaquete['funcionarios']) {
-  if (equipe.estado !== 'pronto' || !equipe.valor.some(f => f.estadoHoje.estado === 'pronto')) return 'Equipe · Ainda sem dado'
-  const n = equipe.valor.filter(f => f.estadoHoje.valor === 'trabalhando').length
-  return n === 1 ? '1 pessoa trabalhando' : `${n} pessoas trabalhando`
+  if (equipe.estado !== 'pronto' || !equipe.valor.length) return 'Equipe · Ainda sem dado'
+  const naEquipe = `${equipe.valor.length} na equipe`
+  const trabalhando = equipe.valor.filter(f => f.estadoHoje.valor === 'trabalhando').length
+  if (trabalhando) return trabalhando === 1 ? '1 pessoa trabalhando' : `${trabalhando} pessoas trabalhando`
+  const esperando = equipe.valor.filter(f => f.estadoHoje.valor === 'precisa_de_voce').length
+  return esperando ? `${naEquipe}, ${esperando} aguardando resposta` : `${naEquipe}, nenhuma tarefa em andamento`
 }
 
 const rotulos: Partial<Record<Rota, string>> = {

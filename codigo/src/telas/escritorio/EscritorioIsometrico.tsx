@@ -65,6 +65,7 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado,
   selecionado?: string
   ampliar?: () => void
 }) {
+  const { oculto } = useApp()
   const titulo = useId(), descricao = useId()
   const palco = useRef<HTMLDivElement>(null)
   const etiquetas = useRef(new Map<string, HTMLElement>())
@@ -155,14 +156,15 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado,
         </div>}
       </div>}
       <aside className="iso-fila" aria-label="Precisa de você">
-        <h3><Icone desenho={Hand} />Precisa de você{dados.total > 0 && <span className="iso-total">{dados.total}</span>}</h3>
+        <h3><Icone desenho={Hand} />Precisa de você{!oculto && dados.total > 0 && <span className="iso-total">{dados.total}</span>}</h3>
         {dados.fila.length ? <ul>{dados.fila.map(t => <li key={t.pergunta.id}>
           <button type="button" onClick={() => selecionar(t.membro.id, t.pergunta.id)}>
             <img src={retrato(t.membro.id)} width={36} height={36} alt="" loading="lazy" />
             <span><b>{t.membro.nome}</b><small>{t.texto}</small>{t.valor && <strong className="iso-valor">{t.valor}</strong>}</span>
             <Icone desenho={ArrowUpRight} />
           </button>
-        </li>)}</ul> : <p>{dados.postos.some(p => !p.funcionario.semDado) ? 'Nenhuma tarefa pendente.' : 'Ainda sem dado.'}</p>}
+        </li>)}</ul> : <p>{dados.total > 0 ? 'Nenhuma tarefa disponível aqui.'
+          : dados.temLeitura ? 'Nenhuma tarefa pendente.' : 'Ainda sem dado.'}</p>}
       </aside>
     </div>
     {listar && <EquipeIsometrica dados={dados} selecionar={selecionar} />}

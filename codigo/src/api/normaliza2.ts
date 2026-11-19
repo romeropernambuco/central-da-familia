@@ -67,7 +67,7 @@ function normalizaPergunta(p: any, semDinheiro: boolean): PerguntaEsc {
 export function normalizaEscritorio(r: any, semDinheiro = false): EscritorioHoje {
   return registrarContrato({
     precisa_de_voce: (r?.precisa_de_voce || []).map((p: any) => normalizaPergunta(p, semDinheiro)),
-    trabalhando: (r?.trabalhando || []).map((t: any) => ({ funcionario: idFunc(t.funcionario ?? t.id), resumo: t.resumo ? txt(t.resumo) : undefined })),
+    trabalhando: semDinheiro ? [] : (r?.trabalhando || []).map((t: any) => ({ funcionario: idFunc(t.funcionario ?? t.id), resumo: txt(t.resumo || t.frase) || undefined })),
     entregue: semDinheiro ? [] : (r?.entregue || []).map((e: any) => ({ funcionario: idFunc(e.funcionario), resumo: txt(e.resumo), numero: e.numero == null ? null : num(e.numero) })),
     funcionarios: (r?.funcionarios || []).map((f: any) => ({ id: idFunc(f.id), nome: txt(f.nome), sala: txt(f.sala), estado: (ESTADOS.includes(f.estado) ? f.estado : 'vai_comecar') as EstadoFuncionario, frase: txt(f.frase || f.fez_hoje || f.sem_pergunta), ...(Array.isArray(f.faz) && f.faz.length ? { faz: f.faz.map(txt) } : {}),
       ...(f.cadastro_resumo && !semDinheiro ? { cadastro_resumo: typeof f.cadastro_resumo === 'string' ? f.cadastro_resumo : txt(f.cadastro_resumo?.titulo ?? f.cadastro_resumo?.texto) } : {}),

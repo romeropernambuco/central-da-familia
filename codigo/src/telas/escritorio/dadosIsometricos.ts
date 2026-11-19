@@ -1,4 +1,4 @@
-import type { EscritorioHoje, EstadoFuncionario, FuncionarioEsc, Papel, PerguntaEsc } from '../../api/tipos'
+import type { EntregaEsc, EscritorioHoje, EstadoFuncionario, FuncionarioEsc, Papel, PerguntaEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { reais } from '../../lib/formato'
 import { valorDaPendencia } from '../../lib/resumo/pendencias'
@@ -10,6 +10,9 @@ import { SALAS_NOME } from './cenaBase'
 export interface PostoIsometrico {
   membro: MembroEquipe
   funcionario: FuncionarioEsc
+  atividade?: string
+  entrega?: EntregaEsc
+  pendencias: number
 }
 
 export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: Papel; oculto: boolean; dono?: boolean }) {
@@ -33,21 +36,25 @@ export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: P
       valor: papel === 'equipe' ? null : oculto ? '••••' : valor === null ? 'Ainda sem dado' : reais(valor),
     }]
   })
-  const porFuncionario = new Map<string, typeof fila[number]>()
-  for (const p of fila) if (!porFuncionario.has(p.membro.id)) porFuncionario.set(p.membro.id, p)
+  const porFuncionario = new Map<string, number>()
+  for (const { membro } of fila) porFuncionario.set(membro.id, (porFuncionario.get(membro.id) ?? 0) + 1)
   const postos: PostoIsometrico[] = permitidos.map(membro => {
     const f = banco.get(membro.id)
-    const pendencia = porFuncionario.get(membro.id)
+    const pendencias = porFuncionario.get(membro.id) ?? 0
     const observavel = papel !== 'equipe' && (papel !== 'casal' || membro.id !== 'analista' || dono)
+    const trabalho = observavel && dado?.trabalhando?.find(t => pertence(t.funcionario, membro))
+    const entrega = observavel && dado?.entregue?.find(t => pertence(t.funcionario, membro))
     const estadoDoBanco = f?.estado === 'trabalhando' || f?.estado === 'entregue' ? f.estado : 'vai_comecar'
-    const estado: EstadoFuncionario = pendencia ? 'precisa_de_voce'
+    const estado: EstadoFuncionario = pendencias ? 'precisa_de_voce'
       : !observavel ? 'vai_comecar'
-      : dado?.trabalhando?.some(t => pertence(t.funcionario, membro)) ? 'trabalhando'
-      : dado?.entregue?.some(t => pertence(t.funcionario, membro)) ? 'entregue'
+      : trabalho ? 'trabalhando'
+      : entrega ? 'entregue'
       : estadoDoBanco
-    const semDado = !pendencia && estado === 'vai_comecar' && (!f || !!f.semDado || !observavel)
+    const semDado = !pendencias && estado === 'vai_comecar' && (!f || !!f.semDado || !observavel)
     return {
-      membro,
+      membro, pendencias,
+      atividade: papel === 'casal' && trabalho ? trabalho.resumo : undefined,
+      entrega: papel === 'casal' && entrega ? entrega : undefined,
       funcionario: {
         ...(papel === 'casal' && observavel ? f : undefined),
         id: membro.id, nome: membro.nome, sala: SALAS_NOME[membro.sala], estado, semDado,
@@ -57,7 +64,7 @@ export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: P
     }
   })
   const perguntas: PerguntaEsc[] = fila.map(p => p.pergunta)
-  return { fila, postos, perguntas, total: fila.length }
+  return { fila, postos, perguntas, total: fila.length, temLeitura: !!dado }
 }
 
 export type DadosIsometricos = ReturnType<typeof dadosIsometricos>

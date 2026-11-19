@@ -4,7 +4,9 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../../app/contexto'
 import { invalidarDados } from '../../app/invalidacao'
 import type { Api, EscritorioHoje, FamiliaMinha, Papel, PerguntaEsc } from '../../api/tipos'
+import { normalizaEscritorio } from '../../api/normaliza2'
 import { definirModoFuncionario } from '../../componentes/AgenteDaAba'
+import { hojeRecife, somaDias } from '../../lib/formato'
 import { Inicio } from '../inicio/Inicio'
 import { InicioClassico } from '../inicio/InicioClassico'
 import { Escritorio } from './Escritorio'
@@ -145,6 +147,94 @@ it('Início J usa o SVG sem WebGL, tem todos os postos e abre o destino real da 
     expect(a.ler('data-ficha', 'cartao').textContent).toContain('Conferido')
     await act(async () => a.ler('aria-label', 'Abrir Cartões').click())
     expect(location.hash).toBe('#/cartoes')
+  } finally { await a.fechar() }
+})
+
+it('Início J distingue a equipe das tarefas, usa a mesma fila do Escritório e respeita o olho', async () => {
+  const a = montar()
+  try {
+    await a.atualizar({ funcionarios: [], trabalhando: [], entregue: [], precisa_de_voce: [] })
+    await a.render(Inicio)
+    expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
+    expect(a.el.textContent).toContain('19 na equipe, nenhuma tarefa em andamento')
+    expect(a.el.textContent).not.toContain('0 pessoas trabalhando')
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('Nenhuma tarefa pendente.')
+    await a.render(EscritorioIsometrico)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('Nenhuma tarefa pendente.')
+    await a.render(Inicio)
+
+    const perguntas = [pergunta('primeira', 'guardado'), pergunta('segunda', 'gestor_guardado')]
+    await a.atualizar({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: perguntas })
+    expect(a.el.textContent).toContain('19 na equipe, 1 aguardando resposta')
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('Precisa de você2')
+
+    await a.atualizar({ funcionarios: [], entregue: [], trabalhando: [{ funcionario: 'contador' }], precisa_de_voce: perguntas })
+    expect(a.el.textContent).toContain('1 pessoa trabalhando')
+    expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('trabalhando')
+    await a.render(EscritorioIsometrico)
+    expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('trabalhando')
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('Precisa de você2')
+    await a.render(EscritorioIsometrico, true)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).not.toContain('Precisa de você2')
+
+    await a.render(Inicio, true)
+    expect(a.el.textContent).not.toMatch(/na equipe|pessoas? trabalhando|Precisa de você2/)
+    expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('Tarefa pendente')
+  } finally { await a.fechar() }
+})
+
+it('ficha J usa a atividade da leitura, o diário datado e só o adiamento ainda válido', async () => {
+  const a = montar()
+  const hoje = hojeRecife()
+  const instante = (dias: number) => `${somaDias(hoje, dias)}T12:00:00-03:00`
+  try {
+    await a.atualizar(normalizaEscritorio({
+      precisa_de_voce: [],
+      trabalhando: [{ funcionario: 'analista_cartao', frase: 'Conferindo fatura de R$ 81.234,56.' }],
+      entregue: [{ funcionario: 'analista_cartao', resumo: 'Fatura atual em dia.' }],
+      funcionarios: [{
+        id: 'analista_cartao', estado: 'entregue', frase: 'Fatura atual em dia.',
+        ultimas_respostas: [
+          { id: '1', ref: 'antiga', quando: instante(-4), resposta: 'Adiada', adiado_ate: instante(1) },
+          { id: '2', ref: 'antiga', quando: instante(-2), resposta: 'Conferência de R$ 72.345,67.' },
+          { id: '3', ref: 'outra', quando: instante(-1), resposta: 'Depois', adiado_ate: instante(2) },
+        ],
+      }],
+    }))
+    await a.render(Inicio)
+    await act(async () => a.ler('data-posto', 'cartao').click())
+    const ficha = () => a.ler('data-ficha', 'cartao').textContent
+    expect(ficha()).toContain('AgoraTarefa em andamento. Conferindo fatura de R$ 81.234,56.')
+    expect(ficha()).toContain('Última entregaConferência de R$ 72.345,67. · anteontem')
+    expect(ficha()).toContain('Resultado atualFatura atual em dia.')
+    expect(ficha()).toContain('Último registroontem')
+    expect(ficha()).toContain('Próxima rotinaRetomar tarefa · depois de amanhã')
+    expect(ficha()).toContain('Pendências0')
+    expect(ficha()).toContain('Ver histórico')
+
+    await a.render(Inicio, true)
+    expect(ficha()).not.toMatch(/81\.234|72\.345|Fatura atual em dia|Pendências0/)
+    expect(ficha()).toContain('Última entregaResposta registrada · anteontem')
+    expect(ficha()).toContain('Pendências••••')
+  } finally { await a.fechar() }
+})
+
+it('ficha J mostra o próximo lembrete marcado e conta todas as perguntas da pessoa', async () => {
+  const a = montar()
+  try {
+    await a.atualizar(normalizaEscritorio({
+      precisa_de_voce: Array.from({ length: 4 }, (_, i) => pergunta(`recado-${i}`, 'secretaria')),
+      trabalhando: [{ funcionario: 'secretaria', frase: '1 lembrete marcado. Próximo: Revisar a casa em 25/11.' }],
+    }))
+    await a.render(Inicio)
+    await act(async () => a.ler('data-posto', 'secretaria').click())
+    const ficha = () => a.ler('data-ficha', 'secretaria').textContent
+    expect(ficha()).toContain('AgoraAguardando sua resposta.')
+    expect(ficha()).toContain('Próxima rotinaRevisar a casa em 25/11.')
+    expect(ficha()).toContain('Pendências4')
+    await a.render(Inicio, true)
+    expect(ficha()).toContain('Próxima rotinaLembrete agendado')
+    expect(ficha()).not.toContain('Revisar a casa')
   } finally { await a.fechar() }
 })
 

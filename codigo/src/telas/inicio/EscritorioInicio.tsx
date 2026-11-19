@@ -8,20 +8,17 @@ import { useModoFuncionario } from '../../componentes/AgenteDaAba'
 import { Icone } from '../../componentes/Icone'
 import { FuncIco, PerguntaCard } from '../../componentes/Pergunta'
 import { Sheet } from '../../componentes/base'
+import { diasEntre, hojeRecife } from '../../lib/formato'
 import { totalPendencias } from '../../lib/resumo/pendencias'
-import { chaveSimples } from '../../api/normaliza2'
 import { Escritorio3D } from '../../propostas/comuns/Escritorio3D'
 import { destinoDoPosto, resumoDaEquipe } from '../../propostas/comuns/modeloPosto'
 import { VisorEscritorio } from '../../propostas/comuns/VisorEscritorio'
 import { prioridades } from '../../propostas/j/modelo'
 import { useEquipeCompleta } from '../escritorio/useEquipe'
-import { dadosIsometricos } from '../escritorio/dadosIsometricos'
-import { APELIDO_BANCO, type SalaEquipe } from '../escritorio/equipe'
+import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
+import type { SalaEquipe } from '../escritorio/equipe'
 import type { PerguntaEsc } from '../../api/tipos'
 
-const estados = {
-  trabalhando: 'Trabalhando', entregue: 'Entregue', precisa_de_voce: 'Precisa de você', vai_comecar: 'Ainda vai começar',
-}
 const nivel = (p: PerguntaEsc, hoje: string) => p.id.startsWith('lembrete:') ? 'lembrete'
   : /^(fatura|dae):/.test(p.id) && p.vence_em && p.vence_em <= hoje ? 'dinheiro em risco' : 'operacao'
 
@@ -59,29 +56,18 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
   const porPagina = celular ? 1 : 2
   const ultimaPagina = Math.max(0, Math.ceil(fila.length / porPagina) - 1)
   const atual = Math.min(pagina, ultimaPagina)
-  const total = oculto || !e ? null : casal ? totalPendencias(e) : dados.total
+  const total = !e ? null : casal ? totalPendencias(e) : dados.total
+  const mostrarTotal = !oculto && total !== null
   const posto = dados.postos.find(({ membro }) => membro.id === selecao?.id)
-  const tarefa = posto && (selecao?.pergunta
-    ? fila.find(t => t.pergunta.id === selecao.pergunta)
-    : fila.find(t => t.membro.id === posto.membro.id))
+  const tarefa = posto && (fila.find(t => t.pergunta.id === selecao?.pergunta)
+    ?? fila.find(t => t.membro.id === posto.membro.id))
   const destino = posto && destinoDoPosto(posto.membro.id, papel, dono)
   const verHistorico = casal && posto && (posto.membro.id !== 'analista' || dono)
-  const ultimaResposta = posto?.funcionario.ultimas_respostas?.find(r => !r.adiado_ate)?.resposta
-  const entrega = posto && !posto.funcionario.semDado && casal && (posto.membro.id !== 'analista' || dono)
-    ? e?.entregue.find(x => (APELIDO_BANCO[x.funcionario] || x.funcionario) === posto.membro.id ||
-      chaveSimples(x.funcionario) === chaveSimples(posto.membro.nome))?.resumo
-    : undefined
-  const resultado = entrega || ultimaResposta
   const fechar = () => selecionar(undefined)
   const abrirPosto = (id: string, pergunta?: string) => selecionar({ id, pergunta })
   const ficha = posto && <Sheet key={posto.membro.id} titulo={posto.membro.nome} rotulo={`Ficha: ${posto.membro.nome}`} lado fechar={fechar}>
     <div className="inicio-posto" data-ficha={posto.membro.id}>
-      <dl>
-        <dt>Função</dt><dd>{posto.membro.papel}</dd>
-        <dt>Agora</dt><dd>{posto.funcionario.semDado ? 'Ainda sem dado' : estados[posto.funcionario.estado]}</dd>
-        {posto.funcionario.estado === 'trabalhando' && <dd>{oculto ? 'Atividade com detalhes ocultos' : posto.funcionario.frase}</dd>}
-        <dt>Último resultado</dt><dd>{resultado ? oculto ? 'Resultado oculto' : resultado : 'Ainda sem dado'}</dd>
-      </dl>
+      <FichaDadosPosto {...{ posto, hoje, oculto }} temLeitura={!!e} filaParcial={total !== null && total > perguntas.length} />
       <div className="j-acoes">
         {destino && <button type="button" aria-label={`Abrir ${destino.rotulo}`} onClick={() => { fechar(); ir(destino.rota, destino.hash.split('?')[1]) }}>Abrir {destino.rotulo} <Icone nome="abrir" size={16} /></button>}
         {verHistorico && <button type="button" onClick={() => ir('escritorio', new URLSearchParams({ f: posto.membro.id, secao: 'historico' }).toString())}>Ver histórico <Icone nome="abrir" size={16} /></button>}
@@ -97,7 +83,7 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
       <div className="j-palco-topo">
         <h2>Escritório da família</h2>
         <div className="j-saude">
-          {!oculto && <p>{resumoDaEquipe(funcionarios)}</p>}
+          {!oculto && <p>{e && estado === 'ok' ? resumoDaEquipe(funcionarios) : estado === 'buscando' ? 'Conferindo a equipe…' : 'Equipe · Ainda sem dado'}</p>}
           <button type="button" onClick={() => {
             abrirFila(true)
             folha.current?.focus({ preventScroll: true })
@@ -116,8 +102,8 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
     </div>
     <aside className="j-folha" aria-label="Precisa de você" ref={folha} tabIndex={-1}>
       {celular ? <button type="button" className="j-folha-gatilho" aria-expanded={filaAberta} aria-controls="j-fila-hoje" onClick={() => abrirFila(!filaAberta)}>
-        <Icone desenho={Hand} size={18} />Precisa de você{total !== null && <span className="j-contagem">{total}</span>}<Icone nome="abrir" size={16} />
-      </button> : <h2 className="j-fila-titulo"><Icone desenho={Hand} size={18} />Precisa de você{total !== null && <span className="j-contagem">{total}</span>}</h2>}
+        <Icone desenho={Hand} size={18} />Precisa de você{mostrarTotal && <span className="j-contagem">{total}</span>}<Icone nome="abrir" size={16} />
+      </button> : <h2 className="j-fila-titulo"><Icone desenho={Hand} size={18} />Precisa de você{mostrarTotal && <span className="j-contagem">{total}</span>}</h2>}
       <div className="j-fila-corpo" id="j-fila-hoje" hidden={celular && !filaAberta}>
         {estado === 'erro' ? <p role="alert">Não foi possível conferir a fila. <button type="button" onClick={atualizar}>Tentar de novo</button></p>
           : !e ? <p className="j-fila-vazia" role="status">{estado === 'buscando' ? 'Conferindo…' : 'Ainda sem dado'}</p>
@@ -144,4 +130,66 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
       </div>
     </aside>
   </div>
+}
+
+const relativo = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' })
+
+function dataRelativa(quando: string, hoje: string) {
+  return relativo.format(diasEntre(hoje, hojeRecife(new Date(quando))), 'day')
+}
+
+function FichaDadosPosto({ posto, hoje, oculto, temLeitura, filaParcial }: {
+  posto: PostoIsometrico; hoje: string; oculto: boolean; temLeitura: boolean; filaParcial: boolean
+}) {
+  const { membro, funcionario: f, pendencias, atividade, entrega } = posto
+  const diario = (f.ultimas_respostas ?? [])
+    .filter(linha => Number.isFinite(Date.parse(linha.quando)))
+    .sort((a, b) => Date.parse(b.quando) - Date.parse(a.quando))
+  const ultimoRegistro = diario[0]
+  const ultimaResposta = diario.find(linha => !linha.adiado_ate && linha.resposta.trim())
+    ?? f.ultimas_respostas?.find(linha => !linha.adiado_ate && linha.resposta.trim())
+  const resultado = entrega?.resumo.trim() || (f.estado === 'entregue' && f.frase !== membro.papel ? f.frase.trim() : '')
+  // Só vale o último registro da tarefa. Uma resposta nova pode substituir o adiamento.
+  const vistos = new Set<string>()
+  const agora = Date.now()
+  let proximoRetorno: string | undefined
+  for (const { ref, adiado_ate } of diario) {
+    if (ref && vistos.has(ref)) continue
+    if (ref) vistos.add(ref)
+    if (adiado_ate && Date.parse(adiado_ate) > agora &&
+      (!proximoRetorno || Date.parse(adiado_ate) < Date.parse(proximoRetorno))) proximoRetorno = adiado_ate
+  }
+  const proximoLembrete = membro.id === 'secretaria' ? atividade?.match(/Próximo:\s*(.+)/)?.[1] : undefined
+  const frase = f.frase.trim()
+  const status = pendencias ? 'Aguardando sua resposta.'
+    : f.semDado ? 'Ainda sem atividade registrada.'
+    : f.estado === 'trabalhando' ? 'Tarefa em andamento.'
+    : 'Sem tarefa em andamento.'
+  const detalhe = !pendencias && !f.semDado && f.estado !== 'entregue' && !proximoLembrete
+    && (atividade || (frase !== membro.papel ? frase : ''))
+
+  return <dl>
+    <dt>Função</dt><dd>{membro.papel}</dd>
+    <dt>Agora</dt><dd>{status}{detalhe && !oculto ? ` ${detalhe}` : ''}</dd>
+    <dt>Última entrega</dt>
+    <dd>{ultimaResposta
+      ? <>{oculto ? 'Resposta registrada' : ultimaResposta.resposta}
+        {Number.isFinite(Date.parse(ultimaResposta.quando)) && <> · <time dateTime={ultimaResposta.quando}>{dataRelativa(ultimaResposta.quando, hoje)}</time></>}</>
+      : resultado ? oculto ? 'Resultado oculto' : resultado : 'Ainda sem entrega registrada.'}</dd>
+    {resultado && ultimaResposta && resultado !== ultimaResposta.resposta && <>
+      <dt>Resultado atual</dt><dd>{oculto ? 'Resultado oculto' : resultado}</dd>
+    </>}
+    {ultimoRegistro && ultimoRegistro !== ultimaResposta && <>
+      <dt>Último registro</dt><dd><time dateTime={ultimoRegistro.quando}>{dataRelativa(ultimoRegistro.quando, hoje)}</time></dd>
+    </>}
+    {(proximoRetorno || proximoLembrete) && <>
+      <dt>Próxima rotina</dt>
+      <dd>{proximoRetorno
+        ? <>Retomar tarefa · <time dateTime={proximoRetorno}>{dataRelativa(proximoRetorno, hoje)}</time></>
+        : oculto ? 'Lembrete agendado' : proximoLembrete}</dd>
+    </>}
+    {temLeitura && <>
+      <dt>Pendências</dt><dd>{oculto ? <span aria-label="Quantidade oculta">••••</span> : filaParcial ? `${pendencias} na fila visível` : pendencias}</dd>
+    </>}
+  </dl>
 }
