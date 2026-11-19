@@ -22,15 +22,16 @@ export const chromium = [
 ].find(caminho => caminho && existsSync(caminho))
 
 const verificacao = String.raw`
-const cenarios = ['claro', 'escuro'].flatMap(tema => [375, 1280, 1440].map(largura => ({ tema, largura })));
+const cenarios = ['claro', 'escuro'].flatMap(tema => [375, 390, 1280, 1440].map(largura => ({ tema, largura })));
 const quadros = cenarios.map(({ tema, largura }) => {
-  const celular = largura === 375;
+  const celular = largura < 400;
   const dispositivo = celular ? 'celular' : 'desktop';
   const lab = document.createElement('div');
   lab.className = 'lab';
   lab.dataset.theme = tema;
   lab.innerHTML = '<div class="lab-amostra" data-dispositivo="' + dispositivo +
-    '" style="--largura:' + largura + 'px"><div class="lab-quadro"><div class="lab-conteudo"></div></div></div>';
+    '" style="--largura:' + largura + 'px' + (largura === 390 ? ';--altura:844px' : '') +
+    '"><div class="lab-quadro"><div class="lab-conteudo"></div></div></div>';
   document.body.append(lab);
   const quadro = lab.querySelector('.lab-quadro');
   const root = createRoot(quadro.firstElementChild);
@@ -42,6 +43,18 @@ const quadros = cenarios.map(({ tema, largura }) => {
 
 async function rodar() {
   await document.fonts.ready;
+  const pincel = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  function contraste(cor, fundo) {
+    function brilho(cor) {
+      pincel.fillStyle = cor;
+      pincel.fillRect(0, 0, 1, 1);
+      return [...pincel.getImageData(0, 0, 1, 1).data].slice(0, 3).map(n => n / 255)
+        .map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
+        .reduce((soma, v, i) => soma + v * [.2126, .7152, .0722][i], 0);
+    }
+    const [escuro, claro] = [cor, fundo].map(brilho).sort((a, b) => a - b);
+    return (claro + .05) / (escuro + .05);
+  }
   const medicoes = quadros.map(({ quadro, celular, largura }) => {
     const caixa = seletor => quadro.querySelector(seletor).getBoundingClientRect();
     const contorno = quadro.getBoundingClientRect();
@@ -50,8 +63,12 @@ async function rodar() {
     const fila = caixa('.m-fila');
     const rumo = caixa('.m-rumo');
     const numeros = medirNumeros(quadro);
+    const referenciasNaDobra = [...quadro.querySelectorAll('.m-referencia')]
+      .filter(el => el.getBoundingClientRect().bottom <= menu.top).length;
     quadro.scrollTop = 420;
     const menuRolado = caixa('.m-menu');
+    quadro.scrollTop = quadro.scrollHeight;
+    const fimVisivel = !celular || caixa('.m-ilustrado:last-child').bottom <= caixa('.m-menu').top;
     quadro.scrollTop = 0;
     quadro.querySelector('.m-menu details').open = true;
     quadro.querySelector('.m-escritorio details').open = true;
@@ -68,13 +85,23 @@ async function rodar() {
       altura: quadro.clientHeight,
       numeros,
       semTransbordo: quadro.scrollWidth === largura,
+      secoes: celular ? [...quadro.querySelectorAll('.m-miolo > *')].map(el => el.getBoundingClientRect().height) : [],
+      cena: celular ? caixa('.maquete-rolagem').height : caixa('.m-palco').height,
+      fimVisivel,
+      referenciasNaDobra,
+      contraste: Math.min(...[...quadro.querySelectorAll('.m-cartao, .m-menu, .m-menu [aria-current], .m-nivel')]
+        .map(el => getComputedStyle(el)).filter(estilo => estilo.backgroundColor !== 'rgba(0, 0, 0, 0)')
+        .map(estilo => contraste(estilo.color, estilo.backgroundColor))),
+      contrasteTrilha: contraste(getComputedStyle(quadro.querySelector('.m-caminho')).stroke,
+        getComputedStyle(quadro.querySelector('.m-rumo')).backgroundColor),
       numerosInteiros: [...quadro.querySelectorAll('.numero-financeiro')].every(numero => {
         const faixa = document.createRange();
         faixa.selectNodeContents(numero);
         return faixa.getBoundingClientRect().right <= numero.closest('.m-cartao').getBoundingClientRect().right;
       }),
       menuFixo: menu.bottom <= contorno.bottom && Math.abs(menuRolado.top - menu.top) < 1,
-      ordem: celular ? fila.top >= escritorio.bottom && rumo.top >= fila.bottom
+      ordem: celular ? escritorio.top >= caixa('.m-abertura').bottom &&
+        fila.top >= escritorio.bottom && rumo.top >= fila.bottom && caixa('.m-motores').top >= rumo.bottom
         : rumo.left > escritorio.right && rumo.top === escritorio.top && fila.top >= escritorio.bottom &&
           escritorio.width / rumo.width > 1.45 && escritorio.width / rumo.width < 1.55,
       controles,
@@ -85,7 +112,7 @@ async function rodar() {
   const clicar = el => flushSync(() => el.click());
   const passos = {};
   for (const [rotulo, titulo] of [['Orçamento', 'Hoje você pode gastar'], ['Faturas', 'Faturas'],
-    ['Escritório', 'Escritório'], ['Início', 'Central da Família']]) {
+    ['Escritório', 'Escritório'], ['Início', dados.saudacao.valor || 'Início']]) {
     const botao = achar('.m-menu > button', rotulo);
     clicar(botao);
     passos[rotulo] = document.activeElement.textContent === titulo && botao.getAttribute('aria-current') === 'location';
@@ -102,14 +129,30 @@ async function rodar() {
   clicar(posto);
   passos.cena = passos.cena && document.activeElement.matches('.m-ficha h3') && !!quadro.querySelector('.m-ficha');
   clicar(quadro.querySelector('[aria-label="Fechar ficha"]'));
+  const original = quadro.querySelector('.m-controles-sala span').textContent;
+  clicar(quadro.querySelector('[aria-label="Próxima sala"]'));
+  passos.sala = quadro.querySelector('.m-controles-sala span').textContent !== original;
+  const todos = achar('.m-controles-sala button', 'Ver todos');
+  clicar(todos);
+  const rolagem = quadro.querySelector('[data-panorama] .maquete-rolagem');
+  rolagem.scrollLeft = rolagem.scrollWidth;
+  passos.panorama = todos.getAttribute('aria-pressed') === 'true' && rolagem.scrollLeft > 0 &&
+    rolagem.querySelectorAll('.maquete-posto').length === dados.funcionarios.valor.length;
+  clicar(todos);
+  passos.panorama = passos.panorama && !quadro.querySelector('[data-panorama]');
   quadro.querySelector('.m-escritorio details').open = true;
   const trabalho = quadro.querySelector('.m-equipe button');
   trabalho.focus();
   passos.postoFocavel = document.activeElement === trabalho && trabalho.tabIndex === 0 && trabalho.type === 'button';
   clicar(trabalho);
-  passos.ficha = document.activeElement.matches('.m-ficha h3') && document.activeElement.textContent === trabalho.textContent;
+  passos.ficha = quadro.querySelector('dialog.m-ficha').open &&
+    document.activeElement.matches('.m-ficha h3') && document.activeElement.textContent === trabalho.textContent;
+  render(true);
+  passos.fichaOculta = quadro.querySelector('dialog.m-ficha')?.open &&
+    !quadro.querySelector('.m-ficha [data-numero-financeiro], .m-posicao, .m-avanco, [data-numero-financeiro]');
+  render(false);
   clicar(quadro.querySelector('[aria-label="Fechar ficha"]'));
-  passos.fechar = !quadro.querySelector('.m-ficha') && document.activeElement.textContent === 'Escritório';
+  passos.fechar = !quadro.querySelector('.m-ficha') && document.activeElement === trabalho;
   clicar(achar('.m-acoes button', 'Abrir'));
   passos.detalhe = quadro.querySelector('.m-detalhe')?.textContent.includes('98.765,43');
   render(true);
@@ -135,6 +178,7 @@ interface Resultado {
   medicoes: {
     largura: number; altura: number; numeros: string[]
     semTransbordo: boolean; numerosInteiros: boolean; menuFixo: boolean; ordem: boolean
+    secoes: number[]; cena: number; fimVisivel: boolean; referenciasNaDobra: number; contraste: number; contrasteTrilha: number
     controles: { largura: number; altura: number; nome: string }[]
   }[]
   passos: Record<string, boolean>

@@ -65,7 +65,7 @@ function Quadro({ escolha, dispositivo, oculto, children }: {
   }, [oculto, dispositivo])
 
   const rotulo = escolha === 'atual' ? 'Início atual' : `Proposta ${escolha.toUpperCase()}`
-  return <section className="lab-amostra" data-dispositivo={dispositivo} aria-label={rotulo}>
+  return <section className="lab-amostra" data-dispositivo={dispositivo} data-proposta={escolha} aria-label={rotulo}>
     <p className="lab-contagem" aria-live="polite">{rotulo} · {oculto ? 'Valores ocultos' : `${numeros.length} números financeiros acima da dobra`}</p>
     <div ref={quadro} className="lab-quadro" tabIndex={0} aria-label={`Prévia rolável · ${rotulo}`}>
       <div className="lab-conteudo" ref={conteudo} data-proposta={escolha}>{children}</div>

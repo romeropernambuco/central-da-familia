@@ -108,6 +108,32 @@ it('mantém o orçamento ao paginar todas as salas, inclusive com pedidos simult
   c.destruir()
 })
 
+it('projeta e anima os 19 postos no panorama móvel dentro do orçamento', () => {
+  const a = ambiente(false), palco = { ...palcoDe('grande'), panorama: true }
+  const largura = 940, altura = 552
+  const estados = Object.fromEntries(EQUIPE.map(m => [m.id, 'trabalhando' as const]))
+  const c = a.montar(estados, palco, { clientWidth: largura, clientHeight: altura })
+  a.quadro(100)
+  const [postos] = palco.posicionar.mock.lastCall!
+  expect(postos.map(p => p.id)).toEqual(EQUIPE.map(m => m.id))
+  expect(postos.every(p => p.x > 22 && p.x < largura - 22 && p.y > 22 && p.y < altura - 22)).toBe(true)
+  const [scene, cam] = a.renderer.render.mock.lastCall!
+  const pixels = (new T.Vector3(0, 1.37, 0).project(cam).y - new T.Vector3(0, .12, 0).project(cam).y) * altura / 2
+  expect(pixels).toBeGreaterThanOrEqual(40)
+  const telas = scene.getObjectByName('telas acesas')
+  expect(telas.count).toBe(EQUIPE.length * 4) // Fundo e três traços por monitor aceso.
+  expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+  for (const estado of ['entregue', 'precisa_de_voce'] as const) {
+    c.atualizar(Object.fromEntries(EQUIPE.map(m => [m.id, estado])), 'tudo')
+    a.quadro(116)
+    expect(telas.count).toBe(0)
+    expect(palco.posicionar.mock.lastCall![0].every(p => p.chama === (estado === 'precisa_de_voce'))).toBe(true)
+    expect(a.renderer.info.render.calls).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.desenhos)
+    expect(a.renderer.info.render.triangles).toBeLessThanOrEqual(ORCAMENTO_ISOMETRICO.triangulos)
+  }
+  c.destruir()
+})
+
 it('aproxima a sala em vários quadros e omite marcadores dos demais estados e páginas', () => {
   const a = ambiente(false), palco = palcoDe('grande')
   const estados: EstadosIsometricos = { contador: 'trabalhando', colchao: 'vai_comecar', tesoureiro: 'entregue', guardado: 'precisa_de_voce' }

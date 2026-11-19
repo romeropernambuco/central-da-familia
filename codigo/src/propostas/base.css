@@ -117,6 +117,26 @@ body { margin: 0; }
   container: proposta / inline-size;
 }
 .lab-conteudo { min-height: 100%; background: var(--fundo); color: var(--texto); font-family: var(--fonte-texto); display: flow-root; }
+
+.lab-amostra[data-dispositivo="celular"]:is([data-proposta="l"], [data-proposta="m"]) .lab-quadro {
+  overscroll-behavior-block: auto;
+}
+
+@media (max-width: 420px) {
+  .lab-amostras[data-comparacao="false"]:has(.lab-amostra[data-dispositivo="celular"]:is([data-proposta="l"], [data-proposta="m"])) {
+    padding-inline: 0;
+  }
+  .lab-amostras[data-comparacao="false"] .lab-amostra[data-dispositivo="celular"]:is([data-proposta="l"], [data-proposta="m"]) {
+    --largura: 100vw;
+    --altura: max(812px, 100svh);
+    inline-size: 100%;
+  }
+  .lab-amostras[data-comparacao="false"] .lab-amostra[data-dispositivo="celular"]:is([data-proposta="l"], [data-proposta="m"]) .lab-quadro {
+    border-inline: 0;
+    border-radius: 0;
+  }
+}
+
 .lab-mensagem { padding: var(--espaco-5); }
 .lab-mensagem h1 { font: 700 var(--tipo-titulo) var(--fonte-titulo); }
 .numero-financeiro { font-variant-numeric: tabular-nums; white-space: nowrap; }

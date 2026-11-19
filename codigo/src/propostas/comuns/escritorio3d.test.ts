@@ -221,6 +221,25 @@ it('mantém a identificação sob demanda e o olho no fallback sem as plaquinhas
   expect(a.el.textContent).not.toContain(moeda)
 })
 
+it('expõe todos os postos na vista geral WebGL, encaminha a seleção e protege o valor sob demanda', async () => {
+  const a = ambiente()
+  const onSelecionar = vi.fn()
+  await a.render({ panorama: true, salaDestacada: 'apoio', valores, onSelecionar })
+  await a.mostrar()
+  expect(opcoes().palco?.panorama).toBe(true)
+  expect(opcoes().vista).toBe('tudo')
+  const postos = a.el.buscar(n => n.getAttribute('data-posto') !== null)
+  expect(postos.map(n => n.getAttribute('data-posto'))).toEqual(funcionarios.valor!.map(f => f.id))
+  expect(postos.every(n => n.textContent === '')).toBe(true)
+  expect(a.ler('aria-label', 'Próxima sala')).toBeUndefined()
+  await act(async () => opcoes().aoTocar(funcionario.id))
+  expect(onSelecionar.mock.calls).toEqual([[funcionario]])
+  expect(a.el.textContent).toContain(moeda)
+  await a.render({ panorama: true, valores, onSelecionar }, true)
+  expect(a.el.textContent).not.toContain(moeda)
+  expect(a.ler('aria-label', 'Valor oculto')).toBeDefined()
+})
+
 it('encerra a observação e descarta a cena ao desmontar', async () => {
   const a = ambiente()
   const removerPreferencia = vi.spyOn(a.preferencia, 'removeEventListener')

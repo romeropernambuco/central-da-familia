@@ -6,7 +6,7 @@ import type { PropsProposta } from '../Propostas'
 import { useValoresOcultos } from '../comuns/privacidade'
 import { Escritorio } from './Escritorio'
 import { Fila, organizarFila, type Resposta } from './Fila'
-import { Financeiro } from './Financeiro'
+import { Bento, Financeiro, Referencias, Rumo } from './Financeiro'
 import './proposta.css'
 
 const abas = [
@@ -15,7 +15,7 @@ const abas = [
   ['faturas', 'Faturas', CreditCard],
   ['escritorio', 'Escritório', BriefcaseBusiness],
 ] as const
-type Destino = typeof abas[number][0] | 'plano' | 'referencias'
+type Destino = typeof abas[number][0] | 'plano' | 'referencias' | 'aplicacoes' | 'imoveis' | 'receitas'
 
 export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
   const id = useId()
@@ -24,6 +24,7 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
   const [ativo, setAtivo] = useState<Destino>('inicio')
   const [respostas, setRespostas] = useState<Partial<Record<string, Resposta>>>({})
   const oculto = useValoresOcultos()
+  const celular = dispositivo === 'celular'
   const papel = dados.pessoa.papel.valor
   const podeVer = papel === 'casal' || papel === 'pessoa'
   const alvo = (destino: Destino | 'fila') => id + '-' + destino
@@ -31,7 +32,8 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
   function focar(destino: Destino | 'fila') {
     const elemento = painel.current?.ownerDocument.getElementById(alvo(destino))
     elemento?.focus({ preventScroll: true })
-    elemento?.scrollIntoView({ block: 'start', inline: 'nearest' })
+    const secao = celular && destino === 'inicio' ? elemento?.closest('.m-abertura') : elemento
+    secao?.scrollIntoView({ block: 'start', inline: 'nearest' })
     if (mais.current) mais.current.open = false
     setAtivo(destino === 'fila' ? 'inicio' : destino)
   }
@@ -50,28 +52,44 @@ export function Proposta({ dados, tema, dispositivo }: PropsProposta) {
       : dados.pendencias.fila.estado === 'indisponivel' ? 'Ainda sem dado sobre a fila.' : 'Nenhuma decisão aguardando você.'
   const maisAtivo = ativo === 'plano' || ativo === 'referencias'
 
+  const cabecalho = <header className="m-cabecalho">
+    <div className="m-identidade">
+      {celular && <p className="m-contexto">Central da Família</p>}
+      <h1 id={alvo('inicio')} tabIndex={-1}>{celular ? dados.saudacao.valor || 'Início' : 'Central da Família'}</h1>
+      <span className="selo-exemplo">Exemplo</span>
+    </div>
+    <section className="m-saude" aria-label="Estado do dia" data-risco={risco}>
+      <p><span className="m-sinal" aria-hidden="true" />{estado}</p>
+      <button className="m-alvo" type="button" onClick={() => focar(pendentes.length ? 'fila' : 'escritorio')}>
+        {pendentes.length ? 'Ver fila' : 'Ver equipe'}<ArrowDown aria-hidden="true" size={16} />
+      </button>
+    </section>
+  </header>
+  const escritorio = <Escritorio dados={dados} titulo={alvo('escritorio')} celular={celular} oculto={oculto} />
+  const fila = <Fila dados={dados} tarefas={tarefas} titulo={alvo('fila')} oculto={oculto} respostas={respostas}
+    completa={celular} responder={(id, resposta) => setRespostas(anteriores => ({ ...anteriores, [id]: resposta }))} />
+
   return <div className="m-central" data-tema={tema} data-dispositivo={dispositivo} ref={painel}>
     <div className="m-miolo">
-      <header className="m-cabecalho">
-        <div className="m-identidade">
-          <h1 id={alvo('inicio')} tabIndex={-1}>Central da Família</h1>
-          <span className="selo-exemplo">Exemplo</span>
+      {celular ? <>
+        <div className="m-abertura">
+          {cabecalho}
+          <Referencias dados={dados} titulo={alvo('referencias')} oculto={oculto} />
         </div>
-        <section className="m-saude" aria-label="Estado do dia" data-risco={risco}>
-          <p><span className="m-sinal" aria-hidden="true" />{estado}</p>
-          <button className="m-alvo" type="button" onClick={() => focar(pendentes.length ? 'fila' : 'escritorio')}>
-            {pendentes.length ? 'Ver fila' : 'Ver equipe'}<ArrowDown aria-hidden="true" size={16} />
-          </button>
+        {escritorio}
+        {fila}
+        <Rumo titulo={alvo('plano')} cobertura={dados.plano2029.progressao} oculto={oculto} celular />
+        <section className="m-motores" aria-labelledby={id + '-motores'}>
+          <h2 id={id + '-motores'}>Motores da família</h2>
+          <Bento dados={dados} alvo={alvo} celular />
         </section>
-      </header>
-      <div className="m-colunas">
-        <div className="m-trabalho">
-          <Escritorio dados={dados} titulo={alvo('escritorio')} celular={dispositivo === 'celular'} oculto={oculto} />
-          <Fila dados={dados} tarefas={tarefas} titulo={alvo('fila')} oculto={oculto} respostas={respostas}
-            responder={(id, resposta) => setRespostas(anteriores => ({ ...anteriores, [id]: resposta }))} />
+      </> : <>
+        {cabecalho}
+        <div className="m-colunas">
+          <div className="m-trabalho">{escritorio}{fila}</div>
+          <Financeiro dados={dados} alvo={alvo} oculto={oculto} />
         </div>
-        <Financeiro dados={dados} alvo={alvo} oculto={oculto} />
-      </div>
+      </>}
     </div>
     <nav className="m-menu" aria-label="Áreas da Central">
       <span className="m-marca" aria-hidden="true"><House size={22} /></span>

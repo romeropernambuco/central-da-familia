@@ -1,43 +1,25 @@
-# Proposta M · Central em duas colunas
+# Proposta M · Central da Família
 
-## Conceito e referências
+A M mantém no desktop a composição em duas colunas. O escritório e a fila ficam na coluna principal. Rumo a 2029, orçamento, faturas e referências ficam na coluna secundária. A navegação usa a barra lateral nos quadros de 1280 e 1440 px.
 
-O escritório ocupa a coluna principal e a fila fica imediatamente abaixo. A coluna direita concentra o plano, o orçamento e os totais para consulta. Em 1280 e 1440 px, a barra lateral permanece visível durante a rolagem e o espaço restante se divide em 60/40. Em 375 px, a ordem é escritório, fila, trilha, cartões ilustrados e referências, com navegação inferior persistente.
+## Celular em cinco telas
 
-- **E** · Início, Orçamento, Faturas, Escritório e Mais, com uma pílula para o destino ativo. O bento fica à direita, com as ilustrações de casa e cartões em tom musgo. Cada cartão apresenta uma medida.
-- **D** · A trilha grossa tem quatro marcos, de 2026 a 2029, e a bandeira «Viver de rendimentos». «Você está aqui» indica a cobertura de renda projetada. As datas representam marcos do calendário. A trilha satura na chegada e o texto conserva a cobertura oficial, inclusive acima de 100%.
-- **F** · A fila «Precisa de você» começa pelas situações de dinheiro em risco, com os níveis nomeados. «Já fiz» conclui na prévia e «Depois» envia a tarefa para Adiadas, de onde pode ser retomada. «Abrir» traz o detalhe disponível. A faixa de quatro referências virou uma lista vertical com saldo em conta, recebimentos garantidos, aplicações e diferença mensal com margem. Orçamento e faturas já têm seus próprios cartões.
-- **I, J e K** · Da I vieram os destinos locais com foco e a ficha ligada ao posto. A J reforçou a leitura da margem como medida oficial. Da K veio a distinção entre a área de trabalho e a consulta financeira, que na M aparecem juntas.
+1. **Abertura.** Saudação e estado do dia, com atalho para a fila ou para o escritório. Quatro cartões mostram saldo em conta, recebimentos garantidos, aplicações e diferença mensal do Plano 2029 com margem. Quando a fonte não disponibiliza uma medida, o cartão diz «Ainda sem dado».
+2. **Escritório.** As setas percorrem as sete salas, com foco nos bonecos. «Ver todos» abre uma vista 3D contínua com os 19 postos e rolagem lateral. Cada pessoa aparece no estado informado pelo exemplo. Os postos são acionáveis por toque ou teclado, e a lista «Ver equipe» oferece outro caminho. A ficha abre como folha inferior e fecha com o botão ou Escape. O modo de movimento reduzido e a indisponibilidade de WebGL usam a maquete estática.
+3. **Precisa de você.** A fila mostra todas as decisões, priorizando as situações de dinheiro em risco. «Já fiz» conclui na prévia, «Depois» permite retomar em Adiadas e «Abrir» mostra o detalhe disponível. Ações feitas na prévia usam apenas o estado local.
+4. **Rumo a 2029.** O trajeto sobe de 2026 até «Viver de rendimentos», com quatro marcos do calendário e uma legenda. O ponto indica a cobertura estimada da meta de renda. A trilha chega a 100%, enquanto o texto mantém a cobertura oficial caso ela ultrapasse a meta.
+5. **Motores da família.** «Hoje você pode gastar» ocupa a largura toda. Aplicações, Imóveis, Receitas e Faturas aparecem em dois pares, com ilustrações e uma medida por cartão.
 
-## Hierarquia e linguagem visual
+Os blocos partem de 88% da altura útil e crescem com o conteúdo. O palco usa 68% dessa altura. A rolagem é livre e o menu inferior inspirado na E fica visível. A moldura do laboratório acompanha a largura da janela nos dois tamanhos móveis e oferece pelo menos 812 px de altura útil.
 
-- **Em dois segundos** · A frase de estado e o atalho para a fila aparecem acima do escritório. No desktop, o título e a bandeira do plano também aparecem junto à cena.
-- **Em cinco segundos** · É possível reconhecer a equipe, localizar a ação mais urgente e ler a cobertura. No celular, «Ver fila» leva direto às decisões.
-- **Depois** · Selecionar uma sala ou abrir a ficha de um funcionário, tratar tarefas e consultar os cartões. A leitura do plano usa a cobertura e a diferença mensal com margem em lugares distintos. O olho tira do DOM o trecho proporcional e a posição do marcador, além de ocultar valores e texto livre das tarefas.
+## Privacidade e acessibilidade
 
-**Bricolage Grotesque** mantém os títulos expressivos e os valores tabulares com personalidade. **Inter** dá legibilidade aos menus, rótulos e textos de tarefa. Números principais a 35 px, referências a 27 px. O tema claro parte de areia quente e papel. O verde-folha orienta navegação, trilha e seleção. O vermelho aparece no nível Dinheiro em risco. O tema escuro tem três superfícies em camadas e dispensa sombras.
+O olho fechado mascara as medidas e retira o avanço e o ponto proporcional da trilha. A fila troca texto livre por rótulos neutros e protege detalhes já abertos. No escritório, nome, sala e estado ficam disponíveis sob demanda, com a arte livre de letras sobre os bonecos. A M não fornece medidas financeiras a balões ou fichas. O papel equipe recebe apenas o painel do Assessor da Casa, sem números financeiros.
 
-## Escritório
+Bricolage Grotesque e Inter mantêm a diferença de hierarquia entre títulos, medidas e rótulos. O verde é o destaque no celular. Texto e ícones identificam os níveis de tarefa. Os alvos têm pelo menos 44 × 44 px. Existe um único h1 por proposta, com foco programático para os destinos do menu.
 
-A M usa `Escritorio3D` em variante grande, com 500 px no desktop e 448 px no celular. As plaquinhas, o foco por sala e os estados vêm do snapshot. Cada posto abre uma ficha com sala e estado. «Ver equipe» oferece os mesmos funcionários em botões nativos, inclusive quando a cena exige rolagem lateral no celular. O painel só destaca como ativos os funcionários cujo estado recebido é «Trabalhando».
+## Verificação
 
-Nesta worktree, a interface compartilhada ainda delega à maquete SVG. A troca da f60 encaixa o Three.js com as mesmas propriedades. A M usa o olho e o papel recebido e deixa os balões de valor fora da cena. Foram medidas a maquete e a navegação por botões. A cena WebGL depende da integração compartilhada.
+O Chrome com toque emulado foi usado em 375 × 812 e 390 × 844. A cena mediu 552 e 574 px, respectivamente. A vista geral de 940 px permitiu arrastar a planta na horizontal e abrir uma ficha. O último cartão ficou acessível acima do menu. A geometria e o HTML da composição desktop em 1280 e 1440 px coincidiram com a referência anterior em movimento reduzido. Todos os dados usados são de exemplo ou sintéticos. Celular físico, leitor de tela e desempenho de GPU móvel ficam por verificar.
 
-## Autoavaliação
-
-- **Hierarquia · 9/10.** Status, escritório e rumo têm posições previsíveis. O cartão de orçamento fica mais abaixo no fluxo móvel.
-- **Números na primeira dobra · 9/10.** No Chromium, a amostra exibiu 0 em 375 × 812 e 3 em 1280 × 800 e 1440 × 800, nos dois temas. A cena e a ação do dia abrem o celular. A trilha e os cartões ficam visíveis no desktop.
-- **Ritmo · 8/10.** A coluna de trabalho ganha espaço, com a fila logo abaixo. A rolagem lateral da maquete exige mais exploração no celular.
-- **Tipografia · 9/10.** Títulos, valores e legendas têm papéis distintos. Os valores de exemplo cabem sem quebra nas três larguras.
-- **Ícones e ilustrações · 8/10.** Lucide identifica ações, os cartões reaproveitam a arte da E e a trilha mantém seu desenho próprio.
-- **Organização por tarefa · 9/10.** A fila permite abrir, concluir, adiar, retomar e desfazer na prévia.
-- **Acessibilidade · 8/10.** O teste mede os alvos e verifica foco no destino e na ficha. A leitura com leitor de tela ainda precisa de avaliação manual.
-- **Privacidade · 10/10 no escopo do laboratório.** O teste cobre valores, texto livre, proporção gráfica, detalhe já aberto e bloqueio do perfil Assessor da Casa.
-- **Temas · 9/10.** Os dois temas passaram pelas mesmas medidas. A maquete mantém as cores de materiais definidas pelo componente compartilhado.
-- **Escritório como personagem · 8/10.** Cena protagonista, salas e fichas ligadas ao elenco. Falta validar a troca compartilhada para Three.js e seu comportamento em aparelhos móveis.
-
-## Integração com o produto
-
-Montar um adaptador ao lado de `app/useResumoFamilia.ts` para receber a família e o papel autenticados. Aproveitar os seletores de `lib/resumo` para orçamento, saldo, faturas, recebimentos garantidos, aplicações e plano. Preservar fonte, unidade, previsão e estados de carregamento, vazio e erro. Usar `cobre_pct` e `falta_com_margem` do plano oficial. Fazer a autorização antes das leituras e aplicar a mesma privacidade ao formulário, à ficha e a qualquer detalhe financeiro.
-
-Integrar a cena de `telas/escritorio/EscritorioIsometrico.tsx` pela camada compartilhada da f60. No produto, `dadosIsometricos` filtra postos e fila pelo perfil. Reutilizar o carregamento sob demanda, o tratamento de perda de contexto e a seleção de funcionário da cena. Ligar «Abrir» às fichas e destinos existentes e mapear «Já fiz» e «Depois» às opções válidas de cada tarefa. Atualizar o resumo após a confirmação da ação e dar retorno de erro antes de remover a tarefa da fila.
+Para integração futura, o adaptador do Início deve receber família e papel autenticados antes de ler os seletores oficiais. O plano usa `cobre_pct` e `falta_com_margem`. As ações da fila devem usar os destinos e operações válidos de cada tarefa, com retorno de erro e atualização do resumo após a confirmação.

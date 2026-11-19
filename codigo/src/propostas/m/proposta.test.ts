@@ -42,7 +42,9 @@ it.each([
   expect(html).toContain(`data-tema="${tema}" data-dispositivo="${dispositivo}"`)
   expect(html.match(/<h1\b/g)).toHaveLength(1)
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
-  const secoes = ['m-escritorio"', 'm-fila"', 'm-rumo"', 'm-bento"', 'm-referencias"']
+  const secoes = dispositivo === 'celular'
+    ? ['m-referencias"', 'm-escritorio"', 'm-fila"', 'm-rumo"', 'm-motores"', 'm-bento"']
+    : ['m-escritorio"', 'm-fila"', 'm-rumo"', 'm-bento"', 'm-referencias"']
   let ultima = -1
   for (const secao of secoes) {
     const posicao = html.indexOf(secao)
@@ -50,7 +52,7 @@ it.each([
     ultima = posicao
   }
   expect(html.match(/class="m-referencia"/g)).toHaveLength(4)
-  expect(html.match(/class="m-cartao m-ilustrado"/g)).toHaveLength(2)
+  expect(html.match(/class="m-cartao m-ilustrado"/g)).toHaveLength(dispositivo === 'celular' ? 5 : 2)
   expect(html).toMatch(/>2026<.*>2027<.*>2028<.*>2029</)
   expect(html).toContain('Viver de rendimentos')
 })
@@ -59,7 +61,8 @@ it('retira o texto livre e a geometria do avanço quando o olho fecha', () => {
   const dados = comTarefaPrivada()
   const aberto = renderizar('claro', 'celular', dados)
   expect(aberto).toContain(textoPrivado)
-  expect(aberto).toMatch(/class="m-posicao" cx="226[^"]*"/)
+  expect(aberto).toMatch(/class="m-posicao" cx="141[^"]*"/)
+  expect(renderizar('claro', 'desktop', dados)).toMatch(/class="m-posicao" cx="226[^"]*"/)
   expect(aberto).toContain('class="m-avanco"')
   const fechado = renderizar('claro', 'celular', dados, true)
   expect(fechado).toContain('aria-label="Valor oculto"')
@@ -71,9 +74,11 @@ it('retira o texto livre e a geometria do avanço quando o olho fecha', () => {
 it('protege o Assessor da Casa mesmo com um snapshot financeiro completo e o olho aberto', () => {
   const dados = comTarefaPrivada()
   dados.pessoa.papel = { ...dados.pessoa.papel, estado: 'pronto', valor: 'equipe' }
-  const html = renderizar('escuro', 'desktop', dados)
-  expect(html).toContain('<h1>Assessor da Casa</h1>')
-  expect(html).not.toMatch(/R\$|Rumo a 2029|m-posicao|m-fila|m-referencia|31\/79|data-numero-financeiro/)
+  for (const dispositivo of ['desktop', 'celular'] as const) {
+    const html = renderizar('escuro', dispositivo, dados)
+    expect(html).toContain('<h1>Assessor da Casa</h1>')
+    expect(html).not.toMatch(/R\$|Rumo a 2029|m-posicao|m-fila|m-referencia|31\/79|data-numero-financeiro/)
+  }
 })
 
 it('mostra zero apenas se informado e usa exclusivamente a diferença com margem', () => {
@@ -121,10 +126,28 @@ it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () =>
   expect(renderizar('claro', 'desktop', dados)).toMatch(/<strong>Trabalhando agora<\/strong>[^<]+/)
 })
 
+it('entrega a fila inteira e o controle de panorama exclusivamente no celular', () => {
+  const dados = comTarefaPrivada()
+  const tarefa = dados.pendencias.fila.valor![0]
+  dados.pendencias.fila.valor = Array.from({ length: 6 }, (_, indice) => ({
+    ...tarefa, id: 'tarefa-' + indice, perguntaCurta: 'Decisão ' + (indice + 1),
+  }))
+  const celular = renderizar('claro', 'celular', dados)
+  const desktop = renderizar('claro', 'desktop', dados)
+  expect(celular.match(/class="m-tarefa"/g)).toHaveLength(6)
+  expect(celular).toContain('Decisão 6')
+  expect(celular).toMatch(/aria-pressed="false"[^>]*>.*?<\/svg>Ver todos<\/button>/)
+  expect(celular).not.toContain('Ver fila completa')
+  expect(desktop.match(/class="m-tarefa"/g)).toHaveLength(3)
+  expect(desktop).toContain('Ver fila completa')
+  expect(desktop).toContain('--escritorio3d-altura:440px')
+  expect(desktop).not.toMatch(/Ver todos|m-abertura|m-motores/)
+})
+
 it('tem alvo mínimo, destaque verde, tipografia tabular, ilustrações escondidas e movimento reduzido', () => {
   const html = renderizar('claro', 'celular')
   const ilustracoes = [...html.matchAll(/class="m-arte" aria-hidden="true"/g)]
-  expect(ilustracoes).toHaveLength(2)
+  expect(ilustracoes).toHaveLength(5)
   expect(html).toMatch(/class="m-trilha"[^>]*aria-hidden="true"/)
   expect(html).not.toMatch(/\p{Extended_Pictographic}/u)
   expect(css).toMatch(/\.m-central \.m-alvo\s*\{[^}]*min-inline-size: 44px;[^}]*min-block-size: 44px;/)
@@ -138,16 +161,30 @@ it('tem alvo mínimo, destaque verde, tipografia tabular, ilustrações escondid
 
 it.skipIf(!chromium)('mede o layout e aciona menu, funcionário e fila no Chromium', async () => {
   const { medicoes, passos } = await verificarNavegador(comTarefaPrivada())
-  expect(medicoes).toHaveLength(6)
+  expect(medicoes).toHaveLength(8)
   for (const [i, medida] of medicoes.entries()) {
-    expect([medida.largura, medida.altura]).toEqual([[375, 812], [1280, 800], [1440, 800]][i % 3])
+    expect([medida.largura, medida.altura]).toEqual([[375, 812], [390, 844], [1280, 800], [1440, 800]][i % 4])
     expect(medida, JSON.stringify(medida)).toMatchObject({ semTransbordo: true, numerosInteiros: true, menuFixo: true, ordem: true })
     expect(medida.controles.length).toBeGreaterThan(10)
     expect(medida.controles.filter(item => item.largura < 44 || item.altura < 44 || !item.nome.trim())).toEqual([])
-    console.info(`M · ${i < 3 ? 'claro' : 'escuro'} · ${medida.largura}px · ${medida.numeros.length} acima da dobra`)
+    expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
+    if (medida.largura < 400) {
+      expect(medida.secoes).toHaveLength(5)
+      expect(Math.min(...medida.secoes)).toBeGreaterThanOrEqual(medida.altura * .85)
+      expect(medida.cena).toBeGreaterThanOrEqual(medida.altura * .60)
+      expect(medida.contrasteTrilha).toBeGreaterThanOrEqual(3)
+      expect(medida.fimVisivel).toBe(true)
+      expect(medida.numeros).toHaveLength(3)
+      expect(medida.referenciasNaDobra).toBe(4)
+    } else {
+      expect(medida.cena).toBeCloseTo(medida.largura === 1280 ? 440 : 463.61, 0)
+      expect(medida.numeros).toHaveLength(3)
+    }
+    console.info(`M · ${i < 4 ? 'claro' : 'escuro'} · ${medida.largura}px · ${medida.numeros.length} acima da dobra`)
   }
   expect(passos).toEqual({
     Orçamento: true, Faturas: true, Escritório: true, Início: true, mais: true, cena: true, postoFocavel: true, ficha: true,
     fechar: true, detalhe: true, olho: true, feita: true, desfeita: true, adiada: true, retomada: true,
+    sala: true, panorama: true, fichaOculta: true,
   })
 }, 30000)

@@ -11,6 +11,7 @@ import './escritorio3d.css'
 
 export interface PropsEscritorio3D extends PropsEscritorioMaquete {
   altura?: number
+  panorama?: boolean
 }
 
 const ESTADOS = {
@@ -30,10 +31,11 @@ function podeMontarCena() {
     typeof ResizeObserver === 'function' && typeof requestAnimationFrame === 'function'
 }
 
-export function Escritorio3D({ altura, valores, ...props }: PropsEscritorio3D) {
+export function Escritorio3D({ altura, valores, panorama = false, ...props }: PropsEscritorio3D) {
   const [reduzir, reduzirMovimento] = useState(() => !podeMontarCena() || window.matchMedia(REDUZIR).matches)
   const [falhou, marcarFalha] = useState(false)
   const valoresPermitidos = props.papel === 'equipe' || props.papel === null ? undefined : valores
+  const salaDestacada = panorama ? undefined : props.salaDestacada
 
   useEffect(() => {
     if (!podeMontarCena()) return
@@ -45,10 +47,11 @@ export function Escritorio3D({ altura, valores, ...props }: PropsEscritorio3D) {
   }, [])
 
   return <div className="escritorio3d" data-variante={props.variante ?? 'media'}
+    data-panorama={panorama || undefined}
     style={altura === undefined ? undefined : { '--escritorio3d-altura': `${altura}px` } as CSSProperties}
     data-renderizacao={reduzir || falhou ? 'svg' : undefined}>
-    {reduzir || falhou ? <EscritorioMaquete {...props} mostrarPlaquinhas={false} detalhesSobDemanda valores={valoresPermitidos} />
-      : <Palco3D {...props} valores={valoresPermitidos} marcarFalha={marcarFalha} />}
+    {reduzir || falhou ? <EscritorioMaquete {...props} salaDestacada={salaDestacada} mostrarPlaquinhas={false} detalhesSobDemanda valores={valoresPermitidos} />
+      : <Palco3D {...props} salaDestacada={salaDestacada} valores={valoresPermitidos} panorama={panorama} marcarFalha={marcarFalha} />}
   </div>
 }
 
@@ -56,8 +59,8 @@ type Funcionario = NonNullable<PropsEscritorio3D['funcionarios']['valor']>[numbe
 
 function Palco3D({
   funcionarios, salaDestacada, valores, variante = 'media',
-  oculto, onSelecionar, marcarFalha,
-}: PropsEscritorioMaquete & { marcarFalha: (falhou: boolean) => void }) {
+  oculto, onSelecionar, panorama, marcarFalha,
+}: PropsEscritorioMaquete & { panorama: boolean; marcarFalha: (falhou: boolean) => void }) {
   const camera = useRef<HTMLDivElement>(null)
   const etiquetas = useRef(new Map<string, HTMLElement>())
   const cena = useRef<ReturnType<typeof montarEscritorioIsometrico> | null>(null)
@@ -71,7 +74,7 @@ function Palco3D({
   const salas = SALAS_ISOMETRICAS.filter(sala => equipe.some(f => f.sala === sala))
   const salaDaPagina = pagina && salas.includes(pagina) ? pagina : salas[0]
   const salaVisivel = salaDestacada ?? salaDaPagina
-  const visiveis = equipe.filter(f => f.sala === salaVisivel)
+  const visiveis = panorama ? equipe : equipe.filter(f => f.sala === salaVisivel)
   const detalhe = [apontado, focado, selecionado].map(id => visiveis.find(f => f.id === id)).find(Boolean)
   const valor = detalhe && valores?.[detalhe.id]
   const elenco = equipe.map(f => ({ ...POR_ID[f.id], sala: f.sala }))
@@ -106,7 +109,7 @@ function Palco3D({
               if (funcionario) atuais.current.abrir(funcionario)
             },
             palco: {
-              variante, elenco, pagina, aoApontar: apontar, aoDesenhar: () => marcarPronto(true),
+              variante, elenco, pagina, panorama, aoApontar: apontar, aoDesenhar: () => marcarPronto(true),
               posicionar(postos, largura, altura) {
                 const posicoes = distribuirEtiquetas(postos, largura, altura)
                 for (const [id, no] of etiquetas.current) {
@@ -131,7 +134,7 @@ function Palco3D({
       cena.current?.destruir()
       cena.current = null
     }
-  }, [chaveElenco, variante, marcarFalha])
+  }, [chaveElenco, variante, panorama, marcarFalha])
 
   // Atualiza estados e câmera sem reconstruir as malhas. Nomes, fichas e valores ficam no React.
   const chaveEstados = equipe.map(f => f.estadoHoje.valor ?? '').join(',')
@@ -149,8 +152,9 @@ function Palco3D({
   }
 
   return <div className="escritorio3d-cena" data-renderizacao={pronto ? '3d' : 'carregando'}>
-    <div className="escritorio3d-quadro" role="group"
-      aria-label={salaVisivel ? `Escritório · ${SALAS_NOME[salaVisivel]}` : 'Postos do escritório'}>
+    <div className="escritorio3d-quadro" role="group" tabIndex={panorama ? 0 : undefined}
+      aria-label={panorama ? 'Vista geral do escritório, com rolagem horizontal'
+        : salaVisivel ? `Escritório · ${SALAS_NOME[salaVisivel]}` : 'Postos do escritório'}>
       <div className="escritorio3d-palco">
         <div className="escritorio3d-camera" ref={camera} aria-hidden="true" />
         {!pronto && <div className="escritorio3d-esqueleto" role="status">Carregando escritório…</div>}
@@ -167,7 +171,7 @@ function Palco3D({
         </div>
       </div>
     </div>
-    {!salaDestacada && salas.length > 1 && <div className="escritorio3d-paginas" role="group" aria-label="Salas do escritório">
+    {!panorama && !salaDestacada && salas.length > 1 && <div className="escritorio3d-paginas" role="group" aria-label="Salas do escritório">
       <button type="button" aria-label="Sala anterior" onClick={() => virar(-1)}><ChevronLeft aria-hidden="true" size={20} /></button>
       <span aria-live="polite">{SALAS_NOME[salaDaPagina]} <small>{indice + 1} de {salas.length}</small></span>
       <button type="button" aria-label="Próxima sala" onClick={() => virar(1)}><ChevronRight aria-hidden="true" size={20} /></button>

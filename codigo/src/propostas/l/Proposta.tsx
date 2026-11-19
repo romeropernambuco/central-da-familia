@@ -102,8 +102,7 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
     alvo.scrollIntoView({ block: 'start', inline: 'nearest' })
   }
 
-  return <div className="l-inicio" data-tema={tema} data-dispositivo={dispositivo}>
-    <div className="l-conteudo">
+  const abertura = <>
       <header className="l-topo">
         <div className="l-marca"><House size={16} aria-hidden="true" />Central da Família</div>
         <span className="selo-exemplo l-exemplo">Exemplo</span>
@@ -119,7 +118,11 @@ export function Proposta({ dados, tema = 'escuro', dispositivo }: PropsProposta)
         <p data-risco={risco || undefined}>{risco ? <ShieldAlert size={17} aria-hidden="true" /> : <ClipboardList size={17} aria-hidden="true" />}{frase}</p>
         <button type="button" onClick={() => { setPasta('agora'); ir('fila') }}>Ver fila <ArrowDown size={16} aria-hidden="true" /></button>
       </section>}
+  </>
 
+  return <div className="l-inicio" data-tema={tema} data-dispositivo={dispositivo}>
+    <div className="l-conteudo">
+      {dispositivo === 'celular' && familiar ? <div className="l-abertura">{abertura}</div> : abertura}
       {familiar && <Palco id={id('escritorio')} funcionarios={dados.funcionarios} celular={dispositivo === 'celular'}
         papel={papel} oculto={oculto} selecionar={selecionar} />}
       {(familiar || casa) && <Fila id={id('fila')} {...{ itens, estado, familiar, pasta, setPasta, movidas, setMovidas }}

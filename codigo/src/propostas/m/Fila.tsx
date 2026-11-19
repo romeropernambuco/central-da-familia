@@ -1,5 +1,6 @@
 import { ArrowUpRight, Bell, Check, Clock, TriangleAlert, UserRound, Wrench } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { TudoEmDia } from '../../componentes/ilustracoes'
 import type { DadosInicio } from '../dadosExemplo'
 import { Medida } from './Financeiro'
 
@@ -19,12 +20,13 @@ export function organizarFila(dados: DadosInicio) {
 type Tarefa = ReturnType<typeof organizarFila>[number]
 export type Resposta = 'feita' | 'adiada'
 
-export function Fila({ dados, tarefas, titulo, oculto, respostas, responder }: {
+export function Fila({ dados, tarefas, titulo, oculto, respostas, completa, responder }: {
   dados: DadosInicio
   tarefas: Tarefa[]
   titulo: string
   oculto: boolean
   respostas: Partial<Record<string, Resposta>>
+  completa: boolean
   responder: (id: string, resposta: Resposta | undefined) => void
 }) {
   const [alteracao, setAlteracao] = useState<{ id: string; texto: string; desfazer: boolean }>()
@@ -34,6 +36,7 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, responder }: {
   const cabecalho = useRef<HTMLHeadingElement>(null)
   const existemAdiadas = tarefas.some(tarefa => respostas[tarefa.id] === 'adiada')
   const lista = tarefas.filter(tarefa => aba === 'depois' ? respostas[tarefa.id] === 'adiada' : !respostas[tarefa.id])
+  const filaIndisponivel = dados.pendencias.fila.estado === 'indisponivel'
 
   function mover(id: string, resposta: Resposta | undefined, texto: string) {
     responder(id, resposta)
@@ -57,7 +60,7 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, responder }: {
       </div>}
     </header>
     {lista.length ? <ul className="m-tarefas">
-      {(verTudo ? lista : lista.slice(0, 3)).map(tarefa => {
+      {(completa || verTudo ? lista : lista.slice(0, 3)).map(tarefa => {
         const nivel = niveis[tarefa.nivel]
         const pessoa = dados.funcionarios.valor?.find(item => item.id === tarefa.funcionario || item.nome === tarefa.funcionario)
         const expandida = aberta === tarefa.id
@@ -93,9 +96,10 @@ export function Fila({ dados, tarefas, titulo, oculto, respostas, responder }: {
           </div>
         </li>
       })}
-    </ul> : <p className="m-ausente">{dados.pendencias.fila.estado === 'indisponivel' ? 'Ainda sem dado'
+    </ul> : <p className="m-ausente">{filaIndisponivel ? 'Ainda sem dado'
       : aba === 'depois' ? 'Nenhuma tarefa adiada.' : 'Nenhuma decisão aguardando você.'}</p>}
-    {lista.length > 3 && <button className="m-alvo m-ver-fila" type="button" aria-expanded={verTudo}
+    {completa && !filaIndisponivel && !lista.length && <div className="m-fila-vazia" aria-hidden="true"><TudoEmDia /></div>}
+    {!completa && lista.length > 3 && <button className="m-alvo m-ver-fila" type="button" aria-expanded={verTudo}
       onClick={() => setVerTudo(!verTudo)}>{verTudo ? 'Ver menos' : 'Ver fila completa'}</button>}
     {alteracao && <div className="m-retorno">
       <p role="status">{alteracao.texto}</p>
