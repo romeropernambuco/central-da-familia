@@ -123,7 +123,7 @@ function Feira() {
         </section>}
 
         {feira && !equipe && (
-          <section className="card" aria-labelledby="fSem">
+          <section className="card aba-destaque" aria-labelledby="fSem">
             <div className="card-h"><h2 id="fSem"><Icone nome="casa" />Semana de {dataCurta(segundaDaSemana(hoje))}</h2></div>
             {casal && <CasaDisponivelHoje valor={disponivelHojeCasa(resumo?.envelopes || [])} />}
             {/* B8: nunca "livre" e "passou" na mesma tela */}

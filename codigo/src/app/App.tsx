@@ -1,4 +1,5 @@
 import './navegacao.css'
+import './abas.css'
 import '@fontsource-variable/inter'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
@@ -8,6 +9,7 @@ import { lazy, Suspense, useEffect, useState, useRef } from 'react'
 import { FlaskConical } from 'lucide-react'
 import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
+import { OlhoDaAba, SeloDaAba } from '../componentes/ControlesDaAba'
 import { Marca } from '../componentes/Marca'
 import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
@@ -54,7 +56,7 @@ import { ir } from './rotas'
 export { ir } from './rotas'
 
 export function App() {
-  const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto, alternarOculto } = useApp()
+  const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto } = useApp()
   const tituloRef = useRef<HTMLHeadingElement>(null)
   const destino = useDestino()
   useEffect(() => {
@@ -120,11 +122,11 @@ export function App() {
         })}
         <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
-      <main id="main">
-        <header className="top">
-          <div className="tt"><small>{subt}</small><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1></div>
-          <span className={'sync' + (api.modo === 'exemplo' ? ' ex' : semRede ? ' off' : '')} role="status"><Icone nome={semRede ? 'erro' : api.modo === 'exemplo' ? 'ajuda' : 'salvo'} />{api.modo === 'exemplo' ? 'exemplo' : semRede ? 'Sem internet' : 'Conectado'}</span>
-          {!equipe && <button className="iconbtn olho" type="button" onClick={alternarOculto} aria-pressed={oculto} aria-label={oculto ? 'Mostrar os valores' : 'Esconder os valores'} title={oculto ? 'Mostrar os valores' : 'Esconder os valores'}>{oculto ? <Icone nome="olhoFechado" /> : <Icone nome="olho" />}</button>}
+      <main id="main" aria-labelledby="titulo-tela">
+        <header className="top aba-cabecalho">
+          <div className="tt"><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1><small>{subt}</small></div>
+          <SeloDaAba />
+          {!equipe && <OlhoDaAba />}
           {equipe && <a className="btn line central-privacidade" href="#/privacidade"><Icone nome="privacidade" />Privacidade</a>}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
@@ -134,20 +136,22 @@ export function App() {
         {erro && <p className="todo warn" role="alert">{erro}</p>}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
         {r !== 'inicio' && r !== 'escritorio' && <AgenteDaAba key={r} rota={r} />}
-        <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />} >
-        {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
-        {r === 'lancamentos' && <Lancamentos />}
-        {r === 'orcamento' && <MeuOrcamento />}
-        {r === 'casa' && <Casa />}
-        {r === 'guardado' && <Guardado />}
-        {r === 'cartoes' && <Cartoes />}
-        {r === 'planejamento' && <Planejamento />}
-        {r === 'desejos' && <Desejos />}
-        {r === 'escritorio' && <Escritorio />}
-        {r === 'ajustes' && <Ajustes />}
-        {r === 'privacidade' && <Privacidade />}
-        {r === 'painel' && <Painel />}
-        </Suspense>
+        <div className={r === 'inicio' ? undefined : 'aba-conteudo'}>
+          <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />}>
+            {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
+            {r === 'lancamentos' && <Lancamentos />}
+            {r === 'orcamento' && <MeuOrcamento />}
+            {r === 'casa' && <Casa />}
+            {r === 'guardado' && <Guardado />}
+            {r === 'cartoes' && <Cartoes />}
+            {r === 'planejamento' && <Planejamento />}
+            {r === 'desejos' && <Desejos />}
+            {r === 'escritorio' && <Escritorio />}
+            {r === 'ajustes' && <Ajustes />}
+            {r === 'privacidade' && <Privacidade />}
+            {r === 'painel' && <Painel />}
+          </Suspense>
+        </div>
         {(r === 'inicio' || r === 'escritorio') && <AgenteDaAba key={r} rota={r} semCena />}
         <AjudaDaAba rota={r} />
       </main>

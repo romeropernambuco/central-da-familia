@@ -186,7 +186,7 @@ export function Planejamento() {
               const s = centavos(renda - limites - fat)
               return (
                 <div key={m} className="fat prev"><span>{mesCurto(m)}</span><span className="sub">faturas {reais(fat)}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{s >= 0 ? <Din v={s} /> : <span className="din-warn" title="passa da renda">passa <Din v={-s} /></span>}<Qm titulo={`Previsão de ${mesCurto(m)}`} linhas={[{ linha: sozinho ? 'Rendas' : 'Rendas da família', valor: renda }, { linha: sozinho ? 'Limites' : 'Limites de todos e da Casa', valor: -limites }, { linha: sozinho ? 'Já comprometido nas suas faturas' : 'Já comprometido nas faturas da família', valor: -fat }, { linha: 'Sobra prevista', valor: s }]} /></span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{oculto || s >= 0 ? <Din v={s} /> : <span className="din-warn" title="passa da renda">passa <Din v={-s} /></span>}<Qm titulo={`Previsão de ${mesCurto(m)}`} linhas={[{ linha: sozinho ? 'Rendas' : 'Rendas da família', valor: renda }, { linha: sozinho ? 'Limites' : 'Limites de todos e da Casa', valor: -limites }, { linha: sozinho ? 'Já comprometido nas suas faturas' : 'Já comprometido nas faturas da família', valor: -fat }, { linha: 'Sobra prevista', valor: s }]} /></span>
                 </div>
               )
             })}

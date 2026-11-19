@@ -194,7 +194,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
   return <><h3>Realizado</h3><div className="mes-indicadores">
-    {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal' : undefined}><p><Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />{nome}</p><Din v={valor} tam="mid" /></div>)}
+    {([['Entrou', totais.entrou], ['Saiu', totais.saiu], ['Saldo do mês', totais.saldo]] as const).map(([nome, valor]) => <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal aba-destaque' : undefined}><p><Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />{nome}</p><Din v={valor} tam="mid" /></div>)}
   </div><h3>Previsto · ainda não recebido</h3><p>Entradas certas pendentes: <Din v={totais.previsto} /></p>
   <details className="mes-como"><summary><Icone nome="ajuda" />Como ler este resumo</summary><p className="sub">Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este mês. Incertos ficam fora. Previsto não entra no saldo realizado.</p></details></>
 }

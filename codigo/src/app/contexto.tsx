@@ -202,21 +202,23 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }
   return (
     <ContextoApp.Provider value={v}>
-      {children}
-      <BarraDesfazer />
-      <FilaPendentes />
-      {exp && (
-        <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
-          <p className="corpo"><b>{textoPrivado(exp.titulo, oculto)}</b></p>
-          <Explicacao linhas={exp.linhas} nota={exp.nota} />
-        </Sheet>
-      )}
-      {toastE && (
-        <div className="toast" style={desfazer.atual ? { bottom: 150 } : undefined} role="status" key={toastE.id}>
-          <span>{textoPrivado(toastE.msg, oculto)}</span>
-          {toastE.desfazer && <button type="button" onClick={() => { const d = toastE.desfazer!; setToast(null); tentar(async () => { await d() }) }}>Desfazer</button>}
-        </div>
-      )}
+      <div className={sessao && familia ? 'central-app' : undefined}>
+        {children}
+        <BarraDesfazer />
+        <FilaPendentes />
+        {exp && (
+          <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
+            <p className="corpo"><b>{textoPrivado(exp.titulo, oculto)}</b></p>
+            <Explicacao linhas={exp.linhas} nota={exp.nota} />
+          </Sheet>
+        )}
+        {toastE && (
+          <div className="toast" style={desfazer.atual ? { bottom: 150 } : undefined} role="status" key={toastE.id}>
+            <span>{textoPrivado(toastE.msg, oculto)}</span>
+            {toastE.desfazer && <button type="button" onClick={() => { const d = toastE.desfazer!; setToast(null); tentar(async () => { await d() }) }}>Desfazer</button>}
+          </div>
+        )}
+      </div>
     </ContextoApp.Provider>
   )
 }

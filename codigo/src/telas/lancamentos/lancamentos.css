@@ -1,4 +1,3 @@
-.lancamentos-f29{gap:24px;min-width:0}
 .mes-indicadores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-block:16px 24px}
 .mes-indicadores>div{padding:16px;border:1px solid var(--border);border-radius:var(--r-card);background:var(--raised);min-width:0}
 .mes-indicadores p{display:flex;align-items:center;gap:8px;margin-bottom:12px}
@@ -12,8 +11,10 @@
 .lancamentos-f29 .iconbtn:hover{border-color:var(--accent)}
 .lancamentos-f29 .iconbtn:active{background:var(--accent-soft)}
 .lancamentos-f29 :is(button,a):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-.lancamentos-f29 .seg{flex-wrap:wrap}
-@media(max-width:440px){.lancamentos-f29 .li{flex-wrap:wrap}.lancamentos-f29 .li .m{flex:1;min-width:120px}.lancamentos-f29 .li .v{margin-left:auto}.lancamentos-f29 .seg{display:flex;width:100%}.lancamentos-f29 .seg button{flex:1;white-space:normal}}
+@media(max-width:440px){
+  .lancamentos-f29 .li:has(>.v>button){grid-template-columns:auto minmax(0,1fr);row-gap:2px}
+  .lancamentos-f29 .li:has(>.v>button)>.v{grid-column:2;justify-content:space-between}
+}
 .mes-como{margin-block:16px}
 .mes-como summary{display:flex;gap:8px;align-items:center;min-height:44px;cursor:pointer;color:var(--ink-2);font-weight:600}
 .mes-como summary:after{content:'+';margin-left:auto}

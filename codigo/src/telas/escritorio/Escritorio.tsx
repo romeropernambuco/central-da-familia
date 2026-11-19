@@ -43,7 +43,7 @@ export function Escritorio() {
       }
     }}>
       <nav className="segbar" aria-label="Partes do Escritório">
-        <div className="seg">
+        <div className="seg compacta">
           {([['hoje', 'Hoje'], ['relatorio', 'Relatório'], ['lembretes', 'Lembretes']] as [Aba, string][]).map(([a, n]) => <button key={a} type="button" aria-pressed={aba === a} onClick={() => setAba(a)}><Icone nome={a === 'hoje' ? 'escritorio' : a === 'relatorio' ? 'folha' : 'recepcao'} />{n}</button>)}
         </div>
       </nav>

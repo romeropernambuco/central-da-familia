@@ -1,8 +1,6 @@
 ﻿@import '../../componentes/patrimonio-plano.css';
-.f30-guardado .guard-hoje{border-top:3px solid var(--accent);background:linear-gradient(145deg,var(--accent-soft),var(--surface) 65%)}
 .f30-guardado .guard-3{gap:12px}
-.f30-guardado .guard-3>div{padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
-.f30-guardado .guard-ex{padding:16px;border-radius:16px;background:var(--sunken);line-height:1.6}
-.imoveis .imo-total .tot .din{font-size:clamp(28px,6vw,40px)}
+.f30-guardado .guard-3>div{padding:14px;border:1px solid var(--border);border-radius:var(--r-card);background:var(--surface)}
+.f30-guardado .guard-ex{padding:16px;border-radius:var(--r-card);background:var(--sunken);line-height:1.6}
 .guard-card{min-height:88px}.guard-card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media(max-width:480px){.f30-guardado .guard-3{grid-template-columns:1fr}.imoveis .imo-total{grid-template-columns:1fr}}

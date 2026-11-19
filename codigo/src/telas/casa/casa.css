@@ -1,5 +1,3 @@
-.casa-visual{gap:24px;min-width:0}
-.casa-visual .card{padding:20px;min-width:0}
 .casa-visual .card-h{align-items:flex-start;margin-bottom:16px}
 .casa-visual .card-h h2>.ico,.casa-visual .env-h .ico{color:var(--accent-ink);flex-shrink:0}
 .casa-visual .li{padding-block:12px;gap:12px;min-width:0}
@@ -17,7 +15,5 @@
 .casa-visual .check:hover{background:var(--raised)}
 .casa-visual .check:active{background:var(--accent-soft)}
 .casa-visual .row-btns{gap:8px;flex-wrap:wrap}
-.casa-visual .seg{width:100%}
-.casa-visual .seg button{flex:1;min-height:44px}
 @media(max-width:480px){.casa-visual .duas{grid-template-columns:1fr;gap:24px}.casa-visual .li:has(.btn){grid-template-columns:minmax(0,1fr)!important}.casa-visual .li>.btn{justify-self:start}.casa-visual .card-h{flex-wrap:wrap;gap:8px}}
 @media(max-width:480px){.casa-visual .li:has(>.v){grid-template-columns:44px minmax(0,1fr)!important}.casa-visual .li>.v{grid-column:2;justify-self:start}}

@@ -27,7 +27,7 @@ import { centavos, dataCurta, diasNoMes, diasRestantes, fimDoMes, hojeRecife, pl
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e conquistas. Abre no limite de quem olha (R2). */
 export function MeuOrcamento() {
-  const { api, familia, resumo, erroResumo, recarregar, versao, abrirLancar, toast } = useApp()
+  const { api, familia, resumo, erroResumo, recarregar, versao, abrirLancar, toast, oculto } = useApp()
   const pessoais = (resumo?.envelopes || []).filter(e => !e.casa)
   const [envId, setEnvId] = useState<string | null>(null)
   const env = pessoais.find(e => e.id === envId) || pessoais.find(e => e.id === familia?.envelopeId) || pessoais[0]
@@ -87,7 +87,7 @@ export function MeuOrcamento() {
         </div>
       )}
       <nav className="segbar" aria-label="Ir para">
-        <div className="seg">
+        <div className="seg compacta">
           <button type="button" onClick={() => ir('oHoje')}><Icone nome="inicio" />Hoje</button>
           <button type="button" onClick={() => ir('oCofrinho')}><Icone nome="guardar" />Sobra anotada</button>
           <button type="button" onClick={() => ir('oMais')}><Icone nome="salvo" />Conquistas</button>
@@ -96,11 +96,11 @@ export function MeuOrcamento() {
 
       <div className="tela-larga">
         <div className="col">
-          <section className="card" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}>
+          <section className="card aba-destaque" id="oHoje" aria-labelledby="oHojeT" style={{ scrollMarginTop: 72 }} {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}>
             <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
             {!meu && <p className="sub dono-linha">Orçamento de <NomeDaPessoa pessoa={{ tipo: 'membro', id: env.dono_id || `envelope:${env.id}`, nome: dono }} />: aqui é só para ver. Quem lança e mexe é {textoPrivado(dono)}.</p>}
-            <p className="lbl" style={{ marginTop: 8 }}>{n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}</p>
-            <div className="numrow"><Din v={valorPrincipalEnvelope(env, n)} className={n.estado === 'devendo' ? 'din-warn' : undefined} tam="big" /><Qm titulo={textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
+            <p className="lbl" style={{ marginTop: 8 }}>{oculto ? 'Valores escondidos' : n.estado === 'devendo' ? 'Este mês fica devendo' : env.regra === 'diario' ? 'Pode gastar hoje' : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}</p>
+            <div className="numrow"><Din v={valorPrincipalEnvelope(env, n)} className={!oculto && n.estado === 'devendo' ? 'din-warn' : undefined} tam="big" /><Qm titulo={oculto ? 'De onde vem o valor' : textoPrivado(`${env.nome}: ${n.rotulo}`)} linhas={n.linhas} /></div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">Compras anotadas hoje (valor integral) <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}{env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}</p>

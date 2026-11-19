@@ -1,4 +1,3 @@
-.escritorio-visual{gap:24px;min-width:0}
 .escritorio-visual .card,.ficha>section,.numeros-aba{min-width:0}
 .escritorio-visual .esc-cena-card[hidden]{display:none}
 .escritorio-visual .esc-grade:has(>.esc-cena-card[hidden]){grid-template-columns:minmax(0,1fr)}
@@ -29,7 +28,7 @@
 .ficha .faz-l{display:grid;gap:12px;line-height:1.6}
 .ficha .cf-estado-vazio{padding:16px}
 .ficha .cf-estado-vazio svg{max-height:88px}
-@media(max-width:480px){.escritorio-visual .seg{width:100%}.escritorio-visual .seg button{flex:1;padding-inline:8px}.escritorio-visual .rel-ind{grid-template-columns:1fr}.ficha .cad-l{flex-wrap:wrap}.ficha .cad-l .v{flex-basis:100%;padding-left:44px}.escritorio-visual .esc-frase{padding:16px}}
+@media(max-width:480px){.escritorio-visual .rel-ind{grid-template-columns:1fr}.ficha .cad-l{flex-wrap:wrap}.ficha .cad-l .v{flex-basis:100%;padding-left:44px}.escritorio-visual .esc-frase{padding:16px}}
 @media(prefers-reduced-motion:reduce){.escritorio-visual button.li{transition:none}}
 
 .cena3d-tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}

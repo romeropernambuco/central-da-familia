@@ -1,5 +1,4 @@
-﻿.painel-f29{gap:24px;min-width:0}
-.painel-f29 .nums{gap:24px}
-.painel-f29 .din.big{font-variant-numeric:tabular-nums;font-size:clamp(2rem,8vw,3rem);margin-block:24px;overflow-wrap:anywhere}
+﻿.painel-f29 .nums{gap:var(--espaco-aba,16px)}
+.painel-f29 .din.big{margin-block:16px}
 .painel-f29 .card-h{flex-wrap:wrap;gap:12px}
 .painel-f29 .sub{line-height:1.65;max-width:68ch}

@@ -59,7 +59,7 @@ function emitirDialogo() { ouvintesDialogo.forEach(ouvir => ouvir()) }
 const FOCAVEL = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
 /** `lado`: no computador vira painel lateral (no celular continua subindo de baixo). */
-export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho }: { titulo: string; fechar: () => void; children: ReactNode; rotulo?: string; lado?: boolean; cabecalho?: ReactNode }) {
+export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho, subtitulo }: { titulo: string; fechar: () => void; children: ReactNode; rotulo?: string; lado?: boolean; cabecalho?: ReactNode; subtitulo?: string }) {
   const dialogo = useRef({})
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -97,8 +97,9 @@ export function Sheet({ titulo, fechar, children, rotulo, lado, cabecalho }: { t
     <>
       <div className="scrim" onClick={fechar} />
       <div className={'sheet' + (lado ? ' lado' : '')} role="dialog" aria-modal="true" aria-label={rotulo || titulo} ref={ref} tabIndex={-1}>
-        <div className="sheet-top">
-          <h2>{titulo}</h2>{cabecalho}
+        <div className={subtitulo ? 'sheet-top aba-cabecalho' : 'sheet-top'}>
+          {subtitulo ? <div className="tt"><h2>{titulo}</h2><small>{subtitulo}</small></div> : <h2>{titulo}</h2>}
+          {cabecalho}
           <button className="iconbtn" type="button" onClick={fechar} aria-label="Fechar"><Icone desenho={X} /></button>
         </div>
         <div className="sheet-body">{rascunhos.size > 0 && <p className="sub" role="status">Continuar de onde parou: o rascunho fica nesta sessão ao fechar.</p>}<ContextoDialogo.Provider value={dialogo.current}>{children}</ContextoDialogo.Provider></div>

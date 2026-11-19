@@ -1,5 +1,4 @@
 .lancar-f29{padding:24px 16px;border-radius:var(--r-card);background:var(--raised);margin-block:16px}
-.lancar-f29 output{font-variant-numeric:tabular-nums;font-size:clamp(2rem,10vw,3.5rem);overflow-wrap:anywhere}
 .lancar-modo button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
 .lancar-destinos-f29{gap:12px}
 .lancar-destinos-f29 .envbtn{min-height:72px;position:relative;padding:16px 44px 16px 16px;text-align:start}

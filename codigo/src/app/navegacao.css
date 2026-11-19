@@ -1,20 +1,8 @@
 .central-rail, .central-mobile, .central-extras, #main > .top {
-  --nav-verde: #40582d;
-  --nav-selecao: #e8eedf;
-  --nav-sobre-verde: #fffefa;
+  --nav-verde: var(--accent);
+  --nav-selecao: var(--accent-soft);
+  --nav-sobre-verde: var(--on-accent);
   font-family: 'Inter Variable', system-ui, sans-serif;
-}
-:root[data-theme="dark"] :is(.central-rail, .central-mobile, .central-extras, #main > .top) {
-  --nav-verde: #c0d6a7;
-  --nav-selecao: #283124;
-  --nav-sobre-verde: #202b18;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) :is(.central-rail, .central-mobile, .central-extras, #main > .top) {
-    --nav-verde: #c0d6a7;
-    --nav-selecao: #283124;
-    --nav-sobre-verde: #202b18;
-  }
 }
 #main > .top h1, .central-rail .brand b { font-family: var(--font-num); }
 .central-rail.rail { gap: 10px; padding: 16px 14px; }

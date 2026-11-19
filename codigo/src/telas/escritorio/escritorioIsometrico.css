@@ -22,21 +22,15 @@
   height: 430px;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 16px;
-  background: radial-gradient(ellipse at 52% 36%, #fcf9f1, var(--iso-fundo) 85%);
-  box-shadow: inset 0 0 0 1px #7b675623;
-}
-[data-theme="dark"] .iso-palco { background: radial-gradient(ellipse at 52% 36%, #464139, #25221d 85%); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .iso-palco { background: radial-gradient(ellipse at 52% 36%, #464139, #25221d 85%); }
-  :root:not([data-theme]) .iso-aviso { color: #fff6e7; }
+  border-radius: var(--r-card);
+  background: var(--cover-bg, var(--iso-fundo));
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 .iso-palco[data-renderizacao="lista"] { height: auto; min-height: 64px; }
 .iso-canvas, .iso-etiquetas, .iso-toque { position: absolute; inset: 0; width: 100%; height: 100%; }
 .iso-etiquetas { pointer-events: none; }
 .iso-etiquetas [hidden], .iso-etiquetas[hidden] { display: none; }
-.iso-aviso { margin: 0; padding: 16px; color: var(--iso-tinta); }
-[data-theme="dark"] .iso-aviso { color: #fff6e7; }
+.iso-aviso { margin: 0; padding: 16px; color: var(--ink-2); }
 .iso-etiqueta, .iso-placa { position: absolute; transform: translate(-50%, -50%); }
 .iso-etiqueta { color: var(--iso-tinta); pointer-events: auto; min-height: 44px; min-width: 44px; z-index: 1; }
 .iso-etiqueta:hover, .iso-etiqueta:focus-visible, .iso-etiqueta[data-estado="precisa_de_voce"] { z-index: 2; }
@@ -78,7 +72,7 @@
   font-size: 13px;
 }
 .iso-filtros button[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); font-weight: 700; }
-.iso-fila, .iso-equipe { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.iso-fila, .iso-equipe { padding: 14px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface); }
 .iso-fila h3, .iso-equipe h3 { display: flex; gap: 7px; align-items: center; margin: 0; font-size: 16px; }
 .iso-total { margin-left: auto; background: var(--accent-soft); padding: 2px 7px; border-radius: 10px; font-size: 12px; }
 .iso-fila > p { color: var(--muted); font-size: 14px; margin: 8px 0 0; }

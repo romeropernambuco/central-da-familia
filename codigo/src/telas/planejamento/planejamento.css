@@ -1,4 +1,4 @@
 ﻿@import '../../componentes/patrimonio-plano.css';
-.f30-planejamento .reajuste{padding:18px;border-radius:16px;line-height:1.6}
+.f30-planejamento .reajuste{padding:18px;border-radius:var(--r-card);line-height:1.6}
 .f30-planejamento .meter{height:8px}
 @media(max-width:480px){.f30-planejamento .linha-campo{display:flex}.f30-planejamento .linha-campo>.n{flex:1 1 100%}.f30-planejamento .linha-campo .campo-valor{max-width:100%}}

@@ -88,7 +88,7 @@ export function Guardado() {
             vistos.set(pessoa, marco.valor); redesenharMarco(n => n + 1)
           }}><Icone desenho={X} /></button></p>
       )}
-      <section className="card guard-hoje" aria-labelledby="gHoje">
+      <section className="card guard-hoje aba-destaque" aria-labelledby="gHoje">
         <h2 id="gHoje" className="lbl">Rendeu hoje</h2>
         <div className="numrow"><Din v={totaisGuardado(g).hoje} tam="hero" /></div>
         {g.motivo_zero
@@ -178,7 +178,7 @@ function GuardadoVazio({ g, comecar }: { g: GuardadoHoje; comecar: () => void })
   const ex = exemploVazio(g.cdi_usado.pct_ano ? cdiDiaDoAno(g.cdi_usado.pct_ano) : CDI_DIA_PADRAO)
   return (
     <div className="view f30-guardado">
-      <section className="card guard-hoje">
+      <section className="card guard-hoje aba-destaque">
         <h2 className="lbl">Rendeu hoje</h2>
         <div className="numrow"><Din v={0} tam="hero" /></div>
         <EstadoVazio ilustracao="SemAplicacoes" titulo="Seu guardado começa aqui" frase="Diga onde o dinheiro está e acompanhe o rendimento de cada dia." />

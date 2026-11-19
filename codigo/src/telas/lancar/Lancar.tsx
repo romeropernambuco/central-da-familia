@@ -8,7 +8,8 @@ import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
-import { Eye, EyeOff, Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
+import { Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
+import { OlhoDaAba, SeloDaAba } from '../../componentes/ControlesDaAba'
 import { useApp } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
@@ -57,7 +58,7 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
 
 /** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
 export function Lancar() {
-  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, alternarOculto, sessao } = useApp()
+  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, sessao } = useApp()
   const corr = lancarAberto?.corrigir
   const chaveRascunho = sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
   const [rascunho] = useState(() => chaveRascunho ? lerRascunho(chaveRascunho) : null)
@@ -215,7 +216,10 @@ export function Lancar() {
   )
   const datas = quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
-    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'} fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'} cabecalho={<button type="button" className="iconbtn" aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto} onClick={alternarOculto}>{oculto ? <Icone desenho={EyeOff} /> : <Icone desenho={Eye} />}</button>}>
+    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'}
+      subtitulo={corr ? 'Revise os dados do lançamento' : 'Registre um gasto ou uma entrada'}
+      fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'}
+      cabecalho={<><SeloDaAba /><OlhoDaAba curto /></>}>
       {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={descartar}>Descartar</button></p>}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
@@ -392,7 +396,9 @@ function AnotarCompra() {
     finally { fotoTrava.current = false; setPreparandoFoto(false) }
   }
   return (
-    <Sheet titulo="Anotar compra" fechar={() => { if (!gravando && !fotoTrava.current) fecharLancar() }} rotulo="Anotar compra">
+    <Sheet titulo="Anotar compra" subtitulo="Registre um item da feira ou da casa"
+      fechar={() => { if (!gravando && !fotoTrava.current) fecharLancar() }} rotulo="Anotar compra"
+      cabecalho={<SeloDaAba />}>
       {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
       <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
       <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>

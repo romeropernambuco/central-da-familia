@@ -6,7 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 vi.hoisted(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00')) })
 import { ContextoApp, type Ctx } from './app/contexto'
 import { esconderValores } from './lib/formato'
-import { apiExemplo } from './api/exemplo'
+import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
+import { protegerApi } from './api/protegida'
 import type { Api } from './api/tipos'
 import { DocumentoTeste, NoTeste } from './telas/escritorio/numeros.dom-teste'
 import { PerguntaCard } from './componentes/Pergunta'
@@ -395,6 +396,95 @@ for (const inicial of [true, false]) {
 }
 import { GraficoMes } from './componentes/Graficos'
 import { Cartoes } from './telas/cartoes/Cartoes'
+
+const abasDoCasal = ['lancamentos', 'orcamento', 'cartoes', 'casa', 'guardado', 'planejamento', 'desejos', 'escritorio', 'ajustes', 'privacidade']
+const acessoAbas = [
+  ['bruno', [...abasDoCasal, 'painel']],
+  ['ana', abasDoCasal],
+  ['filha', ['lancamentos', 'orcamento', 'casa', 'desejos', 'ajustes', 'privacidade']],
+  ['equipe', ['casa', 'privacidade']],
+] as const
+
+it.each(acessoAbas)('f71: %s conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar', async (como, rotas) => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00'))
+  reiniciarExemplo()
+  exemploComo(como)
+  const doc = ambiente()
+  const eventos = new EventTarget()
+  vi.stubGlobal('addEventListener', eventos.addEventListener.bind(eventos))
+  vi.stubGlobal('removeEventListener', eventos.removeEventListener.bind(eventos))
+  Object.assign(window, { scrollTo() {} })
+  Object.assign(doc.body, { classList: { toggle() {}, remove() {} } })
+  location.hash = '#/' + rotas[0]
+  location.search = '?sem3d'
+  const container = doc.createElement('div')
+  doc.body.appendChild(container)
+  const root = createRoot(container as unknown as HTMLElement)
+  const sessao = (await apiExemplo.sessao())!
+  const api = protegerApi({ ...apiExemplo, sessao: async () => ({
+    ...sessao, familias: sessao.familias.map(f => ({ ...f, nome: segredo })),
+  }) })
+  const classe = (n: NoTeste, nome: string) => n.getAttribute('class')?.split(' ').includes(nome) ?? false
+  const acha = (predicado: (n: NoTeste) => boolean) => container.buscar(predicado)[0]
+  const moeda = /R\$\s*[−-]?\s*\d/
+  const equipe = como === 'equipe'
+  try {
+    await act(async () => root.render(createElement(Provedor, { api, children: createElement(AppReal) })))
+    const olho = () => acha(n => classe(n, 'olho'))
+    if (!equipe) await act(async () => olho().click())
+    for (const rota of rotas) {
+      await act(async () => {
+        location.hash = '#/' + rota
+        eventos.dispatchEvent(new Event('hashchange'))
+        await vi.dynamicImportSettled()
+      })
+      const main = acha(n => n.tagName === 'MAIN')
+      const titulo = main.buscar(n => n.getAttribute('id') === 'titulo-tela')[0]
+      const cabecalho = titulo.parentNode!.parentNode!
+      expect(cabecalho.tagName, rota).toBe('HEADER')
+      expect(classe(cabecalho, 'aba-cabecalho'), rota).toBe(true)
+      expect(main.getAttribute('aria-labelledby')).toBe('titulo-tela')
+      expect(cabecalho.buscar(n => n.tagName === 'SMALL')[0].textContent).toBeTruthy()
+      expect(cabecalho.buscar(n => n.getAttribute('role') === 'status')[0].textContent.trim()).toBe('exemplo')
+      const conteudo = main.buscar(n => classe(n, 'aba-conteudo'))[0]
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        expect(conteudo.buscar(n => n.tagName === 'H2' || n.tagName === 'H3').length, rota).toBeGreaterThan(0)
+      })
+      expect(acha(n => n.getAttribute('href') === '#/' + rota && n.getAttribute('aria-current') === 'page')).toBeDefined()
+      if (equipe) expect(olho()).toBeUndefined()
+      else expect(olho().getAttribute('aria-pressed'), rota).toBe('true')
+      expect(html(container), rota).not.toMatch(moeda)
+      if (!equipe) expect(vazamentos(container), rota).toEqual([])
+    }
+    await act(async () => {
+      acha(n => n.tagName === 'BUTTON' && (equipe ? n.textContent === 'Anotar compra' : n.getAttribute('aria-label') === 'Anotar gasto')).click()
+      await vi.dynamicImportSettled()
+    })
+    const dialogo = acha(n => n.getAttribute('role') === 'dialog')
+    const cabecalho = dialogo.buscar(n => classe(n, 'aba-cabecalho'))[0]
+    expect(cabecalho.buscar(n => n.tagName === 'H2')[0].textContent).toBe(equipe ? 'Anotar compra' : 'Anotar')
+    expect(cabecalho.buscar(n => n.getAttribute('role') === 'status')[0].textContent.trim()).toBe('exemplo')
+    expect(cabecalho.buscar(n => n.tagName === 'SMALL')[0].textContent).toBeTruthy()
+    if (equipe) {
+      expect(dialogo.buscar(n => n.tagName === 'OUTPUT' || n.getAttribute('inputmode') === 'decimal')).toHaveLength(0)
+      expect(cabecalho.buscar(n => n.getAttribute('aria-pressed') !== null)).toHaveLength(0)
+    } else {
+      expect(cabecalho.buscar(n => n.getAttribute('aria-pressed') !== null)[0].getAttribute('aria-pressed')).toBe('true')
+      await act(async () => dialogo.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label') === '7')[0].click())
+      expect(dialogo.buscar(n => n.tagName === 'OUTPUT')[0].getAttribute('aria-label')).toBe('Valor escondido')
+    }
+    expect(html(dialogo)).not.toMatch(moeda)
+  } finally {
+    await act(async () => root.unmount())
+    esconderValores(false)
+    reiniciarExemplo()
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  }
+})
+
 it('4: zero literal e atributos monetários ficam protegidos', async()=>{
  const doc=ambiente(), container=doc.createElement('div');doc.body.appendChild(container)
  const root=createRoot(container as unknown as HTMLElement)

@@ -1,5 +1,3 @@
-.cartoes-visual{gap:24px;min-width:0}
-.cartoes-visual .card{padding:20px;min-width:0}
 .cartoes-visual .card-h{display:grid;gap:8px;align-items:start}
 .cartoes-visual .card-h h2{overflow-wrap:anywhere;line-height:1.4}
 .cartoes-visual .card-h h2>.ico{flex-shrink:0;color:var(--accent-ink)}
@@ -11,4 +9,4 @@
 .cartoes-visual .btn{min-height:44px;white-space:normal;height:auto}
 .cartoes-visual .row-btns{gap:8px;flex-wrap:wrap}
 .bar i.neutra{background:var(--muted)!important;transition:none}
-@media(max-width:480px){.cartoes-visual .row-btns>.btn{width:100%}.cartoes-visual .fat{grid-template-columns:64px minmax(24px,1fr) auto}.cartoes-visual .numrow .big{font-size:clamp(28px,8vw,40px)}}
+@media(max-width:480px){.cartoes-visual .row-btns>.btn{width:100%}.cartoes-visual .fat{grid-template-columns:64px minmax(24px,1fr) auto}}

@@ -1,6 +1,5 @@
 .f32-ajustes{gap:24px;min-width:0}.f32-ajustes .col{gap:24px;min-width:0}
-.f32-ajustes .card{padding:20px;min-width:0}.f32-ajustes h2{display:flex;gap:10px;align-items:center;margin-bottom:12px;font-size:20px;line-height:1.35}
-.f32-ajustes .seg{display:flex;flex-wrap:wrap;gap:8px}.f32-ajustes .seg>button{min-height:44px;flex:1 1 auto}
+.f32-ajustes h2{display:flex;gap:10px;align-items:center;margin-bottom:12px;font-size:20px;line-height:1.35}
 .f32-ajustes .li{min-height:64px;gap:12px;padding-block:16px}.f32-ajustes .m{min-width:0;overflow-wrap:anywhere}
 .f32-ajustes .m>small{display:block;margin-top:4px;line-height:1.5;color:var(--muted)}
 .quem-nome{display:block;white-space:normal;overflow-wrap:anywhere}
