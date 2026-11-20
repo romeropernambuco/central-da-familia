@@ -289,6 +289,10 @@ export async function verificarNavegador(dados: DadosInicio) {
     if (ret.erro) throw new Error(ret.erro)
     return ret
   } finally {
-    rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    try {
+      rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    } catch {
+      // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+    }
   }
 }

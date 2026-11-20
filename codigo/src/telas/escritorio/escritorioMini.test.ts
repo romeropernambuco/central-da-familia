@@ -921,7 +921,11 @@ it('SW gerado guarda GLB sob demanda, serve offline e muda versão quando o GLB 
     expect(versaoDosModelos(resolve(temporario, 'modelos'))).not.toBe(modeloV1)
     expect(gravarSw(temporario, resolve('src/sw.modelo.js')).versao).not.toBe(v1)
   } finally {
-    rmSync(temporario, { recursive: true })
+    try {
+      rmSync(temporario, { recursive: true })
+    } catch {
+      // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+    }
   }
 })
 

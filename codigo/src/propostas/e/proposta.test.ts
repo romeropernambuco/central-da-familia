@@ -376,7 +376,11 @@ it.skipIf(!chrome)(
         console.info(`Proposta E · ${tema} · ${dispositivo} · ${medida.valores.length} acima da dobra`)
       }
     } finally {
-      rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+      try {
+        rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+      } catch {
+        // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+      }
     }
   },
   35000,

@@ -190,7 +190,11 @@ it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos
     }
   } finally {
     if (dirname(realpathSync(pasta)) === raizTemp)
-      rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+      try {
+        rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+      } catch {
+        // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+      }
   }
 })
 

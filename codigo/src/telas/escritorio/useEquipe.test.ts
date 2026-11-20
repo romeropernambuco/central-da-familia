@@ -44,6 +44,8 @@ const pendente = <T>() => {
 const render = () => {
   h.indice = 0
   h.efeito = 0
+  // este teste troca os hooks do React por versões de mentira e chama o hook direto, fora de um componente
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const equipe = useEquipeCompleta([])
   h.pendentes.splice(0).forEach(f => f())
   return equipe

@@ -1,0 +1,29 @@
+# Roda a cada envio e a cada pedido de mudança. Se algo aqui falhar, a mudança não está pronta.
+name: Verificar
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: codigo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: codigo/package-lock.json
+      - run: npm ci
+      - name: Tipos
+        run: npm run typecheck
+      - name: Regras de casa
+        run: npm run lint
+      - name: Formatação
+        run: npm run format:check
+      - name: Testes
+        run: npm test

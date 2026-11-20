@@ -307,6 +307,10 @@ it.skipIf(!chrome)('usa o medidor da casca e verifica contagem, encaixe e alvos 
       console.info(`F ${c.tema} ${c.dispositivo}: ${medicao.valores.length} números acima da dobra`)
     }
   } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    } catch {
+      // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+    }
   }
 })

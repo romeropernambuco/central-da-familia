@@ -73,3 +73,18 @@ O upload de pasta pelo Safari falha com frequência, então faça o upload pelo 
 - `npm test` roda o Vitest. `npm run build:exemplo && npm run e2e` roda o Playwright no modo exemplo, em 390 e 1280.
 - `npm run build:demo` gera o `demo.html`. `npm run zip` monta o `central-app.zip` (sem os prints e sem `node_modules`).
 - Os prints do teste ficam em `testes/prints` e não entram no zip. As folhas `folha_390.png` e `folha_1280.png` juntam todos.
+
+## Antes de comitar
+
+Um comando confere tudo o que a verificação automática confere:
+
+```bash
+npm run verificar
+```
+
+Ele roda, nesta ordem: tipos (`typecheck`), regras de casa (`lint`), formatação (`format:check`) e testes (`test`).
+
+- `npm run format` arruma a formatação sozinho.
+- O `lint` aceita no máximo 561 avisos, que é a dívida conhecida em 20/11/2026. O número só pode cair: quando
+  resolver avisos, baixe o limite em `package.json`. Não suba o limite para fazer uma mudança passar.
+- O CSS ainda não é formatado automaticamente, porque vários testes leem o CSS como texto.

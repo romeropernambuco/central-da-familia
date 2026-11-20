@@ -256,6 +256,10 @@ export async function medirNoChromium(dados: DadosInicio[], cenarios: { tema: Te
     if (resultado.erro) throw new Error(resultado.erro)
     return resultado
   } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    } catch {
+      // pasta temporária presa pelo navegador no Windows: o sistema limpa depois, o teste não falha por isso
+    }
   }
 }
