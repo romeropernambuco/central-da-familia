@@ -34,7 +34,7 @@ Gerir as finanças da família, imóveis de investimento, investimentos aplicado
 - Versão antiga: branch `fase-final` no GitHub (o que foi ao ar em 14/11). Ponto de partida do trabalho.
 - Propostas: `src/propostas/a` a `m` (cada uma com `NOTAS.md`).
 - Escritório 3D compartilhado: `src/propostas/comuns/Escritorio3D.tsx` e cena em `src/telas/escritorio/`.
-- Relatórios das frentes do Codex: `codigo/RELATORIO-f*.md`.
+- Relatórios das frentes do Codex: `codigo/docs/historico/RELATORIO-f*.md`.
 - Pendências do banco e do dono: `roteiro-do-dono.md`, `banco/rascunhos-para-revisao/`, `codigo/DEFINICOES-PROVISORIAS.md`.
 
 ## O que ainda falta
