@@ -280,7 +280,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const Rt = new T.Vector3(), Up = new T.Vector3(), Fw = new T.Vector3(); cam.matrixWorld.extractBasis(Rt, Up, Fw)
   function vistaDe(x0: number, x1: number, y1: number, z0: number, z1: number) { const a = [1e9, -1e9, 1e9, -1e9], v = new T.Vector3(); [x0, x1].forEach(x => { [0, y1].forEach(y => { [z0, z1].forEach(z => { v.set(x, y, z).sub(cam.position); const cxx = v.dot(Rt), cy = v.dot(Up); a[0] = Math.min(a[0], cxx); a[1] = Math.max(a[1], cxx); a[2] = Math.min(a[2], cy); a[3] = Math.max(a[3], cy) }) }) }); return { cx: (a[0] + a[1]) / 2, cy: (a[2] + a[3]) / 2, hw: (a[1] - a[0]) / 2, hh: (a[3] - a[2]) / 2 } }
   /* B3 e B4 (pacote 4): enquadramento mais justo; cada sala só com ela mesma */
-  const VISTAS: Record<string, any> = { tudo: vistaDe(-6.2, 12.2, 2.2, -5.2, 9.3) }
+  // "Ver tudo" enquadra a planta de verdade (o bloco das 6 salas + a Recepção), não a caixa em volta:
+  // a caixa incluía o canto vazio ao lado da Recepção e a cena ficava pequena, com espaço sobrando embaixo.
+  const juntar = (...vs: { cx: number; cy: number; hw: number; hh: number }[]) => { const x0 = Math.min(...vs.map(v => v.cx - v.hw)), x1 = Math.max(...vs.map(v => v.cx + v.hw)), y0 = Math.min(...vs.map(v => v.cy - v.hh)), y1 = Math.max(...vs.map(v => v.cy + v.hh)); return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, hw: (x1 - x0) / 2, hh: (y1 - y0) / 2 } }
+  const VISTAS: Record<string, any> = { tudo: juntar(vistaDe(-6.2, 12.2, 2.2, -5.2, 5.2), vistaDe(-3.2, 3.2, 2.2, 5, 9.3)) }
   Object.keys(SALAS).forEach(k => { const s = SALAS[k]; VISTAS[k] = vistaDe(s.cx - 3, s.cx + 3, 1.9, s.cz - s.d / 2, s.cz + s.d / 2) })
   if (o.mini && chars[0]) {
     const ch = chars[0]

@@ -149,3 +149,13 @@
 .iso-legenda li { display: inline-flex; align-items: center; gap: 5px; }
 .iso-legenda li[data-estado="precisa_de_voce"] { color: var(--accent-ink); font-weight: 600; }
 .iso-equipe li small.iso-frase { display: block; color: var(--ink-2); }
+
+/* Aba Escritório: a cena ocupa a largura toda e acompanha o formato da planta, para os 19 aparecerem com nome, sem aperto e sem sobra. */
+.iso-grade.iso-grade-ampla { grid-template-columns: minmax(0, 1fr); }
+.iso-grade-ampla .cena3d { aspect-ratio: 4 / 3.7; }
+.iso-grade-ampla .iso-fila { max-height: none; }
+@media (min-width: 900px) {
+  .iso-grade-ampla .cena3d { aspect-ratio: 16 / 10.5; max-block-size: 88vh; }
+  .iso-grade-ampla .iso-fila ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 18px; }
+  .iso-grade-ampla .iso-fila li + li { border-top: 0; }
+}

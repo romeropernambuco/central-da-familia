@@ -139,7 +139,7 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado,
       <strong>{oculto ? 'Precisa de você hoje' : fraseDoDia(dados.total) + (dados.total > 0 ? ' hoje' : '')}</strong>
       {primeiro && <span>Primeiro: {primeiro.membro.nome}{primeiro.valor && primeiro.valor !== 'Ainda sem dado' ? `, ${primeiro.valor}` : ''}.</span>}
     </p>}
-    <div className="iso-grade">
+    <div className={'iso-grade' + (original ? ' iso-grade-ampla' : '')}>
       {comCena && original && <div className="iso-vista">
         <Cena3D funcionarios={funcionarios} selecionado={selecionado ?? null} aoTocar={id => selecionar(id)} valores={valores} />
         <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
