@@ -188,7 +188,7 @@ function Lembretes() {
           <div className="card-h"><h2 id="lNovo"><Icone nome="lancar" />Novo lembrete</h2></div>
           <div className="form-l">
             <label className="campo"><span>O quê</span><CampoPrivado className="inp" value={titulo} maxLength={120} placeholder="Ex.: Renovar o seguro do carro" onChange={ev => setTitulo(ev.target.value)} /></label>
-            <label className="campo"><span>Quando</span><CampoPrivado className="inp" type="datetime-local" value={quando} onChange={ev => setQuando(ev.target.value)} /></label>
+            <label className="campo"><span>Quando</span><CampoPrivado privado={false} className="inp" type="datetime-local" value={quando} onChange={ev => setQuando(ev.target.value)} /></label>
             <div className="campo"><span id="lRep">Repetir</span>
               <div className="pills" role="group" aria-labelledby="lRep">{REPETE.map(([r, n]) => <button key={r} type="button" className="pill" aria-pressed={repetir === r} onClick={() => setRepetir(r)}>{n}</button>)}</div>
             </div>

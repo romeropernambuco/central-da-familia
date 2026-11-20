@@ -15,12 +15,7 @@ import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Sheet } from '../../componentes/base'
 import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from '../../lib/formato'
 
-function AcaoConvite({ classe, oculto, url, aoAbrir, children }: { classe: string; oculto: boolean; url: () => string; aoAbrir?: () => void; children: ReactNode }) {
-  const { toast } = useApp()
-  return oculto
-    ? <button className={classe} type="button" onClick={() => toast('Abra o olho para compartilhar este convite.')}>{children}</button>
-    : <a className={classe} target="_blank" rel="noreferrer" href={url()} onClick={aoAbrir}>{children}</a>
-}
+import { AcaoConvite } from '../../componentes/AcaoConvite'
 
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
@@ -68,7 +63,7 @@ export function Ajustes() {
                 setConvidando(false)
                 if (ok) { setConvidado({ nome: nome2.trim(), email: email2.trim().toLowerCase() }); setN(x => x + 1); toast('Convite guardado. Agora mande a mensagem.') }
               }}><Icone desenho={UserPlus} />Convidar</button>}
-            <a className="btn line" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }))}><Icone desenho={MessageCircle} />Chamar família amiga</a>
+            <a className="btn line" target="_blank" rel="noreferrer" href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }), true)}><Icone desenho={MessageCircle} />Chamar família amiga</a>
           </div>
           </>}
         </section>

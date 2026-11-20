@@ -44,7 +44,7 @@ function bancoFalso() {
   // Também permite executar contra o código antigo, que nem inicia a conferência.
   void segunda.promessa.catch(() => {})
   const insert = vi.fn(async (r: any) => {
-    linhas.push({ ...r, id: 'novo', criado_em: new Date(Date.now() + 1).toISOString() })
+    linhas.push({ ...r, criado_em: new Date(Date.now() + 1).toISOString() })
     throw new TypeError('Failed to fetch')
   })
   falso.cliente = {
@@ -95,15 +95,17 @@ it('conferência que falha mantém envio bloqueado; só lista confirmada sem cor
   expect(b.linhas).toHaveLength(1)
 })
 
-it.each(['dono_membro', 'descricao', 'valor_centavos', 'mes_previsto', 'criado_em'])('API real: não confunde recebimento com %s diferente', async campo => {
+it.each([
+  ['registro idêntico de outro envio (id diferente) não conta como salvo', { id: 'outro-id' }, false],
+  ['o próprio registro conta como salvo mesmo com o relógio do aparelho adiantado', { criado_em: '2000-01-01T00:00:00Z' }, true],
+])('API real: %s', async (_nome, mudanca, esperado) => {
   const b = bancoFalso()
   const r = { descricao: 'Contrato', valor: 12.34, mes_previsto: '2026-12', tipo: 'contrato' as const, certo: true }
   const e = await apiReal.recebimentoCriar!('a', r).catch(e => e)
   expect(e.name).toBe('ErroRede')
   expect(e.conferir).toBeTypeOf('function')
-  const outra = { ...b.linhas[0], [campo]: campo === 'criado_em' ? '2000-01-01T00:00:00Z' : campo === 'valor_centavos' ? 1235 : 'diferente' }
-  b.segunda.resolver({ data: [outra], error: null })
-  expect(await e.conferir()).toBe(false)
+  expect(b.linhas[0].id).toMatch(/^[0-9a-f-]{36}$/)
+  b.segunda.resolver({ data: [{ ...b.linhas[0], ...mudanca }], error: null })
+  expect(await e.conferir()).toBe(esperado)
   expect(b.insert).toHaveBeenCalledTimes(1)
 })
-

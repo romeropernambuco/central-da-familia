@@ -271,8 +271,9 @@ export function mensagemConvite(tipo: 'pessoa' | 'amiga' | 'equipe', o: { famili
   return `Oi, ${o.quem}! Pra anotar as compras da casa, abre este link: ${o.link} Depois digita o código ${o.codigo}. O código vale por 24 horas e só funciona nesse link.`
 }
 
-export function linkWhatsApp(texto: string): string {
-  return 'https://wa.me/?text=' + encodeURIComponent(valoresOcultos() ? 'Conte�do oculto.' : texto)
+/** `publico`: mensagem sem dado da família (indicar o app a amigos) sai inteira mesmo com o olho fechado. */
+export function linkWhatsApp(texto: string, publico = false): string {
+  return 'https://wa.me/?text=' + encodeURIComponent(valoresOcultos() && !publico ? 'Conteúdo oculto.' : texto)
 }
 
 /* ---------- tempo de lançar ---------- */

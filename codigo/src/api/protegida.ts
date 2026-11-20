@@ -6,8 +6,8 @@ import { pendentes } from '../app/pendentes'
 import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
 import { desfazer } from '../app/desfazer'
+import { igual } from '../lib/mescla'
 const copia = <T,>(v: T): T => structuredClone(v)
-const igual = (a: unknown,b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 export function protegerApi(api: Api): Api {
  let consultaSessao = 0
  const mutacoes = /^(salvar|criar|definir|convidar|cancelar|reenviar|lancar$|apagarLancamento|restaurarLancamento|corrigirLancamento|casaMarcar|guardado(Criar|Movimentar|Encerrar)|recebimento(Criar|Mudar)|objetivoSalvar|desejo(Criar|Mudar)|imovel(Salvar|Tirar)|cartaoSalvar|estoqueItemSalvar|backupRestaurar|anotarCompraEquipe|escritorioResponder|faturaInformar|feira(Registrar|AnexarNota|SemNota)|estoqueContar|lembrete(Criar|Concluir|Adiar|Apagar)|reajuste(Votar|Aplicar))/

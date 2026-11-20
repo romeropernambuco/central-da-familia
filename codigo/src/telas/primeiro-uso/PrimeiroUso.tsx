@@ -10,13 +10,14 @@ import { ir } from '../../app/rotas'
 import { Marca } from '../../componentes/Marca'
 import { Din } from '../../componentes/base'
 import type { Envelope } from '../../api/tipos'
+import { AcaoConvite } from '../../componentes/AcaoConvite'
 import { emailValido, linkWhatsApp, mensagemConvite, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 
 const linkApp = () => location.origin + location.pathname
 
 /** Primeiro uso em 5 minutos: família, limites, 2ª pessoa e família amiga. */
 export function PrimeiroUso() {
-  const { api, sessao, trocarSessao, recarregar, toast, sair } = useApp()
+  const { api, sessao, trocarSessao, recarregar, toast, sair, oculto } = useApp()
   const [passo, setPasso] = useState(1)
   // R4: antes de criar uma família nova, pergunta se alguém da casa já convidou (evita família paralela)
   const [jaPerguntou, setJaPerguntou] = useState(false)
@@ -120,7 +121,7 @@ export function PrimeiroUso() {
           <label className="campo"><span>Nome dela ou dele</span><CampoPrivado className="inp" placeholder="Ex.: Caio" value={segunda} onChange={e => setSegunda(e.target.value)} /></label>
           <label className="campo"><span>E-mail dela ou dele</span><CampoPrivado className="inp" type="email" inputMode="email" placeholder="bruno@email.com" value={email2} onChange={e => { setEmail2(e.target.value); setConvidado(false) }} /><small>É com esse e-mail que a pessoa entra. O convite fica guardado nele.</small></label>
           {convidado
-            ? <a className="btn primary full" href={linkWhatsApp(msgPessoa)} target="_blank" rel="noreferrer"><Icone desenho={MessageCircle} />Abrir o WhatsApp com o convite</a>
+            ? <AcaoConvite classe="btn primary full" oculto={oculto} url={() => linkWhatsApp(msgPessoa)}><Icone desenho={MessageCircle} />Abrir o WhatsApp com o convite</AcaoConvite>
             : <button className="btn primary full" type="button" disabled={ocupado} onClick={() => faz(async () => {
               if (!segunda.trim() || !emailValido(email2)) throw new Error('Escreva o nome e o e-mail de quem divide as contas com você.')
               if (!fid) return
@@ -142,7 +143,7 @@ export function PrimeiroUso() {
           <button className="btn primary full" type="button" onClick={fim}>Começar pelo Início<Icone desenho={ArrowRight} /></button>
           <h3>Se quiser, indique a amigos</h3>
           <p className="sub">Quem testa junto troca dica. A mensagem já vai pronta.</p>
-          <a className="btn line full" href={linkWhatsApp(msgAmiga)} target="_blank" rel="noreferrer"><Icone desenho={MessageCircle} />Mandar para uma família amiga</a>
+          <a className="btn line full" href={linkWhatsApp(msgAmiga, true)} target="_blank" rel="noreferrer"><Icone desenho={MessageCircle} />Mandar para uma família amiga</a>
         </div>
       )}
     </div>

@@ -27,6 +27,7 @@ import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
 import type { CasaDaEquipe, Lancamento, MarcaCasa } from '../../api/tipos'
 import type { Folha, PessoaFolha } from '../escritorio/ajudantes'
+import { AcaoConvite } from '../../componentes/AcaoConvite'
 import { avisoDAE, centavos, dataCurta, diaSemana, hojeRecife, linkEquipe, linkWhatsApp, mensagemConvite, previsaoGas, reais, reservaFolha, segundaDaSemana, somaDias, textoParaValor, todoDia } from '../../lib/formato'
 
 type Aba = 'feira' | 'prestadores' | 'gas' | 'folha'
@@ -207,7 +208,7 @@ function proxDia(hoje: string, dow: number): string {
 }
 
 function Prestadores() {
-  const { abrirLancar, resumo } = useApp()
+  const { abrirLancar, resumo, oculto } = useApp()
   const hoje = hojeRecife()
   const [ps, setPs, falhaPs] = useConfig<Prestador[]>('casa_prestadores', [])
   const [novo, setNovo] = useState(false)
@@ -230,7 +231,7 @@ function Prestadores() {
               <p className="sub">Próxima visita <b>{ehHoje ? 'hoje' : dataCurta(prox)}</b>{p.ultimaVez ? ` · veio por último ${dataCurta(p.ultimaVez)}` : ''}</p>
               {(amanha || ehHoje) && <p className="todo warn">{ehHoje ? 'É hoje.' : 'É amanhã.'} Mande a confirmação.</p>}
               <div className="row-btns">
-                <a className="btn sm line" target="_blank" rel="noreferrer" href={linkWhatsApp(msg)}><Icone desenho={MessageCircle} />Confirmar</a>
+                <AcaoConvite classe="btn sm line" oculto={oculto} url={() => linkWhatsApp(msg)}><Icone desenho={MessageCircle} />Confirmar</AcaoConvite>
                 <button className="btn sm primary" type="button" onClick={() => { setPs(ps.map(x => x.id === p.id ? { ...x, ultimaVez: hoje } : x)); abrirLancar({ envelope: casaMensal?.id, valor: p.valor, descricao: `${p.servico} ${p.nome}` }) }}><Icone desenho={Check} />Veio hoje</button>
               </div>
             </section>
