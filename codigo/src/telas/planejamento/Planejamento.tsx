@@ -1,3 +1,4 @@
+import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import './planejamento.css'
 import { SaldoConta } from './SaldoConta'
 import { useDestino } from '../../app/destinos'
@@ -107,10 +108,7 @@ export function Planejamento() {
   }, [resumo?.envelopes.map(e => base(e)).join(), colchaoMeta])
   useEffect(() => {
     if (!familia) return
-    api
-      .faturas(familia.id, 6)
-      .then(setFaturas)
-      .catch(() => {})
+    api.faturas(familia.id, 6).then(setFaturas).catch(falhaDeLeitura('as faturas'))
     api
       .membros(familia.id)
       .then(m => {
@@ -122,7 +120,7 @@ export function Planejamento() {
     api
       .entrouAMais?.(familia.id, hojeRecife().slice(0, 7))
       .then(setExtra)
-      .catch(() => {})
+      .catch(falhaDeLeitura('o que entrou a mais no mês'))
   }, [api, familia?.id, versao])
 
   if (!resumo || !familia)

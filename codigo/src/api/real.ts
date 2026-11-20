@@ -2,6 +2,7 @@ import { prepararAcolhimento } from '../lib/acolhimento'
 // Banco de verdade: Supabase, schema `produto`. As contas vêm das funções (RPC) do CONTRATO.md;
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { buscarComPrazo } from './prazo'
 import type {
   Api,
   AvisoCasa,
@@ -59,6 +60,7 @@ function sb(): SupabaseClient<any, any, any> {
     cli = createClient<any, any, any>(url, chave, {
       db: { schema: 'produto' },
       auth: { persistSession: true, autoRefreshToken: true },
+      global: { fetch: buscarComPrazo() },
     })
   }
   return cli!

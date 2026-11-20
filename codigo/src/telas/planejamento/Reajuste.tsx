@@ -1,3 +1,4 @@
+import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import './planejamento.css'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
@@ -113,10 +114,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const [ativa, setAtiva] = useState<string | null>(null)
   useEffect(() => {
     if (!familia || familia.papel !== 'casal') return
-    api
-      .objetivo?.(familia.id)
-      .then(setObj)
-      .catch(() => {})
+    api.objetivo?.(familia.id).then(setObj).catch(falhaDeLeitura('o objetivo de 2029'))
   }, [api, familia?.id])
   useEffect(() => {
     if (!familia || familia.papel !== 'casal' || !api.reajusteSituacao) return

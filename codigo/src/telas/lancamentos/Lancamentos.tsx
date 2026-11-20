@@ -1,3 +1,4 @@
+import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import { useInvalidacao } from '../../app/invalidacao'
 import { totaisDoMes } from '../../lib/resumo/movimentacao'
 export { totaisDoMes } from '../../lib/resumo/movimentacao'
@@ -79,7 +80,7 @@ function LancamentosFamilia() {
       .then(c => {
         if (vivo) setCartoes(c)
       })
-      .catch(() => {})
+      .catch(falhaDeLeitura('os cartões'))
     // C5: a 2ª coluna do computador só mostra totais que o app já tem (o resumo do mês e as faturas); o casal lê
     if (familia.papel === 'casal')
       api
@@ -87,7 +88,7 @@ function LancamentosFamilia() {
         .then(f => {
           if (vivo) setFaturas(f)
         })
-        .catch(() => {})
+        .catch(falhaDeLeitura('as faturas'))
     return () => {
       vivo = false
     }

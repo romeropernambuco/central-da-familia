@@ -189,7 +189,6 @@ export function Cena3D({
       cena.current = null
       delete (window as any).__escritorio
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids])
 
   useEffect(() => {

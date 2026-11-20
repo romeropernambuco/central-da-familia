@@ -1,3 +1,4 @@
+import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import { disponivelHojeCasa, livreDaSemana } from '../../lib/resumo/orcamento'
 import { CasaDisponivelHoje } from '../../componentes/CasaDisponivelHoje'
 import { useDestino } from '../../app/destinos'
@@ -167,10 +168,7 @@ function Feira() {
   const [avisos, setAvisos] = useState<{ tipo: string; data: string; nome: string }[]>([])
   useEffect(() => {
     if (familia && familia.papel === 'casal')
-      api
-        .avisosCasa(familia.id)
-        .then(setAvisos)
-        .catch(() => {})
+      api.avisosCasa(familia.id).then(setAvisos).catch(falhaDeLeitura('os avisos da casa'))
   }, [api, familia?.id, versao])
   const veioEquipe = avisos.filter(a => a.tipo === 'casa_presenca' && a.data === hoje).map(a => a.nome)
   const veio = [...new Set([...(pres[hoje] || []), ...veioEquipe])]
@@ -714,7 +712,7 @@ function Gas() {
       api
         .avisosCasa(familia.id)
         .then(a => setDaEquipe(a.filter(x => x.tipo === 'casa_gas').map(x => x.data)))
-        .catch(() => {})
+        .catch(falhaDeLeitura('os avisos de gás'))
   }, [api, familia?.id, versao])
   // trocas anotadas pelo casal (config) + trocas avisadas pela equipe (eventos)
   const gas = { trocas: [...new Set([...gasCfg.trocas, ...daEquipe])].sort() }

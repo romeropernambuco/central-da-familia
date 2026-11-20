@@ -6,8 +6,13 @@ export class EnvioInterrompido extends Error {
     this.name = 'EnvioInterrompido'
   }
 }
+/** Sinal de que o envio não terminou: ficou guardado, esperando a rede. */
+export const FICOU_ESPERANDO = Symbol('ficou esperando a rede')
+
 interface Pendente {
   executar: () => Promise<unknown>
+  /** Uma tentativa deste envio está no ar agora: a repetição automática não dispara outra por cima. */
+  emVoo: boolean
   resolver: (r: any) => void
   rejeitar: (e: unknown) => void
   promessa: Promise<any>
@@ -35,7 +40,7 @@ export class FilaPendentes {
       resolver = sim
       rejeitar = nao
     })
-    const item = { executar, resolver, rejeitar, promessa }
+    const item: Pendente = { executar, resolver, rejeitar, promessa, emVoo: true }
     this.itens.set(chave, item)
     void (async () => {
       try {
@@ -50,10 +55,30 @@ export class FilaPendentes {
           rejeitar(e)
         }
       } finally {
+        item.emVoo = false
         this.avisar()
       }
     })()
     return promessa
+  }
+
+  /**
+   * Resolve quando a primeira tentativa deste envio falhou por rede e ele ficou esperando na fila.
+   * A tela usa isso para liberar a pessoa ("guardado, envio depois") em vez de ficar presa em "Salvando".
+   * Se o envio terminar antes (salvou ou foi recusado), nunca resolve: quem decide é a promessa do próprio envio.
+   */
+  ficouEsperando(chave: string): Promise<typeof FICOU_ESPERANDO> {
+    return new Promise(resolver => {
+      const conferir = () => {
+        const item = this.itens.get(chave)
+        if (!item || item.emVoo) return false
+        parar()
+        resolver(FICOU_ESPERANDO)
+        return true
+      }
+      const parar = this.ouvir(() => void conferir())
+      conferir()
+    })
   }
 
   async repetir() {
@@ -61,6 +86,8 @@ export class FilaPendentes {
     this.ocupado = true
     try {
       for (const [chave, item] of this.itens) {
+        if (item.emVoo) continue
+        item.emVoo = true
         try {
           const r = await item.executar()
           if (this.itens.get(chave) !== item) continue
@@ -71,6 +98,8 @@ export class FilaPendentes {
             this.itens.delete(chave)
             item.rejeitar(e)
           }
+        } finally {
+          item.emVoo = false
         }
         this.avisar()
       }

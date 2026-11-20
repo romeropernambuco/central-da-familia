@@ -1,3 +1,7 @@
+import { falhaDeLeitura } from '../../app/falhasDeLeitura'
+import type { NovoLancamento } from '../../api/tipos'
+import { avisarQuandoOEnvioTerminar } from './envioGuardado'
+import { FICOU_ESPERANDO, pendentes } from '../../app/pendentes'
 import './lancar.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
@@ -207,7 +211,7 @@ export function Lancar() {
             setCartaoAtalho(c ? 'achou' : 'nao achou')
           }
         })
-        .catch(() => {})
+        .catch(falhaDeLeitura('os cartões'))
   }, [api, familia?.id, equipe])
   const digitarRef = useRef(digitar)
   digitarRef.current = digitar
@@ -232,6 +236,7 @@ export function Lancar() {
         .then(ls => {
           if (vivo) setRecentes(ls)
         })
+        // só serve para estranhar um valor fora do costume; sem ela o gasto é anotado do mesmo jeito
         .catch(() => {})
     return () => {
       vivo = false
@@ -292,7 +297,7 @@ export function Lancar() {
       // B10: nada salva como "Gasto": sem nome vira "Gasto de quarta 18/11" (o dia ajuda a lembrar depois)
       const descricao = desc.trim() || `Gasto de ${diaSemana(quando)} ${dataCurta(quando)}`
       const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p, pagoPor].join('|'))
-      const r = await api.lancar({
+      const gasto: NovoLancamento = {
         familia: familia.id,
         envelope,
         valor,
@@ -303,12 +308,25 @@ export function Lancar() {
         segundos: s,
         chave,
         pago_por: pagoPor || null,
-      })
+      }
+      const envio = api.lancar(gasto)
+      const primeiro = await Promise.race([envio, pendentes.ficouEsperando(chave)])
+      if (primeiro === FICOU_ESPERANDO) {
+        // Sem internet: o gasto está guardado no aparelho e a fila reenvia sozinha. A pessoa não fica presa em "Salvando".
+        limparRascunho()
+        toque.gravou()
+        fecharLancar()
+        toast('Sem internet agora. O gasto ficou guardado neste aparelho e vai ser enviado quando a rede voltar.')
+        void avisarQuandoOEnvioTerminar(envio, gasto, { toast, recarregar })
+        return
+      }
+      const r = primeiro
       limparRascunho()
       toque.gravou()
       if (r.avisoPagador && r.repetirPagador) {
         setErro(r.avisoPagador)
         setPagadorPendente(() => r.repetirPagador!)
+        // o aviso do pagador já está na tela; se os números não atualizarem agora, a próxima leitura traz
         await recarregar().catch(() => {})
         return
       }

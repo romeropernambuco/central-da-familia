@@ -9,6 +9,7 @@ import {
 import { encerrarAcolhimento } from '../lib/acolhimento'
 import { salvamento } from './salvamento'
 import { FilaPendentes } from '../componentes/FilaPendentes'
+import { FalhasDeLeitura } from '../componentes/FalhasDeLeitura'
 import { pendentes } from './pendentes'
 import { desfazer } from './desfazer'
 import { limparRascunhos } from './rascunhos'
@@ -133,6 +134,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     },
     [api],
   )
+  const sessaoAtual = useRef(sessao)
+  sessaoAtual.current = sessao
   const trocarSessao = useCallback(async () => {
     if (saindo.current) return
     const meu = ++consultaSessao.current
@@ -147,6 +150,12 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       setErro(null)
     } catch (e) {
       if (meu !== consultaSessao.current || e instanceof LeituraSubstituida) return
+      // Oscilação de rede com a pessoa já dentro do app: ela continua onde estava, com o que já tinha carregado.
+      // Cair para a tela de entrar aqui fazia parecer que a conta tinha saído.
+      if (e instanceof ErroRede && sessaoAtual.current) {
+        setToast({ msg: 'Sem internet agora. Mostrando o que já estava carregado.', id: Date.now() })
+        return
+      }
       pedido.current++
       limparLeituras(api)
       setSessao(null)
@@ -378,6 +387,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
         {children}
         <BarraDesfazer />
         <FilaPendentes aoTentarDeNovo={gasto => void tentar(() => api.lancar(gasto))} />
+        <FalhasDeLeitura aoTentarDeNovo={() => void recarregar()} />
         {exp && (
           <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
             <p className="corpo">

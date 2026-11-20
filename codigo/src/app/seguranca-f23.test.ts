@@ -162,7 +162,8 @@ it('resposta perdida após gravar reenvia a chave original sem duplicar lançame
     chave: 'f23-resposta-perdida',
   }
   const p = api.lancar(n)
-  await vi.waitFor(() => expect(pendentes.itens.size).toBe(1))
+  // a repetição só entra depois que a primeira tentativa terminou: não dispara outra por cima de um envio no ar
+  await vi.waitFor(() => expect([...pendentes.itens.values()][0]?.emVoo).toBe(false))
   await pendentes.repetir()
   await p
   const depois = (await apiExemplo.backupLer!('fam-silva')).lancamentos as unknown[]
