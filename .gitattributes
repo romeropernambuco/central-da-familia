@@ -1,0 +1,10 @@
+# Finais de linha iguais em todo aparelho (o repositório guarda LF; o Windows não converte).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff2 binary
+*.zip binary
+*.pdf binary
