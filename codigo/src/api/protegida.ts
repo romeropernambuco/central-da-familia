@@ -7,9 +7,15 @@ import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
 import { desfazer } from '../app/desfazer'
 import { igual } from '../lib/mescla'
+import { guardarPendente, pendentesGuardados, tirarPendente } from '../app/pendentesGuardados'
 const copia = <T,>(v: T): T => structuredClone(v)
 export function protegerApi(api: Api): Api {
  let consultaSessao = 0
+ // Só o banco real guarda a fila no aparelho: no exemplo os dados nascem de novo a cada abertura.
+ const dono = () => { const e = escopoLeitura(api); return api.modo === 'real' && e ? `${e.sessao}|${e.familia}|${e.membro}` : '' }
+ const retomar = () => { const d = dono(); if (!d) return
+   for (const n of pendentesGuardados(d)) if (!pendentes.itens.has(n.chave)) void (publica.lancar(n) as Promise<unknown>).catch(() => { /* erro definitivo já tirou da fila */ })
+ }
  const mutacoes = /^(salvar|criar|definir|convidar|cancelar|reenviar|lancar$|apagarLancamento|restaurarLancamento|corrigirLancamento|casaMarcar|guardado(Criar|Movimentar|Encerrar)|recebimento(Criar|Mudar)|objetivoSalvar|desejo(Criar|Mudar)|imovel(Salvar|Tirar)|cartaoSalvar|estoqueItemSalvar|backupRestaurar|anotarCompraEquipe|escritorioResponder|faturaInformar|feira(Registrar|AnexarNota|SemNota)|estoqueContar|lembrete(Criar|Concluir|Adiar|Apagar)|reajuste(Votar|Aplicar))/
  const publica = new Proxy(api, { get(alvo, prop: keyof Api) {
  const f = alvo[prop]
@@ -22,6 +28,7 @@ export function protegerApi(api: Api): Api {
    try { s = await api.sessao() } catch (erro) { if (!atual()) throw new LeituraSubstituida(); throw erro }
    if (!atual()) throw new LeituraSubstituida()
    definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null)
+   retomar()
    return s
  }
  if (prop === 'aoSairSessao') return (avisar: () => void) => api.aoSairSessao!(() => { limparLeituras(api); avisar() })
@@ -74,7 +81,12 @@ export function protegerApi(api: Api): Api {
  }
 
  if (!sessaoAtual()) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
- const r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args)
+ const guardado = prop === 'lancar' ? dono() : ''
+ if (guardado) guardarPendente(guardado, familia)
+ let r
+ // sem internet a promessa fica em aberto e o item continua guardado; resposta ou erro definitivo tira do aparelho
+ try { r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args) }
+ finally { if (guardado) tirarPendente(familia.chave) }
  if (!sessaoAtual()) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
  if (snapshot && api.backupLer && api.backupRestaurar) {
  const fid = typeof familia === 'string' ? familia : familia.familia
