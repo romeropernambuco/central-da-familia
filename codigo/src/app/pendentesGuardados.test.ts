@@ -9,17 +9,39 @@ import { guardarPendente, pendentesGuardados, recusadosGuardados, tirarPendente 
 const guardado = new Map<string, string>()
 beforeEach(() => {
   guardado.clear()
-  vi.stubGlobal('localStorage', { getItem: (k: string) => guardado.get(k) ?? null, setItem: (k: string, v: string) => { guardado.set(k, v) }, removeItem: (k: string) => { guardado.delete(k) } })
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => guardado.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      guardado.set(k, v)
+    },
+    removeItem: (k: string) => {
+      guardado.delete(k)
+    },
+  })
 })
-afterEach(() => { pendentes.limpar(); reiniciarExemplo(); desfazer.limpar(); vi.unstubAllGlobals() })
+afterEach(() => {
+  pendentes.limpar()
+  reiniciarExemplo()
+  desfazer.limpar()
+  vi.unstubAllGlobals()
+})
 
-const gasto = (chave: string) => ({ familia: 'fam-silva', envelope: 'env-ana', valor: 23, data: '2026-11-16', descricao: 'Fictício', chave })
+const gasto = (chave: string) => ({
+  familia: 'fam-silva',
+  envelope: 'env-ana',
+  valor: 23,
+  data: '2026-11-16',
+  descricao: 'Fictício',
+  chave,
+})
 const chaves = () => JSON.parse(guardado.get('envios_pendentes') || '[]').map((x: any) => x.dados.chave)
 /** Mesma API do exemplo, tratada como banco real (é só no real que a fila vai para o aparelho). */
 const real = (lancar: typeof apiExemplo.lancar) => protegerApi({ ...apiExemplo, modo: 'real', lancar })
 
 it('gasto anotado sem internet sobrevive a fechar o app e é reenviado, uma vez só, ao abrir de novo', async () => {
-  const semRede = vi.fn(async () => { throw new ErroRede() })
+  const semRede = vi.fn(async () => {
+    throw new ErroRede()
+  })
   const antes = real(semRede)
   await antes.sessao()
   void antes.lancar(gasto('fila-1')).catch(() => {})
@@ -44,7 +66,11 @@ it('gasto salvo na hora, ou recusado de vez, não fica guardado no aparelho', as
   await ok.sessao()
   await ok.lancar(gasto('fila-2'))
   expect(chaves()).toEqual([])
-  const recusa = real(vi.fn(async () => { throw new Error('Valor inválido') }))
+  const recusa = real(
+    vi.fn(async () => {
+      throw new Error('Valor inválido')
+    }),
+  )
   await recusa.sessao()
   await expect(recusa.lancar(gasto('fila-3'))).rejects.toThrow('Valor inválido')
   expect(chaves()).toEqual([])
@@ -60,17 +86,29 @@ it('não reenvia o que é de outra pessoa no mesmo aparelho, e o modo exemplo n�
   expect(pendentesGuardados('outra-sessao|fam-silva|x')).toHaveLength(1)
 
   guardado.clear()
-  const exemplo = protegerApi({ ...apiExemplo, lancar: vi.fn(async () => { throw new ErroRede() }) })
+  const exemplo = protegerApi({
+    ...apiExemplo,
+    lancar: vi.fn(async () => {
+      throw new ErroRede()
+    }),
+  })
   await exemplo.sessao()
   void exemplo.lancar(gasto('fila-4')).catch(() => {})
   await vi.waitFor(() => expect(pendentes.itens.size).toBe(1))
   expect(chaves()).toEqual([])
 })
 
-const donoDaSessao = async () => { const s = (await apiExemplo.sessao())!; return `${s.userId}|${s.familias[0].id}|${s.familias[0].membroId || ''}` }
+const donoDaSessao = async () => {
+  const s = (await apiExemplo.sessao())!
+  return `${s.userId}|${s.familias[0].id}|${s.familias[0].membroId || ''}`
+}
 
 it('sair da conta, ou a sessão cair, com gasto pendente NÃO apaga o gasto: ele volta a ser enviado ao entrar de novo', async () => {
-  const antes = real(vi.fn(async () => { throw new ErroRede() }))
+  const antes = real(
+    vi.fn(async () => {
+      throw new ErroRede()
+    }),
+  )
   await antes.sessao()
   void antes.lancar(gasto('fila-sair')).catch(() => {})
   await vi.waitFor(() => expect(pendentes.itens.size).toBe(1))
@@ -87,11 +125,16 @@ it('sair da conta, ou a sessão cair, com gasto pendente NÃO apaga o gasto: ele
 it('reenvio que o banco recusa de vez não some: fica marcado com o motivo e o app não insiste sozinho', async () => {
   const dono = await donoDaSessao()
   guardarPendente(dono, gasto('fila-recusa'))
-  const recusa = vi.fn(async () => { throw new Error('Esse limite não existe mais.') })
+  const recusa = vi.fn(async () => {
+    throw new Error('Esse limite não existe mais.')
+  })
   const api = real(recusa)
   await api.sessao()
   await vi.waitFor(() => expect(recusadosGuardados(dono)).toHaveLength(1))
-  expect(recusadosGuardados(dono)[0]).toMatchObject({ erro: 'Esse limite não existe mais.', dados: { chave: 'fila-recusa', valor: 23 } })
+  expect(recusadosGuardados(dono)[0]).toMatchObject({
+    erro: 'Esse limite não existe mais.',
+    dados: { chave: 'fila-recusa', valor: 23 },
+  })
   expect(pendentesGuardados(dono)).toEqual([])
   await api.sessao()
   await new Promise(r => setTimeout(r, 20))

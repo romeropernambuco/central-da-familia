@@ -2,11 +2,26 @@
 
 export type Papel = 'casal' | 'pessoa' | 'equipe'
 
-export interface FamiliaMinha { id: string; nome: string; papel: Papel; membroNome: string; envelopeId: string | null; /** id em membros de quem entrou (pra saber o que é dele: cartão, aplicação) */ membroId?: string | null }
+export interface FamiliaMinha {
+  id: string
+  nome: string
+  papel: Papel
+  membroNome: string
+  envelopeId: string | null
+  /** id em membros de quem entrou (pra saber o que é dele: cartão, aplicação) */ membroId?: string | null
+}
 
-export interface Sessao { userId: string; email: string | null; familias: FamiliaMinha[]; dono: boolean }
+export interface Sessao {
+  userId: string
+  email: string | null
+  familias: FamiliaMinha[]
+  dono: boolean
+}
 
-export interface LinhaExplicacao { linha: string; valor: number }
+export interface LinhaExplicacao {
+  linha: string
+  valor: number
+}
 
 export interface Envelope {
   id: string
@@ -100,37 +115,127 @@ export interface Lancamento {
 }
 
 /** Pessoa da família e como está o convite dela. */
-export interface ConviteFamilia { membroId?: string; id: string; nome: string; email: string | null; papel: Papel; situacao: 'esperando' | 'entrou' | 'cancelado'; entrou_em?: string | null; enviado_em?: string | null }
+export interface ConviteFamilia {
+  membroId?: string
+  id: string
+  nome: string
+  email: string | null
+  papel: Papel
+  situacao: 'esperando' | 'entrou' | 'cancelado'
+  entrou_em?: string | null
+  enviado_em?: string | null
+}
 
 export interface Cartao {
-  id: string; nome: string; dia_fechamento: number | null; dia_vencimento: number | null
+  id: string
+  nome: string
+  dia_fechamento: number | null
+  dia_vencimento: number | null
   /* CONTRATO3: cadastro do Analista de Cartão. Nunca o número do cartão: só apelido e, se quiser, os 4 últimos. */
-  banco?: string | null; /** nome de quem é o cartão (pra mostrar) */ titular?: string | null; /** id do membro da família (é o que vai pro banco) */ titular_id?: string | null; limite?: number | null
-  taxa_valor?: number | null; taxa_periodo?: 'mes' | 'ano' | null; taxa_mes?: number | null; taxa_isenta_acima?: number | null
-  final4?: string | null; ativo?: boolean
+  banco?: string | null
+  /** nome de quem é o cartão (pra mostrar) */ titular?: string | null
+  /** id do membro da família (é o que vai pro banco) */ titular_id?: string | null
+  limite?: number | null
+  taxa_valor?: number | null
+  taxa_periodo?: 'mes' | 'ano' | null
+  taxa_mes?: number | null
+  taxa_isenta_acima?: number | null
+  final4?: string | null
+  ativo?: boolean
 }
 /** Fatura do mês como veio no banco (produto.cartao_faturas). */
-export interface FaturaBanco { cartao_id: string; mes: string; valor_banco: number | null; paga_em: string | null; paga_por?: string | null }
+export interface FaturaBanco {
+  cartao_id: string
+  mes: string
+  valor_banco: number | null
+  paga_em: string | null
+  paga_por?: string | null
+}
 /** Feira da semana (produto.feiras). `valor` só chega pro casal. */
-export interface Feira { id: string; semana: string; data: string; valor?: number; loja: string | null; tem_nota: boolean; sem_nota_motivo: string | null; feita_por: string | null }
+export interface Feira {
+  id: string
+  semana: string
+  data: string
+  valor?: number
+  loja: string | null
+  tem_nota: boolean
+  sem_nota_motivo: string | null
+  feita_por: string | null
+}
 export type EstadoItem = 'tem' | 'pouco' | 'acabou'
-export interface ItemEstoque { id: string; nome: string; categoria: string; ativo: boolean }
-export interface Contagem { id: string; semana: string; data: string; contado_por: string | null; itens: { item_id: string; estado: EstadoItem }[] }
-export interface Estoque { itens: ItemEstoque[]; contagens: Contagem[] }
+export interface ItemEstoque {
+  id: string
+  nome: string
+  categoria: string
+  ativo: boolean
+}
+export interface Contagem {
+  id: string
+  semana: string
+  data: string
+  contado_por: string | null
+  itens: { item_id: string; estado: EstadoItem }[]
+}
+export interface Estoque {
+  itens: ItemEstoque[]
+  contagens: Contagem[]
+}
 
-export interface Fatura { cartao_id: string; cartao: string; mes: string; vencimento: string; fecha_em?: string; total: number; fechada: boolean; /** quanto desta fatura é gasto da Casa (quem pagou) */ da_casa?: number }
+export interface Fatura {
+  cartao_id: string
+  cartao: string
+  mes: string
+  vencimento: string
+  fecha_em?: string
+  total: number
+  fechada: boolean
+  /** quanto desta fatura é gasto da Casa (quem pagou) */ da_casa?: number
+}
 
 /** Equipe: `convite` é o id que vai no link e `codigo_4_digitos` o código. Casal e pessoa: `convite` vem como 'email'. */
-export interface Convite { convite?: string; codigo_4_digitos?: string; expira_em?: string; email?: string; ok?: boolean }
+export interface Convite {
+  convite?: string
+  codigo_4_digitos?: string
+  expira_em?: string
+  email?: string
+  ok?: boolean
+}
 
-export interface Numero { chave: string; nome: string; valor: number; texto: string; meta: string; ok: boolean; explicacao: string }
+export interface Numero {
+  chave: string
+  nome: string
+  valor: number
+  texto: string
+  meta: string
+  ok: boolean
+  explicacao: string
+}
 
-export interface NovoLancamento { pago_por?: string | null; familia: string; envelope: string; valor: number; data: string; descricao: string; cartao?: string | null; /** compra no cartão em N vezes */ parcelas?: number; /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number; /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string }
+export interface NovoLancamento {
+  pago_por?: string | null
+  familia: string
+  envelope: string
+  valor: number
+  data: string
+  descricao: string
+  cartao?: string | null
+  /** compra no cartão em N vezes */ parcelas?: number
+  /** segundos do toque no + até o toque no envelope; o banco grava no evento `lancamento` */ segundos?: number
+  /** 1 uuid por toque; a mesma chave numa nova tentativa do mesmo lançamento (o banco não grava 2 vezes) */ chave: string
+}
 
 /** O que a equipe anota na Casa sem ler config_familia (a tranca não deixa): vai como evento. */
 export type AvisoCasa = 'casa_gas' | 'casa_presenca'
 
-export interface CupomLido { itens: { nome: string; valor: number; qtd?: number | null }[]; total: number; data: string | null; loja: string | null; aviso?: string; /** soma das linhas lidas e se ela bate com o total impresso (função versão 2) */ soma_dos_itens?: number; total_confere?: boolean }
+export interface CupomLido {
+  itens: { nome: string; valor: number; qtd?: number | null }[]
+  total: number
+  data: string | null
+  loja: string | null
+  aviso?: string
+  /** soma das linhas lidas e se ela bate com o total impresso (função versão 2) */ soma_dos_itens?: number
+  total_confere?: boolean
+}
 
 /** O que a equipe (e o casal) vê da Casa por produto.casa_da_equipe: nenhum valor em dinheiro. */
 export interface CasaDaEquipe {
@@ -139,7 +244,14 @@ export interface CasaDaEquipe {
   lista: { id: string; nome: string; ok: boolean }[]
   /** compras da Casa nos últimos 7 dias: só nome e data */
   comprado: { data: string; nome: string }[]
-  prestadores: { id: string; nome: string; servico: string; dia: number; proxima_visita: string; ultima_vez: string | null }[]
+  prestadores: {
+    id: string
+    nome: string
+    servico: string
+    dia: number
+    proxima_visita: string
+    ultima_vez: string | null
+  }[]
   gas: { trocas: string[]; media_dias: number | null; proxima_troca: string | null; avisar_em: string | null }
   presenca: { hoje: string[]; meu_ponto: { chegou?: string; saiu?: string } }
 }
@@ -150,11 +262,21 @@ export type MarcaCasa = 'comprei' | 'acabou' | 'prestador_veio' | 'troquei_gas' 
 /* ---------- Guardado (a caixinha): CONTRATO2.md, seção A ---------- */
 export type TipoAplicacao = 'caixinha' | 'cdb' | 'lci_lca' | 'poupanca' | 'tesouro_selic'
 export interface GuardadoAplicacao {
-  id: string; nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; saldo: number
-  rendeu_hoje_liquido: number; rendeu_mes_liquido: number; ir_faixa: number
-  vence_em: string | null; liquidez: 'diaria' | 'vencimento'; fgc_ok: boolean
+  id: string
+  nome: string
+  banco: string
+  tipo: TipoAplicacao
+  pct_cdi: number
+  saldo: number
+  rendeu_hoje_liquido: number
+  rendeu_mes_liquido: number
+  ir_faixa: number
+  vence_em: string | null
+  liquidez: 'diaria' | 'vencimento'
+  fgc_ok: boolean
   /** No nome de quem (membro); null = do casal. */
-  titular?: string | null; titular_nome?: string | null
+  titular?: string | null
+  titular_nome?: string | null
 }
 /** O que produto.guardado_hoje devolve. Só o casal recebe. */
 export interface GuardadoHoje {
@@ -173,27 +295,51 @@ export interface GuardadoHoje {
   /** Saldo total no fim de cada um dos últimos 30 dias (linha subindo). */
   saldo_30?: { data: string; saldo: number }[]
   /** Quanto está no nome de quem olha e quanto é do casal. */
-  seu_total?: number; casal_total?: number
+  seu_total?: number
+  casal_total?: number
   /** Saldo só do que está no nome de quem olha, nos últimos 30 dias (pro marco G10). */
   saldo_30_seu?: { data: string; saldo: number }[]
 }
-export interface NovaAplicacao { nome: string; banco: string; tipo: TipoAplicacao; pct_cdi: number; valor_inicial: number; data: string; vence_em?: string | null; /** membro dono (só o próprio); sem o campo = no nome de quem cria */ titular?: string | null; /** E2: aplicação do casal (o banco grava sem titular). Nunca junto com `titular`. */ do_casal?: boolean }
-export interface CustoDoGasto { ate_fim_do_mes: number; em_12_meses: number }
+export interface NovaAplicacao {
+  nome: string
+  banco: string
+  tipo: TipoAplicacao
+  pct_cdi: number
+  valor_inicial: number
+  data: string
+  vence_em?: string | null
+  /** membro dono (só o próprio); sem o campo = no nome de quem cria */ titular?: string | null
+  /** E2: aplicação do casal (o banco grava sem titular). Nunca junto com `titular`. */ do_casal?: boolean
+}
+export interface CustoDoGasto {
+  ate_fim_do_mes: number
+  em_12_meses: number
+}
 
 /* ---------- Escritório que cobra e Lembretes: CONTRATO2.md, seção B ---------- */
 export type EstadoFuncionario = 'vai_comecar' | 'trabalhando' | 'entregue' | 'precisa_de_voce'
 /** `pede`: campo obrigatório antes de gravar; `pede2`: 2º campo, opcional; `abre`: o que o app abre (lancar, guardado, cartao, nota, contagem). Igual ao BANCO2.md. */
 export type Pede = 'data' | 'valor' | 'texto'
 export type Abre = 'lancar' | 'guardado' | 'cartao' | 'nota' | 'contagem' | 'orcamento'
-export interface OpcaoPergunta { id: string; rotulo: string; pede?: Pede; pede2?: Pede; abre?: Abre }
+export interface OpcaoPergunta {
+  id: string
+  rotulo: string
+  pede?: Pede
+  pede2?: Pede
+  abre?: Abre
+}
 export interface PerguntaEsc {
   /** Fragmentos privados da fala e das opções. Moedas são detectadas separadamente. */
   trechosPrivados?: string[]
-  id: string; funcionario: string; pergunta: string; contexto: string
+  id: string
+  funcionario: string
+  pergunta: string
+  contexto: string
   /** em R$; a equipe nunca recebe */
   valor?: number
   opcoes: OpcaoPergunta[]
-  vence_em?: string | null; atrasado_dias?: number
+  vence_em?: string | null
+  atrasado_dias?: number
   /** texto pronto pra copiar (opção "Copiar mensagem") */
   mensagem?: string
   /** nome curto do assunto, pro diário ("Fatura do cartão Inter") */
@@ -203,28 +349,97 @@ export interface PerguntaEsc {
   /** as partes da fala, uma a uma (o exemplo manda; serve pra conferência das falas) */
   partes?: { vi: string; importa: string; sugiro: string }
 }
-export interface FuncionarioEsc { trechosPrivados?: string[]; id: string; nome: string; sala: string; estado: EstadoFuncionario; frase: string; /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]; /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string; /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[]; /** C2: funcionário que ainda não tem dado no banco (o card diz o que ele vai fazer, sem número) */ semDado?: boolean }
-export interface EntregaEsc { funcionario: string; resumo: string; numero?: number | null }
-export interface EscritorioHoje { precisa_de_voce: PerguntaEsc[]; /** E3 (conserto 9): quantas são no total (a tela mostra até 3) */ precisa_total?: number; trabalhando: { funcionario: string; resumo?: string }[]; entregue: EntregaEsc[]; funcionarios: FuncionarioEsc[] }
+export interface FuncionarioEsc {
+  trechosPrivados?: string[]
+  id: string
+  nome: string
+  sala: string
+  estado: EstadoFuncionario
+  frase: string
+  /** as 3 linhas de "O que eu faço e quando", quando o banco manda */ faz?: string[]
+  /** 1 linha do cadastro dele ("2 cartões, 1 fatura aberta") */ cadastro_resumo?: string
+  /** as 10 últimas respostas do diário dele */ ultimas_respostas?: LinhaDiario[]
+  /** C2: funcionário que ainda não tem dado no banco (o card diz o que ele vai fazer, sem número) */ semDado?: boolean
+}
+export interface EntregaEsc {
+  funcionario: string
+  resumo: string
+  numero?: number | null
+}
+export interface EscritorioHoje {
+  precisa_de_voce: PerguntaEsc[]
+  /** E3 (conserto 9): quantas são no total (a tela mostra até 3) */ precisa_total?: number
+  trabalhando: { funcionario: string; resumo?: string }[]
+  entregue: EntregaEsc[]
+  funcionarios: FuncionarioEsc[]
+}
 export type Repetir = 'nunca' | 'dia' | 'semana' | 'mes' | 'ano'
-export interface Lembrete { id: string; titulo: string; detalhe: string | null; quando: string; repetir: Repetir; para: string; funcionario?: string | null; feito_em: string | null }
-export interface NovoLembrete { titulo: string; quando: string; repetir: Repetir; detalhe?: string; para?: string }
-export interface LinhaDiario { trechosPrivados?: string[]; /** id da pergunta respondida */ ref?: string; /** "anotado às 10:05" ou "12/11, 10:05", quando o banco manda o texto pronto */ quando_txt?: string; id: string; funcionario: string; assunto: string; pergunta: string; resposta: string; quando: string; adiado_ate: string | null; respondido_por?: string | null }
-export interface RelatorioFuncionario { funcionario: string; perguntas: number; respondidas: number; pendentes: number; /** minutos entre a pergunta e a resposta; null = ainda sem resposta */ tempo_medio_min: number | null }
-export interface RelatorioEsc { funcionarios: RelatorioFuncionario[]; diario: LinhaDiario[] }
+export interface Lembrete {
+  id: string
+  titulo: string
+  detalhe: string | null
+  quando: string
+  repetir: Repetir
+  para: string
+  funcionario?: string | null
+  feito_em: string | null
+}
+export interface NovoLembrete {
+  titulo: string
+  quando: string
+  repetir: Repetir
+  detalhe?: string
+  para?: string
+}
+export interface LinhaDiario {
+  trechosPrivados?: string[]
+  /** id da pergunta respondida */ ref?: string
+  /** "anotado às 10:05" ou "12/11, 10:05", quando o banco manda o texto pronto */ quando_txt?: string
+  id: string
+  funcionario: string
+  assunto: string
+  pergunta: string
+  resposta: string
+  quando: string
+  adiado_ate: string | null
+  respondido_por?: string | null
+}
+export interface RelatorioFuncionario {
+  funcionario: string
+  perguntas: number
+  respondidas: number
+  pendentes: number
+  /** minutos entre a pergunta e a resposta; null = ainda sem resposta */ tempo_medio_min: number | null
+}
+export interface RelatorioEsc {
+  funcionarios: RelatorioFuncionario[]
+  diario: LinhaDiario[]
+}
 
 /* ---------- E5: recebimentos com data (produto.recebimentos, f_05). Ver: o casal; criar e mudar: só o dono ---------- */
 export type TipoRecebimento = 'salario' | 'contrato' | 'retorno' | 'outro'
 export interface RecebimentoTela {
-  id: string; dono_membro: string; dono_nome: string | null; descricao: string
+  id: string
+  dono_membro: string
+  dono_nome: string | null
+  descricao: string
   /** em reais (a tela); o banco guarda em centavos inteiros */
   valor: number
   /** 'AAAA-MM' */ mes_previsto: string
   /** pra onde foi o atrasado ('AAAA-MM'); null = ainda no mês previsto */ mes_novo: string | null
-  tipo: TipoRecebimento; certo: boolean; recebido_em: string | null; valor_recebido: number | null
+  tipo: TipoRecebimento
+  certo: boolean
+  recebido_em: string | null
+  valor_recebido: number | null
   /** quem olha é o dono (só ele lança e mexe) */ meu: boolean
 }
-export interface NovoRecebimento { descricao: string; valor: number; mes_previsto: string; tipo: TipoRecebimento; certo: boolean }
+export interface NovoRecebimento {
+  descricao: string
+  valor: number
+  mes_previsto: string
+  tipo: TipoRecebimento
+  certo: boolean
+}
 
 /** Contrato compartilhado: controles da série ficam em outra chave. */
 export interface FonteReceita {
@@ -237,28 +452,52 @@ export interface FonteReceita {
 export type FontesReceita = Record<string, FonteReceita>
 export type CenarioReceitas = 'garantido' | 'previstos' | 'tudo'
 /** Chave receitas_controle. Valores em centavos; mês é a identidade da ocorrência. */
-export type ControleReceitas = Record<string, {
-  valor?: number; atualizado_em?: string
-  recebidas?: Record<string, { valor: number; data: string }>
-}>
+export type ControleReceitas = Record<
+  string,
+  {
+    valor?: number
+    atualizado_em?: string
+    recebidas?: Record<string, { valor: number; data: string }>
+  }
+>
 
 /* ---------- E6: parâmetros do objetivo 2029 (produto.objetivo, f_07), histórico e Focus (f_10) ---------- */
 /** As chaves exatas do banco (ECONOMISTA item 4). Dinheiro em centavos inteiros; taxa em texto decimal ("0.1000" = 10%). */
 export interface ParametrosObjetivo {
   /** gasto por mês em 2029, a preços de hoje; null = [confirmar] (a conta usa o teto do mês até a família dizer) */
   gasto_2029_hoje: number | null
-  renda_certa_2029: number; margem: string; taxa_real_trabalho: string; aliq_proj: string
+  renda_certa_2029: number
+  margem: string
+  taxa_real_trabalho: string
+  aliq_proj: string
   /** IR de 2029 em diante (aplicação longa); sem o campo vale o padrão do ECONOMISTA (15%). aliq_proj é o de até 2028 */
   aliq_renda?: string
   /** RODADA_PATRIMONIO (f_15): IR do aluguel, texto decimal; sem o campo vale o padrão do motor (27,5%, a confirmar) */
   aliq_aluguel?: string
-  taxa_bruta_ano: Record<string, string>; ipca_ano: Record<string, string>
+  taxa_bruta_ano: Record<string, string>
+  ipca_ano: Record<string, string>
   /** null = [confirmar] (a conta usa 6) */ piso_meses: number | null
-  mes_reajuste: number; travado_focus: boolean
+  mes_reajuste: number
+  travado_focus: boolean
 }
-export interface FocusAno { ano: number; selic_fim: string; ipca: string; divulgado_em: string; fonte: string }
-export interface HistoricoObjetivo { quem: string | null; quando: string; antes: ParametrosObjetivo | null; depois: ParametrosObjetivo }
-export interface Objetivo { parametros: ParametrosObjetivo | null; historico: HistoricoObjetivo[]; focus: FocusAno[] }
+export interface FocusAno {
+  ano: number
+  selic_fim: string
+  ipca: string
+  divulgado_em: string
+  fonte: string
+}
+export interface HistoricoObjetivo {
+  quem: string | null
+  quando: string
+  antes: ParametrosObjetivo | null
+  depois: ParametrosObjetivo
+}
+export interface Objetivo {
+  parametros: ParametrosObjetivo | null
+  historico: HistoricoObjetivo[]
+  focus: FocusAno[]
+}
 
 /* ---------- E7 (F8) com a f_12: o reajuste do teto votado no banco (reajuste_situacao, reajuste_votar, reajuste_aplicar) ---------- */
 export interface ReajusteSituacao {
@@ -266,7 +505,8 @@ export interface ReajusteSituacao {
   /** todos os adultos do casal votaram e no mesmo teto (o banco decide) */ aprovado: boolean
   /** em centavos; null enquanto não aprovou */ teto_aprovado: number | null
   /** IPCA aprovado, em texto decimal ("0.0450"); null enquanto não aprovou */ ipca_aprovado: string | null
-  /** R1: 'AAAA-MM' de quando vale de verdade (o banco decide: o mês de vigência ou o seguinte ao último voto); null sem aprovação */ vale_a_partir: string | null
+  /** R1: 'AAAA-MM' de quando vale de verdade (o banco decide: o mês de vigência ou o seguinte ao último voto); null sem aprovação */ vale_a_partir:
+    string | null
   /** o mês de hoje já chegou em vale_a_partir (o banco decide) */ ja_vale: boolean
   /** f_14: último dia ('AAAA-MM-DD') em que ainda dá pra aplicar: o último dia do mês de vale_a_partir. Depois o voto vence e
    *  é preciso votar de novo. null = sem prazo (banco antes da f_14) */ aplicar_ate: string | null
@@ -275,7 +515,12 @@ export interface ReajusteSituacao {
   faltam: { membro_id: string; nome: string }[]
   /** f_14: o voto refeito ainda em aberto (mês que não começou, sem aprovação), pra o outro adulto achar sem a config.
    *  Vem quando o mês pedido não tem voto (e, com o ajuste do BANCO, também quando está vencido). Sem o campo: null */
-  voto_aberto?: { mes_vigencia: string; teto: number; ipca: string | null; votou: { membro_id: string; nome: string }[] } | null
+  voto_aberto?: {
+    mes_vigencia: string
+    teto: number
+    ipca: string | null
+    votou: { membro_id: string; nome: string }[]
+  } | null
 }
 
 /* ---------- E8: desejos (produto.desejos, f_06). Ver: o casal todos, a pessoa (filha) só os dela. Mexer: só o dono ---------- */
@@ -291,7 +536,13 @@ export interface NovoDesejo {
   /** contrato antecipado: quanto entra agora, adiantado */ antecipado: number | null
   volta_certa: boolean
 }
-export interface DesejoTela extends NovoDesejo { id: string; dono_membro: string; dono_nome: string | null; situacao: SituacaoDesejo; /** quem olha é o dono (só ele muda) */ meu: boolean }
+export interface DesejoTela extends NovoDesejo {
+  id: string
+  dono_membro: string
+  dono_nome: string | null
+  situacao: SituacaoDesejo
+  /** quem olha é o dono (só ele muda) */ meu: boolean
+}
 
 /* ---------- RODADA_PATRIMONIO: imóveis (produto.imovel, f_15). Ver: só o casal, com o dono. Mexer: só o dono. Filha e equipe nada ---------- */
 export type UsoImovel = 'mora' | 'aluga' | 'parado' | 'vende'
@@ -308,12 +559,40 @@ export interface NovoImovel {
   venda_mes: string | null
   venda_contrato: boolean
 }
-export interface ImovelTela extends NovoImovel { id: string; dono_membro: string; dono_nome: string | null; /** quem olha é o dono (só ele muda) */ meu: boolean }
+export interface ImovelTela extends NovoImovel {
+  id: string
+  dono_membro: string
+  dono_nome: string | null
+  /** quem olha é o dono (só ele muda) */ meu: boolean
+}
 
 /** Chaves guardadas em config_familia (1 linha por chave, valor jsonb). */
-export type ChaveConfig = 'reserva_onde' | 'contas_fixas' | 'casa_prestadores' | 'casa_gas' | 'casa_folha' | 'casa_lista' | 'casa_presenca' | 'casa_ponto' | 'rendas' | 'metas' | 'termo_aceito' | 'entradas' | 'dias_sem_gasto' | 'metas_pessoais' | 'reajuste_teto' | 'fontes_receita' | 'receitas_controle' | 'numeros_atualizados'
+export type ChaveConfig =
+  | 'reserva_onde'
+  | 'contas_fixas'
+  | 'casa_prestadores'
+  | 'casa_gas'
+  | 'casa_folha'
+  | 'casa_lista'
+  | 'casa_presenca'
+  | 'casa_ponto'
+  | 'rendas'
+  | 'metas'
+  | 'termo_aceito'
+  | 'entradas'
+  | 'dias_sem_gasto'
+  | 'metas_pessoais'
+  | 'reajuste_teto'
+  | 'fontes_receita'
+  | 'receitas_controle'
+  | 'numeros_atualizados'
 
-export interface PessoaNome { tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'; id: string; nome?: string | null; funcao?: string }
+export interface PessoaNome {
+  tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'
+  id: string
+  nome?: string | null
+  funcao?: string
+}
 export interface Api {
   /** Capacidade opcional: só aparece quando há armazenamento implementado. Reais. */
   saldosConta?(familia: string): Promise<import('../lib/resumo/saldos').SaldoConta[]>
@@ -338,13 +617,29 @@ export interface Api {
   convidar(familia: string, papel: Papel, nome: string, email?: string): Promise<Convite>
 
   resumoHoje(familia: string): Promise<ResumoHoje>
-  lancar(n: NovoLancamento): Promise<{ lancamento: Lancamento; resumo: ResumoHoje; repetido?: boolean; avisoPagador?: string; repetirPagador?: () => Promise<void> }>
+  lancar(n: NovoLancamento): Promise<{
+    lancamento: Lancamento
+    resumo: ResumoHoje
+    repetido?: boolean
+    avisoPagador?: string
+    repetirPagador?: () => Promise<void>
+  }>
   /** Lançamentos de 1 mês (AAAA-MM), vivos e apagados, do mais novo pro mais velho. */
   lancamentos(familia: string, mes: string): Promise<Lancamento[]>
   apagarLancamento(id: string): Promise<void>
   restaurarLancamento(id: string): Promise<void>
   /** Corrige valor, descrição, dia, envelope ou cartão de um lançamento (banco: lanc_mudar deixa a autora mudar). */
-  corrigirLancamento?(id: string, campos: { valor?: number; descricao?: string; data?: string; envelope?: string; cartao?: string | null; parcelas?: number }): Promise<void>
+  corrigirLancamento?(
+    id: string,
+    campos: {
+      valor?: number
+      descricao?: string
+      data?: string
+      envelope?: string
+      cartao?: string | null
+      parcelas?: number
+    },
+  ): Promise<void>
   /** Passou do combinado: cobre com a sobra da Casa neste mês (SÓ NO EXEMPLO: no banco precisa de função nova). Devolve como desfazer. */
   cobrirComCasa?(familia: string, envelope: string, valor: number): Promise<() => Promise<void>>
   /** Quem está na família e como está o convite de cada um. */
@@ -353,9 +648,15 @@ export interface Api {
   cancelarConvite?(familia: string, id: string): Promise<void>
 
   /** Equipe: anota a compra SEM valor (o que comprou, feira ou coisa da casa, foto da nota). O casal confere pela foto. */
-  anotarCompraEquipe?(familia: string, c: { tipo: 'feira' | 'casa'; nome: string; foto?: string | null }): Promise<{ aviso: string }>
+  anotarCompraEquipe?(
+    familia: string,
+    c: { tipo: 'feira' | 'casa'; nome: string; foto?: string | null },
+  ): Promise<{ aviso: string }>
   /** Regra do salário: o que entrou a mais neste mês pra quem olha e quanto disso foi pra reserva. */
-  entrouAMais?(familia: string, mes: string): Promise<{ entrou: number; guardado: number; itens: { de: string; valor: number; destino: string }[] }>
+  entrouAMais?(
+    familia: string,
+    mes: string,
+  ): Promise<{ entrou: number; guardado: number; itens: { de: string; valor: number; destino: string }[] }>
   /** V3 "Foi imprevisto" (SÓ NO EXEMPLO): o que passou sai da reserva pra mês ruim. Devolve como desfazer. */
   cobrirImprevisto?(familia: string, envelope: string, valor: number): Promise<() => Promise<void>>
 
@@ -379,7 +680,14 @@ export interface Api {
   guardadoHoje(familia: string): Promise<GuardadoHoje>
   guardadoCriar(familia: string, a: NovaAplicacao): Promise<void>
   /** Guardar (aporte), tirar (resgate) ou conferir o saldo. `chave`: 1 uuid por toque, o banco não grava 2 vezes. */
-  guardadoMovimentar(aplicacao: string, tipo: 'aporte' | 'resgate' | 'saldo_conferido', valor: number, data: string, chave: string, nota?: string): Promise<void>
+  guardadoMovimentar(
+    aplicacao: string,
+    tipo: 'aporte' | 'resgate' | 'saldo_conferido',
+    valor: number,
+    data: string,
+    chave: string,
+    nota?: string,
+  ): Promise<void>
   /** Desfaz o último movimento gravado com essa chave (banco: guardado_desfazer). */
   guardadoDesfazer?(aplicacao: string, chave: string): Promise<void>
   guardadoEncerrar(aplicacao: string): Promise<void>
@@ -389,7 +697,16 @@ export interface Api {
   /* Escritório: perguntas de quem precisa de você, respostas no diário, relatório e lembretes. */
   escritorioHoje(familia: string): Promise<EscritorioHoje>
   /** Grava no diário e faz o efeito. Responder de novo a mesma pergunta corrige (a linha antiga fica). Devolve a mensagem pronta quando a opção é copiar. */
-  escritorioResponder(familia: string, perguntaId: string, opcao: string, dados?: Record<string, unknown>): Promise<{ mensagem?: string; /** id da linha gravada no diário */ diario_id?: string; /** confirmação do que foi feito (rodada 2) */ aviso?: string } | void>
+  escritorioResponder(
+    familia: string,
+    perguntaId: string,
+    opcao: string,
+    dados?: Record<string, unknown>,
+  ): Promise<{
+    mensagem?: string
+    /** id da linha gravada no diário */ diario_id?: string
+    /** confirmação do que foi feito (rodada 2) */ aviso?: string
+  } | void>
   escritorioRelatorio(familia: string, de: string, ate: string): Promise<RelatorioEsc>
   /** Diário de 1 funcionário, do mais novo pro mais velho ("ver tudo"). */
   escritorioDiario(familia: string, funcionario: string, limite: number, antes?: string): Promise<LinhaDiario[]>
@@ -398,7 +715,12 @@ export interface Api {
   /* Analista de Cartão */
   cartaoSalvar(familia: string, c: Partial<Cartao> & { nome: string }): Promise<void>
   faturasBanco(familia: string): Promise<FaturaBanco[]>
-  faturaInformar(familia: string, cartao: string, mes: string, d: { valor_banco?: number | null; paga_em?: string | null }): Promise<void>
+  faturaInformar(
+    familia: string,
+    cartao: string,
+    mes: string,
+    d: { valor_banco?: number | null; paga_em?: string | null },
+  ): Promise<void>
   /* Fiscal da Feira */
   feiras(familia: string, opcoes?: { semValores?: boolean }): Promise<Feira[]>
   feiraRegistrar(familia: string, f: { data: string; valor?: number; loja?: string }): Promise<void>
@@ -409,7 +731,10 @@ export interface Api {
   feiraSemNota(familia: string, feira: string, motivo: string): Promise<void>
   estoque(familia: string): Promise<Estoque>
   estoqueContar(familia: string, itens: { item_id: string; estado: EstadoItem }[]): Promise<void>
-  estoqueItemSalvar(familia: string, item: { id?: string; nome: string; categoria: string; ativo?: boolean }): Promise<void>
+  estoqueItemSalvar(
+    familia: string,
+    item: { id?: string; nome: string; categoria: string; ativo?: boolean },
+  ): Promise<void>
   lembretes(familia: string): Promise<Lembrete[]>
   lembreteCriar(familia: string, l: NovoLembrete): Promise<void>
   lembreteConcluir(familia: string, id: string): Promise<void>
@@ -425,7 +750,17 @@ export interface Api {
   recebimentos?(familia: string): Promise<RecebimentoTela[]>
   recebimentoCriar?(familia: string, r: NovoRecebimento): Promise<void>
   /** o dono marca que chegou (data e valor), muda o mês (atrasado) ou tira (nada some: fica marcado como apagado) */
-  recebimentoMudar?(familia: string, id: string, m: { recebido_em?: string | null; valor_recebido?: number | null; mes_novo?: string | null; certo?: boolean; apagar?: boolean }): Promise<void>
+  recebimentoMudar?(
+    familia: string,
+    id: string,
+    m: {
+      recebido_em?: string | null
+      valor_recebido?: number | null
+      mes_novo?: string | null
+      certo?: boolean
+      apagar?: boolean
+    },
+  ): Promise<void>
   /* E6: o objetivo 2029. Só o casal; os 2 mudam e o banco guarda o histórico (quem, quando, antes e depois) */
   objetivo?(familia: string): Promise<Objetivo>
   objetivoSalvar?(familia: string, p: ParametrosObjetivo): Promise<void>

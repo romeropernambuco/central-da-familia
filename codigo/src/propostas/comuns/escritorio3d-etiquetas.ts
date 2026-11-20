@@ -1,6 +1,9 @@
 import type { PostoProjetado } from '../../telas/escritorio/cenaIsometrica'
 
-interface Posicao { x: number; y: number }
+interface Posicao {
+  x: number
+  y: number
+}
 
 /** Distribui os alvos transparentes sem sobrepor as áreas de toque. */
 export function distribuirEtiquetas(postos: readonly PostoProjetado[], largura: number, altura: number) {

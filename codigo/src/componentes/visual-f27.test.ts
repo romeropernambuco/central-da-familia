@@ -4,7 +4,9 @@ import { expect, it } from 'vitest'
 import * as base from './base'
 
 it('impede novo envio durante carregamento e anuncia a espera sem perder o nome', () => {
-  const html = renderToStaticMarkup(createElement(base.Botao, { carregando: true, type: 'submit', icone: 'salvo' }, 'Salvar'))
+  const html = renderToStaticMarkup(
+    createElement(base.Botao, { carregando: true, type: 'submit', icone: 'salvo' }, 'Salvar'),
+  )
   expect(html).toContain('disabled=""')
   expect(html).toContain('aria-busy="true"')
   expect(html).toContain('type="submit"')
@@ -24,7 +26,18 @@ it('oculta ícones decorativos e dá nome apenas aos que informam sozinhos', asy
 })
 
 it('troca o substituto pela ilustração sem duplicar a informação ou perder a ação', () => {
-  const html = renderToStaticMarkup(createElement(base.Vazio, { children: 'Nenhum im�vel', ico: 'substituto', ilustracao: createElement('svg', { 'aria-hidden': true }), acao: createElement('button', null, 'Cadastrar') }, 'Nenhum imóvel'))
+  const html = renderToStaticMarkup(
+    createElement(
+      base.Vazio,
+      {
+        children: 'Nenhum im�vel',
+        ico: 'substituto',
+        ilustracao: createElement('svg', { 'aria-hidden': true }),
+        acao: createElement('button', null, 'Cadastrar'),
+      },
+      'Nenhum imóvel',
+    ),
+  )
   expect(html).toContain('<svg aria-hidden="true"')
   expect(html).not.toContain('substituto')
   expect(html).toContain('Nenhum imóvel')

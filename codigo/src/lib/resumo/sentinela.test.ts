@@ -19,49 +19,133 @@ import type { Api, FamiliaMinha, ResumoHoje } from '../../api/tipos'
 const familia = { id: 'f', papel: 'casal', envelopeId: 'eu', membroId: 'm' } as FamiliaMinha
 const hoje = '2026-11-17'
 const resumo: ResumoHoje = {
-  dias_restantes: 1, livre_mes: 8765, pode_gastar_hoje: 99, colchao: 0, explicacao: [],
-    envelopes: [{ id: 'eu', nome: 'Meu limite', regra: 'mensal', livre: 8765, limite_mes: 9999, gasto_mes: 1234, gasto_hoje: 678.91 }],
+  dias_restantes: 1,
+  livre_mes: 8765,
+  pode_gastar_hoje: 99,
+  colchao: 0,
+  explicacao: [],
+  envelopes: [
+    {
+      id: 'eu',
+      nome: 'Meu limite',
+      regra: 'mensal',
+      livre: 8765,
+      limite_mes: 9999,
+      gasto_mes: 1234,
+      gasto_hoje: 678.91,
+    },
+  ],
 }
 function fonte() {
-  const lancamento = { id: 'g', envelope_id: 'eu', data: hoje, criado_em: hoje, descricao: 'Compra', valor: 5432, cartao_id: null }
+  const lancamento = {
+    id: 'g',
+    envelope_id: 'eu',
+    data: hoje,
+    criado_em: hoje,
+    descricao: 'Compra',
+    valor: 5432,
+    cartao_id: null,
+  }
   const interna = {
-    modo: 'real', resumoHoje: vi.fn(async () => resumo), lancamentos: async () => [lancamento], recebimentos: async () => [],
-    config: async (_f: string, k: string, padrao: unknown) => k === 'entradas' ? [{ data: hoje, valor: 7654 }] : padrao,
-    cartoes: async () => [{ id: 'cartao-teste', nome: 'Cartão de teste', dia_fechamento: 12, dia_vencimento: 19, ativo: true }],
-    faturas: async () => [{ cartao_id: 'cartao-teste', cartao: 'Cartão de teste', mes: '2026-11', vencimento: '2026-11-19', total: 3456.78, fechada: true }],
+    modo: 'real',
+    resumoHoje: vi.fn(async () => resumo),
+    lancamentos: async () => [lancamento],
+    recebimentos: async () => [],
+    config: async (_f: string, k: string, padrao: unknown) =>
+      k === 'entradas' ? [{ data: hoje, valor: 7654 }] : padrao,
+    cartoes: async () => [
+      { id: 'cartao-teste', nome: 'Cartão de teste', dia_fechamento: 12, dia_vencimento: 19, ativo: true },
+    ],
+    faturas: async () => [
+      {
+        cartao_id: 'cartao-teste',
+        cartao: 'Cartão de teste',
+        mes: '2026-11',
+        vencimento: '2026-11-19',
+        total: 3456.78,
+        fechada: true,
+      },
+    ],
     faturasBanco: async () => [],
-    guardadoHoje: async () => normalizaGuardado({ total: 9876, aplicacoes: [{ id: 'a', saldo: 9876 }], rendeu_hoje_liquido: 8765,
-      rendeu_mes_liquido: 7654, rendeu_desde_inicio_liquido: 6543, por_dia_30: [], cdi_usado: { pct_ano: 10, data: hoje, fonte: 'teste' } }),
-    escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }), membros: async () => [],
+    guardadoHoje: async () =>
+      normalizaGuardado({
+        total: 9876,
+        aplicacoes: [{ id: 'a', saldo: 9876 }],
+        rendeu_hoje_liquido: 8765,
+        rendeu_mes_liquido: 7654,
+        rendeu_desde_inicio_liquido: 6543,
+        por_dia_30: [],
+        cdi_usado: { pct_ano: 10, data: hoje, fonte: 'teste' },
+      }),
+    escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }),
+    membros: async () => [],
   } as unknown as Api
   const api = protegerApi(interna)
   definirEscopoLeitura(api, 'sessao', familia)
   return { api, interna }
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
 
-async function lerTela(el: ReturnType<typeof createElement>, api: Api, bloco?: string, atributo = 'data-bloco', oculto = false) {
+async function lerTela(
+  el: ReturnType<typeof createElement>,
+  api: Api,
+  bloco?: string,
+  atributo = 'data-bloco',
+  oculto = false,
+) {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
   const doc = new DocumentoTeste()
-  Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] } })
+  Object.assign(NoTeste.prototype, {
+    focus() {},
+    closest() {
+      return null
+    },
+    querySelectorAll() {
+      return []
+    },
+  })
   vi.stubGlobal('document', doc)
   Object.assign(doc.documentElement, { dataset: {} })
-  vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
+  vi.stubGlobal(
+    'window',
+    Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }),
+  )
   vi.stubGlobal('location', { hash: '#/inicio?sem3d', search: '?sem3d' })
-  vi.stubGlobal('localStorage', { getItem() { return null }, removeItem() {} })
+  vi.stubGlobal('localStorage', {
+    getItem() {
+      return null
+    },
+    removeItem() {},
+  })
   vi.stubGlobal('Element', NoTeste)
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const elRaiz = doc.createElement('div')
   doc.body.appendChild(elRaiz)
   const root = createRoot(elRaiz as unknown as HTMLElement)
   try {
-    await act(async () => root.render(createElement(ContextoApp.Provider, {
-      value: { api, familia, resumo, sessao: null, versao: 0, oculto } as unknown as Ctx,
-    }, el)))
-    if (el.type === NumerosAba) await act(async () => { await vi.dynamicImportSettled() })
+    await act(async () =>
+      root.render(
+        createElement(
+          ContextoApp.Provider,
+          {
+            value: { api, familia, resumo, sessao: null, versao: 0, oculto } as unknown as Ctx,
+          },
+          el,
+        ),
+      ),
+    )
+    if (el.type === NumerosAba)
+      await act(async () => {
+        await vi.dynamicImportSettled()
+      })
     return bloco ? elRaiz.buscar(n => n.getAttribute(atributo) === bloco)[0].textContent : elRaiz.textContent
-  } finally { await act(async () => root.unmount()) }
+  } finally {
+    await act(async () => root.unmount())
+  }
 }
 
 it('orçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário', async () => {

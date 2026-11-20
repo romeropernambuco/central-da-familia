@@ -5,7 +5,7 @@ import type { numerosRumo2029 } from './plano2029'
 /** API de telas usa reais decimais; futuro() usa centavos inteiros. Nunca inferir a unidade. */
 export type Dinheiro = { unidade: 'reais'; valor: number } | { unidade: 'centavos'; valor: number }
 export const emReais = (valor: number): Dinheiro => ({ unidade: 'reais', valor })
-export const paraMotor = (d: Dinheiro): number => d.unidade === 'centavos' ? d.valor : Math.round(d.valor * 100)
+export const paraMotor = (d: Dinheiro): number => (d.unidade === 'centavos' ? d.valor : Math.round(d.valor * 100))
 export const daTela = (valor: number): Dinheiro => ({ unidade: 'reais', valor })
 export interface FonteResumo {
   recurso: string
@@ -22,10 +22,11 @@ interface Metadados {
   /** Data informada pela fonte; null quando o contrato não a fornece. */
   atualizadoEm: string | null
 }
-export type CampoResumo<T> = Metadados & (
-  { estado: 'pronto'; valor: T } |
-  { estado: 'carregando' | 'vazio' | 'erro' | 'indisponivel' | 'restrito'; valor: null; motivo?: string }
-)
+export type CampoResumo<T> = Metadados &
+  (
+    | { estado: 'pronto'; valor: T }
+    | { estado: 'carregando' | 'vazio' | 'erro' | 'indisponivel' | 'restrito'; valor: null; motivo?: string }
+  )
 export type RecebimentosResumo = ReturnType<typeof import('./recebimentos').recebimentosDoMes>
 export type CasaResumo = ReturnType<typeof import('./casa').situacaoCasa>
 type OrcamentoResumo = Awaited<ReturnType<typeof import('./leituras').lerOrcamento>>
@@ -40,5 +41,7 @@ export interface ResumoFamilia {
   casa: CampoResumo<CasaResumo>
   desejos: CampoResumo<ReturnType<typeof import('./desejos').totaisDesejos>>
   pendencias: CampoResumo<{ total: number; primeira?: { id: string; assunto: string } }>
-  plano2029: CampoResumo<{ unidade: 'centavos'; confirmar: string[]; conferenciaAntiga: boolean } & ReturnType<typeof numerosRumo2029>>
+  plano2029: CampoResumo<
+    { unidade: 'centavos'; confirmar: string[]; conferenciaAntiga: boolean } & ReturnType<typeof numerosRumo2029>
+  >
 }

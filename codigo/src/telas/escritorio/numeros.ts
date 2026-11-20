@@ -18,46 +18,81 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
     case 'inicio': {
       const r = await api.resumoHoje(id)
       const d = destaqueOrcamento(r, familia.envelopeId, hojeRecife(), FUSO)
-      return [{ nome: d.escopo === 'pessoal' ? 'Seu orçamento · pode gastar hoje' : 'Pode gastar hoje', valor: d.valor }, { nome: 'Livre no mês', valor: d.livre }]
+      return [
+        { nome: d.escopo === 'pessoal' ? 'Seu orçamento · pode gastar hoje' : 'Pode gastar hoje', valor: d.valor },
+        { nome: 'Livre no mês', valor: d.livre },
+      ]
     }
     case 'orcamento': {
       const r = await api.resumoHoje(id)
       const e = r.envelopes.find(e => e.id === familia.envelopeId)
       if (!e) throw new Error('Orçamento pessoal indisponível')
-      return [{ nome: 'Limite do mês', valor: e.limite_mes }, { nome: 'Gasto no mês', valor: e.gasto_mes }, { nome: 'Livre', valor: e.livre }]
+      return [
+        { nome: 'Limite do mês', valor: e.limite_mes },
+        { nome: 'Gasto no mês', valor: e.gasto_mes },
+        { nome: 'Livre', valor: e.livre },
+      ]
     }
     case 'lancamentos': {
-      const hoje = hojeRecife(), mes = hoje.slice(0, 7)
-      const [linhas, total] = await Promise.all([api.recebimentos ? lerLancamentosMes(api, id, mes) : api.lancamentos(id, mes), api.recebimentos ? lerMes(api, id, hoje) : null])
+      const hoje = hojeRecife(),
+        mes = hoje.slice(0, 7)
+      const [linhas, total] = await Promise.all([
+        api.recebimentos ? lerLancamentosMes(api, id, mes) : api.lancamentos(id, mes),
+        api.recebimentos ? lerMes(api, id, hoje) : null,
+      ])
       const t = total ?? totaisDoMes(mes, hoje, linhas, [], [])
-      const numeros = [quantidade('Gastos realizados no mês', gastosRealizados(mes, hoje, linhas).length), { nome: 'Saiu no mês', valor: t.saiu }]
-      if (total) numeros.push({ nome: 'Entrou no mês', valor: t.entrou }, { nome: 'Entradas certas pendentes', valor: t.previsto })
+      const numeros = [
+        quantidade('Gastos realizados no mês', gastosRealizados(mes, hoje, linhas).length),
+        { nome: 'Saiu no mês', valor: t.saiu },
+      ]
+      if (total)
+        numeros.push(
+          { nome: 'Entrou no mês', valor: t.entrou },
+          { nome: 'Entradas certas pendentes', valor: t.previsto },
+        )
       return numeros
     }
     case 'cartoes': {
       const [cartoes, faturas] = await Promise.all([api.cartoes(id), api.faturas(id, 1)])
-      return [quantidade('Cartões cadastrados', cartoes.length), { nome: 'Faturas consultadas (1 mês)', valor: faturas.reduce((s, f) => s + f.total, 0) }]
+      return [
+        quantidade('Cartões cadastrados', cartoes.length),
+        { nome: 'Faturas consultadas (1 mês)', valor: faturas.reduce((s, f) => s + f.total, 0) },
+      ]
     }
     case 'casa': {
       const e = await api.estoque(id)
-      return [quantidade('Itens ativos no estoque', e.itens.filter(i => i.ativo).length), quantidade('Contagens registradas', e.contagens.length)]
+      return [
+        quantidade('Itens ativos no estoque', e.itens.filter(i => i.ativo).length),
+        quantidade('Contagens registradas', e.contagens.length),
+      ]
     }
     case 'guardado': {
       const g = totaisGuardado(await api.guardadoHoje(id))
-      return [{ nome: 'Total guardado', valor: g.total }, { nome: 'Rendimento líquido hoje', valor: g.hoje }]
+      return [
+        { nome: 'Total guardado', valor: g.total },
+        { nome: 'Rendimento líquido hoje', valor: g.hoje },
+      ]
     }
     case 'planejamento': {
       if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')
       const total = await lerTotaisRecebimentos(api, id)
-      return [quantidade('Recebimentos previstos em aberto', total.ocorrencias), { nome: 'Total previsto (todos os meses)', valor: total.previsto }]
+      return [
+        quantidade('Recebimentos previstos em aberto', total.ocorrencias),
+        { nome: 'Total previsto (todos os meses)', valor: total.previsto },
+      ]
     }
     case 'desejos': {
       if (!api.desejos) throw new Error('Desejos indisponíveis')
       const d = await api.desejos(id)
-      return [quantidade('Desejos pensando', d.filter(x => x.situacao === 'pensando').length), quantidade('Desejos combinados', d.filter(x => x.situacao === 'combinado').length)]
+      return [
+        quantidade('Desejos pensando', d.filter(x => x.situacao === 'pensando').length),
+        quantidade('Desejos combinados', d.filter(x => x.situacao === 'combinado').length),
+      ]
     }
-    case 'painel': return (await api.numerosSemana()).map(n => ({ nome: n.nome, texto: n.texto }))
-    case 'ajustes': return [quantidade('Membros cadastrados', (await api.membros(id)).length)]
+    case 'painel':
+      return (await api.numerosSemana()).map(n => ({ nome: n.nome, texto: n.texto }))
+    case 'ajustes':
+      return [quantidade('Membros cadastrados', (await api.membros(id)).length)]
     case 'privacidade': {
       const membros = await api.membros(id)
       return [quantidade('Adultos responsáveis pela família', membros.filter(m => m.papel === 'casal').length)]
@@ -66,7 +101,8 @@ export async function numerosDaAba(api: Api, familia: FamiliaMinha, rota: Rota):
       const e = await api.escritorioHoje(id)
       return [quantidade('Perguntas pendentes', totalPendencias(e)), quantidade('Entregas', e.entregue.length)]
     }
-    default: throw new Error('Esta tela não tem indicadores')
+    default:
+      throw new Error('Esta tela não tem indicadores')
   }
 }
 

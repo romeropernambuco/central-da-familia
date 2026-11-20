@@ -9,7 +9,13 @@ export function reajustarTeto(teto: Centavos, ipca_ano_anterior: Taxa | Dec): Ce
 
 /** Teto da projeção no mês m: parte do teto do mês de hoje e reajusta em cada mês de reajuste
  *  depois de hoje até m, com o IPCA do ano anterior (Focus). */
-export function tetoProjetado(teto_hoje: Centavos, mes_hoje: Mes, m: Mes, mes_reajuste: number, ipca_ano: Record<number, Taxa>): Centavos {
+export function tetoProjetado(
+  teto_hoje: Centavos,
+  mes_hoje: Mes,
+  m: Mes,
+  mes_reajuste: number,
+  ipca_ano: Record<number, Taxa>,
+): Centavos {
   let t = teto_hoje
   if (compararMes(m, mes_hoje) <= 0) return t
   for (const x of listaMeses(proximoMes(mes_hoje), m)) {

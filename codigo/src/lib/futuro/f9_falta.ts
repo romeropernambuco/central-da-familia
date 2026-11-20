@@ -3,7 +3,11 @@ import { arred, centavos, compararMes, Dec, potencia, taxa, UM } from './decimal
 import { taxaRealMensal } from './f2_taxa_real'
 import type { Centavos, Desejo, Mes, Taxa } from './tipos'
 
-export interface MesDoPiso { mes: Mes; saldo_final: Centavos; piso: Centavos }
+export interface MesDoPiso {
+  mes: Mes
+  saldo_final: Centavos
+  piso: Centavos
+}
 
 /** Mês abaixo do piso: fica_devendo = piso − saldo_final; devendo_ate = 1º mês seguinte em que
  *  saldo_final − fica_devendo ≥ piso (do mês). null se não quita dentro da linha. */
@@ -13,7 +17,11 @@ export function ficaDevendo(meses: MesDoPiso[]): { mes: Mes; fica_devendo: Centa
     if (x.saldo_final >= x.piso) return { mes: x.mes, fica_devendo: 0, devendo_ate: null }
     const dev = x.piso - x.saldo_final
     let ate: Mes | null = null
-    for (let j = i + 1; j < ord.length; j++) if (ord[j].saldo_final - dev >= ord[j].piso) { ate = ord[j].mes; break }
+    for (let j = i + 1; j < ord.length; j++)
+      if (ord[j].saldo_final - dev >= ord[j].piso) {
+        ate = ord[j].mes
+        break
+      }
     return { mes: x.mes, fica_devendo: dev, devendo_ate: ate }
   })
 }
@@ -53,11 +61,17 @@ export function ajusteSugerido(meses_restantes: number): 'guardar' | 'cortar' {
 
 /** (b) reduzir o gasto de 2029 em F × taxa_real_mensal. */
 export function cortarPorMes2029(falta: Centavos, taxa_real_anual: Taxa | Dec): Centavos {
-  if (falta <= 0 || taxa(taxa_real_anual).lte(0)) { centavos(falta); return 0 }
+  if (falta <= 0 || taxa(taxa_real_anual).lte(0)) {
+    centavos(falta)
+    return 0
+  }
   return arred(centavos(falta).times(taxaRealMensal(taxa_real_anual)))
 }
 
 /** (c) desejos pra adiar ou cortar, do maior pro menor (empate: ordem do cadastro). */
 export function desejosPraAdiar(desejos: Desejo[]): string[] {
-  return desejos.map((d, i) => ({ d, i })).sort((a, b) => b.d.valor - a.d.valor || a.i - b.i).map((x) => x.d.id)
+  return desejos
+    .map((d, i) => ({ d, i }))
+    .sort((a, b) => b.d.valor - a.d.valor || a.i - b.i)
+    .map(x => x.d.id)
 }

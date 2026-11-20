@@ -20,19 +20,26 @@ import { Proposta } from './Proposta'
 
 const pasta = 'src/propostas/f'
 const css = ts.sys.readFile(pasta + '/proposta.css')!
-const cenarios = (['claro', 'escuro'] as const).flatMap(tema => (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })))
+const cenarios = (['claro', 'escuro'] as const).flatMap(tema =>
+  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })),
+)
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 let dados: DadosInicio
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-17T14:00:00Z'))
-  try { dados = await carregarDadosInicio() } finally { vi.useRealTimers() }
+  try {
+    dados = await carregarDadosInicio()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 function render(c = cenarios[0], snapshot = dados, oculto = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: oculto },
-    createElement(Proposta, { ...c, dados: snapshot })))
+  return renderToStaticMarkup(
+    createElement(PrivacidadePropostas.Provider, { value: oculto }, createElement(Proposta, { ...c, dados: snapshot })),
+  )
 }
 
 it.each(cenarios)('renderiza o exemplo em $tema no $dispositivo com uma decisão no centro e a equipe ao lado', c => {
@@ -56,18 +63,28 @@ it.each(cenarios)('renderiza o exemplo em $tema no $dispositivo com uma decisão
 function comTarefas(niveis: DadosInicio['alertas']['valor']) {
   const snapshot = structuredClone(dados)
   snapshot.alertas = { ...dados.alertas, estado: 'pronto', valor: niveis ?? [] }
-  snapshot.pendencias.fila = { ...dados.pendencias.fila, estado: 'pronto', valor: (niveis ?? []).map(a => ({
-    id: a.id, funcionario: 'contador', perguntaCurta: a.texto, valor: { ...dados.faturas.total, estado: 'pronto', valor: 918273.46 },
-  })) }
+  snapshot.pendencias.fila = {
+    ...dados.pendencias.fila,
+    estado: 'pronto',
+    valor: (niveis ?? []).map(a => ({
+      id: a.id,
+      funcionario: 'contador',
+      perguntaCurta: a.texto,
+      valor: { ...dados.faturas.total, estado: 'pronto', valor: 918273.46 },
+    })),
+  }
   return snapshot
 }
 
 it('mostra os três níveis por extenso em ordem de prioridade e destaca a sala da primeira decisão', () => {
-  const html = render(cenarios[1], comTarefas([
-    { id: 'l', nivel: 'lembrete', texto: 'Retomar lembrete' },
-    { id: 'o', nivel: 'operacao', texto: 'Conferir registro' },
-    { id: 'r', nivel: 'dinheiro em risco', texto: 'Revisar dinheiro em risco' },
-  ]))
+  const html = render(
+    cenarios[1],
+    comTarefas([
+      { id: 'l', nivel: 'lembrete', texto: 'Retomar lembrete' },
+      { id: 'o', nivel: 'operacao', texto: 'Conferir registro' },
+      { id: 'r', nivel: 'dinheiro em risco', texto: 'Revisar dinheiro em risco' },
+    ]),
+  )
   const posicoes = ['Dinheiro em risco', 'Operação', 'Lembrete'].map(r => html.indexOf('>' + r + '</span>'))
   expect(posicoes[0]).toBeGreaterThan(-1)
   expect(posicoes[1]).toBeGreaterThan(posicoes[0])
@@ -77,7 +94,9 @@ it('mostra os três níveis por extenso em ordem de prioridade e destaca a sala 
 })
 
 it('fecha o olho sem expor moeda, percentual, proporção, texto livre ou identificador nos links', () => {
-  const snapshot = comTarefas([{ id: 'tarefa:731876,29', nivel: 'operacao', texto: 'Conferir R$ 731876,29 (77,3%; razão 17/19)' }])
+  const snapshot = comTarefas([
+    { id: 'tarefa:731876,29', nivel: 'operacao', texto: 'Conferir R$ 731876,29 (77,3%; razão 17/19)' },
+  ])
   const aberto = render(cenarios[0], snapshot)
   expect(aberto).toContain('77,3%')
   expect(aberto).toContain(moeda.format(918273.46))
@@ -86,13 +105,21 @@ it('fecha o olho sem expor moeda, percentual, proporção, texto livre ou identi
     const fechado = render(c, snapshot, true)
     expect(fechado).toContain('Tarefa com detalhes ocultos')
     expect(fechado).toContain('aria-label="Valor oculto"')
-    expect(fechado.match(/R\$|731876|918[.]?273|77,3%|17\/19|\d\s*%|data-numero-financeiro|\baria-value\w*|<(progress|meter)\b|style="|pathLength=|stroke-dash(?:array|offset)=/i)?.[0]).toBeUndefined()
+    expect(
+      fechado.match(
+        /R\$|731876|918[.]?273|77,3%|17\/19|\d\s*%|data-numero-financeiro|\baria-value\w*|<(progress|meter)\b|style="|pathLength=|stroke-dash(?:array|offset)=/i,
+      )?.[0],
+    ).toBeUndefined()
   }
 })
 
 it('identifica a sobra no Plano 2029 e oculta a direção da diferença com o olho fechado', () => {
   const snapshot = structuredClone(dados)
-  snapshot.plano2029.faltamPorMesComMargem = { ...dados.plano2029.faltamPorMesComMargem, estado: 'pronto', valor: -187650 }
+  snapshot.plano2029.faltamPorMesComMargem = {
+    ...dados.plano2029.faltamPorMesComMargem,
+    estado: 'pronto',
+    valor: -187650,
+  }
   const aberto = render(cenarios[0], snapshot)
   expect(aberto).toContain('Sobra por mês · com margem')
   expect(aberto).toContain(moeda.format(1876.5))
@@ -139,19 +166,25 @@ it('tem foco de destaque, movimento reduzido e geometria de números sem os efei
   expect(css).toMatch(/\.numero-principal\s*\{\s*font-size:\s*(34|35|36)px/)
   expect(css).toMatch(/\.numero-secundario\s*\{\s*font-size:\s*(26|27|28)px/)
   expect(css).toMatch(/\.numero-simbolo\s*\{\s*font-size:\s*\.\d+em/)
-  expect(css + render()).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u)
+  expect(css + render()).not.toMatch(
+    /gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u,
+  )
 })
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const s = parseInt(par, 16) / 255
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  })
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const s = parseInt(par, 16) / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
 it('atinge contraste WCAG AA nos pares de texto, alerta, botão e foco dos dois temas', () => {
-  const ler = (bloco: string) => Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(([, id, valor]) => [id, valor]))
+  const ler = (bloco: string) =>
+    Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(([, id, valor]) => [id, valor]))
   const escuro = ler(css.match(/\.f-inicio \{([^}]+)\}/)![1])
   const claro = ler(css.match(/\.f-inicio\[data-tema="claro"\] \{([^}]+)\}/)![1])
   for (const tokens of [escuro, { ...escuro, ...claro }]) {
@@ -171,26 +204,46 @@ const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles || '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] || '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
 it.skipIf(!chrome)('usa o medidor da casca e verifica contagem, encaixe e alvos com nome nos quatro quadros', () => {
   const dir = mkdtempSync(join(tmpdir(), 'proposta-f-'))
   try {
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/componentes/ilustracoes/ilustracoes.css', pasta + '/proposta.css']
-      .map(arq => ts.sys.readFile(arq)).join('\n')
-    const fontes = ['geist', 'inter'].map(nome => {
-      const fonte = readFileSync(`node_modules/@fontsource-variable/${nome}/files/${nome}-latin-wght-normal.woff2`).toString('base64')
-      const familia = nome[0].toUpperCase() + nome.slice(1)
-      return `@font-face { font-family: '${familia} Variable'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900 }`
-    }).join('\n')
-    const quadros = cenarios.map(c => `<div class="lab" data-theme="${c.tema}"><div class="lab-amostra" data-dispositivo="${c.dispositivo}">
+    const estilos = [
+      'src/propostas/base.css',
+      'src/propostas/comuns/escritorio-maquete.css',
+      'src/componentes/ilustracoes/ilustracoes.css',
+      pasta + '/proposta.css',
+    ]
+      .map(arq => ts.sys.readFile(arq))
+      .join('\n')
+    const fontes = ['geist', 'inter']
+      .map(nome => {
+        const fonte = readFileSync(
+          `node_modules/@fontsource-variable/${nome}/files/${nome}-latin-wght-normal.woff2`,
+        ).toString('base64')
+        const familia = nome[0].toUpperCase() + nome.slice(1)
+        return `@font-face { font-family: '${familia} Variable'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900 }`
+      })
+      .join('\n')
+    const quadros = cenarios
+      .map(
+        c => `<div class="lab" data-theme="${c.tema}"><div class="lab-amostra" data-dispositivo="${c.dispositivo}">
       <div class="lab-quadro"><div class="lab-conteudo" data-proposta="f">${render(c)}</div></div>
-    </div></div>`).join('')
-    const medidor = ts.transpile(ts.sys.readFile('src/propostas/medicao.ts')!.replace('export function', 'function'), { target: ts.ScriptTarget.ES2020 })
+    </div></div>`,
+      )
+      .join('')
+    const medidor = ts.transpile(ts.sys.readFile('src/propostas/medicao.ts')!.replace('export function', 'function'), {
+      target: ts.ScriptTarget.ES2020,
+    })
     const arquivo = join(dir, 'medicao.html')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
+    writeFileSync(
+      arquivo,
+      `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
       <pre id="resultado"></pre><script>${medidor}
       document.fonts.ready.then(() => {
         const resultado = Array.from(document.querySelectorAll('.lab-quadro')).map(quadro => ({
@@ -208,15 +261,32 @@ it.skipIf(!chrome)('usa o medidor da casca e verifica contagem, encaixe e alvos 
         }));
         document.querySelector('#resultado').textContent = encodeURIComponent(JSON.stringify(resultado));
       });
-      </script>`)
-    const resultado = spawnSync(chrome!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu', '--disable-background-networking',
-      '--user-data-dir=' + join(dir, 'perfil'), '--window-size=1400,900', '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 })
+      </script>`,
+    )
+    const resultado = spawnSync(
+      chrome!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--no-first-run',
+        '--disable-gpu',
+        '--disable-background-networking',
+        '--user-data-dir=' + join(dir, 'perfil'),
+        '--window-size=1400,900',
+        '--virtual-time-budget=4000',
+        '--dump-dom',
+        pathToFileURL(arquivo).href,
+      ],
+      { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 },
+    )
     expect(resultado.status, resultado.error?.message ?? resultado.stderr).toBe(0)
     const capturado = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
     expect(capturado).toBeTruthy()
     const medicoes = JSON.parse(decodeURIComponent(capturado!)) as {
-      valores: string[]; semTransbordo: boolean; contextoInteiro: boolean; controles: { nome: string; largura: number; altura: number }[]
+      valores: string[]
+      semTransbordo: boolean
+      contextoInteiro: boolean
+      controles: { nome: string; largura: number; altura: number }[]
     }[]
     expect(medicoes).toHaveLength(cenarios.length)
     for (const [i, medicao] of medicoes.entries()) {
@@ -224,7 +294,9 @@ it.skipIf(!chrome)('usa o medidor da casca e verifica contagem, encaixe e alvos 
       expect(medicao.semTransbordo, c.dispositivo).toBe(true)
       expect(medicao.contextoInteiro, c.dispositivo).toBe(true)
       expect(medicao.valores.length, medicao.valores.join(' · ')).toBeGreaterThanOrEqual(4)
-      expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(c.dispositivo === 'celular' ? 5 : 8)
+      expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(
+        c.dispositivo === 'celular' ? 5 : 8,
+      )
       expect(new Set(medicao.valores).size, medicao.valores.join(' · ')).toBe(medicao.valores.length)
       expect(medicao.controles.length).toBeGreaterThanOrEqual(16)
       for (const controle of medicao.controles) {

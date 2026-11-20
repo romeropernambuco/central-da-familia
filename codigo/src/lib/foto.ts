@@ -14,18 +14,25 @@ export function medidaReduzida(w: number, h: number, max = LADO_MAX): { w: numbe
 }
 
 /** Bytes de um texto base64 (sem o prefixo data:). */
-export const bytesBase64 = (b64: string) => Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
+export const bytesBase64 = (b64: string) =>
+  Math.floor((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
 
 async function abrirImagem(arq: Blob): Promise<{ img: CanvasImageSource; w: number; h: number; soltar: () => void }> {
   if (typeof createImageBitmap === 'function') {
     try {
       const b = await createImageBitmap(arq, { imageOrientation: 'from-image' } as ImageBitmapOptions)
       return { img: b, w: b.width, h: b.height, soltar: () => b.close() }
-    } catch { /* cai pro <img> */ }
+    } catch {
+      /* cai pro <img> */
+    }
   }
   const url = URL.createObjectURL(arq)
   const img = new Image()
-  await new Promise<void>((ok, falha) => { img.onload = () => ok(); img.onerror = () => falha(new Error('Não foi possível abrir essa foto. Tente outra.')); img.src = url })
+  await new Promise<void>((ok, falha) => {
+    img.onload = () => ok()
+    img.onerror = () => falha(new Error('Não foi possível abrir essa foto. Tente outra.'))
+    img.src = url
+  })
   return { img, w: img.naturalWidth, h: img.naturalHeight, soltar: () => URL.revokeObjectURL(url) }
 }
 
@@ -35,17 +42,21 @@ export async function reduzirFoto(arq: Blob): Promise<string> {
   try {
     const m = medidaReduzida(w, h)
     const c = document.createElement('canvas')
-    c.width = m.w; c.height = m.h
+    c.width = m.w
+    c.height = m.h
     const ctx = c.getContext('2d')
     if (!ctx) throw new Error('Este aparelho não conseguiu preparar a foto.')
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, m.w, m.h)
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, m.w, m.h)
     ctx.drawImage(img, 0, 0, m.w, m.h)
     for (const q of [0.82, 0.7, 0.55, 0.4]) {
       const b64 = c.toDataURL('image/jpeg', q).split(',')[1] || ''
       if (b64 && bytesBase64(b64) <= BYTES_MAX) return b64
     }
     throw new Error('A foto ficou grande demais mesmo reduzida. Tire outra mais perto do cupom.')
-  } finally { soltar() }
+  } finally {
+    soltar()
+  }
 }
 
 /** Data do cupom vale se for de hoje pra trás, até 60 dias. Senão, hoje. */
@@ -60,7 +71,8 @@ export const MSG_CUPOM = {
   chave: 'A leitura de cupom ainda não está ligada: o dono precisa colocar a chave da IA no Supabase.',
   ritmo: 'Muitas fotos em 1 minuto (o limite é 6). Espere 1 minuto e tente de novo.',
   geral: 'A leitura de cupom está pausada este mês para todas as famílias. Até voltar, lance digitando o valor.',
-  equipe: 'A leitura de cupom é só para o casal e para as pessoas da família. O Assessor da Casa anota a compra sem informar valores.',
+  equipe:
+    'A leitura de cupom é só para o casal e para as pessoas da família. O Assessor da Casa anota a compra sem informar valores.',
   grande: 'A foto ficou grande demais. Tire outra mais perto do cupom.',
 }
 /** Respostas da função ia-ler-cupom (versão 2): 6 por minuto, teto da família, teto geral, equipe sem IA. */

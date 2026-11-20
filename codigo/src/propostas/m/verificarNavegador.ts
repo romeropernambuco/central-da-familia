@@ -15,9 +15,12 @@ import { pathToFileURL } from 'node:url'
 import type { DadosInicio } from '../dadosExemplo'
 
 export const chromium = [
-  env.BROWSER_CHROME, join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
+  env.BROWSER_CHROME,
+  join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] ?? '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
@@ -178,9 +181,19 @@ async function rodar() {
 interface Resultado {
   erro?: string
   medicoes: {
-    largura: number; altura: number; numeros: string[]
-    semTransbordo: boolean; numerosInteiros: boolean; menuFixo: boolean; ordem: boolean
-    secoes: number[]; cena: number; fimVisivel: boolean; referenciasNaDobra: number; contraste: number; contrasteTrilha: number
+    largura: number
+    altura: number
+    numeros: string[]
+    semTransbordo: boolean
+    numerosInteiros: boolean
+    menuFixo: boolean
+    ordem: boolean
+    secoes: number[]
+    cena: number
+    fimVisivel: boolean
+    referenciasNaDobra: number
+    contraste: number
+    contrasteTrilha: number
     controles: { largura: number; altura: number; nome: string }[]
   }[]
   passos: Record<string, boolean>
@@ -189,11 +202,17 @@ interface Resultado {
 export async function verificarNavegador(dados: DadosInicio) {
   const entrada = '\0verificar-proposta-m'
   const resultado = await build({
-    configFile: false, logLevel: 'silent', base: './',
-    plugins: [react(), {
-      name: 'verificar-proposta-m',
-      resolveId: id => id === entrada ? id : undefined,
-      load: id => id === entrada ? `
+    configFile: false,
+    logLevel: 'silent',
+    base: './',
+    plugins: [
+      react(),
+      {
+        name: 'verificar-proposta-m',
+        resolveId: id => (id === entrada ? id : undefined),
+        load: id =>
+          id === entrada
+            ? `
         import { createElement } from 'react';
         import { createRoot } from 'react-dom/client';
         import { flushSync } from 'react-dom';
@@ -207,10 +226,16 @@ export async function verificarNavegador(dados: DadosInicio) {
           r => document.querySelector('pre').textContent = encodeURIComponent(JSON.stringify(r)),
           e => document.querySelector('pre').textContent = encodeURIComponent(JSON.stringify({ erro: String(e.stack || e) })),
         );
-      ` : undefined,
-    }],
+      `
+            : undefined,
+      },
+    ],
     build: {
-      write: false, assetsInlineLimit: 100_000, minify: false, copyPublicDir: false, cssCodeSplit: false,
+      write: false,
+      assetsInlineLimit: 100_000,
+      minify: false,
+      copyPublicDir: false,
+      cssCodeSplit: false,
       rollupOptions: { input: entrada, output: { format: 'iife', inlineDynamicImports: true } },
     },
   })
@@ -220,19 +245,43 @@ export async function verificarNavegador(dados: DadosInicio) {
     for (const arquivo of resultado.output) {
       // Arquivos de fonte são incorporados pelo Vite.
       if (arquivo.type === 'asset' && !arquivo.fileName.endsWith('.css')) continue
-      writeFileSync(join(pasta, arquivo.fileName.split('/').pop()!), arquivo.type === 'chunk' ? arquivo.code : arquivo.source)
+      writeFileSync(
+        join(pasta, arquivo.fileName.split('/').pop()!),
+        arquivo.type === 'chunk' ? arquivo.code : arquivo.source,
+      )
     }
-    const folha = resultado.output.find(a => a.fileName.endsWith('.css'))?.fileName.split('/').pop()
+    const folha = resultado.output
+      .find(a => a.fileName.endsWith('.css'))
+      ?.fileName.split('/')
+      .pop()
     if (!folha) throw new Error('O Vite não devolveu o CSS da prévia.')
-    const script = resultado.output.find(a => a.type === 'chunk')!.fileName.split('/').pop()
+    const script = resultado.output
+      .find(a => a.type === 'chunk')!
+      .fileName.split('/')
+      .pop()
     const arquivo = join(pasta, 'previa.html')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${folha}">
-      <pre></pre><script src="${script}"></script>`)
-    const processo = spawnSync(chromium!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu',
-      '--disable-background-networking', '--force-prefers-reduced-motion',
-      '--user-data-dir=' + join(pasta, 'perfil'), '--window-size=1480,960',
-      '--virtual-time-budget=5000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 })
+    writeFileSync(
+      arquivo,
+      `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${folha}">
+      <pre></pre><script src="${script}"></script>`,
+    )
+    const processo = spawnSync(
+      chromium!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--no-first-run',
+        '--disable-gpu',
+        '--disable-background-networking',
+        '--force-prefers-reduced-motion',
+        '--user-data-dir=' + join(pasta, 'perfil'),
+        '--window-size=1480,960',
+        '--virtual-time-budget=5000',
+        '--dump-dom',
+        pathToFileURL(arquivo).href,
+      ],
+      { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 },
+    )
     if (processo.status !== 0) throw new Error(processo.error?.message ?? processo.stderr)
     const captura = processo.stdout.match(/<pre>([^<]+)<\/pre>/)?.[1]
     if (!captura) throw new Error('O Chromium não devolveu as verificações da prévia.')

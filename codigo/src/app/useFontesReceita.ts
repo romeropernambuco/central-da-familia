@@ -22,6 +22,17 @@ export function useFontesReceita() {
     const ok = await gravarControle({ ...controle.controle, [id]: valor })
     return ok
   }
-  return { fontes, controle: controle.controle, salvarFonte, salvarControle, pronto,
-    erro: erro || erroControle || (corrompida || controle.corrompida ? 'Há dados inválidos no cadastro de receitas. Nada será sobrescrito. Peça ajuda para conferir o cadastro.' : '') }
+  return {
+    fontes,
+    controle: controle.controle,
+    salvarFonte,
+    salvarControle,
+    pronto,
+    erro:
+      erro ||
+      erroControle ||
+      (corrompida || controle.corrompida
+        ? 'Há dados inválidos no cadastro de receitas. Nada será sobrescrito. Peça ajuda para conferir o cadastro.'
+        : ''),
+  }
 }

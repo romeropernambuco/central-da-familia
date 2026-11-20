@@ -6,18 +6,24 @@ import { simularCompra } from '../../lib/formato'
 import type { Fatura } from '../../api/tipos'
 
 const mocks = vi.hoisted(() => ({
-  useState: vi.fn(), useEffect: vi.fn(), useApp: vi.fn(),
+  useState: vi.fn(),
+  useEffect: vi.fn(),
+  useApp: vi.fn(),
 }))
 vi.mock('react', async importOriginal => ({
-  ...await importOriginal<typeof import('react')>(),
-  useState: mocks.useState, useEffect: mocks.useEffect,
+  ...(await importOriginal<typeof import('react')>()),
+  useState: mocks.useState,
+  useEffect: mocks.useEffect,
 }))
 vi.mock('../../app/contexto', () => ({ useApp: mocks.useApp }))
 vi.mock('../../componentes/Qm', () => ({ Qm: () => null }))
 // Sequência de estados congelada do simulador. Conferência coberta pela integração f35.
 vi.mock('../../componentes/ConferenciasResumo', () => ({ ConferenciaFaturas: () => null }))
 
-afterEach(() => { vi.useRealTimers(); vi.resetAllMocks() })
+afterEach(() => {
+  vi.useRealTimers()
+  vi.resetAllMocks()
+})
 
 describe('faturas existentes no simulador de cartões', () => {
   it.each([10, 12])('soma os compromissos até a última parcela de uma compra em %ix', async parcelas => {
@@ -35,13 +41,35 @@ describe('faturas existentes no simulador de cartões', () => {
       cartoes: vi.fn().mockResolvedValue([cartao]),
       faturas: vi.fn(async (_familia: string, meses: number) => existentes.slice(0, meses)),
     }
-    mocks.useApp.mockReturnValue({ api, familia: { id: 'f', papel: 'casal' }, resumo: { envelopes: [], livre_mes: 1000, colchao: 0 } })
+    mocks.useApp.mockReturnValue({
+      api,
+      familia: { id: 'f', papel: 'casal' },
+      resumo: { envelopes: [], livre_mes: 1000, colchao: 0 },
+    })
     let carregadas: Fatura[] = []
     const preparar = () => {
       mocks.useState.mockReset()
-      const estados = [[cartao], carregadas, true, false, null, 0, { chave: JSON.stringify(['f', undefined, 'casal']), carregando: false, falha: '', temDado: true }, String(parcelas * 10), parcelas, 'c']
+      const estados = [
+        [cartao],
+        carregadas,
+        true,
+        false,
+        null,
+        0,
+        { chave: JSON.stringify(['f', undefined, 'casal']), carregando: false, falha: '', temDado: true },
+        String(parcelas * 10),
+        parcelas,
+        'c',
+      ]
       for (const [i, estado] of estados.entries()) {
-        mocks.useState.mockImplementationOnce(() => [estado, i === 1 ? (fs: Fatura[]) => { carregadas = fs } : vi.fn()])
+        mocks.useState.mockImplementationOnce(() => [
+          estado,
+          i === 1
+            ? (fs: Fatura[]) => {
+                carregadas = fs
+              }
+            : vi.fn(),
+        ])
       }
       mocks.useState.mockImplementation((inicial: unknown) => [inicial, vi.fn()])
     }
@@ -55,7 +83,9 @@ describe('faturas existentes no simulador de cartões', () => {
     preparar()
     const html = renderToStaticMarkup(createElement(Cartoes))
     const simulador = html.slice(html.indexOf('Faturas do Teste com a compra'))
-    const totais = [...simulador.matchAll(/aria-label="R\$\s*([\d.,]+)"/g)].map(m => Number(m[1].replace('.', '').replace(',', '.')))
+    const totais = [...simulador.matchAll(/aria-label="R\$\s*([\d.,]+)"/g)].map(m =>
+      Number(m[1].replace('.', '').replace(',', '.')),
+    )
     expect(totais).toHaveLength(14)
     for (const [i, fatura] of existentes.entries()) {
       expect(totais[i]).toBe(200 + (ps.some(p => p.mes === fatura.mes) ? 10 : 0))

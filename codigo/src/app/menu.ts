@@ -27,8 +27,12 @@ const abas: readonly Aba[] = [
 const barra: readonly Rota[] = ['inicio', 'orcamento', 'cartoes']
 
 export function menuDoPapel(papel: Parameters<typeof rotaPermitida>[1], dono: boolean) {
-  const lateral = abas.filter(({ r }) =>
-    (podeVerNoMenu(r, papel) || r === 'privacidade') && rotaPermitida(r, papel, dono) === r)
-  return { lateral, inferior: lateral.filter(({ r }) => barra.includes(r)),
-    mais: lateral.filter(({ r }) => !barra.includes(r)) }
+  const lateral = abas.filter(
+    ({ r }) => (podeVerNoMenu(r, papel) || r === 'privacidade') && rotaPermitida(r, papel, dono) === r,
+  )
+  return {
+    lateral,
+    inferior: lateral.filter(({ r }) => barra.includes(r)),
+    mais: lateral.filter(({ r }) => !barra.includes(r)),
+  }
 }

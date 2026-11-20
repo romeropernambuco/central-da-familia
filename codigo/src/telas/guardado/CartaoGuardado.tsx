@@ -14,14 +14,33 @@ export function CartaoGuardado() {
   if (familia?.papel !== 'casal' || estado === 'desligado' || !g) return null
   const vazio = !g.aplicacoes.length
   return (
-    <a className="card guard-card" href="#/guardado" aria-label={vazio ? 'Guardado: começar a guardar' : `Guardado: ${reais(totaisGuardado(g).total)}. Rendeu hoje ${reais(totaisGuardado(g).hoje)}. Abrir.`}>
-      <span className="tile"><Icone desenho={Landmark} /></span>
+    <a
+      className="card guard-card"
+      href="#/guardado"
+      aria-label={
+        vazio
+          ? 'Guardado: começar a guardar'
+          : `Guardado: ${reais(totaisGuardado(g).total)}. Rendeu hoje ${reais(totaisGuardado(g).hoje)}. Abrir.`
+      }
+    >
+      <span className="tile">
+        <Icone desenho={Landmark} />
+      </span>
       {vazio ? (
-        <span className="m"><b>Guardado</b><small>Diga onde o dinheiro está e veja quanto ele rende por dia.</small></span>
+        <span className="m">
+          <b>Guardado</b>
+          <small>Diga onde o dinheiro está e veja quanto ele rende por dia.</small>
+        </span>
       ) : (
         <span className="m">
-          <span className="guard-l"><span>Guardado</span><Din v={totaisGuardado(g).total} /></span>
-          <span className="guard-l dest"><span>Rendeu hoje</span><Din v={totaisGuardado(g).hoje} /></span>
+          <span className="guard-l">
+            <span>Guardado</span>
+            <Din v={totaisGuardado(g).total} />
+          </span>
+          <span className="guard-l dest">
+            <span>Rendeu hoje</span>
+            <Din v={totaisGuardado(g).hoje} />
+          </span>
           {g.motivo_zero && <small>{textoPrivado(g.motivo_zero)}</small>}
         </span>
       )}

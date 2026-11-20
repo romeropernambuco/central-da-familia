@@ -9,18 +9,28 @@ import { Proposta } from './Proposta'
 import { chromium, noNavegador } from './verificarNavegador'
 
 const cenarios = (['claro', 'escuro'] as const).flatMap(tema =>
-  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })))
+  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })),
+)
 let dados: DadosInicio
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-18T14:00:00Z'))
-  try { dados = await carregarDadosInicio() } finally { vi.useRealTimers() }
+  try {
+    dados = await carregarDadosInicio()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 function render(cenario: Omit<PropsProposta, 'dados'> = cenarios[0], snapshot = dados, oculto = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: oculto },
-    createElement(Proposta, { ...cenario, dados: snapshot })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: oculto },
+      createElement(Proposta, { ...cenario, dados: snapshot }),
+    ),
+  )
 }
 
 function comDecisoes() {
@@ -28,13 +38,23 @@ function comDecisoes() {
   const decisoes = [
     { id: 'lembrete:aviso', texto: 'Guardar comprovante', nivel: 'lembrete' },
     { id: 'estoque:lista', texto: 'Revisar estoque', nivel: 'operacao' },
-    { id: 'fatura:9817,28', texto: 'Conferir cobrança de R$ 9.817,28, 77,3% e razão 17/19', nivel: 'dinheiro em risco' },
+    {
+      id: 'fatura:9817,28',
+      texto: 'Conferir cobrança de R$ 9.817,28, 77,3% e razão 17/19',
+      nivel: 'dinheiro em risco',
+    },
     { id: 'retorno:1', texto: 'Checar retorno do banco', nivel: 'operacao' },
   ] satisfies { id: string; texto: string; nivel: NivelAlerta }[]
-  copia.pendencias.fila = { ...copia.pendencias.fila, estado: 'pronto', valor: decisoes.map(({ id, texto }, i) => ({
-    id, perguntaCurta: texto, funcionario: i === 1 ? 'fiscal' : 'Contador',
-    valor: { unidade: 'reais', natureza: 'previsto', estado: 'pronto', valor: i === 2 ? 9817.28 : 241.11 + i },
-  })) }
+  copia.pendencias.fila = {
+    ...copia.pendencias.fila,
+    estado: 'pronto',
+    valor: decisoes.map(({ id, texto }, i) => ({
+      id,
+      perguntaCurta: texto,
+      funcionario: i === 1 ? 'fiscal' : 'Contador',
+      valor: { unidade: 'reais', natureza: 'previsto', estado: 'pronto', valor: i === 2 ? 9817.28 : 241.11 + i },
+    })),
+  }
   copia.alertas = { ...copia.alertas, estado: 'pronto', valor: decisoes }
   copia.plano2029.progressao = { ...copia.plano2029.progressao, estado: 'pronto', valor: 61.7 }
   copia.plano2029.faltamPorMesComMargem = { ...copia.plano2029.faltamPorMesComMargem, estado: 'pronto', valor: -981728 }
@@ -60,7 +80,9 @@ it.each(cenarios)('organiza as seções em $tema para $dispositivo', cenario => 
 it('mostra a fila completa em ordem de urgência e reserva cada cifra uma vez', () => {
   const html = render(cenarios[0], comDecisoes())
   expect(html.match(/class="l-decisao"/g)).toHaveLength(4)
-  expect(html).toMatch(/Conferir cobrança[\s\S]*Dinheiro em risco[\s\S]*Revisar estoque[\s\S]*Operação[\s\S]*Checar retorno[\s\S]*Guardar comprovante[\s\S]*Lembrete/)
+  expect(html).toMatch(
+    /Conferir cobrança[\s\S]*Dinheiro em risco[\s\S]*Revisar estoque[\s\S]*Operação[\s\S]*Checar retorno[\s\S]*Guardar comprovante[\s\S]*Lembrete/,
+  )
   expect(html.match(/9\.817,28/g)).toHaveLength(1)
 })
 
@@ -74,10 +96,16 @@ it('remove cifras, proporções, texto livre e a geometria calculada com o olho 
     const fechado = render(cenario, copia, true)
     expect(fechado).toContain('class="l-caminho"')
     expect(fechado).toContain('Valor oculto')
-    expect(fechado).not.toMatch(/R\$|data-numero-financeiro|l-cobertura|l-posicao|Você está aqui|Sobra mensal|Falta mensal|61,7|77,3|17\/19|9817,28|9\.817/)
+    expect(fechado).not.toMatch(
+      /R\$|data-numero-financeiro|l-cobertura|l-posicao|Você está aqui|Sobra mensal|Falta mensal|61,7|77,3|17\/19|9817,28|9\.817/,
+    )
     const outra = structuredClone(copia)
     outra.plano2029.progressao = { ...copia.plano2029.progressao, estado: 'pronto', valor: 130 }
-    outra.plano2029.faltamPorMesComMargem = { ...copia.plano2029.faltamPorMesComMargem, estado: 'pronto', valor: 123456 }
+    outra.plano2029.faltamPorMesComMargem = {
+      ...copia.plano2029.faltamPorMesComMargem,
+      estado: 'pronto',
+      valor: 123456,
+    }
     expect(render(cenario, outra, true)).toBe(fechado)
   }
 })
@@ -87,7 +115,9 @@ it('respeita os escopos de Assessor e de orçamento pessoal com o olho aberto', 
   copia.pessoa.papel = { ...copia.pessoa.papel, estado: 'pronto', valor: 'equipe' }
   const html = render(cenarios[0], copia)
   expect(html).toContain('Conferir o estoque')
-  expect(html).not.toMatch(/Guardar comprovante|Conferir cobrança|R\$|data-numero-financeiro|l-trilha|l-resumo|l-motores/)
+  expect(html).not.toMatch(
+    /Guardar comprovante|Conferir cobrança|R\$|data-numero-financeiro|l-trilha|l-resumo|l-motores/,
+  )
   copia.pessoa.papel = { ...copia.pessoa.papel, valor: 'pessoa' }
   const pessoal = render(cenarios[0], copia)
   expect(pessoal).toContain('Pode gastar hoje')
@@ -107,10 +137,12 @@ it('mostra estados ausentes sem inserir zero ou marcador de progresso', () => {
 })
 
 it('usa somente a API do escritório 3D e mantém as restrições visuais locais', () => {
-  const fonte = ['Proposta.tsx', 'Palco.tsx', 'Financeiro.tsx', 'Fila.tsx'].map(arquivo => ts.sys.readFile('src/propostas/l/' + arquivo)).join('\n')
+  const fonte = ['Proposta.tsx', 'Palco.tsx', 'Financeiro.tsx', 'Fila.tsx']
+    .map(arquivo => ts.sys.readFile('src/propostas/l/' + arquivo))
+    .join('\n')
   const css = ts.sys.readFile('src/propostas/l/proposta.css')!
   expect(fonte).toContain("from '../comuns/Escritorio3D'")
-  expect(fonte).toMatch(/<Escritorio3D completo[\s\S]*onSelecionar/)
+  expect(fonte).toMatch(/<Escritorio3D\s+completo[\s\S]*onSelecionar/)
   expect(fonte).not.toMatch(/EscritorioMaquete|from .*api\//u)
   expect(fonte).not.toMatch(/\p{Extended_Pictographic}/u)
   expect(css).not.toMatch(/gradient\(|backdrop-filter:|border-(?:left|inline-start):|text-shadow:|neon/i)
@@ -120,12 +152,27 @@ it('usa somente a API do escritório 3D e mantém as restrições visuais locais
   expect(css).toMatch(/font-variant-numeric: tabular-nums;\s*white-space: nowrap;/)
 })
 
-it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e primeira dobra e exercita menu, fila e posto com teclado', async () => {
-  await noNavegador([comDecisoes(), dados], async (rodar, tecla) => {
-    for (const { tema, dispositivo } of cenarios) {
-      for (const largura of dispositivo === 'celular' ? [375] : [1280, 1440]) {
-        await rodar(`montar('${tema}', '${dispositivo}', ${largura}, false, 1); document.fonts.ready.then(() => true)`)
-        const medida = await rodar<{ alvos: string[]; cortes: string[]; largura: boolean; menu: boolean; dobra: string[]; contraste: number; movimento: boolean; blocos: number[]; palco: number; altura: number }>(String.raw`
+it.skipIf(!chromium || typeof WebSocket === 'undefined')(
+  'mede alvos, texto e primeira dobra e exercita menu, fila e posto com teclado',
+  async () => {
+    await noNavegador([comDecisoes(), dados], async (rodar, tecla) => {
+      for (const { tema, dispositivo } of cenarios) {
+        for (const largura of dispositivo === 'celular' ? [375] : [1280, 1440]) {
+          await rodar(
+            `montar('${tema}', '${dispositivo}', ${largura}, false, 1); document.fonts.ready.then(() => true)`,
+          )
+          const medida = await rodar<{
+            alvos: string[]
+            cortes: string[]
+            largura: boolean
+            menu: boolean
+            dobra: string[]
+            contraste: number
+            movimento: boolean
+            blocos: number[]
+            palco: number
+            altura: number
+          }>(String.raw`
           (() => {
             const visiveis = seletor => todos(seletor).filter(el => el.getClientRects().length);
             const alvos = visiveis('button, summary').filter(el => {
@@ -158,31 +205,32 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
               dobra: Previa.medirNumeros(quadro) };
           })()
         `)
-        expect(medida.alvos, `${tema}/${largura}`).toEqual([])
-        expect(medida.cortes, `${tema}/${largura}`).toEqual([])
-        expect(medida.largura).toBe(true)
-        expect(medida.menu).toBe(true)
-        expect(medida.dobra).toHaveLength(4)
-        expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
-        expect(medida.movimento).toBe(true)
-        if (dispositivo === 'celular') {
-          expect(medida.blocos).toHaveLength(5)
-          expect(Math.min(...medida.blocos)).toBeGreaterThanOrEqual(medida.altura * .85)
-          expect(medida.palco).toBeGreaterThanOrEqual(medida.altura)
+          expect(medida.alvos, `${tema}/${largura}`).toEqual([])
+          expect(medida.cortes, `${tema}/${largura}`).toEqual([])
+          expect(medida.largura).toBe(true)
+          expect(medida.menu).toBe(true)
+          expect(medida.dobra).toHaveLength(4)
+          expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
+          expect(medida.movimento).toBe(true)
+          if (dispositivo === 'celular') {
+            expect(medida.blocos).toHaveLength(5)
+            expect(Math.min(...medida.blocos)).toBeGreaterThanOrEqual(medida.altura * 0.85)
+            expect(medida.palco).toBeGreaterThanOrEqual(medida.altura)
+          }
         }
       }
-    }
-    await rodar("montar('escuro', 'celular', 375); q('.escritorio3d-zoom button:last-child').focus()")
-    await tecla('Tab')
-    expect(await rodar("document.activeElement.matches('.l-palco button')")).toBe(true)
-    await tecla('Enter')
-    expect(await rodar("q('dialog')?.open && document.activeElement.matches('dialog h3')")).toBe(true)
-    await tecla('Escape')
-    expect(await rodar("!q('dialog') && document.activeElement.matches('.l-palco button')")).toBe(true)
-    await tecla(' ')
-    expect(await rodar("q('dialog')?.open")).toBe(true)
-    await tecla('Escape')
-    expect(await rodar(String.raw`
+      await rodar("montar('escuro', 'celular', 375); q('.escritorio3d-zoom button:last-child').focus()")
+      await tecla('Tab')
+      expect(await rodar("document.activeElement.matches('.l-palco button')")).toBe(true)
+      await tecla('Enter')
+      expect(await rodar("q('dialog')?.open && document.activeElement.matches('dialog h3')")).toBe(true)
+      await tecla('Escape')
+      expect(await rodar("!q('dialog') && document.activeElement.matches('.l-palco button')")).toBe(true)
+      await tecla(' ')
+      expect(await rodar("q('dialog')?.open")).toBe(true)
+      await tecla('Escape')
+      expect(
+        await rodar(String.raw`
       click(botao('.l-menu button', 'Orçamento'));
       const orcamento = texto(document.activeElement) === 'Hoje você pode gastar' &&
         botao('.l-menu button', 'Orçamento').getAttribute('aria-current') === 'location';
@@ -206,7 +254,20 @@ it.skipIf(!chromium || typeof WebSocket === 'undefined')('mede alvos, texto e pr
       montar('escuro', 'celular', 375, true);
       ({ orcamento, mais, escritorio, faturas, inicio, abrir, adiar, concluir, desfazer,
         privacidade: !q('[data-numero-financeiro], .l-posicao') && !texto(quadro).includes('17/19') })
-    `)).toEqual({ orcamento: true, mais: true, escritorio: true, faturas: true, inicio: true,
-      abrir: true, adiar: true, concluir: true, desfazer: true, privacidade: true })
-  })
-}, 30000)
+    `),
+      ).toEqual({
+        orcamento: true,
+        mais: true,
+        escritorio: true,
+        faturas: true,
+        inicio: true,
+        abrir: true,
+        adiar: true,
+        concluir: true,
+        desfazer: true,
+        privacidade: true,
+      })
+    })
+  },
+  30000,
+)

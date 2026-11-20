@@ -3,7 +3,20 @@
 
 export const FUSO = 'America/Recife'
 const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-const MES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+const MES_LONGO = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+]
 const DIA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 /** "todo sábado", "toda segunda" (sábado e domingo são masculinos). */
 export const todoDia = (dow: number) => `${dow === 0 || dow === 6 ? 'todo' : 'toda'} ${DIA_SEMANA[dow]}`
@@ -26,7 +39,9 @@ export function partesDinheiro(v: number): { sinal: string; inteiro: string; cen
 
 /** N12: olho fechado troca todo valor por "R$ •••" (fila do mercado, criança olhando). Fica só neste aparelho. */
 let valoresEscondidos = false
-export const esconderValores = (sim: boolean) => { valoresEscondidos = sim }
+export const esconderValores = (sim: boolean) => {
+  valoresEscondidos = sim
+}
 export const valoresOcultos = () => valoresEscondidos
 
 /** Espaço que não quebra: "R$" nunca fica sozinho no fim da linha (letra grande). */
@@ -39,7 +54,9 @@ export function reais(v: number): string {
 }
 /** Valor de campo com 2 casas: 87.5 vira "87,50" (corrigir abre igual ao que a pessoa digitou). */
 export function valorComCentavos(v: number): string {
-  return centavos(Number(v) || 0).toFixed(2).replace('.', ',')
+  return centavos(Number(v) || 0)
+    .toFixed(2)
+    .replace('.', ',')
 }
 /** Olho fechado: troca "R$ 1.234,56" dentro de qualquer texto (fala de funcionário, aviso) por "R$ •••". */
 export function mascararTexto(s: string): string {
@@ -64,7 +81,8 @@ export function somaDias(iso: string, n: number): string {
 }
 
 export function diasEntre(de: string, ate: string): number {
-  const x = partes(de), y = partes(ate)
+  const x = partes(de),
+    y = partes(ate)
   return Math.round((Date.UTC(y.a, y.m - 1, y.d) - Date.UTC(x.a, x.m - 1, x.d)) / 86400000)
 }
 
@@ -167,7 +185,8 @@ export function valorParaTexto(v: number | null | undefined): string {
 }
 
 /** Campo de dinheiro só vale com no máximo 1 vírgula e 2 casas: barra "1,5,3" antes de salvar. */
-export const valorDigitadoValido = (txt: string, assinado = false) => (assinado ? /^-?\d{1,9}(,\d{0,2})?$/ : /^\d{1,9}(,\d{0,2})?$/).test(txt.trim())
+export const valorDigitadoValido = (txt: string, assinado = false) =>
+  (assinado ? /^-?\d{1,9}(,\d{0,2})?$/ : /^\d{1,9}(,\d{0,2})?$/).test(txt.trim())
 
 /* ---------- códigos ---------- */
 
@@ -185,18 +204,33 @@ export const plural = (n: number, um: string, varios: string) => `${n} ${n === 1
  * Compra depois do fechamento vai pra fatura seguinte. Se o vencimento é antes do fechamento no calendário
  * (ex.: fecha 25, vence 5), a fatura vence no mês seguinte ao fechamento.
  */
-export function mesDaFatura(m: number, d: number, diaFechamento: number, diaVencimento: number, diasDoMes = 31): number {
+export function mesDaFatura(
+  m: number,
+  d: number,
+  diaFechamento: number,
+  diaVencimento: number,
+  diasDoMes = 31,
+): number {
   // E4: igual a produto._mes_fatura: o fechamento num dia que o mês não tem (31 em fevereiro) vale o último dia do mês
   return m + (d >= Math.min(diaFechamento, diasDoMes) ? 1 : 0) + (diaVencimento <= diaFechamento ? 1 : 0)
 }
 
-export interface ParcelaSimulada { mes: string; valor: number }
+export interface ParcelaSimulada {
+  mes: string
+  valor: number
+}
 
 /**
  * Divide a compra em parcelas iguais (a 1ª leva a diferença dos centavos)
  * e diz em qual mês de fatura cada uma cai, pelo dia de fechamento do cartão.
  */
-export function simularCompra(valor: number, parcelas: number, dataCompra: string, diaFechamento: number, diaVencimento: number): ParcelaSimulada[] {
+export function simularCompra(
+  valor: number,
+  parcelas: number,
+  dataCompra: string,
+  diaFechamento: number,
+  diaVencimento: number,
+): ParcelaSimulada[] {
   const n = Math.max(1, Math.min(24, Math.floor(parcelas)))
   const total = Math.round(valor * 100)
   const base = Math.floor(total / n)
@@ -206,7 +240,10 @@ export function simularCompra(valor: number, parcelas: number, dataCompra: strin
   let ano = a
   const out: ParcelaSimulada[] = []
   for (let i = 0; i < n; i++) {
-    while (mes > 12) { mes -= 12; ano++ }
+    while (mes > 12) {
+      mes -= 12
+      ano++
+    }
     out.push({ mes: `${ano}-${String(mes).padStart(2, '0')}`, valor: (base + (i === 0 ? sobra : 0)) / 100 })
     mes++
   }
@@ -263,7 +300,10 @@ export function linkEquipe(base: string, convite: string): string {
  * Mensagens prontas pro WhatsApp. Decisão do dono: nenhuma leva valor em R$ (mensagem encaminhada não espalha dinheiro da casa).
  * O app só abre o WhatsApp com o texto; quem envia é a pessoa.
  */
-export function mensagemConvite(tipo: 'pessoa' | 'amiga' | 'equipe', o: { familia: string; quem: string; link: string; codigo?: string; email?: string }): string {
+export function mensagemConvite(
+  tipo: 'pessoa' | 'amiga' | 'equipe',
+  o: { familia: string; quem: string; link: string; codigo?: string; email?: string },
+): string {
   if (tipo === 'pessoa')
     return `Oi${o.quem.trim() ? ', ' + o.quem.trim() : ''}! Coloquei a casa na Central da Família. Entra aqui para ver o nosso número do dia: ${o.link} Entra com o seu e-mail${o.email ? ' (' + o.email.trim() + ')' : ''} e digita o código de 6 números que chega nele. No iPhone: toque e segure o link e escolha "Abrir no Safari" (não abra dentro do WhatsApp). Depois, no Safari, toque em Compartilhar e em "Adicionar à Tela de Início".`
   if (tipo === 'amiga')
@@ -304,7 +344,9 @@ export function mesAnterior(mes: string): string {
 }
 
 /** Junta meses seguidos de fatura zerada numa linha só ("jan a abr: R$ 0"), pra não pesar mais que a fatura que existe. */
-export function agruparFaturas<F extends { mes: string; total: number }>(fs: F[]): ({ tipo: 'mes'; f: F } | { tipo: 'zeros'; de: string; ate: string })[] {
+export function agruparFaturas<F extends { mes: string; total: number }>(
+  fs: F[],
+): ({ tipo: 'mes'; f: F } | { tipo: 'zeros'; de: string; ate: string })[] {
   const out: ({ tipo: 'mes'; f: F } | { tipo: 'zeros'; de: string; ate: string })[] = []
   for (const f of fs) {
     const ult = out[out.length - 1]
@@ -320,10 +362,24 @@ export function textoPrivado<T>(texto: T, oculto = valoresOcultos()): T {
   return (oculto && typeof texto === 'string' && texto !== '' ? '•••' : texto) as T
 }
 
-
 /** Único acesso ao clipboard; sem versão segura explícita, bloqueia com aviso. */
-export async function copiarProtegido(texto: string, protegido?: string, avisar: (s: string) => void = s => { if (typeof window !== 'undefined') window.alert?.(s) }, oculto = valoresOcultos()): Promise<boolean> {
-  if (oculto && protegido === undefined) { avisar('Abra o olho para copiar este conteúdo privado.'); return false }
-  try { await navigator.clipboard.writeText(oculto ? protegido! : texto); return true }
-  catch { avisar('Não foi possível copiar. Tente novamente.'); return false }
+export async function copiarProtegido(
+  texto: string,
+  protegido?: string,
+  avisar: (s: string) => void = s => {
+    if (typeof window !== 'undefined') window.alert?.(s)
+  },
+  oculto = valoresOcultos(),
+): Promise<boolean> {
+  if (oculto && protegido === undefined) {
+    avisar('Abra o olho para copiar este conteúdo privado.')
+    return false
+  }
+  try {
+    await navigator.clipboard.writeText(oculto ? protegido! : texto)
+    return true
+  } catch {
+    avisar('Não foi possível copiar. Tente novamente.')
+    return false
+  }
 }

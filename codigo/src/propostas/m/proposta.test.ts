@@ -21,30 +21,47 @@ beforeAll(async () => {
 afterAll(() => vi.useRealTimers())
 
 function renderizar(tema: Tema, dispositivo: Dispositivo, dados = exemplo, oculto = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: oculto },
-    createElement(Proposta, { tema, dispositivo, dados })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: oculto },
+      createElement(Proposta, { tema, dispositivo, dados }),
+    ),
+  )
 }
 
 function comTarefaPrivada() {
   const dados = structuredClone(exemplo)
-  dados.pendencias.fila = { ...dados.pendencias.fila, estado: 'pronto', valor: [{
-    id: 'revisao-privada', funcionario: dados.funcionarios.valor![0].id, perguntaCurta: textoPrivado,
-    valor: { estado: 'pronto', valor: 98765.43, unidade: 'reais', natureza: 'previsto' },
-  }] }
+  dados.pendencias.fila = {
+    ...dados.pendencias.fila,
+    estado: 'pronto',
+    valor: [
+      {
+        id: 'revisao-privada',
+        funcionario: dados.funcionarios.valor![0].id,
+        perguntaCurta: textoPrivado,
+        valor: { estado: 'pronto', valor: 98765.43, unidade: 'reais', natureza: 'previsto' },
+      },
+    ],
+  }
   dados.plano2029.progressao = { ...dados.plano2029.progressao, estado: 'pronto', valor: 73.25 }
   return dados
 }
 
 it.each([
-  ['claro', 'celular'], ['escuro', 'celular'], ['claro', 'desktop'], ['escuro', 'desktop'],
+  ['claro', 'celular'],
+  ['escuro', 'celular'],
+  ['claro', 'desktop'],
+  ['escuro', 'desktop'],
 ] as const)('renderiza %s em %s com a ordem da Central e um único h1', (tema, dispositivo) => {
   const html = renderizar(tema, dispositivo)
   expect(html).toContain(`data-tema="${tema}" data-dispositivo="${dispositivo}"`)
   expect(html.match(/<h1\b/g)).toHaveLength(1)
   expect(html.match(/>Exemplo</g)).toHaveLength(1)
-  const secoes = dispositivo === 'celular'
-    ? ['m-referencias"', 'm-escritorio"', 'm-fila"', 'm-rumo"', 'm-motores"', 'm-bento"']
-    : ['m-escritorio"', 'm-fila"', 'm-rumo"', 'm-bento"', 'm-referencias"']
+  const secoes =
+    dispositivo === 'celular'
+      ? ['m-referencias"', 'm-escritorio"', 'm-fila"', 'm-rumo"', 'm-motores"', 'm-bento"']
+      : ['m-escritorio"', 'm-fila"', 'm-rumo"', 'm-bento"', 'm-referencias"']
   let ultima = -1
   for (const secao of secoes) {
     const posicao = html.indexOf(secao)
@@ -68,7 +85,9 @@ it('retira o texto livre e a geometria do avanço quando o olho fecha', () => {
   expect(fechado).toContain('aria-label="Valor oculto"')
   expect(fechado).toContain('class="m-caminho"')
   expect(fechado).toContain('Tarefa pendente')
-  expect(fechado).not.toMatch(/R\$|21\.293,82|73,25%|73,3|31\/79|98\.765,43|m-posicao|m-avanco|data-numero-financeiro|<progress|<meter|aria-valuenow/)
+  expect(fechado).not.toMatch(
+    /R\$|21\.293,82|73,25%|73,3|31\/79|98\.765,43|m-posicao|m-avanco|data-numero-financeiro|<progress|<meter|aria-valuenow/,
+  )
 })
 
 it('protege o Assessor da Casa mesmo com um snapshot financeiro completo e o olho aberto', () => {
@@ -113,7 +132,7 @@ it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () =>
   const codigo = String(readFileSync(new URL('./Escritorio.tsx', import.meta.url), 'utf8'))
   expect(codigo).toContain("from '../comuns/Escritorio3D'")
   expect(codigo).not.toMatch(/EscritorioMaquete|\bvalores=/)
-  expect(codigo).toMatch(/<Escritorio3D completo[\s\S]*variante="grande"/)
+  expect(codigo).toMatch(/<Escritorio3D\s+completo[\s\S]*variante="grande"/)
   const html = renderizar('claro', 'desktop')
   expect(html).toContain('class="m-palco"')
   const equipe = html.match(/<ul class="m-equipe">(.*?)<\/ul>/)?.[1] ?? ''
@@ -131,7 +150,9 @@ it('entrega a fila inteira no celular e abre com a planta toda nos dois disposit
   const dados = comTarefaPrivada()
   const tarefa = dados.pendencias.fila.valor![0]
   dados.pendencias.fila.valor = Array.from({ length: 6 }, (_, indice) => ({
-    ...tarefa, id: 'tarefa-' + indice, perguntaCurta: 'Decisão ' + (indice + 1),
+    ...tarefa,
+    id: 'tarefa-' + indice,
+    perguntaCurta: 'Decisão ' + (indice + 1),
   }))
   const celular = renderizar('claro', 'celular', dados)
   const desktop = renderizar('claro', 'desktop', dados)
@@ -162,32 +183,64 @@ it('tem alvo mínimo, destaque verde, tipografia tabular, ilustrações escondid
   expect(css).not.toMatch(/gradient\s*\(|backdrop-filter|background-clip:\s*text|border-(left|inline-start)\s*:|neon/i)
 })
 
-it.skipIf(!chromium)('mede o layout e aciona menu, funcionário e fila no Chromium', async () => {
-  const { medicoes, passos } = await verificarNavegador(comTarefaPrivada())
-  expect(medicoes).toHaveLength(8)
-  for (const [i, medida] of medicoes.entries()) {
-    expect([medida.largura, medida.altura]).toEqual([[375, 812], [390, 844], [1280, 800], [1440, 800]][i % 4])
-    expect(medida, JSON.stringify(medida)).toMatchObject({ semTransbordo: true, numerosInteiros: true, menuFixo: true, ordem: true })
-    expect(medida.controles.length).toBeGreaterThan(10)
-    expect(medida.controles.filter(item => item.largura < 44 || item.altura < 44 || !item.nome.trim())).toEqual([])
-    expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
-    if (medida.largura < 400) {
-      expect(medida.secoes).toHaveLength(5)
-      expect(Math.min(...medida.secoes)).toBeGreaterThanOrEqual(medida.altura * .85)
-      expect(medida.cena).toBeGreaterThanOrEqual(medida.altura)
-      expect(medida.contrasteTrilha).toBeGreaterThanOrEqual(3)
-      expect(medida.fimVisivel).toBe(true)
-      expect(medida.numeros).toHaveLength(3)
-      expect(medida.referenciasNaDobra).toBe(4)
-    } else {
-      expect(medida.cena).toBeGreaterThanOrEqual(510)
-      expect(medida.numeros).toHaveLength(3)
+it.skipIf(!chromium)(
+  'mede o layout e aciona menu, funcionário e fila no Chromium',
+  async () => {
+    const { medicoes, passos } = await verificarNavegador(comTarefaPrivada())
+    expect(medicoes).toHaveLength(8)
+    for (const [i, medida] of medicoes.entries()) {
+      expect([medida.largura, medida.altura]).toEqual(
+        [
+          [375, 812],
+          [390, 844],
+          [1280, 800],
+          [1440, 800],
+        ][i % 4],
+      )
+      expect(medida, JSON.stringify(medida)).toMatchObject({
+        semTransbordo: true,
+        numerosInteiros: true,
+        menuFixo: true,
+        ordem: true,
+      })
+      expect(medida.controles.length).toBeGreaterThan(10)
+      expect(medida.controles.filter(item => item.largura < 44 || item.altura < 44 || !item.nome.trim())).toEqual([])
+      expect(medida.contraste).toBeGreaterThanOrEqual(4.5)
+      if (medida.largura < 400) {
+        expect(medida.secoes).toHaveLength(5)
+        expect(Math.min(...medida.secoes)).toBeGreaterThanOrEqual(medida.altura * 0.85)
+        expect(medida.cena).toBeGreaterThanOrEqual(medida.altura)
+        expect(medida.contrasteTrilha).toBeGreaterThanOrEqual(3)
+        expect(medida.fimVisivel).toBe(true)
+        expect(medida.numeros).toHaveLength(3)
+        expect(medida.referenciasNaDobra).toBe(4)
+      } else {
+        expect(medida.cena).toBeGreaterThanOrEqual(510)
+        expect(medida.numeros).toHaveLength(3)
+      }
+      console.info(`M · ${i < 4 ? 'claro' : 'escuro'} · ${medida.largura}px · ${medida.numeros.length} acima da dobra`)
     }
-    console.info(`M · ${i < 4 ? 'claro' : 'escuro'} · ${medida.largura}px · ${medida.numeros.length} acima da dobra`)
-  }
-  expect(passos).toEqual({
-    Orçamento: true, Faturas: true, Escritório: true, Início: true, mais: true, cena: true, postoFocavel: true, ficha: true,
-    fechar: true, detalhe: true, olho: true, feita: true, desfeita: true, adiada: true, retomada: true,
-    sala: true, panorama: true, fichaOculta: true, idaEVolta: true,
-  })
-}, 30000)
+    expect(passos).toEqual({
+      Orçamento: true,
+      Faturas: true,
+      Escritório: true,
+      Início: true,
+      mais: true,
+      cena: true,
+      postoFocavel: true,
+      ficha: true,
+      fechar: true,
+      detalhe: true,
+      olho: true,
+      feita: true,
+      desfeita: true,
+      adiada: true,
+      retomada: true,
+      sala: true,
+      panorama: true,
+      fichaOculta: true,
+      idaEVolta: true,
+    })
+  },
+  30000,
+)

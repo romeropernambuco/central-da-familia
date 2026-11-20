@@ -54,95 +54,439 @@ import ts from 'typescript'
 import { readFileSync } from 'node:fs'
 
 const roots: Root[] = []
-afterEach(async () => { for (const r of roots.splice(0)) await act(async () => r.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); esconderValores(false); desfazer.limpar() })
-const hoje = '2026-11-17', mes = '2026-11'
+afterEach(async () => {
+  for (const r of roots.splice(0)) await act(async () => r.unmount())
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+  esconderValores(false)
+  desfazer.limpar()
+})
+const hoje = '2026-11-17',
+  mes = '2026-11'
 function mundo(n = 1) {
-  let gasto = 20 * n, total = 500 * n, pago = false, recebido = false, contou = false, feira = false, saldo = 100 * n
-  const familia = { id: 'f', membroId: 'm', membroNome: 'Teste', nome: 'Fictícia', papel: 'casal', envelopeId: 'eu' } as FamiliaMinha
-  const config: Record<string, any> = { fontes_receita: { r: { origem: 'empresa', certeza: 'garantido', recorrencia: 'mensal', fim: '2026-12' } }, receitas_controle: {}, entradas: [{ data: hoje, valor: 30 * n }] }
-  const resumo = () => ({ hoje, explicacao: [], pode_gastar_hoje: 900, dias_restantes: 13, livre_mes: 100 - gasto, colchao: 0, envelopes: [{ id: 'eu', nome: 'Meu', regra: 'mensal', limite_mes: 100, gasto_mes: gasto, livre: 100 - gasto, hoje: 100 - gasto, meu: true }, { id: 'casa', nome: 'Casa', casa: true, hoje: 7, regra: 'mensal', limite_mes: 100, gasto_mes: 0, livre: 100 }] } as ResumoHoje)
-  const recebimentos = () => [{ id: 'r', valor: 125 * n, certo: true, mes_previsto: '2026-10', mes_novo: null, descricao: 'Empresa', recebido_em: recebido ? hoje : null, valor_recebido: recebido ? 125 * n : null, meu: true, dono_membro: 'm', dono_nome: 'Teste', tipo: 'contrato' as const }]
-  const gastos = () => [{ id: 'g', valor: gasto, data: hoje, envelope_id: 'eu', cartao_id: null, descricao: 'Gasto', criado_em: hoje, apagado_em: null }]
-  const g = () => normalizaGuardado({ total, rendeu_hoje_liquido: n, rendeu_mes_liquido: 2 * n, rendeu_desde_inicio_liquido: 3 * n, aplicacoes: [{ id: 'a', saldo: total, nome: 'Aplicação', banco: 'Banco', tipo: 'cdb', titular: null }], por_dia_30: [], explicacao: [] }, hoje)
-  const e = () => ({ precisa_total: 8, precisa_de_voce: feira ? [] : [{ id: 'feira_feita:2026-11-16', funcionario: 'fiscal', assunto: 'Conferir feira', opcoes: [], espera_dias: 1, vi: 'Conferir feira' }], funcionarios: [], entregue: [], trabalhando: [] })
+  let gasto = 20 * n,
+    total = 500 * n,
+    pago = false,
+    recebido = false,
+    contou = false,
+    feira = false,
+    saldo = 100 * n
+  const familia = {
+    id: 'f',
+    membroId: 'm',
+    membroNome: 'Teste',
+    nome: 'Fictícia',
+    papel: 'casal',
+    envelopeId: 'eu',
+  } as FamiliaMinha
+  const config: Record<string, any> = {
+    fontes_receita: { r: { origem: 'empresa', certeza: 'garantido', recorrencia: 'mensal', fim: '2026-12' } },
+    receitas_controle: {},
+    entradas: [{ data: hoje, valor: 30 * n }],
+  }
+  const resumo = () =>
+    ({
+      hoje,
+      explicacao: [],
+      pode_gastar_hoje: 900,
+      dias_restantes: 13,
+      livre_mes: 100 - gasto,
+      colchao: 0,
+      envelopes: [
+        {
+          id: 'eu',
+          nome: 'Meu',
+          regra: 'mensal',
+          limite_mes: 100,
+          gasto_mes: gasto,
+          livre: 100 - gasto,
+          hoje: 100 - gasto,
+          meu: true,
+        },
+        { id: 'casa', nome: 'Casa', casa: true, hoje: 7, regra: 'mensal', limite_mes: 100, gasto_mes: 0, livre: 100 },
+      ],
+    }) as ResumoHoje
+  const recebimentos = () => [
+    {
+      id: 'r',
+      valor: 125 * n,
+      certo: true,
+      mes_previsto: '2026-10',
+      mes_novo: null,
+      descricao: 'Empresa',
+      recebido_em: recebido ? hoje : null,
+      valor_recebido: recebido ? 125 * n : null,
+      meu: true,
+      dono_membro: 'm',
+      dono_nome: 'Teste',
+      tipo: 'contrato' as const,
+    },
+  ]
+  const gastos = () => [
+    {
+      id: 'g',
+      valor: gasto,
+      data: hoje,
+      envelope_id: 'eu',
+      cartao_id: null,
+      descricao: 'Gasto',
+      criado_em: hoje,
+      apagado_em: null,
+    },
+  ]
+  const g = () =>
+    normalizaGuardado(
+      {
+        total,
+        rendeu_hoje_liquido: n,
+        rendeu_mes_liquido: 2 * n,
+        rendeu_desde_inicio_liquido: 3 * n,
+        aplicacoes: [{ id: 'a', saldo: total, nome: 'Aplicação', banco: 'Banco', tipo: 'cdb', titular: null }],
+        por_dia_30: [],
+        explicacao: [],
+      },
+      hoje,
+    )
+  const e = () => ({
+    precisa_total: 8,
+    precisa_de_voce: feira
+      ? []
+      : [
+          {
+            id: 'feira_feita:2026-11-16',
+            funcionario: 'fiscal',
+            assunto: 'Conferir feira',
+            opcoes: [],
+            espera_dias: 1,
+            vi: 'Conferir feira',
+          },
+        ],
+    funcionarios: [],
+    entregue: [],
+    trabalhando: [],
+  })
   const fs = () => [{ cartao_id: 'c', cartao: 'Cartão', mes, vencimento: '2026-11-25', total: 40 * n, fechada: true }]
   const banco = () => [{ cartao_id: 'c', mes, valor_banco: 50 * n, paga_em: pago ? hoje : null }]
-  const estoque = () => ({ itens: [{ id: 'arroz', nome: 'Arroz', categoria: 'alimento', ativo: true }], contagens: contou ? [{ id: 'ct', semana: '2026-11-16', data: hoje, contado_por: 'm', itens: [{ item_id: 'arroz', estado: 'acabou' as const }] }] : [] })
-  const feiras = () => feira ? [{ id: 'feira', semana: '2026-11-16', data: hoje, tem_nota: false, sem_nota_motivo: null, loja: null, feita_por: 'm' }] : []
-  const imoveis = [{ id: 'i', apelido: 'Casa', valor: 10000 * n, aluguel: 200, custos: 20, vacancia: '0.08', uso: 'aluga', tem_contrato: true, contrato_ate: '2030-12', meu: true, dono_membro: 'm', dono_nome: 'Teste' }] as any
-  const desejos = [{ id: 'd', nome: 'Viagem', valor: 1, mes: '2028-12', situacao: 'pensando', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false, meu: true, dono_membro: 'm', dono_nome: 'Teste' }] as any
+  const estoque = () => ({
+    itens: [{ id: 'arroz', nome: 'Arroz', categoria: 'alimento', ativo: true }],
+    contagens: contou
+      ? [
+          {
+            id: 'ct',
+            semana: '2026-11-16',
+            data: hoje,
+            contado_por: 'm',
+            itens: [{ item_id: 'arroz', estado: 'acabou' as const }],
+          },
+        ]
+      : [],
+  })
+  const feiras = () =>
+    feira
+      ? [
+          {
+            id: 'feira',
+            semana: '2026-11-16',
+            data: hoje,
+            tem_nota: false,
+            sem_nota_motivo: null,
+            loja: null,
+            feita_por: 'm',
+          },
+        ]
+      : []
+  const imoveis = [
+    {
+      id: 'i',
+      apelido: 'Casa',
+      valor: 10000 * n,
+      aluguel: 200,
+      custos: 20,
+      vacancia: '0.08',
+      uso: 'aluga',
+      tem_contrato: true,
+      contrato_ate: '2030-12',
+      meu: true,
+      dono_membro: 'm',
+      dono_nome: 'Teste',
+    },
+  ] as any
+  const desejos = [
+    {
+      id: 'd',
+      nome: 'Viagem',
+      valor: 1,
+      mes: '2028-12',
+      situacao: 'pensando',
+      volta_de: 'nada',
+      volta: 0,
+      volta_mes: null,
+      antecipado: null,
+      volta_certa: false,
+      meu: true,
+      dono_membro: 'm',
+      dono_nome: 'Teste',
+    },
+  ] as any
   const contas = () => [{ id: 's', nome: 'Corrente', valor: saldo, conferidoEm: '2026-11-16' }]
-  const entrada = (): FuturoEntrada => ({ hoje, saldo_caixa: saldo * 100, aplicacoes: [], recebimentos: [], compromissos: [], dividas: [], desvios: [], desejos: [], imoveis: [], parametros: { mes_base: mes, virada: '2029-01', gasto_2029_hoje: 300000, renda_certa_2029: 0, margem: '0.1', taxa_real_trabalho: '0.04', taxa_bruta_ano: { 2026: '0.12', 2027: '0.1', 2028: '0.09' }, ipca_ano: { 2026: '0.04', 2027: '0.04', 2028: '0.04' }, aliq_proj: '0.225', piso_meses: 6, teto_mes: 100000, mes_reajuste: 1 } })
-  const interna = { modo: 'real', resumoHoje: vi.fn(async () => resumo()), lancamentos: vi.fn(async () => gastos()), guardadoHoje: vi.fn(async () => g()), futuroEntradas: vi.fn(async () => ({ entrada: entrada(), confirmar: [] })), faturas: vi.fn(async () => fs()), faturasBanco: vi.fn(async () => banco()), recebimentos: vi.fn(async () => recebimentos()), config: vi.fn(async (_f: string, k: string, padrao: unknown) => config[k] ?? padrao), salvarConfig: async (_f: string, k: string, v: unknown) => { config[k] = v }, escritorioHoje: vi.fn(async () => e()), estoque: vi.fn(async () => estoque()), feiras: vi.fn(async () => feiras()), imoveis: vi.fn(async () => imoveis), desejos: vi.fn(async () => desejos), saldosConta: vi.fn(async () => contas()), membros: async () => [],
-    lancar: async () => { gasto += 10 }, faturaInformar: async () => { pago = true }, recebimentoMudar: async () => { recebido = true }, guardadoMovimentar: async () => { total += 100 }, feiraRegistrar: async () => { feira = true }, estoqueContar: async () => { contou = true }, salvarSaldoConta: async (_f: string, c: { valor: number }) => { saldo = c.valor },
+  const entrada = (): FuturoEntrada => ({
+    hoje,
+    saldo_caixa: saldo * 100,
+    aplicacoes: [],
+    recebimentos: [],
+    compromissos: [],
+    dividas: [],
+    desvios: [],
+    desejos: [],
+    imoveis: [],
+    parametros: {
+      mes_base: mes,
+      virada: '2029-01',
+      gasto_2029_hoje: 300000,
+      renda_certa_2029: 0,
+      margem: '0.1',
+      taxa_real_trabalho: '0.04',
+      taxa_bruta_ano: { 2026: '0.12', 2027: '0.1', 2028: '0.09' },
+      ipca_ano: { 2026: '0.04', 2027: '0.04', 2028: '0.04' },
+      aliq_proj: '0.225',
+      piso_meses: 6,
+      teto_mes: 100000,
+      mes_reajuste: 1,
+    },
+  })
+  const interna = {
+    modo: 'real',
+    resumoHoje: vi.fn(async () => resumo()),
+    lancamentos: vi.fn(async () => gastos()),
+    guardadoHoje: vi.fn(async () => g()),
+    futuroEntradas: vi.fn(async () => ({ entrada: entrada(), confirmar: [] })),
+    faturas: vi.fn(async () => fs()),
+    faturasBanco: vi.fn(async () => banco()),
+    recebimentos: vi.fn(async () => recebimentos()),
+    config: vi.fn(async (_f: string, k: string, padrao: unknown) => config[k] ?? padrao),
+    salvarConfig: async (_f: string, k: string, v: unknown) => {
+      config[k] = v
+    },
+    escritorioHoje: vi.fn(async () => e()),
+    estoque: vi.fn(async () => estoque()),
+    feiras: vi.fn(async () => feiras()),
+    imoveis: vi.fn(async () => imoveis),
+    desejos: vi.fn(async () => desejos),
+    saldosConta: vi.fn(async () => contas()),
+    membros: async () => [],
+    lancar: async () => {
+      gasto += 10
+    },
+    faturaInformar: async () => {
+      pago = true
+    },
+    recebimentoMudar: async () => {
+      recebido = true
+    },
+    guardadoMovimentar: async () => {
+      total += 100
+    },
+    feiraRegistrar: async () => {
+      feira = true
+    },
+    estoqueContar: async () => {
+      contou = true
+    },
+    salvarSaldoConta: async (_f: string, c: { valor: number }) => {
+      saldo = c.valor
+    },
     backupLer: async () => ({ gasto, total, pago, recebido, contou, feira, saldo }),
-    backupRestaurar: async (_f: string, v: any) => { ({ gasto, total, pago, recebido, contou, feira, saldo } = v) },
+    backupRestaurar: async (_f: string, v: any) => {
+      ;({ gasto, total, pago, recebido, contou, feira, saldo } = v)
+    },
   } as unknown as Api
   const api = protegerApi(interna)
   definirEscopoLeitura(api, 'sessao-ficticia', familia)
-  return { api, interna, familia, resumo, config, recebimentos, gastos, g, e, fs, banco, estoque, feiras, imoveis, desejos, contas, entrada }
+  return {
+    api,
+    interna,
+    familia,
+    resumo,
+    config,
+    recebimentos,
+    gastos,
+    g,
+    e,
+    fs,
+    banco,
+    estoque,
+    feiras,
+    imoveis,
+    desejos,
+    contas,
+    entrada,
+  }
 }
-async function montar(m = mundo(), origem?: ReactNode, papel = 'casal', largura?: number, storage = { getItem: () => null, setItem() {}, removeItem() {} }) {
-  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
+async function montar(
+  m = mundo(),
+  origem?: ReactNode,
+  papel = 'casal',
+  largura?: number,
+  storage = { getItem: () => null, setItem() {}, removeItem() {} },
+) {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(hoje + 'T12:00:00Z'))
   const doc = new DocumentoTeste()
-  Object.assign(NoTeste.prototype, { focus() {}, closest() { return null }, querySelectorAll() { return [] }, scrollIntoView() {} })
+  Object.assign(NoTeste.prototype, {
+    focus() {},
+    closest() {
+      return null
+    },
+    querySelectorAll() {
+      return []
+    },
+    scrollIntoView() {},
+  })
   Object.assign(doc.documentElement, { dataset: {} })
-  vi.stubGlobal('document', doc); vi.stubGlobal('window', Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }))
-  if (largura !== undefined) window.matchMedia = consulta => Object.assign(new EventTarget(), { matches: largura >= Number(consulta.match(/\d+/)?.[0]) }) as MediaQueryList
-  vi.stubGlobal('localStorage', storage);
-  vi.stubGlobal('addEventListener', window.addEventListener.bind(window)); vi.stubGlobal('removeEventListener', window.removeEventListener.bind(window))
-  Object.assign(doc.body, { classList: { toggle() {}, remove() {} } }); vi.stubGlobal('Element', NoTeste)
-  vi.stubGlobal('location', { hash: '#/inicio' }); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-  vi.stubGlobal('MutationObserver', class { observe() {} disconnect() {} })
-  const box = doc.createElement('div'); doc.body.appendChild(box)
-  const root = createRoot(box as unknown as HTMLElement); roots.push(root)
+  vi.stubGlobal('document', doc)
+  vi.stubGlobal(
+    'window',
+    Object.assign(new EventTarget(), { document: doc, HTMLElement: NoTeste, HTMLIFrameElement: class {} }),
+  )
+  if (largura !== undefined)
+    window.matchMedia = consulta =>
+      Object.assign(new EventTarget(), { matches: largura >= Number(consulta.match(/\d+/)?.[0]) }) as MediaQueryList
+  vi.stubGlobal('localStorage', storage)
+  vi.stubGlobal('addEventListener', window.addEventListener.bind(window))
+  vi.stubGlobal('removeEventListener', window.removeEventListener.bind(window))
+  Object.assign(doc.body, { classList: { toggle() {}, remove() {} } })
+  vi.stubGlobal('Element', NoTeste)
+  vi.stubGlobal('location', { hash: '#/inicio' })
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  vi.stubGlobal(
+    'MutationObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  )
+  const box = doc.createElement('div')
+  doc.body.appendChild(box)
+  const root = createRoot(box as unknown as HTMLElement)
+  roots.push(root)
   const familia = { ...m.familia, papel } as FamiliaMinha
   definirEscopoLeitura(m.api, 'sessao-ficticia', familia)
   let r!: Resumo
-  function Captura() { r = useResumoFamilia().resumo; return null }
+  function Captura() {
+    r = useResumoFamilia().resumo
+    return null
+  }
   let oculto = false
-  const render = async () => { esconderValores(oculto); await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api: m.api, familia, resumo: m.resumo(), versao: 0, oculto, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, toast() {}, recarregar: async () => {}, abrirLancar() {}, sessao: { userId: 'sessao-ficticia', familias: [familia] } } as unknown as Ctx }, createElement(Fragment, null, papel === 'equipe' ? null : createElement(Captura), createElement(telaInicio ? Inicio : ResumoFamilia), createElement('div', { 'data-origem': true }, origem))))) }
+  const render = async () => {
+    esconderValores(oculto)
+    await act(async () =>
+      root.render(
+        createElement(
+          ContextoApp.Provider,
+          {
+            value: {
+              api: m.api,
+              familia,
+              resumo: m.resumo(),
+              versao: 0,
+              oculto,
+              tentar: async (f: () => Promise<unknown>) => {
+                await f()
+                return true
+              },
+              toast() {},
+              recarregar: async () => {},
+              abrirLancar() {},
+              sessao: { userId: 'sessao-ficticia', familias: [familia] },
+            } as unknown as Ctx,
+          },
+          createElement(
+            Fragment,
+            null,
+            papel === 'equipe' ? null : createElement(Captura),
+            createElement(telaInicio ? Inicio : ResumoFamilia),
+            createElement('div', { 'data-origem': true }, origem),
+          ),
+        ),
+      ),
+    )
+  }
   await render()
-  if (m.api.modo === 'exemplo') await act(async () => { await new Promise(r => setTimeout(r, 200)) })
-  return { m, box, get r() { return r }, render, ocultar: async () => { oculto = !oculto; await render() }, bloco: (k: keyof Resumo) => box.buscar(x => x.getAttribute('data-bloco') === k)[0], origem: () => box.buscar(x => x.getAttribute('data-origem') === 'true')[0] }
+  if (m.api.modo === 'exemplo')
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 200))
+    })
+  return {
+    m,
+    box,
+    get r() {
+      return r
+    },
+    render,
+    ocultar: async () => {
+      oculto = !oculto
+      await render()
+    },
+    bloco: (k: keyof Resumo) => box.buscar(x => x.getAttribute('data-bloco') === k)[0],
+    origem: () => box.buscar(x => x.getAttribute('data-origem') === 'true')[0],
+  }
 }
 
 it.each([1, 2, 3])('cada bloco usa o selector oficial, cenário %s', async n => {
-  const m = mundo(n), a = await montar(m)
+  const m = mundo(n),
+    a = await montar(m)
   expect(a.r.saldoConta.valor).toEqual({ unidade: 'reais', valor: saldoDasContas(m.contas()).valor })
   expect(a.r.podeGastarHoje.valor?.valor.valor).toBe(destaqueOrcamento(m.resumo(), 'eu', hoje, FUSO).valor)
   expect(a.r.aplicacoes.valor).toEqual({ unidade: 'reais', ...totaisGuardado(m.g()) })
   expect(a.r.imoveis.valor?.valor.valor).toBe(totalImoveis(m.imoveis))
   expect(a.r.faturas.valor).toEqual(faturasAConferir(m.fs(), m.banco(), hoje, '2026-12-17'))
   expect(a.r.recebimentos.valor).toEqual(recebimentosDoMes(m.recebimentos(), m.config.fontes_receita, {}, mes))
-  expect(a.r.movimentacaoMes.valor).toEqual({ unidade: 'reais', ...totaisDoMes(mes, hoje, m.gastos(), m.recebimentos(), m.config.entradas, m.config.fontes_receita, {}) })
+  expect(a.r.movimentacaoMes.valor).toEqual({
+    unidade: 'reais',
+    ...totaisDoMes(mes, hoje, m.gastos(), m.recebimentos(), m.config.entradas, m.config.fontes_receita, {}),
+  })
   expect(a.r.casa.valor).toEqual(situacaoCasa(m.e() as any, m.feiras(), m.estoque(), '2026-11-16'))
   expect(a.r.desejos.valor).toEqual(totaisDesejos(m.desejos))
   expect(a.r.pendencias.valor?.total).toBe(totalPendencias(m.e() as any))
   const ent = entradaDoCenario({ entrada: m.entrada(), confirmar: [] }, 'garantido')!
-  expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(ent), ent), confirmar: [], conferenciaAntiga: false })
+  expect(a.r.plano2029.valor).toEqual({
+    unidade: 'centavos',
+    ...numerosRumo2029(futuro(ent), ent),
+    confirmar: [],
+    conferenciaAntiga: false,
+  })
   expect(a.r.saldoConta.conferidoEm).toBe('2026-11-16')
   expect(a.r.aplicacoes.conferidoEm).toBeNull()
   expect(a.bloco('saldoConta').textContent).toContain('Conferido em')
 })
 
-it.each([1, 2, 3])('f36: principal 2029 é a falta oficial com margem e coincide com o compacto, cenário %s', async n => {
-  const a = await montar(mundo(n), createElement(RumoA2029, { compacto: true }))
-  const principal = a.bloco('plano2029').buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent
-  const e = entradaDoCenario({ entrada: a.m.entrada(), confirmar: [] }, 'garantido')!
-  const falta = numerosRumo2029(futuro(e), e).falta_com_margem!
-  const numero = (Math.abs(falta) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  expect(principal).toContain(numero)
-  const normalizar = (s: string) => s.replace(/[\s.]/g, '').replace(/,00/g, '')
-  expect(normalizar(a.origem().textContent).toLowerCase()).toContain(normalizar(principal).toLowerCase().replace(/,00/g, ''))
-  expect(a.bloco('plano2029').textContent).toContain('com margem de segurança')
-  expect(a.bloco('plano2029').textContent).toContain('estimado')
-})
+it.each([1, 2, 3])(
+  'f36: principal 2029 é a falta oficial com margem e coincide com o compacto, cenário %s',
+  async n => {
+    const a = await montar(mundo(n), createElement(RumoA2029, { compacto: true }))
+    const principal = a.bloco('plano2029').buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent
+    const e = entradaDoCenario({ entrada: a.m.entrada(), confirmar: [] }, 'garantido')!
+    const falta = numerosRumo2029(futuro(e), e).falta_com_margem!
+    const numero = (Math.abs(falta) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    expect(principal).toContain(numero)
+    const normalizar = (s: string) => s.replace(/[\s.]/g, '').replace(/,00/g, '')
+    expect(normalizar(a.origem().textContent).toLowerCase()).toContain(
+      normalizar(principal).toLowerCase().replace(/,00/g, ''),
+    )
+    expect(a.bloco('plano2029').textContent).toContain('com margem de segurança')
+    expect(a.bloco('plano2029').textContent).toContain('estimado')
+  },
+)
 
 it('f36: expansão local conserva o ritmo da aba, hoje já saiu, Casa e um único principal', async () => {
   const m = mundo()
   const base = m.resumo
-  m.resumo = () => { const r = base(); Object.assign(r.envelopes[0], { ate_domingo: 838.12, gasto_hoje: 12.34 }); return r }
+  m.resumo = () => {
+    const r = base()
+    Object.assign(r.envelopes[0], { ate_domingo: 838.12, gasto_hoje: 12.34 })
+    return r
+  }
   ;(m.interna.resumoHoje as any).mockImplementation(async () => m.resumo())
   const a = await montar(m, createElement(RitmoMes, { e: m.resumo().envelopes[0] }))
   const bloco = a.bloco('podeGastarHoje')
@@ -153,7 +497,9 @@ it('f36: expansão local conserva o ritmo da aba, hoje já saiu, Casa e um únic
   await act(async () => abrir.click())
   // Aguarda o chunk do gráfico; mantém a mesma verificação após Suspense.
   for (let i = 0; i < 30 && !bloco.textContent.includes('Ainda pode gastar até domingo'); i++)
-    await act(async () => { await new Promise(r => setTimeout(r, 10)) })
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 10))
+    })
   expect(abrir.getAttribute('aria-expanded')).toBe('true')
   expect(bloco.textContent).toContain('Ainda pode gastar até domingo')
   expect(bloco.textContent).toContain('838,12')
@@ -171,13 +517,16 @@ it('f36: expansão local conserva o ritmo da aba, hoje já saiu, Casa e um únic
 })
 
 it('f36: Rendeu hoje líquido coincide com CartaoGuardado', async () => {
-  const m = mundo(3), base = m.g
+  const m = mundo(3),
+    base = m.g
   m.g = () => ({ ...base(), rendeu_hoje_liquido: 3.27 })
   ;(m.interna.guardadoHoje as any).mockImplementation(async () => m.g())
   const a = await montar(m, createElement(CartaoGuardado))
   expect(a.bloco('aplicacoes').textContent).toContain('Rendeu hoje')
   const normalizar = (s: string) => s.replace(/[\s.]/g, '').replace(/,00/g, '')
-  const esperado = normalizar(`Rendeu hoje ${totaisGuardado(a.m.g()).hoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`)
+  const esperado = normalizar(
+    `Rendeu hoje ${totaisGuardado(a.m.g()).hoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+  )
   const frase = a.bloco('aplicacoes').buscar(x => x.getAttribute('class') === 'resumo-frase')[0]
   expect(normalizar(frase.textContent)).toBe(`${esperado}líquido`)
   const rendimento = a.origem().buscar(x => x.getAttribute('class') === 'guard-l dest')[0]
@@ -189,10 +538,41 @@ function mundoComEnvelopes() {
   const base = m.resumo
   m.resumo = () => {
     const r = base()
-    Object.assign(r.envelopes[0], { regra: 'diario', hoje: 101.33, valor_dia: 101.33, limite_mes: 620.18, gasto_mes: 120.12, livre: 500.06 })
-    Object.assign(r.envelopes[1], { nome: 'Feira de teste', regra: 'semanal', teto_semana: 181.51, gasto_semana: 32.37, hoje: 24.86, livre: 305.78 })
-    r.envelopes.push({ id: 'outro', nome: 'Outro titular', regra: 'diario', limite_mes: 740.14, gasto_mes: 346.78, livre: 393.36, hoje: 61.02, valor_dia: 61.02 })
-    r.placar_casal = r.envelopes.filter(e => !e.casa).map(e => ({ nome: e.nome, eu: e.id === 'eu', limite: e.limite_mes, gasto: e.gasto_mes, fecha: projecao(e.gasto_mes, e.limite_mes, hoje).fecha }))
+    Object.assign(r.envelopes[0], {
+      regra: 'diario',
+      hoje: 101.33,
+      valor_dia: 101.33,
+      limite_mes: 620.18,
+      gasto_mes: 120.12,
+      livre: 500.06,
+    })
+    Object.assign(r.envelopes[1], {
+      nome: 'Feira de teste',
+      regra: 'semanal',
+      teto_semana: 181.51,
+      gasto_semana: 32.37,
+      hoje: 24.86,
+      livre: 305.78,
+    })
+    r.envelopes.push({
+      id: 'outro',
+      nome: 'Outro titular',
+      regra: 'diario',
+      limite_mes: 740.14,
+      gasto_mes: 346.78,
+      livre: 393.36,
+      hoje: 61.02,
+      valor_dia: 61.02,
+    })
+    r.placar_casal = r.envelopes
+      .filter(e => !e.casa)
+      .map(e => ({
+        nome: e.nome,
+        eu: e.id === 'eu',
+        limite: e.limite_mes,
+        gasto: e.gasto_mes,
+        fecha: projecao(e.gasto_mes, e.limite_mes, hoje).fecha,
+      }))
     return r
   }
   vi.mocked(m.interna.resumoHoje).mockImplementation(async () => m.resumo())
@@ -209,7 +589,9 @@ const expandir = async (bloco: NoTeste) => {
 
 // Os testes deste arquivo conferem o Resumo da família completo; só quem precisa da tela inteira liga o Início.
 let telaInicio = false
-afterEach(() => { telaInicio = false })
+afterEach(() => {
+  telaInicio = false
+})
 
 it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre vêm do Meu orçamento', async id => {
   telaInicio = true
@@ -217,11 +599,15 @@ it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre v
   const e = m.resumo().envelopes.find(e => e.id === id)!
   const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
   if (id === 'outro') {
-    const botao = a.origem().buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(e.nome))[0]
+    const botao = a
+      .origem()
+      .buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(e.nome))[0]
     expect(botao).toBeDefined()
     await act(async () => botao.click())
   }
-  const cartao = envelope(a.box, id === 'eu' ? 'env-destaque' : 'env-compacto').find(x => x.textContent.includes(e.nome))!
+  const cartao = envelope(a.box, id === 'eu' ? 'env-destaque' : 'env-compacto').find(x =>
+    x.textContent.includes(e.nome),
+  )!
   expect(cartao).toBeDefined()
   const moeda = (v: number) => reais(v).replace(/\s/g, '')
   for (const n of [e.limite_mes, e.gasto_mes, e.livre]) {
@@ -229,7 +615,8 @@ it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre v
     expect(a.origem().textContent.replace(/\s/g, '')).toContain(moeda(n))
   }
   // no Início o número de hoje fica só na referência do topo; o cartão do Resumo não repete
-  const valorInicio = id === 'eu' ? a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0] : cartao
+  const valorInicio =
+    id === 'eu' ? a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0] : cartao
   expect(valorInicio.textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
   expect(a.origem().buscar(x => x.getAttribute('aria-label') === reais(e.hoje!)).length).toBeGreaterThan(0)
   if (id === 'eu') {
@@ -238,8 +625,12 @@ it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre v
     // trava do enxugamento: o número de hoje e o título dele não se repetem abaixo das referências do topo
     expect(inicio.textContent).not.toMatch(/101,33/)
     expect(inicio.textContent).not.toContain('Hoje você pode gastar')
-    expect(a.box.buscar(x => ['faturas', 'aplicacoes', 'pendencias'].includes(x.getAttribute('data-bloco') || ''))).toHaveLength(0)
-    expect(a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0].textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
+    expect(
+      a.box.buscar(x => ['faturas', 'aplicacoes', 'pendencias'].includes(x.getAttribute('data-bloco') || '')),
+    ).toHaveLength(0)
+    expect(
+      a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0].textContent.replace(/\s/g, ''),
+    ).toContain(moeda(e.hoje!))
   }
 })
 
@@ -250,8 +641,14 @@ it('f37: placar em Início traz as mesmas projeções dos dois orçamentos', asy
   const placar = a.box.buscar(x => x.tagName === 'SECTION' && x.getAttribute('class') === 'placar ok')[0]
   expect(placar.textContent).toContain('O casal, se continuar assim')
   for (const p of r.placar_casal!) {
-    expect(placar.buscar(x => x.tagName === 'LI' && x.textContent.startsWith(p.nome))[0].buscar(x => x.getAttribute('aria-label') === reais(p.fecha))).toHaveLength(1)
-    const botao = a.origem().buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(p.nome))[0]
+    expect(
+      placar
+        .buscar(x => x.tagName === 'LI' && x.textContent.startsWith(p.nome))[0]
+        .buscar(x => x.getAttribute('aria-label') === reais(p.fecha)),
+    ).toHaveLength(1)
+    const botao = a
+      .origem()
+      .buscar(x => x.tagName === 'BUTTON' && x.getAttribute('class') === 'pill' && x.textContent.startsWith(p.nome))[0]
     await act(async () => botao.click())
     expect(a.origem().textContent).toContain(`${reais(p.fecha)} de ${reais(p.limite)}`)
   }
@@ -265,12 +662,19 @@ it('f37: a linha diária e o livre semanal da Casa coincidem com a aba Casa', as
   expect(linha(a.origem())).toContain('24,86')
   const semanal = reais(149.14)
   expect(a.origem().buscar(x => x.getAttribute('aria-label') === semanal)).toHaveLength(1)
-  expect(envelope(a.box, 'env-compacto').find(x => x.textContent.includes('Feira de teste'))!.buscar(x => x.getAttribute('aria-label') === semanal)).toHaveLength(1)
+  expect(
+    envelope(a.box, 'env-compacto')
+      .find(x => x.textContent.includes('Feira de teste'))!
+      .buscar(x => x.getAttribute('aria-label') === semanal),
+  ).toHaveLength(1)
 })
 
 it('f37: o Início renderiza os valores sentinela dos seletores de envelope e Casa', async () => {
   const selecionar = orcamento.numeroEnvelope
-  vi.spyOn(orcamento, 'numeroEnvelope').mockImplementation((e, ...args) => ({ ...selecionar(e, ...args), valor: 8765.43 }))
+  vi.spyOn(orcamento, 'numeroEnvelope').mockImplementation((e, ...args) => ({
+    ...selecionar(e, ...args),
+    valor: 8765.43,
+  }))
   vi.spyOn(orcamento, 'disponivelHojeCasa').mockReturnValue(7654.32)
   const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
   await expandir(a.bloco('podeGastarHoje'))
@@ -283,7 +687,10 @@ it('f37: placar e detalhe de 2029 renderizam as projeções sentinela', async ()
   const selecionarPlacar = orcamento.projecaoCasal
   vi.spyOn(orcamento, 'projecaoCasal').mockImplementation(placar => ({ ...selecionarPlacar(placar)!, sobra: 6543.21 }))
   const numerar = plano2029.numerosRumo2029
-  vi.spyOn(plano2029, 'numerosRumo2029').mockImplementation((...args) => ({ ...numerar(...args), falta_sem_margem: 543210 }))
+  vi.spyOn(plano2029, 'numerosRumo2029').mockImplementation((...args) => ({
+    ...numerar(...args),
+    falta_sem_margem: 543210,
+  }))
   const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
   expect(a.box.buscar(x => x.getAttribute('class') === 'placar ok')[0].textContent).toContain('6.543,21')
   const plano = a.bloco('plano2029')
@@ -297,11 +704,13 @@ it('f37: estouro do envelope em Início coincide com Meu orçamento', async () =
   m.resumo = () => {
     const r = base()
     const e = r.envelopes.find(e => e.id === 'outro')!
-    Object.assign(e, { gasto_mes: 771.30, livre: -31.16 })
+    Object.assign(e, { gasto_mes: 771.3, livre: -31.16 })
     return r
   }
   const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
-  const botao = a.origem().buscar(x => x.getAttribute('class') === 'pill' && x.textContent.startsWith('Outro titular'))[0]
+  const botao = a
+    .origem()
+    .buscar(x => x.getAttribute('class') === 'pill' && x.textContent.startsWith('Outro titular'))[0]
   await act(async () => botao.click())
   const excesso = reais(31.16)
   const cartao = envelope(a.box, 'env-compacto').find(x => x.textContent.includes('Outro titular'))!
@@ -318,7 +727,8 @@ it('f37: Plano expande o valor sem margem da aba Planejamento e preserva o princ
   expect(bloco.textContent).toContain('com margem de segurança')
   expect(bloco.textContent).not.toContain('Sem a margem de segurança')
   await expandir(bloco)
-  const semMargem = (no: NoTeste) => no.buscar(x => x.tagName === 'SPAN' && x.textContent.startsWith('Sem a margem de segurança'))[0].textContent
+  const semMargem = (no: NoTeste) =>
+    no.buscar(x => x.tagName === 'SPAN' && x.textContent.startsWith('Sem a margem de segurança'))[0].textContent
   expect(semMargem(bloco)).toEqual(semMargem(a.origem()))
   expect(bloco.buscar(x => x.getAttribute('class') === 'resumo-numero')[0].textContent).toBe(principal)
 })
@@ -331,10 +741,18 @@ it('f37: o casal vê os cartões, a pessoa só o próprio e o Assessor não cons
   expect(envelope(pessoa.box, 'env-destaque')).toHaveLength(1)
   expect(envelope(pessoa.box, 'env-compacto')).toHaveLength(0)
   await expandir(pessoa.bloco('podeGastarHoje'))
-  expect(pessoa.box.textContent).not.toMatch(/Outro titular|Feira de teste|O casal, se continuar assim|Casa · disponível hoje/)
+  expect(pessoa.box.textContent).not.toMatch(
+    /Outro titular|Feira de teste|O casal, se continuar assim|Casa · disponível hoje/,
+  )
   const assessor = await montar(mundoComEnvelopes(), undefined, 'equipe', 1024)
   expect(assessor.box.textContent).toBe('')
-  for (const consulta of [assessor.m.interna.resumoHoje, assessor.m.interna.config, assessor.m.interna.lancamentos, assessor.m.interna.futuroEntradas]) expect(consulta).not.toHaveBeenCalled()
+  for (const consulta of [
+    assessor.m.interna.resumoHoje,
+    assessor.m.interna.config,
+    assessor.m.interna.lancamentos,
+    assessor.m.interna.futuroEntradas,
+  ])
+    expect(consulta).not.toHaveBeenCalled()
 })
 
 it('f37: olho fechado remove valores e geometria dos envelopes e do placar', async () => {
@@ -347,12 +765,25 @@ it('f37: olho fechado remove valores e geometria dos envelopes e do placar', asy
   const orcamento = a.box.buscar(x => x.getAttribute('class') === 'resumo-item resumo-orcamento')[0]
   expect(orcamento.textContent.match(/Valores escondidos/g)).toHaveLength(4)
   expect(orcamento.textContent).not.toMatch(/\d|Outro titular|Feira de teste|fecha com|vai passar/)
-  expect(orcamento.buscar(no => [...no.atributos].some(([k, v]) => ['style', 'value', 'data-do-outro'].includes(k) || k.startsWith('aria-') && /%|R\$|101,33|Outro titular/.test(v)))).toHaveLength(0)
+  expect(
+    orcamento.buscar(no =>
+      [...no.atributos].some(
+        ([k, v]) =>
+          ['style', 'value', 'data-do-outro'].includes(k) ||
+          (k.startsWith('aria-') && /%|R\$|101,33|Outro titular/.test(v)),
+      ),
+    ),
+  ).toHaveLength(0)
   expect(a.bloco('podeGastarHoje').textContent).not.toMatch(/101,33|24,86/)
   expect(a.bloco('plano2029').textContent).not.toContain('Sem a margem de segurança')
 })
 
-it.each([[375, false], [799, false], [800, true], [1280, true]])('f37: em %d px o estado inicial da seção é %s', async (largura, aberto) => {
+it.each([
+  [375, false],
+  [799, false],
+  [800, true],
+  [1280, true],
+])('f37: em %d px o estado inicial da seção é %s', async (largura, aberto) => {
   const a = await montar(mundoComEnvelopes(), undefined, 'casal', largura)
   const botao = a.box.buscar(x => x.tagName === 'BUTTON' && x.textContent.trim() === 'Seu orçamento e envelopes')[0]
   expect(botao.getAttribute('aria-expanded')).toBe(String(aberto))
@@ -363,7 +794,8 @@ it('f37: lembra a escolha ao remontar a tela durante a sessão', async () => {
   const m = mundoComEnvelopes()
   m.familia.membroId = 'memoria-f37'
   const a = await montar(m, undefined, 'casal', 375)
-  const botao = (box: NoTeste) => box.buscar(x => x.tagName === 'BUTTON' && x.textContent.trim() === 'Seu orçamento e envelopes')[0]
+  const botao = (box: NoTeste) =>
+    box.buscar(x => x.tagName === 'BUTTON' && x.textContent.trim() === 'Seu orçamento e envelopes')[0]
   expect(botao(a.box).getAttribute('aria-expanded')).toBe('false')
   await act(async () => botao(a.box).click())
   const b = await montar(m, undefined, 'casal', 375)
@@ -373,7 +805,11 @@ it('f37: lembra a escolha ao remontar a tela durante a sessão', async () => {
 it('f37: reserva espaço durante a carga e mantém links e expansão em regiões irmãs', async () => {
   const m = mundoComEnvelopes()
   let resolver!: (r: ResumoHoje) => void
-  vi.mocked(m.interna.resumoHoje).mockReturnValue(new Promise(r => { resolver = r }))
+  vi.mocked(m.interna.resumoHoje).mockReturnValue(
+    new Promise(r => {
+      resolver = r
+    }),
+  )
   const a = await montar(m, undefined, 'casal', 1024)
   const bloco = a.bloco('podeGastarHoje')
   expect(bloco.getAttribute('data-estado')).toBe('carregando')
@@ -381,7 +817,14 @@ it('f37: reserva espaço durante a carga e mantém links e expansão em regiões
   const estilos = readFileSync('src/telas/inicio/resumo.css', 'utf8')
   expect(estilos).toMatch(/\.resumo-item\s*\{[^}]*min-block-size:\s*var\(--resumo-altura\)/)
   const grade = a.box.buscar(x => x.getAttribute('class') === 'resumo-grade')[0]
-  expect(grade.childNodes.map(x => x.getAttribute('data-bloco'))).toEqual(['podeGastarHoje', 'saldoConta', 'faturas', 'aplicacoes', 'recebimentos', 'plano2029'])
+  expect(grade.childNodes.map(x => x.getAttribute('data-bloco'))).toEqual([
+    'podeGastarHoje',
+    'saldoConta',
+    'faturas',
+    'aplicacoes',
+    'recebimentos',
+    'plano2029',
+  ])
   expect(estilos).not.toMatch(/\border:\s*-?\d/)
   await act(async () => resolver(m.resumo()))
   await expandir(bloco)
@@ -392,13 +835,19 @@ it('f37: reserva espaço durante a carga e mantém links e expansão em regiões
 })
 
 it('f36: nota única de conferência, saldo claro e ícones explícitos nos onze blocos', async () => {
-  const m = mundo(); (m.interna.saldosConta as any).mockResolvedValue([])
+  const m = mundo()
+  ;(m.interna.saldosConta as any).mockResolvedValue([])
   const a = await montar(m)
   expect(a.box.textContent.match(/Nenhum número conferido manualmente ainda/g)).toHaveLength(1)
   expect(a.box.textContent).not.toContain('Sem conferência registrada')
   expect(a.bloco('saldoConta').textContent).toContain('Ainda sem dado')
   expect(a.bloco('saldoConta').textContent.match(/Saldo em conta/g)).toHaveLength(1)
-  expect(a.bloco('saldoConta').buscar(x => x.tagName === 'BUTTON')[0].getAttribute('class')).toContain('primary')
+  expect(
+    a
+      .bloco('saldoConta')
+      .buscar(x => x.tagName === 'BUTTON')[0]
+      .getAttribute('class'),
+  ).toContain('primary')
   for (const k of Object.keys(a.r) as (keyof Resumo)[]) {
     const chip = a.bloco(k).buscar(x => x.getAttribute('class') === 'resumo-icone')[0]
     const svg = chip.buscar(x => x.tagName === 'SVG')[0]
@@ -409,28 +858,47 @@ it('f36: nota única de conferência, saldo claro e ícones explícitos nos onze
   }
 })
 
-it.each(['2026-11-17', '2025-12-31', '2026-01-01T00:30:00Z'])('f36: data de conferência única no Início e Planejamento: %s', async data => {
-  const m = mundo(); (m.interna.saldosConta as any).mockResolvedValue([{ id: 's', nome: 'Conta', valor: 100, conferidoEm: data.slice(0, 10) }])
-  const a = await montar(m, createElement(SaldoConta))
-  const esperado = data.startsWith('2025') ? '31/12/2025' : data.includes('01-01') ? '01/01' : '17/11'
-  expect(dataConferencia(data, hoje)).toBe(esperado)
-  expect(a.bloco('saldoConta').textContent).toContain(`Conferido em ${esperado}`)
-  expect(a.origem().textContent).toContain(`Conferido em ${esperado}`)
-  expect(a.origem().textContent).not.toContain(data.slice(0, 10))
-})
+it.each(['2026-11-17', '2025-12-31', '2026-01-01T00:30:00Z'])(
+  'f36: data de conferência única no Início e Planejamento: %s',
+  async data => {
+    const m = mundo()
+    ;(m.interna.saldosConta as any).mockResolvedValue([
+      { id: 's', nome: 'Conta', valor: 100, conferidoEm: data.slice(0, 10) },
+    ])
+    const a = await montar(m, createElement(SaldoConta))
+    const esperado = data.startsWith('2025') ? '31/12/2025' : data.includes('01-01') ? '01/01' : '17/11'
+    expect(dataConferencia(data, hoje)).toBe(esperado)
+    expect(a.bloco('saldoConta').textContent).toContain(`Conferido em ${esperado}`)
+    expect(a.origem().textContent).toContain(`Conferido em ${esperado}`)
+    expect(a.origem().textContent).not.toContain(data.slice(0, 10))
+  },
+)
 
 it.each([0, 1, 2])('f36: plural compartilhado e texto curto nos blocos, quantidade %s', async n => {
   const a = await montar()
   const r = structuredClone(a.r)
-  if (r.casa.valor) Object.assign(r.casa.valor, { estadoFeira: n === 1 ? 'nao_iniciada' : 'confirmada', feira: n === 1, nota: n, estadoEstoque: 'nao_iniciada', cobrarEstoque: true })
+  if (r.casa.valor)
+    Object.assign(r.casa.valor, {
+      estadoFeira: n === 1 ? 'nao_iniciada' : 'confirmada',
+      feira: n === 1,
+      nota: n,
+      estadoEstoque: 'nao_iniciada',
+      cobrarEstoque: true,
+    })
   if (r.recebimentos.valor) r.recebimentos.valor.atrasados = n
   if (r.desejos.valor) Object.assign(r.desejos.valor, { pensando: 2, combinados: n })
   const itens = itensResumo(r, hoje, false)
   expect(plural(n, 'nota pendente', 'notas pendentes')).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}`)
-  expect(itens.find(i => i.chave === 'casa')!.numero).toBe(n === 1 ? 'Feira ainda sem confirmação · cobrança pendente' : 'Feira em dia')
-  expect(itens.find(i => i.chave === 'casa')!.frase).toBe(`${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}\nEstoque: contagem pendente`)
+  expect(itens.find(i => i.chave === 'casa')!.numero).toBe(
+    n === 1 ? 'Feira ainda sem confirmação · cobrança pendente' : 'Feira em dia',
+  )
+  expect(itens.find(i => i.chave === 'casa')!.frase).toBe(
+    `${n} ${n === 1 ? 'nota pendente' : 'notas pendentes'}\nEstoque: contagem pendente`,
+  )
   expect(itens.find(i => i.chave === 'recebimentos')!.frase).toContain(`${n} ${n === 1 ? 'atrasado.' : 'atrasados.'}`)
-  expect(itens.find(i => i.chave === 'desejos')!.numero).toBe(`2 pensando · ${n} ${n === 1 ? 'combinado' : 'combinados'}`)
+  expect(itens.find(i => i.chave === 'desejos')!.numero).toBe(
+    `2 pensando · ${n} ${n === 1 ? 'combinado' : 'combinados'}`,
+  )
 })
 
 it('f36: formulário de saldo tem rótulos, exemplo, foco inicial, Esc e devolução de foco', async () => {
@@ -438,7 +906,11 @@ it('f36: formulário de saldo tem rótulos, exemplo, foco inicial, Esc e devolu�
   const doc = a.box.ownerDocument
   Object.defineProperty(doc, 'activeElement', { value: null, writable: true, configurable: true })
   Object.assign(doc, { contains: (n: NoTeste) => doc.buscar(x => x === n).length > 0 })
-  Object.assign(NoTeste.prototype, { focus(this: NoTeste) { Object.assign(doc, { activeElement: this }) } })
+  Object.assign(NoTeste.prototype, {
+    focus(this: NoTeste) {
+      Object.assign(doc, { activeElement: this })
+    },
+  })
   const teclado = new EventTarget()
   doc.addEventListener = teclado.addEventListener.bind(teclado) as any
   doc.removeEventListener = teclado.removeEventListener.bind(teclado) as any
@@ -452,7 +924,9 @@ it('f36: formulário de saldo tem rótulos, exemplo, foco inicial, Esc e devolu�
   expect(conta.parentNode!.buscar(x => x.tagName === 'SPAN')[0].textContent).toBe('Conta')
   expect(doc.activeElement).toBe(conta)
   const valor = dialogo.buscar(x => x.tagName === 'INPUT' && x.getAttribute('aria-label') === 'Saldo em conta')[0]
-  expect(dialogo.buscar(x => x.tagName === 'LABEL' && x.getAttribute('for') === valor.getAttribute('id'))[0].textContent).toBe('Saldo em conta')
+  expect(
+    dialogo.buscar(x => x.tagName === 'LABEL' && x.getAttribute('for') === valor.getAttribute('id'))[0].textContent,
+  ).toBe('Saldo em conta')
   expect(valor.parentNode?.textContent).toBe('R$')
   expect(dialogo.buscar(x => x.tagName === 'LABEL' && x.textContent === 'Data da conferência')).toHaveLength(1)
   await act(async () => teclado.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' })))
@@ -463,65 +937,135 @@ it('f36: formulário de saldo tem rótulos, exemplo, foco inicial, Esc e devolu�
 it('f36: tarefa tocável e fila completa têm destinos explícitos no Início', async () => {
   const a = await montar()
   const links = a.bloco('pendencias').buscar(x => x.tagName === 'A')
-  expect(lerDestino(links[0].getAttribute('href')!)).toMatchObject({ rota: 'escritorio', secao: 'tarefa', entidade: a.m.e().precisa_de_voce[0].id })
+  expect(lerDestino(links[0].getAttribute('href')!)).toMatchObject({
+    rota: 'escritorio',
+    secao: 'tarefa',
+    entidade: a.m.e().precisa_de_voce[0].id,
+  })
   expect(links[1].textContent).toBe('Ver fila no Escritório')
   expect(links[1].getAttribute('href')).toBe('#/escritorio')
   expect(a.bloco('pendencias').textContent).toContain('8 na fila')
 })
 
 const origens = [
-  ['saldoConta', () => createElement(SaldoConta)], ['podeGastarHoje', () => createElement(MeuOrcamento)], ['aplicacoes', () => createElement(CartaoGuardado)], ['faturas', () => createElement(ConferenciaFaturas)], ['casa', () => createElement(ConferenciaCasa)], ['movimentacaoMes', () => createElement(ResumoDoMes)], ['plano2029', () => createElement(RumoA2029, { compacto: true })], ['recebimentos', () => createElement(Recebimentos)], ['imoveis', () => createElement(Imoveis, { aplicado: 500 })], ['pendencias', () => createElement(PrecisaDeVoce)], ['desejos', () => createElement(Desejos)],
+  ['saldoConta', () => createElement(SaldoConta)],
+  ['podeGastarHoje', () => createElement(MeuOrcamento)],
+  ['aplicacoes', () => createElement(CartaoGuardado)],
+  ['faturas', () => createElement(ConferenciaFaturas)],
+  ['casa', () => createElement(ConferenciaCasa)],
+  ['movimentacaoMes', () => createElement(ResumoDoMes)],
+  ['plano2029', () => createElement(RumoA2029, { compacto: true })],
+  ['recebimentos', () => createElement(Recebimentos)],
+  ['imoveis', () => createElement(Imoveis, { aplicado: 500 })],
+  ['pendencias', () => createElement(PrecisaDeVoce)],
+  ['desejos', () => createElement(Desejos)],
 ] as const
-it.each(origens.flatMap(([chave, criar]) => [1, 2, 3].map(n => [chave, criar, n] as const)))('renderiza resumo e origem para %s, cenário %s', async (chave, criar, n) => {
-  const a = await montar(mundo(n), criar())
-  const item = itensResumo(a.r, hoje, false).find(i => i.chave === chave)!
-  // Componentes antigos separam inteiro e centavos em spans; compara texto monetário normalizado.
-  const normalizar = (s: string) => s.replace(/[\s.]/g, '')
-  if (chave === 'casa') expect(a.origem().textContent).toContain('Feira ainda sem confirmação')
-  else if (chave === 'pendencias') expect(a.origem().textContent).toContain('8')
-  else if (chave === 'desejos') { expect(a.origem().textContent).toContain('Viagem'); expect(a.origem().textContent).toContain(item.numero) }
-  else if (chave === 'plano2029') expect(a.origem().textContent).toContain('2029')
-  else expect(normalizar(a.origem().textContent)).toContain(normalizar(item.numero).replace(/,00$/, ''))
-  expect(a.bloco(chave).textContent).toContain(item.numero)
-})
+it.each(origens.flatMap(([chave, criar]) => [1, 2, 3].map(n => [chave, criar, n] as const)))(
+  'renderiza resumo e origem para %s, cenário %s',
+  async (chave, criar, n) => {
+    const a = await montar(mundo(n), criar())
+    const item = itensResumo(a.r, hoje, false).find(i => i.chave === chave)!
+    // Componentes antigos separam inteiro e centavos em spans; compara texto monetário normalizado.
+    const normalizar = (s: string) => s.replace(/[\s.]/g, '')
+    if (chave === 'casa') expect(a.origem().textContent).toContain('Feira ainda sem confirmação')
+    else if (chave === 'pendencias') expect(a.origem().textContent).toContain('8')
+    else if (chave === 'desejos') {
+      expect(a.origem().textContent).toContain('Viagem')
+      expect(a.origem().textContent).toContain(item.numero)
+    } else if (chave === 'plano2029') expect(a.origem().textContent).toContain('2029')
+    else expect(normalizar(a.origem().textContent)).toContain(normalizar(item.numero).replace(/,00$/, ''))
+    expect(a.bloco(chave).textContent).toContain(item.numero)
+  },
+)
 
-const falhas = [ ['resumoHoje', ['podeGastarHoje']], ['guardadoHoje', ['aplicacoes']], ['faturas', ['faturas']], ['faturasBanco', ['faturas']], ['recebimentos', ['recebimentos', 'movimentacaoMes']], ['futuroEntradas', ['plano2029']], ['estoque', ['casa']], ['feiras', ['casa']], ['escritorioHoje', ['casa', 'pendencias']], ['imoveis', ['imoveis']], ['lancamentos', ['movimentacaoMes']], ['desejos', ['desejos']], ['saldosConta', ['saldoConta']] ] as const
+const falhas = [
+  ['resumoHoje', ['podeGastarHoje']],
+  ['guardadoHoje', ['aplicacoes']],
+  ['faturas', ['faturas']],
+  ['faturasBanco', ['faturas']],
+  ['recebimentos', ['recebimentos', 'movimentacaoMes']],
+  ['futuroEntradas', ['plano2029']],
+  ['estoque', ['casa']],
+  ['feiras', ['casa']],
+  ['escritorioHoje', ['casa', 'pendencias']],
+  ['imoveis', ['imoveis']],
+  ['lancamentos', ['movimentacaoMes']],
+  ['desejos', ['desejos']],
+  ['saldosConta', ['saldoConta']],
+] as const
 it.each(falhas)('falha isolada de %s não vira zero nem exemplo', async (metodo, afetados) => {
-  const m = mundo(); (m.interna[metodo] as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Fora do ar'))
+  const m = mundo()
+  ;(m.interna[metodo] as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Fora do ar'))
   const a = await montar(m)
   for (const k of Object.keys(a.r) as (keyof Resumo)[]) {
-    if ((afetados as readonly string[]).includes(k)) { expect(a.r[k].estado, k).toBe('erro'); expect(a.r[k].valor).toBeNull(); expect(a.bloco(k).textContent).toContain('Não foi possível conferir'); expect(a.bloco(k).textContent).not.toMatch(/R\$|Nenhum|Modo exemplo/) }
-    else expect(a.r[k].estado, k).toBe('pronto')
+    if ((afetados as readonly string[]).includes(k)) {
+      expect(a.r[k].estado, k).toBe('erro')
+      expect(a.r[k].valor).toBeNull()
+      expect(a.bloco(k).textContent).toContain('Não foi possível conferir')
+      expect(a.bloco(k).textContent).not.toMatch(/R\$|Nenhum|Modo exemplo/)
+    } else expect(a.r[k].estado, k).toBe('pronto')
   }
 })
 
 it('carregamento independente, resposta antiga descartada e repetição só do bloco', async () => {
-  const m = mundo(); let resolver!: (v: any) => void
-  ;(m.interna.guardadoHoje as ReturnType<typeof vi.fn>).mockImplementationOnce(() => new Promise(r => { resolver = r }))
+  const m = mundo()
+  let resolver!: (v: any) => void
+  ;(m.interna.guardadoHoje as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    () =>
+      new Promise(r => {
+        resolver = r
+      }),
+  )
   const a = await montar(m)
-  expect(a.r.aplicacoes.estado).toBe('carregando'); expect(a.r.podeGastarHoje.estado).toBe('pronto')
+  expect(a.r.aplicacoes.estado).toBe('carregando')
+  expect(a.r.podeGastarHoje.estado).toBe('pronto')
   const chamadas = (m.interna.resumoHoje as ReturnType<typeof vi.fn>).mock.calls.length
-  await act(async () => { invalidarDados(m.api, 'f', ['guardado']) })
+  await act(async () => {
+    invalidarDados(m.api, 'f', ['guardado'])
+  })
   expect(a.r.aplicacoes.valor?.total).toBe(500)
   await act(async () => resolver({ ...m.g(), total: 99999 }))
   expect(a.r.aplicacoes.valor?.total).toBe(500)
   ;(m.interna.guardadoHoje as ReturnType<typeof vi.fn>).mockRejectedValueOnce(Error('Rede'))
   await act(async () => invalidarDados(m.api, 'f', ['guardado']))
   expect(a.r.aplicacoes.valor).toBeNull()
-  await act(async () => a.bloco('aplicacoes').buscar(x => x.tagName === 'BUTTON')[0].click())
+  await act(async () =>
+    a
+      .bloco('aplicacoes')
+      .buscar(x => x.tagName === 'BUTTON')[0]
+      .click(),
+  )
   expect(a.r.aplicacoes.valor?.total).toBe(500)
   expect((m.interna.resumoHoje as ReturnType<typeof vi.fn>).mock.calls.length).toBe(chamadas)
 })
 
 it.each(['equipe', 'pessoa'])('papel %s bloqueia fontes do casal antes da leitura', async papel => {
-  const m = mundo(); const a = await montar(m, undefined, papel)
-  for (const metodo of ['guardadoHoje', 'futuroEntradas', 'saldosConta', 'imoveis', 'faturas', 'faturasBanco', 'recebimentos'] as const) expect(m.interna[metodo]).not.toHaveBeenCalled()
-  if (papel === 'equipe') { expect(a.box.textContent).toBe(''); expect(m.interna.resumoHoje).not.toHaveBeenCalled(); expect(m.interna.config).not.toHaveBeenCalled() }
-  else { expect(a.r.podeGastarHoje.estado).toBe('pronto'); expect(a.r.plano2029.estado).toBe('restrito'); expect(a.box.textContent).not.toMatch(/Plano 2029|Imóveis|Aplicações/) }
+  const m = mundo()
+  const a = await montar(m, undefined, papel)
+  for (const metodo of [
+    'guardadoHoje',
+    'futuroEntradas',
+    'saldosConta',
+    'imoveis',
+    'faturas',
+    'faturasBanco',
+    'recebimentos',
+  ] as const)
+    expect(m.interna[metodo]).not.toHaveBeenCalled()
+  if (papel === 'equipe') {
+    expect(a.box.textContent).toBe('')
+    expect(m.interna.resumoHoje).not.toHaveBeenCalled()
+    expect(m.interna.config).not.toHaveBeenCalled()
+  } else {
+    expect(a.r.podeGastarHoje.estado).toBe('pronto')
+    expect(a.r.plano2029.estado).toBe('restrito')
+    expect(a.box.textContent).not.toMatch(/Plano 2029|Imóveis|Aplicações/)
+  }
 })
 
 it('pessoa sem envelope próprio não recebe o disponível geral como substituto', async () => {
-  const m = mundo(); m.familia.envelopeId = null
+  const m = mundo()
+  m.familia.envelopeId = null
   const a = await montar(m, undefined, 'pessoa')
   expect(a.r.podeGastarHoje.estado).toBe('erro')
   expect(a.r.podeGastarHoje.valor).toBeNull()
@@ -530,61 +1074,109 @@ it('pessoa sem envelope próprio não recebe o disponível geral como substituto
 
 it('olho mascara texto, atributos, proporções e não mantém valor anterior como atual', async () => {
   const a = await montar(mundo(3))
-  const aberto = itensResumo(a.r, hoje, false).map(i => i.numero).filter(s => s.startsWith('R$'))
+  const aberto = itensResumo(a.r, hoje, false)
+    .map(i => i.numero)
+    .filter(s => s.startsWith('R$'))
   await a.ocultar()
-  const html = renderToStaticMarkup(createElement(ResumoApresentacao, { resumo: a.r, hoje, oculto: true, repetir() {} }))
+  const html = renderToStaticMarkup(
+    createElement(ResumoApresentacao, { resumo: a.r, hoje, oculto: true, repetir() {} }),
+  )
   for (const numero of aberto) expect(html).not.toContain(numero)
   expect(html.replace(/href="[^"]*"/g, '')).not.toMatch(/%|width:|aria-label="R\$|title="R\$/)
   expect(html).toContain('••••')
-  await a.ocultar(); expect(a.bloco('saldoConta').textContent).toContain('300')
+  await a.ocultar()
+  expect(a.bloco('saldoConta').textContent).toContain('300')
 })
 
 it('C4: funcionário abandona soma-base e usa todas as ocorrências', async () => {
   const { numerosDaAba } = await import('../../telas/escritorio/numeros')
-  const m = mundo(), r = await numerosDaAba(m.api, m.familia, 'planejamento')
+  const m = mundo(),
+    r = await numerosDaAba(m.api, m.familia, 'planejamento')
   expect(r[1].valor).toBe(totaisRecebimentos(m.recebimentos(), m.config.fontes_receita, {}).previsto)
   expect(r[1].valor).toBe(375)
 })
 
-it.each(['guardadoHoje', 'resumoHoje', 'estoque', 'faturasBanco', 'saldosConta', 'imoveis', 'recebimentos', 'faturas'])('contrato incompleto de %s é erro, não zero', async metodo => {
-  const m = mundo(); (m.interna[metodo as keyof Api] as ReturnType<typeof vi.fn>).mockResolvedValue({})
-  const a = await montar(m)
-  const chave = ({ guardadoHoje: 'aplicacoes', resumoHoje: 'podeGastarHoje', estoque: 'casa', faturasBanco: 'faturas', saldosConta: 'saldoConta', imoveis: 'imoveis', recebimentos: 'recebimentos', faturas: 'faturas' } as const)[metodo as 'guardadoHoje']
-  expect(a.r[chave].estado).toBe('erro'); expect(a.r[chave].valor).toBeNull()
-})
+it.each(['guardadoHoje', 'resumoHoje', 'estoque', 'faturasBanco', 'saldosConta', 'imoveis', 'recebimentos', 'faturas'])(
+  'contrato incompleto de %s é erro, não zero',
+  async metodo => {
+    const m = mundo()
+    ;(m.interna[metodo as keyof Api] as ReturnType<typeof vi.fn>).mockResolvedValue({})
+    const a = await montar(m)
+    const chave = (
+      {
+        guardadoHoje: 'aplicacoes',
+        resumoHoje: 'podeGastarHoje',
+        estoque: 'casa',
+        faturasBanco: 'faturas',
+        saldosConta: 'saldoConta',
+        imoveis: 'imoveis',
+        recebimentos: 'recebimentos',
+        faturas: 'faturas',
+      } as const
+    )[metodo as 'guardadoHoje']
+    expect(a.r[chave].estado).toBe('erro')
+    expect(a.r[chave].valor).toBeNull()
+  },
+)
 
-it.each(['fontes_receita', 'receitas_controle', 'entradas'])('falha de config %s fica no bloco dependente', async chave => {
-  const m = mundo()
-  ;(m.interna.config as ReturnType<typeof vi.fn>).mockImplementation(async (_f: string, k: string, padrao: unknown) => {
-    if (k === chave) throw Error('Sem leitura')
-    return m.config[k] ?? padrao
-  })
-  const a = await montar(m)
-  expect(a.r[chave === 'entradas' ? 'movimentacaoMes' : 'recebimentos'].estado).toBe('erro')
-  expect(a.r.podeGastarHoje.estado).toBe('pronto'); expect(a.r.aplicacoes.estado).toBe('pronto'); expect(a.r.plano2029.estado).toBe('pronto')
-})
+it.each(['fontes_receita', 'receitas_controle', 'entradas'])(
+  'falha de config %s fica no bloco dependente',
+  async chave => {
+    const m = mundo()
+    ;(m.interna.config as ReturnType<typeof vi.fn>).mockImplementation(
+      async (_f: string, k: string, padrao: unknown) => {
+        if (k === chave) throw Error('Sem leitura')
+        return m.config[k] ?? padrao
+      },
+    )
+    const a = await montar(m)
+    expect(a.r[chave === 'entradas' ? 'movimentacaoMes' : 'recebimentos'].estado).toBe('erro')
+    expect(a.r.podeGastarHoje.estado).toBe('pronto')
+    expect(a.r.aplicacoes.estado).toBe('pronto')
+    expect(a.r.plano2029.estado).toBe('pronto')
+  },
+)
 
 it.each([
-  ['gasto', 'podeGastarHoje', (a: Api) => a.lancar({ familia: 'f', envelope: 'eu', valor: 10, data: hoje, descricao: '', chave: 'k' })],
+  [
+    'gasto',
+    'podeGastarHoje',
+    (a: Api) => a.lancar({ familia: 'f', envelope: 'eu', valor: 10, data: hoje, descricao: '', chave: 'k' }),
+  ],
   ['fatura', 'faturas', (a: Api) => a.faturaInformar('f', 'c', mes, { paga_em: hoje, valor_banco: 50 })],
   ['recebimento', 'recebimentos', (a: Api) => a.recebimentoMudar!('f', 'r', { recebido: true } as any)],
   ['aplicação', 'aplicacoes', (a: Api) => a.guardadoMovimentar('a', 'aporte', 100, hoje, 'k')],
   ['feira', 'casa', (a: Api) => a.feiraRegistrar('f', { data: hoje })],
   ['estoque', 'casa', (a: Api) => a.estoqueContar('f', [{ item_id: 'arroz', estado: 'acabou' }])],
-  ['saldo', 'saldoConta', (a: Api) => a.salvarSaldoConta!('f', { id: 's', nome: 'Conta', valor: 4321, conferidoEm: hoje })],
+  [
+    'saldo',
+    'saldoConta',
+    (a: Api) => a.salvarSaldoConta!('f', { id: 's', nome: 'Conta', valor: 4321, conferidoEm: hoje }),
+  ],
 ] as const)('ação %s invalida e atualiza resumo junto da leitura da aba', async (_nome, chave, acao) => {
-  const m = mundo(); m.interna.modo = 'exemplo'
+  const m = mundo()
+  m.interna.modo = 'exemplo'
   const a = await montar(m)
   const antes = structuredClone(a.r[chave].valor)
-  await act(async () => { await acao(m.api) })
+  await act(async () => {
+    await acao(m.api)
+  })
   expect(a.r[chave].estado).toBe('pronto')
   expect(a.r[chave].valor).not.toEqual(antes)
-  if (chave === 'saldoConta') expect(a.r.plano2029.valor).toEqual({ unidade: 'centavos', ...numerosRumo2029(futuro(m.entrada()), m.entrada()), confirmar: [], conferenciaAntiga: false })
+  if (chave === 'saldoConta')
+    expect(a.r.plano2029.valor).toEqual({
+      unidade: 'centavos',
+      ...numerosRumo2029(futuro(m.entrada()), m.entrada()),
+      confirmar: [],
+      conferenciaAntiga: false,
+    })
   // Consulta concorrente de outra superfície usa o mesmo cache da borda.
   const extra = await montar(m, origens.find(([k]) => k === chave)![1]())
   expect(extra.r[chave].valor).toEqual(a.r[chave].valor)
   expect(desfazer.atual).not.toBeNull()
-  await act(async () => { await desfazer.atual!.desfazer() })
+  await act(async () => {
+    await desfazer.atual!.desfazer()
+  })
   expect(a.r[chave].valor).toEqual(antes)
   expect(extra.r[chave].valor).toEqual(antes)
 })
@@ -593,11 +1185,26 @@ it('destinos dos onze blocos preservam seção, entidade e período com permiss�
   const a = await montar()
   const itens = itensResumo(a.r, hoje, false)
   expect(itens.map(i => [i.chave, i.destino.rota, i.destino.secao])).toEqual([
-    ['saldoConta', 'planejamento', 'saldo'], ['podeGastarHoje', 'orcamento', 'orcamento'], ['faturas', 'cartoes', 'fatura'], ['aplicacoes', 'guardado', 'aplicacoes'], ['recebimentos', 'planejamento', 'recebimentos'], ['plano2029', 'planejamento', 'plano2029'], ['casa', 'escritorio', 'tarefa'], ['imoveis', 'guardado', 'imoveis'], ['movimentacaoMes', 'lancamentos', 'mes'], ['desejos', 'desejos', 'desejo'], ['pendencias', 'escritorio', 'tarefa'],
+    ['saldoConta', 'planejamento', 'saldo'],
+    ['podeGastarHoje', 'orcamento', 'orcamento'],
+    ['faturas', 'cartoes', 'fatura'],
+    ['aplicacoes', 'guardado', 'aplicacoes'],
+    ['recebimentos', 'planejamento', 'recebimentos'],
+    ['plano2029', 'planejamento', 'plano2029'],
+    ['casa', 'escritorio', 'tarefa'],
+    ['imoveis', 'guardado', 'imoveis'],
+    ['movimentacaoMes', 'lancamentos', 'mes'],
+    ['desejos', 'desejos', 'desejo'],
+    ['pendencias', 'escritorio', 'tarefa'],
   ])
   for (const i of itens) {
     expect(lerDestino(enderecoDestino(i.destino))).toEqual(i.destino)
-    expect(a.bloco(i.chave).buscar(x => x.tagName === 'A')[0].getAttribute('href')).toBe(enderecoDestino(i.destino))
+    expect(
+      a
+        .bloco(i.chave)
+        .buscar(x => x.tagName === 'A')[0]
+        .getAttribute('href'),
+    ).toBe(enderecoDestino(i.destino))
     expect(destinoPermitido(i.destino, 'casal')).toBe(true)
     expect(destinoPermitido(i.destino, 'equipe')).toBe(false)
   }
@@ -606,24 +1213,51 @@ it('destinos dos onze blocos preservam seção, entidade e período com permiss�
 })
 
 it('foco e rolagem aguardam entidade de uma seção carregada depois (lazy)', () => {
-  let mudou!: () => void, elementos: any[] = []
+  let mudou!: () => void,
+    elementos: any[] = []
   const disconnect = vi.fn()
-  vi.stubGlobal('MutationObserver', class { constructor(f: () => void) { mudou = f } observe() {} disconnect = disconnect })
+  vi.stubGlobal(
+    'MutationObserver',
+    class {
+      constructor(f: () => void) {
+        mudou = f
+      }
+      observe() {}
+      disconnect = disconnect
+    },
+  )
   const destino: DestinoResumo = { rota: 'cartoes', secao: 'fatura', entidade: 'cartao-2', periodo: mes }
   const raiz = { querySelectorAll: () => elementos } as unknown as HTMLElement
   const parar = focarDestino(destino, raiz)
-  const outro = { dataset: { secao: 'fatura', entidade: 'cartao-1', periodo: mes }, focus: vi.fn(), scrollIntoView: vi.fn() }
-  elementos = [outro]; mudou(); expect(outro.focus).not.toHaveBeenCalled()
-  const alvo = { ...outro, dataset: { secao: 'fatura', entidade: 'cartao-2', periodo: mes }, focus: vi.fn(), scrollIntoView: vi.fn() }
-  elementos.push(alvo); mudou()
-  expect(alvo.focus).toHaveBeenCalledWith({ preventScroll: true }); expect(alvo.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' })
+  const outro = {
+    dataset: { secao: 'fatura', entidade: 'cartao-1', periodo: mes },
+    focus: vi.fn(),
+    scrollIntoView: vi.fn(),
+  }
+  elementos = [outro]
+  mudou()
+  expect(outro.focus).not.toHaveBeenCalled()
+  const alvo = {
+    ...outro,
+    dataset: { secao: 'fatura', entidade: 'cartao-2', periodo: mes },
+    focus: vi.fn(),
+    scrollIntoView: vi.fn(),
+  }
+  elementos.push(alvo)
+  mudou()
+  expect(alvo.focus).toHaveBeenCalledWith({ preventScroll: true })
+  expect(alvo.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' })
   expect(disconnect).toHaveBeenCalledOnce()
-  mudou(); expect(alvo.focus).toHaveBeenCalledTimes(1)
-  parar(); expect(disconnect).toHaveBeenCalledOnce()
+  mudou()
+  expect(alvo.focus).toHaveBeenCalledTimes(1)
+  parar()
+  expect(disconnect).toHaveBeenCalledOnce()
 })
 
 it('sem capacidade real não há saldo inventado nem botão de informar', async () => {
-  const m = mundo(); delete m.interna.saldosConta; delete m.interna.salvarSaldoConta
+  const m = mundo()
+  delete m.interna.saldosConta
+  delete m.interna.salvarSaldoConta
   const a = await montar(m)
   expect(a.r.saldoConta.estado).toBe('indisponivel')
   expect(a.bloco('saldoConta').textContent).toContain('Ainda sem dado')
@@ -634,30 +1268,65 @@ it('sem capacidade real não há saldo inventado nem botão de informar', async 
 it('saldo no exemplo percorre formulário, estado, resumo e motor; desfazer restaura ambos', async () => {
   const { apiExemplo, exemploComo } = await import('../../api/exemplo')
   exemploComo('ana')
-  const sessao = (await apiExemplo.sessao())!, f = sessao.familias[0]
+  const sessao = (await apiExemplo.sessao())!,
+    f = sessao.familias[0]
   const api = protegerApi(apiExemplo)
   definirEscopoLeitura(api, sessao.userId, f)
   const snapshot = await apiExemplo.backupLer!(f.id)
-  const m = mundo(); m.api = api; m.familia = f
+  const m = mundo()
+  m.api = api
+  m.familia = f
   // Usa o componente real do formulário. IDs reais da família fictícia vêm da sessão do exemplo.
-  const a = await montar({ ...m, resumo: () => ({ explicacao: [], envelopes: [], pode_gastar_hoje: 0, dias_restantes: 1, livre_mes: 0, colchao: 0, hoje } as ResumoHoje) }, createElement(SaldoConta))
+  const a = await montar(
+    {
+      ...m,
+      resumo: () =>
+        ({
+          explicacao: [],
+          envelopes: [],
+          pode_gastar_hoje: 0,
+          dias_restantes: 1,
+          livre_mes: 0,
+          colchao: 0,
+          hoje,
+        }) as ResumoHoje,
+    },
+    createElement(SaldoConta),
+  )
   const antes = (await api.futuroEntradas!(f.id)).entrada!.saldo_caixa
-  await act(async () => a.bloco('saldoConta').buscar(x => x.tagName === 'BUTTON')[0].click())
+  await act(async () =>
+    a
+      .bloco('saldoConta')
+      .buscar(x => x.tagName === 'BUTTON')[0]
+      .click(),
+  )
   const props = (no: NoTeste) => Object.entries(no).find(([k]) => k.startsWith('__reactProps'))![1] as any
   const inputs = a.box.buscar(x => x.tagName === 'INPUT')
   const nome = inputs.find(i => i.parentNode?.textContent.startsWith('Conta'))!
   const valor = inputs.find(i => i.getAttribute('aria-label') === 'Saldo em conta')!
-  await act(async () => { props(nome).onChange({ target: { value: 'Conta fictícia' } }); props(valor).onChange({ target: { value: '1.234,56' } }) })
+  await act(async () => {
+    props(nome).onChange({ target: { value: 'Conta fictícia' } })
+    props(valor).onChange({ target: { value: '1.234,56' } })
+  })
   const form = a.box.buscar(x => x.tagName === 'FORM')[0]
   try {
-    await act(async () => { await props(form).onSubmit({ preventDefault() {} }) })
+    await act(async () => {
+      await props(form).onSubmit({ preventDefault() {} })
+    })
     expect(a.r.saldoConta.valor?.valor).toBe(antes / 100 + 1234.56)
     let depois!: number
-    await act(async () => { depois = (await api.futuroEntradas!(f.id)).entrada!.saldo_caixa })
+    await act(async () => {
+      depois = (await api.futuroEntradas!(f.id)).entrada!.saldo_caixa
+    })
     expect(depois).toBe(antes + 123456)
     expect(a.origem().textContent).toContain('1.234,56')
     // Reabrir permite escolher a mesma conta, em vez de duplicar o saldo.
-    await act(async () => a.bloco('saldoConta').buscar(x => x.tagName === 'BUTTON')[0].click())
+    await act(async () =>
+      a
+        .bloco('saldoConta')
+        .buscar(x => x.tagName === 'BUTTON')[0]
+        .click(),
+    )
     const contaSalva = (await api.saldosConta!(f.id)).find(c => c.nome === 'Conta fictícia')!
     const select = a.box.buscar(x => x.tagName === 'SELECT')[0]
     expect(select).toBeDefined()
@@ -665,25 +1334,50 @@ it('saldo no exemplo percorre formulário, estado, resumo e motor; desfazer rest
     const inputValor = a.box.buscar(x => x.getAttribute('aria-label') === 'Saldo em conta')[0]
     expect(String((props(inputValor) as any).value).replace(/\D/g, '')).toBe('123456')
     expect(desfazer.atual).not.toBeNull()
-    await act(async () => { await desfazer.atual!.desfazer() })
-    await act(async () => { depois = (await api.futuroEntradas!(f.id)).entrada!.saldo_caixa })
+    await act(async () => {
+      await desfazer.atual!.desfazer()
+    })
+    await act(async () => {
+      depois = (await api.futuroEntradas!(f.id)).entrada!.saldo_caixa
+    })
     expect(depois).toBe(antes)
     expect(a.r.saldoConta.estado).toBe('indisponivel')
-  } finally { await act(async () => { await apiExemplo.backupRestaurar!(f.id, snapshot) }) }
+  } finally {
+    await act(async () => {
+      await apiExemplo.backupRestaurar!(f.id, snapshot)
+    })
+  }
 })
 
 it('f53.2: confirmar a recorrência de novembro transfere R$ 500 nas três superfícies', async () => {
   const m = mundo()
   m.config.entradas = []
   m.config.receitas_controle = { r: { valor: 50000 } }
-  const a = await montar(m, createElement(Fragment, null, createElement(ResumoDoMes), createElement(NumerosAba, { id: 'contador', fechar() {} })))
-  await act(async () => { await vi.dynamicImportSettled() })
+  const a = await montar(
+    m,
+    createElement(
+      Fragment,
+      null,
+      createElement(ResumoDoMes),
+      createElement(NumerosAba, { id: 'contador', fechar() {} }),
+    ),
+  )
+  await act(async () => {
+    await vi.dynamicImportSettled()
+  })
   const ficha = () => a.origem().buscar(x => x.getAttribute('aria-label') === 'Resumo da aba')[0].textContent
   expect(ficha()).toContain('Entradas certas pendentesR$500')
   expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 0, previsto: 500 })
   expect(a.origem().textContent).toContain('Entradas certas pendentes: R$500')
-  expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({ nome: 'Entradas certas pendentes', valor: 500 })
-  await act(async () => m.api.salvarConfig(m.familia.id, 'receitas_controle', { r: { valor: 50000, recebidas: { [mes]: { valor: 50000, data: hoje } } } }))
+  expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({
+    nome: 'Entradas certas pendentes',
+    valor: 500,
+  })
+  await act(async () =>
+    m.api.salvarConfig(m.familia.id, 'receitas_controle', {
+      r: { valor: 50000, recebidas: { [mes]: { valor: 50000, data: hoje } } },
+    }),
+  )
   expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 500, previsto: 0 })
   expect(a.bloco('movimentacaoMes').textContent).toMatch(/Entrou R\$\s*500/)
   expect(a.origem().textContent).toContain('EntrouR$500')
@@ -696,9 +1390,15 @@ it('f53.5: o cache conserva a evidência de valores brutos incompletos', async (
   const m = mundo()
   vi.mocked(m.interna.resumoHoje).mockResolvedValue(normalizaResumo({}))
   vi.mocked(m.interna.lancamentos).mockResolvedValue([normalizaLancamento({ id: 'g', data: hoje })])
-  vi.mocked(m.interna.guardadoHoje).mockResolvedValue(normalizaGuardado({
-    total: 'inválido', rendeu_hoje_liquido: 0, rendeu_mes_liquido: 0, rendeu_desde_inicio_liquido: 0, aplicacoes: [],
-  }))
+  vi.mocked(m.interna.guardadoHoje).mockResolvedValue(
+    normalizaGuardado({
+      total: 'inválido',
+      rendeu_hoje_liquido: 0,
+      rendeu_mes_liquido: 0,
+      rendeu_desde_inicio_liquido: 0,
+      aplicacoes: [],
+    }),
+  )
   const a = await montar(m)
   for (const k of ['podeGastarHoje', 'movimentacaoMes', 'aplicacoes'] as const) {
     expect(a.r[k]).toMatchObject({ estado: 'erro', valor: null })
@@ -737,7 +1437,9 @@ it('f53.7: segunda antes das 18h sem registro não confirma feira nem estoque', 
     await a.render()
   })
   expect(a.bloco('casa').textContent).toContain('cobrança pendente')
-  await act(async () => { await m.api.feiraRegistrar(m.familia.id, { data: '2026-11-16' }) })
+  await act(async () => {
+    await m.api.feiraRegistrar(m.familia.id, { data: '2026-11-16' })
+  })
   expect(a.bloco('casa').textContent).toContain('Feira em dia')
 })
 
@@ -759,7 +1461,12 @@ it('f53.10: limite do dia e valor integral da compra parcelada têm rótulos pr�
   vi.mocked(m.interna.resumoHoje).mockResolvedValue(r)
   vi.mocked(m.interna.lancamentos).mockResolvedValue([{ ...m.gastos()[0], valor: 1200, parcelas: 6 }])
   const a = await montar(m, createElement(MeuOrcamento))
-  await act(async () => a.bloco('podeGastarHoje').buscar(x => x.getAttribute('class') === 'resumo-expandir')[0].click())
+  await act(async () =>
+    a
+      .bloco('podeGastarHoje')
+      .buscar(x => x.getAttribute('class') === 'resumo-expandir')[0]
+      .click(),
+  )
   expect(a.bloco('podeGastarHoje').textContent).toMatch(/Hoje já saiu do limite: R\$\s*0/)
   expect(a.origem().textContent).toMatch(/Compras anotadas hoje \(valor integral\)\s*R\$\s*1\.200/)
 })
@@ -772,15 +1479,26 @@ it('f53.12 e 13: formulário espera a lista e preserva saldo negativo, ID e data
   vi.mocked(m.interna.saldosConta!).mockRejectedValue(new Error('rede'))
   const a = await montar(m, createElement(InformarSaldo, { fechar() {} }))
   const form = a.origem().buscar(x => x.tagName === 'FORM')[0]
-  const enviar = () => act(async () => { await propsF53(form).onSubmit({ preventDefault() {} }) })
+  const enviar = () =>
+    act(async () => {
+      await propsF53(form).onSubmit({ preventDefault() {} })
+    })
   expect(a.origem().textContent).toContain('Não foi possível abrir as contas')
   const nome = a.origem().buscar(x => x.getAttribute('placeholder') === 'Conta corrente')[0]
   const valor = a.origem().buscar(x => x.getAttribute('aria-label') === 'Saldo em conta')[0]
-  await act(async () => { propsF53(nome).onChange({ target: { value: 'Corrente' } }); propsF53(valor).onChange({ target: { value: '100' } }) })
+  await act(async () => {
+    propsF53(nome).onChange({ target: { value: 'Corrente' } })
+    propsF53(valor).onChange({ target: { value: '100' } })
+  })
   await enviar()
   expect(salvar).not.toHaveBeenCalled()
   vi.mocked(m.interna.saldosConta!).mockResolvedValue(m.contas())
-  await act(async () => a.origem().buscar(x => x.tagName === 'BUTTON' && x.textContent === 'Tentar de novo')[0].click())
+  await act(async () =>
+    a
+      .origem()
+      .buscar(x => x.tagName === 'BUTTON' && x.textContent === 'Tentar de novo')[0]
+      .click(),
+  )
   const select = a.origem().buscar(x => x.tagName === 'SELECT')[0]
   await enviar()
   expect(salvar).not.toHaveBeenCalled()
@@ -806,16 +1524,28 @@ it('f53.12: exemplo conserva o saldo negativo na edição', async () => {
   const campo = a.origem().buscar(x => x.getAttribute('aria-label') === 'Saldo em conta')[0]
   await act(async () => propsF53(campo).onChange({ target: { value: '-25,50' } }))
   const form = a.origem().buscar(x => x.tagName === 'FORM')[0]
-  await act(async () => { await propsF53(form).onSubmit({ preventDefault() {} }) })
+  await act(async () => {
+    await propsF53(form).onSubmit({ preventDefault() {} })
+  })
   expect(salvar).toHaveBeenCalledWith('f', { id: 's', nome: 'Corrente', valor: -25.5, conferidoEm: '2026-11-16' })
   expect(a.r.saldoConta.valor?.valor).toBe(-25.5)
 })
 
 it('f53.16: período inválido fica fora do destino e do total, Gastos abre no mês válido', async () => {
-  const a = await montar(mundo(), createElement(Fragment, null, createElement(Recebimentos), createElement(ResumoDoMes)))
+  const a = await montar(
+    mundo(),
+    createElement(Fragment, null, createElement(Recebimentos), createElement(ResumoDoMes)),
+  )
   expect(lerDestino('#/guardado?secao=mes&entidade=abc&periodo=2026-11')).toMatchObject({ secao: '' })
-  expect(lerDestino('#/planejamento?secao=recebimentos&entidade=abc&periodo=banana')).toMatchObject({ entidade: undefined, periodo: undefined })
-  const hash = async (novo: string) => act(async () => { location.hash = novo; window.dispatchEvent(new Event('hashchange')) })
+  expect(lerDestino('#/planejamento?secao=recebimentos&entidade=abc&periodo=banana')).toMatchObject({
+    entidade: undefined,
+    periodo: undefined,
+  })
+  const hash = async (novo: string) =>
+    act(async () => {
+      location.hash = novo
+      window.dispatchEvent(new Event('hashchange'))
+    })
   await hash('#/planejamento?secao=recebimentos&periodo=banana')
   const alvo = (secao: string) => a.origem().buscar(x => x.getAttribute('data-secao') === secao)[0]
   expect(alvo('recebimentos').getAttribute('data-periodo')).toBe(mes)
@@ -832,8 +1562,18 @@ it('f53.16 e 19: Guardado vazio tem alvo e mantém o descarte só em memória', 
   expect(a.origem().buscar(x => x.getAttribute('data-secao') === 'aplicacoes')).toHaveLength(1)
   const armazenar = vi.fn()
   const b = mundo()
-  vi.mocked(b.interna.guardadoHoje).mockResolvedValue({ ...b.g(), saldo_30: [{ data: '2026-11-16', saldo: 9000 }, { data: hoje, saldo: 11000 }] })
-  const c = await montar(b, createElement(Guardado), 'casal', undefined, { getItem: () => null, removeItem() {}, setItem: armazenar })
+  vi.mocked(b.interna.guardadoHoje).mockResolvedValue({
+    ...b.g(),
+    saldo_30: [
+      { data: '2026-11-16', saldo: 9000 },
+      { data: hoje, saldo: 11000 },
+    ],
+  })
+  const c = await montar(b, createElement(Guardado), 'casal', undefined, {
+    getItem: () => null,
+    removeItem() {},
+    setItem: armazenar,
+  })
   const fechar = c.origem().buscar(x => x.getAttribute('aria-label') === 'Fechar o aviso')[0]
   expect(fechar).toBeDefined()
   await act(async () => fechar.click())
@@ -846,14 +1586,27 @@ it('f53.16 e 19: Guardado vazio tem alvo e mantém o descarte só em memória', 
 it('f53.3, 11 e 19: provedor protege sessão, estado da leitura e privacidade no início', async () => {
   const m = mundo()
   let resolver!: (v: Awaited<ReturnType<Api['sessao']>>) => void
-  const antiga = new Promise<Awaited<ReturnType<Api['sessao']>>>(r => { resolver = r })
+  const antiga = new Promise<Awaited<ReturnType<Api['sessao']>>>(r => {
+    resolver = r
+  })
   const nova = { userId: 'nova', email: null, dono: false, familias: [m.familia] }
   m.interna.sessao = vi.fn().mockReturnValueOnce(antiga).mockResolvedValue(nova)
-  m.interna.sair = async () => { throw new Error('rede') }
+  m.interna.sair = async () => {
+    throw new Error('rede')
+  }
   let ctx!: Ctx
-  function Capturar() { ctx = useApp(); return createElement(MeuOrcamento) }
+  function Capturar() {
+    ctx = useApp()
+    return createElement(MeuOrcamento)
+  }
   const remover = vi.fn()
-  const a = await montar(m, createElement(Provedor, { api: m.api, children: createElement(Capturar) }), 'casal', undefined, { getItem: () => null, setItem() {}, removeItem: remover })
+  const a = await montar(
+    m,
+    createElement(Provedor, { api: m.api, children: createElement(Capturar) }),
+    'casal',
+    undefined,
+    { getItem: () => null, setItem() {}, removeItem: remover },
+  )
   expect(remover).toHaveBeenCalledWith('marco_visto')
   await act(async () => ctx.trocarSessao())
   await act(async () => resolver({ ...nova, userId: 'antiga' }))
@@ -870,13 +1623,28 @@ it('f53.3, 11 e 19: provedor protege sessão, estado da leitura e privacidade no
   expect(ctx.sessao).toBeNull()
 })
 
-const fontesReais = import.meta.glob(['./leituras.ts', '../../app/useResumoFamilia.ts', '../../telas/inicio/*.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const fontesReais = import.meta.glob(['./leituras.ts', '../../app/useResumoFamilia.ts', '../../telas/inicio/*.tsx'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
 it('AST: resumo real não importa exemplo/fixtures nem atribui números financeiros literais', () => {
   for (const [nome, codigo] of Object.entries(fontesReais)) {
-    const arvore = ts.createSourceFile(nome, codigo, ts.ScriptTarget.Latest, true, nome.endsWith('tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
+    const arvore = ts.createSourceFile(
+      nome,
+      codigo,
+      ts.ScriptTarget.Latest,
+      true,
+      nome.endsWith('tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    )
     const visitar = (no: ts.Node) => {
-      if (ts.isImportDeclaration(no)) expect(no.moduleSpecifier.getText(arvore), nome).not.toMatch(/api\/exemplo|fixture|dadosTeste/)
-      if (ts.isPropertyAssignment(no) && /^(valor|saldo|total|renda|previsto|garantido|provavel|incerto)$/.test(no.name.getText(arvore))) expect(ts.isNumericLiteral(no.initializer), `${nome}:${no.getText(arvore)}`).toBe(false)
+      if (ts.isImportDeclaration(no))
+        expect(no.moduleSpecifier.getText(arvore), nome).not.toMatch(/api\/exemplo|fixture|dadosTeste/)
+      if (
+        ts.isPropertyAssignment(no) &&
+        /^(valor|saldo|total|renda|previsto|garantido|provavel|incerto)$/.test(no.name.getText(arvore))
+      )
+        expect(ts.isNumericLiteral(no.initializer), `${nome}:${no.getText(arvore)}`).toBe(false)
       ts.forEachChild(no, visitar)
     }
     visitar(arvore)
@@ -906,7 +1674,10 @@ it('f59: mantém os avisos da f53 e recompõe só Faturas ao tentar de novo', as
   vi.mocked(m.interna.estoque).mockResolvedValue({ itens: [], contagens: [] })
   vi.mocked(m.interna.faturas).mockRejectedValue(new Error('rede'))
   m.config.numeros_atualizados = { saldo_caixa: '2026-09-16' }
-  vi.mocked(m.interna.futuroEntradas!).mockImplementation(async () => ({ entrada: m.entrada(), confirmar: ['Confirme a taxa'] }))
+  vi.mocked(m.interna.futuroEntradas!).mockImplementation(async () => ({
+    entrada: m.entrada(),
+    confirmar: ['Confirme a taxa'],
+  }))
   const a = await montar(m)
   const blocoOrcamento = a.bloco('podeGastarHoje')
   expect(blocoOrcamento.textContent).toContain('Este mês fica devendo')
@@ -919,7 +1690,8 @@ it('f59: mantém os avisos da f53 e recompõe só Faturas ao tentar de novo', as
   expect(plano.textContent).toContain('Há números com mais de 60 dias.')
 
   const campos = Object.keys(a.r) as (keyof Resumo)[]
-  const propsDoLink = (chave: keyof Resumo) => propsF53(a.bloco(chave).buscar(x => x.getAttribute('class') === 'resumo-link')[0])
+  const propsDoLink = (chave: keyof Resumo) =>
+    propsF53(a.bloco(chave).buscar(x => x.getAttribute('class') === 'resumo-link')[0])
   const anteriores = campos.map(chave => ({ chave, campo: a.r[chave], props: propsDoLink(chave) }))
   const faturas = a.bloco('faturas')
   expect(faturas.textContent).toContain('Não foi possível conferir')

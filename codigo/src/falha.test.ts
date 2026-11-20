@@ -7,7 +7,14 @@ function raizFalsa() {
   let clique: (() => void) | null = null
   const raiz: RaizFalha & { clicar(): void } = {
     innerHTML: '',
-    querySelector: s => (s === '[data-falha="tentar"]' && raiz.innerHTML.includes('data-falha="tentar"') ? { addEventListener: (_t, f) => { clique = f } } : null),
+    querySelector: s =>
+      s === '[data-falha="tentar"]' && raiz.innerHTML.includes('data-falha="tentar"')
+        ? {
+            addEventListener: (_t, f) => {
+              clique = f
+            },
+          }
+        : null,
     clicar: () => clique?.(),
   }
   return raiz
@@ -15,17 +22,28 @@ function raizFalsa() {
 
 describe('C6: tela de falha em vez de tela branca', () => {
   it('pedaço do app que não baixou: mensagem de internet e botão Tentar de novo que recarrega', () => {
-    const raiz = raizFalsa(); let recarregou = 0
-    const f = mostrarFalha(raiz, new TypeError('Failed to fetch dynamically imported module: https://x/assets/partida-abc.js'), () => { recarregou++ })
+    const raiz = raizFalsa()
+    let recarregou = 0
+    const f = mostrarFalha(
+      raiz,
+      new TypeError('Failed to fetch dynamically imported module: https://x/assets/partida-abc.js'),
+      () => {
+        recarregou++
+      },
+    )
     expect(f.titulo).toBe('Não foi possível abrir a Central agora')
     expect(raiz.innerHTML).toContain('Confira a internet')
     expect(raiz.innerHTML).toContain('>Tentar de novo</button>')
     expect(raiz.innerHTML).toContain('role="alert"')
-    raiz.clicar(); expect(recarregou).toBe(1)
+    raiz.clicar()
+    expect(recarregou).toBe(1)
   })
   it('banco sem endereço: carregarApi falha com ErroConfig e a tela explica, sem inglês nem detalhe técnico', async () => {
     // no Vitest não existe .env: é o mesmo caso do build publicado sem VITE_SUPABASE_URL
-    const e = await carregarApi().then(() => null, x => x)
+    const e = await carregarApi().then(
+      () => null,
+      x => x,
+    )
     expect(e).toBeInstanceOf(ErroConfig)
     const raiz = raizFalsa()
     mostrarFalha(raiz, e, () => {})
@@ -35,6 +53,7 @@ describe('C6: tela de falha em vez de tela branca', () => {
   })
   it('sem #root ainda devolve o texto e não quebra; texto sem travessão', () => {
     expect(mostrarFalha(null, new Error('x'), () => {}).titulo).toBe('Não foi possível abrir a Central agora')
-    for (const f of [textoDaFalha(new ErroConfig()), textoDaFalha(new Error('x'))]) expect(f.titulo + f.texto).not.toMatch(/[–—]/)
+    for (const f of [textoDaFalha(new ErroConfig()), textoDaFalha(new Error('x'))])
+      expect(f.titulo + f.texto).not.toMatch(/[–—]/)
   })
 })

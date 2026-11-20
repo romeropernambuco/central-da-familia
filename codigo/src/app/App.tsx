@@ -15,8 +15,10 @@ import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
 const PrimeiroUso = lazy(() => import('../telas/primeiro-uso/PrimeiroUso').then(m => ({ default: m.PrimeiroUso })))
 const Inicio = lazy(() => import('../telas/inicio/Inicio').then(m => ({ default: m.Inicio })))
-const InicioClassico = import.meta.env.MODE === 'exemplo' || import.meta.env.MODE === 'demo'
-  ? lazy(() => import('../telas/inicio/InicioClassico').then(m => ({ default: m.InicioClassico }))) : null
+const InicioClassico =
+  import.meta.env.MODE === 'exemplo' || import.meta.env.MODE === 'demo'
+    ? lazy(() => import('../telas/inicio/InicioClassico').then(m => ({ default: m.InicioClassico })))
+    : null
 const Lancar = lazy(() => import('../telas/lancar/Lancar').then(m => ({ default: m.Lancar })))
 const Lancamentos = lazy(() => import('../telas/lancamentos/Lancamentos').then(m => ({ default: m.Lancamentos })))
 const MeuOrcamento = lazy(() => import('../telas/meu-orcamento/MeuOrcamento').then(m => ({ default: m.MeuOrcamento })))
@@ -68,11 +70,18 @@ export function App() {
   const [mais, setMais] = useState(false)
   const [carregou, setCarregou] = useState(false)
   useEffect(() => {
-    const f = () => { setHash(location.hash); setMais(false); window.scrollTo(0, 0) }
+    const f = () => {
+      setHash(location.hash)
+      setMais(false)
+      window.scrollTo(0, 0)
+    }
     addEventListener('hashchange', f)
     return () => removeEventListener('hashchange', f)
   }, [])
-  useEffect(() => { const t = setTimeout(() => setCarregou(true), 400); return () => clearTimeout(t) }, [])
+  useEffect(() => {
+    const t = setTimeout(() => setCarregou(true), 400)
+    return () => clearTimeout(t)
+  }, [])
   // E9: o Atalho do iPhone abre #/lancar?valor=&loja=&cartao= e o Lançar abre preenchido. Nunca salva sozinho:
   // a pessoa confere e toca no nome dela. O endereço volta pro Início (voltar no navegador não reabre o Lançar).
   useEffect(() => {
@@ -92,48 +101,107 @@ export function App() {
     if (lancarAberto || document.activeElement?.closest('input,textarea,select,[role="dialog"]')) return
     tituloRef.current?.focus?.({ preventScroll: true })
   }, [rota])
-  useEffect(() => { if (sessao) setCarregou(true) }, [sessao])
+  useEffect(() => {
+    if (sessao) setCarregou(true)
+  }, [sessao])
 
   if (!sessao) {
     if (!carregou) return <Carregando />
-    return <Suspense fallback={<Carregando />}><Entrar /><AjudaDaAba rota="entrar" /></Suspense>
+    return (
+      <Suspense fallback={<Carregando />}>
+        <Entrar />
+        <AjudaDaAba rota="entrar" />
+      </Suspense>
+    )
   }
   const equipe = familia?.papel === 'equipe'
   // a equipe nunca vê o primeiro uso (tela de criar família e limites em R$), nem digitando o endereço
   // só o casal cria família: a equipe e a pessoa da família (filha) nunca veem o primeiro uso
-  if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal')) return <Suspense fallback={<Carregando />}><PrimeiroUso /></Suspense>
+  if (!familia || (rota === 'primeiro-uso' && familia.papel === 'casal'))
+    return (
+      <Suspense fallback={<Carregando />}>
+        <PrimeiroUso />
+      </Suspense>
+    )
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const { lateral, inferior, mais: extras } = menuDoPapel(familia.papel, !!sessao.dono)
   const Classico = r === 'inicio' && api.modo === 'exemplo' && sessao.dono && hashClassico(hash) ? InicioClassico : null
-  const [subt, titulo] = r === 'inicio'
-    ? [textoPrivado(familia.nome, oculto), Classico ? cap(mesLongo(hojeRecife())) : 'Início']
-    : equipe && r !== 'privacidade' ? ['itens, lista de compras e gás', 'Casa'] : TITULO[r] || ['', '']
-  const link = (m: (typeof lateral)[number], curto = m.nome) =>
-    <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}><Icone nome={m.icone} />{curto}</a>
+  const [subt, titulo] =
+    r === 'inicio'
+      ? [textoPrivado(familia.nome, oculto), Classico ? cap(mesLongo(hojeRecife())) : 'Início']
+      : equipe && r !== 'privacidade'
+        ? ['itens, lista de compras e gás', 'Casa']
+        : TITULO[r] || ['', '']
+  const link = (m: (typeof lateral)[number], curto = m.nome) => (
+    <a key={m.r} href={'#/' + m.r} aria-current={r === m.r ? 'page' : undefined}>
+      <Icone nome={m.icone} />
+      {curto}
+    </a>
+  )
 
   return (
     <>
       <nav className="rail central-rail" aria-label="Telas no computador">
-        <div className="brand"><Marca /><span><b>Central da Família</b><small>{textoPrivado(familia.nome, oculto)}</small></span></div>
-        {!equipe && <button className="lancar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" />Anotar</button>}
+        <div className="brand">
+          <Marca />
+          <span>
+            <b>Central da Família</b>
+            <small>{textoPrivado(familia.nome, oculto)}</small>
+          </span>
+        </div>
+        {!equipe && (
+          <button className="lancar" type="button" onClick={() => abrirLancar()}>
+            <Icone nome="lancar" />
+            Anotar
+          </button>
+        )}
         {GRUPOS.map(grupo => {
           const itens = lateral.filter(m => m.grupo === grupo)
-          return itens.length > 0 && <div className="rail-grupo" role="group" key={grupo} aria-label={grupo}><span>{grupo}</span>{itens.map(m => link(m))}</div>
+          return (
+            itens.length > 0 && (
+              <div className="rail-grupo" role="group" key={grupo} aria-label={grupo}>
+                <span>{grupo}</span>
+                {itens.map(m => link(m))}
+              </div>
+            )
+          )
         })}
         <p className="foot">{api.modo === 'exemplo' ? 'Modo exemplo: nada sai deste aparelho' : 'Dados da família'}</p>
       </nav>
       <main id="main" aria-labelledby="titulo-tela">
         <header className="top aba-cabecalho">
-          <div className="tt"><h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">{titulo}</h1><small>{subt}</small></div>
+          <div className="tt">
+            <h1 ref={tituloRef} tabIndex={-1} id="titulo-tela">
+              {titulo}
+            </h1>
+            <small>{subt}</small>
+          </div>
           <SeloDaAba />
           {!equipe && <OlhoDaAba />}
-          {equipe && <a className="btn line central-privacidade" href="#/privacidade"><Icone nome="privacidade" />Privacidade</a>}
+          {equipe && (
+            <a className="btn line central-privacidade" href="#/privacidade">
+              <Icone nome="privacidade" />
+              Privacidade
+            </a>
+          )}
         </header>
         {api.modo === 'exemplo' && r === 'inicio' && (
-          <p className="exemplo-faixa"><Icone desenho={FlaskConical} aria-hidden="true" />Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}. Pode mexer à vontade: nada é gravado de verdade.</p>
+          <p className="exemplo-faixa">
+            <Icone desenho={FlaskConical} aria-hidden="true" />
+            Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}.
+            Pode mexer à vontade: nada é gravado de verdade.
+          </p>
         )}
-        {semRede && api.modo !== 'exemplo' && !erro && <p className="todo warn" role="alert">Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.</p>}
-        {erro && <p className="todo warn" role="alert">{erro}</p>}
+        {semRede && api.modo !== 'exemplo' && !erro && (
+          <p className="todo warn" role="alert">
+            Sem internet agora. O que aparece pode estar velho e nada novo é salvo até a internet voltar.
+          </p>
+        )}
+        {erro && (
+          <p className="todo warn" role="alert">
+            {erro}
+          </p>
+        )}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
         {r !== 'inicio' && r !== 'escritorio' && <AgenteDaAba key={r} rota={r} />}
         <div className={r === 'inicio' ? undefined : 'aba-conteudo'}>
@@ -155,16 +223,38 @@ export function App() {
         {(r === 'inicio' || r === 'escritorio') && <AgenteDaAba key={r} rota={r} semCena />}
         <AjudaDaAba rota={r} />
       </main>
-      <nav className={'tabbar central-mobile' + (equipe ? ' so1' : '')} aria-label={equipe ? 'Anotar' : 'Telas no celular'}>
+      <nav
+        className={'tabbar central-mobile' + (equipe ? ' so1' : '')}
+        aria-label={equipe ? 'Anotar' : 'Telas no celular'}
+      >
         {equipe ? (
-          <button className="plus anotar" type="button" onClick={() => abrirLancar()}><Icone nome="lancar" aria-hidden="true" />Anotar compra</button>
+          <button className="plus anotar" type="button" onClick={() => abrirLancar()}>
+            <Icone nome="lancar" aria-hidden="true" />
+            Anotar compra
+          </button>
         ) : (
           <>
             {inferior.filter(m => m.r !== 'cartoes').map(m => link(m, m.r === 'orcamento' ? 'Orçamento' : m.nome))}
-            <button className="plus tabbar-lancar" type="button" onClick={() => abrirLancar()} aria-label="Anotar gasto"><Icone nome="lancar" aria-hidden="true" /><span>Anotar</span></button>
+            <button
+              className="plus tabbar-lancar"
+              type="button"
+              onClick={() => abrirLancar()}
+              aria-label="Anotar gasto"
+            >
+              <Icone nome="lancar" aria-hidden="true" />
+              <span>Anotar</span>
+            </button>
             {inferior.filter(m => m.r === 'cartoes').map(m => link(m))}
-            <button className="central-mais" type="button" onClick={() => setMais(true)} aria-expanded={mais}
-              data-ativo={extras.some(m => m.r === r) || undefined}><Icone nome="mais" />Mais</button>
+            <button
+              className="central-mais"
+              type="button"
+              onClick={() => setMais(true)}
+              aria-expanded={mais}
+              data-ativo={extras.some(m => m.r === r) || undefined}
+            >
+              <Icone nome="mais" />
+              Mais
+            </button>
           </>
         )}
       </nav>
@@ -173,18 +263,38 @@ export function App() {
           <ul className="list central-extras">
             {extras.map(m => (
               <li key={m.r}>
-                <button className="li" aria-current={r === m.r ? 'page' : undefined} type="button" onClick={() => { setMais(false); ir(m.r) }}>
-                  <span className="tile"><Icone nome={m.icone} /></span><span className="m"><b>{m.nome}</b><small>{(TITULO[m.r] || ['', ''])[0]}</small></span><Icone nome="abrir" className="muted" />
+                <button
+                  className="li"
+                  aria-current={r === m.r ? 'page' : undefined}
+                  type="button"
+                  onClick={() => {
+                    setMais(false)
+                    ir(m.r)
+                  }}
+                >
+                  <span className="tile">
+                    <Icone nome={m.icone} />
+                  </span>
+                  <span className="m">
+                    <b>{m.nome}</b>
+                    <small>{(TITULO[m.r] || ['', ''])[0]}</small>
+                  </span>
+                  <Icone nome="abrir" className="muted" />
                 </button>
               </li>
             ))}
           </ul>
         </Sheet>
       )}
-      {lancarAberto && <Suspense fallback={<Carregando />}><Lancar key={JSON.stringify([api.modo, sessao.userId, familia.id])} /></Suspense>}
+      {lancarAberto && (
+        <Suspense fallback={<Carregando />}>
+          <Lancar key={JSON.stringify([api.modo, sessao.userId, familia.id])} />
+        </Suspense>
+      )}
     </>
   )
 }
 
-function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
-
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}

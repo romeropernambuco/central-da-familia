@@ -13,12 +13,46 @@ import type { Aplicacao, Desejo, FuturoEntrada, Taxa } from './tipos'
 const TB: Record<number, Taxa> = { 2026: '0.1375', 2027: '0.125', 2028: '0.11' }
 const IP: Record<number, Taxa> = { 2026: '0.0522', 2027: '0.049', 2028: '0.04', 2029: '0.04' }
 const TAXAS = { taxa_bruta_ano: TB, aliq_proj: '0.225', virada: '2029-01', taxa_real_trabalho: '0.04' }
-const ap = (id: string, titular: string, saldo: number, titulares: string[] = [titular]): Aplicacao => ({ id, titular, titulares, banco: 'Banco X (exemplo)', saldo, taxa_bruta_anual: '0.10', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, fgc: true })
+const ap = (id: string, titular: string, saldo: number, titulares: string[] = [titular]): Aplicacao => ({
+  id,
+  titular,
+  titulares,
+  banco: 'Banco X (exemplo)',
+  saldo,
+  taxa_bruta_anual: '0.10',
+  isenta: false,
+  aplicada_em: '2026-01-01',
+  resgate_previsto: null,
+  fgc: true,
+})
 const base: FuturoEntrada = {
-  hoje: '2026-11-13', saldo_caixa: 20_000_000, aplicacoes: [ap('a1', 'T1', 80_000_000)], recebimentos: [], compromissos: [], dividas: [], desvios: [], desejos: [],
-  parametros: { mes_base: '2026-11', virada: '2029-01', gasto_2029_hoje: 3_000_000, renda_certa_2029: 0, margem: '0.10', taxa_real_trabalho: '0.04', taxa_bruta_ano: TB, ipca_ano: IP, aliq_proj: '0.225', piso_meses: 6, teto_mes: 3_000_000, mes_reajuste: 1 },
+  hoje: '2026-11-13',
+  saldo_caixa: 20_000_000,
+  aplicacoes: [ap('a1', 'T1', 80_000_000)],
+  recebimentos: [],
+  compromissos: [],
+  dividas: [],
+  desvios: [],
+  desejos: [],
+  parametros: {
+    mes_base: '2026-11',
+    virada: '2029-01',
+    gasto_2029_hoje: 3_000_000,
+    renda_certa_2029: 0,
+    margem: '0.10',
+    taxa_real_trabalho: '0.04',
+    taxa_bruta_ano: TB,
+    ipca_ano: IP,
+    aliq_proj: '0.225',
+    piso_meses: 6,
+    teto_mes: 3_000_000,
+    mes_reajuste: 1,
+  },
 }
-const ultimo = (e: FuturoEntrada) => { const l = futuro(e).linha; return l[l.length - 1].saldo_final }
+const ultimo = (e: FuturoEntrada) => {
+  const l = futuro(e).linha
+  return l[l.length - 1].saldo_final
+}
 
 describe('Revisão do ECONOMISTA: N1 a N5', () => {
   // Motivo: prova o futuro() inteiro e a correção 3 (guardar por mês com os fatores da linha;
@@ -36,7 +70,17 @@ describe('Revisão do ECONOMISTA: N1 a N5', () => {
   // Motivo: correção 1. Desejo pago com contrato antecipado: entra A em d e deixa de entrar R em r.
   // Antes a calculadora dizia "ganha" (−71.192,35) quando a família perde.
   it('N2 desejo com contrato antecipado', () => {
-    const des: Desejo = { id: 'd1', dono: 'p1', valor: 5_000_000, mes: '2027-01', volta_de: 'contrato', volta: 12_000_000, volta_mes: '2027-12', antecipado: 10_000_000, volta_certa: true }
+    const des: Desejo = {
+      id: 'd1',
+      dono: 'p1',
+      valor: 5_000_000,
+      mes: '2027-01',
+      volta_de: 'contrato',
+      volta: 12_000_000,
+      volta_mes: '2027-12',
+      antecipado: 10_000_000,
+      volta_certa: true,
+    }
     const r = avaliarDesejo(des, TAXAS)
     expect(t(r.perda_na_virada)).toBe('71192.41')
     expect(t(r.impacto_renda_mensal as number)).toBe('233.07')
@@ -52,7 +96,10 @@ describe('Revisão do ECONOMISTA: N1 a N5', () => {
   // depois o titular no banco limitado a 250 mil. Antes não saía aviso.
   it('N3 FGC misto', () => {
     // Com a lista de titulares (REVISOR C5), o 2º titular da conjunta também aparece; o valor de T1 é o do ECONOMISTA.
-    expect(avisosFGC([ap('i', 'T1', 10_000_000), ap('c', 'T1', 28_000_000, ['T1', 'T2'])])).toEqual([{ banco: 'Banco X (exemplo)', titular: 'T1', fora: 1_500_000 }, { banco: 'Banco X (exemplo)', titular: 'T2', fora: 1_500_000 }])
+    expect(avisosFGC([ap('i', 'T1', 10_000_000), ap('c', 'T1', 28_000_000, ['T1', 'T2'])])).toEqual([
+      { banco: 'Banco X (exemplo)', titular: 'T1', fora: 1_500_000 },
+      { banco: 'Banco X (exemplo)', titular: 'T2', fora: 1_500_000 },
+    ])
   })
   // Motivo: mês-base diferente de 11/2026.
   it('N4 gasto na virada com mês-base 06/2027', () => {
@@ -61,9 +108,13 @@ describe('Revisão do ECONOMISTA: N1 a N5', () => {
   })
   // Motivo: IR por data nas bordas de 720 dias e resgate padrão (31/12 antes da virada).
   it('N5 IR por data e resgate padrão', () => {
-    expect(diasIR('2027-01-01', '2028-12-21')).toBe(720); expect(aliquotaIR(720).toString()).toBe('0.175')
-    expect(diasIR('2027-01-01', '2028-12-22')).toBe(721); expect(aliquotaIR(721).toString()).toBe('0.15')
+    expect(diasIR('2027-01-01', '2028-12-21')).toBe(720)
+    expect(aliquotaIR(720).toString()).toBe('0.175')
+    expect(diasIR('2027-01-01', '2028-12-22')).toBe(721)
+    expect(aliquotaIR(721).toString()).toBe('0.15')
     expect(diasIR('2027-01-02', '2028-12-31')).toBe(729)
-    expect(t(rendimentoAplicacao({ ...ap('x', 'T1', 10_000_000), aplicada_em: '2027-01-02' }, '2027-03', '2029-01'))).toBe('695.28')
+    expect(
+      t(rendimentoAplicacao({ ...ap('x', 'T1', 10_000_000), aplicada_em: '2027-01-02' }, '2027-03', '2029-01')),
+    ).toBe('695.28')
   })
 })

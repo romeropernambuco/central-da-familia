@@ -12,6 +12,7 @@ export function valorDaPendencia(p: Pick<PerguntaEsc, 'valor'>): number | null {
 }
 export function campoPendencias(e: EscritorioHoje, fonte: FonteResumo[], consultadoEm: string): CampoResumo<number> {
   const meta = { fonte, consultadoEm, conferidoEm: null, atualizadoEm: null }
-  return camposAusentes(e).length ? { ...meta, estado: 'indisponivel', valor: null, motivo: 'Contrato incompleto: precisa_de_voce' }
+  return camposAusentes(e).length
+    ? { ...meta, estado: 'indisponivel', valor: null, motivo: 'Contrato incompleto: precisa_de_voce' }
     : { ...meta, estado: 'pronto', valor: totalPendencias(e) }
 }

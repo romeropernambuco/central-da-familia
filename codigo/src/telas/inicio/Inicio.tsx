@@ -22,9 +22,11 @@ export { porDiaDe } from '../../lib/resumo/porDia'
 export { SemGastosInicio } from './UltimosLancamentos'
 
 function medida<U extends 'reais' | 'centavos' | 'percentual' | 'quantidade'>(
-  fonte: CampoResumo<unknown>, valor: number | null | undefined, unidade: U,
+  fonte: CampoResumo<unknown>,
+  valor: number | null | undefined,
+  unidade: U,
 ) {
-  const meta = { unidade, natureza: fonte.fonte[0]?.natureza ?? 'cadastrado' as const }
+  const meta = { unidade, natureza: fonte.fonte[0]?.natureza ?? ('cadastrado' as const) }
   return valor != null && Number.isFinite(valor)
     ? { ...meta, estado: 'pronto' as const, valor }
     : { ...meta, estado: 'indisponivel' as const, valor: null }
@@ -44,26 +46,106 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
   const destinoAplicacoes = { rota: 'guardado', secao: 'aplicacoes' } as const
   const destinoPlano = { rota: 'planejamento', secao: 'plano2029' } as const
   const primeira = faturas.valor?.lista[0]
-  const destinoFaturas = { rota: 'cartoes', secao: 'fatura', entidade: primeira?.cartao_id, periodo: primeira?.mes } as const
+  const destinoFaturas = {
+    rota: 'cartoes',
+    secao: 'fatura',
+    entidade: primeira?.cartao_id,
+    periodo: primeira?.mes,
+  } as const
   return {
-    cobertura, destinoPlano,
+    cobertura,
+    destinoPlano,
     chips: [
-      { chave: 'podeGastarHoje', titulo: orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Limite de hoje', icone: 'orcamento', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'), tamanho: 'principal' },
-      { chave: 'plano2029', titulo: 'Plano 2029', icone: 'plano2029', destino: destinoPlano, campo: oficial.campo, legenda: oficial.rotulo + ' · com margem', tamanho: 'principal' },
-      { chave: 'aplicacoes', titulo: 'Total aplicado', icone: 'guardado', destino: destinoAplicacoes, campo: medida(aplicacoes, aplicacoes.valor?.total, 'reais'), tamanho: 'secundario' },
-      { chave: 'faturas', titulo: 'Faturas previstas', icone: 'cartoes', destino: destinoFaturas, campo: medida(faturas, faturas.valor?.total, 'reais'), tamanho: 'secundario' },
-    ] as const satisfies readonly { chave: keyof ResumoFamilia; titulo: string; icone: NomeIcone; destino: DestinoResumo; campo: Parameters<typeof Quantia>[0]['campo']; tamanho: 'principal' | 'secundario'; legenda?: string }[],
+      {
+        chave: 'podeGastarHoje',
+        titulo: orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Limite de hoje',
+        icone: 'orcamento',
+        destino: destinoOrcamento,
+        campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'),
+        tamanho: 'principal',
+      },
+      {
+        chave: 'plano2029',
+        titulo: 'Plano 2029',
+        icone: 'plano2029',
+        destino: destinoPlano,
+        campo: oficial.campo,
+        legenda: oficial.rotulo + ' · com margem',
+        tamanho: 'principal',
+      },
+      {
+        chave: 'aplicacoes',
+        titulo: 'Total aplicado',
+        icone: 'guardado',
+        destino: destinoAplicacoes,
+        campo: medida(aplicacoes, aplicacoes.valor?.total, 'reais'),
+        tamanho: 'secundario',
+      },
+      {
+        chave: 'faturas',
+        titulo: 'Faturas previstas',
+        icone: 'cartoes',
+        destino: destinoFaturas,
+        campo: medida(faturas, faturas.valor?.total, 'reais'),
+        tamanho: 'secundario',
+      },
+    ] as const satisfies readonly {
+      chave: keyof ResumoFamilia
+      titulo: string
+      icone: NomeIcone
+      destino: DestinoResumo
+      campo: Parameters<typeof Quantia>[0]['campo']
+      tamanho: 'principal' | 'secundario'
+      legenda?: string
+    }[],
     cartoes: [
-      { chave: 'podeGastarHoje', titulo: 'Meu orçamento', legenda: 'Livre no mês', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.envelope?.livre, 'reais'), Figura: SemGastos },
-      { chave: 'aplicacoes', titulo: 'Aplicações', legenda: 'Rendimento líquido de hoje', destino: destinoAplicacoes, campo: medida(aplicacoes, aplicacoes.valor?.hoje, 'reais'), Figura: SemAplicacoes },
-      { chave: 'faturas', titulo: 'Faturas', legenda: 'Faturas a vencer ou conferir', destino: destinoFaturas, campo: medida(faturas, faturas.valor?.lista.length, 'quantidade'), Figura: SemCartoes },
-      { chave: 'imoveis', titulo: 'Imóveis', legenda: 'Aluguel líquido estimado', destino: { rota: 'guardado', secao: 'imoveis' }, campo: medida(imoveis, aluguel?.valor, aluguel?.unidade ?? 'reais'), Figura: SemImoveis },
+      {
+        chave: 'podeGastarHoje',
+        titulo: 'Meu orçamento',
+        legenda: 'Livre no mês',
+        destino: destinoOrcamento,
+        campo: medida(orcamento, orcamento.valor?.envelope?.livre, 'reais'),
+        Figura: SemGastos,
+      },
+      {
+        chave: 'aplicacoes',
+        titulo: 'Aplicações',
+        legenda: 'Rendimento líquido de hoje',
+        destino: destinoAplicacoes,
+        campo: medida(aplicacoes, aplicacoes.valor?.hoje, 'reais'),
+        Figura: SemAplicacoes,
+      },
+      {
+        chave: 'faturas',
+        titulo: 'Faturas',
+        legenda: 'Faturas a vencer ou conferir',
+        destino: destinoFaturas,
+        campo: medida(faturas, faturas.valor?.lista.length, 'quantidade'),
+        Figura: SemCartoes,
+      },
+      {
+        chave: 'imoveis',
+        titulo: 'Imóveis',
+        legenda: 'Aluguel líquido estimado',
+        destino: { rota: 'guardado', secao: 'imoveis' },
+        campo: medida(imoveis, aluguel?.valor, aluguel?.unidade ?? 'reais'),
+        Figura: SemImoveis,
+      },
     ] as const,
   }
 }
 
-function Leitura({ estado, campo, tamanho }: { estado: CampoResumo<unknown>['estado'] } & Parameters<typeof Quantia>[0]) {
-  if (estado === 'carregando') return <span className="j-sem-dado" role="status">Conferindo…</span>
+function Leitura({
+  estado,
+  campo,
+  tamanho,
+}: { estado: CampoResumo<unknown>['estado'] } & Parameters<typeof Quantia>[0]) {
+  if (estado === 'carregando')
+    return (
+      <span className="j-sem-dado" role="status">
+        Conferindo…
+      </span>
+    )
   if (estado === 'erro') return <span className="j-sem-dado">Não foi possível conferir</span>
   return <Quantia {...{ campo, tamanho }} />
 }
@@ -96,49 +178,87 @@ function InicioFamilia() {
   const { chips, cartoes, cobertura, destinoPlano } = referencias(resumo, oculto)
   const casal = familia?.papel === 'casal'
   const envelopeHoje = resumo.podeGastarHoje.estado === 'restrito' ? null : resumo.podeGastarHoje.valor?.envelope
-  return <>
-    <PrivacidadePropostas.Provider value={oculto}>
-      <div className="j-inicio inicio-j" data-dispositivo={celular ? 'celular' : 'desktop'}>
-        <section className="j-cena" aria-label="Painel do escritório">
-          <div className="j-resumo" aria-label="Referências do dia" role="group">
-            {chips.filter(({ chave }) => resumo[chave].estado !== 'restrito').map(chip => (
-              <a key={chip.chave} href={enderecoDestino(chip.destino)} className="j-chip" data-referencia={chip.chave}>
-                <span><Icone nome={chip.icone} size={15} />{chip.titulo}</span>
-                <Leitura estado={resumo[chip.chave].estado} campo={chip.campo} tamanho={chip.tamanho} />
-                {'legenda' in chip && <small>{chip.legenda}</small>}
+  return (
+    <>
+      <PrivacidadePropostas.Provider value={oculto}>
+        <div className="j-inicio inicio-j" data-dispositivo={celular ? 'celular' : 'desktop'}>
+          <section className="j-cena" aria-label="Painel do escritório">
+            <div className="j-resumo" aria-label="Referências do dia" role="group">
+              {chips
+                .filter(({ chave }) => resumo[chave].estado !== 'restrito')
+                .map(chip => (
+                  <a
+                    key={chip.chave}
+                    href={enderecoDestino(chip.destino)}
+                    className="j-chip"
+                    data-referencia={chip.chave}
+                  >
+                    <span>
+                      <Icone nome={chip.icone} size={15} />
+                      {chip.titulo}
+                    </span>
+                    <Leitura estado={resumo[chip.chave].estado} campo={chip.campo} tamanho={chip.tamanho} />
+                    {'legenda' in chip && <small>{chip.legenda}</small>}
+                  </a>
+                ))}
+            </div>
+            {envelopeHoje && <SobreHoje e={envelopeHoje} placar={casal ? resumo.podeGastarHoje.valor?.placar : null} />}
+            <EscritorioInicio {...{ celular, hoje }} />
+          </section>
+          <section className="j-acompanhamento" aria-labelledby="j-rotinas">
+            <h2 id="j-rotinas">Rotinas da família</h2>
+            <div className="j-bento">
+              {cartoes
+                .filter(({ chave }) => resumo[chave].estado !== 'restrito')
+                .map(({ chave, titulo, legenda, destino, campo, Figura }) => (
+                  <article key={chave} className="j-cartao" data-rotina={chave}>
+                    <div className="j-cartao-texto">
+                      <h3>{titulo}</h3>
+                      <p>{legenda}</p>
+                      <Leitura estado={resumo[chave].estado} campo={campo} tamanho="secundario" />
+                      <a href={enderecoDestino(destino)} aria-label={`Abrir ${titulo}`}>
+                        Ver área <Icone nome="abrir" size={16} />
+                      </a>
+                    </div>
+                    <div className="j-arte" aria-hidden="true">
+                      <Figura />
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </section>
+          {casal && (
+            <section className="j-plano" aria-labelledby="j-rumo" data-trilha="plano2029">
+              <div className="j-plano-topo">
+                <span className="j-plano-icone">
+                  <Icone nome="plano2029" />
+                </span>
+                <h2 id="j-rumo">Rumo a 2029</h2>
+              </div>
+              <Trilha
+                plano={cobertura}
+                celular={celular}
+                consultarMargem={() =>
+                  document.querySelector<HTMLAnchorElement>('[data-referencia="plano2029"]')?.focus()
+                }
+              />
+              <Linha2028Resumo />
+              <a className="lnk" href={enderecoDestino(destinoPlano)}>
+                Abrir Plano 2029 <Icone nome="abrir" size={16} />
               </a>
-            ))}
-          </div>
-          {envelopeHoje && <SobreHoje e={envelopeHoje} placar={casal ? resumo.podeGastarHoje.valor?.placar : null} />}
-          <EscritorioInicio {...{ celular, hoje }} />
-        </section>
-        <section className="j-acompanhamento" aria-labelledby="j-rotinas">
-          <h2 id="j-rotinas">Rotinas da família</h2>
-          <div className="j-bento">
-            {cartoes.filter(({ chave }) => resumo[chave].estado !== 'restrito').map(({ chave, titulo, legenda, destino, campo, Figura }) => (
-              <article key={chave} className="j-cartao" data-rotina={chave}>
-                <div className="j-cartao-texto">
-                  <h3>{titulo}</h3><p>{legenda}</p>
-                  <Leitura estado={resumo[chave].estado} campo={campo} tamanho="secundario" />
-                  <a href={enderecoDestino(destino)} aria-label={`Abrir ${titulo}`}>Ver área <Icone nome="abrir" size={16} /></a>
-                </div>
-                <div className="j-arte" aria-hidden="true"><Figura /></div>
-              </article>
-            ))}
-          </div>
-        </section>
-        {casal && <section className="j-plano" aria-labelledby="j-rumo" data-trilha="plano2029">
-          <div className="j-plano-topo"><span className="j-plano-icone"><Icone nome="plano2029" /></span><h2 id="j-rumo">Rumo a 2029</h2></div>
-          <Trilha plano={cobertura} celular={celular} consultarMargem={() => document.querySelector<HTMLAnchorElement>('[data-referencia="plano2029"]')?.focus()} />
-          <Linha2028Resumo />
-          <a className="lnk" href={enderecoDestino(destinoPlano)}>Abrir Plano 2029 <Icone nome="abrir" size={16} /></a>
-        </section>}
+            </section>
+          )}
+        </div>
+      </PrivacidadePropostas.Provider>
+      <div className="view inicio-f29 inicio-j-detalhes">
+        <ResumoApresentacao
+          {...{ resumo, repetir, hoje, oculto }}
+          jaMostrados={JA_NO_TOPO}
+          informarSaldo={casal && api.salvarSaldoConta ? () => setSaldo(true) : undefined}
+        />
+        <UltimosLancamentos />
       </div>
-    </PrivacidadePropostas.Provider>
-    <div className="view inicio-f29 inicio-j-detalhes">
-      <ResumoApresentacao {...{ resumo, repetir, hoje, oculto }} jaMostrados={JA_NO_TOPO} informarSaldo={casal && api.salvarSaldoConta ? () => setSaldo(true) : undefined} />
-      <UltimosLancamentos />
-    </div>
-    {saldo && <InformarSaldo fechar={() => setSaldo(false)} />}
-  </>
+      {saldo && <InformarSaldo fechar={() => setSaldo(false)} />}
+    </>
+  )
 }

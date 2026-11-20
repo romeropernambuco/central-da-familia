@@ -15,7 +15,18 @@ import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
 import type { Cartao, ResumoHoje } from '../../api/tipos'
-import { centavos, dataCurta, diaSemana, hojeRecife, reais, segundosDesde, somaDias, tecla, textoParaValor, valorComCentavos } from '../../lib/formato'
+import {
+  centavos,
+  dataCurta,
+  diaSemana,
+  hojeRecife,
+  reais,
+  segundosDesde,
+  somaDias,
+  tecla,
+  textoParaValor,
+  valorComCentavos,
+} from '../../lib/formato'
 import { reduzirFoto } from '../../lib/foto'
 import { numeroEnvelope } from '../../componentes/EnvelopeCard'
 import { calcularImpactoDaCompra } from './parcelamento'
@@ -24,13 +35,36 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
 
-type Rascunho = { modo?: 'gasto' | 'entrou'; txt: string; desc: string; quando: string; cartao: string | null; envelope: string; parcelas: number; pago_por?: string }
+type Rascunho = {
+  modo?: 'gasto' | 'entrou'
+  txt: string
+  desc: string
+  quando: string
+  cartao: string | null
+  envelope: string
+  parcelas: number
+  pago_por?: string
+}
 function lerRascunho(chave: string): Rascunho | null {
- try {
-  const d = rascunhos.get(chave) as Rascunho | undefined
-  if (d && typeof d.txt === 'string' && typeof d.desc === 'string' && typeof d.quando === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.quando) && (d.cartao === null || typeof d.cartao === 'string') && typeof d.envelope === 'string' && Number.isInteger(d.parcelas) && d.parcelas >= 1 && d.parcelas <= 12) return d
- } catch { /* sem storage ou rascunho inválido */ }
- return null
+  try {
+    const d = rascunhos.get(chave) as Rascunho | undefined
+    if (
+      d &&
+      typeof d.txt === 'string' &&
+      typeof d.desc === 'string' &&
+      typeof d.quando === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(d.quando) &&
+      (d.cartao === null || typeof d.cartao === 'string') &&
+      typeof d.envelope === 'string' &&
+      Number.isInteger(d.parcelas) &&
+      d.parcelas >= 1 &&
+      d.parcelas <= 12
+    )
+      return d
+  } catch {
+    /* sem storage ou rascunho inválido */
+  }
+  return null
 }
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
@@ -40,9 +74,11 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
   const parte = `${reais(valor)} em ${nome}.`
   if (!e) return parte
   // E1 (rodada 2): gasto grande (10% do mês e no mínimo R$ 150) ganha a conta do resto do mês, sem culpa
-  const lim = e.limite_base ?? e.limite_mes, conta = valor
+  const lim = e.limite_base ?? e.limite_mes,
+    conta = valor
   if (!e.casa && lim > 0 && conta >= Math.max(150, lim * 0.1) && e.livre >= 0) {
-    const pct = Math.round((conta / lim) * 100), dias = Number(hojeRecife().slice(8)) <= 0 ? 0 : Math.max(1, (r?.dias_restantes || 1))
+    const pct = Math.round((conta / lim) * 100),
+      dias = Number(hojeRecife().slice(8)) <= 0 ? 0 : Math.max(1, r?.dias_restantes || 1)
     return `${desc ? cap(desc) : 'Esse gasto'} de ${reais(conta)} é ${pct}% do seu mês de ${reais(lim)}. Ele entra 1 vez só: os ${dias === 1 ? 'dia que falta fica' : `${dias} dias que faltam ficam`} com ${reais(centavos(e.livre / dias))} por dia, em média.`
   }
   if (e.regra === 'diario') {
@@ -50,28 +86,54 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
     // E3 (conserto 5): a mesma frase do Início: quanto já saiu hoje e quanto ainda pode
     return `${parte} Hoje já saiu ${reais(e.gasto_hoje || 0)}. Ainda pode hoje ${reais(e.valor_dia || 0)}${e.amanha != null ? `; amanhã, ${reais(e.amanha)}` : ''}.`
   }
-  if (e.regra === 'mensal' && !e.casa && e.livre >= 0 && e.gasto_hoje != null) return `${parte} Hoje já saiu ${reais(e.gasto_hoje)}. Ainda pode hoje ${reais(e.hoje || 0)}.`
+  if (e.regra === 'mensal' && !e.casa && e.livre >= 0 && e.gasto_hoje != null)
+    return `${parte} Hoje já saiu ${reais(e.gasto_hoje)}. Ainda pode hoje ${reais(e.hoje || 0)}.`
   // E3 (conserto 10): quem passou lê "passou R$ X", nunca "livre R$ 0"
-  if (e.regra === 'semanal') { const l = centavos((e.teto_semana || 0) - (e.gasto_semana || 0)); return l < 0 ? `${parte} A semana passou ${reais(-l)}. Na segunda começa uma semana nova.` : `${parte} Ainda livre nesta semana: ${reais(l)}.` }
-  return e.livre < 0 ? `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.` : `${parte} Ainda livre no mês: ${reais(e.livre)}.`
+  if (e.regra === 'semanal') {
+    const l = centavos((e.teto_semana || 0) - (e.gasto_semana || 0))
+    return l < 0
+      ? `${parte} A semana passou ${reais(-l)}. Na segunda começa uma semana nova.`
+      : `${parte} Ainda livre nesta semana: ${reais(l)}.`
+  }
+  return e.livre < 0
+    ? `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.`
+    : `${parte} Ainda livre no mês: ${reais(e.livre)}.`
 }
 
 /** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
 export function Lancar() {
   const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, sessao } = useApp()
   const corr = lancarAberto?.corrigir
-  const chaveRascunho = sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
-  const [rascunho] = useState(() => chaveRascunho ? lerRascunho(chaveRascunho) : null)
+  const chaveRascunho =
+    sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho
+      ? 'anotar:' + JSON.stringify([api.modo, sessao.userId, familia.id])
+      : ''
+  const [rascunho] = useState(() => (chaveRascunho ? lerRascunho(chaveRascunho) : null))
   const [recuperado, setRecuperado] = useState(!!rascunho)
   const concluido = useRef(false)
   const inicio = useRef(performance.now())
-  const [modo, setModo] = useState<'gasto' | 'entrou'>(lancarAberto?.entrou ? 'entrou' : rascunho?.modo === 'entrou' ? 'entrou' : 'gasto')
-  const [txt, setTxt] = useState(corr ? valorComCentavos(corr.valor) : lancarAberto?.valor ? (lancarAberto.atalho ? valorComCentavos(lancarAberto.valor) : String(lancarAberto.valor).replace('.', ',')) : rascunho?.txt || '')
+  const [modo, setModo] = useState<'gasto' | 'entrou'>(
+    lancarAberto?.entrou ? 'entrou' : rascunho?.modo === 'entrou' ? 'entrou' : 'gasto',
+  )
+  const [txt, setTxt] = useState(
+    corr
+      ? valorComCentavos(corr.valor)
+      : lancarAberto?.valor
+        ? lancarAberto.atalho
+          ? valorComCentavos(lancarAberto.valor)
+          : String(lancarAberto.valor).replace('.', ',')
+        : rascunho?.txt || '',
+  )
   // B9: ao corrigir, o valor antigo vem selecionado: o 1º número digitado já substitui (sem apagar 4 vezes)
   const [selecionado, setSelecionado] = useState(!!corr)
-  const digitar = (t: string) => { setTxt(x => tecla(selecionado ? '' : x, t === 'apagar' && selecionado ? 'apagar' : t)); setSelecionado(false) }
+  const digitar = (t: string) => {
+    setTxt(x => tecla(selecionado ? '' : x, t === 'apagar' && selecionado ? 'apagar' : t))
+    setSelecionado(false)
+  }
   const hoje = hojeRecife()
-  const [quando, setQuando] = useState<string>(corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : rascunho?.quando || hoje)
+  const [quando, setQuando] = useState<string>(
+    corr ? corr.data : lancarAberto?.quando === 'ontem' ? somaDias(hoje, -1) : rascunho?.quando || hoje,
+  )
   const [cartao, setCartao] = useState<string | null>(corr ? corr.cartao_id : rascunho?.cartao || null)
   const membrosPagamento = useMembros()
   const [pagoPor, setPagoPor] = useState(rascunho?.pago_por || '')
@@ -80,7 +142,7 @@ export function Lancar() {
   const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || rascunho?.desc || '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
-  const [pagadorPendente, setPagadorPendente] = useState<null | (()=>Promise<void>)>(null)
+  const [pagadorPendente, setPagadorPendente] = useState<null | (() => Promise<void>)>(null)
   const equipe = familia?.papel === 'equipe'
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
@@ -88,21 +150,65 @@ export function Lancar() {
   useEffect(() => {
     if (!chaveRascunho || concluido.current) return
     try {
-      if (!txt && !desc) { rascunhos.delete(chaveRascunho); return }
-      rascunhos.set(chaveRascunho, { modo, txt, desc, quando, cartao, parcelas, pago_por: pagoPor, envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '' })
-    } catch { /* sem storage */ }
+      if (!txt && !desc) {
+        rascunhos.delete(chaveRascunho)
+        return
+      }
+      rascunhos.set(chaveRascunho, {
+        modo,
+        txt,
+        desc,
+        quando,
+        cartao,
+        parcelas,
+        pago_por: pagoPor,
+        envelope: lancarAberto?.envelope || rascunho?.envelope || familia?.envelopeId || '',
+      })
+    } catch {
+      /* sem storage */
+    }
   }, [chaveRascunho, modo, txt, desc, quando, cartao, parcelas, pagoPor])
-  const limparRascunho = () => { concluido.current = true; try { if (chaveRascunho) rascunhos.delete(chaveRascunho) } catch { /* sem storage */ } }
-  const descartar = () => { limparRascunho(); setTxt(''); setDesc(''); setQuando(hoje); setCartao(null); setPagoPor(''); setParcelas(1); setRecuperado(false); concluido.current = false }
+  const limparRascunho = () => {
+    concluido.current = true
+    try {
+      if (chaveRascunho) rascunhos.delete(chaveRascunho)
+    } catch {
+      /* sem storage */
+    }
+  }
+  const descartar = () => {
+    limparRascunho()
+    setTxt('')
+    setDesc('')
+    setQuando(hoje)
+    setCartao(null)
+    setPagoPor('')
+    setParcelas(1)
+    setRecuperado(false)
+    concluido.current = false
+  }
   const atalho = !corr ? lancarAberto?.atalho : undefined
   const [cartaoAtalho, setCartaoAtalho] = useState<'achou' | 'nao achou' | null>(null)
-  useEffect(() => { if (familia && !equipe) api.cartoes(familia.id).then(cs => {
-    const meus = cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id)
-    setCartoes(meus)
-    if (rascunho?.cartao && !meus.some(c => c.id === rascunho.cartao)) { setCartao(null); setParcelas(1) }
-    // E9: o cartão que o iPhone mandou, se for um dos seus (o do outro nunca entra)
-    if (atalho?.cartao) { const c = acharCartao(meus, atalho.cartao); if (c) setCartao(c.id); setCartaoAtalho(c ? 'achou' : 'nao achou') }
-  }).catch(() => {}) }, [api, familia?.id, equipe])
+  useEffect(() => {
+    if (familia && !equipe)
+      api
+        .cartoes(familia.id)
+        .then(cs => {
+          const meus = cs.filter(x => cartaoMeu(x, familia) || x.id === corr?.cartao_id)
+          setCartoes(meus)
+          if (rascunho?.cartao && !meus.some(c => c.id === rascunho.cartao)) {
+            setCartao(null)
+            setParcelas(1)
+          }
+          // E9: o cartão que o iPhone mandou, se for um dos seus (o do outro nunca entra)
+          if (atalho?.cartao) {
+            const c = acharCartao(meus, atalho.cartao)
+            if (c) setCartao(c.id)
+            setCartaoAtalho(c ? 'achou' : 'nao achou')
+          }
+        })
+        .catch(() => {})
+  }, [api, familia?.id, equipe])
   const digitarRef = useRef(digitar)
   digitarRef.current = digitar
   // teclado físico no computador
@@ -118,12 +224,25 @@ export function Lancar() {
   }, [])
 
   const [recentes, setRecentes] = useState<import('../../api/tipos').Lancamento[]>([])
-  useEffect(() => { let vivo=true; if(familia && !equipe) api.lancamentos(familia.id,hoje.slice(0,7)).then(ls=>{if(vivo)setRecentes(ls)}).catch(()=>{}); return ()=>{vivo=false} },[api,familia?.id,equipe,hoje])
+  useEffect(() => {
+    let vivo = true
+    if (familia && !equipe)
+      api
+        .lancamentos(familia.id, hoje.slice(0, 7))
+        .then(ls => {
+          if (vivo) setRecentes(ls)
+        })
+        .catch(() => {})
+    return () => {
+      vivo = false
+    }
+  }, [api, familia?.id, equipe, hoje])
   const valor = textoParaValor(txt)
   // E2: lança só no seu, na Casa e no sem dono; o limite do outro é só pra ler
   const envs = (resumo?.envelopes || []).filter(e => (!equipe || e.casa) && escreveNo(e, familia))
   // o limite de quem lança vem primeiro (G8); se abriu de um envelope, ele vem antes
-  const primeiro = corr?.envelope_id || lancarAberto?.envelope || (recuperado ? rascunho?.envelope : undefined) || familia?.envelopeId
+  const primeiro =
+    corr?.envelope_id || lancarAberto?.envelope || (recuperado ? rascunho?.envelope : undefined) || familia?.envelopeId
   const ordem = [...envs].sort((a, b) => (a.id === primeiro ? -1 : b.id === primeiro ? 1 : 0))
   const c = cartoes.find(x => x.id === cartao)
   // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
@@ -131,7 +250,10 @@ export function Lancar() {
   const impactoCompra = calcularImpactoDaCompra(valor, parcelas, quando, hoje, c)
   const { simulacao: sim, frase: fraseDaCompra, impacto: fraseImpacto, contaNoMes } = impactoCompra
 
-  const meuLim = (() => { const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId); return e ? e.limite_base ?? e.limite_mes : 0 })()
+  const meuLim = (() => {
+    const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId)
+    return e ? (e.limite_base ?? e.limite_mes) : 0
+  })()
   const gastoGrande = valor > 0 && valor >= Math.max(150, meuLim * 0.1)
   // trava do duplo toque: vale no mesmo instante do 1º toque, antes de a tela redesenhar o botão desligado
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
@@ -140,44 +262,112 @@ export function Lancar() {
   // E3 (conserto 10): valor maior que o mês inteiro do limite pede confirmação antes de salvar (ex.: R$ 28.650 digitado sem vírgula)
   const [confirmar, setConfirmar] = useState<{ envelope: string; nome: string; mes: number } | null>(null)
   const salvar = (envelope: string, nome: string, certeza = false) => {
-    const e = resumo?.envelopes.find(x => x.id === envelope), mes = e ? e.limite_base ?? e.limite_mes : 0
-    if (!certeza && !equipe && valorForaPadrao(valor, mes, recentes.filter(l=>l.envelope_id===envelope && !l.apagado_em && !l.parcela).slice(0,30).map(l=>l.valor))) { setConfirmar({ envelope, nome, mes }); return }
+    const e = resumo?.envelopes.find(x => x.id === envelope),
+      mes = e ? (e.limite_base ?? e.limite_mes) : 0
+    if (
+      !certeza &&
+      !equipe &&
+      valorForaPadrao(
+        valor,
+        mes,
+        recentes
+          .filter(l => l.envelope_id === envelope && !l.apagado_em && !l.parcela)
+          .slice(0, 30)
+          .map(l => l.valor),
+      )
+    ) {
+      setConfirmar({ envelope, nome, mes })
+      return
+    }
     setConfirmar(null)
     return trava(() => (corr ? corrigir(envelope, nome) : gravar(envelope, nome)))
   }
   async function gravar(envelope: string, nome: string) {
     if (!familia || valor <= 0) return
-    setSalvando(true); setErro('')
+    setSalvando(true)
+    setErro('')
     try {
       const s = segundosDesde(inicio.current, performance.now())
       const p = cartao ? parcelas : 1
       // B10: nada salva como "Gasto": sem nome vira "Gasto de quarta 18/11" (o dia ajuda a lembrar depois)
       const descricao = desc.trim() || `Gasto de ${diaSemana(quando)} ${dataCurta(quando)}`
       const chave = toque.para([envelope, valor, quando, descricao, cartao || '', p, pagoPor].join('|'))
-      const r = await api.lancar({ familia: familia.id, envelope, valor, data: quando, descricao, cartao, parcelas: p, segundos: s, chave, pago_por: pagoPor || null })
+      const r = await api.lancar({
+        familia: familia.id,
+        envelope,
+        valor,
+        data: quando,
+        descricao,
+        cartao,
+        parcelas: p,
+        segundos: s,
+        chave,
+        pago_por: pagoPor || null,
+      })
       limparRascunho()
       toque.gravou()
-      if(r.avisoPagador && r.repetirPagador) { setErro(r.avisoPagador); setPagadorPendente(()=>r.repetirPagador!); await recarregar().catch(()=>{}); return }
+      if (r.avisoPagador && r.repetirPagador) {
+        setErro(r.avisoPagador)
+        setPagadorPendente(() => r.repetirPagador!)
+        await recarregar().catch(() => {})
+        return
+      }
       ;(window as any).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
-      toast(equipe ? `Compra anotada em ${nome}.` : cartao ? impactoCompra.confirmacao : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()), async () => { await api.apagarLancamento(r.lancamento.id); await recarregar() })
+      toast(
+        equipe
+          ? `Compra anotada em ${nome}.`
+          : cartao
+            ? impactoCompra.confirmacao
+            : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()),
+        async () => {
+          await api.apagarLancamento(r.lancamento.id)
+          await recarregar()
+        },
+      )
     } catch (e) {
       setSalvando(false)
-      if (e instanceof ErroSessao) { await tentar(async () => { throw e }); return }
+      if (e instanceof ErroSessao) {
+        await tentar(async () => {
+          throw e
+        })
+        return
+      }
       setErro((e as Error).message)
     }
   }
   async function corrigir(envelope: string, nome: string) {
     if (!corr || !api.corrigirLancamento || valor <= 0) return
-    setSalvando(true); setErro('')
-    const antes = { valor: corr.valor, descricao: corr.descricao || '', data: corr.data, envelope: corr.envelope_id, cartao: corr.cartao_id, parcelas: corr.parcelas || 1 }
+    setSalvando(true)
+    setErro('')
+    const antes = {
+      valor: corr.valor,
+      descricao: corr.descricao || '',
+      data: corr.data,
+      envelope: corr.envelope_id,
+      cartao: corr.cartao_id,
+      parcelas: corr.parcelas || 1,
+    }
     try {
-      await api.corrigirLancamento(corr.id, { valor, descricao: desc.trim(), data: quando, envelope, cartao, parcelas: cartao ? parcelas : 1 })
+      await api.corrigirLancamento(corr.id, {
+        valor,
+        descricao: desc.trim(),
+        data: quando,
+        envelope,
+        cartao,
+        parcelas: cartao ? parcelas : 1,
+      })
       fecharLancar()
       await recarregar()
-      toast(`Corrigido: ${reais(valor)} em ${nome}.`, async () => { await api.corrigirLancamento!(corr.id, antes); await recarregar() })
-    } catch (e) { setSalvando(false); setErro((e as Error).message) }
+      toast(`Corrigido: ${reais(valor)} em ${nome}.`, async () => {
+        await api.corrigirLancamento!(corr.id, antes)
+        await recarregar()
+      })
+    } catch (e) {
+      setSalvando(false)
+      setErro((e as Error).message)
+    }
   }
 
   // A1: a equipe da casa nunca vê R$: a folha dela pergunta o que comprou e pede a foto da nota
@@ -187,8 +377,12 @@ export function Lancar() {
     if (!corr) return
     const ok = await tentar(() => api.apagarLancamento(corr.id))
     if (!ok) return
-    fecharLancar(); await recarregar()
-    toast(`${reais(corr.valor)} foi para lixeira.`, async () => { await api.restaurarLancamento(corr.id); await recarregar() })
+    fecharLancar()
+    await recarregar()
+    toast(`${reais(corr.valor)} foi para lixeira.`, async () => {
+      await api.restaurarLancamento(corr.id)
+      await recarregar()
+    })
   }
 
   const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'apagar']
@@ -197,14 +391,41 @@ export function Lancar() {
     <>
       <div className="amount lancar-f29">
         <span className="lab">{modo === 'entrou' ? 'Quanto entrou?' : corr ? 'Valor certo' : 'Quanto gastou?'}</span>
-        <output className={(valor ? '' : 'zero') + (selecionado ? ' selecionado' : '')} aria-live="polite" aria-label={oculto ? 'Valor escondido' : 'Valor ' + reais(valor)}>
-          <span className="cur">R$</span><span className="num">{oculto && valor ? '•••' : <>{(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}{dec !== undefined ? ',' + dec : ''}</>}</span>
+        <output
+          className={(valor ? '' : 'zero') + (selecionado ? ' selecionado' : '')}
+          aria-live="polite"
+          aria-label={oculto ? 'Valor escondido' : 'Valor ' + reais(valor)}
+        >
+          <span className="cur">R$</span>
+          <span className="num">
+            {oculto && valor ? (
+              '•••'
+            ) : (
+              <>
+                {(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                {dec !== undefined ? ',' + dec : ''}
+              </>
+            )}
+          </span>
         </output>
         {selecionado && <small className="sub">Digite o valor certo: o antigo some no 1º número.</small>}
-        {oculto && valor > 0 && <small className="sub">Valores escondidos. Use o olho desta folha para ver o que digitou.</small>}
+        {oculto && valor > 0 && (
+          <small className="sub">Valores escondidos. Use o olho desta folha para ver o que digitou.</small>
+        )}
       </div>
       {/* B10: o "O que foi?" fica à vista, logo abaixo do valor */}
-      {modo === 'gasto' && <label className="campo"><span>O que foi?</span><CampoPrivado className="inp lanc-o-que" placeholder="O que foi? (ex.: Farmácia)" value={desc} onChange={e => setDesc(e.target.value)} aria-label="O que foi" /></label>}
+      {modo === 'gasto' && (
+        <label className="campo">
+          <span>O que foi?</span>
+          <CampoPrivado
+            className="inp lanc-o-que"
+            placeholder="O que foi? (ex.: Farmácia)"
+            value={desc}
+            onChange={e => setDesc(e.target.value)}
+            aria-label="O que foi"
+          />
+        </label>
+      )}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
           <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
@@ -214,84 +435,292 @@ export function Lancar() {
       </div>
     </>
   )
-  const datas = quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
+  const datas =
+    quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
-    <Sheet titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'}
+    <Sheet
+      titulo={corr ? 'Corrigir lançamento' : modo === 'entrou' ? 'Entrou dinheiro' : 'Anotar'}
       subtitulo={corr ? 'Revise os dados do lançamento' : 'Registre um gasto ou uma entrada'}
-      fechar={() => { if (!salvando) fecharLancar() }} rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'}
-      cabecalho={<><SeloDaAba /><OlhoDaAba curto /></>}>
-      {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={descartar}>Descartar</button></p>}
+      fechar={() => {
+        if (!salvando) fecharLancar()
+      }}
+      rotulo={corr ? 'Corrigir lançamento' : 'Anotar gasto'}
+      cabecalho={
+        <>
+          <SeloDaAba />
+          <OlhoDaAba curto />
+        </>
+      }
+    >
+      {recuperado && (
+        <p role="status">
+          Rascunho recuperado. Continuar de onde parou{' '}
+          <button type="button" onClick={descartar}>
+            Descartar
+          </button>
+        </p>
+      )}
       {casal && !corr && (
         <div className="seg compacta lancar-modo" role="group" aria-label="O que aconteceu">
-          <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}><Icone nome="gasto" />Gastei</button>
-          <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}><Icone nome="entrada" />Entrou dinheiro</button>
+          <button type="button" aria-pressed={modo === 'gasto'} onClick={() => setModo('gasto')}>
+            <Icone nome="gasto" />
+            Gastei
+          </button>
+          <button type="button" aria-pressed={modo === 'entrou'} onClick={() => setModo('entrou')}>
+            <Icone nome="entrada" />
+            Entrou dinheiro
+          </button>
         </div>
       )}
       {/* E9: veio do Atalho do iPhone: nada foi salvo ainda */}
-      {atalho && modo === 'gasto' && <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status"><span>{textoPrivado(atalho.erro ? atalho.erro : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome para salvar.')}{textoPrivado(cartaoAtalho === 'nao achou' ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.` : '')}</span></p>}
-      {modo === 'entrou' ? <EntrouDinheiro valor={valor} visor={visor} confirmar={limparRascunho} /> : (
+      {atalho && modo === 'gasto' && (
+        <p className={'todo ' + (atalho.erro ? 'warn' : 'ok') + ' atalho-aviso'} role="status">
+          <span>
+            {textoPrivado(
+              atalho.erro
+                ? atalho.erro
+                : 'Veio do Atalho do iPhone. Nada foi salvo: confira e toque no seu nome para salvar.',
+            )}
+            {textoPrivado(
+              cartaoAtalho === 'nao achou'
+                ? ` O cartão "${atalho.cartao}" não é um dos seus cadastrados: ficou Pix ou dinheiro.`
+                : '',
+            )}
+          </span>
+        </p>
+      )}
+      {modo === 'entrou' ? (
+        <EntrouDinheiro valor={valor} visor={visor} confirmar={limparRascunho} />
+      ) : (
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
-          {!equipe && !corr && <button className="btn line sm" type="button" style={{ justifySelf: 'start' }} onClick={() => setCupom(true)}><Icone desenho={Camera} />Ler cupom com foto</button>}
+          {!equipe && !corr && (
+            <button
+              className="btn line sm"
+              type="button"
+              style={{ justifySelf: 'start' }}
+              onClick={() => setCupom(true)}
+            >
+              <Icone desenho={Camera} />
+              Ler cupom com foto
+            </button>
+          )}
           {visor}
-          {!corr && <label className="campo"><span>Quem pagou? (opcional)</span><select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}><option value="">Não informado</option>{(casal ? membrosPagamento.lista : familia?.membroId ? [{ id: familia.membroId, nome: familia.membroNome }] : []).map(m => <option key={m.id} value={m.id}>{textoPrivado(m.nome)}</option>)}</select><small>Quem anota não é necessariamente quem paga.</small></label>}
-          <div className="atrow"><span className="atl">Quando</span>
-            {datas.map(d => <button key={d} type="button" className="pill" aria-pressed={quando === d} onClick={() => setQuando(d)}>{d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}</button>)}
+          {!corr && (
+            <label className="campo">
+              <span>Quem pagou? (opcional)</span>
+              <select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}>
+                <option value="">Não informado</option>
+                {(casal
+                  ? membrosPagamento.lista
+                  : familia?.membroId
+                    ? [{ id: familia.membroId, nome: familia.membroNome }]
+                    : []
+                ).map(m => (
+                  <option key={m.id} value={m.id}>
+                    {textoPrivado(m.nome)}
+                  </option>
+                ))}
+              </select>
+              <small>Quem anota não é necessariamente quem paga.</small>
+            </label>
+          )}
+          <div className="atrow">
+            <span className="atl">Quando</span>
+            {datas.map(d => (
+              <button key={d} type="button" className="pill" aria-pressed={quando === d} onClick={() => setQuando(d)}>
+                {d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}
+              </button>
+            ))}
           </div>
           {!equipe && cartoes.length > 0 && (
-            <div className="atrow"><span className="atl">Pagou</span>
-              <button type="button" className="pill" aria-pressed={cartao === null} onClick={() => { setCartao(null); setParcelas(1) }}><Icone nome="orcamento" />Pix ou dinheiro</button>
-              {cartoes.map(x => <button key={x.id} type="button" className="pill" aria-pressed={cartao === x.id} onClick={() => setCartao(x.id)}><Icone nome="cartao" />{textoPrivado(x.nome)}</button>)}
+            <div className="atrow">
+              <span className="atl">Pagou</span>
+              <button
+                type="button"
+                className="pill"
+                aria-pressed={cartao === null}
+                onClick={() => {
+                  setCartao(null)
+                  setParcelas(1)
+                }}
+              >
+                <Icone nome="orcamento" />
+                Pix ou dinheiro
+              </button>
+              {cartoes.map(x => (
+                <button
+                  key={x.id}
+                  type="button"
+                  className="pill"
+                  aria-pressed={cartao === x.id}
+                  onClick={() => setCartao(x.id)}
+                >
+                  <Icone nome="cartao" />
+                  {textoPrivado(x.nome)}
+                </button>
+              ))}
             </div>
           )}
           {c && (
             <div className="parcelas">
               <span className="atl">Em quantas vezes</span>
               <div className="pills parc" role="group" aria-label="Em quantas vezes">
-                {PARCELAS.map(p => <button key={p} type="button" className="pill" aria-pressed={parcelas === p} disabled={p > 1 && !temDias} onClick={() => setParcelas(p)}>{p === 1 ? 'À vista' : `${p}x`}</button>)}
+                {PARCELAS.map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    className="pill"
+                    aria-pressed={parcelas === p}
+                    disabled={p > 1 && !temDias}
+                    onClick={() => setParcelas(p)}
+                  >
+                    {p === 1 ? 'À vista' : `${p}x`}
+                  </button>
+                ))}
               </div>
-              {!temDias && <p className="sub">O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em Cartões para parcelar.</p>}
+              {!temDias && (
+                <p className="sub">
+                  O {textoPrivado(c.nome)} está sem o dia que a fatura fecha ou o dia que vence. Cadastre os 2 em
+                  Cartões para parcelar.
+                </p>
+              )}
               {/* E4 (conserto 7 com a decisão do dono): cada parcela no mês da fatura, com o dia do vencimento cadastrado */}
-              {valor > 0 && <><p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p><p className="sub parc-impacto">{textoPrivado(fraseImpacto)}</p></>}
+              {valor > 0 && (
+                <>
+                  <p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p>
+                  <p className="sub parc-impacto">{textoPrivado(fraseImpacto)}</p>
+                </>
+              )}
             </div>
           )}
           {/* E7 (F6): gasto grande (10% do seu mês e no mínimo R$ 150, a mesma régua do aviso depois de salvar) mostra o custo em 2029 antes de salvar */}
           {/* QA E11 (E8): parcelado que não conta neste mês não mostra o aviso como se fosse gasto de hoje */}
-          {casal && !corr && gastoGrande && sim.length <= 1 && <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />}
-          <p className="lbl salvar-dica">{corr ? 'Toque no nome para salvar a correção' : valor > 0 ? 'Toque no seu nome para salvar' : 'Digite o valor e toque no seu nome para salvar'}</p>
+          {casal && !corr && gastoGrande && sim.length <= 1 && (
+            <Impacto2029 valor={valor} prefixo="Gasto grande: se não estava no combinado, " className="lanc-impacto" />
+          )}
+          <p className="lbl salvar-dica">
+            {corr
+              ? 'Toque no nome para salvar a correção'
+              : valor > 0
+                ? 'Toque no seu nome para salvar'
+                : 'Digite o valor e toque no seu nome para salvar'}
+          </p>
           <div className="envbtns lancar-destinos-f29">
             {ordem.map(e => {
               // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
               const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
               // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
               const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
-              const onde = e.regra === 'diario' ? ['hoje', 'do dia'] : e.regra === 'semanal' ? ['na semana', 'da semana'] : ['no mês', 'do mês']
+              const onde =
+                e.regra === 'diario'
+                  ? ['hoje', 'do dia']
+                  : e.regra === 'semanal'
+                    ? ['na semana', 'da semana']
+                    : ['no mês', 'do mês']
               const conta = contaNoMes
               const depois = centavos(agora - conta)
-              const linha = !n ? '' : valor > 0 && !corr && sim.length > 1 && !conta ? `${reais(agora)} ${n.rotulo}, não muda` : valor > 0 && !corr ? (depois >= 0 ? `depois fica ${reais(depois)} ${onde[0]}` : `passa ${reais(-depois)} ${onde[1]}`) : n.estado === 'devendo' ? (e.regra === 'semanal' ? `passou ${reais(n.devendo)} nesta semana` : `fica devendo ${reais(n.devendo)}`) : `${reais(agora)} ${n.rotulo}`
+              const linha = !n
+                ? ''
+                : valor > 0 && !corr && sim.length > 1 && !conta
+                  ? `${reais(agora)} ${n.rotulo}, não muda`
+                  : valor > 0 && !corr
+                    ? depois >= 0
+                      ? `depois fica ${reais(depois)} ${onde[0]}`
+                      : `passa ${reais(-depois)} ${onde[1]}`
+                    : n.estado === 'devendo'
+                      ? e.regra === 'semanal'
+                        ? `passou ${reais(n.devendo)} nesta semana`
+                        : `fica devendo ${reais(n.devendo)}`
+                      : `${reais(agora)} ${n.rotulo}`
               return (
-                <button key={e.id} type="button" className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')} disabled={valor <= 0 || salvando} onClick={() => salvar(e.id, e.nome)} aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}>
-                  <Icone nome="salvo" /><b>Salvar em {textoPrivado(e.nome)}</b><Icone nome="abrir" className="destino-seta" />
+                <button
+                  key={e.id}
+                  type="button"
+                  className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')}
+                  disabled={valor <= 0 || salvando}
+                  onClick={() => salvar(e.id, e.nome)}
+                  aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}
+                >
+                  <Icone nome="salvo" />
+                  <b>Salvar em {textoPrivado(e.nome)}</b>
+                  <Icone nome="abrir" className="destino-seta" />
                   <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
                 </button>
               )
             })}
           </div>
           {confirmar && (
-            <div className="todo warn confirmar-valor" role="alert"><span><b>Confere? {reais(valor)} é bem acima do seu normal em {textoPrivado(confirmar.nome)}.</b></span>
+            <div className="todo warn confirmar-valor" role="alert">
+              <span>
+                <b>
+                  Confere? {reais(valor)} é bem acima do seu normal em {textoPrivado(confirmar.nome)}.
+                </b>
+              </span>
               <span className="row-btns" style={{ marginTop: 8 }}>
-                <button className="btn sm primary" type="button" disabled={salvando} onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}>Confirmar {reais(valor)}</button>
-                <button className="btn sm line" type="button" onClick={() => { setConfirmar(null); setTxt(''); setSelecionado(false) }}>Corrigir o valor</button>
+                <button
+                  className="btn sm primary"
+                  type="button"
+                  disabled={salvando}
+                  onClick={() => salvar(confirmar.envelope, confirmar.nome, true)}
+                >
+                  Confirmar {reais(valor)}
+                </button>
+                <button
+                  className="btn sm line"
+                  type="button"
+                  onClick={() => {
+                    setConfirmar(null)
+                    setTxt('')
+                    setSelecionado(false)
+                  }}
+                >
+                  Corrigir o valor
+                </button>
               </span>
             </div>
           )}
-          {!ordem.length && <EstadoVazio ilustracao="Plano2029" titulo="Nenhum limite criado ainda" frase="Crie em Planejamento." />}
+          {!ordem.length && (
+            <EstadoVazio ilustracao="Plano2029" titulo="Nenhum limite criado ainda" frase="Crie em Planejamento." />
+          )}
           {/* B14: a lixeira mora só dentro do Corrigir (longe do lápis da lista) */}
-          {corr && <button className="btn ghost" type="button" style={{ justifySelf: 'start' }} disabled={salvando} onClick={apagarEste}><Icone desenho={Trash2} />Apagar este lançamento</button>}
+          {corr && (
+            <button
+              className="btn ghost"
+              type="button"
+              style={{ justifySelf: 'start' }}
+              disabled={salvando}
+              onClick={apagarEste}
+            >
+              <Icone desenho={Trash2} />
+              Apagar este lançamento
+            </button>
+          )}
         </>
       )}
-      {pagadorPendente && <button className="btn primary" type="button" onClick={async()=>{try{await pagadorPendente();setPagadorPendente(null);fecharLancar();await recarregar()}catch(e){setErro((e as Error).message)}}}>Informar de novo</button>}
-      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
+      {pagadorPendente && (
+        <button
+          className="btn primary"
+          type="button"
+          onClick={async () => {
+            try {
+              await pagadorPendente()
+              setPagadorPendente(null)
+              fecharLancar()
+              await recarregar()
+            } catch (e) {
+              setErro((e as Error).message)
+            }
+          }}
+        >
+          Informar de novo
+        </button>
+      )}
+      {erro && (
+        <p className="erro" role="alert">
+          {textoPrivado(erro)}
+        </p>
+      )}
     </Sheet>
   )
 }
@@ -301,55 +730,135 @@ function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: Rea
   const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
   const { g } = useGuardado()
   const { familia: fam } = useApp()
-  const [entradas, salvarEntradas] = useConfig<{ id: string; data: string; valor: number; de: string; destino: string }[]>('entradas', [])
+  const [entradas, salvarEntradas] = useConfig<
+    { id: string; data: string; valor: number; de: string; destino: string }[]
+  >('entradas', [])
   const [de, setDe] = useState('')
   // E2: guarda só na sua aplicação ou na do casal
   const apps = (g?.aplicacoes || []).filter(a => aplicacaoMinha(a, fam))
-  const padrao = apps.find(a => a.liquidez === 'diaria' && a.titular && a.titular !== null) || apps.find(a => a.liquidez === 'diaria') || apps[0]
+  const padrao =
+    apps.find(a => a.liquidez === 'diaria' && a.titular && a.titular !== null) ||
+    apps.find(a => a.liquidez === 'diaria') ||
+    apps[0]
   const [destino, setDestino] = useState<string>('')
   const alvo = destino || padrao?.id || 'combinado'
   const [trabalho, setTrabalho] = useState(false)
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   const toque = useMemo(() => criarChaveToque(), [])
-  const salvar = () => trava(async () => {
-    if (!familia || valor <= 0) return
-    const hoje = hojeRecife(), nota = de.trim() || (trabalho ? 'Pagamento do meu trabalho' : 'Dinheiro que entrou')
-    // AUTONOMA ideia 2: o que é do trabalho conta como renda deste mês (não é "a mais")
-    if (trabalho) {
-      const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'renda' }])
-      if (ok) { confirmar(); fecharLancar(); toast(`${reais(valor)} anotados como renda deste mês, do seu trabalho.`) }
-      return
-    }
-    if (alvo === 'combinado') {
-      const ok = await salvarEntradas([...(entradas || []), { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'gasto combinado' }])
-      if (ok) { confirmar(); fecharLancar(); toast(`${reais(valor)} anotados para um gasto combinado. Não muda o que você pode gastar.`) }
-      return
-    }
-    const app = apps.find(a => a.id === alvo)
-    if (!app) return
-    const chave = toque.para([app.id, valor, hoje, nota].join('|'))
-    const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
-    if (!ok) return
-    confirmar(); toque.gravou(); fecharLancar(); await recarregar()
-    toast(`${reais(valor)} foram pro guardado (${app.nome}) e contam para 2029. Pela regra da casa, isso não muda o que você pode gastar.`, api.guardadoDesfazer ? async () => { await api.guardadoDesfazer!(app.id, chave); await recarregar() } : undefined)
-  })
+  const salvar = () =>
+    trava(async () => {
+      if (!familia || valor <= 0) return
+      const hoje = hojeRecife(),
+        nota = de.trim() || (trabalho ? 'Pagamento do meu trabalho' : 'Dinheiro que entrou')
+      // AUTONOMA ideia 2: o que é do trabalho conta como renda deste mês (não é "a mais")
+      if (trabalho) {
+        const ok = await salvarEntradas([
+          ...(entradas || []),
+          { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'renda' },
+        ])
+        if (ok) {
+          confirmar()
+          fecharLancar()
+          toast(`${reais(valor)} anotados como renda deste mês, do seu trabalho.`)
+        }
+        return
+      }
+      if (alvo === 'combinado') {
+        const ok = await salvarEntradas([
+          ...(entradas || []),
+          { id: String(Date.now()), data: hoje, valor, de: nota, destino: 'gasto combinado' },
+        ])
+        if (ok) {
+          confirmar()
+          fecharLancar()
+          toast(`${reais(valor)} anotados para um gasto combinado. Não muda o que você pode gastar.`)
+        }
+        return
+      }
+      const app = apps.find(a => a.id === alvo)
+      if (!app) return
+      const chave = toque.para([app.id, valor, hoje, nota].join('|'))
+      const ok = await tentar(() => api.guardadoMovimentar(app.id, 'aporte', valor, hoje, chave, nota))
+      if (!ok) return
+      confirmar()
+      toque.gravou()
+      fecharLancar()
+      await recarregar()
+      toast(
+        `${reais(valor)} foram pro guardado (${app.nome}) e contam para 2029. Pela regra da casa, isso não muda o que você pode gastar.`,
+        api.guardadoDesfazer
+          ? async () => {
+              await api.guardadoDesfazer!(app.id, chave)
+              await recarregar()
+            }
+          : undefined,
+      )
+    })
   return (
     <>
       <div className="pills" role="group" aria-label="De onde é esse dinheiro">
-        <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}><Icone nome="folha" />É do meu trabalho</button>
-        <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}><Icone nome="entrada" />Entrou a mais</button>
+        <button type="button" className="pill" aria-pressed={trabalho} onClick={() => setTrabalho(true)}>
+          <Icone nome="folha" />É do meu trabalho
+        </button>
+        <button type="button" className="pill" aria-pressed={!trabalho} onClick={() => setTrabalho(false)}>
+          <Icone nome="entrada" />
+          Entrou a mais
+        </button>
       </div>
-      <p className="sub">{trabalho ? 'Pagamento de cliente, serviço, comissão: conta como renda deste mês.' : <>Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai pro guardado (fora do gasto do mês, conta para 2029) e <b>não aumenta</b> o que dá para gastar.</>}</p>
+      <p className="sub">
+        {trabalho ? (
+          'Pagamento de cliente, serviço, comissão: conta como renda deste mês.'
+        ) : (
+          <>
+            Presente, bônus, venda, dinheiro devolvido. Pela regra da casa, o que entra a mais do que a renda do mês vai
+            pro guardado (fora do gasto do mês, conta para 2029) e <b>não aumenta</b> o que dá para gastar.
+          </>
+        )}
+      </p>
       {visor}
-      <CampoPrivado className="inp" placeholder="De onde veio? Ex.: presente da madrinha" value={de} onChange={e => setDe(e.target.value)} aria-label="De onde veio" />
-      {!trabalho && <div className="campo"><span id="eDest">Pra onde vai</span>
-        <div className="pills" role="group" aria-labelledby="eDest">
-          {apps.map(a => <button key={a.id} type="button" className="pill" aria-pressed={alvo === a.id} onClick={() => setDestino(a.id)}>{textoPrivado(a.nome)}<small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small></button>)}
-          <button type="button" className="pill" aria-pressed={alvo === 'combinado'} onClick={() => setDestino('combinado')}>É para um gasto combinado</button>
+      <CampoPrivado
+        className="inp"
+        placeholder="De onde veio? Ex.: presente da madrinha"
+        value={de}
+        onChange={e => setDe(e.target.value)}
+        aria-label="De onde veio"
+      />
+      {!trabalho && (
+        <div className="campo">
+          <span id="eDest">Pra onde vai</span>
+          <div className="pills" role="group" aria-labelledby="eDest">
+            {apps.map(a => (
+              <button
+                key={a.id}
+                type="button"
+                className="pill"
+                aria-pressed={alvo === a.id}
+                onClick={() => setDestino(a.id)}
+              >
+                {textoPrivado(a.nome)}
+                <small className="pill-dono">{a.titular ? 'seu' : 'do casal'}</small>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="pill"
+              aria-pressed={alvo === 'combinado'}
+              onClick={() => setDestino('combinado')}
+            >
+              É para um gasto combinado
+            </button>
+          </div>
+          {!apps.length && (
+            <small>
+              Você ainda não tem nada no Guardado. Dá para anotar como gasto combinado ou criar a aplicação no Guardado.
+            </small>
+          )}
         </div>
-        {!apps.length && <small>Você ainda não tem nada no Guardado. Dá para anotar como gasto combinado ou criar a aplicação no Guardado.</small>}
-      </div>}
-      <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}><Icone desenho={ArrowDownToLine} />{trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}</button>
+      )}
+      <button className="btn primary full" type="button" disabled={valor <= 0} onClick={salvar}>
+        <Icone desenho={ArrowDownToLine} />
+        {trabalho || alvo === 'combinado' ? 'Anotar' : `Guardar ${valor > 0 ? reais(valor) : ''}`}
+      </button>
     </>
   )
 }
@@ -362,13 +871,34 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
  */
 function AnotarCompra() {
   const { api, familia, sessao, fecharLancar, toast, recarregar, tentar, oculto } = useApp()
-  const chave = sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
-  const [rascunho] = useState(() => { try { return chave ? rascunhos.get(chave) as string || '' : '' } catch { return '' } })
+  const chave =
+    sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
+  const [rascunho] = useState(() => {
+    try {
+      return chave ? (rascunhos.get(chave) as string) || '' : ''
+    } catch {
+      return ''
+    }
+  })
   const [recuperado, setRecuperado] = useState(!!rascunho)
   const [nome, setNome] = useState(rascunho)
   const salvo = useRef(false)
-  const limpar = () => { try { if (chave) rascunhos.delete(chave) } catch { /* sem storage */ } }
-  useEffect(() => { if (!chave || salvo.current) return; try { if (nome) rascunhos.set(chave, nome); else limpar() } catch { /* sem storage */ } }, [chave, nome])
+  const limpar = () => {
+    try {
+      if (chave) rascunhos.delete(chave)
+    } catch {
+      /* sem storage */
+    }
+  }
+  useEffect(() => {
+    if (!chave || salvo.current) return
+    try {
+      if (nome) rascunhos.set(chave, nome)
+      else limpar()
+    } catch {
+      /* sem storage */
+    }
+  }, [chave, nome])
   const [tipo, setTipo] = useState<'feira' | 'casa'>('feira')
   const [foto, setFoto] = useState<string | null>(null)
   const [erro, setErro] = useState('')
@@ -377,50 +907,168 @@ function AnotarCompra() {
   const fotoTrava = useRef(false)
   const camera = useRef<HTMLInputElement>(null)
   const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
-  const anotar = () => trava(async () => {
-    if (fotoTrava.current) return
-    if (!familia) return
-    if (!nome.trim()) { setErro('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.'); return }
-    if (!api.anotarCompraEquipe) { setErro('Essa opção ainda não está disponível. Fale com quem cuida do app.'); return }
-    setGravando(true); setErro('')
-    let aviso = ''
-    const ok = await tentar(async () => { aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso })
-    setGravando(false)
-    if (!ok) { setErro('Não consegui enviar. Tente de novo. A foto continua aqui.'); return }
-    salvo.current = true; limpar(); fecharLancar(); await recarregar(); toast(aviso)
-  })
+  const anotar = () =>
+    trava(async () => {
+      if (fotoTrava.current) return
+      if (!familia) return
+      if (!nome.trim()) {
+        setErro('Escreva o que você comprou. Ex.: feira do mercadinho, detergente.')
+        return
+      }
+      if (!api.anotarCompraEquipe) {
+        setErro('Essa opção ainda não está disponível. Fale com quem cuida do app.')
+        return
+      }
+      setGravando(true)
+      setErro('')
+      let aviso = ''
+      const ok = await tentar(async () => {
+        aviso = (await api.anotarCompraEquipe!(familia.id, { tipo, nome: nome.trim(), foto })).aviso
+      })
+      setGravando(false)
+      if (!ok) {
+        setErro('Não consegui enviar. Tente de novo. A foto continua aqui.')
+        return
+      }
+      salvo.current = true
+      limpar()
+      fecharLancar()
+      await recarregar()
+      toast(aviso)
+    })
   const pegarFoto = async (arq: File | null) => {
     if (!arq || fotoTrava.current || gravando) return
-    fotoTrava.current = true; setPreparandoFoto(true); setErro('')
-    try { setFoto(await reduzirFoto(arq)) } catch { setErro('Não foi possível ler a foto. Tente de novo.') }
-    finally { fotoTrava.current = false; setPreparandoFoto(false) }
+    fotoTrava.current = true
+    setPreparandoFoto(true)
+    setErro('')
+    try {
+      setFoto(await reduzirFoto(arq))
+    } catch {
+      setErro('Não foi possível ler a foto. Tente de novo.')
+    } finally {
+      fotoTrava.current = false
+      setPreparandoFoto(false)
+    }
   }
   return (
-    <Sheet titulo="Anotar compra" subtitulo="Registre um item da feira ou da casa"
-      fechar={() => { if (!gravando && !fotoTrava.current) fecharLancar() }} rotulo="Anotar compra"
-      cabecalho={<SeloDaAba />}>
-      {recuperado && <p role="status">Rascunho recuperado. Continuar de onde parou <button type="button" onClick={() => { limpar(); setNome(''); setRecuperado(false) }}>Descartar</button></p>}
-      <label className="campo"><span>O que você comprou?</span><CampoPrivado className="inp lanc-o-que" placeholder="Ex.: feira do mercadinho, detergente" value={nome} onChange={e => setNome(e.target.value)} /></label>
-      <div className="campo"><span id="aqTipo">É da feira ou da casa?</span>
+    <Sheet
+      titulo="Anotar compra"
+      subtitulo="Registre um item da feira ou da casa"
+      fechar={() => {
+        if (!gravando && !fotoTrava.current) fecharLancar()
+      }}
+      rotulo="Anotar compra"
+      cabecalho={<SeloDaAba />}
+    >
+      {recuperado && (
+        <p role="status">
+          Rascunho recuperado. Continuar de onde parou{' '}
+          <button
+            type="button"
+            onClick={() => {
+              limpar()
+              setNome('')
+              setRecuperado(false)
+            }}
+          >
+            Descartar
+          </button>
+        </p>
+      )}
+      <label className="campo">
+        <span>O que você comprou?</span>
+        <CampoPrivado
+          className="inp lanc-o-que"
+          placeholder="Ex.: feira do mercadinho, detergente"
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+        />
+      </label>
+      <div className="campo">
+        <span id="aqTipo">É da feira ou da casa?</span>
         <div className="anotar-tipo" role="group" aria-labelledby="aqTipo">
-          <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}><Icone nome="comprador" />Feira da semana</button>
-          <button type="button" className="pill" aria-pressed={tipo === 'casa'} onClick={() => setTipo('casa')}><Icone nome="casa" />Coisa da casa</button>
+          <button type="button" className="pill" aria-pressed={tipo === 'feira'} onClick={() => setTipo('feira')}>
+            <Icone nome="comprador" />
+            Feira da semana
+          </button>
+          <button type="button" className="pill" aria-pressed={tipo === 'casa'} onClick={() => setTipo('casa')}>
+            <Icone nome="casa" />
+            Coisa da casa
+          </button>
         </div>
       </div>
       <div className="foto-nota">
-        <input ref={camera} type="file" accept="image/*" capture="environment" disabled={gravando || preparandoFoto} onChange={ev => { const f = ev.target.files?.[0] || null; ev.target.value = ''; pegarFoto(f) }} />
-        <button type="button" className="btn full line" disabled={gravando || preparandoFoto} onClick={() => camera.current?.click()}>{foto ? <><Icone desenho={Camera} />Trocar foto da nota</> : <><Icone desenho={Camera} />Tirar foto da nota</>}</button>
+        <input
+          ref={camera}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          disabled={gravando || preparandoFoto}
+          onChange={ev => {
+            const f = ev.target.files?.[0] || null
+            ev.target.value = ''
+            pegarFoto(f)
+          }}
+        />
+        <button
+          type="button"
+          className="btn full line"
+          disabled={gravando || preparandoFoto}
+          onClick={() => camera.current?.click()}
+        >
+          {foto ? (
+            <>
+              <Icone desenho={Camera} />
+              Trocar foto da nota
+            </>
+          ) : (
+            <>
+              <Icone desenho={Camera} />
+              Tirar foto da nota
+            </>
+          )}
+        </button>
         {preparandoFoto && <p role="status">Preparando foto…</p>}
-        {foto && <div role="status">
-          {!oculto && <img alt="Miniatura da nota" src={foto === 'exemplo' ? 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="120"%3E%3Crect width="100" height="120" fill="white"/%3E%3Ctext x="10" y="60"%3ENota exemplo%3C/text%3E%3C/svg%3E' : `data:image/jpeg;base64,${foto}`} style={{ width: 100, height: 120, objectFit: 'contain', borderRadius: 8 }} />}
-          <p><Icone desenho={Check} aria-hidden="true" />Foto recebida</p>
-          <p className="sub">{gravando ? 'Enviando a compra. Aguarde a confirmação.' : 'Foto neste aparelho. A compara ainda não foi confirmada.'}</p>
-        </div>}
-        {api.modo === 'exemplo' && !foto && <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>Usar uma nota de exemplo</button>}
+        {foto && (
+          <div role="status">
+            {!oculto && (
+              <img
+                alt="Miniatura da nota"
+                src={
+                  foto === 'exemplo'
+                    ? 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="120"%3E%3Crect width="100" height="120" fill="white"/%3E%3Ctext x="10" y="60"%3ENota exemplo%3C/text%3E%3C/svg%3E'
+                    : `data:image/jpeg;base64,${foto}`
+                }
+                style={{ width: 100, height: 120, objectFit: 'contain', borderRadius: 8 }}
+              />
+            )}
+            <p>
+              <Icone desenho={Check} aria-hidden="true" />
+              Foto recebida
+            </p>
+            <p className="sub">
+              {gravando
+                ? 'Enviando a compra. Aguarde a confirmação.'
+                : 'Foto neste aparelho. A compara ainda não foi confirmada.'}
+            </p>
+          </div>
+        )}
+        {api.modo === 'exemplo' && !foto && (
+          <button type="button" className="btn ghost full" onClick={() => setFoto('exemplo')}>
+            Usar uma nota de exemplo
+          </button>
+        )}
       </div>
       <p className="sub">O casal confere o valor pela foto. Você não precisa digitar nenhum valor.</p>
-      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <button type="button" className="btn primary full" disabled={gravando || preparandoFoto} onClick={anotar}><Icone desenho={Check} />{gravando ? 'Enviando a compra…' : 'Anotar a compra'}</button>
+      {erro && (
+        <p className="erro" role="alert">
+          {textoPrivado(erro)}
+        </p>
+      )}
+      <button type="button" className="btn primary full" disabled={gravando || preparandoFoto} onClick={anotar}>
+        <Icone desenho={Check} />
+        {gravando ? 'Enviando a compra…' : 'Anotar a compra'}
+      </button>
     </Sheet>
   )
 }

@@ -22,7 +22,12 @@ export interface ResultadoDesejo {
 /** perda = F6(V, d) − F6(R, r) se certo; = F6(V, d) se incerto ou sem retorno.
  *  Pago com contrato antecipado (volta_de = 'contrato' e antecipado preenchido): entra A em d e deixa de entrar R em r,
  *  igual à linha (fluxosDoDesejo): perda = F6(V, d) − F6(A, d) + F6(R, r) (revisão do ECONOMISTA, caso N2). */
-export function avaliarDesejo(d: Pick<Desejo, 'valor' | 'mes' | 'volta' | 'volta_mes' | 'volta_certa' | 'volta_de'> & { antecipado?: Centavos | null }, t: TaxasProjecao & { taxa_real_trabalho: Taxa }): ResultadoDesejo {
+export function avaliarDesejo(
+  d: Pick<Desejo, 'valor' | 'mes' | 'volta' | 'volta_mes' | 'volta_certa' | 'volta_de'> & {
+    antecipado?: Centavos | null
+  },
+  t: TaxasProjecao & { taxa_real_trabalho: Taxa },
+): ResultadoDesejo {
   const saida = valorNaVirada(d.valor, d.mes, t)
   const antecipa = d.volta_de === 'contrato' && d.antecipado != null && d.volta_mes !== null
   const temVolta = antecipa || (d.volta_de !== 'nada' && d.volta > 0 && d.volta_mes !== null)
@@ -50,8 +55,16 @@ export function avaliarDesejo(d: Pick<Desejo, 'valor' | 'mes' | 'volta' | 'volta
 
 /** Contrato antecipado: tira R do mês r e põe A no mês d. desconto_mensal = (R ÷ A)^(1/n) − 1.
  *  efeito = F6(A, d) − F6(R, r): negativo = antecipar custa mais do que o caixa rende. */
-export function avaliarAntecipacao(A: Centavos, d: Mes, R: Centavos, r: Mes, t: TaxasProjecao & { taxa_real_trabalho: Taxa }): {
-  desconto_mensal: Dec | null; efeito_na_virada: Centavos; impacto_renda_mensal: Centavos | null
+export function avaliarAntecipacao(
+  A: Centavos,
+  d: Mes,
+  R: Centavos,
+  r: Mes,
+  t: TaxasProjecao & { taxa_real_trabalho: Taxa },
+): {
+  desconto_mensal: Dec | null
+  efeito_na_virada: Centavos
+  impacto_renda_mensal: Centavos | null
   leitura: 'antecipar custa mais do que o caixa rende' | 'antecipar compensa'
 } {
   const efeito = valorNaVirada(A, d, t) - valorNaVirada(R, r, t)
@@ -65,7 +78,10 @@ export function avaliarAntecipacao(A: Centavos, d: Mes, R: Centavos, r: Mes, t: 
 
 /** O que o desejo faz na linha mês a mês. Saída de V em d (desvio); volta certa em volta_mes (retorno).
  *  Contrato antecipado: A entra em d (retorno) e R deixa de entrar em r (desvio). Volta incerta não entra. */
-export function fluxosDoDesejo(d: Desejo): { desvios: { mes: Mes; valor: Centavos }[]; retornos: { mes: Mes; valor: Centavos }[] } {
+export function fluxosDoDesejo(d: Desejo): {
+  desvios: { mes: Mes; valor: Centavos }[]
+  retornos: { mes: Mes; valor: Centavos }[]
+} {
   const desvios: { mes: Mes; valor: Centavos }[] = [{ mes: d.mes, valor: d.valor }]
   const retornos: { mes: Mes; valor: Centavos }[] = []
   if (d.volta_de === 'contrato' && d.antecipado !== null && d.volta_mes !== null) {

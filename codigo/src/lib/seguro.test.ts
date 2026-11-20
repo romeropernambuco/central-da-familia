@@ -1,21 +1,39 @@
 import { describe, expect, it } from 'vitest'
 import { comIntervalo, criarGuardaConfig, resumoSemDinheiro, umaPorVez } from './seguro'
-import { textoParaValor, valorDigitadoValido, valorParaTexto, reais, hojeRecife, simularCompra, somaDias } from './formato'
+import {
+  textoParaValor,
+  valorDigitadoValido,
+  valorParaTexto,
+  reais,
+  hojeRecife,
+  simularCompra,
+  somaDias,
+} from './formato'
 import type { ResumoHoje } from '../api/tipos'
 
 describe('duplo toque no Lançar', () => {
   it('2 toques no mesmo instante gravam 1 vez só', async () => {
     let gravados = 0
     let soltar!: () => void
-    const lancar = umaPorVez(async () => { gravados++; await new Promise<void>(r => { soltar = r }) })
-    const a = lancar(), b = lancar(), c = lancar()
+    const lancar = umaPorVez(async () => {
+      gravados++
+      await new Promise<void>(r => {
+        soltar = r
+      })
+    })
+    const a = lancar(),
+      b = lancar(),
+      c = lancar()
     soltar()
     await Promise.all([a, b, c])
     expect(gravados).toBe(1)
   })
   it('depois que termina (ou falha), deixa lançar de novo', async () => {
     let n = 0
-    const f = umaPorVez(async () => { n++; if (n === 1) throw new Error('sem internet') })
+    const f = umaPorVez(async () => {
+      n++
+      if (n === 1) throw new Error('sem internet')
+    })
     await expect(f()).rejects.toThrow('sem internet')
     await f()
     expect(n).toBe(2)
@@ -25,7 +43,14 @@ describe('duplo toque no Lançar', () => {
 describe('config da Casa não apaga o que estava salvo', () => {
   it('leitura falhou: gravar é recusado e o banco fica como estava', async () => {
     const banco = { lista: ['arroz', 'feijão'] }
-    const g = criarGuardaConfig<string[]>(async () => { throw new Error('Sem internet agora.') }, async v => { banco.lista = v })
+    const g = criarGuardaConfig<string[]>(
+      async () => {
+        throw new Error('Sem internet agora.')
+      },
+      async v => {
+        banco.lista = v
+      },
+    )
     await expect(g.carregar()).rejects.toThrow()
     await expect(g.salvar(['sabão'])).rejects.toThrow(/nada foi mudado/)
     expect(banco.lista).toEqual(['arroz', 'feijão'])
@@ -35,7 +60,20 @@ describe('config da Casa não apaga o que estava salvo', () => {
     let soltar!: (v: string[]) => void
     let lento = false
     // só a próxima leitura fica presa (a releitura que o salvar faz antes de gravar responde na hora)
-    const g = criarGuardaConfig<string[]>(() => { if (lento) { lento = false; return new Promise(r => { soltar = r }) } return Promise.resolve([...banco.lista]) }, async v => { banco.lista = v })
+    const g = criarGuardaConfig<string[]>(
+      () => {
+        if (lento) {
+          lento = false
+          return new Promise(r => {
+            soltar = r
+          })
+        }
+        return Promise.resolve([...banco.lista])
+      },
+      async v => {
+        banco.lista = v
+      },
+    )
     expect((await g.carregar())?.valor).toEqual(['arroz'])
     lento = true
     const leituraVelha = g.carregar()
@@ -48,21 +86,64 @@ describe('config da Casa não apaga o que estava salvo', () => {
 
 describe('equipe sem dinheiro na memória', () => {
   const r: ResumoHoje = {
-    pode_gastar_hoje: 467, livre_mes: 9340, colchao: 1000, dias_restantes: 20,
+    pode_gastar_hoje: 467,
+    livre_mes: 9340,
+    colchao: 1000,
+    dias_restantes: 20,
     explicacao: [{ linha: 'Combinado', valor: 9000 }],
     envelopes: [
-      { id: 'a', nome: 'Ana', regra: 'diario', limite_mes: 3000, gasto_mes: 800, livre: 2200, valor_dia: 110, casa: false },
-      { id: 'f', nome: 'Feira semanal', regra: 'semanal', limite_mes: 5769.25, gasto_mes: 3274, livre: 2495.25, teto_semana: 1153.85, gasto_semana: 500, limite_base: 5000, casa: true },
-      { id: 'c', nome: 'Casa mensal', regra: 'mensal', limite_mes: 1500, gasto_mes: 1850, livre: -350, colchao_meta: 1000, casa: true },
+      {
+        id: 'a',
+        nome: 'Ana',
+        regra: 'diario',
+        limite_mes: 3000,
+        gasto_mes: 800,
+        livre: 2200,
+        valor_dia: 110,
+        casa: false,
+      },
+      {
+        id: 'f',
+        nome: 'Feira semanal',
+        regra: 'semanal',
+        limite_mes: 5769.25,
+        gasto_mes: 3274,
+        livre: 2495.25,
+        teto_semana: 1153.85,
+        gasto_semana: 500,
+        limite_base: 5000,
+        casa: true,
+      },
+      {
+        id: 'c',
+        nome: 'Casa mensal',
+        regra: 'mensal',
+        limite_mes: 1500,
+        gasto_mes: 1850,
+        livre: -350,
+        colchao_meta: 1000,
+        casa: true,
+      },
     ],
   }
   it('sobra só o nome dos envelopes da Casa, sem nenhum número de dinheiro', () => {
     const s = resumoSemDinheiro(r)
     expect(s.envelopes.map(e => e.nome)).toEqual(['Feira semanal', 'Casa mensal'])
     const texto = JSON.stringify(s)
-    for (const proibido of ['467', '9340', '1000', '5769', '3274', '1153', '5000', '1850', '350', '9000', '2495']) expect(texto).not.toContain(proibido)
+    for (const proibido of ['467', '9340', '1000', '5769', '3274', '1153', '5000', '1850', '350', '9000', '2495'])
+      expect(texto).not.toContain(proibido)
     expect(s.explicacao).toEqual([])
-    for (const e of s.envelopes) expect([e.limite_mes, e.gasto_mes, e.livre, e.teto_semana, e.gasto_semana, e.limite_base, e.colchao_meta, e.valor_dia]).toEqual([0, 0, 0, undefined, undefined, undefined, undefined, undefined])
+    for (const e of s.envelopes)
+      expect([
+        e.limite_mes,
+        e.gasto_mes,
+        e.livre,
+        e.teto_semana,
+        e.gasto_semana,
+        e.limite_base,
+        e.colchao_meta,
+        e.valor_dia,
+      ]).toEqual([0, 0, 0, undefined, undefined, undefined, undefined, undefined])
   })
 })
 

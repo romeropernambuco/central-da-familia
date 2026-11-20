@@ -20,7 +20,9 @@ import { Proposta } from './Proposta'
 
 const pasta = 'src/propostas/b'
 const css = ts.sys.readFile(pasta + '/proposta.css')!
-const cenarios = (['claro', 'escuro'] as const).flatMap(tema => (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })))
+const cenarios = (['claro', 'escuro'] as const).flatMap(tema =>
+  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })),
+)
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 let dados: DadosInicio
 
@@ -58,7 +60,11 @@ describe('Escritório em primeiro', () => {
     const celular = render()
     const id = celular.match(/<section class="b-fila b-painel" id="([^"]+)"[^>]* hidden=""/)?.[1]
     expect(id).toBeTruthy()
-    expect(celular.match(new RegExp(`aria-controls="${id}" aria-expanded="false"|aria-expanded="false" aria-controls="${id}"`, 'g'))).toHaveLength(2)
+    expect(
+      celular.match(
+        new RegExp(`aria-controls="${id}" aria-expanded="false"|aria-expanded="false" aria-controls="${id}"`, 'g'),
+      ),
+    ).toHaveLength(2)
     expect(celular).toMatch(/<svg class="escritorio-maquete" data-variante="grande"/)
     const desktop = render(dados, false, cenarios[1])
     expect(desktop).toMatch(/<svg class="escritorio-maquete" data-variante="grande"/)
@@ -77,11 +83,18 @@ describe('Escritório em primeiro', () => {
     expect(aberto).toContain('918273,46')
     expect(aberto).toContain('77,3%')
     expect(aberto).toContain('data-numero-financeiro')
-    const pelaCasca = renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: true },
-      createElement(Proposta, { dados: alterado, ...cenarios[0] })))
+    const pelaCasca = renderToStaticMarkup(
+      createElement(
+        PrivacidadePropostas.Provider,
+        { value: true },
+        createElement(Proposta, { dados: alterado, ...cenarios[0] }),
+      ),
+    )
     for (const oculto of [render(alterado, true), pelaCasca]) {
       expect(oculto).toContain('aria-label="Valor oculto"')
-      expect(oculto).not.toMatch(/R\$|\d\s*%|918273|918\.273|data-numero-financeiro|<progress|<meter|aria-value|stroke-dash(?:array|offset)/i)
+      expect(oculto).not.toMatch(
+        /R\$|\d\s*%|918273|918\.273|data-numero-financeiro|<progress|<meter|aria-value|stroke-dash(?:array|offset)/i,
+      )
       const marcadores = [...aberto.matchAll(/data-numero-financeiro="true">([^<]+)/g)]
       expect(marcadores.length).toBeGreaterThan(4)
       for (const [, numero] of marcadores) {
@@ -94,10 +107,19 @@ describe('Escritório em primeiro', () => {
   it('protege tarefas de Assessor da Casa mesmo se receber o snapshot completo', () => {
     const equipe = structuredClone(dados)
     equipe.pessoa.papel = { ...equipe.pessoa.papel, estado: 'pronto', valor: 'equipe' }
-    equipe.pendencias.fila = { ...equipe.pendencias.fila, estado: 'pronto', valor: [
-      { id: 'feira_nota:ab', funcionario: 'fiscal', perguntaCurta: 'Feira de R$ 900,00', valor: dados.aplicacoes.total },
-      { id: 'salario:ab', funcionario: 'folha', perguntaCurta: 'Salário de teste', valor: dados.aplicacoes.total },
-    ] }
+    equipe.pendencias.fila = {
+      ...equipe.pendencias.fila,
+      estado: 'pronto',
+      valor: [
+        {
+          id: 'feira_nota:ab',
+          funcionario: 'fiscal',
+          perguntaCurta: 'Feira de R$ 900,00',
+          valor: dados.aplicacoes.total,
+        },
+        { id: 'salario:ab', funcionario: 'folha', perguntaCurta: 'Salário de teste', valor: dados.aplicacoes.total },
+      ],
+    }
     const html = render(equipe)
     expect(html).toContain('Tarefas da Casa')
     expect(html).toContain('Guardar a nota da feira')
@@ -107,9 +129,16 @@ describe('Escritório em primeiro', () => {
   it('nomeia níveis por extenso e ordena dinheiro em risco antes de operação e lembrete', () => {
     const d = structuredClone(dados)
     const niveis = ['lembrete', 'operacao', 'dinheiro em risco'] as const
-    d.pendencias.fila = { ...d.pendencias.fila, estado: 'pronto', valor: niveis.map(nivel => ({
-      id: nivel, funcionario: 'contador', perguntaCurta: 'Revisão pendente', valor: dados.faturas.total,
-    })) }
+    d.pendencias.fila = {
+      ...d.pendencias.fila,
+      estado: 'pronto',
+      valor: niveis.map(nivel => ({
+        id: nivel,
+        funcionario: 'contador',
+        perguntaCurta: 'Revisão pendente',
+        valor: dados.faturas.total,
+      })),
+    }
     d.alertas = { ...d.alertas, estado: 'pronto', valor: niveis.map(nivel => ({ id: nivel, nivel, texto: nivel })) }
     const html = render(d)
     const rotulos = ['Dinheiro em risco', 'Operação', 'Lembrete'].map(rotulo => html.indexOf('>' + rotulo + '<'))
@@ -141,16 +170,21 @@ describe('Escritório em primeiro', () => {
     expect(regra).toContain('min-block-size: 44px')
     expect(css).toContain('outline: 2px solid var(--destaque)')
     expect(css).toContain('prefers-reduced-motion: reduce')
-    expect(css + html).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u)
+    expect(css + html).not.toMatch(
+      /gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u,
+    )
     expect(html).not.toMatch(/<linearGradient|<radialGradient|<filter/i)
   })
 })
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const s = parseInt(par, 16) / 255
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  })
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const s = parseInt(par, 16) / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
@@ -160,7 +194,8 @@ function contraste(a: string, b: string) {
 }
 
 it('atinge contraste WCAG AA com as cores do CSS nos dois temas', () => {
-  const ler = (bloco: string) => Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(([, id, valor]) => [id, valor]))
+  const ler = (bloco: string) =>
+    Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(([, id, valor]) => [id, valor]))
   const claro = ler(css.match(/\.b-inicio \{([^}]+)\}/)![1])
   const escuro = ler(css.match(/\.b-inicio\[data-tema="escuro"\] \{([^}]+)\}/)![1])
   for (const tokens of [claro, { ...claro, ...escuro }]) {
@@ -177,25 +212,45 @@ const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles || '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] || '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
 it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geometria e alvos no navegador', () => {
   const dir = mkdtempSync(join(tmpdir(), 'proposta-b-'))
   try {
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/componentes/ilustracoes/ilustracoes.css', pasta + '/proposta.css']
-      .map(arq => ts.sys.readFile(arq)).join('\n')
-    const fontes = ['geist', 'inter'].map(nome => {
-      const fonte = readFileSync(`node_modules/@fontsource-variable/${nome}/files/${nome}-latin-wght-normal.woff2`).toString('base64')
-      return `@font-face {font-family: '${nome} Variable'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900}`
-    }).join('\n')
-    const quadros = cenarios.map(c => `<div class="lab" data-theme="${c.tema}"><div class="lab-amostra" data-dispositivo="${c.dispositivo}">
+    const estilos = [
+      'src/propostas/base.css',
+      'src/propostas/comuns/escritorio-maquete.css',
+      'src/componentes/ilustracoes/ilustracoes.css',
+      pasta + '/proposta.css',
+    ]
+      .map(arq => ts.sys.readFile(arq))
+      .join('\n')
+    const fontes = ['geist', 'inter']
+      .map(nome => {
+        const fonte = readFileSync(
+          `node_modules/@fontsource-variable/${nome}/files/${nome}-latin-wght-normal.woff2`,
+        ).toString('base64')
+        return `@font-face {font-family: '${nome} Variable'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900}`
+      })
+      .join('\n')
+    const quadros = cenarios
+      .map(
+        c => `<div class="lab" data-theme="${c.tema}"><div class="lab-amostra" data-dispositivo="${c.dispositivo}">
       <div class="lab-quadro"><div class="lab-conteudo" data-proposta="b">${render(dados, false, c)}</div></div>
-    </div></div>`).join('')
-    const medidor = ts.transpile(ts.sys.readFile('src/propostas/medicao.ts')!.replace('export function', 'function'), { target: ts.ScriptTarget.ES2020 })
+    </div></div>`,
+      )
+      .join('')
+    const medidor = ts.transpile(ts.sys.readFile('src/propostas/medicao.ts')!.replace('export function', 'function'), {
+      target: ts.ScriptTarget.ES2020,
+    })
     const arquivo = join(dir, 'medicao.html')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
+    writeFileSync(
+      arquivo,
+      `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
       <pre id="resultado"></pre><script>${medidor}
       document.fonts.ready.then(() => {
         const resultado = Array.from(document.querySelectorAll('.lab-quadro')).map(quadro => {
@@ -235,16 +290,37 @@ it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geomet
         }})
         document.querySelector('#resultado').textContent = encodeURIComponent(JSON.stringify(resultado))
       })
-      </script>`)
-    const resultado = spawnSync(chrome!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu', '--disable-background-networking',
-      '--user-data-dir=' + join(dir, 'perfil'), '--window-size=1400,900', '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 })
+      </script>`,
+    )
+    const resultado = spawnSync(
+      chrome!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--no-first-run',
+        '--disable-gpu',
+        '--disable-background-networking',
+        '--user-data-dir=' + join(dir, 'perfil'),
+        '--window-size=1400,900',
+        '--virtual-time-budget=4000',
+        '--dump-dom',
+        pathToFileURL(arquivo).href,
+      ],
+      { encoding: 'utf8', timeout: 20000, maxBuffer: 8_000_000 },
+    )
     expect(resultado.status, resultado.error?.message ?? resultado.stderr).toBe(0)
     const capturado = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
     expect(capturado).toBeTruthy()
     const medicoes = JSON.parse(decodeURIComponent(capturado!)) as {
-      valores: string[]; semTransbordo: boolean; salasVisiveis: number; chipsInteiros: boolean
-      topoCena: number; alturaDesenho: number; indicadoresNaCena: number; filaLateral: boolean; folhaNoRodape?: boolean
+      valores: string[]
+      semTransbordo: boolean
+      salasVisiveis: number
+      chipsInteiros: boolean
+      topoCena: number
+      alturaDesenho: number
+      indicadoresNaCena: number
+      filaLateral: boolean
+      folhaNoRodape?: boolean
       controles: { nome: string; largura: number; altura: number }[]
     }[]
     for (const [i, medicao] of medicoes.entries()) {

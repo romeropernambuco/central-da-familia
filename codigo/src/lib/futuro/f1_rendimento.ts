@@ -14,7 +14,11 @@ export function aliquotaIR(dias: number, isenta = false): Dec {
 }
 
 /** IR e líquido de um rendimento bruto já conhecido. */
-export function irSobre(rendimento_bruto: Centavos, dias: number, isenta = false): { aliquota: Dec; ir: Centavos; liquido: Centavos } {
+export function irSobre(
+  rendimento_bruto: Centavos,
+  dias: number,
+  isenta = false,
+): { aliquota: Dec; ir: Centavos; liquido: Centavos } {
   const a = aliquotaIR(dias, isenta)
   const b = centavos(rendimento_bruto)
   return { aliquota: a, ir: arred(b.times(a)), liquido: arred(b.times(UM.minus(a))) }
@@ -32,18 +36,36 @@ export function fatorLiquido(taxa_bruta_anual: Taxa | Dec, aliquota: Taxa | Dec,
 }
 
 /** Rendimento líquido do mês em centavos. Saldo negativo ou zero não rende. */
-export function rendimentoMes(saldo_inicial: Centavos, taxa_bruta_anual: Taxa | Dec, aliquota: Taxa | Dec, dias: number): Centavos {
-  if (saldo_inicial <= 0) { centavos(saldo_inicial); return 0 }
+export function rendimentoMes(
+  saldo_inicial: Centavos,
+  taxa_bruta_anual: Taxa | Dec,
+  aliquota: Taxa | Dec,
+  dias: number,
+): Centavos {
+  if (saldo_inicial <= 0) {
+    centavos(saldo_inicial)
+    return 0
+  }
   return arred(centavos(saldo_inicial).times(fatorLiquido(taxa_bruta_anual, aliquota, dias)))
 }
 
 /** Padrão do resgate quando a aplicação não tem data: último dia antes da virada. */
-function resgatePadrao(virada: Mes): string { const m = mesAnterior(virada); return `${m}-${diasDoMes(m)}` }
+function resgatePadrao(virada: Mes): string {
+  const m = mesAnterior(virada)
+  return `${m}-${diasDoMes(m)}`
+}
 
 /** F1 aplicado a uma aplicação cadastrada no mês m. */
-export function rendimentoAplicacao(ap: Aplicacao, m: Mes, virada: Mes, taxa_referencia: Taxa = '0', aliq_referencia: Taxa = '0'): Centavos {
+export function rendimentoAplicacao(
+  ap: Aplicacao,
+  m: Mes,
+  virada: Mes,
+  taxa_referencia: Taxa = '0',
+  aliq_referencia: Taxa = '0',
+): Centavos {
   const resgate = ap.resgate_previsto ?? resgatePadrao(virada)
-  const al = ap.taxa_bruta_anual === undefined ? taxa(aliq_referencia) : aliquotaIR(diasIR(ap.aplicada_em, resgate), ap.isenta)
+  const al =
+    ap.taxa_bruta_anual === undefined ? taxa(aliq_referencia) : aliquotaIR(diasIR(ap.aplicada_em, resgate), ap.isenta)
   if (compararMes(m, resgate.slice(0, 7)) > 0 || compararMes(m, ap.aplicada_em.slice(0, 7)) < 0) return 0
   const inicio = m === ap.aplicada_em.slice(0, 7) ? Number(ap.aplicada_em.slice(8, 10)) : 1
   const fim = m === resgate.slice(0, 7) ? Number(resgate.slice(8, 10)) : diasDoMes(m)

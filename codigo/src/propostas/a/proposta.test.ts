@@ -21,20 +21,30 @@ beforeAll(async () => {
 afterAll(() => vi.useRealTimers())
 
 function render(props: Partial<Parameters<typeof Proposta>[0]> = {}, olhoDaCasca = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: olhoDaCasca },
-    createElement(Proposta, { dados, tema: 'claro', dispositivo: 'celular', ...props })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: olhoDaCasca },
+      createElement(Proposta, { dados, tema: 'claro', dispositivo: 'celular', ...props }),
+    ),
+  )
 }
 
 const textos = (html: string) => html.replace(/<[^>]+>/g, '')
-const valores = (html: string) => [...html.matchAll(/<span\b[^>]*data-numero-financeiro="true"[^>]*>([^<]+)(?:<span class="numero-simbolo">(%))?/g)]
-  .map(([, valor, simbolo]) => valor + (simbolo ?? ''))
+const valores = (html: string) =>
+  [
+    ...html.matchAll(/<span\b[^>]*data-numero-financeiro="true"[^>]*>([^<]+)(?:<span class="numero-simbolo">(%))?/g),
+  ].map(([, valor, simbolo]) => valor + (simbolo ?? ''))
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const valorEsperado = (c: Campo<number, 'reais' | 'centavos'>) => {
   if (c.estado !== 'pronto') throw new Error('O snapshot usado neste teste precisa ter valor.')
   return moeda.format(c.unidade === 'centavos' ? c.valor / 100 : c.valor)
 }
 const contextos = [
-  ['claro', 'celular'], ['claro', 'desktop'], ['escuro', 'celular'], ['escuro', 'desktop'],
+  ['claro', 'celular'],
+  ['claro', 'desktop'],
+  ['escuro', 'celular'],
+  ['escuro', 'desktop'],
 ] as const satisfies readonly [PropsProposta['tema'], PropsProposta['dispositivo']][]
 
 describe.each(contextos)('%s em %s', (tema, dispositivo) => {
@@ -48,8 +58,11 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     const faixa = html.split('<section class="calmo-escritorio"')[1]
     expect(faixa).toMatch(/<svg class="escritorio-maquete" data-variante="media"/)
     expect(faixa).toContain('escritorio-maquete')
-    const nomes = [...faixa.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
-      .map(([, nome]) => nome)
+    const nomes = [
+      ...faixa.matchAll(
+        /<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g,
+      ),
+    ].map(([, nome]) => nome)
     expect(nomes.length).toBeGreaterThanOrEqual(8)
     expect(nomes.sort()).toEqual(dados.funcionarios.valor!.map(f => f.curto).sort())
     expect(faixa).toContain('Equipe e estados')
@@ -65,8 +78,12 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     const cobertura = dados.plano2029.progressao.valor!.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'
     const demais = [dados.aplicacoes.rendeuHoje, dados.faturas.total, dados.recebimentos.previsto]
     const exibidos = [
-      valorEsperado(dados.hojePodeGastar.valor), moeda.format(acumulado), valorEsperado(limite),
-      valorEsperado(plano), ...(dispositivo === 'desktop' ? [cobertura] : []), ...demais.map(valorEsperado),
+      valorEsperado(dados.hojePodeGastar.valor),
+      moeda.format(acumulado),
+      valorEsperado(limite),
+      valorEsperado(plano),
+      ...(dispositivo === 'desktop' ? [cobertura] : []),
+      ...demais.map(valorEsperado),
     ]
     expect(valores(html)).toEqual(exibidos)
     expect(new Set(exibidos).size).toBe(exibidos.length)
@@ -86,7 +103,9 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     expect(visivel).toMatch(/class="calmo-linha-mes"[^>]*>/)
     expect(visivel).toMatch(/style="inline-size:[\d.]+%"/)
     for (const valor of valores(visivel)) expect(oculto.includes(valor)).toBe(false)
-    expect(oculto).not.toMatch(/R\$|\d\s*%|data-numero-financeiro|class="calmo-(linha-mes|mini-linha|barra|anel|limite)"|aria-valuenow|inline-size:/)
+    expect(oculto).not.toMatch(
+      /R\$|\d\s*%|data-numero-financeiro|class="calmo-(linha-mes|mini-linha|barra|anel|limite)"|aria-valuenow|inline-size:/,
+    )
     expect(oculto).not.toContain('Total investido')
     expect(oculto.match(/aria-label="Valor oculto"/g)).toHaveLength(5)
   })
@@ -94,14 +113,28 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
 
 it('desenha o teto na mesma escala do acumulado e mantém as grandezas nomeadas', () => {
   const ritmo = dados.hojePodeGastar.ritmoMes
-  const comRitmo = (limite: number) => render({ dispositivo: 'desktop', dados: {
-    ...dados, hojePodeGastar: { ...dados.hojePodeGastar, ritmoMes: { ...ritmo,
-      limite: { ...ritmo.limite, estado: 'pronto', valor: limite },
-      serieDiaria: { ...ritmo.serieDiaria, estado: 'pronto', valor: [
-        { data: '2026-11-01', valor: 70 }, { data: '2026-11-09', valor: 50 },
-      ] },
-    } },
-  } })
+  const comRitmo = (limite: number) =>
+    render({
+      dispositivo: 'desktop',
+      dados: {
+        ...dados,
+        hojePodeGastar: {
+          ...dados.hojePodeGastar,
+          ritmoMes: {
+            ...ritmo,
+            limite: { ...ritmo.limite, estado: 'pronto', valor: limite },
+            serieDiaria: {
+              ...ritmo.serieDiaria,
+              estado: 'pronto',
+              valor: [
+                { data: '2026-11-01', valor: 70 },
+                { data: '2026-11-09', valor: 50 },
+              ],
+            },
+          },
+        },
+      },
+    })
   for (const limite of [100, 180]) {
     const html = comRitmo(limite)
     const svg = html.match(/<svg class="calmo-linha-mes".*?<\/svg>/)?.[0] ?? ''
@@ -117,9 +150,13 @@ it('preserva a leitura dos gastos quando o limite do envelope está indisponíve
   const ritmo = dados.hojePodeGastar.ritmoMes
   const semLimite: DadosInicio = {
     ...dados,
-    hojePodeGastar: { ...dados.hojePodeGastar, ritmoMes: {
-      ...ritmo, limite: { ...ritmo.limite, estado: 'indisponivel', valor: null },
-    } },
+    hojePodeGastar: {
+      ...dados.hojePodeGastar,
+      ritmoMes: {
+        ...ritmo,
+        limite: { ...ritmo.limite, estado: 'indisponivel', valor: null },
+      },
+    },
   }
   const html = render({ dispositivo: 'desktop', dados: semLimite })
   expect(html).toContain('class="calmo-linha-mes"')
@@ -130,7 +167,8 @@ it('preserva a leitura dos gastos quando o limite do envelope está indisponíve
 
 it('distingue os indicadores de cada decisão e esconde a escala com o olho', () => {
   const html = render({ dispositivo: 'desktop' })
-  const cartao = (variante: string) => html.split(`class="calmo-resumo calmo-resumo-${variante}"`)[1]?.split('</article>')[0] ?? ''
+  const cartao = (variante: string) =>
+    html.split(`class="calmo-resumo calmo-resumo-${variante}"`)[1]?.split('</article>')[0] ?? ''
   expect(cartao('plano')).toContain('numero-principal')
   expect(cartao('plano')).toContain('calmo-barra')
   expect(cartao('aplicacoes')).toContain('calmo-mini-linha')
@@ -155,11 +193,15 @@ it('aplica a prop oculto também ao texto livre com dados financeiros', () => {
 it('prioriza os três níveis por texto e reserva o vermelho ao aviso com risco', () => {
   const comAlertas: DadosInicio = {
     ...dados,
-    alertas: { ...dados.alertas, estado: 'pronto', valor: [
-      { id: 'lembrete:exemplo', nivel: 'lembrete', texto: 'Lembrar da revisão' },
-      { id: 'estoque:hoje', nivel: 'operacao', texto: 'Contar estoque' },
-      { id: 'fatura:vencida', nivel: 'dinheiro em risco', texto: 'Conferir fatura' },
-    ] },
+    alertas: {
+      ...dados.alertas,
+      estado: 'pronto',
+      valor: [
+        { id: 'lembrete:exemplo', nivel: 'lembrete', texto: 'Lembrar da revisão' },
+        { id: 'estoque:hoje', nivel: 'operacao', texto: 'Contar estoque' },
+        { id: 'fatura:vencida', nivel: 'dinheiro em risco', texto: 'Conferir fatura' },
+      ],
+    },
   }
   const html = render({ dados: comAlertas })
   expect(html).toMatch(/<li class="calmo-risco">.*Dinheiro em risco<\/span><p>Conferir fatura<\/p><\/li>/)
@@ -194,10 +236,14 @@ it('limita o Assessor da Casa às tarefas autorizadas mesmo com um snapshot fina
   const equipe: DadosInicio = {
     ...dados,
     pessoa: { ...dados.pessoa, papel: { ...dados.pessoa.papel, estado: 'pronto', valor: 'equipe' } },
-    alertas: { ...dados.alertas, estado: 'pronto', valor: [
-      { id: 'feira_nota:1', nivel: 'operacao', texto: 'Nota de R$ 99,90' },
-      { id: 'fatura:2', nivel: 'dinheiro em risco', texto: 'Fatura em risco' },
-    ] },
+    alertas: {
+      ...dados.alertas,
+      estado: 'pronto',
+      valor: [
+        { id: 'feira_nota:1', nivel: 'operacao', texto: 'Nota de R$ 99,90' },
+        { id: 'fatura:2', nivel: 'dinheiro em risco', texto: 'Fatura em risco' },
+      ],
+    },
   }
   const html = render({ dados: equipe })
   expect(html).toContain('Registrar a nota da feira')
@@ -221,15 +267,20 @@ it('usa ícones e formas sem os tratamentos proibidos', () => {
   const html = render()
   expect(html).toContain('class="lucide')
   expect(html).toMatch(/class="calmo-maquete"><svg class="escritorio-maquete"/)
-  expect(css).not.toMatch(/backdrop-filter|gradient\s*\(|background-clip:\s*text|text-shadow|border-(?:left|inline-start):\s*[^;]*(?:destaque|risco)/i)
+  expect(css).not.toMatch(
+    /backdrop-filter|gradient\s*\(|background-clip:\s*text|text-shadow|border-(?:left|inline-start):\s*[^;]*(?:destaque|risco)/i,
+  )
   expect(html).not.toMatch(/<linearGradient|<radialGradient|[\p{Extended_Pictographic}\uFE0F]/u)
 })
 
 function luminancia(hex: string) {
-  const rgb = hex.slice(1).match(/../g)!.map(par => {
-    const s = Number.parseInt(par, 16) / 255
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  })
+  const rgb = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const s = Number.parseInt(par, 16) / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
   return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
 }
 
@@ -243,7 +294,8 @@ it('calcula o contraste AA dos pares de texto, ação e foco em ambos os temas',
   for (const paleta of [claro, escuro]) {
     const pares = [
       ...['fundo', 'cartao', 'menu', 'calmo-hero'].flatMap(fundo =>
-        ['texto', 'texto-secundario', 'destaque'].map(frente => [frente, fundo, 4.5] as const)),
+        ['texto', 'texto-secundario', 'destaque'].map(frente => [frente, fundo, 4.5] as const),
+      ),
       ['sobre-destaque', 'destaque', 4.5],
       ['risco', 'calmo-risco-fundo', 4.5],
       ['calmo-nav-texto', 'calmo-nav-fundo', 4.5],

@@ -7,7 +7,10 @@ describe('foto do cupom', () => {
     expect(medidaReduzida(4032, 3024)).toEqual({ w: 1200, h: 900 })
     expect(medidaReduzida(800, 600)).toEqual({ w: 800, h: 600 })
   })
-  it('conta os bytes do base64', () => { expect(bytesBase64('YWJj')).toBe(3); expect(bytesBase64('YWI=')).toBe(2) })
+  it('conta os bytes do base64', () => {
+    expect(bytesBase64('YWJj')).toBe(3)
+    expect(bytesBase64('YWI=')).toBe(2)
+  })
   it('data do cupom: fora do prazo ou no futuro vira hoje', () => {
     expect(dataDoCupom('2026-11-09', '2026-11-11')).toBe('2026-11-09')
     expect(dataDoCupom('2026-11-20', '2026-11-11')).toBe('2026-11-11')

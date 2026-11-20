@@ -33,20 +33,30 @@ beforeAll(async () => {
   reiniciarExemplo()
   exemplo = await carregarDadosInicio()
 })
-afterAll(() => { vi.useRealTimers(); reiniciarExemplo() })
+afterAll(() => {
+  vi.useRealTimers()
+  reiniciarExemplo()
+})
 
 function renderizar(tema: Tema, dispositivo: Dispositivo, dados = exemplo, oculto = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: oculto },
-    createElement(Proposta, { dados, tema, dispositivo })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: oculto },
+      createElement(Proposta, { dados, tema, dispositivo }),
+    ),
+  )
 }
 
 const contextos = [
-  ['claro', 'celular'], ['escuro', 'celular'], ['claro', 'desktop'], ['escuro', 'desktop'],
+  ['claro', 'celular'],
+  ['escuro', 'celular'],
+  ['claro', 'desktop'],
+  ['escuro', 'desktop'],
 ] as const
 const formatar = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
-const valoresMarcados = (html: string) => Array.from(
-  html.matchAll(/data-numero-financeiro="true">([^<]+)<\/span>/g), m => m[1],
-)
+const valoresMarcados = (html: string) =>
+  Array.from(html.matchAll(/data-numero-financeiro="true">([^<]+)<\/span>/g), m => m[1])
 
 describe.each(contextos)('%s em %s', (tema, dispositivo) => {
   it('renderiza cinco peças ilustradas, um título principal e um selo Exemplo', () => {
@@ -60,7 +70,9 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     const figuras = Array.from(html.matchAll(/<svg\b[^>]*class="cf-ilustracao"[^>]*>/g), m => m[0])
     expect(figuras).toHaveLength(5)
     expect(figuras.every(svg => svg.includes('aria-hidden="true"') && svg.includes('focusable="false"'))).toBe(true)
-    expect(html).toMatch(/role="img" aria-label="Maquete isométrica do escritório"><svg\b[^>]*data-variante="media"[^>]*aria-hidden="true"/)
+    expect(html).toMatch(
+      /role="img" aria-label="Maquete isométrica do escritório"><svg\b[^>]*data-variante="media"[^>]*aria-hidden="true"/,
+    )
     expect(html).toContain('Precisa de você</h3>')
   })
 
@@ -84,19 +96,27 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
     const dados = structuredClone(exemplo)
     const original = dados.pendencias.fila.valor?.[0]
     const perguntaCurta = 'Conferir R$ 98.765,43 com 73,25% de cobertura e proporção 31/79'
-    dados.pendencias.fila = { ...dados.pendencias.fila, estado: 'pronto', valor: [{
-      id: original?.id ?? 'conferencia',
-      funcionario: 'contador',
-      perguntaCurta,
-      valor: { estado: 'pronto', unidade: 'reais', natureza: 'previsto', valor: 11223.45 },
-    }] }
+    dados.pendencias.fila = {
+      ...dados.pendencias.fila,
+      estado: 'pronto',
+      valor: [
+        {
+          id: original?.id ?? 'conferencia',
+          funcionario: 'contador',
+          perguntaCurta,
+          valor: { estado: 'pronto', unidade: 'reais', natureza: 'previsto', valor: 11223.45 },
+        },
+      ],
+    }
     const aberto = renderizar(tema, dispositivo, dados)
     const fechado = renderizar(tema, dispositivo, dados, true)
     expect(aberto).toContain(perguntaCurta)
     expect(aberto).toMatch(/R\$\s*11\.223,45/)
     expect(fechado.match(/aria-label="Valor oculto"/g)).toHaveLength(4)
     expect(fechado).not.toMatch(/data-numero-financeiro|R\$|73,25%|31\/79|11\.223,45|98\.765,43/)
-    expect(fechado).not.toMatch(/<progress\b|<meter\b|role="(?:progressbar|meter)"|aria-valuenow|stroke-dashoffset|sparkline/i)
+    expect(fechado).not.toMatch(
+      /<progress\b|<meter\b|role="(?:progressbar|meter)"|aria-valuenow|stroke-dashoffset|sparkline/i,
+    )
     expect(fechado).toContain('Precisa de você')
   })
 })
@@ -104,7 +124,11 @@ describe.each(contextos)('%s em %s', (tema, dispositivo) => {
 it('diferencia ausência, erro e um zero verdadeiro', () => {
   const dados = structuredClone(exemplo)
   dados.hojePodeGastar.valor = { ...dados.hojePodeGastar.valor, estado: 'vazio', valor: null }
-  dados.plano2029.faltamPorMesComMargem = { ...dados.plano2029.faltamPorMesComMargem, estado: 'indisponivel', valor: null }
+  dados.plano2029.faltamPorMesComMargem = {
+    ...dados.plano2029.faltamPorMesComMargem,
+    estado: 'indisponivel',
+    valor: null,
+  }
   dados.aplicacoes.total = { ...dados.aplicacoes.total, estado: 'pronto', valor: 0 }
   dados.pendencias.fila = { ...dados.pendencias.fila, estado: 'vazio', valor: null }
   const html = renderizar('claro', 'celular', dados)
@@ -117,10 +141,18 @@ it('diferencia ausência, erro e um zero verdadeiro', () => {
 it('mostra a sobra mensal com margem e oculta também a indicação de sobra', () => {
   const dados = structuredClone(exemplo)
   dados.plano2029.faltamPorMesComMargem = { ...dados.plano2029.faltamPorMesComMargem, estado: 'pronto', valor: -234567 }
-  dados.pendencias.fila = { ...dados.pendencias.fila, estado: 'pronto', valor: [{
-    id: 'conferir', funcionario: 'contador', perguntaCurta: 'Conferir saldo',
-    valor: { estado: 'pronto', unidade: 'reais', natureza: 'previsto', valor: 2345.67 },
-  }] }
+  dados.pendencias.fila = {
+    ...dados.pendencias.fila,
+    estado: 'pronto',
+    valor: [
+      {
+        id: 'conferir',
+        funcionario: 'contador',
+        perguntaCurta: 'Conferir saldo',
+        valor: { estado: 'pronto', unidade: 'reais', natureza: 'previsto', valor: 2345.67 },
+      },
+    ],
+  }
   const aberto = renderizar('claro', 'desktop', dados)
   expect(aberto).toContain('Sobra por mês, com margem')
   expect(valoresMarcados(aberto).filter(valor => valor === formatar(2345.67))).toHaveLength(1)
@@ -140,15 +172,25 @@ it('bloqueia todo o mosaico financeiro para o Assessor da Casa com o olho aberto
 it('ordena dinheiro em risco, operação e lembrete e imprime rótulo e tema visual explícitos', () => {
   const dados = structuredClone(exemplo)
   const ids = ['lembrar', 'operar', 'vencer']
-  dados.pendencias.fila = { ...dados.pendencias.fila, estado: 'pronto', valor: ids.map(id => ({
-    id, funcionario: 'contador', perguntaCurta: id,
-    valor: { estado: 'indisponivel', valor: null, unidade: 'reais', natureza: 'previsto' },
-  })) }
-  dados.alertas = { ...dados.alertas, estado: 'pronto', valor: [
-    { id: 'lembrar', nivel: 'lembrete', texto: '' },
-    { id: 'operar', nivel: 'operacao', texto: '' },
-    { id: 'vencer', nivel: 'dinheiro em risco', texto: '' },
-  ] }
+  dados.pendencias.fila = {
+    ...dados.pendencias.fila,
+    estado: 'pronto',
+    valor: ids.map(id => ({
+      id,
+      funcionario: 'contador',
+      perguntaCurta: id,
+      valor: { estado: 'indisponivel', valor: null, unidade: 'reais', natureza: 'previsto' },
+    })),
+  }
+  dados.alertas = {
+    ...dados.alertas,
+    estado: 'pronto',
+    valor: [
+      { id: 'lembrar', nivel: 'lembrete', texto: '' },
+      { id: 'operar', nivel: 'operacao', texto: '' },
+      { id: 'vencer', nivel: 'dinheiro em risco', texto: '' },
+    ],
+  }
   const html = renderizar('claro', 'desktop', dados)
   expect(html.indexOf('>vencer</p>')).toBeLessThan(html.indexOf('>operar</p>'))
   expect(html.indexOf('>operar</p>')).toBeLessThan(html.indexOf('>lembrar</p>'))
@@ -178,10 +220,14 @@ it('segue as restrições de acabamento dentro do módulo', () => {
   expect(regra('.bento-grade')).toContain('display: grid')
   expect(css).toContain('"hoje hoje plano" "aplicacoes faturas plano" "escritorio escritorio escritorio"')
   expect(css).toMatch(/prefers-reduced-motion:\s*reduce/)
-  expect(regra('.bento-valor .numero-financeiro')).toMatch(/font-variant-numeric: tabular-nums;[\s\S]*white-space: nowrap/)
+  expect(regra('.bento-valor .numero-financeiro')).toMatch(
+    /font-variant-numeric: tabular-nums;[\s\S]*white-space: nowrap/,
+  )
   expect(css).toContain('font-size: 2.25rem')
   expect(css).toContain('font-size: 1.6875rem')
-  expect(css).not.toMatch(/gradient\s*\(|backdrop-filter|background-clip:\s*text|border-(?:left|inline-start)\s*:|neon/i)
+  expect(css).not.toMatch(
+    /gradient\s*\(|backdrop-filter|background-clip:\s*text|border-(?:left|inline-start)\s*:|neon/i,
+  )
   expect(html).not.toMatch(/\p{Extended_Pictographic}/u)
   expect(html.match(/style="[^"]*(?:width|height):[^"]*%/g) ?? []).toHaveLength(0)
 })
@@ -199,11 +245,20 @@ it.each(['claro', 'escuro'] as const)('calcula contraste AA dos tokens em %s', t
   const cores = new Map(Array.from(regra(seletor).matchAll(/--([a-z-]+): (#[\da-f]{6});/g), m => [m[1], m[2]]))
   const superficies = ['fundo', 'cartao', 'menu', 'plano', 'aplicacoes', 'faturas']
   const pares = [
-    ...superficies.flatMap(fundo => [['texto', fundo, 4.5], ['texto-secundario', fundo, 4.5]] as const),
+    ...superficies.flatMap(
+      fundo =>
+        [
+          ['texto', fundo, 4.5],
+          ['texto-secundario', fundo, 4.5],
+        ] as const,
+    ),
     ...['cartao', 'menu', 'fundo', 'plano', 'aplicacoes', 'faturas'].map(fundo => ['destaque', fundo, 3] as const),
-    ['sobre-destaque', 'destaque', 4.5], ['risco', 'menu', 4.5],
-    ['sobre-heroi', 'heroi', 4.5], ['legenda-heroi', 'heroi', 4.5],
-    ['borda', 'cartao', 3], ['borda', 'menu', 3],
+    ['sobre-destaque', 'destaque', 4.5],
+    ['risco', 'menu', 4.5],
+    ['sobre-heroi', 'heroi', 4.5],
+    ['legenda-heroi', 'heroi', 4.5],
+    ['borda', 'cartao', 3],
+    ['borda', 'menu', 3],
   ] as const
   for (const [tinta, fundo, alvo] of pares) {
     expect(cores.has(tinta) && cores.has(fundo), `${tinta} sobre ${fundo}`).toBe(true)
@@ -216,31 +271,50 @@ const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] ?? '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
-it.skipIf(!chrome)('mede a primeira tela com o CSS e o medidor do laboratório em Chromium', () => {
-  const pasta = mkdtempSync(join(tmpdir(), 'proposta-e-'))
-  try {
-    const estilos = ['../base.css', '../comuns/escritorio-maquete.css', '../../componentes/ilustracoes/ilustracoes.css']
-      .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8')).join('\n') + '\n' + css
-    const fontes = [['bricolage-grotesque', 'Bricolage Grotesque Variable'], ['inter', 'Inter Variable']]
-      .map(([pacote, familia]) => {
-        const arquivo = `node_modules/@fontsource-variable/${pacote}/files/${pacote}-latin-wght-normal.woff2`
-        const fonte = readFileSync(arquivo).toString('base64')
-        return `@font-face {font-family: '${familia}'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900}`
-      }).join('\n')
-    const medidor = ts.transpile(readFileSync(new URL('../medicao.ts', import.meta.url), 'utf8')
-      .replace('export function', 'function'), { target: ts.ScriptTarget.ES2020 })
-    const quadros = contextos.map(([tema, dispositivo]) => `
+it.skipIf(!chrome)(
+  'mede a primeira tela com o CSS e o medidor do laboratório em Chromium',
+  () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'proposta-e-'))
+    try {
+      const estilos =
+        ['../base.css', '../comuns/escritorio-maquete.css', '../../componentes/ilustracoes/ilustracoes.css']
+          .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8'))
+          .join('\n') +
+        '\n' +
+        css
+      const fontes = [
+        ['bricolage-grotesque', 'Bricolage Grotesque Variable'],
+        ['inter', 'Inter Variable'],
+      ]
+        .map(([pacote, familia]) => {
+          const arquivo = `node_modules/@fontsource-variable/${pacote}/files/${pacote}-latin-wght-normal.woff2`
+          const fonte = readFileSync(arquivo).toString('base64')
+          return `@font-face {font-family: '${familia}'; src: url(data:font/woff2;base64,${fonte}); font-weight: 100 900}`
+        })
+        .join('\n')
+      const medidor = ts.transpile(
+        readFileSync(new URL('../medicao.ts', import.meta.url), 'utf8').replace('export function', 'function'),
+        { target: ts.ScriptTarget.ES2020 },
+      )
+      const quadros = contextos
+        .map(
+          ([tema, dispositivo]) => `
       <div class="lab" data-theme="${tema}">
         <section class="lab-amostra" data-dispositivo="${dispositivo}">
           <div class="lab-quadro"><div class="lab-conteudo" data-proposta="e">${renderizar(tema, dispositivo)}</div></div>
         </section>
-      </div>`).join('')
-    const arquivo = join(pasta, 'medicao.html')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
+      </div>`,
+        )
+        .join('')
+      const arquivo = join(pasta, 'medicao.html')
+      writeFileSync(
+        arquivo,
+        `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}</style>${quadros}
       <pre id="resultado"></pre><script>${medidor}
       document.fonts.ready.then(() => {
         const medidas = [...document.querySelectorAll('.lab-quadro')].map(quadro => {
@@ -261,30 +335,49 @@ it.skipIf(!chrome)('mede a primeira tela com o CSS e o medidor do laboratório e
         })
         document.querySelector('#resultado').textContent = encodeURIComponent(JSON.stringify(medidas))
       })
-      </script>`)
-    const resultado = spawnSync(chrome!, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-background-networking',
-      '--no-first-run', '--user-data-dir=' + join(pasta, 'perfil'), '--window-size=1400,1000',
-      '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 25000, maxBuffer: 8_000_000 })
-    expect(resultado.status, resultado.error?.message ?? resultado.stderr).toBe(0)
-    const captura = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
-    expect(captura).toBeTruthy()
-    const medidas = JSON.parse(decodeURIComponent(captura!)) as {
-      dimensoes: number[]; valores: string[]; semTransbordo: boolean; numerosInteiros: boolean; alvoMinimo: number
-    }[]
-    expect(medidas).toHaveLength(contextos.length)
-    for (const [i, [tema, dispositivo]] of contextos.entries()) {
-      const medida = medidas[i]
-      const celular = dispositivo === 'celular'
-      expect(medida.dimensoes).toEqual(celular ? [375, 812] : [1280, 800])
-      expect(medida.valores[0]).toEqual(formatar(exemplo.hojePodeGastar.valor.valor!).replace(/\s/g, ' '))
-      expect(medida.valores.length).toBeLessThanOrEqual(celular ? 5 : 8)
-      expect(new Set(medida.valores).size).toBe(medida.valores.length)
-      expect(medida.semTransbordo && medida.numerosInteiros).toBe(true)
-      expect(medida.alvoMinimo).toBeGreaterThanOrEqual(44)
-      console.info(`Proposta E · ${tema} · ${dispositivo} · ${medida.valores.length} acima da dobra`)
+      </script>`,
+      )
+      const resultado = spawnSync(
+        chrome!,
+        [
+          '--headless',
+          '--no-sandbox',
+          '--disable-gpu',
+          '--disable-background-networking',
+          '--no-first-run',
+          '--user-data-dir=' + join(pasta, 'perfil'),
+          '--window-size=1400,1000',
+          '--virtual-time-budget=4000',
+          '--dump-dom',
+          pathToFileURL(arquivo).href,
+        ],
+        { encoding: 'utf8', timeout: 25000, maxBuffer: 8_000_000 },
+      )
+      expect(resultado.status, resultado.error?.message ?? resultado.stderr).toBe(0)
+      const captura = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
+      expect(captura).toBeTruthy()
+      const medidas = JSON.parse(decodeURIComponent(captura!)) as {
+        dimensoes: number[]
+        valores: string[]
+        semTransbordo: boolean
+        numerosInteiros: boolean
+        alvoMinimo: number
+      }[]
+      expect(medidas).toHaveLength(contextos.length)
+      for (const [i, [tema, dispositivo]] of contextos.entries()) {
+        const medida = medidas[i]
+        const celular = dispositivo === 'celular'
+        expect(medida.dimensoes).toEqual(celular ? [375, 812] : [1280, 800])
+        expect(medida.valores[0]).toEqual(formatar(exemplo.hojePodeGastar.valor.valor!).replace(/\s/g, ' '))
+        expect(medida.valores.length).toBeLessThanOrEqual(celular ? 5 : 8)
+        expect(new Set(medida.valores).size).toBe(medida.valores.length)
+        expect(medida.semTransbordo && medida.numerosInteiros).toBe(true)
+        expect(medida.alvoMinimo).toBeGreaterThanOrEqual(44)
+        console.info(`Proposta E · ${tema} · ${dispositivo} · ${medida.valores.length} acima da dobra`)
+      }
+    } finally {
+      rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
     }
-  } finally {
-    rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
-  }
-}, 35000)
+  },
+  35000,
+)

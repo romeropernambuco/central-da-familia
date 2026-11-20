@@ -60,7 +60,9 @@ export function comCasas(x: Dec, casas: number): string {
 }
 
 /** Taxa em % com 4 casas (testes) ou 2 (tela): 0.087125 → '8.7125'. */
-export function pct(x: Dec, casas = 4): string { return comCasas(x.times(100), casas) }
+export function pct(x: Dec, casas = 4): string {
+  return comCasas(x.times(100), casas)
+}
 
 /** '788.41' → 78841. Aceita sinal. Recusa mais de 2 casas. */
 export function centavosDeTexto(s: string): Centavos {
@@ -69,25 +71,46 @@ export function centavosDeTexto(s: string): Centavos {
 }
 
 /** 78841 → '788.41'. */
-export function textoDeCentavos(c: Centavos): string { return comCasas(centavos(c).div(100), 2) }
+export function textoDeCentavos(c: Centavos): string {
+  return comCasas(centavos(c).div(100), 2)
+}
 
 // ---------- meses e dias ----------
 function partes(m: Mes): [number, number] {
   const r = /^(\d{4})-(\d{2})$/.exec(m)
   if (!r) throw new Error(`Mês inválido: ${m}`)
-  const a = Number(r[1]), mm = Number(r[2])
+  const a = Number(r[1]),
+    mm = Number(r[2])
   if (mm < 1 || mm > 12) throw new Error(`Mês inválido: ${m}`)
   return [a, mm]
 }
-export function mes(a: number, m: number): Mes { return `${a}-${m < 10 ? '0' : ''}${m}` }
-export function anoDe(m: Mes): number { return partes(m)[0] }
-export function numeroDoMes(m: Mes): number { return partes(m)[1] }
-export function proximoMes(m: Mes): Mes { const [a, mm] = partes(m); return mm === 12 ? mes(a + 1, 1) : mes(a, mm + 1) }
-export function mesAnterior(m: Mes): Mes { const [a, mm] = partes(m); return mm === 1 ? mes(a - 1, 12) : mes(a, mm - 1) }
+export function mes(a: number, m: number): Mes {
+  return `${a}-${m < 10 ? '0' : ''}${m}`
+}
+export function anoDe(m: Mes): number {
+  return partes(m)[0]
+}
+export function numeroDoMes(m: Mes): number {
+  return partes(m)[1]
+}
+export function proximoMes(m: Mes): Mes {
+  const [a, mm] = partes(m)
+  return mm === 12 ? mes(a + 1, 1) : mes(a, mm + 1)
+}
+export function mesAnterior(m: Mes): Mes {
+  const [a, mm] = partes(m)
+  return mm === 1 ? mes(a - 1, 12) : mes(a, mm - 1)
+}
 /** Negativo se a < b, zero se igual, positivo se a > b. */
-export function compararMes(a: Mes, b: Mes): number { const [x, y] = partes(a), [z, w] = partes(b); return (x - z) * 12 + (y - w) }
+export function compararMes(a: Mes, b: Mes): number {
+  const [x, y] = partes(a),
+    [z, w] = partes(b)
+  return (x - z) * 12 + (y - w)
+}
 /** Quantos meses de a até b (b − a). */
-export function mesesEntre(a: Mes, b: Mes): number { return compararMes(b, a) }
+export function mesesEntre(a: Mes, b: Mes): number {
+  return compararMes(b, a)
+}
 /** Lista de a até b, inclusive. Vazia se b < a. */
 export function listaMeses(de: Mes, ate: Mes): Mes[] {
   const out: Mes[] = []
@@ -101,9 +124,16 @@ export function mesDaData(data: string): Mes {
   return `${r[1]}-${r[2]}`
 }
 /** Dias corridos do mês (28, 29, 30 ou 31). */
-export function diasDoMes(m: Mes): number { const [a, mm] = partes(m); return new Date(Date.UTC(a, mm, 0)).getUTCDate() }
+export function diasDoMes(m: Mes): number {
+  const [a, mm] = partes(m)
+  return new Date(Date.UTC(a, mm, 0)).getUTCDate()
+}
 /** Dias corridos entre 2 datas 'AAAA-MM-DD' (fim − início). */
 export function diasCorridos(inicio: string, fim: string): number {
-  const p = (s: string) => { const r = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!r) throw new Error(`Data inválida: ${s}`); return Date.UTC(Number(r[1]), Number(r[2]) - 1, Number(r[3])) }
+  const p = (s: string) => {
+    const r = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+    if (!r) throw new Error(`Data inválida: ${s}`)
+    return Date.UTC(Number(r[1]), Number(r[2]) - 1, Number(r[3]))
+  }
   return Math.round((p(fim) - p(inicio)) / 86400000)
 }

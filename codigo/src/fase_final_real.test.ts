@@ -12,24 +12,39 @@ let respostas: Record<string, { data: unknown; error: null }> = {}
 function construtor(tabela: string) {
   const c: Chamada = { tabela, passos: [] }
   chamadas.push(c)
-  const p: any = new Proxy({}, {
-    get(_t, nome: string) {
-      if (nome === 'then') {
-        const ult = c.passos.filter(x => !['eq', 'is', 'gte', 'lt', 'order', 'range'].includes(x[0])).map(x => x[0]).join('+')
-        const r = respostas[`${tabela}:${ult}`] ?? { data: [], error: null }
-        return (ok: (v: unknown) => void) => ok(r)
-      }
-      return (...args: unknown[]) => { c.passos.push([nome, args]); return p }
+  const p: any = new Proxy(
+    {},
+    {
+      get(_t, nome: string) {
+        if (nome === 'then') {
+          const ult = c.passos
+            .filter(x => !['eq', 'is', 'gte', 'lt', 'order', 'range'].includes(x[0]))
+            .map(x => x[0])
+            .join('+')
+          const r = respostas[`${tabela}:${ult}`] ?? { data: [], error: null }
+          return (ok: (v: unknown) => void) => ok(r)
+        }
+        return (...args: unknown[]) => {
+          c.passos.push([nome, args])
+          return p
+        }
+      },
     },
-  })
+  )
   return p
 }
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     from: (t: string) => construtor(t),
-    rpc: async (nome: string, args: unknown) => { chamadas.push({ tabela: 'rpc:' + nome, passos: [['args', [args]]] }); return respostas['rpc:' + nome] ?? { data: null, error: null } },
-    auth: { getSession: async () => ({ data: { session: { user: { id: 'u-exemplo' } } } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) },
+    rpc: async (nome: string, args: unknown) => {
+      chamadas.push({ tabela: 'rpc:' + nome, passos: [['args', [args]]] })
+      return respostas['rpc:' + nome] ?? { data: null, error: null }
+    },
+    auth: {
+      getSession: async () => ({ data: { session: { user: { id: 'u-exemplo' } } } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    },
   }),
 }))
 
@@ -39,7 +54,10 @@ beforeAll(async () => {
   vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'chave-publicavel-de-exemplo')
   api = (await import('./api/real')).apiReal
 })
-beforeEach(() => { chamadas.length = 0; respostas = {} })
+beforeEach(() => {
+  chamadas.length = 0
+  respostas = {}
+})
 const passos = (c: Chamada) => c.passos.map(x => x[0])
 
 describe('D1: a consulta de lançamentos do mês', () => {
@@ -55,39 +73,99 @@ describe('D1: a consulta de lançamentos do mês', () => {
     expect(c.passos).toContainEqual(['range', [0, 999]])
   })
   it('com 1.000 linhas, a 2ª página começa no 1.000 (sem repetir a 1ª)', async () => {
-    respostas['lancamentos:select'] = { data: Array.from({ length: 1000 }, (_, i) => ({ id: 'l' + i, valor: 1, data: '2026-12-01', envelope_id: 'e' })), error: null }
+    respostas['lancamentos:select'] = {
+      data: Array.from({ length: 1000 }, (_, i) => ({ id: 'l' + i, valor: 1, data: '2026-12-01', envelope_id: 'e' })),
+      error: null,
+    }
     await api.lancamentos('fam-exemplo', '2026-12')
     const ranges = chamadas.filter(x => x.tabela === 'lancamentos').map(c => c.passos.find(p => p[0] === 'range')![1])
-    expect(ranges.slice(0, 2)).toEqual([[0, 999], [1000, 1999]])
+    expect(ranges.slice(0, 2)).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ])
   })
   it('nenhuma linha do real.ts tem comentário // depois de uma chamada ao banco (o resto da linha some)', async () => {
-    const ruins = readFileSync('src/api/real.ts', 'utf8').split('\n').map((l: string, i: number) => [i + 1, l] as const)
-      .filter(([, l]: readonly [number, string]) => /(sb\(\)|rpc\(|\.from\(|\.eq\(|\.select\()/.test(l) && /\)\s*\/\/[^\n]*\.(eq|gte|lt|order|range|in|is)\(/.test(l))
+    const ruins = readFileSync('src/api/real.ts', 'utf8')
+      .split('\n')
+      .map((l: string, i: number) => [i + 1, l] as const)
+      .filter(
+        ([, l]: readonly [number, string]) =>
+          /(sb\(\)|rpc\(|\.from\(|\.eq\(|\.select\()/.test(l) &&
+          /\)\s*\/\/[^\n]*\.(eq|gte|lt|order|range|in|is)\(/.test(l),
+      )
     expect(ruins).toEqual([])
   })
 })
 
 describe('D2 e f_12: salvar o objetivo é 1 chamada a objetivo_salvar (sem escrever direto na tabela)', () => {
-  const p = { gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1', taxa_real_trabalho: '0.04', aliq_proj: '0.15', taxa_bruta_ano: {}, ipca_ano: {}, piso_meses: null, mes_reajuste: 1, travado_focus: false }
+  const p = {
+    gasto_2029_hoje: null,
+    renda_certa_2029: 0,
+    margem: '0.1',
+    taxa_real_trabalho: '0.04',
+    aliq_proj: '0.15',
+    taxa_bruta_ano: {},
+    ipca_ano: {},
+    piso_meses: null,
+    mes_reajuste: 1,
+    travado_focus: false,
+  }
   it('chama produto.objetivo_salvar com a família e os parâmetros; nada de insert, update ou upsert em objetivo', async () => {
     await api.objetivoSalvar!('fam-exemplo', p)
-    expect(chamadas.find(c => c.tabela === 'rpc:objetivo_salvar')?.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', parametros: p })
+    expect(chamadas.find(c => c.tabela === 'rpc:objetivo_salvar')?.passos[0][1][0]).toEqual({
+      familia: 'fam-exemplo',
+      parametros: p,
+    })
     expect(chamadas.filter(c => c.tabela === 'objetivo')).toEqual([])
   })
 })
 
 describe('f_12: o reajuste do teto vai pelas 3 funções do banco', () => {
   it('situação, voto e aplicar mandam o mês de vigência como data (AAAA-MM-01) e leem o formato do banco', async () => {
-    respostas['rpc:reajuste_situacao'] = { data: { mes_vigencia: '2027-02', aprovado: false, teto_aprovado_centavos: null, ipca_aprovado: null, vale_a_partir: null, ja_vale: false, votos: [{ membro_id: 'm1', nome: 'Exemplo', teto_centavos: 1000, ipca: '0.0450', votou_em: '2027-01-05T10:00:00-03:00' }], faltam: [{ membro_id: 'm2', nome: 'Outro' }] }, error: null }
+    respostas['rpc:reajuste_situacao'] = {
+      data: {
+        mes_vigencia: '2027-02',
+        aprovado: false,
+        teto_aprovado_centavos: null,
+        ipca_aprovado: null,
+        vale_a_partir: null,
+        ja_vale: false,
+        votos: [
+          {
+            membro_id: 'm1',
+            nome: 'Exemplo',
+            teto_centavos: 1000,
+            ipca: '0.0450',
+            votou_em: '2027-01-05T10:00:00-03:00',
+          },
+        ],
+        faltam: [{ membro_id: 'm2', nome: 'Outro' }],
+      },
+      error: null,
+    }
     const s = await api.reajusteSituacao!('fam-exemplo', '2027-02')
-    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_situacao')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', mes_vigencia: '2027-02-01' })
-    expect(s.faltam[0].nome).toBe('Outro'); expect(s.votos[0].teto).toBe(1000)
-    expect(s.votos[0].ipca).toBe('0.0450'); expect(s.vale_a_partir).toBeNull()
+    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_situacao')!.passos[0][1][0]).toEqual({
+      familia: 'fam-exemplo',
+      mes_vigencia: '2027-02-01',
+    })
+    expect(s.faltam[0].nome).toBe('Outro')
+    expect(s.votos[0].teto).toBe(1000)
+    expect(s.votos[0].ipca).toBe('0.0450')
+    expect(s.vale_a_partir).toBeNull()
     await api.reajusteVotar!('fam-exemplo', '2027-02', 1000, '0.0450')
-    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_votar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', mes_vigencia: '2027-02-01', teto_centavos: 1000, ipca: '0.0450' })
+    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_votar')!.passos[0][1][0]).toEqual({
+      familia: 'fam-exemplo',
+      mes_vigencia: '2027-02-01',
+      teto_centavos: 1000,
+      ipca: '0.0450',
+    })
     // R1: o banco calcula o limite novo; a tela não manda valor
     await api.reajusteAplicar!('fam-exemplo', 'env-1', '2027-02')
-    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_aplicar')!.passos[0][1][0]).toEqual({ familia: 'fam-exemplo', envelope: 'env-1', mes_vigencia: '2027-02-01' })
+    expect(chamadas.find(c => c.tabela === 'rpc:reajuste_aplicar')!.passos[0][1][0]).toEqual({
+      familia: 'fam-exemplo',
+      envelope: 'env-1',
+      mes_vigencia: '2027-02-01',
+    })
     expect(chamadas.filter(c => c.tabela === 'config_familia')).toEqual([])
   })
 })
@@ -95,8 +173,25 @@ describe('f_12: o reajuste do teto vai pelas 3 funções do banco', () => {
 describe('f_11: o dinheiro em conta corrente entra no motor', () => {
   it('saldo_caixa do banco vira o saldo_caixa da entrada e sai do "a confirmar"; sem o campo, 0 e "a confirmar"', async () => {
     const { entradaDoBanco } = await import('./api/futuro')
-    const base: any = { hoje: '2026-11-18', mes_base: '2026-11', aplicacoes: [], cdi_hoje: { pct_ano: '14.9' }, recebimentos: [], limites_mes: [{ envelope_id: 'e', limite_centavos: 1000000 }], config: null, parcelas_futuras: [], desejos: [], parametros: null,
-      focus: [2026, 2027, 2028].map(ano => ({ ano, selic_fim: '0.12', ipca: '0.04', divulgado_em: '2026-11-09', fonte: 'exemplo' })) }
+    const base: any = {
+      hoje: '2026-11-18',
+      mes_base: '2026-11',
+      aplicacoes: [],
+      cdi_hoje: { pct_ano: '14.9' },
+      recebimentos: [],
+      limites_mes: [{ envelope_id: 'e', limite_centavos: 1000000 }],
+      config: null,
+      parcelas_futuras: [],
+      desejos: [],
+      parametros: null,
+      focus: [2026, 2027, 2028].map(ano => ({
+        ano,
+        selic_fim: '0.12',
+        ipca: '0.04',
+        divulgado_em: '2026-11-09',
+        fonte: 'exemplo',
+      })),
+    }
     const com = entradaDoBanco({ ...base, saldo_caixa: 1234567 })
     expect(com.entrada!.saldo_caixa).toBe(1234567)
     expect(com.confirmar.join(' ')).not.toMatch(/dinheiro parado na conta/)
@@ -108,7 +203,19 @@ describe('f_11: o dinheiro em conta corrente entra no motor', () => {
 
 describe('f_13: o IR de 2029 em diante vai junto no objetivo_salvar', () => {
   it('parametros.aliq_renda vai como texto decimal, ao lado de aliq_proj', async () => {
-    const p = { gasto_2029_hoje: null, renda_certa_2029: 0, margem: '0.1', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', taxa_bruta_ano: {}, ipca_ano: {}, piso_meses: null, mes_reajuste: 1, travado_focus: false }
+    const p = {
+      gasto_2029_hoje: null,
+      renda_certa_2029: 0,
+      margem: '0.1',
+      taxa_real_trabalho: '0.04',
+      aliq_proj: '0.225',
+      aliq_renda: '0.15',
+      taxa_bruta_ano: {},
+      ipca_ano: {},
+      piso_meses: null,
+      mes_reajuste: 1,
+      travado_focus: false,
+    }
     await api.objetivoSalvar!('fam-exemplo', p)
     const enviado = chamadas.find(c => c.tabela === 'rpc:objetivo_salvar')!.passos[0][1][0] as any
     expect(enviado.parametros.aliq_renda).toBe('0.15')
@@ -116,18 +223,44 @@ describe('f_13: o IR de 2029 em diante vai junto no objetivo_salvar', () => {
   })
 })
 
-
-describe('f25: pagamento explícito usa a coluna existente sem trocar autoria',()=>{
- it('grava pagador na mesma compra retornada pela RPC e o entrega normalizado',async()=>{
-  respostas['rpc:lancar_com_chave']={data:{lancamento:{id:'l',autor:'a',valor:10},resumo:{}},error:null}
-  respostas['lancamentos:update+select+single']={data:{id:'l'},error:null}
-  const r=await api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'})
-  expect(r.lancamento).toMatchObject({autor:'a',pago_por:'b'})
-  expect(chamadas.find(c=>c.tabela==='lancamentos')?.passos).toEqual(expect.arrayContaining([['update',[{pago_por:'b'}]],['eq',['familia_id','f']],['eq',['id','l']]]))
- })
- it('não anuncia sucesso quando a compra foi anotada mas a identificação do pagador falhou',async()=>{
-  respostas['rpc:lancar_com_chave']={data:{lancamento:{id:'l',autor:'a'},resumo:{}},error:null}
-  respostas['lancamentos:update+select+single']={data:null,error:{message:'pagador recusado'} as any}
-  const r=await api.lancar({familia:'f',envelope:'e',valor:10,data:'2026-11-16',descricao:'Compra',chave:'k',pago_por:'b'});expect(r.avisoPagador).toContain('Gasto salvo, mas o pagador não foi gravado. Informar de novo');expect(r.repetirPagador).toBeTypeOf('function')
- })
+describe('f25: pagamento explícito usa a coluna existente sem trocar autoria', () => {
+  it('grava pagador na mesma compra retornada pela RPC e o entrega normalizado', async () => {
+    respostas['rpc:lancar_com_chave'] = {
+      data: { lancamento: { id: 'l', autor: 'a', valor: 10 }, resumo: {} },
+      error: null,
+    }
+    respostas['lancamentos:update+select+single'] = { data: { id: 'l' }, error: null }
+    const r = await api.lancar({
+      familia: 'f',
+      envelope: 'e',
+      valor: 10,
+      data: '2026-11-16',
+      descricao: 'Compra',
+      chave: 'k',
+      pago_por: 'b',
+    })
+    expect(r.lancamento).toMatchObject({ autor: 'a', pago_por: 'b' })
+    expect(chamadas.find(c => c.tabela === 'lancamentos')?.passos).toEqual(
+      expect.arrayContaining([
+        ['update', [{ pago_por: 'b' }]],
+        ['eq', ['familia_id', 'f']],
+        ['eq', ['id', 'l']],
+      ]),
+    )
+  })
+  it('não anuncia sucesso quando a compra foi anotada mas a identificação do pagador falhou', async () => {
+    respostas['rpc:lancar_com_chave'] = { data: { lancamento: { id: 'l', autor: 'a' }, resumo: {} }, error: null }
+    respostas['lancamentos:update+select+single'] = { data: null, error: { message: 'pagador recusado' } as any }
+    const r = await api.lancar({
+      familia: 'f',
+      envelope: 'e',
+      valor: 10,
+      data: '2026-11-16',
+      descricao: 'Compra',
+      chave: 'k',
+      pago_por: 'b',
+    })
+    expect(r.avisoPagador).toContain('Gasto salvo, mas o pagador não foi gravado. Informar de novo')
+    expect(r.repetirPagador).toBeTypeOf('function')
+  })
 })

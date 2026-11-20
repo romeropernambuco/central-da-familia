@@ -4,7 +4,8 @@ const ler = (p: string) => fontes[`./${p}`]
 describe('nenhuma identidade anônima sem chamado', () => {
   it('rejeita fallbacks textuais antigos ou novos nas telas e APIs', () => {
     const problemas: string[] = []
-    const fallback = /(?:\|\||\?\?)\s*['"`](?:algu[eé]m(?: do casal)?|equipe|outro adulto|outra pessoa|convidad[oa]|pessoa|respons[aá]vel n[aã]o identificado)['"`]/i
+    const fallback =
+      /(?:\|\||\?\?)\s*['"`](?:algu[eé]m(?: do casal)?|equipe|outro adulto|outra pessoa|convidad[oa]|pessoa|respons[aá]vel n[aã]o identificado)['"`]/i
     for (const [p, fonte] of Object.entries(fontes).filter(([p]) => !p.endsWith('.test.ts'))) {
       fonte.split('\n').forEach((linha, i) => {
         if (!linha.trimStart().startsWith('//') && fallback.test(linha)) problemas.push(`${p}:${i + 1}`)
@@ -13,10 +14,16 @@ describe('nenhuma identidade anônima sem chamado', () => {
     expect(problemas).toEqual([])
   })
   it.each([
-    'telas/casa/Casa.tsx', 'telas/ajustes/Ajustes.tsx', 'telas/escritorio/Ficha.tsx',
-    'telas/lancamentos/Lancamentos.tsx', 'telas/planejamento/Parametros.tsx',
-    'telas/planejamento/Recebimentos.tsx', 'telas/guardado/Guardado.tsx',
-    'telas/guardado/Imoveis.tsx', 'telas/desejos/Desejos.tsx', 'telas/cartoes/Cartoes.tsx',
+    'telas/casa/Casa.tsx',
+    'telas/ajustes/Ajustes.tsx',
+    'telas/escritorio/Ficha.tsx',
+    'telas/lancamentos/Lancamentos.tsx',
+    'telas/planejamento/Parametros.tsx',
+    'telas/planejamento/Recebimentos.tsx',
+    'telas/guardado/Guardado.tsx',
+    'telas/guardado/Imoveis.tsx',
+    'telas/desejos/Desejos.tsx',
+    'telas/cartoes/Cartoes.tsx',
     'telas/meu-orcamento/MeuOrcamento.tsx',
   ])('%s usa o chamado compartilhado', arquivo => {
     expect(ler(arquivo)).toMatch(/<NomeDaPessoa\s/)

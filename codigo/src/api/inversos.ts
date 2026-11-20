@@ -9,7 +9,8 @@ import { igual } from '../lib/mescla'
  * (desfazer só o último enganaria).
  */
 const MUDOU = 'Isso mudou depois; confira antes de desfazer'
-const so = <T extends object>(o: T, campos: readonly (keyof T)[]) => Object.fromEntries(campos.map(c => [c, o[c] ?? null]))
+const so = <T extends object>(o: T, campos: readonly (keyof T)[]) =>
+  Object.fromEntries(campos.map(c => [c, o[c] ?? null]))
 
 export async function prepararInverso(api: Api, prop: string, args: any[]): Promise<(() => Promise<void>) | undefined> {
   const [familia, id, dados] = args
@@ -18,10 +19,21 @@ export async function prepararInverso(api: Api, prop: string, args: any[]): Prom
   if (prop === 'recebimentoMudar' && api.recebimentos && !dados?.apagar) {
     const antes = (await api.recebimentos(familia)).find(x => x.id === id)
     if (!antes) return
-    const volta: Record<string, unknown> = {}, tocados: ('recebido_em' | 'valor_recebido' | 'mes_novo' | 'certo')[] = []
-    if (dados.recebido_em !== undefined) { volta.recebido_em = antes.recebido_em; volta.valor_recebido = antes.valor_recebido; tocados.push('recebido_em') }
-    if (dados.mes_novo !== undefined) { volta.mes_novo = antes.mes_novo; tocados.push('mes_novo') }
-    if (dados.certo !== undefined) { volta.certo = antes.certo; tocados.push('certo') }
+    const volta: Record<string, unknown> = {},
+      tocados: ('recebido_em' | 'valor_recebido' | 'mes_novo' | 'certo')[] = []
+    if (dados.recebido_em !== undefined) {
+      volta.recebido_em = antes.recebido_em
+      volta.valor_recebido = antes.valor_recebido
+      tocados.push('recebido_em')
+    }
+    if (dados.mes_novo !== undefined) {
+      volta.mes_novo = antes.mes_novo
+      tocados.push('mes_novo')
+    }
+    if (dados.certo !== undefined) {
+      volta.certo = antes.certo
+      tocados.push('certo')
+    }
     if (!tocados.length) return
     return async () => {
       const agora = (await api.recebimentos!(familia)).find(x => x.id === id)
@@ -31,8 +43,10 @@ export async function prepararInverso(api: Api, prop: string, args: any[]): Prom
   }
 
   if (prop === 'faturaInformar') {
-    const mes = dados as string, d = args[3] as { valor_banco?: number | null; paga_em?: string | null }
-    const achar = async () => (await api.faturasBanco(familia)).find(x => x.cartao_id === id && x.mes.slice(0, 7) === mes.slice(0, 7))
+    const mes = dados as string,
+      d = args[3] as { valor_banco?: number | null; paga_em?: string | null }
+    const achar = async () =>
+      (await api.faturasBanco(familia)).find(x => x.cartao_id === id && x.mes.slice(0, 7) === mes.slice(0, 7))
     const antes = await achar()
     const volta: { valor_banco?: number; paga_em?: string | null } = {}
     if (d.valor_banco != null) {
@@ -62,7 +76,12 @@ export async function prepararInverso(api: Api, prop: string, args: any[]): Prom
       if (!fotografado || !igual(await achar(), depois)) throw new Error(MUDOU)
       await api.cartaoSalvar(familia, antes)
     }
-    return Object.assign(voltar, { aposGravar: async () => { depois = await achar(); fotografado = true } })
+    return Object.assign(voltar, {
+      aposGravar: async () => {
+        depois = await achar()
+        fotografado = true
+      },
+    })
   }
 
   if (prop === 'lembreteAdiar') {
@@ -80,7 +99,13 @@ export async function prepararInverso(api: Api, prop: string, args: any[]): Prom
     if (!antes) return
     return async () => {
       const agora = (await api.estoque(familia)).itens.find(x => x.id === antes.id)
-      if (!agora || agora.nome !== id.nome || agora.categoria !== id.categoria || agora.ativo !== (id.ativo ?? antes.ativo)) throw new Error(MUDOU)
+      if (
+        !agora ||
+        agora.nome !== id.nome ||
+        agora.categoria !== id.categoria ||
+        agora.ativo !== (id.ativo ?? antes.ativo)
+      )
+        throw new Error(MUDOU)
       await api.estoqueItemSalvar(familia, antes)
     }
   }

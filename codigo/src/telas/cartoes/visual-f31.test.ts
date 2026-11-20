@@ -10,18 +10,42 @@ const m = vi.hoisted(() => ({ app: vi.fn(), escritorio: vi.fn(), estados: [] as 
 vi.mock('../../app/contexto', () => ({ useApp: m.app }))
 vi.mock('../../app/useDados2', () => ({ useEscritorio: m.escritorio }))
 vi.mock('../../componentes/Qm', () => ({ Qm: () => null }))
-vi.mock('react', async original => ({ ...await original<typeof import('react')>(),
-  useState: (inicial: unknown) => [m.estados.length ? m.estados.shift() : typeof inicial === 'function' ? (inicial as () => unknown)() : inicial, vi.fn()],
+vi.mock('react', async original => ({
+  ...(await original<typeof import('react')>()),
+  useState: (inicial: unknown) => [
+    m.estados.length ? m.estados.shift() : typeof inicial === 'function' ? (inicial as () => unknown)() : inicial,
+    vi.fn(),
+  ],
 }))
 beforeEach(() => {
   m.estados = []
   m.app.mockReturnValue({ api: {}, familia: { id: 'f', papel: 'casal' }, oculto: false, resumo: { envelopes: [] } })
 })
-afterEach(() => { esconderValores(false); vi.clearAllMocks() })
+afterEach(() => {
+  esconderValores(false)
+  vi.clearAllMocks()
+})
 function estadosCartoes(total?: number) {
   const cartoes = total === undefined ? [] : [{ id: 'c', nome: 'Teste', dia_fechamento: 10, dia_vencimento: 20 }]
-  const faturas = total === undefined ? [] : [0, total].map((t, i) => ({ cartao_id: 'c', mes: `2026-${11+i}`, vencimento: `2026-${11+i}-20`, total: t, fechada: false }))
-  m.estados = [cartoes, faturas, false, false, null, 0, { chave: JSON.stringify(['f', undefined, 'casal']), carregando: false, falha: '', temDado: true }]
+  const faturas =
+    total === undefined
+      ? []
+      : [0, total].map((t, i) => ({
+          cartao_id: 'c',
+          mes: `2026-${11 + i}`,
+          vencimento: `2026-${11 + i}-20`,
+          total: t,
+          fechada: false,
+        }))
+  m.estados = [
+    cartoes,
+    faturas,
+    false,
+    false,
+    null,
+    0,
+    { chave: JSON.stringify(['f', undefined, 'casal']), carregando: false, falha: '', temDado: true },
+  ]
 }
 it('cartões sem dados usam EstadoVazio ilustrado e ação de cadastro nativa', () => {
   estadosCartoes()

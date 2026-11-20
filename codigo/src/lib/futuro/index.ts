@@ -17,7 +17,20 @@ import type { Centavos, Desejo, FuturoEntrada, FuturoSaida, LinhaMes, Marco, Mes
 
 export * from './tipos'
 // Fronteira única (PLANO 3A; REVISOR 2): fora de lib/futuro, tudo se importa daqui. Lista em fase_final/entregas/MOTOR_index.md.
-export { Dec, textoDeCentavos, centavosDeTexto, pct, comCasas, mensal, diasDoMes, proximoMes, mesAnterior, compararMes, listaMeses, mesDaData } from './decimal'
+export {
+  Dec,
+  textoDeCentavos,
+  centavosDeTexto,
+  pct,
+  comCasas,
+  mensal,
+  diasDoMes,
+  proximoMes,
+  mesAnterior,
+  compararMes,
+  listaMeses,
+  mesDaData,
+} from './decimal'
 export { aliquotaIR, irSobre, diasIR, rendimentoMes, rendimentoAplicacao } from './f1_rendimento'
 export { taxaLiquidaAnual, taxaRealAnual, taxaRealMensal, semValor, ALERTA_SEM_VALOR } from './f2_taxa_real'
 export { fatorInflacao, gastoNaVirada, patrimonioNecessario, rendaSustentavel } from './f3_necessario'
@@ -28,12 +41,26 @@ export { avaliarDesejo, avaliarAntecipacao, taxaImplicitaMensal, type ResultadoD
 export { reajustarTeto, tetoProjetado, tetoVigente } from './f8_reajuste'
 export { ficaDevendo, cortarPorMes2029, desejosPraAdiar, ajusteSugerido, MESES_MINIMOS_PRA_GUARDAR } from './f9_falta'
 export { avisosFGC, fgcConta, TODOS_OS_BANCOS, LIMITE_FGC, TETO_CPF_FGC } from './f10_fgc'
-export { aluguelLiquidoMes, rentabilidadeAno, aluguelNoMes, analisarImoveis, gatilhosDeRecebimento } from './f11_imoveis'
+export {
+  aluguelLiquidoMes,
+  rentabilidadeAno,
+  aluguelNoMes,
+  analisarImoveis,
+  gatilhosDeRecebimento,
+} from './f11_imoveis'
 
 /** Padrões do ECONOMISTA.md pra quem monta os parâmetros iniciais (todos editáveis pela família).
  *  IR da projeção até 2028: 22,5% (item 4: "o caixa gira, preparar pro pior").
  *  IR do modo renda, 2029 em diante: 15% (exemplo F2 dele, aplicação longa). O motor não usa este objeto: só lê parametros. */
-export const PADROES_ECONOMISTA = { margem: '0.10', taxa_real_trabalho: '0.04', aliq_proj: '0.225', aliq_renda: '0.15', aliq_aluguel: '0.275', piso_meses: 6, mes_reajuste: 1 } as const
+export const PADROES_ECONOMISTA = {
+  margem: '0.10',
+  taxa_real_trabalho: '0.04',
+  aliq_proj: '0.225',
+  aliq_renda: '0.15',
+  aliq_aluguel: '0.275',
+  piso_meses: 6,
+  mes_reajuste: 1,
+} as const
 // aliq_aluguel: o ECONOMISTA.md não fixa IR de aluguel. Decisão do chefe: 27,5% (pior caso do carnê-leão, preparar pro pior), editável, [confirmar].
 
 /** IR do aluguel: o do parâmetro; sem ele, 27,5% marcado [confirmar]. */
@@ -44,23 +71,34 @@ function aliqAluguel(e: FuturoEntrada): { aliq: Taxa; confirmar: boolean } {
 
 function taxasDe(e: FuturoEntrada) {
   const p = e.parametros
-  return { taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj, virada: p.virada, taxa_real_trabalho: p.taxa_real_trabalho }
+  return {
+    taxa_bruta_ano: p.taxa_bruta_ano,
+    aliq_proj: p.aliq_proj,
+    virada: p.virada,
+    taxa_real_trabalho: p.taxa_real_trabalho,
+  }
 }
 
 /** Desejo que ainda vai sair do caixa. "feito" já saiu do saldo (contar de novo descontaria 2 vezes) e "desisti" não sai.
  *  Os 2 ficam só no histórico da tela (REVISOR E12, C2). */
-export function desejoPendente(d: Desejo): boolean { return d.situacao !== 'feito' && d.situacao !== 'desisti' }
+export function desejoPendente(d: Desejo): boolean {
+  return d.situacao !== 'feito' && d.situacao !== 'desisti'
+}
 
 /** Depois da virada (hoje no mês da virada ou depois) o motor entra em modo renda (QA E11, erros 1 e 2). */
-export function emModoRenda(e: FuturoEntrada): boolean { return compararMes(mesDaData(e.hoje), e.parametros.virada) >= 0 }
+export function emModoRenda(e: FuturoEntrada): boolean {
+  return compararMes(mesDaData(e.hoje), e.parametros.virada) >= 0
+}
 
 /** Taxa real do ano corrente: Fisher com a Selic e o IPCA do ano (líquida do IR da projeção).
  *  Sem os 2 nos parâmetros: a taxa real de trabalho, marcando falta_taxa. Só o modo renda usa (com aliq_renda). */
 function taxaRealDoAno(e: FuturoEntrada, ano: number): { real: Dec; falta_taxa: boolean } {
   const p = e.parametros
-  const tb = p.taxa_bruta_ano[ano], ip = p.ipca_ano[ano]
+  const tb = p.taxa_bruta_ano[ano],
+    ip = p.ipca_ano[ano]
   // IR do modo renda: aliq_renda (ECONOMISTA F2: aplicação longa, 15%); sem o campo, o da projeção.
-  if (tb !== undefined && ip !== undefined) return { real: taxaRealAnual(tb, p.aliq_renda ?? p.aliq_proj, ip), falta_taxa: false }
+  if (tb !== undefined && ip !== undefined)
+    return { real: taxaRealAnual(tb, p.aliq_renda ?? p.aliq_proj, ip), falta_taxa: false }
   return { real: taxa(p.taxa_real_trabalho), falta_taxa: true }
 }
 
@@ -83,11 +121,22 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   const { real, falta_taxa: semTaxa } = taxaRealDoAno(e, anoDe(mes))
   let falta_taxa = semTaxa
   let gasto: Centavos
-  try { gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano) } catch { gasto = p.gasto_2029_hoje; falta_taxa = true }
+  try {
+    gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)
+  } catch {
+    gasto = p.gasto_2029_hoje
+    falta_taxa = true
+  }
   const patrimonio = patrimonioHoje(e)
   const renda = rendaSustentavel(patrimonio, real)
   const al = aliqAluguel(e)
-  const im = analisarImoveis(e.imoveis ?? [], { meses: [], mes_ref: mes, mes_hoje: mes, aliq_aluguel: al.aliq, taxa_real_aplicacoes: real })
+  const im = analisarImoveis(e.imoveis ?? [], {
+    meses: [],
+    mes_ref: mes,
+    mes_hoje: mes,
+    aliq_aluguel: al.aliq,
+    taxa_real_aplicacoes: real,
+  })
   const aluguel = im.aluguel_no_mes_ref // entra no mês, até contrato_ate
   // Conta perpétua: só o aluguel com contrato de pelo menos 12 meses à frente abate (revisão E14, M1).
   const a_cobrir = gasto - p.renda_certa_2029 - im.aluguel_perpetuo
@@ -95,25 +144,56 @@ function futuroRenda(entrada: FuturoEntrada): FuturoSaida {
   const necessario = patrimonioNecessario(a_cobrir, p.margem, real)
   const f = necessario === null ? 0 : patrimonio - necessario
   const perguntas: { recebimento_atrasado: string }[] = []
-  for (const r of e.recebimentos) if (mesDoRecebimento(r, mes, mesAnterior(p.virada)).pergunta) perguntas.push({ recebimento_atrasado: r.id })
+  for (const r of e.recebimentos)
+    if (mesDoRecebimento(r, mes, mesAnterior(p.virada)).pergunta) perguntas.push({ recebimento_atrasado: r.id })
   const rendaDoMes: RendaDoMes = {
-    mes, patrimonio, taxa_real_anual: real.toString(), taxa_real_mensal: real.lte(0) ? '0' : taxaRealMensal(real).toString(),
-    renda_sustentavel: renda, gasto_do_mes: gasto, folga_do_mes: renda - Math.max(0, a_cobrir_mes), falta_taxa,
-    aluguel_liquido: aluguel, renda_total: renda + aluguel,
+    mes,
+    patrimonio,
+    taxa_real_anual: real.toString(),
+    taxa_real_mensal: real.lte(0) ? '0' : taxaRealMensal(real).toString(),
+    renda_sustentavel: renda,
+    gasto_do_mes: gasto,
+    folga_do_mes: renda - Math.max(0, a_cobrir_mes),
+    falta_taxa,
+    aluguel_liquido: aluguel,
+    renda_total: renda + aluguel,
   }
   return {
-    modo: 'renda', linha: [], patrimonio_necessario: necessario, renda_sustentavel: renda, folga: f,
-    ajustes_falta: f < 0 ? { guardar_por_mes: 0, ...partesDoCorte(cortarPorMes2029(-f, real), a_cobrir, renda), desejos_pra_adiar: desejosPraAdiar(e.desejos), sugerido: 'cortar', meses_restantes: 0 } : null,
-    renda: rendaDoMes, perguntas, avisos_fgc: avisosFGC(e.aplicacoes),
-    patrimonio_imoveis: im.patrimonio_imoveis, aluguel_liquido_2029: im.aluguel_perpetuo, renda_total_2029: renda + im.aluguel_perpetuo,
-    imoveis: im.imoveis, gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)], aliq_aluguel_confirmar: al.confirmar,
+    modo: 'renda',
+    linha: [],
+    patrimonio_necessario: necessario,
+    renda_sustentavel: renda,
+    folga: f,
+    ajustes_falta:
+      f < 0
+        ? {
+            guardar_por_mes: 0,
+            ...partesDoCorte(cortarPorMes2029(-f, real), a_cobrir, renda),
+            desejos_pra_adiar: desejosPraAdiar(e.desejos),
+            sugerido: 'cortar',
+            meses_restantes: 0,
+          }
+        : null,
+    renda: rendaDoMes,
+    perguntas,
+    avisos_fgc: avisosFGC(e.aplicacoes),
+    patrimonio_imoveis: im.patrimonio_imoveis,
+    aluguel_liquido_2029: im.aluguel_perpetuo,
+    renda_total_2029: renda + im.aluguel_perpetuo,
+    imoveis: im.imoveis,
+    gatilhos: [...im.gatilhos, ...gatilhosDeRecebimento(e.recebimentos)],
+    aliq_aluguel_confirmar: al.confirmar,
   }
 }
 
 /** Divide o corte (F9b, com a margem dentro) em: o que falta no mês sem margem + a folga de segurança.
  *  falta_por_mes = gasto a cobrir − renda sustentável (nunca negativo); margem_por_mes = o resto do corte.
  *  A soma das 2 é sempre o corte, centavo por centavo (QA E11: card com 2 números diferentes lado a lado). */
-function partesDoCorte(cortar: Centavos, a_cobrir: Centavos, renda: Centavos): { cortar_por_mes_2029: Centavos; falta_por_mes: Centavos; margem_por_mes: Centavos } {
+function partesDoCorte(
+  cortar: Centavos,
+  a_cobrir: Centavos,
+  renda: Centavos,
+): { cortar_por_mes_2029: Centavos; falta_por_mes: Centavos; margem_por_mes: Centavos } {
   const falta = Math.min(cortar, Math.max(0, a_cobrir - renda))
   return { cortar_por_mes_2029: cortar, falta_por_mes: falta, margem_por_mes: cortar - falta }
 }
@@ -155,35 +235,66 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
   for (const r of e.recebimentos) {
     const x = mesDoRecebimento(r, mes_hoje, ultimo)
     if (x.pergunta) perguntas.push({ recebimento_atrasado: r.id })
-    if (x.mes) { recs.push({ mes: x.mes, valor: r.valor }); marcos.push({ mes: x.mes, id: r.id, tipo: 'recebimento', descricao: r.descricao ?? null, dono: r.dono, valor: r.valor }) }
+    if (x.mes) {
+      recs.push({ mes: x.mes, valor: r.valor })
+      marcos.push({
+        mes: x.mes,
+        id: r.id,
+        tipo: 'recebimento',
+        descricao: r.descricao ?? null,
+        dono: r.dono,
+        valor: r.valor,
+      })
+    }
   }
-  const desvios = somarPorMes(e.desvios.filter((d) => naLinha(d.mes)))
+  const desvios = somarPorMes(e.desvios.filter(d => naLinha(d.mes)))
   const retornos = somarPorMes([])
   for (const d of e.desejos) {
     const f = fluxosDoDesejo(d)
     const ajusta = (m: Mes) => (compararMes(m, de) < 0 ? de : m)
-    somarPorMes(f.desvios.map((x) => ({ ...x, mes: ajusta(x.mes) })).filter((x) => naLinha(x.mes)), desvios)
-    somarPorMes(f.retornos.map((x) => ({ ...x, mes: ajusta(x.mes) })).filter((x) => naLinha(x.mes)), retornos)
+    somarPorMes(
+      f.desvios.map(x => ({ ...x, mes: ajusta(x.mes) })).filter(x => naLinha(x.mes)),
+      desvios,
+    )
+    somarPorMes(
+      f.retornos.map(x => ({ ...x, mes: ajusta(x.mes) })).filter(x => naLinha(x.mes)),
+      retornos,
+    )
   }
 
   // Imóveis: aluguel com contrato mês a mês e venda com contrato como recebimento; o resto vira gatilho.
   const al = aliqAluguel(e)
-  const im = analisarImoveis(e.imoveis ?? [], { meses: listaMeses(de, ultimo), mes_ref: p.virada, mes_hoje, aliq_aluguel: al.aliq, taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real })
+  const im = analisarImoveis(e.imoveis ?? [], {
+    meses: listaMeses(de, ultimo),
+    mes_ref: p.virada,
+    mes_hoje,
+    aliq_aluguel: al.aliq,
+    taxa_real_aplicacoes: taxaRealDoAno(e, anoDe(p.virada)).real,
+  })
   recs.push(...im.vendas)
-  for (const v of im.vendas) marcos.push({ mes: v.mes, id: v.id, tipo: 'venda', descricao: v.apelido, dono: v.dono, valor: v.valor })
+  for (const v of im.vendas)
+    marcos.push({ mes: v.mes, id: v.id, tipo: 'venda', descricao: v.apelido, dono: v.dono, valor: v.valor })
 
   const saldo_inicial = e.aplicacoes.reduce((s, a) => s + a.saldo, e.saldo_caixa)
   const linha = projetarLinha({
-    saldo_inicial, de, ate: ultimo, aplicacoes: e.aplicacoes, virada: p.virada,
+    saldo_inicial,
+    de,
+    ate: ultimo,
+    aplicacoes: e.aplicacoes,
+    virada: p.virada,
     taxa_individual_sem_vencimento: p.taxa_individual_sem_vencimento ?? false,
-    taxa_bruta_ano: p.taxa_bruta_ano, aliq_proj: p.aliq_proj,
-    teto, piso: (m) => pisoDoMes(p.piso_meses, teto(m)),
+    taxa_bruta_ano: p.taxa_bruta_ano,
+    aliq_proj: p.aliq_proj,
+    teto,
+    piso: m => pisoDoMes(p.piso_meses, teto(m)),
     recebimentos: somarPorMes(recs),
-    compromissos: somarPorMes(e.compromissos.filter((c) => naLinha(c.mes))),
-    dividas: somarPorMes(e.dividas.filter((c) => naLinha(c.mes))),
-    desvios, retornos, alugueis: somarPorMes(im.alugueis),
+    compromissos: somarPorMes(e.compromissos.filter(c => naLinha(c.mes))),
+    dividas: somarPorMes(e.dividas.filter(c => naLinha(c.mes))),
+    desvios,
+    retornos,
+    alugueis: somarPorMes(im.alugueis),
   })
-  for (const l of linha) l.marcos = marcos.filter((x) => x.mes === l.mes).map(({ mes: _m, ...x }) => x)
+  for (const l of linha) l.marcos = marcos.filter(x => x.mes === l.mes).map(({ mes: _m, ...x }) => x)
   const saldo_final = linha.length ? linha[linha.length - 1].saldo_final : saldo_inicial
 
   const gasto = gastoNaVirada(p.gasto_2029_hoje, p.mes_base, p.virada, p.ipca_ano)
@@ -195,12 +306,17 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
   if (f < 0) {
     // Poucos meses até a virada (QA E11, erro 3): guardar não serve, o ajuste sugerido é cortar o gasto de 2029.
     const sugerido = ajusteSugerido(linha.length)
-    const fatores = linha.map((l) => fatorLiquido(p.taxa_bruta_ano[anoDe(l.mes)], p.aliq_proj, diasDoMes(l.mes)))
+    const fatores = linha.map(l => fatorLiquido(p.taxa_bruta_ano[anoDe(l.mes)], p.aliq_proj, diasDoMes(l.mes)))
     ajustes_falta = {
       guardar_por_mes: sugerido === 'guardar' ? guardarPorMesNaLinha(-f, fatores) : 0,
-      ...partesDoCorte(cortarPorMes2029(-f, p.taxa_real_trabalho), a_cobrir, rendaSustentavel(saldo_final, p.taxa_real_trabalho)),
+      ...partesDoCorte(
+        cortarPorMes2029(-f, p.taxa_real_trabalho),
+        a_cobrir,
+        rendaSustentavel(saldo_final, p.taxa_real_trabalho),
+      ),
       desejos_pra_adiar: desejosPraAdiar(e.desejos),
-      sugerido, meses_restantes: linha.length,
+      sugerido,
+      meses_restantes: linha.length,
     }
   }
   return {
@@ -224,7 +340,10 @@ export function futuro(entrada: FuturoEntrada): FuturoSaida {
 
 /** "Isso tira R$ Y por mês da renda de 2029, pra sempre." (F6 com os parâmetros da família).
  *  Depois da virada: o valor sai de agora, sem juros até a virada, e a perda usa a taxa real do ano (modo renda). */
-export function impacto2029(e: FuturoEntrada, desvio: { mes: Mes; valor: Centavos }): { valor_na_virada: Centavos; perda_renda_mensal: Centavos | null; modo?: 'projecao' | 'renda' } {
+export function impacto2029(
+  e: FuturoEntrada,
+  desvio: { mes: Mes; valor: Centavos },
+): { valor_na_virada: Centavos; perda_renda_mensal: Centavos | null; modo?: 'projecao' | 'renda' } {
   if (emModoRenda(e)) {
     const { real } = taxaRealDoAno(e, anoDe(mesDaData(e.hoje)))
     return { valor_na_virada: desvio.valor, perda_renda_mensal: perdaRendaMensal(desvio.valor, real), modo: 'renda' }
@@ -240,7 +359,10 @@ export function impacto2029(e: FuturoEntrada, desvio: { mes: Mes; valor: Centavo
  *  "Apertado sem o desejo" = a família já fica devendo sem ele e o desejo não derruba mês novo: mostra o custo.
  *  "Cabe" = nada devendo e folga ≥ 0. "Cabe, mas tira" = nada devendo, só a folga de 2029 fica negativa.
  *  Depois da virada (modo renda): compara o patrimônio de hoje, com e sem o desejo, com o piso do mês. */
-export function cabeDesejo(e: FuturoEntrada, desejo: Desejo): {
+export function cabeDesejo(
+  e: FuturoEntrada,
+  desejo: Desejo,
+): {
   situacao: 'cabe' | 'cabe, mas tira' | 'ainda nao cabe' | 'apertado sem o desejo'
   tira_por_mes_2029: Centavos | null
   primeiro_mes_abaixo: Mes | null
@@ -253,21 +375,41 @@ export function cabeDesejo(e: FuturoEntrada, desejo: Desejo): {
   const roda = (d: Desejo) => futuro({ ...e, desejos: [...e.desejos, d] })
   const sem = futuro(e).linha
   const devendoSem = mesesDevendo(sem)
-  const apertado = sem.find((l) => devendoSem.has(l.mes))?.mes ?? null
-  const derrubado = (s: FuturoSaida) => { const d = mesesDevendo(s.linha); return s.linha.find((l) => d.has(l.mes) && !devendoSem.has(l.mes))?.mes ?? null }
+  const apertado = sem.find(l => devendoSem.has(l.mes))?.mes ?? null
+  const derrubado = (s: FuturoSaida) => {
+    const d = mesesDevendo(s.linha)
+    return s.linha.find(l => d.has(l.mes) && !devendoSem.has(l.mes))?.mes ?? null
+  }
   const s = roda(desejo)
   const primeiro = derrubado(s)
   if (primeiro === null) {
     const situacao = apertado !== null ? 'apertado sem o desejo' : s.folga >= 0 ? 'cabe' : 'cabe, mas tira'
-    return { situacao, tira_por_mes_2029: tira, primeiro_mes_abaixo: null, caberia_em: null, apertado_sem_desejo: apertado, modo: 'projecao' }
+    return {
+      situacao,
+      tira_por_mes_2029: tira,
+      primeiro_mes_abaixo: null,
+      caberia_em: null,
+      apertado_sem_desejo: apertado,
+      modo: 'projecao',
+    }
   }
   const ultimo = mesAnterior(e.parametros.virada)
-  const livreDali = (m: Mes) => ![...devendoSem].some((x) => compararMes(x, m) >= 0)
+  const livreDali = (m: Mes) => ![...devendoSem].some(x => compararMes(x, m) >= 0)
   let caberia: Mes | null = null
   for (let m = proximoMes(desejo.mes); compararMes(m, ultimo) <= 0; m = proximoMes(m)) {
-    if (livreDali(m) && derrubado(roda({ ...desejo, mes: m })) === null) { caberia = m; break }
+    if (livreDali(m) && derrubado(roda({ ...desejo, mes: m })) === null) {
+      caberia = m
+      break
+    }
   }
-  return { situacao: 'ainda nao cabe', tira_por_mes_2029: tira, primeiro_mes_abaixo: primeiro, caberia_em: caberia, apertado_sem_desejo: apertado, modo: 'projecao' }
+  return {
+    situacao: 'ainda nao cabe',
+    tira_por_mes_2029: tira,
+    primeiro_mes_abaixo: primeiro,
+    caberia_em: caberia,
+    apertado_sem_desejo: apertado,
+    modo: 'projecao',
+  }
 }
 
 function cabeDesejoRenda(e: FuturoEntrada, desejo: Desejo): ReturnType<typeof cabeDesejo> {
@@ -277,9 +419,33 @@ function cabeDesejoRenda(e: FuturoEntrada, desejo: Desejo): ReturnType<typeof ca
   const f = fluxosDoDesejo(desejo)
   const liquido = f.desvios.reduce((t, x) => t + x.valor, 0) - f.retornos.reduce((t, x) => t + x.valor, 0)
   const tira = perdaRendaMensal(liquido, real)
-  const sem = patrimonioHoje(e), com = futuroRenda({ ...e, desejos: [...e.desejos, desejo] })
+  const sem = patrimonioHoje(e),
+    com = futuroRenda({ ...e, desejos: [...e.desejos, desejo] })
   const quando = compararMes(desejo.mes, mes) > 0 ? desejo.mes : mes
-  if (sem < piso) return { situacao: 'apertado sem o desejo', tira_por_mes_2029: tira, primeiro_mes_abaixo: null, caberia_em: null, apertado_sem_desejo: mes, modo: 'renda' }
-  if (com.renda!.patrimonio < piso) return { situacao: 'ainda nao cabe', tira_por_mes_2029: tira, primeiro_mes_abaixo: quando, caberia_em: null, apertado_sem_desejo: null, modo: 'renda' }
-  return { situacao: com.folga >= 0 ? 'cabe' : 'cabe, mas tira', tira_por_mes_2029: tira, primeiro_mes_abaixo: null, caberia_em: null, apertado_sem_desejo: null, modo: 'renda' }
+  if (sem < piso)
+    return {
+      situacao: 'apertado sem o desejo',
+      tira_por_mes_2029: tira,
+      primeiro_mes_abaixo: null,
+      caberia_em: null,
+      apertado_sem_desejo: mes,
+      modo: 'renda',
+    }
+  if (com.renda!.patrimonio < piso)
+    return {
+      situacao: 'ainda nao cabe',
+      tira_por_mes_2029: tira,
+      primeiro_mes_abaixo: quando,
+      caberia_em: null,
+      apertado_sem_desejo: null,
+      modo: 'renda',
+    }
+  return {
+    situacao: com.folga >= 0 ? 'cabe' : 'cabe, mas tira',
+    tira_por_mes_2029: tira,
+    primeiro_mes_abaixo: null,
+    caberia_em: null,
+    apertado_sem_desejo: null,
+    modo: 'renda',
+  }
 }

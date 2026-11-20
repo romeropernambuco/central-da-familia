@@ -11,16 +11,27 @@ import { Proposta } from './Proposta'
 const css = readFileSync(new URL('./rumo.css', import.meta.url), 'utf8')
 
 let dados: DadosInicio
-beforeAll(async () => { dados = await carregarDadosInicio() })
+beforeAll(async () => {
+  dados = await carregarDadosInicio()
+})
 
 function render(config: Partial<PropsProposta & { oculto: boolean }> = {}, olhoDaCasca = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: olhoDaCasca },
-    createElement(Proposta, { dados, tema: 'claro', dispositivo: 'celular', ...config })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: olhoDaCasca },
+      createElement(Proposta, { dados, tema: 'claro', dispositivo: 'celular', ...config }),
+    ),
+  )
 }
 
 const marcador = /data-numero-financeiro="true"/g
 const contar = (html: string) => [...html.matchAll(marcador)].length
-const texto = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+const texto = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const contextos = [
   { tema: 'claro', dispositivo: 'celular' },
@@ -47,7 +58,9 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(html).toMatch(/<details class="rumo-cenario"><summary>Cenário sem margem/)
     expect(conteudo).not.toContain(texto(brl.format(semMargem.valor! / 100)))
     expect(cobertura.estado).toBe('pronto')
-    expect(conteudo).toContain(`${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(cobertura.valor!)}%`)
+    expect(conteudo).toContain(
+      `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(cobertura.valor!)}%`,
+    )
     expect(html).toContain('Quem trabalha por você')
     expect(html).toContain('escritorio-maquete')
   })
@@ -56,7 +69,9 @@ describe('Rumo a 2029 no laboratório', () => {
     const html = render()
     expect(html).toContain('Você está aqui')
     expect(texto(html)).toContain('Viver de rendimentos')
-    expect(html).toMatch(/<ol class="rumo-marcos" aria-label="Marcos do calendário"><li>2026<\/li><li>2027<\/li><li>2028<\/li><li>2029<\/li><\/ol>/)
+    expect(html).toMatch(
+      /<ol class="rumo-marcos" aria-label="Marcos do calendário"><li>2026<\/li><li>2027<\/li><li>2028<\/li><li>2029<\/li><\/ol>/,
+    )
     expect(html).toMatch(/class="rumo-posicao" cx="[^"]+" cy="[^"]+"/)
     expect(html).toContain('class="rumo-haste"')
     expect(render({ dispositivo: 'desktop' })).toMatch(/class="rumo-trilha"[^>]*viewBox="0 0 640 128"/)
@@ -82,10 +97,16 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(html.match(/class="rumo-motor-figura"><svg/g)).toHaveLength(3)
     expect(html.match(/class="rumo-acao rumo-responsavel"/g)).toHaveLength(3)
     expect(html).toContain('aria-label="Ver Gestor do Guardado no escritório"')
-    const maquete = html.match(/<div class="rumo-maquete" role="img" aria-label="Maquete isométrica do escritório">(<svg[\s\S]*?)<\/div><div class="rumo-equipe"/)?.[1] ?? ''
+    const maquete =
+      html.match(
+        /<div class="rumo-maquete" role="img" aria-label="Maquete isométrica do escritório">(<svg[\s\S]*?)<\/div><div class="rumo-equipe"/,
+      )?.[1] ?? ''
     expect(maquete).toMatch(/^<svg\b[^>]*data-variante="media"[^>]*aria-hidden="true"/)
-    const nomes = [...maquete.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
-      .map(([, nome]) => nome)
+    const nomes = [
+      ...maquete.matchAll(
+        /<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g,
+      ),
+    ].map(([, nome]) => nome)
     expect(nomes.length).toBeGreaterThanOrEqual(8)
     expect(nomes.sort()).toEqual(dados.funcionarios.valor!.map(f => f.curto).sort())
     expect(html).toContain('data-sala="patrimonio" data-destaque="true"')
@@ -100,7 +121,10 @@ describe('Rumo a 2029 no laboratório', () => {
     // o primeiro motor inteiro se a fila do dia ou os estados ocuparem menos espaço.
     expect(celular.indexOf('Quem trabalha por você')).toBeLessThan(celular.indexOf('O que move o plano'))
     expect(desktop.indexOf('Quem trabalha por você')).toBeGreaterThan(desktop.indexOf('O que move o plano'))
-    const fimDaMaximaFaixaMovel = celular.indexOf('<article class="rumo-motor"', celular.indexOf('<article class="rumo-motor"') + 1)
+    const fimDaMaximaFaixaMovel = celular.indexOf(
+      '<article class="rumo-motor"',
+      celular.indexOf('<article class="rumo-motor"') + 1,
+    )
     expect(fimDaMaximaFaixaMovel).toBeGreaterThan(0)
     const faixaMovel = contar(celular.slice(0, fimDaMaximaFaixaMovel))
     expect(faixaMovel).toBe(4)
@@ -111,13 +135,25 @@ describe('Rumo a 2029 no laboratório', () => {
 
   it('oculta texto, marcadores, atributos e geometria pelo olho da casca e pela prop', () => {
     const comTextoPrivado = structuredClone(dados)
-    comTextoPrivado.pendencias.fila = { ...comTextoPrivado.pendencias.fila, estado: 'pronto', valor: [
-      { id: 'tarefa-privada', funcionario: 'contador', perguntaCurta: 'Conferir 76543,21 ou 98,7% (R$ 7.654,32)', valor: dados.saldoConta },
-    ] }
+    comTextoPrivado.pendencias.fila = {
+      ...comTextoPrivado.pendencias.fila,
+      estado: 'pronto',
+      valor: [
+        {
+          id: 'tarefa-privada',
+          funcionario: 'contador',
+          perguntaCurta: 'Conferir 76543,21 ou 98,7% (R$ 7.654,32)',
+          valor: dados.saldoConta,
+        },
+      ],
+    }
     const aberto = render({ dados: comTextoPrivado })
     expect(aberto).toContain('76543,21')
     expect(aberto).toContain('class="rumo-cobertura"')
-    for (const fechado of [render({ dados: comTextoPrivado, oculto: true }), render({ dados: comTextoPrivado }, true)]) {
+    for (const fechado of [
+      render({ dados: comTextoPrivado, oculto: true }),
+      render({ dados: comTextoPrivado }, true),
+    ]) {
       expect(contar(fechado)).toBe(0)
       expect(fechado).not.toMatch(/R\$|\d\s*%|76543|class="rumo-(?:cobertura|posicao|haste)"|Você está aqui|pathLength/)
       expect(fechado).toContain('Marcos do calendário')
@@ -136,8 +172,16 @@ describe('Rumo a 2029 no laboratório', () => {
 
   it('mostra os estados ausentes e conserva zero quando o campo está pronto', () => {
     const semDados = structuredClone(dados)
-    semDados.plano2029.faltamPorMesComMargem = { ...dados.plano2029.faltamPorMesComMargem, estado: 'indisponivel', valor: null }
-    semDados.plano2029.faltamPorMesSemMargem = { ...dados.plano2029.faltamPorMesSemMargem, estado: 'vazio', valor: null }
+    semDados.plano2029.faltamPorMesComMargem = {
+      ...dados.plano2029.faltamPorMesComMargem,
+      estado: 'indisponivel',
+      valor: null,
+    }
+    semDados.plano2029.faltamPorMesSemMargem = {
+      ...dados.plano2029.faltamPorMesSemMargem,
+      estado: 'vazio',
+      valor: null,
+    }
     semDados.plano2029.progressao = { ...dados.plano2029.progressao, estado: 'indisponivel', valor: null }
     semDados.aplicacoes.rendeuHoje = { ...dados.aplicacoes.rendeuHoje, estado: 'vazio', valor: null }
     semDados.imoveis.aluguelLiquidoEstimado = { ...dados.imoveis.aluguelLiquidoEstimado, estado: 'pronto', valor: 0 }
@@ -153,10 +197,14 @@ describe('Rumo a 2029 no laboratório', () => {
   it('restringe a vista do Assessor da Casa às tarefas da casa', () => {
     const equipe = structuredClone(dados)
     equipe.pessoa.papel = { ...equipe.pessoa.papel, estado: 'pronto', valor: 'equipe' }
-    equipe.pendencias.fila = { ...equipe.pendencias.fila, estado: 'pronto', valor: [
-      { id: 'estoque:exemplo', funcionario: 'auditor', perguntaCurta: 'R$ 7.654,32', valor: dados.saldoConta },
-      { id: 'fatura:exemplo', funcionario: 'cartao', perguntaCurta: 'Tarefa financeira', valor: dados.saldoConta },
-    ] }
+    equipe.pendencias.fila = {
+      ...equipe.pendencias.fila,
+      estado: 'pronto',
+      valor: [
+        { id: 'estoque:exemplo', funcionario: 'auditor', perguntaCurta: 'R$ 7.654,32', valor: dados.saldoConta },
+        { id: 'fatura:exemplo', funcionario: 'cartao', perguntaCurta: 'Tarefa financeira', valor: dados.saldoConta },
+      ],
+    }
     const html = render({ dados: equipe })
     expect(texto(html)).toContain('Tarefas da casa')
     expect(texto(html)).toContain('Contar o estoque da casa')
@@ -175,13 +223,25 @@ describe('Rumo a 2029 no laboratório', () => {
 
   it('prioriza risco e operação e oferece acesso à fila restante com pílulas nominadas', () => {
     const exemplo = structuredClone(dados)
-    exemplo.alertas = { ...exemplo.alertas, estado: 'pronto', valor: [
-      { id: 'lembrete:a', nivel: 'lembrete', texto: 'Revisão da casa' },
-      { id: 'feira_nota:b', nivel: 'operacao', texto: 'Conferir a nota' },
-      { id: 'fatura:c', nivel: 'dinheiro em risco', texto: 'Resolver a fatura' },
-    ] }
-    exemplo.pendencias.fila = { ...exemplo.pendencias.fila, estado: 'pronto', valor: exemplo.alertas.valor.map(a =>
-      ({ id: a.id, perguntaCurta: a.texto, funcionario: 'secretaria', valor: dados.saldoConta })) }
+    exemplo.alertas = {
+      ...exemplo.alertas,
+      estado: 'pronto',
+      valor: [
+        { id: 'lembrete:a', nivel: 'lembrete', texto: 'Revisão da casa' },
+        { id: 'feira_nota:b', nivel: 'operacao', texto: 'Conferir a nota' },
+        { id: 'fatura:c', nivel: 'dinheiro em risco', texto: 'Resolver a fatura' },
+      ],
+    }
+    exemplo.pendencias.fila = {
+      ...exemplo.pendencias.fila,
+      estado: 'pronto',
+      valor: exemplo.alertas.valor.map(a => ({
+        id: a.id,
+        perguntaCurta: a.texto,
+        funcionario: 'secretaria',
+        valor: dados.saldoConta,
+      })),
+    }
     const html = render({ dados: exemplo })
     expect(html).toContain('Há dinheiro em risco.')
     expect(html.indexOf('Resolver a fatura')).toBeGreaterThan(0)
@@ -195,7 +255,9 @@ describe('Rumo a 2029 no laboratório', () => {
   it('exige nome e alvo mínimo nos controles e oculta ilustrações decorativas da leitura assistiva', () => {
     const html = render()
     const botoes = [...html.matchAll(/<button\b([^>]*)>(.*?)<\/button>/g)]
-    const regraAlvos = css.match(/\.rumo button\.rumo-acao, \.rumo button\.rumo-aba, \.rumo button\.rumo-avatar\s*\{([^}]*)\}/)?.[1]
+    const regraAlvos = css.match(
+      /\.rumo button\.rumo-acao, \.rumo button\.rumo-aba, \.rumo button\.rumo-avatar\s*\{([^}]*)\}/,
+    )?.[1]
     expect(regraAlvos).toMatch(/min-inline-size: 44px/)
     expect(regraAlvos).toMatch(/min-block-size: 44px/)
     expect(botoes.length).toBeGreaterThanOrEqual(9)
@@ -207,7 +269,9 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(css).toMatch(/\.rumo-cenario summary:focus-visible\s*\{[^}]*outline: 2px solid var\(--rumo-verde-heroi\)/)
     const semDados = structuredClone(dados)
     semDados.aplicacoes.rendeuHoje = { ...dados.aplicacoes.rendeuHoje, estado: 'vazio', valor: null }
-    const figuras = [...render({ dados: semDados }).matchAll(/<svg\b[^>]*class="(?:cf-ilustracao|rumo-trilha)[^"]*"[^>]*>/g)]
+    const figuras = [
+      ...render({ dados: semDados }).matchAll(/<svg\b[^>]*class="(?:cf-ilustracao|rumo-trilha)[^"]*"[^>]*>/g),
+    ]
     expect(figuras.length).toBeGreaterThanOrEqual(2)
     for (const [figura] of figuras) expect(figura).toContain('aria-hidden="true"')
   })
@@ -217,7 +281,9 @@ describe('Rumo a 2029 no laboratório', () => {
     expect(css).toMatch(/font-variant-numeric: tabular-nums/)
     expect(css).toMatch(/focus-visible\s*\{\s*outline:\s*2px solid var\(--destaque\)/)
     expect(css).toContain('prefers-reduced-motion: reduce')
-    expect(css).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-left|border-inline-start:\s*\d+px\s+solid\s+var\(--(?:destaque|risco)/i)
+    expect(css).not.toMatch(
+      /gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-left|border-inline-start:\s*\d+px\s+solid\s+var\(--(?:destaque|risco)/i,
+    )
     const html = render()
     expect(html).toContain('lucide')
     expect(html).not.toMatch(/\p{Extended_Pictographic}|<(?:linearGradient|radialGradient|filter)\b/u)
@@ -229,10 +295,13 @@ function tokens(bloco: string) {
 }
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const srgb = Number.parseInt(par, 16) / 255
-    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4
-  })
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const srgb = Number.parseInt(par, 16) / 255
+      return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4
+    })
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
@@ -247,12 +316,24 @@ it.each(['claro', 'escuro'])('alcança contraste AA nos pares de texto do tema %
   const claro = tokens(blocos[0])
   const paleta = tema === 'escuro' ? { ...claro, ...tokens(blocos[1]) } : claro
   const pares: [string, string][] = [
-    ['texto', 'fundo'], ['texto', 'cartao'], ['texto', 'menu'],
-    ['texto-secundario', 'fundo'], ['texto-secundario', 'cartao'], ['texto-secundario', 'menu'],
-    ['destaque', 'fundo'], ['destaque', 'menu'], ['destaque', 'cartao'], ['sobre-destaque', 'destaque'],
-    ['risco', 'menu'], ['risco', 'cartao'],
-    ['rumo-texto-heroi', 'rumo-heroi'], ['rumo-suave-heroi', 'rumo-heroi'], ['rumo-verde-heroi', 'rumo-heroi'],
-    ['rumo-verde-heroi', 'rumo-fundo-trilha'], ['rumo-texto-heroi', 'rumo-fundo-trilha'], ['rumo-suave-heroi', 'rumo-fundo-trilha'],
+    ['texto', 'fundo'],
+    ['texto', 'cartao'],
+    ['texto', 'menu'],
+    ['texto-secundario', 'fundo'],
+    ['texto-secundario', 'cartao'],
+    ['texto-secundario', 'menu'],
+    ['destaque', 'fundo'],
+    ['destaque', 'menu'],
+    ['destaque', 'cartao'],
+    ['sobre-destaque', 'destaque'],
+    ['risco', 'menu'],
+    ['risco', 'cartao'],
+    ['rumo-texto-heroi', 'rumo-heroi'],
+    ['rumo-suave-heroi', 'rumo-heroi'],
+    ['rumo-verde-heroi', 'rumo-heroi'],
+    ['rumo-verde-heroi', 'rumo-fundo-trilha'],
+    ['rumo-texto-heroi', 'rumo-fundo-trilha'],
+    ['rumo-suave-heroi', 'rumo-fundo-trilha'],
   ]
   for (const [frente, fundo] of pares) {
     expect(contraste(paleta[frente], paleta[fundo]), `${frente} / ${fundo}`).toBeGreaterThanOrEqual(4.5)

@@ -7,8 +7,18 @@ vi.mock('../app/contexto', () => ({ useApp: () => ({ oculto: estado.oculto, fami
 vi.mock('../app/useMembros', () => ({ useAdultos: () => 2 }))
 import { EnvelopeCard } from './EnvelopeCard'
 import { FaixaDoMes } from '../telas/lancamentos/Lancamentos'
-const envelope = { id: 'e', nome: 'Pessoal', regra: 'mensal', limite_mes: 1000, gasto_mes: 100, livre: 900, casa: true } as Envelope
-beforeEach(() => { estado.oculto = false })
+const envelope = {
+  id: 'e',
+  nome: 'Pessoal',
+  regra: 'mensal',
+  limite_mes: 1000,
+  gasto_mes: 100,
+  livre: 900,
+  casa: true,
+} as Envelope
+beforeEach(() => {
+  estado.oculto = false
+})
 it('usa chip semântico e ação nomeada no envelope', () => {
   const html = renderToStaticMarkup(createElement(EnvelopeCard, { e: envelope, diasRestantes: 10, onClick() {} }))
   expect(html).toContain('icone-chip')
@@ -21,14 +31,17 @@ it('não desenha o uso do limite com o olho fechado', () => {
   expect(html).not.toContain('class="meter')
 })
 it('agrupa realizado em indicadores com ícones e saldo em destaque', () => {
-  const html = renderToStaticMarkup(createElement(FaixaDoMes, { totais: { entrou: 300, saiu: 100, saldo: 200, previsto: 50 } }))
+  const html = renderToStaticMarkup(
+    createElement(FaixaDoMes, { totais: { entrou: 300, saiu: 100, saldo: 200, previsto: 50 } }),
+  )
   expect(html).toContain('mes-indicadores')
   expect(html).toContain('indicador-principal')
   expect(html).toContain('lucide-arrow-down-left')
 })
 it('mantém a mesma geometria e cor com uso pequeno ou acima do limite quando oculto', () => {
   estado.oculto = true
-  const desenhar = (gasto_mes: number, livre: number) => renderToStaticMarkup(createElement(EnvelopeCard, { e: { ...envelope, gasto_mes, livre }, diasRestantes: 10 }))
+  const desenhar = (gasto_mes: number, livre: number) =>
+    renderToStaticMarkup(createElement(EnvelopeCard, { e: { ...envelope, gasto_mes, livre }, diasRestantes: 10 }))
   expect(desenhar(10, 990)).toBe(desenhar(9999, -8999))
 })
 it('o vazio do Início usa EstadoVazio com ilustração e conserva a ação', async () => {

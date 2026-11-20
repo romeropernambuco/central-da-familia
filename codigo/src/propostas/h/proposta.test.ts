@@ -22,19 +22,34 @@ beforeAll(async () => {
 })
 
 function renderizar(dados: DadosInicio, tema: Tema, dispositivo: Dispositivo, oculto = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: oculto },
-    createElement(Proposta, { dados, tema, dispositivo })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: oculto },
+      createElement(Proposta, { dados, tema, dispositivo }),
+    ),
+  )
 }
 
-const textoDe = (html: string) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
-const numeros = (html: string) => [...html.matchAll(/<span[^>]*data-numero-financeiro="true"[^>]*>(.*?<\/span>)(?:<\/span>)?/g)]
-  .map(([, conteudo]) => textoDe(conteudo))
+const textoDe = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+const numeros = (html: string) =>
+  [...html.matchAll(/<span[^>]*data-numero-financeiro="true"[^>]*>(.*?<\/span>)(?:<\/span>)?/g)].map(([, conteudo]) =>
+    textoDe(conteudo),
+  )
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const dinheiro = (valor: number) => moeda.format(valor).replace(/\s/g, ' ')
-const instrumento = (html: string, tipo: string) => html.match(new RegExp(`<figure[^>]+data-instrumento="${tipo}"[^>]*>.*?</figure>`))?.[0] ?? ''
+const instrumento = (html: string, tipo: string) =>
+  html.match(new RegExp(`<figure[^>]+data-instrumento="${tipo}"[^>]*>.*?</figure>`))?.[0] ?? ''
 
 const cenarios: [Tema, Dispositivo][] = [
-  ['claro', 'celular'], ['escuro', 'celular'], ['claro', 'desktop'], ['escuro', 'desktop'],
+  ['claro', 'celular'],
+  ['escuro', 'celular'],
+  ['claro', 'desktop'],
+  ['escuro', 'desktop'],
 ]
 
 describe.each(cenarios)('%s · %s', (tema, dispositivo) => {
@@ -77,7 +92,11 @@ it('remove valores, frases e geometria financeira ao fechar o olho', () => {
   const serie = alterado.aplicacoes.serieSaldo30Dias.valor!
   serie[serie.length - 1].saldo = 98765.43
   alterado.plano2029.progressao = { ...exemplo.plano2029.progressao, estado: 'pronto', valor: 12.3 }
-  alterado.faturas.proximas.valor![0].valor = { ...exemplo.faturas.proximas.valor![0].valor, estado: 'pronto', valor: 76543.21 }
+  alterado.faturas.proximas.valor![0].valor = {
+    ...exemplo.faturas.proximas.valor![0].valor,
+    estado: 'pronto',
+    valor: 76543.21,
+  }
   alterado.alertas.valor![0].texto = 'Atenção a R$ 65.432,10 e 54,3%'
 
   for (const [tema, dispositivo] of cenarios) {
@@ -126,15 +145,21 @@ it('dá nome a cada ação e mantém alvos de 44 px e foco visível', () => {
 
 it('mantém as três prioridades legíveis sem cor e segue os padrões de acabamento', () => {
   const dados = structuredClone(exemplo)
-  dados.alertas = { ...dados.alertas, estado: 'pronto', valor: [
-    { id: 'prazo', nivel: 'dinheiro em risco', texto: 'Conferir vencimento' },
-    { id: 'estoque', nivel: 'operacao', texto: 'Revisar estoque' },
-    { id: 'nota', nivel: 'lembrete', texto: 'Guardar nota' },
-  ] }
+  dados.alertas = {
+    ...dados.alertas,
+    estado: 'pronto',
+    valor: [
+      { id: 'prazo', nivel: 'dinheiro em risco', texto: 'Conferir vencimento' },
+      { id: 'estoque', nivel: 'operacao', texto: 'Revisar estoque' },
+      { id: 'nota', nivel: 'lembrete', texto: 'Guardar nota' },
+    ],
+  }
   const html = renderizar(dados, 'escuro', 'celular')
   for (const nivel of ['Dinheiro em risco', 'Operação', 'Lembrete']) expect(html).toContain(`${nivel}</span>`)
   expect(html).not.toMatch(/\p{Extended_Pictographic}|NerdWallet|background-clip|backdrop-filter/iu)
-  expect(css).not.toMatch(/(?:repeating-)?(?:linear|radial|conic)-gradient\(|backdrop-filter\s*:|background-clip\s*:\s*text|border-(?:left|inline-start)\s*:\s*[3-9]/i)
+  expect(css).not.toMatch(
+    /(?:repeating-)?(?:linear|radial|conic)-gradient\(|backdrop-filter\s*:|background-clip\s*:\s*text|border-(?:left|inline-start)\s*:\s*[3-9]/i,
+  )
   expect(css).toMatch(/prefers-reduced-motion:\s*reduce/)
   expect(css).toMatch(/\.numero-financeiro\s*\{[^}]*tabular-nums;[^}]*white-space:\s*nowrap/)
   expect(css).toMatch(/\.numero-simbolo\s*\{\s*font-size:\s*\.65em/)
@@ -154,22 +179,41 @@ it('calcula AA para texto, foco, controles e marcas dos gráficos nos dois temas
   for (const tema of ['claro', 'escuro'] as const) {
     expect(renderizar(exemplo, tema, 'desktop')).toContain(`class="h-inicio" data-proposta="h" data-h-tema="${tema}"`)
   }
-  const tokens = (seletor: string) => Object.fromEntries([
-    ...css.split(seletor)[1].split('}')[0].matchAll(/(--[\w-]+):\s*(#[a-f\d]{6});/gi),
-  ].map(([, nome, cor]) => [nome, cor]))
+  const tokens = (seletor: string) =>
+    Object.fromEntries(
+      [
+        ...css
+          .split(seletor)[1]
+          .split('}')[0]
+          .matchAll(/(--[\w-]+):\s*(#[a-f\d]{6});/gi),
+      ].map(([, nome, cor]) => [nome, cor]),
+    )
   const claro = tokens('.h-inicio[data-proposta="h"] {')
   const escuro = { ...claro, ...tokens('.h-inicio[data-h-tema="escuro"] {') }
   const pares: [string, string, number][] = [
-    ['texto', 'fundo', 4.5], ['texto', 'cartao', 4.5], ['texto', 'h-menta', 4.5],
-    ['texto-secundario', 'fundo', 4.5], ['texto-secundario', 'cartao', 4.5],
-    ['texto-secundario', 'h-menta', 4.5], ['texto-secundario', 'h-papel', 4.5],
-    ['texto-secundario', 'menu', 4.5], ['h-selo', 'cartao', 4.5],
-    ['h-sobre-verde', 'h-verde', 4.5], ['h-texto-verde', 'h-verde', 4.5],
-    ['h-sobre-verde', 'h-faixa', 4.5], ['h-texto-verde', 'h-faixa', 4.5],
-    ['destaque', 'cartao', 4.5], ['destaque', 'h-menta', 4.5], ['sobre-destaque', 'destaque', 4.5],
-    ['h-risco', 'menu', 4.5], ['borda', 'h-menta', 3], ['h-selo-borda', 'cartao', 3],
-    ['destaque', 'fundo', 3], ['destaque', 'h-papel', 3],
-    ['h-trilha', 'cartao', 3], ['h-barra-secundaria', 'cartao', 3],
+    ['texto', 'fundo', 4.5],
+    ['texto', 'cartao', 4.5],
+    ['texto', 'h-menta', 4.5],
+    ['texto-secundario', 'fundo', 4.5],
+    ['texto-secundario', 'cartao', 4.5],
+    ['texto-secundario', 'h-menta', 4.5],
+    ['texto-secundario', 'h-papel', 4.5],
+    ['texto-secundario', 'menu', 4.5],
+    ['h-selo', 'cartao', 4.5],
+    ['h-sobre-verde', 'h-verde', 4.5],
+    ['h-texto-verde', 'h-verde', 4.5],
+    ['h-sobre-verde', 'h-faixa', 4.5],
+    ['h-texto-verde', 'h-faixa', 4.5],
+    ['destaque', 'cartao', 4.5],
+    ['destaque', 'h-menta', 4.5],
+    ['sobre-destaque', 'destaque', 4.5],
+    ['h-risco', 'menu', 4.5],
+    ['borda', 'h-menta', 3],
+    ['h-selo-borda', 'cartao', 3],
+    ['destaque', 'fundo', 3],
+    ['destaque', 'h-papel', 3],
+    ['h-trilha', 'cartao', 3],
+    ['h-barra-secundaria', 'cartao', 3],
   ]
   for (const [tema, paleta] of Object.entries({ claro, escuro })) {
     for (const [frente, fundo, minimo] of pares) {

@@ -12,12 +12,20 @@ it('exclui o laboratório do grafo do build real e da entrada direta em produç�
   const root = realpathSync.native(config.root ?? '.')
   vi.stubEnv('NODE_ENV', 'production')
   try {
-    const real = await build({ ...config, root, configFile: false, plugins, mode: 'production', logLevel: 'silent',
-      build: { ...config.build, write: false, manifest: true } })
-    const saidas = (Array.isArray(real) ? real : [real]).flatMap(r => 'output' in r ? r.output : [])
+    const real = await build({
+      ...config,
+      root,
+      configFile: false,
+      plugins,
+      mode: 'production',
+      logLevel: 'silent',
+      build: { ...config.build, write: false, manifest: true },
+    })
+    const saidas = (Array.isArray(real) ? real : [real]).flatMap(r => ('output' in r ? r.output : []))
     expect(saidas.some(a => a.fileName === 'index.html')).toBe(true)
     // A J fornece as peças visuais do Início. O snapshot, a casca e as telas do laboratório continuam isolados.
-    const compartilhados = /\/src\/propostas\/(?:comuns\/(?:Escritorio3D|EscritorioMaquete|VisorEscritorio|escritorio3d-etiquetas|maquete-desenho|modeloPosto|privacidade|escritorio3d|escritorio-maquete)|j\/(?:Trilha|interface|modelo|proposta))\.(?:ts|tsx|css)$/
+    const compartilhados =
+      /\/src\/propostas\/(?:comuns\/(?:Escritorio3D|EscritorioMaquete|VisorEscritorio|escritorio3d-etiquetas|maquete-desenho|modeloPosto|privacidade|escritorio3d|escritorio-maquete)|j\/(?:Trilha|interface|modelo|proposta))\.(?:ts|tsx|css)$/
     for (const saida of saidas) {
       expect(saida.fileName).not.toContain('propostas')
       if (saida.type === 'chunk') {
@@ -30,9 +38,18 @@ it('exclui o laboratório do grafo do build real e da entrada direta em produç�
       }
     }
 
-    const direto = await build({ root, configFile: false, mode: 'exemplo', logLevel: 'silent',
-      build: { write: false, modulePreload: { polyfill: false }, rollupOptions: { input: `${root}/src/propostas/propostas.html` } } })
-    const extras = (Array.isArray(direto) ? direto : [direto]).flatMap(r => 'output' in r ? r.output : [])
+    const direto = await build({
+      root,
+      configFile: false,
+      mode: 'exemplo',
+      logLevel: 'silent',
+      build: {
+        write: false,
+        modulePreload: { polyfill: false },
+        rollupOptions: { input: `${root}/src/propostas/propostas.html` },
+      },
+    })
+    const extras = (Array.isArray(direto) ? direto : [direto]).flatMap(r => ('output' in r ? r.output : []))
     expect(extras.some(a => a.fileName.endsWith('/propostas.html'))).toBe(true)
     for (const extra of extras) {
       expect(extra.fileName).not.toMatch(/\.css$/)

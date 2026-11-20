@@ -17,11 +17,34 @@ import { perguntaDaLinha, perguntasVistas } from '../../app/useDados2'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Contagem, FuncIco, PerguntaCard, type Responder } from '../../componentes/Pergunta'
 import { useDestino } from '../../app/destinos'
-import type { Cartao, EscritorioHoje, Estoque, Fatura, FaturaBanco, Feira, FuncionarioEsc, GuardadoHoje, Lembrete, LinhaDiario, PerguntaEsc, Repetir } from '../../api/tipos'
+import type {
+  Cartao,
+  EscritorioHoje,
+  Estoque,
+  Fatura,
+  FaturaBanco,
+  Feira,
+  FuncionarioEsc,
+  GuardadoHoje,
+  Lembrete,
+  LinhaDiario,
+  PerguntaEsc,
+  Repetir,
+} from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { novoUuid } from '../../lib/seguro'
 import { reduzirFoto } from '../../lib/foto'
-import { dataCurta, diaSemana, FUSO, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
+import {
+  dataCurta,
+  diaSemana,
+  FUSO,
+  hojeRecife,
+  mesCurto,
+  reais,
+  textoParaValor,
+  valorDigitadoValido,
+  valorParaTexto,
+} from '../../lib/formato'
 import { rendeQuanto } from '../../lib/guardado'
 import type { Folha } from './ajudantes'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
@@ -32,22 +55,40 @@ import { EQUIPE } from './equipe'
 /** O que cada funcionário faz e quando cobra: 3 linhas, sempre na 1ª pessoa. */
 // C2: o "O que eu faço e quando" de cada um vem da lista única (equipe.ts)
 export const FAZ: Record<string, [string, string, string]> = Object.fromEntries(EQUIPE.map(m => [m.id, m.faz]))
-const hhmm = (iso: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
+const hhmm = (iso: string) =>
+  new Intl.DateTimeFormat('pt-BR', { timeZone: FUSO, hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 const diaDe = (iso: string) => hojeRecife(new Date(iso))
 
 /**
  * A ficha do funcionário, igual pra todos, em 4 partes fixas: Agora, O que eu cuido, O que você já me respondeu, O que eu faço e quando.
  * No celular sobe de baixo; no computador é um painel do lado direito.
  */
-export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omitirNumeros }: { f: FuncionarioEsc; e: EscritorioHoje; responder: Responder; fechar: () => void; perguntaInicial?: string; omitirNumeros?: boolean }) {
+export function FichaFuncionario({
+  f,
+  e,
+  responder,
+  fechar,
+  perguntaInicial,
+  omitirNumeros,
+}: {
+  f: FuncionarioEsc
+  e: EscritorioHoje
+  responder: Responder
+  fechar: () => void
+  perguntaInicial?: string
+  omitirNumeros?: boolean
+}) {
   const destino = useDestino()
   const { api, familia, versao, oculto } = useApp()
   const mostrar = textoPrivado
-  const fala = (texto: string) => f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
+  const fala = (texto: string) =>
+    f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
   const nomePublico = EQUIPE.find(m => m.id === f.id)?.nome === f.nome
   const cad = useRef<HTMLElement>(null)
   const preferida = perguntaInicial || destino.entidade
-  const minhas = e.precisa_de_voce.filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome)).sort((a, b) => Number(b.id === preferida) - Number(a.id === preferida))
+  const minhas = e.precisa_de_voce
+    .filter(p => p.funcionario === f.id || chaveSimples(p.funcionario) === chaveSimples(f.nome))
+    .sort((a, b) => Number(b.id === preferida) - Number(a.id === preferida))
   const entrega = e.entregue.find(x => x.funcionario === f.id || chaveSimples(x.funcionario) === chaveSimples(f.nome))
   const chaveLeitura = familia?.id + ':' + f.id
   const [diario, setDiario] = useState<{ chave: string; linhas: LinhaDiario[] } | null>(null)
@@ -57,10 +98,17 @@ export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omi
     setDiario(null)
     if (!familia || (!tudo && f.ultimas_respostas)) return
     let vivo = true
-    api.escritorioDiario(familia.id, f.id, tudo ? 100 : 10)
-      .then(linhas => { if (vivo) setDiario({ chave: chaveLeitura, linhas }) })
-      .catch(() => { if (vivo) setDiario({ chave: chaveLeitura, linhas: [] }) })
-    return () => { vivo = false }
+    api
+      .escritorioDiario(familia.id, f.id, tudo ? 100 : 10)
+      .then(linhas => {
+        if (vivo) setDiario({ chave: chaveLeitura, linhas })
+      })
+      .catch(() => {
+        if (vivo) setDiario({ chave: chaveLeitura, linhas: [] })
+      })
+    return () => {
+      vivo = false
+    }
   }, [api, familia?.id, f.id, versao, tudo, f.ultimas_respostas])
   const respostas = diario?.chave === chaveLeitura ? diario.linhas : tudo ? null : f.ultimas_respostas || null
   const verTudo = () => setExpandido(chaveLeitura)
@@ -69,27 +117,71 @@ export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omi
   const topo = useRef<HTMLElement>(null)
 
   return (
-    <Sheet titulo={nomePublico ? f.nome : textoPrivado(f.nome)} fechar={fechar} lado rotulo={`Ficha: ${nomePublico ? f.nome : textoPrivado(f.nome)}`}>
+    <Sheet
+      titulo={nomePublico ? f.nome : textoPrivado(f.nome)}
+      fechar={fechar}
+      lado
+      rotulo={`Ficha: ${nomePublico ? f.nome : textoPrivado(f.nome)}`}
+    >
       <div className="ficha" data-ficha={f.id}>
         {!omitirNumeros && <NumerosAba key={f.id} id={f.id} fechar={fechar} />}
-        <p className="ficha-topo"><FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} /><span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}><IcoEstado e={f.estado} />{f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}</span></p>
+        <p className="ficha-topo">
+          <FuncIco id={f.id} size={44} precisa={f.estado === 'precisa_de_voce'} />
+          <span className={'chip' + (f.estado === 'precisa_de_voce' ? ' ok' : '')}>
+            <IcoEstado e={f.estado} />
+            {f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}
+          </span>
+        </p>
 
         <section aria-labelledby="fAgora" data-parte="agora" ref={topo}>
           <h3 id="fAgora">Agora</h3>
           {corrigindo ? (
             <>
               <p className="sub">Corrigindo a sua resposta. A antiga continua guardada no diário.</p>
-              <PerguntaCard key={'c' + corrigindo.id} p={corrigindo} quem={f.nome} responder={responder} semQuem corrige aoResponder={() => setCorrigindo(null)} />
-              <button type="button" className="btn ghost sm" onClick={() => setCorrigindo(null)}><Icone nome="fechar" />Deixar como está</button>
+              <PerguntaCard
+                key={'c' + corrigindo.id}
+                p={corrigindo}
+                quem={f.nome}
+                responder={responder}
+                semQuem
+                corrige
+                aoResponder={() => setCorrigindo(null)}
+              />
+              <button type="button" className="btn ghost sm" onClick={() => setCorrigindo(null)}>
+                <Icone nome="fechar" />
+                Deixar como está
+              </button>
             </>
           ) : minhas.length ? (
             <>
-              <div data-secao="tarefa" data-entidade={minhas[0].id}><PerguntaCard key={minhas[0].id} p={minhas[0]} quem={f.nome} responder={responder} semQuem abrirCadastro={() => cad.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })} /></div>
-              {minhas.length > 1 && <p className="sub" style={{ marginTop: 8 }}>Depois desta eu tenho mais {minhas.length - 1 === 1 ? '1 pergunta' : `${minhas.length - 1} perguntas`}. Uma de cada vez.</p>}
+              <div data-secao="tarefa" data-entidade={minhas[0].id}>
+                <PerguntaCard
+                  key={minhas[0].id}
+                  p={minhas[0]}
+                  quem={f.nome}
+                  responder={responder}
+                  semQuem
+                  abrirCadastro={() => cad.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
+                />
+              </div>
+              {minhas.length > 1 && (
+                <p className="sub" style={{ marginTop: 8 }}>
+                  Depois desta eu tenho mais {minhas.length - 1 === 1 ? '1 pergunta' : `${minhas.length - 1} perguntas`}
+                  . Uma de cada vez.
+                </p>
+              )}
             </>
           ) : (
             <>
-              <EstadoVazio ilustracao={f.semDado ? 'CasaVazia' : 'TudoEmDia'} titulo={f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'} frase={fala(f.semDado ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando essa informação estiver cadastrada, eu começo e o meu número aparece aqui.` : entrega?.resumo || f.frase)} />
+              <EstadoVazio
+                ilustracao={f.semDado ? 'CasaVazia' : 'TudoEmDia'}
+                titulo={f.semDado ? 'Ainda sem dado.' : 'Hoje não preciso de nada seu.'}
+                frase={fala(
+                  f.semDado
+                    ? `${f.frase.replace(/^Ainda sem dado\. /, '')} Quando essa informação estiver cadastrada, eu começo e o meu número aparece aqui.`
+                    : entrega?.resumo || f.frase,
+                )}
+              />
             </>
           )}
         </section>
@@ -101,28 +193,77 @@ export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omi
 
         <section aria-labelledby="fResp" data-parte="respostas" data-secao="historico">
           <h3 id="fResp">O que você já me respondeu</h3>
-          {!respostas ? <p className="sub">Buscando o que eu anotei…</p> : !respostas.length ? <EstadoVazio ilustracao="SemRecebimentos" titulo="Ainda não anotei nenhuma resposta sua." frase="Quando você responder, ela aparece aqui com dia e hora." /> : (
+          {!respostas ? (
+            <p className="sub">Buscando o que eu anotei…</p>
+          ) : !respostas.length ? (
+            <EstadoVazio
+              ilustracao="SemRecebimentos"
+              titulo="Ainda não anotei nenhuma resposta sua."
+              frase="Quando você responder, ela aparece aqui com dia e hora."
+            />
+          ) : (
             <ul className="list resp">
               {respostas.map((d, i) => {
                 // id da pergunta: vem na linha (exemplo) ou foi guardado quando a resposta saiu deste aparelho. Sem id, não tem Corrigir.
                 const ref = d.ref || perguntaDaLinha.get(d.id)
-                const texto = (s: string) => d.trechosPrivados ? textoDeAgente(s, d.trechosPrivados, oculto) : textoPrivado(s, oculto)
+                const texto = (s: string) =>
+                  d.trechosPrivados ? textoDeAgente(s, d.trechosPrivados, oculto) : textoPrivado(s, oculto)
                 return (
-                <li key={d.id} data-resposta={texto(d.resposta)}>
-                  <span className="q"><small>{d.quando_txt || (diaDe(d.quando) === hoje ? `anotado às ${hhmm(d.quando)}` : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)} · <NomeDaPessoa pessoa={{ tipo: 'membro', id: `diario:${d.id}`, nome: d.respondido_por }} /></small><span>{texto(d.assunto || d.pergunta)}</span><b>{texto(d.resposta)}</b></span>
-                  {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && <button type="button" className="lnk" onClick={() => { setCorrigindo(perguntasVistas.get(ref)!); topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }}><Icone nome="ajustes" />Corrigir</button>}
-                </li>
+                  <li key={d.id} data-resposta={texto(d.resposta)}>
+                    <span className="q">
+                      <small>
+                        {d.quando_txt ||
+                          (diaDe(d.quando) === hoje
+                            ? `anotado às ${hhmm(d.quando)}`
+                            : `${dataCurta(diaDe(d.quando))}, ${hhmm(d.quando)}`)}{' '}
+                        · <NomeDaPessoa pessoa={{ tipo: 'membro', id: `diario:${d.id}`, nome: d.respondido_por }} />
+                      </small>
+                      <span>{texto(d.assunto || d.pergunta)}</span>
+                      <b>{texto(d.resposta)}</b>
+                    </span>
+                    {i < 3 && ref && perguntasVistas.has(ref) && !minhas.some(p => p.id === ref) && (
+                      <button
+                        type="button"
+                        className="lnk"
+                        onClick={() => {
+                          setCorrigindo(perguntasVistas.get(ref)!)
+                          topo.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+                        }}
+                      >
+                        <Icone nome="ajustes" />
+                        Corrigir
+                      </button>
+                    )}
+                  </li>
                 )
               })}
             </ul>
           )}
-          {respostas && respostas.length >= 10 && !tudo && <button type="button" className="btn line sm" style={{ marginTop: 8 }} onClick={verTudo}><Icone nome="abrir" />Ver tudo</button>}
-          <p className="sub" style={{ marginTop: 8 }}>Nada é apagado. Corrigir uma resposta guarda a antiga e passa a valer a nova.</p>
+          {respostas && respostas.length >= 10 && !tudo && (
+            <button type="button" className="btn line sm" style={{ marginTop: 8 }} onClick={verTudo}>
+              <Icone nome="abrir" />
+              Ver tudo
+            </button>
+          )}
+          <p className="sub" style={{ marginTop: 8 }}>
+            Nada é apagado. Corrigir uma resposta guarda a antiga e passa a valer a nova.
+          </p>
         </section>
 
         <section aria-labelledby="fFaz" data-parte="faz">
           <h3 id="fFaz">O que eu faço e quando</h3>
-          <ul className="faz-l">{(f.faz?.length ? f.faz.map(l => mostrar(l, oculto)) : FAZ[f.id] || [fala(f.frase), 'Eu pergunto quando precisar de uma resposta sua.', 'Tudo que você responde fica anotado aqui.']).map((l, i) => <li key={i}>{l}</li>)}</ul>
+          <ul className="faz-l">
+            {(f.faz?.length
+              ? f.faz.map(l => mostrar(l, oculto))
+              : FAZ[f.id] || [
+                  fala(f.frase),
+                  'Eu pergunto quando precisar de uma resposta sua.',
+                  'Tudo que você responde fica anotado aqui.',
+                ]
+            ).map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
         </section>
       </div>
     </Sheet>
@@ -130,54 +271,181 @@ export function FichaFuncionario({ f, e, responder, fechar, perguntaInicial, omi
 }
 
 /* ---------- cadastro genérico: lista com "Novo" e editar em cada linha ---------- */
-interface Campo { privado?: boolean; trechosPrivados?: string[]; k: string; rotulo: string; tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'; opcoes?: [string, string][]; dica?: string; ph?: string }
+interface Campo {
+  privado?: boolean
+  trechosPrivados?: string[]
+  k: string
+  rotulo: string
+  tipo?: 'texto' | 'valor' | 'num' | 'data' | 'datahora' | 'opcao'
+  opcoes?: [string, string][]
+  dica?: string
+  ph?: string
+}
 type Form = Record<string, string>
-interface PropsLista<T> { nome: string; itens: T[]; chave: (t: T) => string; titulo: (t: T) => ReactNode; sub: (t: T) => ReactNode; lado?: (t: T) => ReactNode; campos: Campo[]; paraForm: (t: T | null) => Form; salvar: (f: Form, original: T | null) => Promise<string | void>; novo?: string; vazio: string; /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?: boolean | ((t: T) => boolean); extra?: (t: T) => ReactNode }
+interface PropsLista<T> {
+  nome: string
+  itens: T[]
+  chave: (t: T) => string
+  titulo: (t: T) => ReactNode
+  sub: (t: T) => ReactNode
+  lado?: (t: T) => ReactNode
+  campos: Campo[]
+  paraForm: (t: T | null) => Form
+  salvar: (f: Form, original: T | null) => Promise<string | void>
+  novo?: string
+  vazio: string
+  /** E2: true = nenhuma linha edita; função = só as linhas que ela disser (o do outro é só pra ler) */ semEditar?:
+    boolean | ((t: T) => boolean)
+  extra?: (t: T) => ReactNode
+}
 
-function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, salvar, novo, vazio, semEditar, extra }: PropsLista<T>) {
+function Lista<T>({
+  nome,
+  itens,
+  chave,
+  titulo,
+  sub,
+  lado,
+  campos,
+  paraForm,
+  salvar,
+  novo,
+  vazio,
+  semEditar,
+  extra,
+}: PropsLista<T>) {
   const { tentar, recarregar, toast, oculto, familia, sessao } = useApp()
   const [aberto, setAberto] = useState<string | null>(null) // chave do item em edição, ou '+' pra novo
   const [form, setF] = useState<Form>({})
-  const chaveRascunho = (k: string | null) => 'cadastro:ficha:' + nome + ':' + k + ':' + sessao?.userId + ':' + familia?.id
-  const setForm = (f: Form) => { setF(f); if(aberto) rascunhos.set(chaveRascunho(aberto),f) }
+  const chaveRascunho = (k: string | null) =>
+    'cadastro:ficha:' + nome + ':' + k + ':' + sessao?.userId + ':' + familia?.id
+  const setForm = (f: Form) => {
+    setF(f)
+    if (aberto) rascunhos.set(chaveRascunho(aberto), f)
+  }
   const [erro, setErro] = useState('')
   const [gravando, setGravando] = useState(false)
-  const abrir = (k: string, t: T | null) => { setErro(''); if (aberto === k) { setAberto(null); return } setF(rascunhos.get(chaveRascunho(k)) as Form || paraForm(t)); setAberto(k) }
+  const abrir = (k: string, t: T | null) => {
+    setErro('')
+    if (aberto === k) {
+      setAberto(null)
+      return
+    }
+    setF((rascunhos.get(chaveRascunho(k)) as Form) || paraForm(t))
+    setAberto(k)
+  }
   const gravar = async (t: T | null) => {
-    setGravando(true); setErro('')
+    setGravando(true)
+    setErro('')
     let falta: string | void = ''
-    const ok = await tentar(async () => { falta = await salvar(form, t) })
+    const ok = await tentar(async () => {
+      falta = await salvar(form, t)
+    })
     setGravando(false)
-    if (falta) { setErro(falta); return }
-    if (ok) { rascunhos.delete(chaveRascunho(aberto)); setAberto(null); toast('Salvo.'); await recarregar() }
+    if (falta) {
+      setErro(falta)
+      return
+    }
+    if (ok) {
+      rascunhos.delete(chaveRascunho(aberto))
+      setAberto(null)
+      toast('Salvo.')
+      await recarregar()
+    }
   }
   const formulario = (t: T | null) => (
-    <div className="cad-form">{rascunhos.has(chaveRascunho(aberto)) && <p role="status">Continuar de onde parou.</p>}
+    <div className="cad-form">
+      {rascunhos.has(chaveRascunho(aberto)) && <p role="status">Continuar de onde parou.</p>}
       {campos.map(c => (
         <div className="campo" key={c.k}>
           <span id={`cf-${nome}-${c.k}`}>{c.rotulo}</span>
-          {c.tipo === 'valor' ? <CampoValor valor={form[c.k] || ''} mudar={v => setForm({ ...form, [c.k]: v })} rotulo={c.rotulo} />
-            : c.tipo === 'opcao' ? <div className="pills" role="group" aria-labelledby={`cf-${nome}-${c.k}`}>{c.opcoes!.map(([v, r], i) => <button key={v} type="button" className="pill" aria-label={rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)} aria-pressed={(form[c.k] || '') === v} onClick={() => setForm({ ...form, [c.k]: v })}>{rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)}</button>)}</div>
-              : <CampoPrivado className="inp" aria-labelledby={`cf-${nome}-${c.k}`} privado={c.tipo !== 'num' && c.tipo !== 'data' && c.tipo !== 'datahora'} placeholder={c.ph} type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'} inputMode={c.tipo === 'num' ? 'numeric' : undefined} value={form[c.k] || ''} onChange={ev => setForm({ ...form, [c.k]: c.tipo === 'num' ? ev.target.value.replace(/\D/g, '') : ev.target.value })} />}
+          {c.tipo === 'valor' ? (
+            <CampoValor valor={form[c.k] || ''} mudar={v => setForm({ ...form, [c.k]: v })} rotulo={c.rotulo} />
+          ) : c.tipo === 'opcao' ? (
+            <div className="pills" role="group" aria-labelledby={`cf-${nome}-${c.k}`}>
+              {c.opcoes!.map(([v, r], i) => (
+                <button
+                  key={v}
+                  type="button"
+                  className="pill"
+                  aria-label={rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)}
+                  aria-pressed={(form[c.k] || '') === v}
+                  onClick={() => setForm({ ...form, [c.k]: v })}
+                >
+                  {rotuloDeOpcao(r, i, c.trechosPrivados || [], oculto)}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <CampoPrivado
+              className="inp"
+              aria-labelledby={`cf-${nome}-${c.k}`}
+              privado={c.tipo !== 'num' && c.tipo !== 'data' && c.tipo !== 'datahora'}
+              placeholder={c.ph}
+              type={c.tipo === 'data' ? 'date' : c.tipo === 'datahora' ? 'datetime-local' : 'text'}
+              inputMode={c.tipo === 'num' ? 'numeric' : undefined}
+              value={form[c.k] || ''}
+              onChange={ev =>
+                setForm({ ...form, [c.k]: c.tipo === 'num' ? ev.target.value.replace(/\D/g, '') : ev.target.value })
+              }
+            />
+          )}
           {c.dica && <small>{c.dica}</small>}
         </div>
       ))}
-      {erro && <p className="erro" role="alert">{textoPrivado(erro)}</p>}
-      <div className="row-btns"><button type="button" className="btn primary" disabled={gravando} onClick={() => gravar(t)}><Icone nome="salvo" />Salvar</button><button type="button" className="btn ghost" onClick={() => setAberto(null)}><Icone nome="fechar" />Cancelar</button></div>
+      {erro && (
+        <p className="erro" role="alert">
+          {textoPrivado(erro)}
+        </p>
+      )}
+      <div className="row-btns">
+        <button type="button" className="btn primary" disabled={gravando} onClick={() => gravar(t)}>
+          <Icone nome="salvo" />
+          Salvar
+        </button>
+        <button type="button" className="btn ghost" onClick={() => setAberto(null)}>
+          <Icone nome="fechar" />
+          Cancelar
+        </button>
+      </div>
     </div>
   )
   return (
     <div className="cad" data-cad={nome}>
-      <div className="cad-h"><b>{nome}</b>{novo && <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}><Icone desenho={Plus} />{novo}</button>}</div>
+      <div className="cad-h">
+        <b>{nome}</b>
+        {novo && (
+          <button type="button" className="btn line sm" aria-expanded={aberto === '+'} onClick={() => abrir('+', null)}>
+            <Icone desenho={Plus} />
+            {novo}
+          </button>
+        )}
+      </div>
       {aberto === '+' && formulario(null)}
       {!itens.length && aberto !== '+' && <EstadoVazio ilustracao="CasaVazia" titulo={nome} frase={vazio} />}
       <ul className="list">
         {itens.map(t => (
           <li key={chave(t)}>
-            <div className="cad-l"><span className="icone-chip"><Icone nome="folha" /></span>
-              <span className="m"><b>{typeof titulo(t) === 'string' ? textoPrivado(titulo(t)) : titulo(t)}</b><small>{textoPrivado(sub(t))}</small></span>
+            <div className="cad-l">
+              <span className="icone-chip">
+                <Icone nome="folha" />
+              </span>
+              <span className="m">
+                <b>{typeof titulo(t) === 'string' ? textoPrivado(titulo(t)) : titulo(t)}</b>
+                <small>{textoPrivado(sub(t))}</small>
+              </span>
               {lado && <span className="v">{lado(t)}</span>}
-              {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && <button type="button" className="iconbtn" aria-label="Editar" aria-expanded={aberto === chave(t)} onClick={() => abrir(chave(t), t)}><Icone desenho={Pencil} /></button>}
+              {!(typeof semEditar === 'function' ? semEditar(t) : semEditar) && (
+                <button
+                  type="button"
+                  className="iconbtn"
+                  aria-label="Editar"
+                  aria-expanded={aberto === chave(t)}
+                  onClick={() => abrir(chave(t), t)}
+                >
+                  <Icone desenho={Pencil} />
+                </button>
+              )}
             </div>
             {extra && extra(t)}
             {aberto === chave(t) && formulario(t)}
@@ -191,7 +459,20 @@ function Lista<T>({ nome, itens, chave, titulo, sub, lado, campos, paraForm, sal
 const val = (txt: string | undefined) => (txt && valorDigitadoValido(txt) ? textoParaValor(txt) : null)
 const num = (txt: string | undefined) => (txt && /^\d+$/.test(txt) ? Number(txt) : null)
 const vt = (v: number | null | undefined) => (v ? valorParaTexto(v) : '')
-const MESES: [string, string][] = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'].map((m, i) => [String(i + 1), m])
+const MESES: [string, string][] = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+].map((m, i) => [String(i + 1), m])
 const DIAS: [string, string][] = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map((d, i) => [String(i), d])
 const DIAS_L = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
@@ -216,8 +497,16 @@ function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
     setResultado(null)
     if (!familia) return
     let vivo = true
-    buscar(familia.id).then(valor => { if (vivo) setResultado({ familia: familia.id, versao, valor }) }).catch(() => { if (vivo) setResultado(null) })
-    return () => { vivo = false }
+    buscar(familia.id)
+      .then(valor => {
+        if (vivo) setResultado({ familia: familia.id, versao, valor })
+      })
+      .catch(() => {
+        if (vivo) setResultado(null)
+      })
+    return () => {
+      vivo = false
+    }
   }, [api, familia?.id, versao])
   return resultado?.familia === familia?.id && resultado?.versao === versao ? resultado.valor : null
 }
@@ -231,39 +520,193 @@ function CadCartao() {
   const faturas = useBusca<Fatura[]>(f => api.faturas(f, 2))
   const banco = useBusca<FaturaBanco[]>(f => api.faturasBanco(f))
   const membros = useBusca<{ id: string; nome: string }[]>(f => api.membros(f))
-  const taxa = (c: Cartao) => (!c.taxa_valor ? 'sem mensalidade nem anuidade' : c.taxa_periodo === 'ano' ? `anuidade de ${reais(c.taxa_valor)}${c.taxa_mes ? `, cobrada em ${MESES[c.taxa_mes - 1][1]}` : ''}` : `mensalidade de ${reais(c.taxa_valor)}`)
+  const taxa = (c: Cartao) =>
+    !c.taxa_valor
+      ? 'sem mensalidade nem anuidade'
+      : c.taxa_periodo === 'ano'
+        ? `anuidade de ${reais(c.taxa_valor)}${c.taxa_mes ? `, cobrada em ${MESES[c.taxa_mes - 1][1]}` : ''}`
+        : `mensalidade de ${reais(c.taxa_valor)}`
   const doBanco = (f: Fatura) => banco?.find(b => b.cartao_id === f.cartao_id && b.mes === f.mes)
   return (
     <>
-      <Lista<Cartao> nome="Cartões" novo="Novo cartão" itens={cartoes || []} chave={c => c.id} semEditar={c => doOutro(c)} vazio={cartoes ? 'Nenhum cartão cadastrado. Toque em "Novo cartão".' : 'Buscando os cartões…'}
+      <Lista<Cartao>
+        nome="Cartões"
+        novo="Novo cartão"
+        itens={cartoes || []}
+        chave={c => c.id}
+        semEditar={c => doOutro(c)}
+        vazio={cartoes ? 'Nenhum cartão cadastrado. Toque em "Novo cartão".' : 'Buscando os cartões…'}
         titulo={c => `${c.nome}${c.final4 ? ` · final ${c.final4}` : ''}`}
-        sub={c => <>{c.titular_id && <><NomeDaPessoa pessoa={{ tipo: 'membro', id: c.titular_id, nome: c.titular }} /> · </>}{c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}{c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}{c.limite ? ` · limite ${reais(c.limite)}` : ''}</>}
+        sub={c => (
+          <>
+            {c.titular_id && (
+              <>
+                <NomeDaPessoa pessoa={{ tipo: 'membro', id: c.titular_id, nome: c.titular }} /> ·{' '}
+              </>
+            )}
+            {c.dia_fechamento ? `fecha dia ${c.dia_fechamento}` : 'falta o dia que fecha'}
+            {c.dia_vencimento ? `, vence dia ${c.dia_vencimento}` : ''} · {taxa(c)}
+            {c.limite ? ` · limite ${reais(c.limite)}` : ''}
+          </>
+        )}
         campos={[
-          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' }, { k: 'banco', privado: true, rotulo: 'Banco' }, { k: 'titular', rotulo: 'De quem é', tipo: 'opcao', trechosPrivados: (membros || []).map(m => m.nome), opcoes: [...(membros || []).filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome)).map(m => [m.id, `Meu (${m.nome})`] as [string, string]), ['', 'Da família']], dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, para ler.' },
-          { k: 'dia_fechamento', rotulo: 'Dia que a fatura fecha', tipo: 'num', dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.' }, { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
+          { k: 'nome', privado: true, rotulo: 'Apelido do cartão', ph: 'Ex.: Inter da Helena' },
+          { k: 'banco', privado: true, rotulo: 'Banco' },
+          {
+            k: 'titular',
+            rotulo: 'De quem é',
+            tipo: 'opcao',
+            trechosPrivados: (membros || []).map(m => m.nome),
+            opcoes: [
+              ...(membros || [])
+                .filter(m => m.id === familia?.membroId || (!familia?.membroId && m.nome === familia?.membroNome))
+                .map(m => [m.id, `Meu (${m.nome})`] as [string, string]),
+              ['', 'Da família'],
+            ],
+            dica: 'Cada um cadastra o próprio cartão. O do outro aparece aqui com o nome dele, para ler.',
+          },
+          {
+            k: 'dia_fechamento',
+            rotulo: 'Dia que a fatura fecha',
+            tipo: 'num',
+            dica: 'Compra feita depois desse dia só é cobrada no mês seguinte.',
+          },
+          { k: 'dia_vencimento', rotulo: 'Dia que a fatura vence', tipo: 'num' },
           { k: 'limite', rotulo: 'Limite do cartão', tipo: 'valor' },
-          { k: 'taxa_valor', rotulo: 'Mensalidade ou anuidade', tipo: 'valor', dica: 'Quanto o banco cobra para você ter o cartão. Se não cobra nada, deixe vazio.' },
-          { k: 'taxa_periodo', rotulo: 'Essa cobrança é', tipo: 'opcao', opcoes: [['mes', 'Todo mês'], ['ano', '1 vez por ano']] },
+          {
+            k: 'taxa_valor',
+            rotulo: 'Mensalidade ou anuidade',
+            tipo: 'valor',
+            dica: 'Quanto o banco cobra para você ter o cartão. Se não cobra nada, deixe vazio.',
+          },
+          {
+            k: 'taxa_periodo',
+            rotulo: 'Essa cobrança é',
+            tipo: 'opcao',
+            opcoes: [
+              ['mes', 'Todo mês'],
+              ['ano', '1 vez por ano'],
+            ],
+          },
           { k: 'taxa_mes', rotulo: 'Mês em que a anuidade é cobrada', tipo: 'opcao', opcoes: MESES },
-          { k: 'taxa_isenta_acima', rotulo: 'O banco não cobra se você gastar por mês', tipo: 'valor', dica: 'Se o banco dá isenção acima de um valor de gasto. Se não dá, deixe vazio.' },
-          { k: 'final4', rotulo: 'Os 4 últimos números (se quiser)', tipo: 'num', dica: 'Nunca o número inteiro do cartão: só para você saber qual é.' },
-          { k: 'ativo', rotulo: 'Ainda usa esse cartão?', tipo: 'opcao', opcoes: [['sim', 'Uso'], ['nao', 'Não uso mais']] },
+          {
+            k: 'taxa_isenta_acima',
+            rotulo: 'O banco não cobra se você gastar por mês',
+            tipo: 'valor',
+            dica: 'Se o banco dá isenção acima de um valor de gasto. Se não dá, deixe vazio.',
+          },
+          {
+            k: 'final4',
+            rotulo: 'Os 4 últimos números (se quiser)',
+            tipo: 'num',
+            dica: 'Nunca o número inteiro do cartão: só para você saber qual é.',
+          },
+          {
+            k: 'ativo',
+            rotulo: 'Ainda usa esse cartão?',
+            tipo: 'opcao',
+            opcoes: [
+              ['sim', 'Uso'],
+              ['nao', 'Não uso mais'],
+            ],
+          },
         ]}
-        paraForm={c => ({ nome: c?.nome || '', banco: c?.banco || '', titular: c?.titular_id || '', dia_fechamento: c?.dia_fechamento ? String(c.dia_fechamento) : '', dia_vencimento: c?.dia_vencimento ? String(c.dia_vencimento) : '', limite: vt(c?.limite), taxa_valor: vt(c?.taxa_valor), taxa_periodo: c?.taxa_periodo || 'ano', taxa_mes: c?.taxa_mes ? String(c.taxa_mes) : '', taxa_isenta_acima: vt(c?.taxa_isenta_acima), final4: c?.final4 || '', ativo: c?.ativo === false ? 'nao' : 'sim' })}
+        paraForm={c => ({
+          nome: c?.nome || '',
+          banco: c?.banco || '',
+          titular: c?.titular_id || '',
+          dia_fechamento: c?.dia_fechamento ? String(c.dia_fechamento) : '',
+          dia_vencimento: c?.dia_vencimento ? String(c.dia_vencimento) : '',
+          limite: vt(c?.limite),
+          taxa_valor: vt(c?.taxa_valor),
+          taxa_periodo: c?.taxa_periodo || 'ano',
+          taxa_mes: c?.taxa_mes ? String(c.taxa_mes) : '',
+          taxa_isenta_acima: vt(c?.taxa_isenta_acima),
+          final4: c?.final4 || '',
+          ativo: c?.ativo === false ? 'nao' : 'sim',
+        })}
         salvar={async (f, c) => {
           if (!f.nome.trim()) return 'Dê um apelido pro cartão.'
-          for (const k of ['dia_fechamento', 'dia_vencimento']) if (f[k] && !(Number(f[k]) >= 1 && Number(f[k]) <= 31)) return 'O dia tem que ser de 1 a 31.'
+          for (const k of ['dia_fechamento', 'dia_vencimento'])
+            if (f[k] && !(Number(f[k]) >= 1 && Number(f[k]) <= 31)) return 'O dia tem que ser de 1 a 31.'
           if (f.final4 && f.final4.length !== 4) return 'São só os 4 últimos números do cartão.'
-          await api.cartaoSalvar(familia!.id, { id: c?.id, nome: f.nome.trim(), banco: f.banco.trim() || null, titular_id: f.titular || null, dia_fechamento: num(f.dia_fechamento), dia_vencimento: num(f.dia_vencimento), limite: val(f.limite), taxa_valor: val(f.taxa_valor), taxa_periodo: f.taxa_periodo === 'mes' ? 'mes' : 'ano', taxa_mes: num(f.taxa_mes), taxa_isenta_acima: val(f.taxa_isenta_acima), final4: f.final4 || null, ativo: f.ativo !== 'nao' })
-        }} />
-      <Lista<Fatura> nome="Faturas" itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))} chave={f => f.cartao_id + f.mes} semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))} vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
-        titulo={f => { if (oculto) return '\u2022\u2022\u2022'; const c = cartoes?.find(x => x.id === f.cartao_id); return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}` }}
-        sub={f => { const b = doBanco(f); const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
-          return <>eu somei {reais(f.total)}{b?.valor_banco != null ? ` · o banco cobrou ${reais(b.valor_banco)}` : ' · falta dizer quanto veio no banco'}{Math.abs(dif) >= 1 ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}` : ''} · vence {dataCurta(f.vencimento)}</> }}
-        lado={f => { const b = doBanco(f); return b?.paga_em ? <span className="chip ok"><Icone desenho={Check} />paga {dataCurta(b.paga_em)}</span> : <span className="chip">aberta</span> }}
-        campos={[{ k: 'valor_banco', rotulo: 'Valor que veio no banco', tipo: 'valor', dica: 'Olhe no app do banco. Se for diferente da minha soma, eu mostro a diferença.' }, { k: 'paga_em', rotulo: 'Paga em (deixe vazio se ainda não pagou)', tipo: 'data' }]}
-        paraForm={f => { const b = f ? doBanco(f) : null; return { valor_banco: vt(b?.valor_banco), paga_em: b?.paga_em || '' } }}
-        salvar={async (fm, f) => { if (fm.valor_banco && !valorDigitadoValido(fm.valor_banco)) return 'Digite o valor como aparece no banco, por exemplo 2.512,00.'; await api.faturaInformar(familia!.id, f!.cartao_id, f!.mes, { valor_banco: val(fm.valor_banco), paga_em: fm.paga_em || null }) }} />
+          await api.cartaoSalvar(familia!.id, {
+            id: c?.id,
+            nome: f.nome.trim(),
+            banco: f.banco.trim() || null,
+            titular_id: f.titular || null,
+            dia_fechamento: num(f.dia_fechamento),
+            dia_vencimento: num(f.dia_vencimento),
+            limite: val(f.limite),
+            taxa_valor: val(f.taxa_valor),
+            taxa_periodo: f.taxa_periodo === 'mes' ? 'mes' : 'ano',
+            taxa_mes: num(f.taxa_mes),
+            taxa_isenta_acima: val(f.taxa_isenta_acima),
+            final4: f.final4 || null,
+            ativo: f.ativo !== 'nao',
+          })
+        }}
+      />
+      <Lista<Fatura>
+        nome="Faturas"
+        itens={(faturas || []).filter(f => f.total > 0 || doBanco(f))}
+        chave={f => f.cartao_id + f.mes}
+        semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))}
+        vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
+        titulo={f => {
+          if (oculto) return '\u2022\u2022\u2022'
+          const c = cartoes?.find(x => x.id === f.cartao_id)
+          return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}`
+        }}
+        sub={f => {
+          const b = doBanco(f)
+          const dif = b?.valor_banco != null ? b.valor_banco - f.total : 0
+          return (
+            <>
+              eu somei {reais(f.total)}
+              {b?.valor_banco != null
+                ? ` · o banco cobrou ${reais(b.valor_banco)}`
+                : ' · falta dizer quanto veio no banco'}
+              {Math.abs(dif) >= 1
+                ? ` · diferença de ${reais(Math.abs(dif))} ${dif > 0 ? 'que não foi anotada aqui' : 'a menos no banco'}`
+                : ''}{' '}
+              · vence {dataCurta(f.vencimento)}
+            </>
+          )
+        }}
+        lado={f => {
+          const b = doBanco(f)
+          return b?.paga_em ? (
+            <span className="chip ok">
+              <Icone desenho={Check} />
+              paga {dataCurta(b.paga_em)}
+            </span>
+          ) : (
+            <span className="chip">aberta</span>
+          )
+        }}
+        campos={[
+          {
+            k: 'valor_banco',
+            rotulo: 'Valor que veio no banco',
+            tipo: 'valor',
+            dica: 'Olhe no app do banco. Se for diferente da minha soma, eu mostro a diferença.',
+          },
+          { k: 'paga_em', rotulo: 'Paga em (deixe vazio se ainda não pagou)', tipo: 'data' },
+        ]}
+        paraForm={f => {
+          const b = f ? doBanco(f) : null
+          return { valor_banco: vt(b?.valor_banco), paga_em: b?.paga_em || '' }
+        }}
+        salvar={async (fm, f) => {
+          if (fm.valor_banco && !valorDigitadoValido(fm.valor_banco))
+            return 'Digite o valor como aparece no banco, por exemplo 2.512,00.'
+          await api.faturaInformar(familia!.id, f!.cartao_id, f!.mes, {
+            valor_banco: val(fm.valor_banco),
+            paga_em: fm.paga_em || null,
+          })
+        }}
+      />
     </>
   )
 }
@@ -280,36 +723,180 @@ function CadFiscal() {
   const alvo = useRef('')
   const anexar = async (file: File | null) => {
     if (!familia) return
-    const ok = await tentar(async () => api.feiraAnexarNota(familia.id, alvo.current, file ? await reduzirFoto(file) : 'exemplo'))
-    if (ok) { toast('Nota guardada.'); await recarregar() }
+    const ok = await tentar(async () =>
+      api.feiraAnexarNota(familia.id, alvo.current, file ? await reduzirFoto(file) : 'exemplo'),
+    )
+    if (ok) {
+      toast('Nota guardada.')
+      await recarregar()
+    }
   }
   return (
     <>
-      <input ref={arq} type="file" accept="image/*,application/pdf" capture="environment" hidden onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) anexar(f) }} />
-      <Lista<Feira> nome="Feiras" novo="Nova feira" itens={feiras || []} chave={f => f.id} vazio={feiras ? 'Nenhuma feira registrada. Toque em "Nova feira".' : 'Buscando as feiras…'}
+      <input
+        ref={arq}
+        type="file"
+        accept="image/*,application/pdf"
+        capture="environment"
+        hidden
+        onChange={ev => {
+          const f = ev.target.files?.[0]
+          ev.target.value = ''
+          if (f) anexar(f)
+        }}
+      />
+      <Lista<Feira>
+        nome="Feiras"
+        novo="Nova feira"
+        itens={feiras || []}
+        chave={f => f.id}
+        vazio={feiras ? 'Nenhuma feira registrada. Toque em "Nova feira".' : 'Buscando as feiras…'}
         titulo={f => `Feira de ${dataCurta(f.data)}${f.loja ? ` · ${f.loja}` : ''}`}
-        sub={f => <>{f.tem_nota ? 'nota guardada' : f.sem_nota_motivo ? <>sem nota: {textoPrivado(f.sem_nota_motivo)}</> : 'falta a nota'} · quem fez: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `feira:${f.id}`, nome: f.feita_por }} /></>}
+        sub={f => (
+          <>
+            {f.tem_nota ? (
+              'nota guardada'
+            ) : f.sem_nota_motivo ? (
+              <>sem nota: {textoPrivado(f.sem_nota_motivo)}</>
+            ) : (
+              'falta a nota'
+            )}{' '}
+            · quem fez: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `feira:${f.id}`, nome: f.feita_por }} />
+          </>
+        )}
         lado={f => (!equipe && f.valor != null ? <Din v={f.valor} /> : null)}
-        extra={f => (!f.tem_nota ? <button type="button" className="btn line sm cad-x" onClick={() => { alvo.current = f.id; if (api.modo === 'exemplo') anexar(null); else arq.current?.click() }}><Icone desenho={Camera} />Anexar a nota</button> : null)}
-        campos={[{ k: 'data', rotulo: 'Dia da feira', tipo: 'data' }, ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []), { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' }, { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' }]}
-        paraForm={f => ({ data: f?.data || hojeRecife(), valor: vt(f?.valor), loja: f?.loja || '', motivo: f?.sem_nota_motivo || '' })}
+        extra={f =>
+          !f.tem_nota ? (
+            <button
+              type="button"
+              className="btn line sm cad-x"
+              onClick={() => {
+                alvo.current = f.id
+                if (api.modo === 'exemplo') anexar(null)
+                else arq.current?.click()
+              }}
+            >
+              <Icone desenho={Camera} />
+              Anexar a nota
+            </button>
+          ) : null
+        }
+        campos={[
+          { k: 'data', rotulo: 'Dia da feira', tipo: 'data' },
+          ...(!equipe ? [{ k: 'valor', rotulo: 'Quanto deu', tipo: 'valor' as const }] : []),
+          { k: 'loja', rotulo: 'Onde foi', ph: 'Ex.: Mercadinho, feira livre' },
+          { k: 'motivo', rotulo: 'Se não teve nota, por quê', ph: 'Ex.: feira livre, açougue' },
+        ]}
+        paraForm={f => ({
+          data: f?.data || hojeRecife(),
+          valor: vt(f?.valor),
+          loja: f?.loja || '',
+          motivo: f?.sem_nota_motivo || '',
+        })}
         salvar={async (fm, f) => {
-          if (f) { if (!fm.motivo.trim()) return 'Feira já registrada: aqui dá para dizer por que não teve nota, ou anexar a nota pelo botão.'; await api.feiraSemNota(familia!.id, f.id, fm.motivo.trim()); return }
+          if (f) {
+            if (!fm.motivo.trim())
+              return 'Feira já registrada: aqui dá para dizer por que não teve nota, ou anexar a nota pelo botão.'
+            await api.feiraSemNota(familia!.id, f.id, fm.motivo.trim())
+            return
+          }
           if (!equipe && (!fm.valor || !val(fm.valor))) return 'Digite quanto deu a feira.'
-          await api.feiraRegistrar(familia!.id, { data: fm.data, ...(equipe ? {} : { valor: val(fm.valor)! }), loja: fm.loja.trim() })
-        }} />
+          await api.feiraRegistrar(familia!.id, {
+            data: fm.data,
+            ...(equipe ? {} : { valor: val(fm.valor)! }),
+            loja: fm.loja.trim(),
+          })
+        }}
+      />
       <div className="cad" data-cad="Contagens">
-        <div className="cad-h"><b>Contagens do estoque</b><button type="button" className="btn line sm" aria-expanded={contando} onClick={() => setContando(!contando)}><Icone desenho={Plus} />Contar agora</button></div>
-        {contando && <Contagem gravando={gravando} salvar={async itens => { setGravando(true); const ok = await tentar(() => api.estoqueContar(familia!.id, itens)); setGravando(false); if (ok) { setContando(false); toast('Contagem salva.'); await recarregar() } }} />}
+        <div className="cad-h">
+          <b>Contagens do estoque</b>
+          <button type="button" className="btn line sm" aria-expanded={contando} onClick={() => setContando(!contando)}>
+            <Icone desenho={Plus} />
+            Contar agora
+          </button>
+        </div>
+        {contando && (
+          <Contagem
+            gravando={gravando}
+            salvar={async itens => {
+              setGravando(true)
+              const ok = await tentar(() => api.estoqueContar(familia!.id, itens))
+              setGravando(false)
+              if (ok) {
+                setContando(false)
+                toast('Contagem salva.')
+                await recarregar()
+              }
+            }}
+          />
+        )}
         {est && !est.contagens.length && <p className="sub">Nenhuma contagem ainda.</p>}
-        <ul className="list">{(est?.contagens || []).slice(0, 4).map(c => { const ac = c.itens.filter(i => i.estado === 'acabou').length, po = c.itens.filter(i => i.estado === 'pouco').length
-          return <li key={c.id}><div className="cad-l"><span className="m"><b>{diaSemana(c.data)}, {dataCurta(c.data)}</b><small>quem contou: <NomeDaPessoa pessoa={{ tipo: 'membro', id: `contagem:${c.id}`, nome: c.contado_por }} /> · {c.itens.length} itens · {ac === 1 ? '1 acabou' : `${ac} acabaram`} · {po} com pouco</small></span></div></li> })}</ul>
+        <ul className="list">
+          {(est?.contagens || []).slice(0, 4).map(c => {
+            const ac = c.itens.filter(i => i.estado === 'acabou').length,
+              po = c.itens.filter(i => i.estado === 'pouco').length
+            return (
+              <li key={c.id}>
+                <div className="cad-l">
+                  <span className="m">
+                    <b>
+                      {diaSemana(c.data)}, {dataCurta(c.data)}
+                    </b>
+                    <small>
+                      quem contou:{' '}
+                      <NomeDaPessoa pessoa={{ tipo: 'membro', id: `contagem:${c.id}`, nome: c.contado_por }} /> ·{' '}
+                      {c.itens.length} itens · {ac === 1 ? '1 acabou' : `${ac} acabaram`} · {po} com pouco
+                    </small>
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
       </div>
-      <Lista<Estoque['itens'][number]> nome="Itens da casa" novo="Novo item" itens={(est?.itens || []).filter(i => i.ativo)} chave={i => i.id} vazio={est ? 'Nenhum item. Toque em "Novo item".' : 'Buscando os itens…'}
-        titulo={i => i.nome} sub={i => i.categoria}
-        campos={[{ k: 'nome', rotulo: 'Nome do item', ph: 'Ex.: Arroz' }, { k: 'categoria', rotulo: 'Onde fica', tipo: 'opcao', opcoes: [['Despensa', 'Despensa'], ['Geladeira', 'Geladeira'], ['Limpeza', 'Limpeza'], ['Outros', 'Outros']] }, { k: 'ativo', rotulo: 'Continua na contagem?', tipo: 'opcao', opcoes: [['sim', 'Continua'], ['nao', 'Tirar da contagem']] }]}
+      <Lista<Estoque['itens'][number]>
+        nome="Itens da casa"
+        novo="Novo item"
+        itens={(est?.itens || []).filter(i => i.ativo)}
+        chave={i => i.id}
+        vazio={est ? 'Nenhum item. Toque em "Novo item".' : 'Buscando os itens…'}
+        titulo={i => i.nome}
+        sub={i => i.categoria}
+        campos={[
+          { k: 'nome', rotulo: 'Nome do item', ph: 'Ex.: Arroz' },
+          {
+            k: 'categoria',
+            rotulo: 'Onde fica',
+            tipo: 'opcao',
+            opcoes: [
+              ['Despensa', 'Despensa'],
+              ['Geladeira', 'Geladeira'],
+              ['Limpeza', 'Limpeza'],
+              ['Outros', 'Outros'],
+            ],
+          },
+          {
+            k: 'ativo',
+            rotulo: 'Continua na contagem?',
+            tipo: 'opcao',
+            opcoes: [
+              ['sim', 'Continua'],
+              ['nao', 'Tirar da contagem'],
+            ],
+          },
+        ]}
         paraForm={i => ({ nome: i?.nome || '', categoria: i?.categoria || 'Despensa', ativo: 'sim' })}
-        salvar={async (fm, i) => { if (!fm.nome.trim()) return 'Escreva o nome do item.'; await api.estoqueItemSalvar(familia!.id, { id: i?.id, nome: fm.nome.trim(), categoria: fm.categoria, ativo: fm.ativo !== 'nao' }) }} />
+        salvar={async (fm, i) => {
+          if (!fm.nome.trim()) return 'Escreva o nome do item.'
+          await api.estoqueItemSalvar(familia!.id, {
+            id: i?.id,
+            nome: fm.nome.trim(),
+            categoria: fm.categoria,
+            ativo: fm.ativo !== 'nao',
+          })
+        }}
+      />
     </>
   )
 }
@@ -317,46 +904,145 @@ function CadFiscal() {
 type PessoaF = Folha['pessoas'][number] & { diaPagamento?: number }
 function CadFolha() {
   const [folha, salvar, , lido] = useConfig<Folha>('casa_folha', { pessoas: [], daePaga: {} })
-  const mes = hojeRecife().slice(0, 7), paga = !!folha.daePaga?.[mes]
+  const mes = hojeRecife().slice(0, 7),
+    paga = !!folha.daePaga?.[mes]
   return (
     <>
-      <Lista<PessoaF> nome="Assessores da Casa" novo="Nova pessoa" itens={folha.pessoas as PessoaF[]} chave={p => p.id} vazio={lido ? 'Ninguém cadastrado. Toque em "Nova pessoa".' : 'Buscando…'}
-        titulo={p => <NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} />} sub={p => `salário pago todo dia ${p.diaPagamento || 5}`} lado={p => <Din v={p.salario} />}
-        campos={[{ k: 'nome', rotulo: 'Nome' }, { k: 'funcao', rotulo: 'Função', ph: 'Ex.: Cozinha' }, { k: 'salario', rotulo: 'Salário do mês', tipo: 'valor' }, { k: 'dia', rotulo: 'Dia do pagamento', tipo: 'num' }]}
-        paraForm={p => ({ nome: p?.nome || '', funcao: p?.funcao || '', salario: vt(p?.salario), dia: String(p?.diaPagamento || 5) })}
+      <Lista<PessoaF>
+        nome="Assessores da Casa"
+        novo="Nova pessoa"
+        itens={folha.pessoas as PessoaF[]}
+        chave={p => p.id}
+        vazio={lido ? 'Ninguém cadastrado. Toque em "Nova pessoa".' : 'Buscando…'}
+        titulo={p => <NomeDaPessoa editar pessoa={{ tipo: 'assessor', id: p.id, nome: p.nome, funcao: p.funcao }} />}
+        sub={p => `salário pago todo dia ${p.diaPagamento || 5}`}
+        lado={p => <Din v={p.salario} />}
+        campos={[
+          { k: 'nome', rotulo: 'Nome' },
+          { k: 'funcao', rotulo: 'Função', ph: 'Ex.: Cozinha' },
+          { k: 'salario', rotulo: 'Salário do mês', tipo: 'valor' },
+          { k: 'dia', rotulo: 'Dia do pagamento', tipo: 'num' },
+        ]}
+        paraForm={p => ({
+          nome: p?.nome || '',
+          funcao: p?.funcao || '',
+          salario: vt(p?.salario),
+          dia: String(p?.diaPagamento || 5),
+        })}
         salvar={async (f, p) => {
           if (!f.nome.trim()) return 'Escreva o nome.'
           if (!val(f.salario)) return 'Digite o salário do mês.'
           if (!(Number(f.dia) >= 1 && Number(f.dia) <= 31)) return 'O dia do pagamento tem que ser de 1 a 31.'
-          const nova: PessoaF = { ...p, id: p?.id || novoUuid().slice(0, 8), nome: f.nome.trim(), funcao: f.funcao.trim() || 'Assessor da Casa', salario: val(f.salario)!, diaPagamento: Number(f.dia) }
-          if (!(await salvar({ ...folha, pessoas: p ? folha.pessoas.map(x => (x.id === p.id ? nova : x)) : [...folha.pessoas, nova] }))) throw new Error('Não foi possível salvar. Tente de novo.')
-        }} />
-      <div className="cad"><div className="cad-h"><b>Guia mensal do governo</b><button type="button" className="btn line sm" onClick={() => salvar({ ...folha, daePaga: { ...folha.daePaga, [mes]: !paga } })}>{paga ? 'Desmarcar' : 'Marcar como paga'}</button></div>
-        <p className="sub">{paga ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.` : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de Assessores da Casa e vence todo dia 07.`}</p></div>
+          const nova: PessoaF = {
+            ...p,
+            id: p?.id || novoUuid().slice(0, 8),
+            nome: f.nome.trim(),
+            funcao: f.funcao.trim() || 'Assessor da Casa',
+            salario: val(f.salario)!,
+            diaPagamento: Number(f.dia),
+          }
+          if (
+            !(await salvar({
+              ...folha,
+              pessoas: p ? folha.pessoas.map(x => (x.id === p.id ? nova : x)) : [...folha.pessoas, nova],
+            }))
+          )
+            throw new Error('Não foi possível salvar. Tente de novo.')
+        }}
+      />
+      <div className="cad">
+        <div className="cad-h">
+          <b>Guia mensal do governo</b>
+          <button
+            type="button"
+            className="btn line sm"
+            onClick={() => salvar({ ...folha, daePaga: { ...folha.daePaga, [mes]: !paga } })}
+          >
+            {paga ? 'Desmarcar' : 'Marcar como paga'}
+          </button>
+        </div>
+        <p className="sub">
+          {paga
+            ? `A guia de ${mesCurto(mes + '-01')} está marcada como paga.`
+            : `A guia de ${mesCurto(mes + '-01')} ainda não foi marcada como paga. É o boleto mensal do registro de Assessores da Casa e vence todo dia 07.`}
+        </p>
+      </div>
     </>
   )
 }
 
-interface Prest { id: string; nome: string; servico: string; dia: number; valor: number; ultimaVez?: string }
+interface Prest {
+  id: string
+  nome: string
+  servico: string
+  dia: number
+  valor: number
+  ultimaVez?: string
+}
 function CadComprador() {
   const [prest, salvarP, , lidoP] = useConfig<Prest[]>('casa_prestadores', [])
   const [gas, salvarG, , lidoG] = useConfig<{ trocas: string[] }>('casa_gas', { trocas: [] })
   const trocas = [...(gas.trocas || [])].sort().reverse()
   return (
     <>
-      <Lista<Prest> nome="Prestadores" novo="Novo prestador" itens={prest} chave={p => p.id} vazio={lidoP ? 'Nenhum prestador. Toque em "Novo prestador".' : 'Buscando…'}
-        titulo={p => <>{textoPrivado(p.servico)} · <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} /></>} sub={p => `vem ${(p.dia === 0 || p.dia === 6 ? 'todo ' : 'toda ') + DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`} lado={p => <Din v={p.valor} />}
-        campos={[{ k: 'servico', rotulo: 'Serviço', ph: 'Ex.: Jardineiro' }, { k: 'nome', rotulo: 'Nome' }, { k: 'dia', rotulo: 'Dia da semana', tipo: 'opcao', opcoes: DIAS }, { k: 'valor', rotulo: 'Valor por visita', tipo: 'valor' }]}
-        paraForm={p => ({ servico: p?.servico || '', nome: p?.nome || '', dia: String(p?.dia ?? 6), valor: vt(p?.valor) })}
+      <Lista<Prest>
+        nome="Prestadores"
+        novo="Novo prestador"
+        itens={prest}
+        chave={p => p.id}
+        vazio={lidoP ? 'Nenhum prestador. Toque em "Novo prestador".' : 'Buscando…'}
+        titulo={p => (
+          <>
+            {textoPrivado(p.servico)} · <NomeDaPessoa editar pessoa={{ tipo: 'prestador', id: p.id, nome: p.nome }} />
+          </>
+        )}
+        sub={p =>
+          `vem ${(p.dia === 0 || p.dia === 6 ? 'todo ' : 'toda ') + DIAS_L[p.dia]}${p.ultimaVez ? ` · última vez ${dataCurta(p.ultimaVez)}` : ''}`
+        }
+        lado={p => <Din v={p.valor} />}
+        campos={[
+          { k: 'servico', rotulo: 'Serviço', ph: 'Ex.: Jardineiro' },
+          { k: 'nome', rotulo: 'Nome' },
+          { k: 'dia', rotulo: 'Dia da semana', tipo: 'opcao', opcoes: DIAS },
+          { k: 'valor', rotulo: 'Valor por visita', tipo: 'valor' },
+        ]}
+        paraForm={p => ({
+          servico: p?.servico || '',
+          nome: p?.nome || '',
+          dia: String(p?.dia ?? 6),
+          valor: vt(p?.valor),
+        })}
         salvar={async (f, p) => {
           if (!f.servico.trim() || !f.nome.trim()) return 'Escreva o serviço e o nome.'
-          const novo: Prest = { ...(p || {}), id: p?.id || novoUuid().slice(0, 8), servico: f.servico.trim(), nome: f.nome.trim(), dia: Number(f.dia), valor: val(f.valor) || 0 }
-          if (!(await salvarP(p ? prest.map(x => (x.id === p.id ? novo : x)) : [...prest, novo]))) throw new Error('Não foi possível salvar. Tente de novo.')
-        }} />
-      <Lista<string> nome="Trocas de gás" novo="Nova troca" semEditar itens={trocas.slice(0, 4)} chave={d => d} vazio={lidoG ? 'Nenhuma troca anotada. Com 2 trocas eu já calculo quando o gás acaba.' : 'Buscando…'}
-        titulo={d => `Trocado em ${dataCurta(d)}`} sub={d => diaSemana(d)}
-        campos={[{ k: 'data', rotulo: 'Dia da troca', tipo: 'data' }]} paraForm={() => ({ data: hojeRecife() })}
-        salvar={async f => { if (!/^\d{4}-\d{2}-\d{2}$/.test(f.data)) return 'Escolha o dia.'; if (!(await salvarG({ trocas: [...new Set([...(gas.trocas || []), f.data])].sort() }))) throw new Error('Não foi possível salvar. Tente de novo.') }} />
+          const novo: Prest = {
+            ...(p || {}),
+            id: p?.id || novoUuid().slice(0, 8),
+            servico: f.servico.trim(),
+            nome: f.nome.trim(),
+            dia: Number(f.dia),
+            valor: val(f.valor) || 0,
+          }
+          if (!(await salvarP(p ? prest.map(x => (x.id === p.id ? novo : x)) : [...prest, novo])))
+            throw new Error('Não foi possível salvar. Tente de novo.')
+        }}
+      />
+      <Lista<string>
+        nome="Trocas de gás"
+        novo="Nova troca"
+        semEditar
+        itens={trocas.slice(0, 4)}
+        chave={d => d}
+        vazio={lidoG ? 'Nenhuma troca anotada. Com 2 trocas eu já calculo quando o gás acaba.' : 'Buscando…'}
+        titulo={d => `Trocado em ${dataCurta(d)}`}
+        sub={d => diaSemana(d)}
+        campos={[{ k: 'data', rotulo: 'Dia da troca', tipo: 'data' }]}
+        paraForm={() => ({ data: hojeRecife() })}
+        salvar={async f => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(f.data)) return 'Escolha o dia.'
+          if (!(await salvarG({ trocas: [...new Set([...(gas.trocas || []), f.data])].sort() })))
+            throw new Error('Não foi possível salvar. Tente de novo.')
+        }}
+      />
     </>
   )
 }
@@ -366,75 +1052,225 @@ function CadGuardado() {
   const g = useBusca<GuardadoHoje>(f => api.guardadoHoje(f))
   return (
     <div className="cad" data-cad="Aplicações">
-      <div className="cad-h"><b>Onde o dinheiro está guardado</b><a className="btn line sm" href="#/guardado?nova=1" onClick={e => abrirAtalhoGuardado(e, 'nova')}><Icone desenho={Plus} />Nova aplicação</a></div>
+      <div className="cad-h">
+        <b>Onde o dinheiro está guardado</b>
+        <a className="btn line sm" href="#/guardado?nova=1" onClick={e => abrirAtalhoGuardado(e, 'nova')}>
+          <Icone desenho={Plus} />
+          Nova aplicação
+        </a>
+      </div>
       {g && !g.aplicacoes.length && <p className="sub">Nada guardado ainda. Toque em "Nova aplicação".</p>}
-      <ul className="list">{(g?.aplicacoes || []).map(a => <li key={a.id}><div className="cad-l"><span className="m"><b>{textoPrivado(a.nome)}</b><small>{rendeQuanto(a, true)} · rendeu hoje {reais(a.rendeu_hoje_liquido)}</small></span><span className="v"><Din v={a.saldo} /></span></div></li>)}</ul>
-      <div className="row-btns" style={{ marginTop: 8 }}><a className="btn line sm" href="#/guardado?guardar=1" onClick={e => abrirAtalhoGuardado(e, 'aporte')}>Guardar dinheiro</a><a className="btn line sm" href="#/guardado?tirar=1" onClick={e => abrirAtalhoGuardado(e, 'resgate')}>Tirar dinheiro</a><a className="btn ghost sm" href="#/guardado">Abrir o Guardado<Icone desenho={ChevronRight} /></a></div>
+      <ul className="list">
+        {(g?.aplicacoes || []).map(a => (
+          <li key={a.id}>
+            <div className="cad-l">
+              <span className="m">
+                <b>{textoPrivado(a.nome)}</b>
+                <small>
+                  {rendeQuanto(a, true)} · rendeu hoje {reais(a.rendeu_hoje_liquido)}
+                </small>
+              </span>
+              <span className="v">
+                <Din v={a.saldo} />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="row-btns" style={{ marginTop: 8 }}>
+        <a className="btn line sm" href="#/guardado?guardar=1" onClick={e => abrirAtalhoGuardado(e, 'aporte')}>
+          Guardar dinheiro
+        </a>
+        <a className="btn line sm" href="#/guardado?tirar=1" onClick={e => abrirAtalhoGuardado(e, 'resgate')}>
+          Tirar dinheiro
+        </a>
+        <a className="btn ghost sm" href="#/guardado">
+          Abrir o Guardado
+          <Icone desenho={ChevronRight} />
+        </a>
+      </div>
     </div>
   )
 }
 
-const REPETE: [Repetir, string][] = [['nunca', 'Não repete'], ['dia', 'Todo dia'], ['semana', 'Toda semana'], ['mes', 'Todo mês'], ['ano', 'Todo ano']]
-const localDeRecife = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: FUSO, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)).replace(' ', 'T')
+const REPETE: [Repetir, string][] = [
+  ['nunca', 'Não repete'],
+  ['dia', 'Todo dia'],
+  ['semana', 'Toda semana'],
+  ['mes', 'Todo mês'],
+  ['ano', 'Todo ano'],
+]
+const localDeRecife = (iso: string) =>
+  new Intl.DateTimeFormat('sv-SE', {
+    timeZone: FUSO,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date(iso))
+    .replace(' ', 'T')
 function CadSecretaria() {
   const { api, familia } = useApp()
   const lista = useBusca<Lembrete[]>(f => api.lembretes(f))
   return (
-    <Lista<Lembrete> nome="Lembretes" novo="Novo lembrete" itens={lista || []} chave={l => l.id} vazio={lista ? 'Nenhum lembrete guardado. Toque em "Novo lembrete".' : 'Buscando…'}
-      titulo={l => l.titulo} sub={l => `${dataCurta(diaDe(l.quando))} às ${hhmm(l.quando)} · ${REPETE.find(r => r[0] === l.repetir)?.[1].toLowerCase()} · para ${l.para === 'casal' ? 'o casal' : l.para === 'eu' ? 'mim' : l.para}`}
-      campos={[{ k: 'titulo', privado: true, rotulo: 'O quê', ph: 'Ex.: Ligar pro contador' }, { k: 'quando', rotulo: 'Quando', tipo: 'datahora' }, { k: 'repetir', rotulo: 'Repetir', tipo: 'opcao', opcoes: REPETE }, { k: 'para', rotulo: 'Pra quem', tipo: 'opcao', opcoes: [['eu', 'Só eu'], ['casal', 'O casal']] }]}
-      paraForm={l => ({ titulo: l?.titulo || '', quando: l ? localDeRecife(l.quando) : `${hojeRecife()}T18:00`, repetir: l?.repetir || 'nunca', para: l?.para || 'eu' })}
+    <Lista<Lembrete>
+      nome="Lembretes"
+      novo="Novo lembrete"
+      itens={lista || []}
+      chave={l => l.id}
+      vazio={lista ? 'Nenhum lembrete guardado. Toque em "Novo lembrete".' : 'Buscando…'}
+      titulo={l => l.titulo}
+      sub={l =>
+        `${dataCurta(diaDe(l.quando))} às ${hhmm(l.quando)} · ${REPETE.find(r => r[0] === l.repetir)?.[1].toLowerCase()} · para ${l.para === 'casal' ? 'o casal' : l.para === 'eu' ? 'mim' : l.para}`
+      }
+      campos={[
+        { k: 'titulo', privado: true, rotulo: 'O quê', ph: 'Ex.: Ligar pro contador' },
+        { k: 'quando', rotulo: 'Quando', tipo: 'datahora' },
+        { k: 'repetir', rotulo: 'Repetir', tipo: 'opcao', opcoes: REPETE },
+        {
+          k: 'para',
+          rotulo: 'Pra quem',
+          tipo: 'opcao',
+          opcoes: [
+            ['eu', 'Só eu'],
+            ['casal', 'O casal'],
+          ],
+        },
+      ]}
+      paraForm={l => ({
+        titulo: l?.titulo || '',
+        quando: l ? localDeRecife(l.quando) : `${hojeRecife()}T18:00`,
+        repetir: l?.repetir || 'nunca',
+        para: l?.para || 'eu',
+      })}
       salvar={async (f, l) => {
         if (!f.titulo.trim()) return 'Escreva o que é para lembrar.'
         if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(f.quando)) return 'Escolha o dia e a hora.'
         // editar = guardar o novo e tirar o antigo (o banco não apaga: só marca o antigo como inativo)
-        await api.lembreteCriar(familia!.id, { titulo: f.titulo.trim(), quando: new Date(f.quando + ':00-03:00').toISOString(), repetir: f.repetir as Repetir, para: f.para })
+        await api.lembreteCriar(familia!.id, {
+          titulo: f.titulo.trim(),
+          quando: new Date(f.quando + ':00-03:00').toISOString(),
+          repetir: f.repetir as Repetir,
+          para: f.para,
+        })
         if (l) await api.lembreteApagar(familia!.id, l.id)
-      }} />
+      }}
+    />
   )
 }
 
 function CadReserva() {
   const { api, familia, resumo } = useApp()
   const [ondeSalvo, salvar] = useConfig<string>('reserva_onde', 'conta')
-  const env = resumo?.envelopes.find(e => e.casa && (e.colchao_meta || 0) > 0) || resumo?.envelopes.find(e => e.casa && e.regra === 'mensal') || resumo?.envelopes[0]
+  const env =
+    resumo?.envelopes.find(e => e.casa && (e.colchao_meta || 0) > 0) ||
+    resumo?.envelopes.find(e => e.casa && e.regra === 'mensal') ||
+    resumo?.envelopes[0]
   const combinado = env?.colchao_meta ?? resumo?.colchao ?? 0
   const onde = ondeSalvo === 'guardada' ? 'guardada' : 'conta'
   const nomeOnde = onde === 'conta' ? 'na conta comum, que não rende' : 'guardada onde rende (veja no Guardado)'
   return (
-    <Lista<number> nome="A reserva" itens={[combinado]} chave={() => 'r'} vazio=""
-      titulo={() => 'Reserva combinada'} sub={() => `É o dinheiro que a família combinou nunca gastar. Fica ${nomeOnde}. Quando ela baixa e quando volta, eu anoto nas respostas aqui embaixo.`} lado={v => <Din v={v} />}
-      campos={[{ k: 'valor', rotulo: 'Valor combinado da reserva', tipo: 'valor' }, { k: 'onde', rotulo: 'Onde ela fica', tipo: 'opcao', opcoes: [['conta', 'Na conta comum'], ['guardada', 'Guardada onde rende']] }]}
+    <Lista<number>
+      nome="A reserva"
+      itens={[combinado]}
+      chave={() => 'r'}
+      vazio=""
+      titulo={() => 'Reserva combinada'}
+      sub={() =>
+        `É o dinheiro que a família combinou nunca gastar. Fica ${nomeOnde}. Quando ela baixa e quando volta, eu anoto nas respostas aqui embaixo.`
+      }
+      lado={v => <Din v={v} />}
+      campos={[
+        { k: 'valor', rotulo: 'Valor combinado da reserva', tipo: 'valor' },
+        {
+          k: 'onde',
+          rotulo: 'Onde ela fica',
+          tipo: 'opcao',
+          opcoes: [
+            ['conta', 'Na conta comum'],
+            ['guardada', 'Guardada onde rende'],
+          ],
+        },
+      ]}
       paraForm={() => ({ valor: vt(combinado), onde })}
       salvar={async f => {
         if (!f.valor || val(f.valor) == null) return 'Digite o valor da reserva.'
         if (env && val(f.valor) !== combinado) await api.salvarEnvelope(familia!.id, env.id, { colchao: val(f.valor)! })
         if (f.onde !== onde && !(await salvar(f.onde))) throw new Error('Não foi possível salvar. Tente de novo.')
-      }} />
+      }}
+    />
   )
 }
 
-interface Renda { id: string; nome: string; valor: number; dia?: number; dono?: string }
+interface Renda {
+  id: string
+  nome: string
+  valor: number
+  dia?: number
+  dono?: string
+}
 function CadContador() {
   const { familia, oculto } = useApp()
   const [todas, salvarTodas, , lidoR] = useConfig<Renda[]>('rendas', [])
   // E2 (regra nova, 13/11): o casal vê a renda de cada um, com o nome; cada um mexe só na sua (a do outro continua guardada)
   const rendas = todas.filter(r => !r.dono || r.dono === familia?.membroNome)
   const doOutro = todas.filter(r => r.dono && r.dono !== familia?.membroNome)
-  const salvarR = (v: Renda[]) => salvarTodas([...doOutro, ...v.map(x => ({ ...x, dono: x.dono || familia?.membroNome }))])
+  const salvarR = (v: Renda[]) =>
+    salvarTodas([...doOutro, ...v.map(x => ({ ...x, dono: x.dono || familia?.membroNome }))])
   const [fixas, salvarF, , lidoF] = useConfig<Renda[]>('contas_fixas', [])
-  const lista = (nome: string, novo: string, itens: Renda[], salvar: (v: Renda[]) => Promise<boolean>, lido: boolean, ph: string, outros: Renda[] = []) => (
-    <Lista<Renda> nome={nome} novo={novo} itens={[...itens, ...outros]} chave={r => r.id} vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'} semEditar={r => outros.includes(r)}
-      titulo={r => <>{textoPrivado(r.nome)} {nome === 'Rendas' && <NomeDaPessoa editar pessoa={{ tipo: 'renda', id: r.id, nome: r.dono }} />}</>} sub={r => `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`} lado={r => <Din v={r.valor} />}
-      campos={[{ k: 'nome', privado: true, rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph }, { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' }, { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' }]}
+  const lista = (
+    nome: string,
+    novo: string,
+    itens: Renda[],
+    salvar: (v: Renda[]) => Promise<boolean>,
+    lido: boolean,
+    ph: string,
+    outros: Renda[] = [],
+  ) => (
+    <Lista<Renda>
+      nome={nome}
+      novo={novo}
+      itens={[...itens, ...outros]}
+      chave={r => r.id}
+      vazio={lido ? `Nada cadastrado. Toque em "${novo}".` : 'Buscando…'}
+      semEditar={r => outros.includes(r)}
+      titulo={r => (
+        <>
+          {textoPrivado(r.nome)}{' '}
+          {nome === 'Rendas' && <NomeDaPessoa editar pessoa={{ tipo: 'renda', id: r.id, nome: r.dono }} />}
+        </>
+      )}
+      sub={r =>
+        `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`
+      }
+      lado={r => <Din v={r.valor} />}
+      campos={[
+        { k: 'nome', privado: true, rotulo: nome === 'Rendas' ? 'De quem ou de onde vem' : 'Nome da conta', ph },
+        { k: 'valor', rotulo: 'Valor por mês', tipo: 'valor' },
+        { k: 'dia', rotulo: nome === 'Rendas' ? 'Dia em que entra' : 'Dia em que vence', tipo: 'num' },
+      ]}
       paraForm={r => ({ nome: r?.nome || '', valor: vt(r?.valor), dia: r?.dia ? String(r.dia) : '' })}
       salvar={async (f, r) => {
         if (!f.nome.trim()) return 'Escreva o nome.'
         if (!val(f.valor)) return 'Digite o valor por mês.'
         if (f.dia && !(Number(f.dia) >= 1 && Number(f.dia) <= 31)) return 'O dia tem que ser de 1 a 31.'
-        const n: Renda = { id: r?.id || novoUuid().slice(0, 8), nome: f.nome.trim(), valor: val(f.valor)!, ...(f.dia ? { dia: Number(f.dia) } : {}) }
-        if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n]))) throw new Error('Não foi possível salvar. Tente de novo.')
-      }} />
+        const n: Renda = {
+          id: r?.id || novoUuid().slice(0, 8),
+          nome: f.nome.trim(),
+          valor: val(f.valor)!,
+          ...(f.dia ? { dia: Number(f.dia) } : {}),
+        }
+        if (!(await salvar(r ? itens.map(x => (x.id === r.id ? n : x)) : [...itens, n])))
+          throw new Error('Não foi possível salvar. Tente de novo.')
+      }}
+    />
   )
-  return <>{lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena', doOutro)}{lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}</>
+  return (
+    <>
+      {lista('Rendas', 'Nova renda', rendas, salvarR, lidoR, 'Ex.: Salário da Helena', doOutro)}
+      {lista('Contas fixas', 'Nova conta fixa', fixas, salvarF, lidoF, 'Ex.: Internet')}
+    </>
+  )
 }

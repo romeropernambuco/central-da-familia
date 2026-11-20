@@ -47,15 +47,25 @@ export function FilaPendentes({ aoTentarDeNovo }: { aoTentarDeNovo?: (gasto: Nov
     <>
       {emEspera > 0 && (
         <div className="todo f32-feedback" role="status">
-          Não foi possível salvar ainda. {emEspera} {emEspera === 1 ? 'pendente' : 'pendentes'}, tentando de novo. Mantenha o app aberto.
-          <button type="button" onClick={() => void pendentes.repetir()}><Icone nome="pendente" />Tentar agora</button>
+          Não foi possível salvar ainda. {emEspera} {emEspera === 1 ? 'pendente' : 'pendentes'}, tentando de novo.
+          Mantenha o app aberto.
+          <button type="button" onClick={() => void pendentes.repetir()}>
+            <Icone nome="pendente" />
+            Tentar agora
+          </button>
         </div>
       )}
       {recusados.map(({ dados, erro }) => (
         <div className="todo f32-feedback" role="alert" key={dados.chave} data-recusado={dados.chave}>
-          Um gasto guardado neste aparelho não foi aceito: {textoPrivado(dados.descricao || 'sem descrição')}, {reais(dados.valor)}. {erro}
-          <button type="button" onClick={() => aoTentarDeNovo?.(dados)}><Icone nome="pendente" />Tentar de novo</button>
-          <button type="button" onClick={() => tirarPendente(dados.chave)}>Descartar</button>
+          Um gasto guardado neste aparelho não foi aceito: {textoPrivado(dados.descricao || 'sem descrição')},{' '}
+          {reais(dados.valor)}. {erro}
+          <button type="button" onClick={() => aoTentarDeNovo?.(dados)}>
+            <Icone nome="pendente" />
+            Tentar de novo
+          </button>
+          <button type="button" onClick={() => tirarPendente(dados.chave)}>
+            Descartar
+          </button>
         </div>
       ))}
     </>

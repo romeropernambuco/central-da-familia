@@ -13,7 +13,10 @@ import { POR_ID } from '../../telas/escritorio/equipe'
 import { PrivacidadePropostas } from './privacidade'
 
 const cena = vi.hoisted(() => ({
-  montar: vi.fn(), atualizar: vi.fn(), destruir: vi.fn(), falhar: false,
+  montar: vi.fn(),
+  atualizar: vi.fn(),
+  destruir: vi.fn(),
+  falhar: false,
 }))
 vi.mock('../../telas/escritorio/tres', () => ({}))
 vi.mock('../../telas/escritorio/cenaIsometrica', () => ({
@@ -29,7 +32,9 @@ const dados = await carregarDadosInicio()
 const { funcionarios } = dados
 const funcionario = funcionarios.valor!.find(f => f.id === 'contador')!
 const valores = { [funcionario.id]: dados.aplicacoes.total }
-const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valores[funcionario.id].valor!)
+const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+  valores[funcionario.id].valor!,
+)
 const opcoes = (): OpcoesIsometricas => cena.montar.mock.lastCall![0]
 
 function ambiente({ webGL = true, reduz = false } = {}) {
@@ -43,29 +48,50 @@ function ambiente({ webGL = true, reduz = false } = {}) {
   const preferencia = Object.assign(new EventTarget(), { matches: reduz })
   vi.stubGlobal('document', documento)
   vi.stubGlobal('window', {
-    document: documento, HTMLElement: NoTeste, HTMLIFrameElement: class {}, HTMLCanvasElement: NoTeste,
-    WebGLRenderingContext: webGL ? class {} : undefined, matchMedia: () => preferencia,
+    document: documento,
+    HTMLElement: NoTeste,
+    HTMLIFrameElement: class {},
+    HTMLCanvasElement: NoTeste,
+    WebGLRenderingContext: webGL ? class {} : undefined,
+    matchMedia: () => preferencia,
   })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('ResizeObserver', class {})
   vi.stubGlobal('requestAnimationFrame', vi.fn())
-  const observar = vi.fn(), desconectar = vi.fn()
+  const observar = vi.fn(),
+    desconectar = vi.fn()
   let intersecao: (entradas: { isIntersecting: boolean }[]) => void
-  vi.stubGlobal('IntersectionObserver', class {
-    constructor(callback: typeof intersecao) { intersecao = callback }
-    observe = observar
-    disconnect = desconectar
-  })
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(callback: typeof intersecao) {
+        intersecao = callback
+      }
+      observe = observar
+      disconnect = desconectar
+    },
+  )
   const el = documento.createElement('div')
   documento.body.appendChild(el)
   const root = createRoot(el as unknown as HTMLElement)
   fechar = () => act(async () => root.unmount())
   const ler = (attr: string, valor: string) => el.buscar(n => n.getAttribute(attr) === valor)[0]
   return {
-    el, ler, observar, desconectar, preferencia,
-    render: (props: Partial<PropsEscritorio3D> = {}, olhoFechado = false) => act(async () =>
-      root.render(createElement(PrivacidadePropostas.Provider, { value: olhoFechado },
-        createElement(Escritorio3D, { funcionarios, ...props })))),
+    el,
+    ler,
+    observar,
+    desconectar,
+    preferencia,
+    render: (props: Partial<PropsEscritorio3D> = {}, olhoFechado = false) =>
+      act(async () =>
+        root.render(
+          createElement(
+            PrivacidadePropostas.Provider,
+            { value: olhoFechado },
+            createElement(Escritorio3D, { funcionarios, ...props }),
+          ),
+        ),
+      ),
     mostrar: async (isIntersecting = true) => {
       await act(async () => intersecao([{ isIntersecting }]))
       await act(async () => vi.dynamicImportSettled())
@@ -118,7 +144,10 @@ it('mascara o balão Three.js com a prop oculto ou com o olho da casca', async (
   expect(a.el.textContent).not.toContain(moeda)
   await a.apontar()
   expect(a.el.textContent).toContain(moeda)
-  for (const [oculto, olho] of [[true, false], [false, true]]) {
+  for (const [oculto, olho] of [
+    [true, false],
+    [false, true],
+  ]) {
     await a.render({ valores, oculto }, olho)
     expect(a.ler('aria-label', 'Valor oculto')).toBeDefined()
     expect(a.el.textContent).not.toContain(moeda)
@@ -209,7 +238,9 @@ it('mantém a identificação sob demanda e o olho no fallback sem as plaquinhas
   await a.render({ mostrarPlaquinhas: true, valores, onSelecionar: selecionar }, true)
   expect(a.ler('class', 'maquete-placa maquete-rotulo')).toBeUndefined()
   expect(a.el.textContent).not.toContain(funcionario.nome)
-  const posto = a.el.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('aria-label')?.includes(funcionario.nome) === true)[0]
+  const posto = a.el.buscar(
+    n => n.tagName === 'BUTTON' && n.getAttribute('aria-label')?.includes(funcionario.nome) === true,
+  )[0]
   await act(async () => Simulate.focus(posto as unknown as HTMLElement))
   expect(a.el.textContent).toContain(POR_ID[funcionario.id].papel)
   expect(a.ler('aria-label', 'Valor oculto')).toBeDefined()
@@ -273,10 +304,11 @@ it('usa o SVG estático em movimento reduzido, inclusive se a preferência mudar
   await a.render()
   expect(a.ler('data-renderizacao', 'svg')).toBeDefined()
   expect(a.observar).not.toHaveBeenCalled()
-  const reduzir = (valor: boolean) => act(async () => {
-    a.preferencia.matches = valor
-    a.preferencia.dispatchEvent(new Event('change'))
-  })
+  const reduzir = (valor: boolean) =>
+    act(async () => {
+      a.preferencia.matches = valor
+      a.preferencia.dispatchEvent(new Event('change'))
+    })
   await reduzir(false)
   await a.mostrar()
   expect(a.ler('data-renderizacao', '3d')).toBeDefined()
@@ -288,7 +320,9 @@ it('usa o SVG estático em movimento reduzido, inclusive se a preferência mudar
 it('mantém a API da maquete e aplica altura, variante, estados e foco de sala', async () => {
   expectTypeOf<PropsEscritorio3D>().toMatchTypeOf<PropsEscritorioMaquete & { altura?: number }>()
   expectTypeOf<PropsEscritorioMaquete & { altura?: number }>().toMatchTypeOf<PropsEscritorio3D>()
-  expect(renderToStaticMarkup(createElement(Escritorio3D, { funcionarios, altura: 320 }))).toContain('--escritorio3d-altura:320px')
+  expect(renderToStaticMarkup(createElement(Escritorio3D, { funcionarios, altura: 320 }))).toContain(
+    '--escritorio3d-altura:320px',
+  )
 
   const a = ambiente()
   await a.render({ variante: 'compacta' })

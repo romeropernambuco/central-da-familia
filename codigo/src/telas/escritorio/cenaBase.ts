@@ -2,7 +2,11 @@
 export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
 /** Estados de interação, independentes dos estados persistidos do escritório. */
 export type EstadoAgente = 'trabalhando' | 'chamando' | 'resolvido' | 'parado'
-export interface FuncCena { id: string; sala?: string; estado: EstadoCena }
+export interface FuncCena {
+  id: string
+  sala?: string
+  estado: EstadoCena
+}
 export interface OpcoesCena {
   mini?: boolean
   /** Sala única do mini; sobrepõe o cadastro sem alterar o escritório completo. */
@@ -35,10 +39,23 @@ export interface Cena {
 }
 
 /** Salas na ordem dos botões. A geometria de cada uma está em cena3d.ts. */
-export const SALAS_NOME: Record<string, string> = { caixa: 'Caixa', casa: 'Casa', cartoes: 'Cartões', patrimonio: 'Patrimônio', recepcao: 'Recepção', gestao: 'Gestão', apoio: 'Apoio' }
+export const SALAS_NOME: Record<string, string> = {
+  caixa: 'Caixa',
+  casa: 'Casa',
+  cartoes: 'Cartões',
+  patrimonio: 'Patrimônio',
+  recepcao: 'Recepção',
+  gestao: 'Gestão',
+  apoio: 'Apoio',
+}
 
 export function temWebGL(): boolean {
-  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))) } catch { return false }
+  try {
+    const c = document.createElement('canvas')
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')))
+  } catch {
+    return false
+  }
 }
 
 /** Mede intervalos reais; o primeiro frame e as pausas n?o s?o amostras. */
@@ -47,32 +64,69 @@ export class MedidorFPS {
   private aquecimento = 0
   private tempo = 0
   private frames = 0
-  pausar() { this.ultimo = null; this.tempo = 0; this.frames = 0 }
+  pausar() {
+    this.ultimo = null
+    this.tempo = 0
+    this.frames = 0
+  }
   quadro(agora: number): number | null {
-    const anterior = this.ultimo; this.ultimo = agora
+    const anterior = this.ultimo
+    this.ultimo = agora
     if (anterior === null) return null
     const dt = agora - anterior
     if (dt <= 0) return null
-    if (this.aquecimento < 3000) { this.aquecimento += dt; return null }
-    this.tempo += dt; this.frames++
+    if (this.aquecimento < 3000) {
+      this.aquecimento += dt
+      return null
+    }
+    this.tempo += dt
+    this.frames++
     if (this.tempo < 1000) return null
-    const fps = Math.round(this.frames * 1000 / this.tempo)
-    this.tempo = 0; this.frames = 0
+    const fps = Math.round((this.frames * 1000) / this.tempo)
+    this.tempo = 0
+    this.frames = 0
     return fps
   }
 }
 
 /** Cada import tem sua pr?pria validade, inclusive depois do timeout. */
-export function tentarCarregarCena<T>(carregar: () => Promise<T>, montar: (modulos: T) => void, falhar: () => void): () => void {
+export function tentarCarregarCena<T>(
+  carregar: () => Promise<T>,
+  montar: (modulos: T) => void,
+  falhar: () => void,
+): () => void {
   let valida = true
-  const cancelar = () => { valida = false; clearTimeout(timeout) }
-  const timeout = setTimeout(() => { if (valida) { cancelar(); falhar() } }, 8000)
-  carregar().then(modulos => {
-    if (!valida) return
+  const cancelar = () => {
+    valida = false
     clearTimeout(timeout)
-    try { montar(modulos) } catch { cancelar(); falhar() }
-  }).catch(() => { if (valida) { cancelar(); falhar() } })
+  }
+  const timeout = setTimeout(() => {
+    if (valida) {
+      cancelar()
+      falhar()
+    }
+  }, 8000)
+  carregar()
+    .then(modulos => {
+      if (!valida) return
+      clearTimeout(timeout)
+      try {
+        montar(modulos)
+      } catch {
+        cancelar()
+        falhar()
+      }
+    })
+    .catch(() => {
+      if (valida) {
+        cancelar()
+        falhar()
+      }
+    })
   return cancelar
 }
 
-export const abaDoHash = (hash: string): 'hoje' | 'lembretes' | 'relatorio' => { const aba = new URLSearchParams(hash.split('?')[1] || '').get('aba'); return aba === 'lembretes' || aba === 'relatorio' ? aba : 'hoje' }
+export const abaDoHash = (hash: string): 'hoje' | 'lembretes' | 'relatorio' => {
+  const aba = new URLSearchParams(hash.split('?')[1] || '').get('aba')
+  return aba === 'lembretes' || aba === 'relatorio' ? aba : 'hoje'
+}

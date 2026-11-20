@@ -15,10 +15,14 @@ export function taxaRealAnual(taxa_bruta_anual: Taxa | Dec, aliquota: Taxa | Dec
 }
 
 /** Taxa real mensal: (1 + real_anual)^(1/12) − 1. */
-export function taxaRealMensal(real_anual: Taxa | Dec): Dec { return mensal(real_anual) }
+export function taxaRealMensal(real_anual: Taxa | Dec): Dec {
+  return mensal(real_anual)
+}
 
 /** Quando a taxa real não é positiva, o rendimento não repõe a inflação: não existe patrimônio que baste. */
-export function semValor(real_anual: Taxa | Dec): boolean { return taxa(real_anual).lte(0) }
+export function semValor(real_anual: Taxa | Dec): boolean {
+  return taxa(real_anual).lte(0)
+}
 
 /** Chave do alerta quando a taxa real não é positiva (a tela escreve: "Nesse cenário o rendimento não repõe a inflação"). */
 export const ALERTA_SEM_VALOR = 'rendimento nao repoe a inflacao'

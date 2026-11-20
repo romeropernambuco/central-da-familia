@@ -24,14 +24,18 @@ const ouvintes = new Set<() => void>()
 /** Avisa quando a lista guardada muda (a faixa de pendentes se redesenha). */
 export function ouvirGuardados(aviso: () => void) {
   ouvintes.add(aviso)
-  return () => { ouvintes.delete(aviso) }
+  return () => {
+    ouvintes.delete(aviso)
+  }
 }
 
 function ler(): EnvioGuardado[] {
   try {
     const lista = JSON.parse(localStorage.getItem(CHAVE) || '[]')
     if (!Array.isArray(lista)) return []
-    return lista.filter(item => item && typeof item.dono === 'string' && item.dados && typeof item.dados.chave === 'string')
+    return lista.filter(
+      item => item && typeof item.dono === 'string' && item.dados && typeof item.dados.chave === 'string',
+    )
   } catch {
     return []
   }
@@ -65,7 +69,9 @@ export function tirarPendente(chave: string) {
 
 /** O que ainda falta enviar deste dono (os recusados ficam de fora: esperam a decisão da pessoa). */
 export function pendentesGuardados(dono: string): NovoLancamento[] {
-  return ler().filter(item => item.dono === dono && !item.erro).map(item => item.dados)
+  return ler()
+    .filter(item => item.dono === dono && !item.erro)
+    .map(item => item.dados)
 }
 
 export function recusadosGuardados(dono: string): EnvioGuardado[] {

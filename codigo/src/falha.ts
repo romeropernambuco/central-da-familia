@@ -4,26 +4,50 @@
 
 /** Falta o endereço do banco ou a chave publicável no build (configuração de quem publica, não da família). */
 export class ErroConfig extends Error {
-  constructor() { super('Falta o endereço do banco neste app.'); this.name = 'ErroConfig' }
+  constructor() {
+    super('Falta o endereço do banco neste app.')
+    this.name = 'ErroConfig'
+  }
 }
 
-export interface Falha { titulo: string; texto: string }
+export interface Falha {
+  titulo: string
+  texto: string
+}
 
 export function textoDaFalha(e: unknown): Falha {
   if (e instanceof ErroConfig || (e as Error)?.name === 'ErroConfig')
-    return { titulo: 'O app está sem o endereço do banco', texto: 'Isso é um ajuste de quem publica o app, não é nada no seu celular. Avise quem cuida da Central e tente de novo daqui a pouco.' }
-  return { titulo: 'Não foi possível abrir a Central agora', texto: 'Parte do app não chegou ao seu celular. Confira a internet e toque em Tentar de novo.' }
+    return {
+      titulo: 'O app está sem o endereço do banco',
+      texto:
+        'Isso é um ajuste de quem publica o app, não é nada no seu celular. Avise quem cuida da Central e tente de novo daqui a pouco.',
+    }
+  return {
+    titulo: 'Não foi possível abrir a Central agora',
+    texto: 'Parte do app não chegou ao seu celular. Confira a internet e toque em Tentar de novo.',
+  }
 }
 
 /** O mínimo de elemento que a tela de falha usa (o #root de verdade, ou um falso no teste). */
-export interface RaizFalha { innerHTML: string; querySelector(s: string): { addEventListener(t: 'click', f: () => void): void } | null }
+export interface RaizFalha {
+  innerHTML: string
+  querySelector(s: string): { addEventListener(t: 'click', f: () => void): void } | null
+}
 
-const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
+const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 
 /** Escreve a falha no #root com o botão "Tentar de novo" (recarrega a página). */
-export function mostrarFalha(raiz: RaizFalha | null, e: unknown, recarregar: () => void = () => location.reload()): Falha {
+export function mostrarFalha(
+  raiz: RaizFalha | null,
+  e: unknown,
+  recarregar: () => void = () => location.reload(),
+): Falha {
   const f = textoDaFalha(e)
-  try { console.error('Central da Família não abriu:', e) } catch { /* sem console */ }
+  try {
+    console.error('Central da Família não abriu:', e)
+  } catch {
+    /* sem console */
+  }
   if (!raiz) return f
   raiz.innerHTML =
     '<main role="alert" style="max-width:420px;margin:0 auto;padding:48px 16px;font:16px/1.5 system-ui,-apple-system,sans-serif;color:inherit">' +

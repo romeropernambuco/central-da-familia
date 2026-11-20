@@ -12,17 +12,35 @@ export function useEdicaoNome(p: PessoaNome) {
   const salvar = async (nome: string, funcao: string) => {
     if (!permitido || !familia) throw new Error('Peça a quem administra a família para informar o nome')
     const ms = familia.papel === 'casal' ? await api.membros(familia.id) : []
-    const colecao = p.tipo === 'membro' ? ms : await api.config<any>(familia.id,p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas',null)
+    const colecao =
+      p.tipo === 'membro'
+        ? ms
+        : await api.config<any>(
+            familia.id,
+            p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas',
+            null,
+          )
     const listaNomes = p.tipo === 'membro' ? ms : p.tipo === 'assessor' ? colecao?.pessoas || [] : colecao || []
-    const n = validarNome(nome, listaNomes.map((x:any)=>({id:x.id,nome:p.tipo==='renda'?x.dono:x.nome})), p.id)
+    const n = validarNome(
+      nome,
+      listaNomes.map((x: any) => ({ id: x.id, nome: p.tipo === 'renda' ? x.dono : x.nome })),
+      p.id,
+    )
     if (api.salvarNomePessoa) await api.salvarNomePessoa(familia.id, p, n, funcao.trim())
     else {
       const chave = p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas'
       // Relê antes de escrever; preserva todos os campos, inclusive os não exibidos nesta folha.
       const cfg = await api.config<any>(familia.id, chave, null)
-      const lista: { id: string; nome: string; dono?: string; funcao?: string }[] = p.tipo === 'assessor' ? cfg?.pessoas : cfg
+      const lista: { id: string; nome: string; dono?: string; funcao?: string }[] =
+        p.tipo === 'assessor' ? cfg?.pessoas : cfg
       if (!lista?.some(x => x.id === p.id)) throw new Error('Cadastro não encontrado. Atualize a lista.')
-      const novas = lista.map(x => x.id !== p.id ? x : p.tipo === 'renda' ? { ...x, dono: n } : { ...x, nome: n, ...(p.tipo === 'assessor' ? { funcao: funcao.trim() } : {}) })
+      const novas = lista.map(x =>
+        x.id !== p.id
+          ? x
+          : p.tipo === 'renda'
+            ? { ...x, dono: n }
+            : { ...x, nome: n, ...(p.tipo === 'assessor' ? { funcao: funcao.trim() } : {}) },
+      )
       await api.salvarConfig(familia.id, chave, p.tipo === 'assessor' ? { ...cfg, pessoas: novas } : novas)
     }
     invalidarNomes()

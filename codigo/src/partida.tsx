@@ -8,7 +8,12 @@ import { App } from './app/App'
 import { ProtecaoCarga } from './componentes/Carregando'
 
 // tema: automático pelo celular; "claro" ou "escuro" se a pessoa escolher em Ajustes
-try { const t = localStorage.getItem('tema'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch { /* sem armazenamento */ }
+try {
+  const t = localStorage.getItem('tema')
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
+} catch {
+  /* sem armazenamento */
+}
 
 /** Abre o app. Se não der (banco sem endereço, pedaço que não baixou), a promessa falha e o main.tsx mostra a tela de falha. */
 export async function iniciar(): Promise<void> {
@@ -16,7 +21,13 @@ export async function iniciar(): Promise<void> {
   const raiz = document.getElementById('root')
   if (!raiz) throw new Error('Página sem o lugar do app (#root).')
   createRoot(raiz).render(
-    <StrictMode><Provedor api={api}><ProtecaoCarga><App /></ProtecaoCarga></Provedor></StrictMode>,
+    <StrictMode>
+      <Provedor api={api}>
+        <ProtecaoCarga>
+          <App />
+        </ProtecaoCarga>
+      </Provedor>
+    </StrictMode>,
   )
 }
 
@@ -24,10 +35,15 @@ export async function iniciar(): Promise<void> {
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !import.meta.env.VITE_DEMO && !modoExemplo) {
   const registrar = () => {
     // updateViaCache none: o navegador sempre confere se saiu versão nova do sw.js
-    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
-      // app instalado fica aberto por dias sem recarregar: confere versão nova toda vez que volta pra frente
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}) })
-    }).catch(() => {})
+    navigator.serviceWorker
+      .register('./sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        // app instalado fica aberto por dias sem recarregar: confere versão nova toda vez que volta pra frente
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {})
+        })
+      })
+      .catch(() => {})
   }
   if (document.readyState === 'complete') registrar()
   else addEventListener('load', registrar, { once: true })

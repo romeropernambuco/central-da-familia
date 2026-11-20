@@ -12,7 +12,14 @@ import { totaisGuardado } from '../lib/resumo/guardado'
 import { totalImoveis } from '../lib/resumo/imoveis'
 import { lerRecebimentos } from '../lib/resumo/leituras'
 import { totaisDoMes } from '../lib/resumo/movimentacao'
-import { destaqueOrcamento, disponivelHojeCasa, envelopesVisiveis, livreDaSemana, numeroEnvelope, tetoDoMes } from '../lib/resumo/orcamento'
+import {
+  destaqueOrcamento,
+  disponivelHojeCasa,
+  envelopesVisiveis,
+  livreDaSemana,
+  numeroEnvelope,
+  tetoDoMes,
+} from '../lib/resumo/orcamento'
 import { totalPendencias } from '../lib/resumo/pendencias'
 import { numerosRumo2029 } from '../lib/resumo/plano2029'
 import { porDiaDe } from '../lib/resumo/porDia'
@@ -28,7 +35,11 @@ function numeros(x: unknown): unknown {
   if (Array.isArray(x)) return x.map(numeros)
   if (!x || typeof x !== 'object') return undefined
   if ('unidade' in x && 'valor' in x) return numeros(x.valor)
-  return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, numeros(v)]).filter(([, v]) => v !== undefined))
+  return Object.fromEntries(
+    Object.entries(x)
+      .map(([k, v]) => [k, numeros(v)])
+      .filter(([, v]) => v !== undefined),
+  )
 }
 
 describe('dados do laboratório', () => {
@@ -37,7 +48,10 @@ describe('dados do laboratório', () => {
     vi.setSystemTime(new Date('2026-11-17T14:00:00Z'))
     reiniciarExemplo()
   })
-  afterEach(() => { vi.useRealTimers(); reiniciarExemplo() })
+  afterEach(() => {
+    vi.useRealTimers()
+    reiniciarExemplo()
+  })
 
   it('espelha todos os números de seletores e payloads da família de exemplo', async () => {
     const d = await carregarDadosInicio()
@@ -49,11 +63,38 @@ describe('dados do laboratório', () => {
     expect(d.pessoa.papel.valor).toBe(familia.papel)
     expect(d.familia.nome.valor).toBe(familia.nome)
     expect(d.saldoConta).toEqual({ estado: 'indisponivel', valor: null, unidade: 'reais', natureza: 'cadastrado' })
-    const [resumo, lanc, fs, banco, guardado, r, futuroEntradas, imoveis, escritorio, feiras, estoque, entradas, desejos, avisos, pres] = await Promise.all([
-      api.resumoHoje(id), api.lancamentos(id, mes), api.faturas(id, 14), api.faturasBanco(id), api.guardadoHoje(id),
-      lerRecebimentos(api, id), api.futuroEntradas!(id), api.imoveis!(id), api.escritorioHoje(id), api.feiras(id),
-      api.estoque(id), api.config<{ data: string; valor: number }[]>(id, 'entradas', []), api.desejos!(id),
-      api.avisosCasa(id), api.config<Record<string, string[]>>(id, 'casa_presenca', {}),
+    const [
+      resumo,
+      lanc,
+      fs,
+      banco,
+      guardado,
+      r,
+      futuroEntradas,
+      imoveis,
+      escritorio,
+      feiras,
+      estoque,
+      entradas,
+      desejos,
+      avisos,
+      pres,
+    ] = await Promise.all([
+      api.resumoHoje(id),
+      api.lancamentos(id, mes),
+      api.faturas(id, 14),
+      api.faturasBanco(id),
+      api.guardadoHoje(id),
+      lerRecebimentos(api, id),
+      api.futuroEntradas!(id),
+      api.imoveis!(id),
+      api.escritorioHoje(id),
+      api.feiras(id),
+      api.estoque(id),
+      api.config<{ data: string; valor: number }[]>(id, 'entradas', []),
+      api.desejos!(id),
+      api.avisosCasa(id),
+      api.config<Record<string, string[]>>(id, 'casa_presenca', {}),
     ])
     const s = destaqueOrcamento(resumo, familia.envelopeId, hoje, FUSO)
     const envs = envelopesVisiveis(resumo.envelopes, familia)
@@ -79,20 +120,31 @@ describe('dados do laboratório', () => {
     const proximo = desejos.find(x => x.id === primeiro)
 
     expect(numeros(d)).toEqual({
-      pessoa: {}, familia: {},
+      pessoa: {},
+      familia: {},
       hojePodeGastar: {
-        valor: s.valor, ateDomingo: meu.ate_domingo, jaSaiu: meu.gasto_hoje,
+        valor: s.valor,
+        ateDomingo: meu.ate_domingo,
+        jaSaiu: meu.gasto_hoje,
         ritmoMes: {
-          serieDiaria: Object.entries(porDiaDe(lanc, meu.id, hoje)).sort().map(([, valor]) => ({ valor })),
+          serieDiaria: Object.entries(porDiaDe(lanc, meu.id, hoje))
+            .sort()
+            .map(([, valor]) => ({ valor })),
           projecao: projecao(meu.gasto_mes, limite, hoje, meu.pontual_mes).fecha,
           limite,
         },
       },
       faturas: { total: f.total, proximas: f.lista.length ? f.lista.map(x => ({ valor: x.total })) : undefined },
       aplicacoes: {
-        total: g.total, rendeuHoje: g.hoje,
-        serie30Dias: numeros(guardado.por_dia_30), serieSaldo30Dias: numeros(guardado.saldo_30),
-        lista: guardado.aplicacoes.map(a => ({ saldo: a.saldo, rendeuHoje: a.rendeu_hoje_liquido, rendeuMes: a.rendeu_mes_liquido })),
+        total: g.total,
+        rendeuHoje: g.hoje,
+        serie30Dias: numeros(guardado.por_dia_30),
+        serieSaldo30Dias: numeros(guardado.saldo_30),
+        lista: guardado.aplicacoes.map(a => ({
+          saldo: a.saldo,
+          rendeuHoje: a.rendeu_hoje_liquido,
+          rendeuMes: a.rendeu_mes_liquido,
+        })),
       },
       imoveis: {
         valorCadastrado: totalImoveis(imoveis),
@@ -108,24 +160,32 @@ describe('dados do laboratório', () => {
       casa: {
         notasPendentes: c.nota,
         itensEmFalta: c.falta ?? undefined,
-        livreDaSemana: envs.filter(x => x.casa).map(x => {
-          const valor = livreDaSemana(x)
-          return valor == null ? {} : { valor }
-        }),
+        livreDaSemana: envs
+          .filter(x => x.casa)
+          .map(x => {
+            const valor = livreDaSemana(x)
+            return valor == null ? {} : { valor }
+          }),
         disponivelDiario: disponivelHojeCasa(envs),
       },
       movimentacaoMes: { ...mov, serie },
       desejos: { pensando, combinados, proximo: proximo && { valor: proximo.valor } },
       envelopes: envs.map(x => ({ limite: tetoDoMes(x), gasto: x.gasto_mes, livre: x.livre, podeGastarHoje: x.hoje })),
-      pendencias: { total: totalPendencias(escritorio), fila: escritorio.precisa_de_voce.length
-        ? escritorio.precisa_de_voce.map(q => q.valor == null ? {} : { valor: q.valor }) : undefined },
+      pendencias: {
+        total: totalPendencias(escritorio),
+        fila: escritorio.precisa_de_voce.length
+          ? escritorio.precisa_de_voce.map(q => (q.valor == null ? {} : { valor: q.valor }))
+          : undefined,
+      },
       funcionarios: EQUIPE.map(() => ({})),
       alertas: escritorio.precisa_de_voce.length ? escritorio.precisa_de_voce.map(() => ({})) : undefined,
     })
 
     expect(d.faturas.proximas.valor?.map(x => x.vencimento.valor) ?? []).toEqual(f.lista.map(x => x.vencimento))
     expect(d.desejos.proximo.valor?.id).toBe(primeiro)
-    expect(d.envelopes.valor?.map(x => x.situacao.valor)).toEqual(envs.map(x => numeroEnvelope(x, resumo.dias_restantes, hoje, FUSO).estado))
+    expect(d.envelopes.valor?.map(x => x.situacao.valor)).toEqual(
+      envs.map(x => numeroEnvelope(x, resumo.dias_restantes, hoje, FUSO).estado),
+    )
     expect(d.casa.feiraPendente.valor).toBe(c.feira)
     expect(d.casa.estoquePendente.valor).toBe(c.estoque)
     expect(d.plano2029.cenario.valor).toBe('garantido')
@@ -133,12 +193,15 @@ describe('dados do laboratório', () => {
     expect(d.imoveis.aluguelLiquidoEstimado.natureza).toBe('estimado')
     expect(d.funcionarios.valor).toHaveLength(19)
     const equipe = completarEquipe(escritorio.funcionarios, { rec: r.lista, est: estoque, avisos, pres }, hoje)
-    expect(d.funcionarios.valor?.map(x => [x.id, x.sala, x.estadoHoje.valor])).toEqual(EQUIPE.map(m => {
-      const f = equipe.find(x => x.id === m.id)
-      return [m.id, m.sala, f?.semDado ? null : f?.estado]
-    }))
-    expect(d.pendencias.fila.valor?.map(x => [x.funcionario, x.perguntaCurta]) ?? [])
-      .toEqual(escritorio.precisa_de_voce.map(x => [x.funcionario, x.assunto || x.pergunta]))
+    expect(d.funcionarios.valor?.map(x => [x.id, x.sala, x.estadoHoje.valor])).toEqual(
+      EQUIPE.map(m => {
+        const f = equipe.find(x => x.id === m.id)
+        return [m.id, m.sala, f?.semDado ? null : f?.estado]
+      }),
+    )
+    expect(d.pendencias.fila.valor?.map(x => [x.funcionario, x.perguntaCurta]) ?? []).toEqual(
+      escritorio.precisa_de_voce.map(x => [x.funcionario, x.assunto || x.pergunta]),
+    )
   })
 
   it('passa a mostrar o saldo de exemplo após cadastro, inclusive saldo zero', async () => {
@@ -147,7 +210,12 @@ describe('dados do laboratório', () => {
     const hoje = '2026-11-17'
     await api.salvarSaldoConta!(id, { id: 'teste', nome: 'Conta de exemplo', valor: 0, conferidoEm: hoje })
     const esperado = saldoDasContas(await api.saldosConta!(id))
-    expect((await carregarDadosInicio()).saldoConta).toEqual({ estado: 'pronto', valor: esperado.valor, unidade: 'reais', natureza: 'cadastrado' })
+    expect((await carregarDadosInicio()).saldoConta).toEqual({
+      estado: 'pronto',
+      valor: esperado.valor,
+      unidade: 'reais',
+      natureza: 'cadastrado',
+    })
   })
 
   it('não permite números literais no adaptador', () => {
@@ -155,8 +223,12 @@ describe('dados do laboratório', () => {
     const fonte = ts.createSourceFile(nome, ts.sys.readFile(nome)!, ts.ScriptTarget.Latest, true)
     const literais: string[] = []
     function visitar(no: ts.Node) {
-      if (ts.isNumericLiteral(no) || ts.isBigIntLiteral(no)
-        || (ts.isStringLiteralLike(no) && /^\s*(?:R\$\s*)?[+-]?\d+(?:[.,:-]\d+)*%?\s*$/.test(no.text))) literais.push(no.getText(fonte))
+      if (
+        ts.isNumericLiteral(no) ||
+        ts.isBigIntLiteral(no) ||
+        (ts.isStringLiteralLike(no) && /^\s*(?:R\$\s*)?[+-]?\d+(?:[.,:-]\d+)*%?\s*$/.test(no.text))
+      )
+        literais.push(no.getText(fonte))
       ts.forEachChild(no, visitar)
     }
     visitar(fonte)

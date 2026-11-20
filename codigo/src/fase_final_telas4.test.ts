@@ -27,9 +27,25 @@ describe('Gráfico A: o gasto do mês acumulado', () => {
 })
 
 describe('Gráfico B: o mês mais apertado', () => {
-  const l = (mes: string, saldo: number, piso: number): LinhaMes => ({ mes, saldo_inicial: 0, rendimento: 0, recebimentos: 0, teto: 0, compromissos: 0, dividas: 0, desvios: 0, retornos: 0, saldo_final: saldo, piso, fica_devendo: 0, devendo_ate: null })
+  const l = (mes: string, saldo: number, piso: number): LinhaMes => ({
+    mes,
+    saldo_inicial: 0,
+    rendimento: 0,
+    recebimentos: 0,
+    teto: 0,
+    compromissos: 0,
+    dividas: 0,
+    desvios: 0,
+    retornos: 0,
+    saldo_final: saldo,
+    piso,
+    fica_devendo: 0,
+    devendo_ate: null,
+  })
   it('é o de menor distância entre o caixa e o piso, não o de menor caixa', () => {
-    expect(mesMaisApertado([l('2027-01', 500, 100), l('2027-02', 400, 380), l('2027-03', 300, 100)])!.mes).toBe('2027-02')
+    expect(mesMaisApertado([l('2027-01', 500, 100), l('2027-02', 400, 380), l('2027-03', 300, 100)])!.mes).toBe(
+      '2027-02',
+    )
   })
 })
 
@@ -44,15 +60,64 @@ describe('Desejos: a resposta em 1 palavra antes da conta', () => {
 
 describe('Imóveis: formato do banco (f_15) para o motor', () => {
   it('centavos e mês AAAA-MM; contrato_ate vem como data do fim do mês', () => {
-    const i = imovelDoBanco({ id: 'x', dono_membro: 'm', dono_nome: 'Bruno', apelido: 'Sala (exemplo)', uso: 'aluga', valor_estimado_centavos: 60000000, aluguel_centavos: '300000', custos_centavos: 50000, vacancia: '0.08', tem_contrato: true, contrato_ate: '2029-12-31', venda_valor_centavos: null, venda_mes: null, venda_contrato: false })
-    expect(i).toMatchObject({ valor: 60000000, aluguel_bruto: 300000, custos_mes: 50000, vacancia: '0.08', contrato_ate: '2029-12', venda_valor: null, dono: 'm' })
+    const i = imovelDoBanco({
+      id: 'x',
+      dono_membro: 'm',
+      dono_nome: 'Bruno',
+      apelido: 'Sala (exemplo)',
+      uso: 'aluga',
+      valor_estimado_centavos: 60000000,
+      aluguel_centavos: '300000',
+      custos_centavos: 50000,
+      vacancia: '0.08',
+      tem_contrato: true,
+      contrato_ate: '2029-12-31',
+      venda_valor_centavos: null,
+      venda_mes: null,
+      venda_contrato: false,
+    })
+    expect(i).toMatchObject({
+      valor: 60000000,
+      aluguel_bruto: 300000,
+      custos_mes: 50000,
+      vacancia: '0.08',
+      contrato_ate: '2029-12',
+      venda_valor: null,
+      dono: 'm',
+    })
   })
   it('aceita também as chaves do tipo Imovel do motor', () => {
-    const i = imovelDoBanco({ id: 'y', dono: 'm-ana', apelido: 'Lote', uso: 'vende', valor: 20000000, aluguel_bruto: 0, custos_mes: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: 22000000, venda_mes: '2028-10', venda_contrato: false })
+    const i = imovelDoBanco({
+      id: 'y',
+      dono: 'm-ana',
+      apelido: 'Lote',
+      uso: 'vende',
+      valor: 20000000,
+      aluguel_bruto: 0,
+      custos_mes: 0,
+      vacancia: '0',
+      tem_contrato: false,
+      contrato_ate: null,
+      venda_valor: 22000000,
+      venda_mes: '2028-10',
+      venda_contrato: false,
+    })
     expect(i).toMatchObject({ valor: 20000000, venda_valor: 22000000, venda_mes: '2028-10', dono: 'm-ana' })
   })
   it('as regras de gravação: apelido, venda com valor e mês, meses vazios de 0 a 100%', () => {
-    const ok: NovoImovel = { apelido: 'Sala', valor: 1, uso: 'aluga', aluguel: 1, custos: 0, vacancia: '0.08', tem_contrato: true, contrato_ate: '2029-12', venda_valor: null, venda_mes: null, venda_contrato: false }
+    const ok: NovoImovel = {
+      apelido: 'Sala',
+      valor: 1,
+      uso: 'aluga',
+      aluguel: 1,
+      custos: 0,
+      vacancia: '0.08',
+      tem_contrato: true,
+      contrato_ate: '2029-12',
+      venda_valor: null,
+      venda_mes: null,
+      venda_contrato: false,
+    }
     expect(imovelInvalido(ok)).toBe('')
     expect(imovelInvalido({ ...ok, apelido: ' ' })).toMatch(/apelido/)
     expect(imovelInvalido({ ...ok, venda_valor: 10 })).toMatch(/valor e o mês/)
@@ -61,9 +126,15 @@ describe('Imóveis: formato do banco (f_15) para o motor', () => {
   it('o selo: com contrato entra; sem contrato não entra; onde mora não rende', () => {
     const b = { aluguel: 3000, venda_valor: null, venda_contrato: false }
     // revisão E14 (M2): o selo lê entra_na_conta do motor; sem o motor, não promete
-    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' }, true)).toEqual({ texto: 'com contrato até 12/2029', entra: true })
+    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' }, true)).toEqual({
+      texto: 'com contrato até 12/2029',
+      entra: true,
+    })
     expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: true, contrato_ate: '2029-12' })!.entra).toBeNull()
-    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: false, contrato_ate: null })).toEqual({ texto: 'sem contrato: não entra na conta', entra: false })
+    expect(seloImovel({ ...b, uso: 'aluga', tem_contrato: false, contrato_ate: null })).toEqual({
+      texto: 'sem contrato: não entra na conta',
+      entra: false,
+    })
     expect(seloImovel({ ...b, aluguel: 0, uso: 'mora', tem_contrato: false, contrato_ate: null })!.entra).toBe(false)
     expect(pctAno('0.032770')).toBe('3,3%')
   })
@@ -74,7 +145,12 @@ describe('Imóveis na família de exemplo (o cenário do teste do patrimônio, n
   it('o casal lê os 4 com o dono; filha e equipe nunca', async () => {
     reiniciarExemplo()
     const ana = await apiExemplo.imoveis!('fam-silva')
-    expect(ana.map(i => i.apelido)).toEqual(['Sala comercial (exemplo)', 'Apartamento de praia (exemplo)', 'Casa onde moramos (exemplo)', 'Lote (exemplo)'])
+    expect(ana.map(i => i.apelido)).toEqual([
+      'Sala comercial (exemplo)',
+      'Apartamento de praia (exemplo)',
+      'Casa onde moramos (exemplo)',
+      'Lote (exemplo)',
+    ])
     expect(ana.filter(i => i.meu).map(i => i.dono_nome)).toEqual(['Ana', 'Ana'])
     exemploComo('filha')
     await expect(apiExemplo.imoveis!('fam-silva')).rejects.toThrow(/casal/)
@@ -104,16 +180,23 @@ describe('Imóveis na família de exemplo (o cenário do teste do patrimônio, n
     expect(gs.some(t => /^Lote \(exemplo\): R\$ 220\.000(,00)? em 10\/2028 \(sem contrato\)/.test(t))).toBe(true)
     expect(s.gatilhos!.some(g => g.origem === 'recebimento' && g.motivo === 'incerto')).toBe(true)
     // MOTOR: o nome do recebimento vem em descricao (no exemplo, "Bônus do fim do ano (exemplo)")
-    expect(gs.some(t => /^Bônus do fim do ano \(exemplo\): R\$ [\d.,]+ em \d\d\/\d{4} \(incerto\)\.$/.test(t))).toBe(true)
+    expect(gs.some(t => /^Bônus do fim do ano \(exemplo\): R\$ [\d.,]+ em \d\d\/\d{4} \(incerto\)\.$/.test(t))).toBe(
+      true,
+    )
     expect(s.linha.find(l => l.recebimentos > 0)!.marcos!.some(m => !!m.descricao)).toBe(true)
     expect(s.imoveis!.find(i => i.apelido.startsWith('Casa'))!.aluguel_liquido_mes).toBe(0)
   })
 })
 
 describe('Aviso do VERIFICADOR: aluguel lançado também em "Renda certa em 2029"', () => {
-  const imo = [{ apelido: 'Sala comercial (exemplo)', aluguel_liquido_mes: 166430, entra_na_conta: true }, { apelido: 'Praia', aluguel_liquido_mes: 290000, entra_na_conta: false }]
+  const imo = [
+    { apelido: 'Sala comercial (exemplo)', aluguel_liquido_mes: 166430, entra_na_conta: true },
+    { apelido: 'Praia', aluguel_liquido_mes: 290000, entra_na_conta: false },
+  ]
   it('valor igual ou maior que o aluguel líquido de um imóvel com contrato: avisa com o apelido', () => {
-    expect(avisoRendaCerta(166430, imo)).toBe('Esse valor parece incluir o aluguel de Sala comercial (exemplo). Ele já conta sozinho.')
+    expect(avisoRendaCerta(166430, imo)).toBe(
+      'Esse valor parece incluir o aluguel de Sala comercial (exemplo). Ele já conta sozinho.',
+    )
     expect(avisoRendaCerta(500000, imo)).toMatch(/Sala comercial/)
   })
   it('menor que o aluguel, campo vazio ou imóvel sem contrato: não avisa', () => {
@@ -160,10 +243,15 @@ describe('MOTOR (contrato curto): a falta de 2029 explica o aluguel que não aba
     const f = frasesRenova(s).map(limpa)
     expect(g.aluguel_para_em).toBe('2029-04')
     const mm = `${g.mes!.slice(5)}/${g.mes!.slice(0, 4)}`
-    expect(f).toEqual([`Inclui ${limpa(frasesGatilho(g)).match(/R\$ [\d.,]+/)![0]} do aluguel de Sala comercial (exemplo). O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`])
+    expect(f).toEqual([
+      `Inclui ${limpa(frasesGatilho(g)).match(/R\$ [\d.,]+/)![0]} do aluguel de Sala comercial (exemplo). O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`,
+    ])
     // o selo da sala diz o mesmo
     const m = s.imoveis!.find(i => i.id === sala.id)!
-    expect(seloImovel({ ...sala, contrato_ate: '2029-03' }, m.entra_na_conta, g)).toEqual({ texto: `O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`, entra: false })
+    expect(seloImovel({ ...sala, contrato_ate: '2029-03' }, m.entra_na_conta, g)).toEqual({
+      texto: `O aluguel para em 04/2029. Renove até ${mm} para ele contar em 2029.`,
+      entra: false,
+    })
     expect(limpa(frasesGatilho(g))).toMatch(/contrato curto: renove até \d\d\/\d{4} para contar/)
   })
   it('contrato até 12/2029 (o do exemplo): nenhuma frase de renovar', async () => {

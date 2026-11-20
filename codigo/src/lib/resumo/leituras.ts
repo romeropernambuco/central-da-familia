@@ -22,8 +22,13 @@ export function lerLancamentosMes(api: Api, id: string, mes: string) {
 
 export async function lerRecebimentos(api: Api, id: string) {
   if (!api.recebimentos) throw new Error('Recebimentos indisponíveis')
-  const [lista, f, c] = await Promise.all([api.recebimentos(id), api.config(id, 'fontes_receita', {}), api.config(id, 'receitas_controle', {})])
-  const fontes = lerFontesReceita(f), controle = lerControleReceitas(c)
+  const [lista, f, c] = await Promise.all([
+    api.recebimentos(id),
+    api.config(id, 'fontes_receita', {}),
+    api.config(id, 'receitas_controle', {}),
+  ])
+  const fontes = lerFontesReceita(f),
+    controle = lerControleReceitas(c)
   if (fontes.corrompida || controle.corrompida) throw new Error('Cadastro de receitas incompleto')
   return { lista, fontes: fontes.fontes, controle: controle.controle }
 }
@@ -44,28 +49,58 @@ export async function lerPlano(api: Api, id: string) {
   const p = await api.futuroEntradas(id)
   const e = entradaDoCenario(p, 'garantido')
   if (!e) throw new Error(p.motivo || 'Projeção incompleta')
-  return { unidade: 'centavos' as const, ...numerosRumo2029(futuro(e), e), confirmar: p.confirmar, conferenciaAntiga: false, conferenciasPlano: conferenciasDoPlano(e) }
+  return {
+    unidade: 'centavos' as const,
+    ...numerosRumo2029(futuro(e), e),
+    confirmar: p.confirmar,
+    conferenciaAntiga: false,
+    conferenciasPlano: conferenciasDoPlano(e),
+  }
 }
 export async function lerImoveis(api: Api, id: string) {
   if (!api.imoveis) throw new Error('Imóveis indisponíveis')
   const lista = await api.imoveis(id)
-  if (!Array.isArray(lista) || camposAusentes(lista).length || lista.some(i => camposAusentes(i).length || !Number.isFinite(i.valor))) throw new Error('Imóveis incompletos')
+  if (
+    !Array.isArray(lista) ||
+    camposAusentes(lista).length ||
+    lista.some(i => camposAusentes(i).length || !Number.isFinite(i.valor))
+  )
+    throw new Error('Imóveis incompletos')
   // Falha de projeção não esconde o valor cadastrado. Não recalcula o aluguel.
   let aluguel: number | null = null
-  try { const p = await api.futuroEntradas?.(id); if (p?.entrada) aluguel = futuro(p.entrada).imoveis?.reduce((s, i) => s + i.aluguel_liquido_mes, 0) ?? null } catch { /* explicitamente indisponível */ }
-  return { valor: { unidade: 'reais' as const, valor: totalImoveis(lista) }, aluguel: aluguel === null ? null : { unidade: 'centavos' as const, valor: aluguel }, idsConferencia: lista.map(i => i.id) }
+  try {
+    const p = await api.futuroEntradas?.(id)
+    if (p?.entrada) aluguel = futuro(p.entrada).imoveis?.reduce((s, i) => s + i.aluguel_liquido_mes, 0) ?? null
+  } catch {
+    /* explicitamente indisponível */
+  }
+  return {
+    valor: { unidade: 'reais' as const, valor: totalImoveis(lista) },
+    aluguel: aluguel === null ? null : { unidade: 'centavos' as const, valor: aluguel },
+    idsConferencia: lista.map(i => i.id),
+  }
 }
 export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
   const r = await api.resumoHoje(f.id)
-  if (camposAusentes(r).length || r.so_nomes || !Array.isArray(r.envelopes) ||
-    r.envelopes.some(e => camposAusentes(e).length) || !Number.isFinite(r.pode_gastar_hoje)) throw new Error('Orçamento incompleto')
+  if (
+    camposAusentes(r).length ||
+    r.so_nomes ||
+    !Array.isArray(r.envelopes) ||
+    r.envelopes.some(e => camposAusentes(e).length) ||
+    !Number.isFinite(r.pode_gastar_hoje)
+  )
+    throw new Error('Orçamento incompleto')
   const d = destaqueOrcamento(r, f.envelopeId, hoje, FUSO)
   if (f.papel === 'pessoa' && d.escopo !== 'pessoal') throw new Error('Orçamento pessoal indisponível')
   if (!Number.isFinite(d.valor)) throw new Error('Orçamento incompleto')
   const casal = f.papel === 'casal'
   return {
-    valor: { unidade: 'reais' as const, valor: d.valor }, escopo: d.escopo, devendo: d.numero?.estado === 'devendo', envelope: d.meu ?? null,
-    envelopes: envelopesVisiveis(r.envelopes, f), diasRestantes: r.dias_restantes,
+    valor: { unidade: 'reais' as const, valor: d.valor },
+    escopo: d.escopo,
+    devendo: d.numero?.estado === 'devendo',
+    envelope: d.meu ?? null,
+    envelopes: envelopesVisiveis(r.envelopes, f),
+    diasRestantes: r.dias_restantes,
     casa: casal ? disponivelHojeCasa(r.envelopes) : null,
     placar: casal && Number(hoje.slice(8)) >= 3 ? projecaoCasal(r.placar_casal) : null,
     placarIndisponivel: casal && api.modo === 'real' && !r.placar_casal?.length,
@@ -73,18 +108,38 @@ export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
 }
 export async function lerMes(api: Api, id: string, hoje: string, mes = hoje.slice(0, 7)) {
   const [gastos, receitas, entradas] = await Promise.all([
-    lerLancamentosMes(api, id, mes), lerRecebimentos(api, id), api.config<{ data: string; valor: number }[]>(id, 'entradas', []),
+    lerLancamentosMes(api, id, mes),
+    lerRecebimentos(api, id),
+    api.config<{ data: string; valor: number }[]>(id, 'entradas', []),
   ])
-  if (!Array.isArray(gastos) || !Array.isArray(receitas.lista) || !Array.isArray(entradas) ||
-    camposAusentes(gastos).length || gastos.some(l => camposAusentes(l).length || !Number.isFinite(l.valor)) ||
+  if (
+    !Array.isArray(gastos) ||
+    !Array.isArray(receitas.lista) ||
+    !Array.isArray(entradas) ||
+    camposAusentes(gastos).length ||
+    gastos.some(l => camposAusentes(l).length || !Number.isFinite(l.valor)) ||
     receitas.lista.some(r => camposAusentes(r).length || !Number.isFinite(r.valor)) ||
-    entradas.some(e => !e.data || !Number.isFinite(e.valor))) throw new Error('Movimentação incompleta')
-  return { unidade: 'reais' as const, ...totaisDoMes(mes, hoje, gastos, receitas.lista, entradas, receitas.fontes, receitas.controle) }
+    entradas.some(e => !e.data || !Number.isFinite(e.valor))
+  )
+    throw new Error('Movimentação incompleta')
+  return {
+    unidade: 'reais' as const,
+    ...totaisDoMes(mes, hoje, gastos, receitas.lista, entradas, receitas.fontes, receitas.controle),
+  }
 }
 export async function lerAplicacoes(api: Api, id: string) {
   const g = await api.guardadoHoje(id)
-  if (camposAusentes(g).length || ![g.total, g.rendeu_hoje_liquido, g.rendeu_mes_liquido, g.rendeu_desde_inicio_liquido].every(Number.isFinite)) throw new Error('Aplicações incompletas')
-  return { unidade: 'reais' as const, ...totaisGuardado(g), idsConferencia: g.aplicacoes.map(a => a.id), atualizadoEm: g.atualizado_em || null }
+  if (
+    camposAusentes(g).length ||
+    ![g.total, g.rendeu_hoje_liquido, g.rendeu_mes_liquido, g.rendeu_desde_inicio_liquido].every(Number.isFinite)
+  )
+    throw new Error('Aplicações incompletas')
+  return {
+    unidade: 'reais' as const,
+    ...totaisGuardado(g),
+    idsConferencia: g.aplicacoes.map(a => a.id),
+    atualizadoEm: g.atualizado_em || null,
+  }
 }
 export async function lerPendencias(api: Api, id: string) {
   const e = await api.escritorioHoje(id)

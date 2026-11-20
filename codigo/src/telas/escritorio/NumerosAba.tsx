@@ -21,32 +21,82 @@ export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
   const [erro, setErro] = useState(false)
   const permitido = !!familia && !!membro && rotaPermitida(membro.rota, familia.papel, sessao?.dono) === membro.rota
   useEffect(() => {
-    setResultado(null); setErro(false)
+    setResultado(null)
+    setErro(false)
     if (!familia || !membro || !permitido) return
     let vivo = true
     // As leituras da ficha só entram no pacote quando o painel é aberto.
-    import('./numeros').then(({ numerosDaAba }) => vivo ? numerosDaAba(api, familia, membro.rota) : null)
-      .then(numeros => { if (vivo && numeros) setResultado({ numeros, exemplo: api.modo === 'exemplo' }) })
+    import('./numeros')
+      .then(({ numerosDaAba }) => (vivo ? numerosDaAba(api, familia, membro.rota) : null))
+      .then(numeros => {
+        if (vivo && numeros) setResultado({ numeros, exemplo: api.modo === 'exemplo' })
+      })
       .catch(async erro => {
         if (!vivo) return
         if (erro instanceof ErroSessao) {
           setErro(true)
-          await tentar(async () => { throw erro })
+          await tentar(async () => {
+            throw erro
+          })
           return
         }
         setErro(true)
       })
-    return () => { vivo = false }
+    return () => {
+      vivo = false
+    }
   }, [api, familia?.id, familia?.membroId, familia?.envelopeId, sessao?.userId, id, permitido, versao, n, invalidacao])
   if (!membro) return null
-  return <section className="numeros-aba" aria-label="Resumo da aba">
-    <h3><Icone nome="painel" />{membro.papel}</h3>
-    {!permitido ? <p className="sub">Esta aba está restrita ao perfil autorizado.</p> : <>
-      <p className="sub">{resultado?.exemplo ? 'Modo exemplo — estes números não são da sua família.' : 'Números da aba, nas mesmas leituras usadas pelo app.'}</p>
-      {!resultado && !erro && <p role="status">Consultando os números…</p>}
-      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível conferir." frase="Tente novamente para atualizar este resumo." acao={{ texto: 'Tentar de novo', aoClicar: () => setN(x => x + 1) }} /></div>}
-      {resultado && <dl className="rel-ind">{resultado.numeros.map(n => <div key={n.nome}><dt>{textoPrivado(n.nome)}</dt><dd className="txt">{n.valor !== undefined ? <Din v={n.valor} /> : textoPrivado(n.texto)}</dd></div>)}</dl>}
-      <a className="btn line" href={'#/' + membro.rota} onClick={ev => { ev.preventDefault(); fechar(); ir(membro.rota) }}><Icone nome="abrir" />Abrir aba</a>
-    </>}
-  </section>
+  return (
+    <section className="numeros-aba" aria-label="Resumo da aba">
+      <h3>
+        <Icone nome="painel" />
+        {membro.papel}
+      </h3>
+      {!permitido ? (
+        <p className="sub">Esta aba está restrita ao perfil autorizado.</p>
+      ) : (
+        <>
+          <p className="sub">
+            {resultado?.exemplo
+              ? 'Modo exemplo — estes números não são da sua família.'
+              : 'Números da aba, nas mesmas leituras usadas pelo app.'}
+          </p>
+          {!resultado && !erro && <p role="status">Consultando os números…</p>}
+          {erro && (
+            <div role="alert">
+              <EstadoVazio
+                ilustracao="Erro"
+                titulo="Não foi possível conferir."
+                frase="Tente novamente para atualizar este resumo."
+                acao={{ texto: 'Tentar de novo', aoClicar: () => setN(x => x + 1) }}
+              />
+            </div>
+          )}
+          {resultado && (
+            <dl className="rel-ind">
+              {resultado.numeros.map(n => (
+                <div key={n.nome}>
+                  <dt>{textoPrivado(n.nome)}</dt>
+                  <dd className="txt">{n.valor !== undefined ? <Din v={n.valor} /> : textoPrivado(n.texto)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <a
+            className="btn line"
+            href={'#/' + membro.rota}
+            onClick={ev => {
+              ev.preventDefault()
+              fechar()
+              ir(membro.rota)
+            }}
+          >
+            <Icone nome="abrir" />
+            Abrir aba
+          </a>
+        </>
+      )}
+    </section>
+  )
 }

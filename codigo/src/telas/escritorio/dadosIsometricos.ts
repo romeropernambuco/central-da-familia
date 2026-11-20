@@ -15,7 +15,10 @@ export interface PostoIsometrico {
   pendencias: number
 }
 
-export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: Papel; oculto: boolean; dono?: boolean }) {
+export function dadosIsometricos(
+  dado: EscritorioHoje | null,
+  perfil: { papel: Papel; oculto: boolean; dono?: boolean },
+) {
   const { papel, oculto, dono } = perfil
   const permitidos = EQUIPE.filter(m => papel === 'casal' || funcionarioAutorizado(m.id, papel, dono))
   const banco = new Map(dado?.funcionarios?.map(f => [APELIDO_BANCO[f.id] || f.id, f]))
@@ -29,12 +32,16 @@ export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: P
     if (!membro) return []
     const { valor: _valor, ...semValor } = p
     const valor = papel === 'equipe' ? null : valorDaPendencia(p)
-    return [{
-      membro,
-      pergunta: { ...(papel === 'equipe' ? semValor : p), funcionario: membro.id },
-      texto: oculto ? 'Tarefa pendente' : textoDeAgente(p.assunto || p.pergunta, p.trechosPrivados || [], papel === 'equipe'),
-      valor: papel === 'equipe' ? null : oculto ? '••••' : valor === null ? 'Ainda sem dado' : reais(valor),
-    }]
+    return [
+      {
+        membro,
+        pergunta: { ...(papel === 'equipe' ? semValor : p), funcionario: membro.id },
+        texto: oculto
+          ? 'Tarefa pendente'
+          : textoDeAgente(p.assunto || p.pergunta, p.trechosPrivados || [], papel === 'equipe'),
+        valor: papel === 'equipe' ? null : oculto ? '••••' : valor === null ? 'Ainda sem dado' : reais(valor),
+      },
+    ]
   })
   const porFuncionario = new Map<string, number>()
   for (const { membro } of fila) porFuncionario.set(membro.id, (porFuncionario.get(membro.id) ?? 0) + 1)
@@ -45,20 +52,31 @@ export function dadosIsometricos(dado: EscritorioHoje | null, perfil: { papel: P
     const trabalho = observavel && dado?.trabalhando?.find(t => pertence(t.funcionario, membro))
     const entrega = observavel && dado?.entregue?.find(t => pertence(t.funcionario, membro))
     const estadoDoBanco = f?.estado === 'trabalhando' || f?.estado === 'entregue' ? f.estado : 'vai_comecar'
-    const estado: EstadoFuncionario = pendencias ? 'precisa_de_voce'
-      : !observavel ? 'vai_comecar'
-      : trabalho ? 'trabalhando'
-      : entrega ? 'entregue'
-      : estadoDoBanco
+    const estado: EstadoFuncionario = pendencias
+      ? 'precisa_de_voce'
+      : !observavel
+        ? 'vai_comecar'
+        : trabalho
+          ? 'trabalhando'
+          : entrega
+            ? 'entregue'
+            : estadoDoBanco
     const semDado = !pendencias && estado === 'vai_comecar' && (!f || !!f.semDado || !observavel)
     return {
-      membro, pendencias,
+      membro,
+      pendencias,
       atividade: papel === 'casal' && trabalho ? trabalho.resumo : undefined,
       entrega: papel === 'casal' && entrega ? entrega : undefined,
       funcionario: {
         ...(papel === 'casal' && observavel ? f : undefined),
-        id: membro.id, nome: membro.nome, sala: SALAS_NOME[membro.sala], estado, semDado,
-        frase: (papel === 'casal' && observavel ? f?.frase : undefined) || (semDado ? `Ainda sem dado. ${membro.papel}` : membro.papel),
+        id: membro.id,
+        nome: membro.nome,
+        sala: SALAS_NOME[membro.sala],
+        estado,
+        semDado,
+        frase:
+          (papel === 'casal' && observavel ? f?.frase : undefined) ||
+          (semDado ? `Ainda sem dado. ${membro.papel}` : membro.papel),
         faz: membro.faz,
       },
     }

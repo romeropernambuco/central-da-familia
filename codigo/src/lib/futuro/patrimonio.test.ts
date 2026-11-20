@@ -4,35 +4,131 @@ import { describe, expect, it } from 'vitest'
 import { aluguelLiquidoMes, cabeDesejo, futuro, pct, rentabilidadeAno, textoDeCentavos as t, Dec } from './index'
 import type { FuturoEntrada, Imovel, Recebimento } from './index'
 
-const rec = (id: string, valor: number, mes: string, certo = true, mes_novo: string | null = null): Recebimento => ({ id, dono: 'exemplo', valor, mes_previsto: mes, mes_novo, certo, recebido: false })
-const meses = (de: string, ate: string) => { const out: string[] = []; let [a, m] = de.split('-').map(Number); const [a2, m2] = ate.split('-').map(Number); while (a < a2 || (a === a2 && m <= m2)) { out.push(`${a}-${m < 10 ? '0' : ''}${m}`); m++; if (m === 13) { a++; m = 1 } } return out }
-const imovel = (x: Partial<Imovel> & Pick<Imovel, 'id' | 'apelido' | 'valor' | 'uso'>): Imovel => ({ dono: 'exemplo', aluguel_bruto: 0, custos_mes: 0, vacancia: '0', tem_contrato: false, contrato_ate: null, venda_valor: null, venda_mes: null, venda_contrato: false, ...x })
+const rec = (id: string, valor: number, mes: string, certo = true, mes_novo: string | null = null): Recebimento => ({
+  id,
+  dono: 'exemplo',
+  valor,
+  mes_previsto: mes,
+  mes_novo,
+  certo,
+  recebido: false,
+})
+const meses = (de: string, ate: string) => {
+  const out: string[] = []
+  let [a, m] = de.split('-').map(Number)
+  const [a2, m2] = ate.split('-').map(Number)
+  while (a < a2 || (a === a2 && m <= m2)) {
+    out.push(`${a}-${m < 10 ? '0' : ''}${m}`)
+    m++
+    if (m === 13) {
+      a++
+      m = 1
+    }
+  }
+  return out
+}
+const imovel = (x: Partial<Imovel> & Pick<Imovel, 'id' | 'apelido' | 'valor' | 'uso'>): Imovel => ({
+  dono: 'exemplo',
+  aluguel_bruto: 0,
+  custos_mes: 0,
+  vacancia: '0',
+  tem_contrato: false,
+  contrato_ate: null,
+  venda_valor: null,
+  venda_mes: null,
+  venda_contrato: false,
+  ...x,
+})
 
-const SALA = imovel({ id: 'sala', apelido: 'Sala comercial', valor: 60_000_000, uso: 'aluga', aluguel_bruto: 300_000, custos_mes: 50_000, vacancia: '0.08', tem_contrato: true, contrato_ate: '2029-12' })
-const PRAIA = imovel({ id: 'praia', apelido: 'Apartamento de praia', valor: 90_000_000, uso: 'aluga', aluguel_bruto: 400_000, tem_contrato: false })
+const SALA = imovel({
+  id: 'sala',
+  apelido: 'Sala comercial',
+  valor: 60_000_000,
+  uso: 'aluga',
+  aluguel_bruto: 300_000,
+  custos_mes: 50_000,
+  vacancia: '0.08',
+  tem_contrato: true,
+  contrato_ate: '2029-12',
+})
+const PRAIA = imovel({
+  id: 'praia',
+  apelido: 'Apartamento de praia',
+  valor: 90_000_000,
+  uso: 'aluga',
+  aluguel_bruto: 400_000,
+  tem_contrato: false,
+})
 const CASA = imovel({ id: 'casa', apelido: 'Casa onde mora', valor: 150_000_000, uso: 'mora' })
-const LOTE = (contrato: boolean) => imovel({ id: 'lote', apelido: 'Lote', valor: 20_000_000, uso: 'vende', venda_valor: 22_000_000, venda_mes: '2028-10', venda_contrato: contrato })
+const LOTE = (contrato: boolean) =>
+  imovel({
+    id: 'lote',
+    apelido: 'Lote',
+    valor: 20_000_000,
+    uso: 'vende',
+    venda_valor: 22_000_000,
+    venda_mes: '2028-10',
+    venda_contrato: contrato,
+  })
 
-function cenario(loteComContrato: boolean, mes_reajuste = 0, atraso: string | null = '2027-09', hoje = '2026-11-14'): FuturoEntrada {
+function cenario(
+  loteComContrato: boolean,
+  mes_reajuste = 0,
+  atraso: string | null = '2027-09',
+  hoje = '2026-11-14',
+): FuturoEntrada {
   return {
-    hoje, saldo_caixa: 4_000_000,
-    aplicacoes: [{ id: 'ap', titular: 'exemplo', titulares: ['exemplo'], banco: 'Banco A (exemplo)', saldo: 120_000_000, taxa_bruta_anual: '0.12', isenta: false, aplicada_em: '2026-01-01', resgate_previsto: null, fgc: true }],
-    recebimentos: [
-      rec('contrato', 5_000_000, '2027-03'), rec('investimento', 12_000_000, '2027-08'),
-      ...meses('2026-12', '2028-12').map((m) => rec(`parcela-${m}`, 200_000, m)),
-      rec('comissao', 3_000_000, '2027-06', false), rec('atrasa', 2_500_000, '2027-05', true, atraso),
+    hoje,
+    saldo_caixa: 4_000_000,
+    aplicacoes: [
+      {
+        id: 'ap',
+        titular: 'exemplo',
+        titulares: ['exemplo'],
+        banco: 'Banco A (exemplo)',
+        saldo: 120_000_000,
+        taxa_bruta_anual: '0.12',
+        isenta: false,
+        aplicada_em: '2026-01-01',
+        resgate_previsto: null,
+        fgc: true,
+      },
     ],
-    compromissos: [], dividas: [], desvios: [], desejos: [],
+    recebimentos: [
+      rec('contrato', 5_000_000, '2027-03'),
+      rec('investimento', 12_000_000, '2027-08'),
+      ...meses('2026-12', '2028-12').map(m => rec(`parcela-${m}`, 200_000, m)),
+      rec('comissao', 3_000_000, '2027-06', false),
+      rec('atrasa', 2_500_000, '2027-05', true, atraso),
+    ],
+    compromissos: [],
+    dividas: [],
+    desvios: [],
+    desejos: [],
     imoveis: [SALA, PRAIA, CASA, LOTE(loteComContrato)],
     parametros: {
-      mes_base: '2026-11', virada: '2029-01', gasto_2029_hoje: 2_100_000, renda_certa_2029: 0, margem: '0.10', taxa_real_trabalho: '0.04',
-      taxa_bruta_ano: { 2026: '0.1375', 2027: '0.125', 2028: '0.11', 2029: '0.1025' }, ipca_ano: { 2026: '0.0522', 2027: '0.049', 2028: '0.04', 2029: '0.04' },
-      aliq_proj: '0.225', aliq_renda: '0.15', aliq_aluguel: '0.275', piso_meses: 6, teto_mes: 2_100_000, mes_reajuste,
+      mes_base: '2026-11',
+      virada: '2029-01',
+      gasto_2029_hoje: 2_100_000,
+      renda_certa_2029: 0,
+      margem: '0.10',
+      taxa_real_trabalho: '0.04',
+      taxa_bruta_ano: { 2026: '0.1375', 2027: '0.125', 2028: '0.11', 2029: '0.1025' },
+      ipca_ano: { 2026: '0.0522', 2027: '0.049', 2028: '0.04', 2029: '0.04' },
+      aliq_proj: '0.225',
+      aliq_renda: '0.15',
+      aliq_aluguel: '0.275',
+      piso_meses: 6,
+      teto_mes: 2_100_000,
+      mes_reajuste,
     },
   }
 }
-const ultimo = (e: FuturoEntrada) => { const l = futuro(e).linha; return l[l.length - 1].saldo_final }
-const mesDa = (e: FuturoEntrada, m: string) => futuro(e).linha.find((l) => l.mes === m)!
+const ultimo = (e: FuturoEntrada) => {
+  const l = futuro(e).linha
+  return l[l.length - 1].saldo_final
+}
+const mesDa = (e: FuturoEntrada, m: string) => futuro(e).linha.find(l => l.mes === m)!
 
 describe('aluguel líquido e rentabilidade (ESPERADO.md item 5)', () => {
   it('Sala: 3.000 × 0,92 − 500 = 2.260, IR 27,5% → R$ 1.638,50; 3,2770% ao ano', () => {
@@ -42,17 +138,23 @@ describe('aluguel líquido e rentabilidade (ESPERADO.md item 5)', () => {
   })
   it('casa onde mora: renda zero; sem aliq_aluguel nos parâmetros usa 27,5% e marca [confirmar]', () => {
     expect(aluguelLiquidoMes(CASA, '0.275')).toBe(0)
-    const e = cenario(false); delete (e.parametros as { aliq_aluguel?: string }).aliq_aluguel
+    const e = cenario(false)
+    delete (e.parametros as { aliq_aluguel?: string }).aliq_aluguel
     const s = futuro(e)
-    expect(s.aliq_aluguel_confirmar).toBe(true); expect(s.aluguel_liquido_2029).toBe(163_850)
+    expect(s.aliq_aluguel_confirmar).toBe(true)
+    expect(s.aluguel_liquido_2029).toBe(163_850)
   })
 })
 
 describe('cenário A (Lote sem contrato), teto fixo como no ESPERADO.md', () => {
   const s = futuro(cenario(false))
   it('linha de 12/2026 a 12/2028 com as entradas no mês certo (meses conferidos com o VERIFICADOR)', () => {
-    expect(s.linha[0].mes).toBe('2026-12'); expect(s.linha.length).toBe(25)
-    const v = (m: string) => { const l = s.linha.find((x) => x.mes === m)!; return [t(l.saldo_inicial), t(l.rendimento), t(l.recebimentos + l.alugueis!), t(l.saldo_final)] }
+    expect(s.linha[0].mes).toBe('2026-12')
+    expect(s.linha.length).toBe(25)
+    const v = (m: string) => {
+      const l = s.linha.find(x => x.mes === m)!
+      return [t(l.saldo_inicial), t(l.rendimento), t(l.recebimentos + l.alugueis!), t(l.saldo_final)]
+    }
     expect(v('2026-12')).toEqual(['1240000.00', '10710.02', '3638.50', '1233348.52'])
     expect(v('2027-03')).toEqual(['1217074.55', '9595.57', '53638.50', '1259308.62'])
     expect(v('2027-08')).toEqual(['1228574.10', '9686.24', '123638.50', '1340898.84'])
@@ -69,7 +171,7 @@ describe('cenário A (Lote sem contrato), teto fixo como no ESPERADO.md', () => 
     expect(t(s.renda_total_2029!)).toBe('5685.93')
   })
   it('gatilhos: comissão incerta, praia sem contrato e venda do Lote sem contrato; nenhum entra na conta', () => {
-    expect(s.gatilhos!.map((g) => [g.id, g.tipo, g.motivo, t(g.valor), g.mes])).toEqual([
+    expect(s.gatilhos!.map(g => [g.id, g.tipo, g.motivo, t(g.valor), g.mes])).toEqual([
       ['praia', 'aluguel', 'sem contrato', t(aluguelLiquidoMes(PRAIA, '0.275')), null],
       ['lote', 'venda', 'sem contrato', '220000.00', '2028-10'],
       ['comissao', 'recebimento', 'incerto', '30000.00', '2027-06'],
@@ -85,12 +187,13 @@ describe('cenário A (Lote sem contrato), teto fixo como no ESPERADO.md', () => 
     expect(t(noPrazo - ultimo(cenario(false)))).toBe('871.93')
   })
   it('rentabilidade por imóvel comparada com a taxa real das aplicações', () => {
-    const sala = s.imoveis!.find((i) => i.id === 'sala')!
+    const sala = s.imoveis!.find(i => i.id === 'sala')!
     expect(pct(new Dec(sala.rentabilidade_ano))).toBe('3.2770')
     expect(pct(new Dec(sala.taxa_real_aplicacoes))).toBe('4.5313') // Focus 2029 com IR 15% (aliq_renda)
-    expect(sala.rende_mais_que_aplicacao).toBe(false); expect(sala.entra_na_conta).toBe(true)
-    expect(s.imoveis!.find((i) => i.id === 'praia')!.entra_na_conta).toBe(false)
-    expect(s.imoveis!.find((i) => i.id === 'casa')!.aluguel_liquido_mes).toBe(0)
+    expect(sala.rende_mais_que_aplicacao).toBe(false)
+    expect(sala.entra_na_conta).toBe(true)
+    expect(s.imoveis!.find(i => i.id === 'praia')!.entra_na_conta).toBe(false)
+    expect(s.imoveis!.find(i => i.id === 'casa')!.aluguel_liquido_mes).toBe(0)
   })
 })
 
@@ -98,13 +201,19 @@ describe('cenário B (Lote com contrato)', () => {
   const s = futuro(cenario(true))
   it('a venda entra bruta em 10/2028 e o Lote sai do patrimônio de imóveis', () => {
     const l = mesDa(cenario(true), '2028-10')
-    expect([t(l.saldo_inicial), t(l.rendimento), t(l.recebimentos + l.alugueis!), t(l.saldo_final)]).toEqual(['1262471.96', '8802.55', '223638.50', '1473913.01'])
+    expect([t(l.saldo_inicial), t(l.rendimento), t(l.recebimentos + l.alugueis!), t(l.saldo_final)]).toEqual([
+      '1262471.96',
+      '8802.55',
+      '223638.50',
+      '1473913.01',
+    ])
     expect(t(s.linha[24].saldo_final)).toBe('1459359.30')
     expect(t(s.patrimonio_imoveis!)).toBe('3000000.00')
-    expect(t(s.renda_sustentavel)).toBe('4777.56'); expect(t(s.renda_total_2029!)).toBe('6416.06')
+    expect(t(s.renda_sustentavel)).toBe('4777.56')
+    expect(t(s.renda_total_2029!)).toBe('6416.06')
     expect(t(s.linha[24].saldo_final - futuro(cenario(false)).linha[24].saldo_final)).toBe('223028.58')
-    expect(s.gatilhos!.map((g) => g.id)).toEqual(['praia', 'comissao'])
-    expect(s.imoveis!.find((i) => i.id === 'lote')!.vendido).toBe(true)
+    expect(s.gatilhos!.map(g => g.id)).toEqual(['praia', 'comissao'])
+    expect(s.imoveis!.find(i => i.id === 'lote')!.vendido).toBe(true)
   })
 })
 
@@ -117,10 +226,11 @@ describe('variante com reajuste do teto em janeiro (ESPERADO.md premissa 3)', ()
 
 describe('valor de imóvel nunca vira saque', () => {
   it('tirar ou pôr imóveis sem aluguel com contrato nem venda com contrato não muda a linha', () => {
-    const com = cenario(false), sem = { ...cenario(false), imoveis: [SALA] }
+    const com = cenario(false),
+      sem = { ...cenario(false), imoveis: [SALA] }
     expect(futuro(sem).linha).toEqual(futuro(com).linha)
     const so = { ...cenario(false), imoveis: [] }
-    expect(futuro(so).linha.every((l) => l.alugueis === 0)).toBe(true)
+    expect(futuro(so).linha.every(l => l.alugueis === 0)).toBe(true)
   })
   it('faltando dinheiro, o motor sugere cortar ou guardar e nunca vender imóvel', () => {
     const pobre = { ...cenario(false), saldo_caixa: 0, aplicacoes: [] }
@@ -134,57 +244,108 @@ describe('modo renda (2029) soma aplicações + aluguel com contrato', () => {
   it('02/01/2029: renda_total = renda das aplicações + aluguel da Sala; contrato acaba em 12/2029 e vira gatilho depois', () => {
     const e = cenario(false, 0, '2027-09', '2029-01-02')
     const r = futuro(e).renda!
-    expect(r.aluguel_liquido).toBe(163_850); expect(r.renda_total).toBe(r.renda_sustentavel + 163_850)
+    expect(r.aluguel_liquido).toBe(163_850)
+    expect(r.renda_total).toBe(r.renda_sustentavel + 163_850)
     const depois = futuro(cenario(false, 0, '2027-09', '2030-01-05'))
     expect(depois.renda!.aluguel_liquido).toBe(0)
-    expect(depois.gatilhos!.some((g) => g.id === 'sala' && g.motivo === 'depois do contrato' && g.mes === '2030-01')).toBe(true)
-    expect(cabeDesejo(e, { id: 'd', dono: 'exemplo', valor: 100_000, mes: '2029-02', volta_de: 'nada', volta: 0, volta_mes: null, antecipado: null, volta_certa: false }).modo).toBe('renda')
+    expect(
+      depois.gatilhos!.some(g => g.id === 'sala' && g.motivo === 'depois do contrato' && g.mes === '2030-01'),
+    ).toBe(true)
+    expect(
+      cabeDesejo(e, {
+        id: 'd',
+        dono: 'exemplo',
+        valor: 100_000,
+        mes: '2029-02',
+        volta_de: 'nada',
+        volta: 0,
+        volta_mes: null,
+        antecipado: null,
+        volta_certa: false,
+      }).modo,
+    ).toBe('renda')
   })
 })
 
 describe('nome do recebimento repassado (descricao, como no futuro_entradas da f_08)', () => {
   it('com descricao: aparece no gatilho e no marco do mês; sem ela: null e a conta não muda', () => {
     const e = cenario(true)
-    e.recebimentos = e.recebimentos.map((r) => (r.id === 'comissao' ? { ...r, descricao: 'Comissão da venda (exemplo)' } : r.id === 'investimento' ? { ...r, descricao: 'Volta do investimento (exemplo)' } : r))
+    e.recebimentos = e.recebimentos.map(r =>
+      r.id === 'comissao'
+        ? { ...r, descricao: 'Comissão da venda (exemplo)' }
+        : r.id === 'investimento'
+          ? { ...r, descricao: 'Volta do investimento (exemplo)' }
+          : r,
+    )
     const s = futuro(e)
-    expect(s.gatilhos!.find((g) => g.id === 'comissao')!.descricao).toBe('Comissão da venda (exemplo)')
-    const ago = s.linha.find((l) => l.mes === '2027-08')!.marcos!
-    expect(ago).toContainEqual({ id: 'investimento', tipo: 'recebimento', descricao: 'Volta do investimento (exemplo)', dono: 'exemplo', valor: 12_000_000 })
-    expect(s.linha.find((l) => l.mes === '2027-09')!.marcos!.map((m) => [m.id, m.descricao])).toEqual([['parcela-2027-09', null], ['atrasa', null]])
-    expect(s.linha.find((l) => l.mes === '2028-10')!.marcos!.find((m) => m.tipo === 'venda')).toEqual({ id: 'lote', tipo: 'venda', descricao: 'Lote', dono: 'exemplo', valor: 22_000_000 })
+    expect(s.gatilhos!.find(g => g.id === 'comissao')!.descricao).toBe('Comissão da venda (exemplo)')
+    const ago = s.linha.find(l => l.mes === '2027-08')!.marcos!
+    expect(ago).toContainEqual({
+      id: 'investimento',
+      tipo: 'recebimento',
+      descricao: 'Volta do investimento (exemplo)',
+      dono: 'exemplo',
+      valor: 12_000_000,
+    })
+    expect(s.linha.find(l => l.mes === '2027-09')!.marcos!.map(m => [m.id, m.descricao])).toEqual([
+      ['parcela-2027-09', null],
+      ['atrasa', null],
+    ])
+    expect(s.linha.find(l => l.mes === '2028-10')!.marcos!.find(m => m.tipo === 'venda')).toEqual({
+      id: 'lote',
+      tipo: 'venda',
+      descricao: 'Lote',
+      dono: 'exemplo',
+      valor: 22_000_000,
+    })
     // marcos somam o que entra no mês (fora o aluguel, que tem coluna própria)
     for (const l of s.linha) expect(l.marcos!.reduce((t2, m) => t2 + m.valor, 0)).toBe(l.recebimentos)
     const semNome = futuro(cenario(true))
-    expect(semNome.linha.map((l) => l.saldo_final)).toEqual(s.linha.map((l) => l.saldo_final))
-    expect(semNome.gatilhos!.find((g) => g.id === 'comissao')!.descricao).toBeNull()
+    expect(semNome.linha.map(l => l.saldo_final)).toEqual(s.linha.map(l => l.saldo_final))
+    expect(semNome.gatilhos!.find(g => g.id === 'comissao')!.descricao).toBeNull()
   })
 })
 
 describe('contrato curto não abate o gasto pra sempre (revisão E14, M1)', () => {
-  const com = (ate: string) => { const e = cenario(false); e.imoveis = [{ ...SALA, contrato_ate: ate }, PRAIA, CASA, LOTE(false)]; return e }
+  const com = (ate: string) => {
+    const e = cenario(false)
+    e.imoveis = [{ ...SALA, contrato_ate: ate }, PRAIA, CASA, LOTE(false)]
+    return e
+  }
   it('contrato até 12/2029: abate o perpétuo, entra_na_conta e soma na renda de 2029 (números do VERIFICADOR iguais)', () => {
     const s = futuro(com('2029-12'))
-    expect(s.imoveis!.find((i) => i.id === 'sala')!.entra_na_conta).toBe(true)
-    expect(t(s.aluguel_liquido_2029!)).toBe('1638.50'); expect(t(s.renda_total_2029!)).toBe('5685.93')
-    expect(s.gatilhos!.some((g) => g.motivo === 'renova o contrato')).toBe(false)
+    expect(s.imoveis!.find(i => i.id === 'sala')!.entra_na_conta).toBe(true)
+    expect(t(s.aluguel_liquido_2029!)).toBe('1638.50')
+    expect(t(s.renda_total_2029!)).toBe('5685.93')
+    expect(s.gatilhos!.some(g => g.motivo === 'renova o contrato')).toBe(false)
   })
   it('contrato até 03/2029: o aluguel entra na linha até 12/2028, mas não abate o perpétuo; vira gatilho "renova até 12/2029"', () => {
-    const curto = futuro(com('2029-03')), longo = futuro(com('2029-12'))
-    expect(curto.linha.map((l) => l.saldo_final)).toEqual(longo.linha.map((l) => l.saldo_final)) // a linha até 2028 é a mesma
-    const sala = curto.imoveis!.find((i) => i.id === 'sala')!
-    expect(sala.entra_na_conta).toBe(false); expect(sala.aluguel_liquido_mes).toBe(163_850)
-    expect(curto.aluguel_liquido_2029).toBe(0); expect(curto.renda_total_2029).toBe(curto.renda_sustentavel)
-    expect(curto.gatilhos!.find((g) => g.id === 'sala')).toMatchObject({ motivo: 'renova o contrato', mes: '2029-12', aluguel_para_em: '2029-04', valor: 163_850, por_mes: true }) // VERIFICADOR: o aluguel para em 04/2029; 12/2029 é o prazo pra renovar
+    const curto = futuro(com('2029-03')),
+      longo = futuro(com('2029-12'))
+    expect(curto.linha.map(l => l.saldo_final)).toEqual(longo.linha.map(l => l.saldo_final)) // a linha até 2028 é a mesma
+    const sala = curto.imoveis!.find(i => i.id === 'sala')!
+    expect(sala.entra_na_conta).toBe(false)
+    expect(sala.aluguel_liquido_mes).toBe(163_850)
+    expect(curto.aluguel_liquido_2029).toBe(0)
+    expect(curto.renda_total_2029).toBe(curto.renda_sustentavel)
+    expect(curto.gatilhos!.find(g => g.id === 'sala')).toMatchObject({
+      motivo: 'renova o contrato',
+      mes: '2029-12',
+      aluguel_para_em: '2029-04',
+      valor: 163_850,
+      por_mes: true,
+    }) // VERIFICADOR: o aluguel para em 04/2029; 12/2029 é o prazo pra renovar
     // o necessário sobe exatamente o que o aluguel abatia: (gasto − 1.638,50) × 1,1 ÷ taxa contra gasto × 1,1 ÷ taxa
     expect(curto.patrimonio_necessario!).toBeGreaterThan(longo.patrimonio_necessario!)
   })
   it('modo renda em 02/01/2029 com contrato até 03/2029: o aluguel entra no mês, não no perpétuo; em 04/2029 já não entra', () => {
     const e = { ...com('2029-03'), hoje: '2029-01-02' }
     const r = futuro(e)
-    expect(r.renda!.aluguel_liquido).toBe(163_850); expect(r.renda!.renda_total).toBe(r.renda!.renda_sustentavel + 163_850)
+    expect(r.renda!.aluguel_liquido).toBe(163_850)
+    expect(r.renda!.renda_total).toBe(r.renda!.renda_sustentavel + 163_850)
     expect(r.aluguel_liquido_2029).toBe(0)
-    expect(r.imoveis!.find((i) => i.id === 'sala')!.entra_na_conta).toBe(false)
-    expect(r.gatilhos!.find((g) => g.id === 'sala')!.motivo).toBe('renova o contrato')
+    expect(r.imoveis!.find(i => i.id === 'sala')!.entra_na_conta).toBe(false)
+    expect(r.gatilhos!.find(g => g.id === 'sala')!.motivo).toBe('renova o contrato')
     const longo = futuro({ ...com('2029-12'), hoje: '2029-01-02' })
     expect(r.renda!.folga_do_mes).toBe(longo.renda!.folga_do_mes) // no mês, os 2 recebem o aluguel
     expect(futuro({ ...com('2029-03'), hoje: '2029-04-02' }).renda!.aluguel_liquido).toBe(0)

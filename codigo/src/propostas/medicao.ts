@@ -12,14 +12,19 @@ export function medirNumeros(quadro: HTMLElement): string[] {
   const resultado: string[] = []
 
   function registrar(texto: string) {
-    const visivel = Array.from(faixa.getClientRects()).some(r =>
-      r.width > 0 && r.height > 0 && r.right > esquerda && r.left < direita && r.bottom > topo && r.top < base)
+    const visivel = Array.from(faixa.getClientRects()).some(
+      r => r.width > 0 && r.height > 0 && r.right > esquerda && r.left < direita && r.bottom > topo && r.top < base,
+    )
     if (visivel && texto.trim()) resultado.push(texto.replace(/\s+/g, ' ').trim())
   }
 
   function percorrer(elemento: Element) {
     if (elemento.matches('script, style')) return
-    const visivel = elemento.checkVisibility?.({ opacityProperty: true, visibilityProperty: true, contentVisibilityAuto: true })
+    const visivel = elemento.checkVisibility?.({
+      opacityProperty: true,
+      visibilityProperty: true,
+      contentVisibilityAuto: true,
+    })
     if (visivel === false && getComputedStyle(elemento).display !== 'contents') return
 
     if (elemento.matches(marcador)) {

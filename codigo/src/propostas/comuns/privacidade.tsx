@@ -13,9 +13,20 @@ const formatadores = {
 /** Marca uma ocorrência para a contagem, inclusive percentual ou número exibido sem unidade. */
 export function NumeroFinanceiro({ children, className }: { children: ReactNode; className?: string }) {
   const oculto = useValoresOcultos()
-  return <span className={className ? `numero-financeiro ${className}` : 'numero-financeiro'} data-numero-financeiro={!oculto || undefined}>
-    {oculto ? <span role="img" aria-label="Valor oculto">•••</span> : children}
-  </span>
+  return (
+    <span
+      className={className ? `numero-financeiro ${className}` : 'numero-financeiro'}
+      data-numero-financeiro={!oculto || undefined}
+    >
+      {oculto ? (
+        <span role="img" aria-label="Valor oculto">
+          •••
+        </span>
+      ) : (
+        children
+      )}
+    </span>
+  )
 }
 
 type CampoFinanceiro = Campo<number, 'reais' | 'centavos' | 'percentual' | 'quantidade'>
@@ -25,9 +36,12 @@ export function Valor({ campo, className }: { campo: CampoFinanceiro; className?
   const percentual = campo.unidade === 'percentual'
   const unidade = campo.unidade === 'centavos' ? 'reais' : campo.unidade
   const valor = campo.unidade === 'centavos' ? campo.valor / 100 : campo.valor
-  return <NumeroFinanceiro className={className}>
-    {formatadores[unidade].format(valor)}{percentual && <span className="numero-simbolo">%</span>}
-  </NumeroFinanceiro>
+  return (
+    <NumeroFinanceiro className={className}>
+      {formatadores[unidade].format(valor)}
+      {percentual && <span className="numero-simbolo">%</span>}
+    </NumeroFinanceiro>
+  )
 }
 
 /** Use em gráficos, textos compostos e outros detalhes que podem revelar valores. */

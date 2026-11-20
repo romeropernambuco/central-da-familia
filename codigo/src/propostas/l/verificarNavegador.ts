@@ -14,9 +14,13 @@ import { pathToFileURL } from 'node:url'
 import { env } from 'node:process'
 import type { DadosInicio } from '../dadosExemplo'
 
-export const chromium = [env.BROWSER_CHROME, join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
+export const chromium = [
+  env.BROWSER_CHROME,
+  join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] ?? '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
 const pasta = 'src/propostas/l'
@@ -27,50 +31,80 @@ async function montarPagina(snapshots: DadosInicio[]) {
   const pacote = await rollup({
     input: entrada,
     external: ['react', 'react-dom', 'lucide-react'],
-    plugins: [{
-      name: 'previa-l',
-      resolveId(id, origem) {
-        if (id === entrada || estilo.test(id)) return id
-        if (id === 'three') return resolve('node_modules/three/build/three.module.js')
-        if (!origem || !id.startsWith('.')) return null
-        const caminho = resolve(dirname(origem), id)
-        return [caminho + '.tsx', caminho + '.ts', join(caminho, 'index.ts')].find(existsSync)
+    plugins: [
+      {
+        name: 'previa-l',
+        resolveId(id, origem) {
+          if (id === entrada || estilo.test(id)) return id
+          if (id === 'three') return resolve('node_modules/three/build/three.module.js')
+          if (!origem || !id.startsWith('.')) return null
+          const caminho = resolve(dirname(origem), id)
+          return [caminho + '.tsx', caminho + '.ts', join(caminho, 'index.ts')].find(existsSync)
+        },
+        load(id) {
+          if (estilo.test(id)) return ''
+          if (id === entrada)
+            return [
+              'export { Proposta } from ' + JSON.stringify(resolve(pasta, 'Proposta.tsx')),
+              'export { PrivacidadePropostas } from ' + JSON.stringify(resolve('src/propostas/comuns/privacidade.tsx')),
+              'export { medirNumeros } from ' + JSON.stringify(resolve('src/propostas/medicao.ts')),
+            ].join('\n')
+        },
+        transform(codigo, id) {
+          if (!/\.tsx?$/.test(id)) return
+          const fonte = id.endsWith('.tsx') ? "import React from 'react';\n" + codigo : codigo
+          return ts.transpileModule(fonte, {
+            compilerOptions: {
+              target: ts.ScriptTarget.ES2022,
+              module: ts.ModuleKind.ESNext,
+              jsx: ts.JsxEmit.React,
+            },
+            fileName: id,
+          }).outputText
+        },
       },
-      load(id) {
-        if (estilo.test(id)) return ''
-        if (id === entrada) return [
-          'export { Proposta } from ' + JSON.stringify(resolve(pasta, 'Proposta.tsx')),
-          'export { PrivacidadePropostas } from ' + JSON.stringify(resolve('src/propostas/comuns/privacidade.tsx')),
-          'export { medirNumeros } from ' + JSON.stringify(resolve('src/propostas/medicao.ts')),
-        ].join('\n')
-      },
-      transform(codigo, id) {
-        if (!/\.tsx?$/.test(id)) return
-        const fonte = id.endsWith('.tsx') ? "import React from 'react';\n" + codigo : codigo
-        return ts.transpileModule(fonte, { compilerOptions: {
-          target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.React,
-        }, fileName: id }).outputText
-      },
-    }],
+    ],
   })
   try {
     const { output } = await pacote.generate({
-      format: 'iife', inlineDynamicImports: true, name: 'Previa',
+      format: 'iife',
+      inlineDynamicImports: true,
+      name: 'Previa',
       globals: { react: 'React', 'lucide-react': 'LucideReact' },
     })
     const ler = (arquivo: string) => readFileSync(arquivo, 'utf8')
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/propostas/comuns/escritorio3d.css',
-      'src/componentes/ilustracoes/ilustracoes.css', pasta + '/proposta.css'].map(ler)
-    for (const [pacoteFonte, nome] of [['bricolage-grotesque', 'Bricolage Grotesque'], ['inter', 'Inter']]) {
-      const bytes = readFileSync(`node_modules/@fontsource-variable/${pacoteFonte}/files/${pacoteFonte}-latin-wght-normal.woff2`)
-      estilos.push(`@font-face{font-family:"${nome} Variable";src:url(data:font/woff2;base64,${bytes.toString('base64')});font-weight:100 900}`)
+    const estilos = [
+      'src/propostas/base.css',
+      'src/propostas/comuns/escritorio-maquete.css',
+      'src/propostas/comuns/escritorio3d.css',
+      'src/componentes/ilustracoes/ilustracoes.css',
+      pasta + '/proposta.css',
+    ].map(ler)
+    for (const [pacoteFonte, nome] of [
+      ['bricolage-grotesque', 'Bricolage Grotesque'],
+      ['inter', 'Inter'],
+    ]) {
+      const bytes = readFileSync(
+        `node_modules/@fontsource-variable/${pacoteFonte}/files/${pacoteFonte}-latin-wght-normal.woff2`,
+      )
+      estilos.push(
+        `@font-face{font-family:"${nome} Variable";src:url(data:font/woff2;base64,${bytes.toString('base64')});font-weight:100 900}`,
+      )
     }
-    const libs = ['react/umd/react.production.min.js', 'react-dom/umd/react-dom.production.min.js',
-      'lucide-react/dist/umd/lucide-react.min.js'].map(arquivo => ler('node_modules/' + arquivo))
-    return '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><style>' + estilos.join('\n') +
+    const libs = [
+      'react/umd/react.production.min.js',
+      'react-dom/umd/react-dom.production.min.js',
+      'lucide-react/dist/umd/lucide-react.min.js',
+    ].map(arquivo => ler('node_modules/' + arquivo))
+    return (
+      '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><style>' +
+      estilos.join('\n') +
       '</style><div class="lab"><section class="lab-amostra"><div class="lab-quadro"><div class="lab-conteudo"></div></div></section></div><script>' +
       [...libs.slice(0, 2), 'globalThis.react = React', libs[2], output[0].code].join('\n;\n') +
-      '\nconst snapshots=' + JSON.stringify(snapshots).replace(/</g, '\\u003c') + ';' + String.raw`
+      '\nconst snapshots=' +
+      JSON.stringify(snapshots).replace(/</g, '\\u003c') +
+      ';' +
+      String.raw`
         const quadro = document.querySelector('.lab-quadro');
         const raiz = ReactDOM.createRoot(quadro.firstElementChild);
         const q = seletor => quadro.querySelector(seletor);
@@ -87,8 +121,12 @@ async function montarPagina(snapshots: DadosInicio[]) {
             React.createElement(Previa.Proposta, { dados: snapshots[snapshot], tema, dispositivo }))));
           quadro.scrollTop = 0;
         }
-      ` + '</script></html>'
-  } finally { await pacote.close() }
+      ` +
+      '</script></html>'
+    )
+  } finally {
+    await pacote.close()
+  }
 }
 
 type Rodar = <T>(expressao: string) => Promise<T>
@@ -99,16 +137,29 @@ export async function noNavegador(snapshots: DadosInicio[], verificar: (rodar: R
   try {
     const arquivo = join(dir, 'previa.html')
     writeFileSync(arquivo, await montarPagina(snapshots))
-    const chrome = spawn(chromium!, ['--headless', '--no-sandbox', '--disable-gpu', '--no-first-run',
-      '--disable-background-networking', '--force-prefers-reduced-motion', '--window-size=1600,950',
-      '--remote-debugging-port=0', '--user-data-dir=' + dir, pathToFileURL(arquivo).href], { stdio: 'ignore' })
+    const chrome = spawn(
+      chromium!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-background-networking',
+        '--force-prefers-reduced-motion',
+        '--window-size=1600,950',
+        '--remote-debugging-port=0',
+        '--user-data-dir=' + dir,
+        pathToFileURL(arquivo).href,
+      ],
+      { stdio: 'ignore' },
+    )
     const encerrado = new Promise<void>(ok => chrome.once('close', () => ok()))
     let socket: WebSocket | undefined
     try {
       const porta = join(dir, 'DevToolsActivePort')
       for (let i = 0; i < 50 && !existsSync(porta); i++) await new Promise(ok => setTimeout(ok, 100))
       const [port, caminho] = readFileSync(porta, 'utf8').trim().split(/\r?\n/)
-      const conn = socket = new WebSocket(`ws://127.0.0.1:${port}${caminho}`)
+      const conn = (socket = new WebSocket(`ws://127.0.0.1:${port}${caminho}`))
       await new Promise<void>((ok, falhou) => {
         conn.addEventListener('open', () => ok(), { once: true })
         conn.addEventListener('error', () => falhou(new Error('Chromium indisponível')), { once: true })
@@ -134,19 +185,30 @@ export async function noNavegador(snapshots: DadosInicio[], verificar: (rodar: R
         })
       }
       const { targetInfos } = await enviar<{ targetInfos: { targetId: string; type: string }[] }>('Target.getTargets')
-      const { sessionId } = await enviar<{ sessionId: string }>('Target.attachToTarget', { targetId: targetInfos.find(t => t.type === 'page')!.targetId, flatten: true })
+      const { sessionId } = await enviar<{ sessionId: string }>('Target.attachToTarget', {
+        targetId: targetInfos.find(t => t.type === 'page')!.targetId,
+        flatten: true,
+      })
       const rodar: Rodar = async <T>(expression: string) => {
-        const { result, exceptionDetails } = await enviar<{ result: { value: T; description?: string }; exceptionDetails?: unknown }>(
-          'Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId)
+        const { result, exceptionDetails } = await enviar<{
+          result: { value: T; description?: string }
+          exceptionDetails?: unknown
+        }>('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId)
         if (exceptionDetails) throw new Error(result.description)
         return result.value
       }
-      for (let i = 0; i < 30 && !await rodar<boolean>("typeof montar === 'function'"); i++) await new Promise(ok => setTimeout(ok, 100))
+      for (let i = 0; i < 30 && !(await rodar<boolean>("typeof montar === 'function'")); i++)
+        await new Promise(ok => setTimeout(ok, 100))
       await verificar(rodar, async key => {
         const codigo = { Tab: 9, Enter: 13, Escape: 27, ' ': 32 }[key]
         for (const type of ['keyDown', 'keyUp']) {
-          const text = type === 'keyDown' ? { Tab: undefined, Enter: '\r', Escape: undefined, ' ': ' ' }[key] : undefined
-          await enviar('Input.dispatchKeyEvent', { type, key, windowsVirtualKeyCode: codigo, text, unmodifiedText: text }, sessionId)
+          const text =
+            type === 'keyDown' ? { Tab: undefined, Enter: '\r', Escape: undefined, ' ': ' ' }[key] : undefined
+          await enviar(
+            'Input.dispatchKeyEvent',
+            { type, key, windowsVirtualKeyCode: codigo, text, unmodifiedText: text },
+            sessionId,
+          )
         }
         await rodar('new Promise(ok => requestAnimationFrame(() => requestAnimationFrame(() => ok(true))))')
       })

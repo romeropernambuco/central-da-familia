@@ -22,22 +22,34 @@ import { Proposta } from './Proposta'
 const pasta = 'src/propostas/k'
 const css = ts.sys.readFile(pasta + '/central.css')!
 const cenarios = (['claro', 'escuro'] as const).flatMap(tema =>
-  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })))
+  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })),
+)
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 let dados: DadosInicio
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-17T14:00:00Z'))
-  try { dados = await carregarDadosInicio() } finally { vi.useRealTimers() }
+  try {
+    dados = await carregarDadosInicio()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 function render(cenario = cenarios[0], snapshot = dados, oculto = false, olho = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: olho },
-    createElement(Proposta, { ...cenario, dados: snapshot, oculto })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: olho },
+      createElement(Proposta, { ...cenario, dados: snapshot, oculto }),
+    ),
+  )
 }
 
-function marcadores(html: string) { return html.match(/data-numero-financeiro="true"/g) ?? [] }
+function marcadores(html: string) {
+  return html.match(/data-numero-financeiro="true"/g) ?? []
+}
 
 it.each(cenarios)('renderiza $tema no $dispositivo com resumo, navegação e um título', cenario => {
   const html = render(cenario)
@@ -62,7 +74,8 @@ it.each(cenarios)('renderiza $tema no $dispositivo com resumo, navegação e um 
 
 it('oculta cifras, textos livres, cobertura e qualquer geometria proporcional pelo olho ou pela prop', () => {
   const snapshot = structuredClone(dados)
-  if (snapshot.pendencias.fila.valor) snapshot.pendencias.fila.valor[0].perguntaCurta = 'Conferir repasse de R$ 719,45 (73%)'
+  if (snapshot.pendencias.fila.valor)
+    snapshot.pendencias.fila.valor[0].perguntaCurta = 'Conferir repasse de R$ 719,45 (73%)'
   const aberto = render(cenarios[1], snapshot)
   expect(aberto).toContain('k-trilha-preenchida')
   expect(aberto).toContain('k-trilha-posicao')
@@ -105,26 +118,40 @@ it('usa 19 postos nativos e ilustrações decorativas com foco e movimento reduz
   expect(css).toContain('outline: 2px solid var(--destaque)')
   expect(css).toContain('prefers-reduced-motion: reduce')
   expect(css).toMatch(/stroke-width: 15px/)
-  expect(css + html).not.toMatch(/(?:linear|radial|conic)-gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u)
+  expect(css + html).not.toMatch(
+    /(?:linear|radial|conic)-gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u,
+  )
 })
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const s = parseInt(par, 16) / 255
-    return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4
-  })
-  return .2126 * r + .7152 * g + .0722 * b
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const s = parseInt(par, 16) / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
 it('calcula contraste AA dos pares de tokens nos dois temas', () => {
-  const ler = (seletor: string) => Object.fromEntries([...css.split(seletor + ' {')[1].split('}')[0]
-    .matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi)].map(([, id, valor]) => [id, valor]))
+  const ler = (seletor: string) =>
+    Object.fromEntries(
+      [
+        ...css
+          .split(seletor + ' {')[1]
+          .split('}')[0]
+          .matchAll(/--([\w-]+):\s*(#[\da-f]{6});/gi),
+      ].map(([, id, valor]) => [id, valor]),
+    )
   for (const seletor of ['data-proposta="k"', 'data-tema="escuro"']) {
     const tokens = ler(`.k-inicio[${seletor}]`)
     function verificar(tinta: string, fundo: string, minimo: number) {
       const a = luminancia(tokens[tinta])
       const b = luminancia(tokens[fundo])
-      expect((Math.max(a, b) + .05) / (Math.min(a, b) + .05), `${seletor} ${tinta}/${fundo}`).toBeGreaterThanOrEqual(minimo)
+      expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), `${seletor} ${tinta}/${fundo}`).toBeGreaterThanOrEqual(
+        minimo,
+      )
     }
     for (const fundo of ['fundo', 'cartao', 'menu', 'k-ativo', 'k-cena']) {
       for (const tinta of ['texto', 'texto-secundario', 'destaque', 'risco']) verificar(tinta, fundo, 4.5)
@@ -140,83 +167,129 @@ const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles || '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] || '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
-it.skipIf(!chrome)('mede na casca e exercita abas, navegação, fila, teclado e balões no Chromium', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'proposta-k-'))
-  try {
-    const fixture = structuredClone(dados)
-    const linha = fixture.pendencias.fila.valor?.[0]
-    if (!linha) throw new Error('A fila de exemplo precisa de uma decisão para o teste.')
-    fixture.pendencias.fila = { ...fixture.pendencias.fila, estado: 'pronto', valor: [
-      { ...linha, id: 'teste-risco', perguntaCurta: 'Revisar R$ 719,45 com cobertura de 73%',
-        valor: { ...fixture.faturas.total, estado: 'pronto', valor: 719.45 } },
-      { ...linha, id: 'teste-operacao', perguntaCurta: 'Conferir operação' },
-      { ...linha, id: 'teste-lembrete', perguntaCurta: 'Conferir lembrete' },
-    ] }
-    fixture.alertas = { ...fixture.alertas, estado: 'pronto', valor: [
-      { id: 'teste-lembrete', nivel: 'lembrete', texto: 'Conferir lembrete' },
-      { id: 'teste-operacao', nivel: 'operacao', texto: 'Conferir operação' },
-      { id: 'teste-risco', nivel: 'dinheiro em risco', texto: 'Revisar diferença' },
-    ] }
-    fixture.saldoConta = { ...fixture.saldoConta, estado: 'pronto', valor: 839217.45 }
+it.skipIf(!chrome)(
+  'mede na casca e exercita abas, navegação, fila, teclado e balões no Chromium',
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'proposta-k-'))
+    try {
+      const fixture = structuredClone(dados)
+      const linha = fixture.pendencias.fila.valor?.[0]
+      if (!linha) throw new Error('A fila de exemplo precisa de uma decisão para o teste.')
+      fixture.pendencias.fila = {
+        ...fixture.pendencias.fila,
+        estado: 'pronto',
+        valor: [
+          {
+            ...linha,
+            id: 'teste-risco',
+            perguntaCurta: 'Revisar R$ 719,45 com cobertura de 73%',
+            valor: { ...fixture.faturas.total, estado: 'pronto', valor: 719.45 },
+          },
+          { ...linha, id: 'teste-operacao', perguntaCurta: 'Conferir operação' },
+          { ...linha, id: 'teste-lembrete', perguntaCurta: 'Conferir lembrete' },
+        ],
+      }
+      fixture.alertas = {
+        ...fixture.alertas,
+        estado: 'pronto',
+        valor: [
+          { id: 'teste-lembrete', nivel: 'lembrete', texto: 'Conferir lembrete' },
+          { id: 'teste-operacao', nivel: 'operacao', texto: 'Conferir operação' },
+          { id: 'teste-risco', nivel: 'dinheiro em risco', texto: 'Revisar diferença' },
+        ],
+      }
+      fixture.saldoConta = { ...fixture.saldoConta, estado: 'pronto', valor: 839217.45 }
 
-    const entrada = 'virtual:teste-proposta-k'
-    const pacote = await build({
-      configFile: false, logLevel: 'silent', esbuild: { jsx: 'automatic' },
-      plugins: [{
-        name: 'teste-proposta-k',
-        resolveId: id => id === entrada ? '\0' + entrada : undefined,
-        load: id => id === '\0' + entrada ? codigoBrowser(dados, fixture) : undefined,
-      }],
-      build: { write: false, copyPublicDir: false, minify: false, cssCodeSplit: false, assetsInlineLimit: 1000000, modulePreload: false,
-        rollupOptions: { input: entrada, output: { format: 'iife', inlineDynamicImports: true } } },
-    })
-    if (Array.isArray(pacote) || !('output' in pacote)) throw new Error('Bundle de teste ausente.')
-    const js = pacote.output.find(item => item.type === 'chunk')
-    const estilo = pacote.output.find(item => item.fileName.endsWith('.css'))
-    if (js?.type !== 'chunk' || estilo?.type !== 'asset') {
-      throw new Error('JavaScript ou CSS do teste ausente: ' + pacote.output.map(item => item.fileName).join(', '))
+      const entrada = 'virtual:teste-proposta-k'
+      const pacote = await build({
+        configFile: false,
+        logLevel: 'silent',
+        esbuild: { jsx: 'automatic' },
+        plugins: [
+          {
+            name: 'teste-proposta-k',
+            resolveId: id => (id === entrada ? '\0' + entrada : undefined),
+            load: id => (id === '\0' + entrada ? codigoBrowser(dados, fixture) : undefined),
+          },
+        ],
+        build: {
+          write: false,
+          copyPublicDir: false,
+          minify: false,
+          cssCodeSplit: false,
+          assetsInlineLimit: 1000000,
+          modulePreload: false,
+          rollupOptions: { input: entrada, output: { format: 'iife', inlineDynamicImports: true } },
+        },
+      })
+      if (Array.isArray(pacote) || !('output' in pacote)) throw new Error('Bundle de teste ausente.')
+      const js = pacote.output.find(item => item.type === 'chunk')
+      const estilo = pacote.output.find(item => item.fileName.endsWith('.css'))
+      if (js?.type !== 'chunk' || estilo?.type !== 'asset') {
+        throw new Error('JavaScript ou CSS do teste ausente: ' + pacote.output.map(item => item.fileName).join(', '))
+      }
+      const arquivo = join(dir, 'quadro.html')
+      writeFileSync(
+        arquivo,
+        `<!doctype html><meta charset="utf-8"><style>${estilo.source}</style>
+      <div id="quadros"></div><pre id="resultado"></pre><script>${js.code.replace(/<\/script/gi, '<\\/script')}</script>`,
+      )
+      const processo = spawnSync(
+        chrome,
+        [
+          '--headless',
+          '--no-sandbox',
+          '--no-first-run',
+          '--disable-gpu',
+          '--disable-background-networking',
+          '--window-size=1500,1000',
+          '--user-data-dir=' + join(dir, 'perfil'),
+          '--virtual-time-budget=4000',
+          '--dump-dom',
+          pathToFileURL(arquivo).href,
+        ],
+        { encoding: 'utf8', timeout: 20000, maxBuffer: 12_000_000 },
+      )
+      expect(processo.status, processo.error?.message ?? processo.stderr).toBe(0)
+      const capturado = processo.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
+      expect(capturado, 'O Chromium deve devolver o roteiro e a medição.').toBeTruthy()
+      const resultado = JSON.parse(decodeURIComponent(capturado!)) as {
+        erro?: string
+        quadros: { numeros: string[]; semTransbordo: boolean; alvos: string[] }[]
+        interacao: Record<string, boolean>
+        outrasAbas: { escritorio: number; plano: number }
+      }
+      expect(resultado.erro).toBeUndefined()
+      expect(resultado.quadros).toHaveLength(cenarios.length)
+      resultado.quadros.forEach(({ numeros, semTransbordo, alvos }, i) => {
+        const { tema, dispositivo } = cenarios[i]
+        console.log(`K ${tema} ${dispositivo} — ${numeros.length} números acima da dobra`)
+        expect(numeros.length, numeros.join(' · ')).toBeLessThanOrEqual(dispositivo === 'celular' ? 5 : 8)
+        expect(numeros.length).toBeGreaterThanOrEqual(4)
+        expect(new Set(numeros).size, numeros.join(' · ')).toBe(numeros.length)
+        expect(semTransbordo).toBe(true)
+        expect(alvos).toEqual([])
+      })
+      expect(resultado.outrasAbas.escritorio).toBe(0)
+      expect(resultado.outrasAbas.plano).toBeGreaterThanOrEqual(2)
+      expect(resultado.outrasAbas.plano).toBeLessThanOrEqual(5)
+      console.log(
+        `K celular por aba diretamente da casca — Escritório ${resultado.outrasAbas.escritorio}, Plano ${resultado.outrasAbas.plano}`,
+      )
+      expect(Object.keys(resultado.interacao)).toHaveLength(16)
+      for (const [acao, passou] of Object.entries(resultado.interacao)) expect(passou, acao).toBe(true)
+    } finally {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
     }
-    const arquivo = join(dir, 'quadro.html')
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${estilo.source}</style>
-      <div id="quadros"></div><pre id="resultado"></pre><script>${js.code.replace(/<\/script/gi, '<\\/script')}</script>`)
-    const processo = spawnSync(chrome, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu',
-      '--disable-background-networking', '--window-size=1500,1000', '--user-data-dir=' + join(dir, 'perfil'),
-      '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 20000, maxBuffer: 12_000_000 })
-    expect(processo.status, processo.error?.message ?? processo.stderr).toBe(0)
-    const capturado = processo.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
-    expect(capturado, 'O Chromium deve devolver o roteiro e a medição.').toBeTruthy()
-    const resultado = JSON.parse(decodeURIComponent(capturado!)) as {
-      erro?: string
-      quadros: { numeros: string[]; semTransbordo: boolean; alvos: string[] }[]
-      interacao: Record<string, boolean>
-      outrasAbas: { escritorio: number; plano: number }
-    }
-    expect(resultado.erro).toBeUndefined()
-    expect(resultado.quadros).toHaveLength(cenarios.length)
-    resultado.quadros.forEach(({ numeros, semTransbordo, alvos }, i) => {
-      const { tema, dispositivo } = cenarios[i]
-      console.log(`K ${tema} ${dispositivo} — ${numeros.length} números acima da dobra`)
-      expect(numeros.length, numeros.join(' · ')).toBeLessThanOrEqual(dispositivo === 'celular' ? 5 : 8)
-      expect(numeros.length).toBeGreaterThanOrEqual(4)
-      expect(new Set(numeros).size, numeros.join(' · ')).toBe(numeros.length)
-      expect(semTransbordo).toBe(true)
-      expect(alvos).toEqual([])
-    })
-    expect(resultado.outrasAbas.escritorio).toBe(0)
-    expect(resultado.outrasAbas.plano).toBeGreaterThanOrEqual(2)
-    expect(resultado.outrasAbas.plano).toBeLessThanOrEqual(5)
-    console.log(`K celular por aba diretamente da casca — Escritório ${resultado.outrasAbas.escritorio}, Plano ${resultado.outrasAbas.plano}`)
-    expect(Object.keys(resultado.interacao)).toHaveLength(16)
-    for (const [acao, passou] of Object.entries(resultado.interacao)) expect(passou, acao).toBe(true)
-  } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
-  }
-}, 30000)
+  },
+  30000,
+)
 
 function codigoBrowser(snapshot: DadosInicio, fixture: DadosInicio) {
   return `

@@ -19,7 +19,9 @@ export const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles || '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] || '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
@@ -31,34 +33,48 @@ async function codigoDoNavegador() {
   const pacote = await rollup({
     input: fixture,
     external: ['react', 'react-dom', 'lucide-react'],
-    plugins: [{
-      name: 'fixture-tsx',
-      resolveId(id, importador) {
-        if (id === fixture || estilos.test(id)) return id
-        if (!importador || !id.startsWith('.')) return null
-        const caminho = resolve(importador, '..', id)
-        return [caminho + '.tsx', caminho + '.ts', join(caminho, 'index.ts')].find(existsSync)
+    plugins: [
+      {
+        name: 'fixture-tsx',
+        resolveId(id, importador) {
+          if (id === fixture || estilos.test(id)) return id
+          if (!importador || !id.startsWith('.')) return null
+          const caminho = resolve(importador, '..', id)
+          return [caminho + '.tsx', caminho + '.ts', join(caminho, 'index.ts')].find(existsSync)
+        },
+        load(id) {
+          if (estilos.test(id)) return ''
+          if (id === fixture)
+            return [
+              'export { Proposta } from ' + JSON.stringify(resolve(pasta, 'Proposta.tsx')),
+              'export { medirNumeros } from ' + JSON.stringify(resolve('src/propostas/medicao.ts')),
+            ].join('\n')
+        },
+        transform(codigo, id) {
+          if (!/\.tsx?$/.test(id)) return
+          const fonte = id.endsWith('.tsx') ? "import React from 'react';\n" + codigo : codigo
+          return ts.transpileModule(fonte, {
+            compilerOptions: {
+              target: ts.ScriptTarget.ES2020,
+              module: ts.ModuleKind.ESNext,
+              jsx: ts.JsxEmit.React,
+            },
+            fileName: id,
+          }).outputText
+        },
       },
-      load(id) {
-        if (estilos.test(id)) return ''
-        if (id === fixture) return [
-          'export { Proposta } from ' + JSON.stringify(resolve(pasta, 'Proposta.tsx')),
-          'export { medirNumeros } from ' + JSON.stringify(resolve('src/propostas/medicao.ts')),
-        ].join('\n')
-      },
-      transform(codigo, id) {
-        if (!/\.tsx?$/.test(id)) return
-        const fonte = id.endsWith('.tsx') ? "import React from 'react';\n" + codigo : codigo
-        return ts.transpileModule(fonte, { compilerOptions: {
-          target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.React,
-        }, fileName: id }).outputText
-      },
-    }],
+    ],
   })
   try {
-    const { output } = await pacote.generate({ format: 'iife', name: 'Previas', globals: { react: 'React', 'react-dom': 'ReactDOM', 'lucide-react': 'LucideReact' } })
+    const { output } = await pacote.generate({
+      format: 'iife',
+      name: 'Previas',
+      globals: { react: 'React', 'react-dom': 'ReactDOM', 'lucide-react': 'LucideReact' },
+    })
     return output[0].code
-  } finally { await pacote.close() }
+  } finally {
+    await pacote.close()
+  }
 }
 
 const executar = String.raw`
@@ -150,7 +166,9 @@ Promise.resolve().then(rodar).then(
 interface Resultado {
   erro?: string
   medicoes: {
-    valores: string[]; semTransbordo: boolean; menuVisivel: boolean
+    valores: string[]
+    semTransbordo: boolean
+    menuVisivel: boolean
     controles: { nome: string; altura: number; largura: number }[]
   }[]
   verificacoes: Record<string, boolean>
@@ -159,12 +177,31 @@ interface Resultado {
 export async function medirNoChromium(dados: DadosInicio[], cenarios: { tema: Tema; dispositivo: Dispositivo }[]) {
   const dir = mkdtempSync(join(tmpdir(), 'proposta-i-'))
   try {
-    const estilos = ['src/propostas/base.css', 'src/propostas/comuns/escritorio-maquete.css', 'src/componentes/ilustracoes/ilustracoes.css', pasta + '/bento.css']
-      .map(arq => ts.sys.readFile(arq)).join('\n')
-    const fontes = [['bricolage-grotesque', 'Bricolage Grotesque'], ['inter', 'Inter']].map(([pacote, nome]) => {
-      const fonte = readFileSync('node_modules/@fontsource-variable/' + pacote + '/files/' + pacote + '-latin-wght-normal.woff2').toString('base64')
-      return '@font-face{font-family:"' + nome + ' Variable";src:url(data:font/woff2;base64,' + fonte + ');font-weight:100 900}'
-    }).join('\n')
+    const estilos = [
+      'src/propostas/base.css',
+      'src/propostas/comuns/escritorio-maquete.css',
+      'src/componentes/ilustracoes/ilustracoes.css',
+      pasta + '/bento.css',
+    ]
+      .map(arq => ts.sys.readFile(arq))
+      .join('\n')
+    const fontes = [
+      ['bricolage-grotesque', 'Bricolage Grotesque'],
+      ['inter', 'Inter'],
+    ]
+      .map(([pacote, nome]) => {
+        const fonte = readFileSync(
+          'node_modules/@fontsource-variable/' + pacote + '/files/' + pacote + '-latin-wght-normal.woff2',
+        ).toString('base64')
+        return (
+          '@font-face{font-family:"' +
+          nome +
+          ' Variable";src:url(data:font/woff2;base64,' +
+          fonte +
+          ');font-weight:100 900}'
+        )
+      })
+      .join('\n')
     const biblioteca = (arq: string) => readFileSync('node_modules/' + arq, 'utf8')
     const libs = [
       biblioteca('react/umd/react.production.min.js'),
@@ -174,15 +211,44 @@ export async function medirNoChromium(dados: DadosInicio[], cenarios: { tema: Te
     ].join('\n;\n')
     const arquivo = join(dir, 'casca.html')
     const snapshots = JSON.stringify(dados).replace(/</g, '\\u003c')
-    writeFileSync(arquivo, '<!doctype html><meta charset="utf-8"><style>' + fontes + '\n' + estilos + '</style>' +
-      '<main id="previas"></main><pre id="resultado"></pre><script>' +
-      'window.addEventListener("error", e => document.querySelector("#resultado").textContent = encodeURIComponent(JSON.stringify({erro:e.message})));' +
-      '</script><script>' + libs + '\n' + await codigoDoNavegador() + '\n' +
-      'const snapshots=' + snapshots + ';const cenarios=' + JSON.stringify(cenarios) + ';' + executar + '</script>')
-    const processo = spawnSync(chrome!, ['--headless', '--no-sandbox', '--no-first-run', '--disable-gpu',
-      '--disable-background-networking', '--user-data-dir=' + join(dir, 'perfil'), '--window-size=1440,900',
-      '--virtual-time-budget=5000', '--dump-dom', pathToFileURL(arquivo).href],
-    { encoding: 'utf8', timeout: 22000, maxBuffer: 8_000_000 })
+    writeFileSync(
+      arquivo,
+      '<!doctype html><meta charset="utf-8"><style>' +
+        fontes +
+        '\n' +
+        estilos +
+        '</style>' +
+        '<main id="previas"></main><pre id="resultado"></pre><script>' +
+        'window.addEventListener("error", e => document.querySelector("#resultado").textContent = encodeURIComponent(JSON.stringify({erro:e.message})));' +
+        '</script><script>' +
+        libs +
+        '\n' +
+        (await codigoDoNavegador()) +
+        '\n' +
+        'const snapshots=' +
+        snapshots +
+        ';const cenarios=' +
+        JSON.stringify(cenarios) +
+        ';' +
+        executar +
+        '</script>',
+    )
+    const processo = spawnSync(
+      chrome!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--no-first-run',
+        '--disable-gpu',
+        '--disable-background-networking',
+        '--user-data-dir=' + join(dir, 'perfil'),
+        '--window-size=1440,900',
+        '--virtual-time-budget=5000',
+        '--dump-dom',
+        pathToFileURL(arquivo).href,
+      ],
+      { encoding: 'utf8', timeout: 22000, maxBuffer: 8_000_000 },
+    )
     if (processo.status !== 0) throw new Error(processo.error?.message ?? processo.stderr)
     const captura = processo.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
     if (!captura) throw new Error('O Chromium não devolveu a medição. ' + processo.stderr)

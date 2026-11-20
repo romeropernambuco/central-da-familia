@@ -9,32 +9,58 @@ import { medirNoChromium, chrome } from './verificarChromium'
 
 const css = ts.sys.readFile('src/propostas/i/bento.css')!
 const cenarios = (['claro', 'escuro'] as const).flatMap(tema =>
-  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })))
+  (['celular', 'desktop'] as const).map(dispositivo => ({ tema, dispositivo })),
+)
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 let dados: DadosInicio
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-17T14:00:00Z'))
-  try { dados = await carregarDadosInicio() } finally { vi.useRealTimers() }
+  try {
+    dados = await carregarDadosInicio()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 function render(cenario = cenarios[0], snapshot = dados, oculto = false, olhoDaCasca = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: olhoDaCasca },
-    createElement(Proposta, { ...cenario, dados: snapshot, oculto })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: olhoDaCasca },
+      createElement(Proposta, { ...cenario, dados: snapshot, oculto }),
+    ),
+  )
 }
 
 function comDecisoes() {
   const copia = structuredClone(dados)
   const decisoes = [
     { id: 'lembrete:aviso', nivel: 'lembrete', texto: 'Retomar lembrete', valor: 249.03 },
-    { id: 'estoque:lista', nivel: 'operacao', texto: 'Conferir estoque de R$ 87.512,31, 77,3% e razão 17/19', valor: 87512.31 },
+    {
+      id: 'estoque:lista',
+      nivel: 'operacao',
+      texto: 'Conferir estoque de R$ 87.512,31, 77,3% e razão 17/19',
+      valor: 87512.31,
+    },
     { id: 'fatura:97.236,42', nivel: 'dinheiro em risco', texto: 'Revisar cobrança', valor: 97236.42 },
   ] satisfies { id: string; nivel: NivelAlerta; texto: string; valor: number }[]
-  copia.alertas = { ...copia.alertas, estado: 'pronto', valor: decisoes.map(({ id, nivel, texto }) => ({ id, nivel, texto })) }
-  copia.pendencias.fila = { ...copia.pendencias.fila, estado: 'pronto', valor: decisoes.map(({ id, texto, valor }) => ({
-    id, perguntaCurta: texto, funcionario: 'fiscal', valor: { ...dados.faturas.total, estado: 'pronto', valor },
-  })) }
+  copia.alertas = {
+    ...copia.alertas,
+    estado: 'pronto',
+    valor: decisoes.map(({ id, nivel, texto }) => ({ id, nivel, texto })),
+  }
+  copia.pendencias.fila = {
+    ...copia.pendencias.fila,
+    estado: 'pronto',
+    valor: decisoes.map(({ id, texto, valor }) => ({
+      id,
+      perguntaCurta: texto,
+      funcionario: 'fiscal',
+      valor: { ...dados.faturas.total, estado: 'pronto', valor },
+    })),
+  }
   copia.plano2029.progressao = { ...copia.plano2029.progressao, estado: 'pronto', valor: 61.7 }
   copia.imoveis.aluguelLiquidoEstimado = { ...copia.imoveis.aluguelLiquidoEstimado, estado: 'pronto', valor: 810239 }
   return copia
@@ -81,7 +107,9 @@ it('protege o olho da casca e a prop local, inclusive valor, texto livre e geome
     expect(fechado).toBe(render(cenario, copia, false, true))
     expect(fechado).toContain('class="i-caminho"')
     expect(fechado).toMatch(/class="maquete-balao"[^>]*><span aria-label="Valor oculto">/)
-    expect(fechado).not.toMatch(/R\$|data-numero-financeiro|i-cobertura|i-posicao|i-haste|Você está aqui|61,7|77,3|17\/19|97\.236|8\.102/)
+    expect(fechado).not.toMatch(
+      /R\$|data-numero-financeiro|i-cobertura|i-posicao|i-haste|Você está aqui|61,7|77,3|17\/19|97\.236|8\.102/,
+    )
     const outra = structuredClone(copia)
     outra.plano2029.progressao = { ...outra.plano2029.progressao, estado: 'pronto', valor: 100 }
     outra.imoveis.aluguelLiquidoEstimado = { ...outra.imoveis.aluguelLiquidoEstimado, estado: 'pronto', valor: 123456 }
@@ -142,21 +170,30 @@ it('usa traço sólido de 15 px, tipografia tabular, foco e arte decorativa', ()
   expect(css).toContain('prefers-reduced-motion: reduce')
   expect(html.match(/<svg class="(?:escritorio-maquete|i-curva)[^>]+aria-hidden="true"/g)).toHaveLength(2)
   expect(html.match(/class="i-arte(?:-plano)?" aria-hidden="true"/g)).toHaveLength(4)
-  expect(css + html).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u)
+  expect(css + html).not.toMatch(
+    /gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:|\p{Extended_Pictographic}/u,
+  )
 })
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const canal = parseInt(par, 16) / 255
-    return canal <= 0.04045 ? canal / 12.92 : ((canal + 0.055) / 1.055) ** 2.4
-  })
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const canal = parseInt(par, 16) / 255
+      return canal <= 0.04045 ? canal / 12.92 : ((canal + 0.055) / 1.055) ** 2.4
+    })
   return r * 0.2126 + g * 0.7152 + b * 0.0722
 }
 
 it('calcula contraste AA dos pares de texto, risco, foco e seleção nos dois temas', () => {
   function tokens(seletor: RegExp) {
-    return Object.fromEntries([...css.match(seletor)![1].matchAll(/--([\w-]+): (#[0-9a-f]{6});/g)]
-      .map(([, nome, cor]) => [nome, luminancia(cor)]))
+    return Object.fromEntries(
+      [...css.match(seletor)![1].matchAll(/--([\w-]+): (#[0-9a-f]{6});/g)].map(([, nome, cor]) => [
+        nome,
+        luminancia(cor),
+      ]),
+    )
   }
   const claro = tokens(/\.i-inicio \{([^}]+)\}/)
   const escuro = { ...claro, ...tokens(/\.i-inicio\[data-tema="escuro"\] \{([^}]+)\}/) }
@@ -179,25 +216,40 @@ it('calcula contraste AA dos pares de texto, risco, foco e seleção nos dois te
   }
 })
 
-it.skipIf(!chrome)('mede na casca e exercita navegação, maquete e fila montadas no Chromium', async () => {
-  const { medicoes, verificacoes } = await medirNoChromium([dados, comDecisoes()], cenarios)
-  expect(medicoes).toHaveLength(cenarios.length * 2)
-  for (const [i, medicao] of medicoes.entries()) {
-    const cenario = cenarios[i % cenarios.length]
-    expect(medicao.semTransbordo).toBe(true)
-    expect(medicao.menuVisivel).toBe(true)
-    expect(medicao.valores.length).toBeGreaterThanOrEqual(cenario.dispositivo === 'celular' ? 1 : 4)
-    expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(cenario.dispositivo === 'celular' ? 5 : 8)
-    expect(new Set(medicao.valores).size).toBe(medicao.valores.length)
-    expect(medicao.controles.length).toBeGreaterThanOrEqual(32)
-    for (const controle of medicao.controles) {
-      expect(controle.nome).not.toBe('')
-      expect(controle.altura, controle.nome).toBeGreaterThanOrEqual(44)
-      expect(controle.largura, controle.nome).toBeGreaterThanOrEqual(44)
+it.skipIf(!chrome)(
+  'mede na casca e exercita navegação, maquete e fila montadas no Chromium',
+  async () => {
+    const { medicoes, verificacoes } = await medirNoChromium([dados, comDecisoes()], cenarios)
+    expect(medicoes).toHaveLength(cenarios.length * 2)
+    for (const [i, medicao] of medicoes.entries()) {
+      const cenario = cenarios[i % cenarios.length]
+      expect(medicao.semTransbordo).toBe(true)
+      expect(medicao.menuVisivel).toBe(true)
+      expect(medicao.valores.length).toBeGreaterThanOrEqual(cenario.dispositivo === 'celular' ? 1 : 4)
+      expect(medicao.valores.length, medicao.valores.join(' · ')).toBeLessThanOrEqual(
+        cenario.dispositivo === 'celular' ? 5 : 8,
+      )
+      expect(new Set(medicao.valores).size).toBe(medicao.valores.length)
+      expect(medicao.controles.length).toBeGreaterThanOrEqual(32)
+      for (const controle of medicao.controles) {
+        expect(controle.nome).not.toBe('')
+        expect(controle.altura, controle.nome).toBeGreaterThanOrEqual(44)
+        expect(controle.largura, controle.nome).toBeGreaterThanOrEqual(44)
+      }
+      console.info(
+        'I ' +
+          (i < cenarios.length ? 'exemplo' : 'com decisões') +
+          ' ' +
+          cenario.tema +
+          ' ' +
+          cenario.dispositivo +
+          ': ' +
+          medicao.valores.length +
+          ' números acima da dobra',
+      )
     }
-    console.info('I ' + (i < cenarios.length ? 'exemplo' : 'com decisões') + ' ' + cenario.tema + ' ' +
-      cenario.dispositivo + ': ' + medicao.valores.length + ' números acima da dobra')
-  }
-  for (const [nome, verificacao] of Object.entries(verificacoes)) expect(verificacao, nome).toBe(true)
-  expect(Object.keys(verificacoes)).toHaveLength(15)
-}, 30000)
+    for (const [nome, verificacao] of Object.entries(verificacoes)) expect(verificacao, nome).toBe(true)
+    expect(Object.keys(verificacoes)).toHaveLength(15)
+  },
+  30000,
+)

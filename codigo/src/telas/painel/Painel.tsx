@@ -13,21 +13,58 @@ export function Painel() {
   const { api, sessao } = useApp()
   const [nums, setNums] = useState<Numero[] | null>(null)
   const [erro, setErro] = useState('')
-  useEffect(() => { api.numerosSemana().then(setNums).catch(e => setErro((e as Error).message)) }, [api])
-  if (!sessao?.dono) return <div className="card"><p className="todo"><Icone desenho={Lock} aria-hidden="true" />Esta tela é só do dono do produto.</p></div>
+  useEffect(() => {
+    api
+      .numerosSemana()
+      .then(setNums)
+      .catch(e => setErro((e as Error).message))
+  }, [api])
+  if (!sessao?.dono)
+    return (
+      <div className="card">
+        <p className="todo">
+          <Icone desenho={Lock} aria-hidden="true" />
+          Esta tela é só do dono do produto.
+        </p>
+      </div>
+    )
   return (
     <div className="view painel-f29">
       <RumoA2029 oficial />
-      <p className="sub">Os 4 números que dizem se o app está funcionando, olhados toda segunda. Cada card explica de onde vem.</p>
-      {erro && <div role="alert"><EstadoVazio ilustracao="Erro" titulo="Não foi possível abrir os números" frase={textoPrivado(erro)} /></div>}
-      {!erro && !nums && <div role="status"><EstadoVazio ilustracao="Carregando" titulo="Abrindo o painel" frase="Buscando os números da semana…" /></div>}
-      {!erro && nums?.length === 0 && <EstadoVazio ilustracao="TudoEmDia" titulo="Nenhum número nesta consulta" frase="Os indicadores aparecem quando estiverem disponíveis." />}
+      <p className="sub">
+        Os 4 números que dizem se o app está funcionando, olhados toda segunda. Cada card explica de onde vem.
+      </p>
+      {erro && (
+        <div role="alert">
+          <EstadoVazio ilustracao="Erro" titulo="Não foi possível abrir os números" frase={textoPrivado(erro)} />
+        </div>
+      )}
+      {!erro && !nums && (
+        <div role="status">
+          <EstadoVazio ilustracao="Carregando" titulo="Abrindo o painel" frase="Buscando os números da semana…" />
+        </div>
+      )}
+      {!erro && nums?.length === 0 && (
+        <EstadoVazio
+          ilustracao="TudoEmDia"
+          titulo="Nenhum número nesta consulta"
+          frase="Os indicadores aparecem quando estiverem disponíveis."
+        />
+      )}
       <div className="nums">
         {(nums || []).map(n => (
           <section className="card" key={n.chave} aria-label={textoPrivado(n.nome)}>
-            <div className="card-h"><h2>{textoPrivado(n.nome)}</h2><span className={'chip ' + (n.ok ? 'ok' : 'warn')}>{n.ok ? <Icone desenho={CircleCheck} /> : <Icone desenho={TriangleAlert} />}{n.meta}</span></div>
+            <div className="card-h">
+              <h2>{textoPrivado(n.nome)}</h2>
+              <span className={'chip ' + (n.ok ? 'ok' : 'warn')}>
+                {n.ok ? <Icone desenho={CircleCheck} /> : <Icone desenho={TriangleAlert} />}
+                {n.meta}
+              </span>
+            </div>
             <p className="din big">{textoPrivado(n.texto)}</p>
-            <p className="sub" style={{ marginTop: 6 }}><b>De onde veio esse número?</b> {textoPrivado(n.explicacao)}</p>
+            <p className="sub" style={{ marginTop: 6 }}>
+              <b>De onde veio esse número?</b> {textoPrivado(n.explicacao)}
+            </p>
           </section>
         ))}
       </div>

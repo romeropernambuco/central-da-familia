@@ -13,19 +13,25 @@ const dados = await carregarDadosInicio()
 const estilos: string = readFileSync(new URL('./escritorio-maquete.css', import.meta.url), 'utf8')
 
 function render(props: Partial<PropsEscritorioMaquete> = {}, olhoFechado = false) {
-  return renderToStaticMarkup(createElement(PrivacidadePropostas.Provider, { value: olhoFechado },
-    createElement(EscritorioMaquete, { funcionarios: dados.funcionarios, ...props })))
+  return renderToStaticMarkup(
+    createElement(
+      PrivacidadePropostas.Provider,
+      { value: olhoFechado },
+      createElement(EscritorioMaquete, { funcionarios: dados.funcionarios, ...props }),
+    ),
+  )
 }
 
 it('desenha os 19 postos nas sete salas e permite ligar todas as plaquinhas', () => {
   const html = render({ mostrarPlaquinhas: true })
-  expect([...html.matchAll(/data-funcionario="([^"]+)"/g)].map(m => m[1]).sort())
-    .toEqual(EQUIPE.map(f => f.id).sort())
+  expect([...html.matchAll(/data-funcionario="([^"]+)"/g)].map(m => m[1]).sort()).toEqual(EQUIPE.map(f => f.id).sort())
   expect(EQUIPE).toHaveLength(19)
   expect(html.match(/data-sala=/g)).toHaveLength(7)
   expect(html.match(/class="maquete-placa maquete-rotulo"/g)).toHaveLength(19)
   expect(render()).not.toContain('maquete-placa maquete-rotulo')
-  expect(render({ funcionarios: { ...dados.funcionarios, estado: 'vazio', valor: null } })).not.toContain('data-funcionario=')
+  expect(render({ funcionarios: { ...dados.funcionarios, estado: 'vazio', valor: null } })).not.toContain(
+    'data-funcionario=',
+  )
 })
 
 it('usa o estado atual do snapshot, inclusive quando indisponível', () => {
@@ -34,10 +40,15 @@ it('usa o estado atual do snapshot, inclusive quando indisponível', () => {
   const amostra = funcionarios.valor!.slice(0, estados.length)
   amostra.forEach((f, i) => {
     const valor = estados[i]
-    f.estadoHoje = { ...f.estadoHoje, ...(valor ? { estado: 'pronto', valor } : { estado: 'indisponivel', valor: null }) }
+    f.estadoHoje = {
+      ...f.estadoHoje,
+      ...(valor ? { estado: 'pronto', valor } : { estado: 'indisponivel', valor: null }),
+    }
   })
   const html = render({ funcionarios, mostrarPlaquinhas: true })
-  amostra.forEach((f, i) => expect(html).toContain(`data-funcionario="${f.id}" data-estado="${estados[i] ?? 'indisponivel'}"`))
+  amostra.forEach((f, i) =>
+    expect(html).toContain(`data-funcionario="${f.id}" data-estado="${estados[i] ?? 'indisponivel'}"`),
+  )
   expect(html).toContain('lucide-keyboard')
   expect(html).toContain('lucide-bell-ring')
   expect(html).toContain('lucide-check')
@@ -49,7 +60,9 @@ it('desenha os sinais nos próprios postos, com marcador exclusivo de quem pede 
   const funcionarios = structuredClone(dados.funcionarios)
   const amostra = funcionarios.valor!.slice(0, 4)
   const estados = ['trabalhando', 'vai_comecar', 'entregue', 'precisa_de_voce'] as const
-  amostra.forEach((f, i) => { f.estadoHoje = { ...f.estadoHoje, estado: 'pronto', valor: estados[i] } })
+  amostra.forEach((f, i) => {
+    f.estadoHoje = { ...f.estadoHoje, estado: 'pronto', valor: estados[i] }
+  })
   const html = render({ funcionarios: { ...funcionarios, estado: 'pronto', valor: amostra } })
   const postos = [...html.matchAll(/<g data-funcionario="[^"]+"[^>]*>[\s\S]*?<\/g>/g)].map(m => m[0])
   expect(postos).toHaveLength(amostra.length)
@@ -63,7 +76,11 @@ it('desenha os sinais nos próprios postos, com marcador exclusivo de quem pede 
 })
 
 it('aproxima e centra qualquer sala, preserva os 19 postos e atenua as demais', () => {
-  const vista = (html: string) => html.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number)
+  const vista = (html: string) =>
+    html
+      .match(/viewBox="([^"]+)"/)![1]
+      .split(' ')
+      .map(Number)
   const [, , larguraGeral] = vista(render())
   for (const sala of salas) {
     const html = render({ salaDestacada: sala.id, onSelecionar: vi.fn() })

@@ -12,9 +12,15 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
   const dados: LeiturasInsights = {}
   const erros: unknown[] = []
   const ler = async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
-    try { return await fn() } catch (e) { erros.push(e); return undefined }
+    try {
+      return await fn()
+    } catch (e) {
+      erros.push(e)
+      return undefined
+    }
   }
-  if (rota === 'casa' && (familia.papel === 'casal' || familia.papel === 'equipe')) dados.feiras = await ler(() => api.feiras(familia.id))
+  if (rota === 'casa' && (familia.papel === 'casal' || familia.papel === 'equipe'))
+    dados.feiras = await ler(() => api.feiras(familia.id))
   if (familia.papel !== 'casal') return { dados, erros }
   if (rota === 'guardado') dados.guardado = await ler(() => api.guardadoHoje(familia.id))
   if (rota === 'planejamento' || rota === 'guardado') {
@@ -24,7 +30,10 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
     ])
     if (rec) {
       const controle = await ler(() => api.config(familia.id, 'receitas_controle', {}))
-      if (controle !== undefined) { dados.recebimentos = rec; dados.controleReceitas = controle }
+      if (controle !== undefined) {
+        dados.recebimentos = rec
+        dados.controleReceitas = controle
+      }
     }
     if (f?.entrada) {
       try {
@@ -32,18 +41,35 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
         dados.futuro = futuro(oficial)
         dados.entradaObjetivo = oficial
         dados.mesObjetivo = oficial.parametros.virada
-      } catch (e) { erros.push(e) }
+      } catch (e) {
+        erros.push(e)
+      }
     }
   }
   if (rota === 'cartoes') {
-    const [cs, fs, bs] = await Promise.all([ler(() => api.cartoes(familia.id)), ler(() => api.faturas(familia.id, 2)), ler(() => api.faturasBanco(familia.id))])
-    dados.cartoes = cs; dados.faturas = fs; dados.banco = bs
+    const [cs, fs, bs] = await Promise.all([
+      ler(() => api.cartoes(familia.id)),
+      ler(() => api.faturas(familia.id, 2)),
+      ler(() => api.faturasBanco(familia.id)),
+    ])
+    dados.cartoes = cs
+    dados.faturas = fs
+    dados.banco = bs
     const t = tempoRecife(agora)
-    if (t && cs && fs && bs && fs.some(f => {
-      const b = bs.find(b => b.cartao_id === f.cartao_id && b.mes.slice(0, 7) === f.mes)
-      const dias = diasEntre(t.dia, f.vencimento)
-      return !b?.paga_em && dias >= 0 && dias <= 3 || b?.valor_banco != null && emCentavos(b.valor_banco) !== emCentavos(f.total)
-    })) {
+    if (
+      t &&
+      cs &&
+      fs &&
+      bs &&
+      fs.some(f => {
+        const b = bs.find(b => b.cartao_id === f.cartao_id && b.mes.slice(0, 7) === f.mes)
+        const dias = diasEntre(t.dia, f.vencimento)
+        return (
+          (!b?.paga_em && dias >= 0 && dias <= 3) ||
+          (b?.valor_banco != null && emCentavos(b.valor_banco) !== emCentavos(f.total))
+        )
+      })
+    ) {
       // Até 24 parcelas (limite de simularCompra), com até 2 meses de deslocamento de fechamento.
       // O endpoint real é por mês da COMPRA, não retorna as parcelas sintéticas do exemplo.
       const meses = [t.dia.slice(0, 7)]

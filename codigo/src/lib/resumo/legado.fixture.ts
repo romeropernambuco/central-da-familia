@@ -6,17 +6,39 @@ export type EstadoEnv = 'ok' | 'dia_passou' | 'devendo'
  * E3 (conserto 2): o teto deste mês, o mesmo no topo e no cartão. No "por dia", o que passou no mês passado já saiu
  * (limite_mes = combinado menos o que passou); antes o cartão dizia "de R$ 6.000" e o topo "sobram R$ 5.493".
  */
-export const tetoDoMes = (e: Envelope) => (e.regra === 'diario' ? e.limite_mes : e.limite_base ?? e.limite_mes)
+export const tetoDoMes = (e: Envelope) => (e.regra === 'diario' ? e.limite_mes : (e.limite_base ?? e.limite_mes))
 /** "Dezembro começa com R$ 4.583 (R$ 717 de novembro e R$ 200 de parcela)": a mesma frase no dia 30 e no dia 1. */
-export function comecoDoMes(lim: number, passou: number, parcela: number, mesQuePassou: string): { valor: number; partes: string } {
-  const partes = [passou ? `${reais(passou)} de ${mesQuePassou}` : '', parcela ? `${reais(parcela)} de parcela` : ''].filter(Boolean)
-  return { valor: Math.max(0, centavos(lim - passou - parcela)), partes: partes.length ? ` (${partes.join(' e ')})` : '' }
+export function comecoDoMes(
+  lim: number,
+  passou: number,
+  parcela: number,
+  mesQuePassou: string,
+): { valor: number; partes: string } {
+  const partes = [
+    passou ? `${reais(passou)} de ${mesQuePassou}` : '',
+    parcela ? `${reais(parcela)} de parcela` : '',
+  ].filter(Boolean)
+  return {
+    valor: Math.max(0, centavos(lim - passou - parcela)),
+    partes: partes.length ? ` (${partes.join(' e ')})` : '',
+  }
 }
 /** 1º dia do mês seguinte (de onde sai o que passou). */
 export const primeiroDoMesQueVem = (hoje = hojeRecife()) => somaDias(fimDoMes(hoje), 1)
 
 /** O número principal de cada envelope, conforme a regra dele, e a explicação com os campos do banco. */
-export function numeroEnvelope(e: Envelope, diasRestantes: number): { valor: number; rotulo: string; linhas: LinhaExplicacao[]; usado: number; estado: EstadoEnv; devendo: number; passouHoje: number } {
+export function numeroEnvelope(
+  e: Envelope,
+  diasRestantes: number,
+): {
+  valor: number
+  rotulo: string
+  linhas: LinhaExplicacao[]
+  usado: number
+  estado: EstadoEnv
+  devendo: number
+  passouHoje: number
+} {
   const base = { estado: 'ok' as EstadoEnv, devendo: 0, passouHoje: 0 }
   const topo: LinhaExplicacao[] = [{ linha: 'Combinado pro mês', valor: e.limite_base ?? e.limite_mes }]
   if (e.falta_mes_anterior) topo.push({ linha: 'Passou no mês passado e saiu deste', valor: -e.falta_mes_anterior })
@@ -30,17 +52,33 @@ export function numeroEnvelope(e: Envelope, diasRestantes: number): { valor: num
       ...topo,
       { linha: 'Já gasto neste mês', valor: -gastoSemParcela },
       { linha: e.livre < 0 ? 'Passou do combinado (fica devendo)' : 'Livre no mês', valor: e.livre },
-      { linha: `${dividido(diasRestantes)}${temFds(diasRestantes) ? `. Sábado, domingo e feriado valem ${String(e.peso_fds ?? 1.5).replace('.', ',')} dia${pesoDia(hojeRecife()) > 1 ? ' (hoje é um deles)' : ''}` : ''}, então hoje vale`, valor: inteiro },
+      {
+        linha: `${dividido(diasRestantes)}${temFds(diasRestantes) ? `. Sábado, domingo e feriado valem ${String(e.peso_fds ?? 1.5).replace('.', ',')} dia${pesoDia(hojeRecife()) > 1 ? ' (hoje é um deles)' : ''}` : ''}, então hoje vale`,
+        valor: inteiro,
+      },
       { linha: 'Gasto hoje', valor: -(e.gasto_hoje || 0) },
       { linha: 'Ainda pode gastar hoje', valor: e.valor_dia },
     ]
-    return { valor: devendo ? 0 : e.valor_dia, rotulo: devendo ? 'fica devendo neste mês' : 'pode gastar hoje', usado: e.limite_mes ? e.gasto_mes / (e.limite_base ?? e.limite_mes) : 0, linhas, estado: devendo ? 'devendo' : passouHoje > 0 ? 'dia_passou' : 'ok', devendo, passouHoje }
+    return {
+      valor: devendo ? 0 : e.valor_dia,
+      rotulo: devendo ? 'fica devendo neste mês' : 'pode gastar hoje',
+      usado: e.limite_mes ? e.gasto_mes / (e.limite_base ?? e.limite_mes) : 0,
+      linhas,
+      estado: devendo ? 'devendo' : passouHoje > 0 ? 'dia_passou' : 'ok',
+      devendo,
+      passouHoje,
+    }
   }
   if (e.regra === 'semanal' && e.teto_semana != null) {
     const livre = centavos(e.teto_semana - (e.gasto_semana || 0))
     return {
       // rodada 2: nunca "livre" e "passou" juntos: quando passa, o rótulo vira "passou nesta semana"
-      ...base, valor: Math.max(0, livre), rotulo: livre < 0 ? 'passou nesta semana' : 'livre nesta semana', usado: e.teto_semana ? (e.gasto_semana || 0) / e.teto_semana : 0, devendo: livre < 0 ? -livre : 0, estado: livre < 0 ? 'devendo' : 'ok',
+      ...base,
+      valor: Math.max(0, livre),
+      rotulo: livre < 0 ? 'passou nesta semana' : 'livre nesta semana',
+      usado: e.teto_semana ? (e.gasto_semana || 0) / e.teto_semana : 0,
+      devendo: livre < 0 ? -livre : 0,
+      estado: livre < 0 ? 'devendo' : 'ok',
       linhas: [
         { linha: 'Teto da semana (combinado do mês × 12 ÷ 52 semanas)', valor: e.teto_semana },
         { linha: 'Já gasto desde segunda', valor: -(e.gasto_semana || 0) },
@@ -50,10 +88,30 @@ export function numeroEnvelope(e: Envelope, diasRestantes: number): { valor: num
   }
   const livreSemReserva = centavos(Math.max(0, e.livre - (e.colchao_meta || 0)))
   return {
-    ...base, valor: Math.max(0, e.livre), rotulo: e.livre < 0 ? 'fica devendo neste mês' : 'livre no mês', usado: e.limite_mes ? e.gasto_mes / e.limite_mes : 0, devendo: e.livre < 0 ? -e.livre : 0, estado: e.livre < 0 ? 'devendo' : 'ok',
-    linhas: [...topo, { linha: 'Já gasto neste mês', valor: -gastoSemParcela }, { linha: e.livre < 0 ? 'Passou do combinado (fica devendo)' : 'Livre no mês', valor: e.livre },
+    ...base,
+    valor: Math.max(0, e.livre),
+    rotulo: e.livre < 0 ? 'fica devendo neste mês' : 'livre no mês',
+    usado: e.limite_mes ? e.gasto_mes / e.limite_mes : 0,
+    devendo: e.livre < 0 ? -e.livre : 0,
+    estado: e.livre < 0 ? 'devendo' : 'ok',
+    linhas: [
+      ...topo,
+      { linha: 'Já gasto neste mês', valor: -gastoSemParcela },
+      { linha: e.livre < 0 ? 'Passou do combinado (fica devendo)' : 'Livre no mês', valor: e.livre },
       // B11: a conta de verdade do número de hoje ("Dividido por 13 dias que faltam: R$ 233,08")
-      ...(e.livre > 0 && e.hoje != null ? [...(e.colchao_meta ? [{ linha: 'Tirando a reserva (o dinheiro que a família combinou nunca gastar)', valor: livreSemReserva }] : []), { linha: `${dividido(diasRestantes)}: pode gastar hoje`, valor: e.hoje }] : []),
+      ...(e.livre > 0 && e.hoje != null
+        ? [
+            ...(e.colchao_meta
+              ? [
+                  {
+                    linha: 'Tirando a reserva (o dinheiro que a família combinou nunca gastar)',
+                    valor: livreSemReserva,
+                  },
+                ]
+              : []),
+            { linha: `${dividido(diasRestantes)}: pode gastar hoje`, valor: e.hoje },
+          ]
+        : []),
     ],
   }
 }
@@ -61,16 +119,36 @@ export function numeroEnvelope(e: Envelope, diasRestantes: number): { valor: num
 /** "Dividido pelos 13 dias que faltam" ("1 dia que falta", nunca "1 dias"). */
 const dividido = (n: number) => (n === 1 ? 'Dividido pelo 1 dia que falta' : `Dividido pelos ${n} dias que faltam`)
 /** Algum dos dias que faltam é sábado, domingo ou feriado? (só aí vale falar do 1,5 dia) */
-function temFds(n: number) { const h = hojeRecife(); for (let i = 0; i < n; i++) if (pesoDia(somaDias(h, i)) > 1) return true; return false }
-
-
-type Entrada = { data: string; valor: number }
-export function totaisDoMes(mes: string, hoje: string, gastos: Lancamento[], recebimentos: RecebimentoTela[], entradas: Entrada[]) {
-  // A compra original é a fonte; parcelas sintéticas do exemplo são só projeções de fatura.
-  const saiu = centavos(gastos.filter(l => !l.parcela && !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje).reduce((s, l) => s + l.valor, 0))
-  const entrou = centavos(entradas.filter(e => e.data.startsWith(mes) && e.data <= hoje).reduce((s, e) => s + e.valor, 0)
-    + recebimentos.filter(r => r.recebido_em?.startsWith(mes) && r.recebido_em.slice(0, 10) <= hoje).reduce((s, r) => s + (r.valor_recebido ?? r.valor), 0))
-  const previsto = centavos(recebimentos.filter(r => !r.recebido_em && r.certo && (r.mes_novo || r.mes_previsto) === mes).reduce((s, r) => s + r.valor, 0))
-  return { entrou, saiu, saldo: centavos(entrou - saiu), previsto }
+function temFds(n: number) {
+  const h = hojeRecife()
+  for (let i = 0; i < n; i++) if (pesoDia(somaDias(h, i)) > 1) return true
+  return false
 }
 
+type Entrada = { data: string; valor: number }
+export function totaisDoMes(
+  mes: string,
+  hoje: string,
+  gastos: Lancamento[],
+  recebimentos: RecebimentoTela[],
+  entradas: Entrada[],
+) {
+  // A compra original é a fonte; parcelas sintéticas do exemplo são só projeções de fatura.
+  const saiu = centavos(
+    gastos
+      .filter(l => !l.parcela && !l.apagado_em && l.data.startsWith(mes) && l.data <= hoje)
+      .reduce((s, l) => s + l.valor, 0),
+  )
+  const entrou = centavos(
+    entradas.filter(e => e.data.startsWith(mes) && e.data <= hoje).reduce((s, e) => s + e.valor, 0) +
+      recebimentos
+        .filter(r => r.recebido_em?.startsWith(mes) && r.recebido_em.slice(0, 10) <= hoje)
+        .reduce((s, r) => s + (r.valor_recebido ?? r.valor), 0),
+  )
+  const previsto = centavos(
+    recebimentos
+      .filter(r => !r.recebido_em && r.certo && (r.mes_novo || r.mes_previsto) === mes)
+      .reduce((s, r) => s + r.valor, 0),
+  )
+  return { entrou, saiu, saldo: centavos(entrou - saiu), previsto }
+}

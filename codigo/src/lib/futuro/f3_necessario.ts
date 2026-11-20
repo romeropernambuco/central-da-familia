@@ -1,5 +1,17 @@
 // F3 Patrimônio necessário na virada (ECONOMISTA item 3, F3).
-import { anoDe, arred, centavos, compararMes, Dec, listaMeses, mesAnterior, potencia, proximoMes, taxa, UM } from './decimal'
+import {
+  anoDe,
+  arred,
+  centavos,
+  compararMes,
+  Dec,
+  listaMeses,
+  mesAnterior,
+  potencia,
+  proximoMes,
+  taxa,
+  UM,
+} from './decimal'
 import { semValor, taxaRealMensal } from './f2_taxa_real'
 import type { Centavos, Mes, Taxa } from './tipos'
 
@@ -20,19 +32,38 @@ export function fatorInflacao(mes_base: Mes, virada: Mes, ipca_ano: Record<numbe
 }
 
 /** Gasto mensal levado do mês-base à virada: arred(gasto_hoje × fator). */
-export function gastoNaVirada(gasto_hoje: Centavos, mes_base: Mes, virada: Mes, ipca_ano: Record<number, Taxa>): Centavos {
+export function gastoNaVirada(
+  gasto_hoje: Centavos,
+  mes_base: Mes,
+  virada: Mes,
+  ipca_ano: Record<number, Taxa>,
+): Centavos {
   return arred(centavos(gasto_hoje).times(fatorInflacao(mes_base, virada, ipca_ano)))
 }
 
 /** patrimonio = a_cobrir × (1 + margem) ÷ taxa_real_mensal. null quando a taxa real ≤ 0 (nunca divide por zero). */
-export function patrimonioNecessario(a_cobrir: Centavos, margem: Taxa | Dec, taxa_real_anual: Taxa | Dec): Centavos | null {
+export function patrimonioNecessario(
+  a_cobrir: Centavos,
+  margem: Taxa | Dec,
+  taxa_real_anual: Taxa | Dec,
+): Centavos | null {
   if (semValor(taxa_real_anual)) return null
-  if (a_cobrir <= 0) { centavos(a_cobrir); return 0 }
-  return arred(centavos(a_cobrir).times(UM.plus(taxa(margem))).div(taxaRealMensal(taxa_real_anual)))
+  if (a_cobrir <= 0) {
+    centavos(a_cobrir)
+    return 0
+  }
+  return arred(
+    centavos(a_cobrir)
+      .times(UM.plus(taxa(margem)))
+      .div(taxaRealMensal(taxa_real_anual)),
+  )
 }
 
 /** renda_sustentavel_mensal = patrimonio × taxa_real_mensal. Zero se taxa real ≤ 0 ou patrimônio ≤ 0. */
 export function rendaSustentavel(patrimonio: Centavos, taxa_real_anual: Taxa | Dec): Centavos {
-  if (semValor(taxa_real_anual) || patrimonio <= 0) { centavos(patrimonio); return 0 }
+  if (semValor(taxa_real_anual) || patrimonio <= 0) {
+    centavos(patrimonio)
+    return 0
+  }
   return arred(centavos(patrimonio).times(taxaRealMensal(taxa_real_anual)))
 }

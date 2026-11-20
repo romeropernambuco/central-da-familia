@@ -5,12 +5,17 @@ import { apiExemplo, reiniciarExemplo } from './exemplo'
 import { protegerApi } from './protegida'
 
 const F = 'fam-silva'
-afterEach(() => { pendentes.limpar(); desfazer.limpar(); reiniciarExemplo() })
+afterEach(() => {
+  pendentes.limpar()
+  desfazer.limpar()
+  reiniciarExemplo()
+})
 /** A API do exemplo tratada como banco real: sem o retrato completo, só valem os inversos por ação. */
 const real = () => protegerApi({ ...apiExemplo, modo: 'real' })
 
 it('recebimento: marcar como certo tem desfazer que volta o valor anterior e não gera outro desfazer', async () => {
-  const api = real(), r = (await apiExemplo.recebimentos!(F))[0]
+  const api = real(),
+    r = (await apiExemplo.recebimentos!(F))[0]
   await api.recebimentoMudar!(F, r.id, { certo: !r.certo })
   expect((await apiExemplo.recebimentos!(F)).find(x => x.id === r.id)!.certo).toBe(!r.certo)
   expect(desfazer.atual).not.toBeNull()
@@ -20,7 +25,8 @@ it('recebimento: marcar como certo tem desfazer que volta o valor anterior e nã
 })
 
 it('recebimento: se o dado mudou depois, o desfazer recusa e avisa; apagar não oferece desfazer', async () => {
-  const api = real(), r = (await apiExemplo.recebimentos!(F))[0]
+  const api = real(),
+    r = (await apiExemplo.recebimentos!(F))[0]
   await api.recebimentoMudar!(F, r.id, { certo: !r.certo })
   const acao = desfazer.atual
   await apiExemplo.recebimentoMudar!(F, r.id, { certo: r.certo })
@@ -37,34 +43,47 @@ it('lembrete adiado volta para a hora de antes', async () => {
   await apiExemplo.lembreteCriar(F, { titulo: 'Fictício', quando: '2026-12-01T12:00:00.000Z', repetir: 'nunca' })
   const l = (await apiExemplo.lembretes(F)).find(x => x.titulo === 'Fictício')!
   await api.lembreteAdiar(F, l.id, '2026-12-02T12:00:00.000Z')
-  expect(new Date((await apiExemplo.lembretes(F)).find(x => x.id === l.id)!.quando).toISOString()).toBe('2026-12-02T12:00:00.000Z')
+  expect(new Date((await apiExemplo.lembretes(F)).find(x => x.id === l.id)!.quando).toISOString()).toBe(
+    '2026-12-02T12:00:00.000Z',
+  )
   expect(await desfazer.executar()).toBe(true)
-  expect(new Date((await apiExemplo.lembretes(F)).find(x => x.id === l.id)!.quando).toISOString()).toBe('2026-12-01T12:00:00.000Z')
+  expect(new Date((await apiExemplo.lembretes(F)).find(x => x.id === l.id)!.quando).toISOString()).toBe(
+    '2026-12-01T12:00:00.000Z',
+  )
 })
 
 it('cartão: mudar os dias volta o cadastro inteiro de antes', async () => {
-  const api = real(), c = (await apiExemplo.cartoes(F))[0]
+  const api = real(),
+    c = (await apiExemplo.cartoes(F))[0]
   await api.cartaoSalvar(F, { ...c, dia_fechamento: 3, dia_vencimento: 11 })
-  expect((await apiExemplo.cartoes(F)).find(x => x.id === c.id)).toMatchObject({ dia_fechamento: 3, dia_vencimento: 11 })
+  expect((await apiExemplo.cartoes(F)).find(x => x.id === c.id)).toMatchObject({
+    dia_fechamento: 3,
+    dia_vencimento: 11,
+  })
   expect(await desfazer.executar()).toBe(true)
   expect((await apiExemplo.cartoes(F)).find(x => x.id === c.id)).toEqual(c)
 })
 
 it('fatura: valor informado pela primeira vez não tem volta (o banco não sabe tirar); pagamento marcado tem', async () => {
-  const api = real(), c = (await apiExemplo.cartoes(F))[0]
+  const api = real(),
+    c = (await apiExemplo.cartoes(F))[0]
   const livre = '2031-05'
-  expect((await apiExemplo.faturasBanco(F)).find(x => x.cartao_id === c.id && x.mes.startsWith(livre))?.valor_banco ?? null).toBeNull()
+  expect(
+    (await apiExemplo.faturasBanco(F)).find(x => x.cartao_id === c.id && x.mes.startsWith(livre))?.valor_banco ?? null,
+  ).toBeNull()
   await api.faturaInformar(F, c.id, livre, { valor_banco: 123.45 })
   expect(desfazer.atual).toBeNull()
   await api.faturaInformar(F, c.id, livre, { paga_em: '2031-05-10' })
   expect(desfazer.atual).not.toBeNull()
   expect(await desfazer.executar()).toBe(true)
   const f = (await apiExemplo.faturasBanco(F)).find(x => x.cartao_id === c.id && x.mes.startsWith(livre))!
-  expect(f.paga_em).toBeNull(); expect(f.valor_banco).toBe(123.45)
+  expect(f.paga_em).toBeNull()
+  expect(f.valor_banco).toBe(123.45)
 })
 
 it('lançamento tirado da lixeira pode voltar para ela', async () => {
-  const api = real(), mes = '2026-11'
+  const api = real(),
+    mes = '2026-11'
   const l = (await apiExemplo.lancamentos(F, mes)).find(x => !x.apagado_em && !x.parcela)!
   await apiExemplo.apagarLancamento(l.id)
   await api.restaurarLancamento(l.id)
@@ -73,20 +92,24 @@ it('lançamento tirado da lixeira pode voltar para ela', async () => {
 })
 
 it('modo exemplo continua no retrato completo: os inversos por ação não entram', async () => {
-  const api = protegerApi(apiExemplo), r = (await apiExemplo.recebimentos!(F))[0]
+  const api = protegerApi(apiExemplo),
+    r = (await apiExemplo.recebimentos!(F))[0]
   await api.recebimentoMudar!(F, r.id, { apagar: true })
   expect(desfazer.atual).not.toBeNull()
 })
 
 /** O banco real ajusta o que recebe e a lista esconde cartão desativado; o exemplo não. Este invólucro imita os dois. */
-const realComoOBanco = () => protegerApi({
-  ...apiExemplo, modo: 'real',
-  cartaoSalvar: (f, c) => apiExemplo.cartaoSalvar(f, { ...c, taxa_periodo: c.taxa_valor ? c.taxa_periodo : null }),
-  cartoes: async f => (await apiExemplo.cartoes(f)).filter(c => c.ativo !== false),
-})
+const realComoOBanco = () =>
+  protegerApi({
+    ...apiExemplo,
+    modo: 'real',
+    cartaoSalvar: (f, c) => apiExemplo.cartaoSalvar(f, { ...c, taxa_periodo: c.taxa_valor ? c.taxa_periodo : null }),
+    cartoes: async f => (await apiExemplo.cartoes(f)).filter(c => c.ativo !== false),
+  })
 
 it('cartão sem anuidade: o desfazer funciona mesmo quando o banco guarda o período da taxa diferente do que a tela mandou', async () => {
-  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  const api = realComoOBanco(),
+    c = (await apiExemplo.cartoes(F))[0]
   await apiExemplo.cartaoSalvar(F, { ...c, taxa_valor: null, taxa_periodo: null })
   const antes = (await apiExemplo.cartoes(F)).find(x => x.id === c.id)!
   await api.cartaoSalvar(F, { ...antes, taxa_periodo: 'ano', dia_fechamento: 7 })
@@ -96,7 +119,8 @@ it('cartão sem anuidade: o desfazer funciona mesmo quando o banco guarda o per�
 })
 
 it('cartão desativado some da lista, e o desfazer traz ele de volta', async () => {
-  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  const api = realComoOBanco(),
+    c = (await apiExemplo.cartoes(F))[0]
   await api.cartaoSalvar(F, { ...c, ativo: false })
   expect((await api.cartoes(F)).some(x => x.id === c.id)).toBe(false)
   expect(await desfazer.executar()).toBe(true)
@@ -104,7 +128,8 @@ it('cartão desativado some da lista, e o desfazer traz ele de volta', async () 
 })
 
 it('cartão: se outra pessoa mexeu depois, o desfazer recusa', async () => {
-  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  const api = realComoOBanco(),
+    c = (await apiExemplo.cartoes(F))[0]
   await api.cartaoSalvar(F, { ...c, dia_fechamento: 7 })
   await apiExemplo.cartaoSalvar(F, { ...c, dia_fechamento: 9 })
   expect(await desfazer.executar()).toBe(false)

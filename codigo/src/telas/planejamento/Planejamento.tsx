@@ -21,10 +21,32 @@ import { Reajuste } from './Reajuste'
 import { novoUuid } from '../../lib/seguro'
 import { Qm } from '../../componentes/Qm'
 import type { Fatura } from '../../api/tipos'
-import { centavos, hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
+import {
+  centavos,
+  hojeRecife,
+  mesCurto,
+  reais,
+  textoParaValor,
+  valorDigitadoValido,
+  valorParaTexto,
+} from '../../lib/formato'
 
-interface Renda { id: string; nome: string; valor: number; /** salário entra na sobra; extra vai pra reserva (regra do salário); variável = muda todo mês (conta o mês fraco) */ tipo?: 'salario' | 'extra' | 'variavel'; fraco?: number; bom?: number; /** de quem é (cada um vê a sua) */ dono?: string }
-interface Meta { id: string; nome: string; valor: number; guardado: number }
+interface Renda {
+  id: string
+  nome: string
+  valor: number
+  /** salário entra na sobra; extra vai pra reserva (regra do salário); variável = muda todo mês (conta o mês fraco) */ tipo?:
+    'salario' | 'extra' | 'variavel'
+  fraco?: number
+  bom?: number
+  /** de quem é (cada um vê a sua) */ dono?: string
+}
+interface Meta {
+  id: string
+  nome: string
+  valor: number
+  guardado: number
+}
 const novoId = () => novoUuid().slice(0, 8)
 /** config_familia guarda lista (app novo) ou objeto por id (importado do app antigo: {r1:{fonte, valor}}). */
 function lista(v: unknown): any[] {
@@ -43,19 +65,36 @@ export function Planejamento() {
   // rendas e metas: só gravam depois de lidas e juntam com o que outro celular mudou (useConfig)
   const [rendasCfg, salvarRendas, , rendasLidas] = useConfig<unknown>('rendas', [])
   const [metasCfg, salvarMetas, , metasLidas] = useConfig<unknown>('metas', [])
-  const todasRendas: Renda[] = lista(rendasCfg).map(x => ({ id: x.id, nome: String(x.nome ?? x.fonte ?? 'Renda'), valor: Number(x.valor) || 0, tipo: x.tipo === 'extra' ? 'extra' : x.tipo === 'variavel' ? 'variavel' : 'salario', ...(x.fraco ? { fraco: Number(x.fraco), bom: Number(x.bom) || undefined } : {}), ...(x.dono ? { dono: String(x.dono) } : {}) }))
+  const todasRendas: Renda[] = lista(rendasCfg).map(x => ({
+    id: x.id,
+    nome: String(x.nome ?? x.fonte ?? 'Renda'),
+    valor: Number(x.valor) || 0,
+    tipo: x.tipo === 'extra' ? 'extra' : x.tipo === 'variavel' ? 'variavel' : 'salario',
+    ...(x.fraco ? { fraco: Number(x.fraco), bom: Number(x.bom) || undefined } : {}),
+    ...(x.dono ? { dono: String(x.dono) } : {}),
+  }))
   // E2 (regra nova, 13/11): o orçamento é da família. O casal vê a renda de cada um, com o nome; cada um anota a sua
   const rendas = todasRendas
   const [adultos, setAdultos] = useState(2)
   // C1 (revisão E2/E3): o outro adulto é reconhecido pelo id, nunca pelo nome (nome repetido não destrava)
   const [casalIds, setCasalIds] = useState<string[] | null>(null)
-  const [extra, setExtra] = useState<{ entrou: number; guardado: number; itens: { de: string; valor: number; destino: string }[] } | null>(null)
+  const [extra, setExtra] = useState<{
+    entrou: number
+    guardado: number
+    itens: { de: string; valor: number; destino: string }[]
+  } | null>(null)
   const [entradas] = useConfig<{ data: string; valor: number; destino: string }[]>('entradas', [])
-  const metas: Meta[] = lista(metasCfg).map(x => ({ id: x.id, nome: String(x.nome ?? 'Meta'), valor: Number(x.valor) || 0, guardado: Number(x.guardado) || 0 }))
+  const metas: Meta[] = lista(metasCfg).map(x => ({
+    id: x.id,
+    nome: String(x.nome ?? 'Meta'),
+    valor: Number(x.valor) || 0,
+    guardado: Number(x.guardado) || 0,
+  }))
   const [faturas, setFaturas] = useState<Fatura[]>([])
   const [form, setForm] = useState<'renda' | 'meta' | null>(null)
   const casal = familia?.papel === 'casal'
-  const envColchao = resumo?.envelopes.find(e => e.casa && e.regra === 'mensal') || resumo?.envelopes[resumo.envelopes.length - 1]
+  const envColchao =
+    resumo?.envelopes.find(e => e.casa && e.regra === 'mensal') || resumo?.envelopes[resumo.envelopes.length - 1]
 
   // O que o casal digita é o limite do mês (limite_base no banco); no semanal, limite_mes já é teto × segundas.
   const base = (e: { limite_mes: number; limite_base?: number }) => e.limite_base ?? e.limite_mes
@@ -68,25 +107,54 @@ export function Planejamento() {
   }, [resumo?.envelopes.map(e => base(e)).join(), colchaoMeta])
   useEffect(() => {
     if (!familia) return
-    api.faturas(familia.id, 6).then(setFaturas).catch(() => {})
-    api.membros(familia.id).then(m => { const c = m.filter(x => !x.papel || x.papel === 'casal'); setAdultos(Math.max(1, c.length)); setCasalIds(c.map(x => x.id)) }).catch(() => setCasalIds([]))
-    api.entrouAMais?.(familia.id, hojeRecife().slice(0, 7)).then(setExtra).catch(() => {})
+    api
+      .faturas(familia.id, 6)
+      .then(setFaturas)
+      .catch(() => {})
+    api
+      .membros(familia.id)
+      .then(m => {
+        const c = m.filter(x => !x.papel || x.papel === 'casal')
+        setAdultos(Math.max(1, c.length))
+        setCasalIds(c.map(x => x.id))
+      })
+      .catch(() => setCasalIds([]))
+    api
+      .entrouAMais?.(familia.id, hojeRecife().slice(0, 7))
+      .then(setExtra)
+      .catch(() => {})
   }, [api, familia?.id, versao])
 
-  if (!resumo || !familia) return <div className="card"><p className="sub">Abrindo…</p></div>
+  if (!resumo || !familia)
+    return (
+      <div className="card">
+        <p className="sub">Abrindo…</p>
+      </div>
+    )
   // E2: o limite do outro adulto é só pra ler (só ele muda); o seu, o dos filhos e a Casa o casal muda (decisão do coordenador).
   // C1: pelo id do dono e pelo papel; sem saber (lista de membros não chegou), trava o que o banco diz que não escreve.
-  const outroAdulto = (e: (typeof resumo.envelopes)[number]) => !!e.dono_id && e.dono_id !== familia.membroId && (e.dono_papel === 'casal' || (casalIds ?? []).includes(e.dono_id))
-  const mudaLimite = (e: (typeof resumo.envelopes)[number]) => casal && (escreveNo(e, familia) || (e.dono_id ? !outroAdulto(e) : casalIds !== null && e.dono_papel === 'pessoa'))
+  const outroAdulto = (e: (typeof resumo.envelopes)[number]) =>
+    !!e.dono_id && e.dono_id !== familia.membroId && (e.dono_papel === 'casal' || (casalIds ?? []).includes(e.dono_id))
+  const mudaLimite = (e: (typeof resumo.envelopes)[number]) =>
+    casal && (escreveNo(e, familia) || (e.dono_id ? !outroAdulto(e) : casalIds !== null && e.dono_papel === 'pessoa'))
   const salvarLimites = async () => {
     if (salvando) return
     // campo com 2 vírgulas ou vazio não vira zero calado: barra antes de gravar
     const ruim = resumo.envelopes.filter(mudaLimite).find(e => !valorDigitadoValido(lim[e.id] || ''))
-    if (ruim || !valorDigitadoValido(colchao)) { toast(`Confira o valor de ${ruim ? ruim.nome : 'Reserva'}: use só números e 1 vírgula, tipo 1500,00.`); return }
+    if (ruim || !valorDigitadoValido(colchao)) {
+      toast(`Confira o valor de ${ruim ? ruim.nome : 'Reserva'}: use só números e 1 vírgula, tipo 1500,00.`)
+      return
+    }
     setSalvando(true)
     // 1 função no banco (definir_limite): vale deste mês em diante e não mexe em mês fechado
-    const mudancas: MudancaLimite[] = resumo.envelopes.filter(mudaLimite).map(e => ({ envelope: e.id, antes: centavos(base(e)), depois: textoParaValor(lim[e.id]) })).filter(m => m.depois !== m.antes)
-    const reserva = envColchao && textoParaValor(colchao) !== centavos(colchaoMeta) ? { envelope: envColchao.id, antes: centavos(colchaoMeta), depois: textoParaValor(colchao) } : null
+    const mudancas: MudancaLimite[] = resumo.envelopes
+      .filter(mudaLimite)
+      .map(e => ({ envelope: e.id, antes: centavos(base(e)), depois: textoParaValor(lim[e.id]) }))
+      .filter(m => m.depois !== m.antes)
+    const reserva =
+      envColchao && textoParaValor(colchao) !== centavos(colchaoMeta)
+        ? { envelope: envColchao.id, antes: centavos(colchaoMeta), depois: textoParaValor(colchao) }
+        : null
     let voltar: (() => Promise<void>) | undefined
     const ok = await tentar(async () => {
       const r = await gravarLimites(api, familia.id, mudancas, reserva)
@@ -96,104 +164,395 @@ export function Planejamento() {
     await recarregar()
     setSalvando(false)
     // um desfazer só, que volta todos os limites desta gravação (também quando ela parou no meio)
-    const desfazerTudo = voltar && (async () => { await voltar!(); await recarregar() })
+    const desfazerTudo =
+      voltar &&
+      (async () => {
+        await voltar!()
+        await recarregar()
+      })
     if (ok) toast('Limites salvos. O número de hoje já mudou.', desfazerTudo)
     // gravação que parou no meio: o aviso do erro continua na tela e o desfazer do que entrou fica disponível
-    else if (desfazerTudo) desfazer.registrar({ rotulo: 'Última ação', desfazer: async () => { await desfazerTudo(); return true } })
+    else if (desfazerTudo)
+      desfazer.registrar({
+        rotulo: 'Última ação',
+        desfazer: async () => {
+          await desfazerTudo()
+          return true
+        },
+      })
   }
   // regra do salário: só salário entra na sobra; o que entra a mais vai pra reserva. Renda que muda conta o mês fraco.
-  const renda = centavos(rendas.filter(r => r.tipo !== 'extra').reduce((s, r) => s + (r.tipo === 'variavel' ? r.fraco || r.valor : r.valor), 0))
+  const renda = centavos(
+    rendas
+      .filter(r => r.tipo !== 'extra')
+      .reduce((s, r) => s + (r.tipo === 'variavel' ? r.fraco || r.valor : r.valor), 0),
+  )
   const sozinho = adultos <= 1
   // E2: a conta é da família: as rendas de todos menos os limites de cada um (com o nome) e da Casa. Some o "total dos outros sem detalhe".
   const limites = centavos(resumo.envelopes.reduce((s, e) => s + base(e), 0))
   const sobra = centavos(renda - limites)
-  const nomeLimite = (e: (typeof resumo.envelopes)[number]) => (e.casa ? `Casa: ${e.nome}` : donoDo(e) && !donoDo(e)!.endsWith(e.nome) ? `${e.nome} (de ${donoDo(e)})` : `Limite de ${donoDo(e) || e.nome}`)
-  const doTrabalho = centavos((entradas || []).filter(x => x.destino === 'renda' && x.data?.startsWith(hojeRecife().slice(0, 7))).reduce((s, x) => s + x.valor, 0))
+  const nomeLimite = (e: (typeof resumo.envelopes)[number]) =>
+    e.casa
+      ? `Casa: ${e.nome}`
+      : donoDo(e) && !donoDo(e)!.endsWith(e.nome)
+        ? `${e.nome} (de ${donoDo(e)})`
+        : `Limite de ${donoDo(e) || e.nome}`
+  const doTrabalho = centavos(
+    (entradas || [])
+      .filter(x => x.destino === 'renda' && x.data?.startsWith(hojeRecife().slice(0, 7)))
+      .reduce((s, x) => s + x.valor, 0),
+  )
   const meses = [...new Set(faturas.map(f => f.mes))].sort().slice(1, 6)
 
   return (
     <div className="tela-larga f30-planejamento">
       {/* C3 (sim do dono): o Objetivo de 2029, com o gráfico até 12/2028 e os 3 números, sobe pro topo da tela */}
-      <div className="col col-toda"><SaldoConta /><div data-secao="plano2029"><RumoA2029 oficial={destino.secao === 'plano2029'} /></div><Parametros /></div>
+      <div className="col col-toda">
+        <SaldoConta />
+        <div data-secao="plano2029">
+          <RumoA2029 oficial={destino.secao === 'plano2029'} />
+        </div>
+        <Parametros />
+      </div>
       <div className="col">
         <section className="card" aria-labelledby="pLim">
-          <div className="card-h"><h2 id="pLim"><Icone desenho={Wallet} aria-hidden="true" />Limites do mês</h2></div>
-          <p className="sub" style={{ marginBottom: 12 }}>Quanto cada um pode gastar por mês. Mudou aqui, muda o número de hoje.</p>
+          <div className="card-h">
+            <h2 id="pLim">
+              <Icone desenho={Wallet} aria-hidden="true" />
+              Limites do mês
+            </h2>
+          </div>
+          <p className="sub" style={{ marginBottom: 12 }}>
+            Quanto cada um pode gastar por mês. Mudou aqui, muda o número de hoje.
+          </p>
           <div>
             {resumo.envelopes.map(e => (
-              <label className="linha-campo" key={e.id} {...(mudaLimite(e) ? {} : { 'data-do-outro': textoPrivado(donoDo(e) || 'família') })}>
-                <span className="n">{textoPrivado(e.nome)}<small>{textoPrivado(!mudaLimite(e) && casal ? `de ${donoDo(e)}: só ${donoDo(e)} muda` : e.regra === 'diario' ? 'vira valor por dia' : e.regra === 'semanal' ? 'vira teto por semana' : 'vale pro mês')}</small></span>
-                <CampoValor valor={lim[e.id] || ''} desligado={!mudaLimite(e)} mudar={v => setLim({ ...lim, [e.id]: v })} />
+              <label
+                className="linha-campo"
+                key={e.id}
+                {...(mudaLimite(e) ? {} : { 'data-do-outro': textoPrivado(donoDo(e) || 'família') })}
+              >
+                <span className="n">
+                  {textoPrivado(e.nome)}
+                  <small>
+                    {textoPrivado(
+                      !mudaLimite(e) && casal
+                        ? `de ${donoDo(e)}: só ${donoDo(e)} muda`
+                        : e.regra === 'diario'
+                          ? 'vira valor por dia'
+                          : e.regra === 'semanal'
+                            ? 'vira teto por semana'
+                            : 'vale pro mês',
+                    )}
+                  </small>
+                </span>
+                <CampoValor
+                  valor={lim[e.id] || ''}
+                  desligado={!mudaLimite(e)}
+                  mudar={v => setLim({ ...lim, [e.id]: v })}
+                />
               </label>
             ))}
             <label className="linha-campo">
-              <span className="n"><span><Icone desenho={Shield} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Reserva</span><small>o dinheiro que a família combinou nunca gastar</small></span>
+              <span className="n">
+                <span>
+                  <Icone desenho={Shield} style={{ verticalAlign: '-3px' }} aria-hidden="true" /> Reserva
+                </span>
+                <small>o dinheiro que a família combinou nunca gastar</small>
+              </span>
               <CampoValor valor={colchao} desligado={!casal} mudar={setColchao} />
             </label>
           </div>
-          {casal && <button className="btn primary" type="button" disabled={salvando} onClick={salvarLimites} style={{ marginTop: 14 }}><Icone desenho={Save} />Salvar limites</button>}
+          {casal && (
+            <button
+              className="btn primary"
+              type="button"
+              disabled={salvando}
+              onClick={salvarLimites}
+              style={{ marginTop: 14 }}
+            >
+              <Icone desenho={Save} />
+              Salvar limites
+            </button>
+          )}
           {/* E7 (F8): no mês do reajuste, o teto novo pela inflação; vale com os 2 aprovando */}
           {casal && <Reajuste envelopes={resumo.envelopes} mudaLimite={mudaLimite} />}
         </section>
       </div>
       <div className="col">
         <section className="card" aria-labelledby="pRen">
-          <div className="card-h"><h2 id="pRen"><Icone nome="entrada" />{sozinho ? 'Rendas do mês' : 'Rendas da família'}</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('renda')}><Icone desenho={Plus} />Renda</button>}</div>
-          <p className="lbl">{oculto ? 'Previsão do mês' : sobra >= 0 ? (sozinho ? 'Sobra prevista no mês' : 'Sobra prevista da família no mês') : 'Os limites passam da renda'}</p>
-          <div className="numrow" style={{ marginBottom: 12 }}>
-            {oculto || sobra >= 0 ? <Din v={sobra} className="s44" /> : <span className="din-warn"><Din v={-sobra} className="s44" /></span>}
-            <Qm titulo={sozinho ? 'Sobra prevista no mês' : 'Sobra prevista da família no mês'} linhas={[
-              ...rendas.filter(r => r.tipo !== 'extra').map(r => ({ linha: `${r.nome}${r.dono && !sozinho ? ` (de ${r.dono})` : ''}${r.tipo === 'variavel' ? ', a do mês fraco' : ''}`, valor: r.tipo === 'variavel' ? r.fraco || r.valor : r.valor })),
-              ...resumo.envelopes.map(e => ({ linha: nomeLimite(e), valor: -base(e) })),
-              { linha: 'Sobra se o combinado for gasto todo', valor: sobra }]} nota="Previsão: considera que cada limite gasta tudo o que foi combinado. Dinheiro que entra a mais não entra aqui: vai pro guardado e conta para 2029." />
+          <div className="card-h">
+            <h2 id="pRen">
+              <Icone nome="entrada" />
+              {sozinho ? 'Rendas do mês' : 'Rendas da família'}
+            </h2>
+            {casal && (
+              <button className="lnk" type="button" onClick={() => setForm('renda')}>
+                <Icone desenho={Plus} />
+                Renda
+              </button>
+            )}
           </div>
-          {!oculto && sobra < 0 && <p className="todo warn" style={{ marginBottom: 12 }}>Os limites passam {reais(-sobra)} da renda do mês. Baixe um limite ou anote uma renda que falta.</p>}
-          <ul className="list">{rendas.map(r => <li key={r.id} className="li" style={{ gridTemplateColumns: '40px minmax(0,1fr) auto' }} {...(r.dono && r.dono !== familia.membroNome ? { 'data-do-outro': textoPrivado(r.dono) } : {})}><span className="tile"><Icone nome="entrada" /></span><span className="m"><b>{textoPrivado(r.nome)}</b><small>{!sozinho && <><NomeDaPessoa editar pessoa={{ tipo: 'renda', id: r.id, nome: r.dono }} /> · </>}{r.tipo === 'extra' ? 'entrou a mais: vai pro guardado' : r.tipo === 'variavel' ? `muda todo mês: de ${reais(r.fraco || r.valor)} a ${reais(r.bom || r.valor)}. A conta usa o mês fraco.` : 'salário'}</small></span><span className="v"><Din v={r.tipo === 'variavel' ? r.fraco || r.valor : r.valor} /></span></li>)}</ul>
-          {doTrabalho > 0 && <p className="sub" style={{ marginTop: 8 }}>Este mês já entrou do seu trabalho: <b>{reais(doTrabalho)}</b>.</p>}
+          <p className="lbl">
+            {oculto
+              ? 'Previsão do mês'
+              : sobra >= 0
+                ? sozinho
+                  ? 'Sobra prevista no mês'
+                  : 'Sobra prevista da família no mês'
+                : 'Os limites passam da renda'}
+          </p>
+          <div className="numrow" style={{ marginBottom: 12 }}>
+            {oculto || sobra >= 0 ? (
+              <Din v={sobra} className="s44" />
+            ) : (
+              <span className="din-warn">
+                <Din v={-sobra} className="s44" />
+              </span>
+            )}
+            <Qm
+              titulo={sozinho ? 'Sobra prevista no mês' : 'Sobra prevista da família no mês'}
+              linhas={[
+                ...rendas
+                  .filter(r => r.tipo !== 'extra')
+                  .map(r => ({
+                    linha: `${r.nome}${r.dono && !sozinho ? ` (de ${r.dono})` : ''}${r.tipo === 'variavel' ? ', a do mês fraco' : ''}`,
+                    valor: r.tipo === 'variavel' ? r.fraco || r.valor : r.valor,
+                  })),
+                ...resumo.envelopes.map(e => ({ linha: nomeLimite(e), valor: -base(e) })),
+                { linha: 'Sobra se o combinado for gasto todo', valor: sobra },
+              ]}
+              nota="Previsão: considera que cada limite gasta tudo o que foi combinado. Dinheiro que entra a mais não entra aqui: vai pro guardado e conta para 2029."
+            />
+          </div>
+          {!oculto && sobra < 0 && (
+            <p className="todo warn" style={{ marginBottom: 12 }}>
+              Os limites passam {reais(-sobra)} da renda do mês. Baixe um limite ou anote uma renda que falta.
+            </p>
+          )}
+          <ul className="list">
+            {rendas.map(r => (
+              <li
+                key={r.id}
+                className="li"
+                style={{ gridTemplateColumns: '40px minmax(0,1fr) auto' }}
+                {...(r.dono && r.dono !== familia.membroNome ? { 'data-do-outro': textoPrivado(r.dono) } : {})}
+              >
+                <span className="tile">
+                  <Icone nome="entrada" />
+                </span>
+                <span className="m">
+                  <b>{textoPrivado(r.nome)}</b>
+                  <small>
+                    {!sozinho && (
+                      <>
+                        <NomeDaPessoa editar pessoa={{ tipo: 'renda', id: r.id, nome: r.dono }} /> ·{' '}
+                      </>
+                    )}
+                    {r.tipo === 'extra'
+                      ? 'entrou a mais: vai pro guardado'
+                      : r.tipo === 'variavel'
+                        ? `muda todo mês: de ${reais(r.fraco || r.valor)} a ${reais(r.bom || r.valor)}. A conta usa o mês fraco.`
+                        : 'salário'}
+                  </small>
+                </span>
+                <span className="v">
+                  <Din v={r.tipo === 'variavel' ? r.fraco || r.valor : r.valor} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          {doTrabalho > 0 && (
+            <p className="sub" style={{ marginTop: 8 }}>
+              Este mês já entrou do seu trabalho: <b>{reais(doTrabalho)}</b>.
+            </p>
+          )}
           {/* E3 (conserto 8): renda que muda. O combinado sai do mês fraco; no mês bom, o que passa do fraco vai pro guardado */}
           {(() => {
             const v = rendas.find(r => r.tipo === 'variavel' && (!r.dono || r.dono === familia.membroNome))
             if (!v || !casal) return null
-            const fraco = v.fraco || v.valor, meuEnv = resumo.envelopes.find(e => e.id === familia.envelopeId && !e.casa)
+            const fraco = v.fraco || v.valor,
+              meuEnv = resumo.envelopes.find(e => e.id === familia.envelopeId && !e.casa)
             const aMais = centavos(doTrabalho - fraco)
-            return <>
-              {meuEnv && centavos(base(meuEnv)) !== centavos(fraco) && <button className="btn line sm" type="button" style={{ marginTop: 10 }} onClick={() => tentar(async () => { const r = await gravarLimites(api, familia.id, [{ envelope: meuEnv.id, antes: centavos(base(meuEnv)), depois: fraco }], null); if (r.erro) throw r.erro; await recarregar(); toast(`Combinado do mês: ${reais(fraco)}, o mês fraco.`, r.voltar && (async () => { await r.voltar!(); await recarregar() })) })}><Icone nome="abrir" />Usar {reais(fraco)} como combinado</button>}
-              {aMais > 0 && <p className="todo ok" style={{ marginTop: 10 }}><span>Mês bom: entrou {reais(aMais)} a mais que o mês fraco. Isso vai pro guardado e conta para 2029.</span><button className="btn sm line" type="button" onClick={() => abrirLancar({ entrou: true, valor: aMais, descricao: 'Mês bom do trabalho' })}><Icone nome="salvo" />Guardar {reais(aMais)}</button></p>}
-            </>
+            return (
+              <>
+                {meuEnv && centavos(base(meuEnv)) !== centavos(fraco) && (
+                  <button
+                    className="btn line sm"
+                    type="button"
+                    style={{ marginTop: 10 }}
+                    onClick={() =>
+                      tentar(async () => {
+                        const r = await gravarLimites(
+                          api,
+                          familia.id,
+                          [{ envelope: meuEnv.id, antes: centavos(base(meuEnv)), depois: fraco }],
+                          null,
+                        )
+                        if (r.erro) throw r.erro
+                        await recarregar()
+                        toast(
+                          `Combinado do mês: ${reais(fraco)}, o mês fraco.`,
+                          r.voltar &&
+                            (async () => {
+                              await r.voltar!()
+                              await recarregar()
+                            }),
+                        )
+                      })
+                    }
+                  >
+                    <Icone nome="abrir" />
+                    Usar {reais(fraco)} como combinado
+                  </button>
+                )}
+                {aMais > 0 && (
+                  <p className="todo ok" style={{ marginTop: 10 }}>
+                    <span>
+                      Mês bom: entrou {reais(aMais)} a mais que o mês fraco. Isso vai pro guardado e conta para 2029.
+                    </span>
+                    <button
+                      className="btn sm line"
+                      type="button"
+                      onClick={() => abrirLancar({ entrou: true, valor: aMais, descricao: 'Mês bom do trabalho' })}
+                    >
+                      <Icone nome="salvo" />
+                      Guardar {reais(aMais)}
+                    </button>
+                  </p>
+                )}
+              </>
+            )
           })()}
           {/* C17 (BRUNO ideia 2): a regra do salário cumprida, em 1 linha */}
-          {extra && (extra.entrou > 0
-            ? <p className={'todo ' + (extra.guardado >= extra.entrou ? 'ok' : 'warn')} style={{ marginTop: 10 }}>{extra.guardado >= extra.entrou ? <Icone desenho={CircleCheck} aria-hidden="true" /> : null}<span>{sozinho ? '' : 'A família toda, os 2 juntos. '}Entrou a mais este mês: <b>{reais(extra.entrou)}</b>. Já guardado: <b>{reais(extra.guardado)}</b>. {extra.guardado >= extra.entrou ? 'Regra cumprida: conta para 2029.' : <>Falta guardar: <b>{reais(centavos(extra.entrou - extra.guardado))}</b>.</>}</span></p>
-            : <p className="sub" style={{ marginTop: 10 }}>Este mês não entrou dinheiro a mais. Quando entrar, ele vai pro guardado (fora do gasto do mês) e conta para 2029.</p>)}
-          {casal && <button className="btn line sm" type="button" style={{ marginTop: 10 }} onClick={() => abrirLancar({ entrou: true })}><Icone nome="abrir" />+ Entrou dinheiro a mais (vai pro guardado)</button>}
-          {!rendas.length && rendasLidas && <><EstadoVazio ilustracao="Plano2029" titulo="Cada passo conta" frase="Nenhum salário anotado ainda. Com ele, o app mostra quanto sobra no mês." />{casal ? <button className="btn line" type="button" onClick={() => setForm('renda')}><Icone desenho={Plus} />Anotar renda</button> : undefined}</>}
+          {extra &&
+            (extra.entrou > 0 ? (
+              <p className={'todo ' + (extra.guardado >= extra.entrou ? 'ok' : 'warn')} style={{ marginTop: 10 }}>
+                {extra.guardado >= extra.entrou ? <Icone desenho={CircleCheck} aria-hidden="true" /> : null}
+                <span>
+                  {sozinho ? '' : 'A família toda, os 2 juntos. '}Entrou a mais este mês: <b>{reais(extra.entrou)}</b>.
+                  Já guardado: <b>{reais(extra.guardado)}</b>.{' '}
+                  {extra.guardado >= extra.entrou ? (
+                    'Regra cumprida: conta para 2029.'
+                  ) : (
+                    <>
+                      Falta guardar: <b>{reais(centavos(extra.entrou - extra.guardado))}</b>.
+                    </>
+                  )}
+                </span>
+              </p>
+            ) : (
+              <p className="sub" style={{ marginTop: 10 }}>
+                Este mês não entrou dinheiro a mais. Quando entrar, ele vai pro guardado (fora do gasto do mês) e conta
+                para 2029.
+              </p>
+            ))}
+          {casal && (
+            <button
+              className="btn line sm"
+              type="button"
+              style={{ marginTop: 10 }}
+              onClick={() => abrirLancar({ entrou: true })}
+            >
+              <Icone nome="abrir" />+ Entrou dinheiro a mais (vai pro guardado)
+            </button>
+          )}
+          {!rendas.length && rendasLidas && (
+            <>
+              <EstadoVazio
+                ilustracao="Plano2029"
+                titulo="Cada passo conta"
+                frase="Nenhum salário anotado ainda. Com ele, o app mostra quanto sobra no mês."
+              />
+              {casal ? (
+                <button className="btn line" type="button" onClick={() => setForm('renda')}>
+                  <Icone desenho={Plus} />
+                  Anotar renda
+                </button>
+              ) : undefined}
+            </>
+          )}
         </section>
 
         {/* E5: recebimentos com data, dentro do Planejamento (sem tela nova) */}
         <Recebimentos />
 
         <section className="card" aria-labelledby="pMet">
-          <div className="card-h"><h2 id="pMet"><Icone desenho={Target} aria-hidden="true" />Metas</h2>{casal && <button className="lnk" type="button" onClick={() => setForm('meta')}><Icone desenho={Plus} />Meta</button>}</div>
+          <div className="card-h">
+            <h2 id="pMet">
+              <Icone desenho={Target} aria-hidden="true" />
+              Metas
+            </h2>
+            {casal && (
+              <button className="lnk" type="button" onClick={() => setForm('meta')}>
+                <Icone desenho={Plus} />
+                Meta
+              </button>
+            )}
+          </div>
           {metas.map(m => (
             <div key={m.id} style={{ padding: '8px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{textoPrivado(m.nome)}</b><span className="sub"><Din v={m.guardado} /> de {reais(m.valor)}</span></div>
-              <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true"><i style={{ width: (oculto ? 0 : Math.min(100, (m.guardado / (m.valor || 1)) * 100)) + '%' }} /></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <b>{textoPrivado(m.nome)}</b>
+                <span className="sub">
+                  <Din v={m.guardado} /> de {reais(m.valor)}
+                </span>
+              </div>
+              <div className="meter ok" style={{ marginTop: 6 }} aria-hidden="true">
+                <i style={{ width: (oculto ? 0 : Math.min(100, (m.guardado / (m.valor || 1)) * 100)) + '%' }} />
+              </div>
             </div>
           ))}
-          {!metas.length && metasLidas && <><EstadoVazio ilustracao="Plano2029" titulo="Cada passo conta" frase="Nenhuma meta. Ex.: viagem de julho, material escolar." /></>}
+          {!metas.length && metasLidas && (
+            <>
+              <EstadoVazio
+                ilustracao="Plano2029"
+                titulo="Cada passo conta"
+                frase="Nenhuma meta. Ex.: viagem de julho, material escolar."
+              />
+            </>
+          )}
         </section>
 
         {meses.length > 0 && (
           <section className="card" aria-labelledby="pPrev">
-            <div className="card-h"><h2 id="pPrev">Próximos meses</h2></div>
-            <p className="sub" style={{ marginBottom: 8 }}>Salário menos limites menos o que já está nas faturas de cartão.</p>
+            <div className="card-h">
+              <h2 id="pPrev">Próximos meses</h2>
+            </div>
+            <p className="sub" style={{ marginBottom: 8 }}>
+              Salário menos limites menos o que já está nas faturas de cartão.
+            </p>
             {meses.map(m => {
               // E2: a conta é da família, então entram as faturas de todos os cartões
               const fat = centavos(faturas.filter(f => f.mes === m).reduce((s, f) => s + f.total, 0))
               const s = centavos(renda - limites - fat)
               return (
-                <div key={m} className="fat prev"><span>{mesCurto(m)}</span><span className="sub">faturas {reais(fat)}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{oculto || s >= 0 ? <Din v={s} /> : <span className="din-warn" title="passa da renda">passa <Din v={-s} /></span>}<Qm titulo={`Previsão de ${mesCurto(m)}`} linhas={[{ linha: sozinho ? 'Rendas' : 'Rendas da família', valor: renda }, { linha: sozinho ? 'Limites' : 'Limites de todos e da Casa', valor: -limites }, { linha: sozinho ? 'Já comprometido nas suas faturas' : 'Já comprometido nas faturas da família', valor: -fat }, { linha: 'Sobra prevista', valor: s }]} /></span>
+                <div key={m} className="fat prev">
+                  <span>{mesCurto(m)}</span>
+                  <span className="sub">faturas {reais(fat)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {oculto || s >= 0 ? (
+                      <Din v={s} />
+                    ) : (
+                      <span className="din-warn" title="passa da renda">
+                        passa <Din v={-s} />
+                      </span>
+                    )}
+                    <Qm
+                      titulo={`Previsão de ${mesCurto(m)}`}
+                      linhas={[
+                        { linha: sozinho ? 'Rendas' : 'Rendas da família', valor: renda },
+                        { linha: sozinho ? 'Limites' : 'Limites de todos e da Casa', valor: -limites },
+                        {
+                          linha: sozinho
+                            ? 'Já comprometido nas suas faturas'
+                            : 'Já comprometido nas faturas da família',
+                          valor: -fat,
+                        },
+                        { linha: 'Sobra prevista', valor: s },
+                      ]}
+                    />
+                  </span>
                 </div>
               )
             })}
@@ -202,12 +561,29 @@ export function Planejamento() {
       </div>
       {form && (
         <Sheet titulo={form === 'renda' ? 'Nova renda' : 'Nova meta'} fechar={() => setForm(null)}>
-          <FormSimples tipo={form} salvar={async (nome, valor, muda) => {
-            // só some da tela se gravou; se falhar, o aviso aparece e a lista volta como estava (a renda do outro continua guardada)
-            const nova: Renda = muda ? { id: novoId(), nome, valor: muda.fraco, tipo: 'variavel', fraco: muda.fraco, bom: muda.bom, dono: familia.membroNome } : { id: novoId(), nome, valor, tipo: 'salario', dono: familia.membroNome }
-            const ok = form === 'renda' ? await salvarRendas([...todasRendas, nova]) : await salvarMetas([...metas, { id: novoId(), nome, valor, guardado: 0 }])
-            if (ok) setForm(null);return ok
-          }} />
+          <FormSimples
+            tipo={form}
+            salvar={async (nome, valor, muda) => {
+              // só some da tela se gravou; se falhar, o aviso aparece e a lista volta como estava (a renda do outro continua guardada)
+              const nova: Renda = muda
+                ? {
+                    id: novoId(),
+                    nome,
+                    valor: muda.fraco,
+                    tipo: 'variavel',
+                    fraco: muda.fraco,
+                    bom: muda.bom,
+                    dono: familia.membroNome,
+                  }
+                : { id: novoId(), nome, valor, tipo: 'salario', dono: familia.membroNome }
+              const ok =
+                form === 'renda'
+                  ? await salvarRendas([...todasRendas, nova])
+                  : await salvarMetas([...metas, { id: novoId(), nome, valor, guardado: 0 }])
+              if (ok) setForm(null)
+              return ok
+            }}
+          />
         </Sheet>
       )}
     </div>
@@ -215,29 +591,81 @@ export function Planejamento() {
 }
 
 /** Nova renda (rodada 2, AUTONOMA ideia 1): "Valor fixo" ou "Muda todo mês" (mês fraco e mês bom; o teto sai do mês fraco). */
-function FormSimples({ tipo, salvar }: { tipo: 'renda' | 'meta'; salvar: (nome: string, valor: number, muda?: { fraco: number; bom: number }) => Promise<boolean> }) {
-  const [nome, setNome] = useRascunho('cadastro:plano:nome', ''), [v, setV] = useRascunho('cadastro:plano:v', '')
-  const [muda, setMuda] = useRascunho('cadastro:plano:muda', false), [fraco, setFraco] = useRascunho('cadastro:plano:fraco', ''), [bom, setBom] = useRascunho('cadastro:plano:bom', '')
-  const f = textoParaValor(fraco), b = textoParaValor(bom)
+function FormSimples({
+  tipo,
+  salvar,
+}: {
+  tipo: 'renda' | 'meta'
+  salvar: (nome: string, valor: number, muda?: { fraco: number; bom: number }) => Promise<boolean>
+}) {
+  const [nome, setNome] = useRascunho('cadastro:plano:nome', ''),
+    [v, setV] = useRascunho('cadastro:plano:v', '')
+  const [muda, setMuda] = useRascunho('cadastro:plano:muda', false),
+    [fraco, setFraco] = useRascunho('cadastro:plano:fraco', ''),
+    [bom, setBom] = useRascunho('cadastro:plano:bom', '')
+  const f = textoParaValor(fraco),
+    b = textoParaValor(bom)
   return (
-    <form style={{ display: 'grid', gap: 12 }} onSubmit={async e => { e.preventDefault(); if (!nome) return; const ok = tipo === 'renda' && muda ? f>0 && await salvar(nome,f,{fraco:f,bom:Math.max(b,f)}) : !!v && await salvar(nome,textoParaValor(v)); if(ok)[setNome,setV,setMuda,setFraco,setBom].forEach(s=>s.limpar()) }}>
-      <label className="campo"><span>Nome</span><CampoPrivado className="inp" placeholder={tipo === 'renda' ? 'Ex.: Salário, meu trabalho' : 'Ex.: Viagem de julho'} value={nome} onChange={e => setNome(e.target.value)} /></label>
+    <form
+      style={{ display: 'grid', gap: 12 }}
+      onSubmit={async e => {
+        e.preventDefault()
+        if (!nome) return
+        const ok =
+          tipo === 'renda' && muda
+            ? f > 0 && (await salvar(nome, f, { fraco: f, bom: Math.max(b, f) }))
+            : !!v && (await salvar(nome, textoParaValor(v)))
+        if (ok) [setNome, setV, setMuda, setFraco, setBom].forEach(s => s.limpar())
+      }}
+    >
+      <label className="campo">
+        <span>Nome</span>
+        <CampoPrivado
+          className="inp"
+          placeholder={tipo === 'renda' ? 'Ex.: Salário, meu trabalho' : 'Ex.: Viagem de julho'}
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+        />
+      </label>
       {tipo === 'renda' && (
         <div className="pills" role="group" aria-label="Como é essa renda">
-          <button type="button" className="pill" aria-pressed={!muda} onClick={() => setMuda(false)}>Valor fixo</button>
-          <button type="button" className="pill" aria-pressed={muda} onClick={() => setMuda(true)}>Muda todo mês</button>
+          <button type="button" className="pill" aria-pressed={!muda} onClick={() => setMuda(false)}>
+            Valor fixo
+          </button>
+          <button type="button" className="pill" aria-pressed={muda} onClick={() => setMuda(true)}>
+            Muda todo mês
+          </button>
         </div>
       )}
       {tipo === 'renda' && muda ? (
         <>
-          <div className="campo"><span>No mês fraco entra uns</span><CampoValor valor={fraco} mudar={setFraco} rotulo="Mês fraco" /></div>
-          <div className="campo"><span>No mês bom entra uns</span><CampoValor valor={bom} mudar={setBom} rotulo="Mês bom" /></div>
-          {f > 0 && <p className="todo ok"><span>Seu combinado sugerido: <b>{reais(f)}</b> (o mês fraco). O que vier a mais vai pro guardado{b > f ? `: até ${reais(centavos(b - f))} no mês bom` : ''}.</span></p>}
+          <div className="campo">
+            <span>No mês fraco entra uns</span>
+            <CampoValor valor={fraco} mudar={setFraco} rotulo="Mês fraco" />
+          </div>
+          <div className="campo">
+            <span>No mês bom entra uns</span>
+            <CampoValor valor={bom} mudar={setBom} rotulo="Mês bom" />
+          </div>
+          {f > 0 && (
+            <p className="todo ok">
+              <span>
+                Seu combinado sugerido: <b>{reais(f)}</b> (o mês fraco). O que vier a mais vai pro guardado
+                {b > f ? `: até ${reais(centavos(b - f))} no mês bom` : ''}.
+              </span>
+            </p>
+          )}
         </>
       ) : (
-        <label className="campo"><span>{tipo === 'renda' ? 'Valor por mês' : 'Quanto precisa juntar'}</span><CampoValor valor={v} mudar={v => setV(v.replace(/[^\d,]/g, ''))}  /></label>
+        <label className="campo">
+          <span>{tipo === 'renda' ? 'Valor por mês' : 'Quanto precisa juntar'}</span>
+          <CampoValor valor={v} mudar={v => setV(v.replace(/[^\d,]/g, ''))} />
+        </label>
       )}
-      <button className="btn primary full" type="submit"><Icone nome="salvo" />Salvar</button>
+      <button className="btn primary full" type="submit">
+        <Icone nome="salvo" />
+        Salvar
+      </button>
     </form>
   )
 }

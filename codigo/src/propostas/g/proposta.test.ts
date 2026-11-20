@@ -45,25 +45,35 @@ function detalhe(destino: Destino, fonte = dados, oculto = false) {
 }
 
 const financeiro = /data-numero-financeiro="true"[^>]*>((?:[^<]|<span\b[^>]*>[^<]*<\/span>)*)<\/span>/g
-const texto = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+const texto = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 const valores = (html: string) => [...html.matchAll(financeiro)].map(([, valor]) => texto(valor))
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const contextos = [
-  ['claro', 'celular'], ['escuro', 'celular'], ['claro', 'desktop'], ['escuro', 'desktop'],
+  ['claro', 'celular'],
+  ['escuro', 'celular'],
+  ['claro', 'desktop'],
+  ['escuro', 'desktop'],
 ] as const
 
-it.each(contextos)('renderiza Casa Viva em %s no %s com as quatro entradas e um título principal', (tema, dispositivo) => {
-  const html = inicio({ tema, dispositivo })
-  expect(html).toContain(`data-cv-tema="${tema}" data-cv-dispositivo="${dispositivo}"`)
-  expect(html.match(/<h1\b/g)).toHaveLength(1)
-  expect(html.match(/>Exemplo</g)).toHaveLength(1)
-  expect(html).toContain('Saúde da casa')
-  expect(html.match(/data-comodo="/g)).toHaveLength(4)
-  expect(html).toMatch(/Escritório.*Cozinha.*Carteira.*Cofre/)
-  expect(html.indexOf('class="cv-nav"') < html.indexOf('class="cv-mapa"')).toBe(dispositivo === 'desktop')
-  expect(valores(html)).toContain(texto(brl.format(dados.hojePodeGastar.valor.valor!)))
-  expect(valores(html)).toContain(texto(brl.format(dados.plano2029.faltamPorMesComMargem.valor! / 100)))
-})
+it.each(contextos)(
+  'renderiza Casa Viva em %s no %s com as quatro entradas e um título principal',
+  (tema, dispositivo) => {
+    const html = inicio({ tema, dispositivo })
+    expect(html).toContain(`data-cv-tema="${tema}" data-cv-dispositivo="${dispositivo}"`)
+    expect(html.match(/<h1\b/g)).toHaveLength(1)
+    expect(html.match(/>Exemplo</g)).toHaveLength(1)
+    expect(html).toContain('Saúde da casa')
+    expect(html.match(/data-comodo="/g)).toHaveLength(4)
+    expect(html).toMatch(/Escritório.*Cozinha.*Carteira.*Cofre/)
+    expect(html.indexOf('class="cv-nav"') < html.indexOf('class="cv-mapa"')).toBe(dispositivo === 'desktop')
+    expect(valores(html)).toContain(texto(brl.format(dados.hojePodeGastar.valor.valor!)))
+    expect(valores(html)).toContain(texto(brl.format(dados.plano2029.faltamPorMesComMargem.valor! / 100)))
+  },
+)
 
 it('reserva quatro valores para a maquete e um para o primeiro resumo móvel', () => {
   const preenchido = structuredClone(dados)
@@ -82,7 +92,9 @@ const chrome = [
   env.BROWSER_CHROME,
   join(env.ProgramFiles ?? '', 'Google/Chrome/Application/chrome.exe'),
   join(env['ProgramFiles(x86)'] ?? '', 'Microsoft/Edge/Application/msedge.exe'),
-  '/usr/bin/chromium', '/usr/bin/google-chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/google-chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].find(caminho => caminho && existsSync(caminho))
 
 it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos na geometria real da casca', () => {
@@ -91,18 +103,34 @@ it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos
   try {
     const arquivo = join(pasta, 'casca.html')
     const estilos = ['../base.css', '../comuns/escritorio-maquete.css', '../../componentes/ilustracoes/ilustracoes.css']
-      .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8')).join('\n')
-    const fontes = [['dm-sans', 'DM Sans'], ['fraunces', 'Fraunces']].map(([pastaFonte, familia]) => {
-      const fonte = readFileSync(`node_modules/@fontsource-variable/${pastaFonte}/files/${pastaFonte}-latin-wght-normal.woff2`)
-      return `@font-face { font-family: "${familia} Variable"; src: url(data:font/woff2;base64,${fonte.toString('base64')}); font-weight: 100 900; }`
-    }).join('\n')
-    const quadros = contextos.map(([tema, dispositivo]) =>
-      `<div class="lab" data-theme="${tema}"><div class="lab-amostra" data-dispositivo="${dispositivo}">
+      .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8'))
+      .join('\n')
+    const fontes = [
+      ['dm-sans', 'DM Sans'],
+      ['fraunces', 'Fraunces'],
+    ]
+      .map(([pastaFonte, familia]) => {
+        const fonte = readFileSync(
+          `node_modules/@fontsource-variable/${pastaFonte}/files/${pastaFonte}-latin-wght-normal.woff2`,
+        )
+        return `@font-face { font-family: "${familia} Variable"; src: url(data:font/woff2;base64,${fonte.toString('base64')}); font-weight: 100 900; }`
+      })
+      .join('\n')
+    const quadros = contextos
+      .map(
+        ([tema, dispositivo]) =>
+          `<div class="lab" data-theme="${tema}"><div class="lab-amostra" data-dispositivo="${dispositivo}">
         <div class="lab-quadro"><div class="lab-conteudo" data-proposta="g">${inicio({ tema, dispositivo })}</div></div>
-      </div></div>`).join('')
-    const medidor = ts.transpile(readFileSync(new URL('../medicao.ts', import.meta.url), 'utf8')
-      .replace('export function', 'function'), { target: ts.ScriptTarget.ES2020 })
-    writeFileSync(arquivo, `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}\n${css}</style>${quadros}
+      </div></div>`,
+      )
+      .join('')
+    const medidor = ts.transpile(
+      readFileSync(new URL('../medicao.ts', import.meta.url), 'utf8').replace('export function', 'function'),
+      { target: ts.ScriptTarget.ES2020 },
+    )
+    writeFileSync(
+      arquivo,
+      `<!doctype html><meta charset="utf-8"><style>${fontes}\n${estilos}\n${css}</style>${quadros}
       <pre id="resultado"></pre><script>${medidor}
       document.fonts.ready.then(() => {
         const medicoes = [...document.querySelectorAll('.lab-quadro')].map(quadro => {
@@ -121,49 +149,73 @@ it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos
         })
         document.querySelector('#resultado').textContent = encodeURIComponent(JSON.stringify(medicoes))
       })
-      </script>`)
-    const resultado = spawnSync(chrome!, [
-      '--headless', '--no-sandbox', '--no-first-run', '--disable-gpu', '--disable-background-networking',
-      `--user-data-dir=${join(pasta, 'perfil')}`, '--window-size=1400,900',
-      '--virtual-time-budget=4000', '--dump-dom', pathToFileURL(arquivo).href,
-    ], { encoding: 'utf8', timeout: 25_000, maxBuffer: 8_000_000 })
+      </script>`,
+    )
+    const resultado = spawnSync(
+      chrome!,
+      [
+        '--headless',
+        '--no-sandbox',
+        '--no-first-run',
+        '--disable-gpu',
+        '--disable-background-networking',
+        `--user-data-dir=${join(pasta, 'perfil')}`,
+        '--window-size=1400,900',
+        '--virtual-time-budget=4000',
+        '--dump-dom',
+        pathToFileURL(arquivo).href,
+      ],
+      { encoding: 'utf8', timeout: 25_000, maxBuffer: 8_000_000 },
+    )
     expect(resultado.status, resultado.error?.message ?? resultado.stderr).toBe(0)
     const capturado = resultado.stdout.match(/<pre id="resultado">([^<]+)<\/pre>/)?.[1]
     expect(capturado).toBeTruthy()
     const medicoes = JSON.parse(decodeURIComponent(capturado!)) as {
-      numeros: string[]; semTransbordo: boolean; valoresInteiros: boolean; orcamentoVisivel: boolean; controles: number[]
+      numeros: string[]
+      semTransbordo: boolean
+      valoresInteiros: boolean
+      orcamentoVisivel: boolean
+      controles: number[]
     }[]
     expect(medicoes.map(m => m.numeros.length)).toEqual([3, 3, 4, 4])
     for (const [i, medicao] of medicoes.entries()) {
       expect(new Set(medicao.numeros).size).toBe(medicao.numeros.length)
       expect(medicao, contextos[i].join(' · ')).toMatchObject({
-        semTransbordo: true, valoresInteiros: true, orcamentoVisivel: true,
+        semTransbordo: true,
+        valoresInteiros: true,
+        orcamentoVisivel: true,
       })
       expect(medicao.controles).toHaveLength(12)
       expect(Math.min(...medicao.controles)).toBeGreaterThanOrEqual(44)
     }
   } finally {
-    if (dirname(realpathSync(pasta)) === raizTemp) rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    if (dirname(realpathSync(pasta)) === raizTemp)
+      rmSync(pasta, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   }
 })
 
 it('remove montantes, percentuais, proporções e números em texto livre pelo olho da casca', () => {
   const exemplo = structuredClone(dados)
   exemplo.plano2029.progressao = { ...dados.plano2029.progressao, estado: 'pronto', valor: 73.4 }
-  exemplo.alertas = { ...dados.alertas, estado: 'pronto', valor: [
-    { id: 'aviso', nivel: 'operacao', texto: 'Conferir 987654,32 e 66,6% (R$ 9.876,54)' },
-  ] }
+  exemplo.alertas = {
+    ...dados.alertas,
+    estado: 'pronto',
+    valor: [{ id: 'aviso', nivel: 'operacao', texto: 'Conferir 987654,32 e 66,6% (R$ 9.876,54)' }],
+  }
   expect(detalhe('plano', exemplo)).toMatch(/<progress[^>]+value="73.4"/)
   expect(detalhe('plano', exemplo)).toContain('73,4<span class="numero-simbolo">%</span>')
   expect(detalhe('pendencias', exemplo)).toContain('987654,32')
   expect(detalhe('patrimonio')).toContain('Aluguel líquido estimado')
   const telasOcultas = [
     inicio({ dados: exemplo }, true),
-    ...(['caixa', 'casa', 'cartoes', 'patrimonio', 'plano', 'pendencias'] as const)
-      .map(destino => detalhe(destino, exemplo, true)),
+    ...(['caixa', 'casa', 'cartoes', 'patrimonio', 'plano', 'pendencias'] as const).map(destino =>
+      detalhe(destino, exemplo, true),
+    ),
   ]
   for (const html of telasOcultas) {
-    expect(html).not.toMatch(/data-numero-financeiro|R\$|\d\s*%|987654|73[.,]4|66,6|<(?:progress|meter)\b|aria-value(?:now|text)=/)
+    expect(html).not.toMatch(
+      /data-numero-financeiro|R\$|\d\s*%|987654|73[.,]4|66,6|<(?:progress|meter)\b|aria-value(?:now|text)=/,
+    )
   }
   expect(telasOcultas[0]).toContain('aria-label="Valor oculto"')
   expect(telasOcultas[telasOcultas.length - 1]).toContain('Valores ocultos')
@@ -196,15 +248,22 @@ it('mostra ausências sem trocar um zero disponível por falta de informação',
 
 it('ordena e nomeia os três níveis de aviso por extenso', () => {
   const exemplo = structuredClone(dados)
-  exemplo.alertas = { ...dados.alertas, estado: 'pronto', valor: [
-    { id: 'lembrete:a', nivel: 'lembrete', texto: 'Rever a lista' },
-    { id: 'feira:b', nivel: 'operacao', texto: 'Conferir a nota' },
-    { id: 'fatura:c', nivel: 'dinheiro em risco', texto: 'Resolver a fatura' },
-  ] }
+  exemplo.alertas = {
+    ...dados.alertas,
+    estado: 'pronto',
+    valor: [
+      { id: 'lembrete:a', nivel: 'lembrete', texto: 'Rever a lista' },
+      { id: 'feira:b', nivel: 'operacao', texto: 'Conferir a nota' },
+      { id: 'fatura:c', nivel: 'dinheiro em risco', texto: 'Resolver a fatura' },
+    ],
+  }
   expect(inicio({ dados: exemplo })).toContain('Há um pagamento que pede atenção')
   const html = detalhe('pendencias', exemplo)
-  expect([...html.matchAll(/class="cv-pilula">(.+?)<\/span>/g)].map(([, conteudo]) => texto(conteudo)))
-    .toEqual(['Dinheiro em risco', 'Operação', 'Lembrete'])
+  expect([...html.matchAll(/class="cv-pilula">(.+?)<\/span>/g)].map(([, conteudo]) => texto(conteudo))).toEqual([
+    'Dinheiro em risco',
+    'Operação',
+    'Lembrete',
+  ])
 })
 
 it('abre detalhes com título associado, maquete focada e equipe identificada em texto', () => {
@@ -218,8 +277,9 @@ it('abre detalhes com título associado, maquete focada e equipe identificada em
   const equipe = dados.funcionarios.valor!.filter(f => f.sala === 'caixa')
   const postos = [...html.matchAll(/<g data-funcionario="([^"]+)"/g)].map(([, id]) => id)
   expect(postos.sort()).toEqual(equipe.map(f => f.id).sort())
-  const rotulos = [...html.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g)]
-    .map(([, nome]) => nome)
+  const rotulos = [
+    ...html.matchAll(/<span\b[^>]*data-estado="[^"]+"[^>]*title="[^"]+"[^>]*><svg\b[^>]*>.*?<\/svg>([^<]+)<\/span>/g),
+  ].map(([, nome]) => nome)
   expect(rotulos.sort()).toEqual(equipe.map(f => f.curto).sort())
   expect(html).not.toContain('<h1')
 })
@@ -247,35 +307,50 @@ it('aplica foco terracota, números tabulares e superfícies sólidas', () => {
   const html = inicio()
   expect(html).toContain('lucide')
   expect(html).not.toMatch(/\p{Extended_Pictographic}|<(?:linearGradient|radialGradient|filter)\b/u)
-  expect(css).not.toMatch(/gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:/i)
+  expect(css).not.toMatch(
+    /gradient\(|backdrop-filter|background-clip:\s*text|text-shadow|border-(?:left|inline-start)\s*:/i,
+  )
   expect(css).toMatch(/outline: 2px solid var\(--destaque\)/)
   expect(css).toMatch(/tabular-nums;\s*white-space: nowrap/)
   expect(css).toMatch(/prefers-reduced-motion: reduce/)
 })
 
 function luminancia(hex: string) {
-  const [r, g, b] = hex.slice(1).match(/../g)!.map(par => {
-    const srgb = Number.parseInt(par, 16) / 255
-    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4
-  })
+  const [r, g, b] = hex
+    .slice(1)
+    .match(/../g)!
+    .map(par => {
+      const srgb = Number.parseInt(par, 16) / 255
+      return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4
+    })
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
 it.each(['claro', 'escuro'])('atinge AA com os pares de tokens do tema %s', tema => {
   const bloco = css.split('}')[tema === 'claro' ? 0 : 1]
-  const tokens = Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/g)]
-    .map(([, nome, hex]) => [nome, hex]))
+  const tokens = Object.fromEntries(
+    [...bloco.matchAll(/--([\w-]+):\s*(#[\da-f]{6});/g)].map(([, nome, hex]) => [nome, hex]),
+  )
   const pares = [
-    ['texto', 'fundo'], ['texto', 'cartao'], ['texto', 'menu'], ['texto', 'cv-palco'],
-    ['texto-secundario', 'cartao'], ['texto-secundario', 'menu'], ['texto-secundario', 'fundo'],
-    ['texto-secundario', 'cv-palco'], ['texto-secundario', 'cv-nav'],
-    ['destaque', 'cartao'], ['destaque', 'fundo'], ['destaque', 'cv-ativo'], ['destaque', 'cv-nav'],
-    ['sobre-destaque', 'destaque'], ['risco', 'cv-risco-fundo'],
+    ['texto', 'fundo'],
+    ['texto', 'cartao'],
+    ['texto', 'menu'],
+    ['texto', 'cv-palco'],
+    ['texto-secundario', 'cartao'],
+    ['texto-secundario', 'menu'],
+    ['texto-secundario', 'fundo'],
+    ['texto-secundario', 'cv-palco'],
+    ['texto-secundario', 'cv-nav'],
+    ['destaque', 'cartao'],
+    ['destaque', 'fundo'],
+    ['destaque', 'cv-ativo'],
+    ['destaque', 'cv-nav'],
+    ['sobre-destaque', 'destaque'],
+    ['risco', 'cv-risco-fundo'],
   ]
   for (const [frente, fundo] of pares) {
     const a = luminancia(tokens[frente])
     const b = luminancia(tokens[fundo])
-    expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), `${frente} / ${fundo}`)
-      .toBeGreaterThanOrEqual(4.5)
+    expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), `${frente} / ${fundo}`).toBeGreaterThanOrEqual(4.5)
   }
 })

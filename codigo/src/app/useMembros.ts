@@ -8,27 +8,70 @@ let geracao = 0
 const cache = new WeakMap<Api, Map<string, Promise<{ id: string; user_id?: string; nome: string }[]>>>()
 function lerMembros(api: Api, fid: string, versao: number) {
   let entradas = cache.get(api)
-  if (!entradas) { entradas = new Map(); cache.set(api, entradas) }
+  if (!entradas) {
+    entradas = new Map()
+    cache.set(api, entradas)
+  }
   const chave = `${fid}:${versao}:${geracao}`
   let leitura = entradas.get(chave)
-  if (!leitura) { entradas.clear(); leitura = api.membros(fid); entradas.set(chave, leitura) }
+  if (!leitura) {
+    entradas.clear()
+    leitura = api.membros(fid)
+    entradas.set(chave, leitura)
+  }
   return leitura
 }
-export function invalidarNomes() { geracao++; ouvintes.forEach(f => f()) }
+export function invalidarNomes() {
+  geracao++
+  ouvintes.forEach(f => f())
+}
 export function useMembros() {
   const { api, familia, versao } = useApp()
   const [ms, setMs] = useState<{ id: string; user_id?: string; nome: string }[]>([])
   const pode = familia?.papel === 'casal'
   const [carregando, setCarregando] = useState(false)
-  const [erro, setErro] = useState(false), [n, setN] = useState(0)
+  const [erro, setErro] = useState(false),
+    [n, setN] = useState(0)
   const repetir = invalidarNomes
-  useEffect(() => { const avisar = () => setN(x => x + 1); ouvintes.add(avisar); return () => { ouvintes.delete(avisar) } }, [])
   useEffect(() => {
-    let vivo = true; setMs([]); setErro(false); setCarregando(pode)
-    if (familia && pode) lerMembros(api, familia.id, versao).then(m => { if (vivo) { setMs(m); setCarregando(false) } }).catch(() => { if (vivo) { setErro(true); setCarregando(false) } })
-    return () => { vivo = false }
+    const avisar = () => setN(x => x + 1)
+    ouvintes.add(avisar)
+    return () => {
+      ouvintes.delete(avisar)
+    }
+  }, [])
+  useEffect(() => {
+    let vivo = true
+    setMs([])
+    setErro(false)
+    setCarregando(pode)
+    if (familia && pode)
+      lerMembros(api, familia.id, versao)
+        .then(m => {
+          if (vivo) {
+            setMs(m)
+            setCarregando(false)
+          }
+        })
+        .catch(() => {
+          if (vivo) {
+            setErro(true)
+            setCarregando(false)
+          }
+        })
+    return () => {
+      vivo = false
+    }
   }, [api, familia?.id, pode, versao, n])
-  return Object.assign((id?: string | null) => id === familia?.membroId ? familia?.membroNome || null : (id ? ms.find(m => m.id === id || m.user_id === id)?.nome || null : null), { erro, carregando, repetir, lista: ms, invalidar: invalidarNomes })
+  return Object.assign(
+    (id?: string | null) =>
+      id === familia?.membroId
+        ? familia?.membroNome || null
+        : id
+          ? ms.find(m => m.id === id || m.user_id === id)?.nome || null
+          : null,
+    { erro, carregando, repetir, lista: ms, invalidar: invalidarNomes },
+  )
 }
 
 /** E3 (conserto 8): quantos adultos tem o casal. Família de 1 adulto não vê "Do casal" nem "vocês". null = ainda buscando. */
@@ -40,8 +83,17 @@ export function useAdultos(): number | null {
     if (!familia || !pode) return
     // pessoa da família (filho, avó) não conta como adulto do casal; sem o papel na resposta, conta todo mundo
     let vivo = true
-    api.membros(familia.id).then(ms => { if (vivo) setN(Math.max(1, ms.filter(m => !m.papel || m.papel === 'casal').length)) }).catch(() => { if (vivo) setN(2) })
-    return () => { vivo = false }
+    api
+      .membros(familia.id)
+      .then(ms => {
+        if (vivo) setN(Math.max(1, ms.filter(m => !m.papel || m.papel === 'casal').length))
+      })
+      .catch(() => {
+        if (vivo) setN(2)
+      })
+    return () => {
+      vivo = false
+    }
   }, [api, familia?.id, pode])
   return n
 }

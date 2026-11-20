@@ -19,8 +19,13 @@ export function marcaDaSemana(hoje: string): number {
   const ini = segundaDaSemana(hoje) < hoje.slice(0, 8) + '01' ? hoje.slice(0, 8) + '01' : segundaDaSemana(hoje)
   const dom = somaDias(hoje, (7 - new Date(hoje + 'T12:00:00Z').getUTCDay()) % 7)
   const fim = dom > fimDoMes(hoje) ? fimDoMes(hoje) : dom
-  let antes = 0, total = 0
-  for (let d = ini; d <= fim; d = somaDias(d, 1)) { const p = pesoDia(d); total += p; if (d < hoje) antes += p }
+  let antes = 0,
+    total = 0
+  for (let d = ini; d <= fim; d = somaDias(d, 1)) {
+    const p = pesoDia(d)
+    total += p
+    if (d < hoje) antes += p
+  }
   return total > 0 ? antes / total : 0
 }
 
@@ -28,7 +33,8 @@ export function marcaDaSemana(hoje: string): number {
 function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo: string }) {
   const { oculto } = useApp()
   if (oculto) return <p className="sub">Gráfico oculto.</p>
-  const f = Math.max(0, Math.min(1, feito)), m = Math.max(0, Math.min(1, marca))
+  const f = Math.max(0, Math.min(1, feito)),
+    m = Math.max(0, Math.min(1, marca))
   return (
     <div className="meter ritmo-meter" role="img" aria-label={textoPrivado(rotulo)}>
       <i style={{ width: Math.max(f > 0 ? 2 : 0, f * 100) + '%' }} className={feito > marca + 0.0001 ? 'acima' : ''} />
@@ -39,9 +45,18 @@ function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo:
 
 export type ValoresDoRitmo = { gasto: number; limite: number; fecha?: number; excesso?: number }
 
-export function RitmoMes({ e, quem, porDia, valoresJaVisiveis }: { e: Envelope; /** E2: no orçamento do outro, o nome dele no lugar de "você" */ quem?: string
+export function RitmoMes({
+  e,
+  quem,
+  porDia,
+  valoresJaVisiveis,
+}: {
+  e: Envelope
+  /** E2: no orçamento do outro, o nome dele no lugar de "você" */ quem?: string
   /** C3 (gráfico A): o gasto à vista de cada dia deste envelope no mês (AAAA-MM-DD: reais). Sem ele, a linha vai reta até hoje. */
-  porDia?: Record<string, number> | null; valoresJaVisiveis?: ValoresDoRitmo }) {
+  porDia?: Record<string, number> | null
+  valoresJaVisiveis?: ValoresDoRitmo
+}) {
   const hoje = hojeRecife()
   // E3 (conserto 10): quando o domingo já é do mês que vem, a conta para no fim do mês e o rótulo diz isso
   const domingo = somaDias(hoje, (7 - new Date(hoje + 'T12:00:00Z').getUTCDay()) % 7)
@@ -62,20 +77,73 @@ export function RitmoMes({ e, quem, porDia, valoresJaVisiveis }: { e: Envelope; 
     <div className="ritmo">
       {e.ate_domingo != null && (
         <div className="ritmo-b">
-          <p className="ritmo-t"><span>{rotuloSemana}</span><b>{reais(e.ate_domingo)}</b></p>
-          {totalSemana != null && totalSemana > 0 && <Barra feito={(semana || 0) / totalSemana} marca={marcaSem} rotulo={`Semana: já foram ${reais(semana || 0)} de ${reais(totalSemana)}. O traço é onde deveria estar hoje.`} />}
-          {semana != null && <p className="ritmo-f">Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compara grande` : ''}.</p>}
+          <p className="ritmo-t">
+            <span>{rotuloSemana}</span>
+            <b>{reais(e.ate_domingo)}</b>
+          </p>
+          {totalSemana != null && totalSemana > 0 && (
+            <Barra
+              feito={(semana || 0) / totalSemana}
+              marca={marcaSem}
+              rotulo={`Semana: já foram ${reais(semana || 0)} de ${reais(totalSemana)}. O traço é onde deveria estar hoje.`}
+            />
+          )}
+          {semana != null && (
+            <p className="ritmo-f">
+              Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compara grande` : ''}.
+            </p>
+          )}
         </div>
       )}
       {dia >= 2 && lim > 0 && (
         <div className={'ritmo-b ' + (dia >= 3 ? (p.dentro ? 'ok' : 'warn') : '')}>
-          <p className="ritmo-t"><span>{dia >= 3 ? 'Se continuar assim' : 'No mês'}</span>{(exibirFecha || exibirLimite) && <b>{exibirFecha ? reais(fecha) : ''}{exibirLimite ? `${exibirFecha ? ' de ' : 'Combinado '}${reais(lim)}` : ''}</b>}</p>
+          <p className="ritmo-t">
+            <span>{dia >= 3 ? 'Se continuar assim' : 'No mês'}</span>
+            {(exibirFecha || exibirLimite) && (
+              <b>
+                {exibirFecha ? reais(fecha) : ''}
+                {exibirLimite ? `${exibirFecha ? ' de ' : 'Combinado '}${reais(lim)}` : ''}
+              </b>
+            )}
+          </p>
           {/* C3, gráfico A (no lugar da barra do mês): gasto acumulado, pontilhado "se continuar assim", combinado tracejado; âmbar só se passar */}
-          <GraficoMes gasto={e.gasto_mes} limite={lim} fecha={fecha} hoje={hoje} dias={diasNoMes(hoje)} porDia={porDia} semRotulosDeValores={!!valoresJaVisiveis} />
-          <p className="ritmo-f">{dia < 3 ? valoresJaVisiveis?.gasto === e.gasto_mes ? '' : `Já saíram ${reais(e.gasto_mes)}.` : p.dentro ? `${quemFecha} o mês dentro do combinado.` : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Siga o valor de cada dia.`}</p>
+          <GraficoMes
+            gasto={e.gasto_mes}
+            limite={lim}
+            fecha={fecha}
+            hoje={hoje}
+            dias={diasNoMes(hoje)}
+            porDia={porDia}
+            semRotulosDeValores={!!valoresJaVisiveis}
+          />
+          <p className="ritmo-f">
+            {dia < 3
+              ? valoresJaVisiveis?.gasto === e.gasto_mes
+                ? ''
+                : `Já saíram ${reais(e.gasto_mes)}.`
+              : p.dentro
+                ? `${quemFecha} o mês dentro do combinado.`
+                : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Siga o valor de cada dia.`}
+          </p>
         </div>
       )}
-      {(e.ate_domingo != null || (dia >= 2 && lim > 0)) && <p className="leg ritmo-leg">{e.ate_domingo != null && <span><i className="q risco-q" />na barra da semana, o traço é onde deveria estar hoje</span>}{dia >= 3 && lim > 0 && <span><i className="q g-q-pont" />no gráfico do mês, o pontilhado é se continuar assim</span>}{pontual > 0 && <span>parcelas e compras grandes ({reais(pontual)}) contam 1 vez só</span>}</p>}
+      {(e.ate_domingo != null || (dia >= 2 && lim > 0)) && (
+        <p className="leg ritmo-leg">
+          {e.ate_domingo != null && (
+            <span>
+              <i className="q risco-q" />
+              na barra da semana, o traço é onde deveria estar hoje
+            </span>
+          )}
+          {dia >= 3 && lim > 0 && (
+            <span>
+              <i className="q g-q-pont" />
+              no gráfico do mês, o pontilhado é se continuar assim
+            </span>
+          )}
+          {pontual > 0 && <span>parcelas e compras grandes ({reais(pontual)}) contam 1 vez só</span>}
+        </p>
+      )}
     </div>
   )
 }

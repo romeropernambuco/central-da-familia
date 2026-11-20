@@ -1,8 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import {
-  reais, partesDinheiro, hojeRecife, somaDias, diasNoMes, dataCurta, mesCurto, diasRestantes, segundaDaSemana,
-  tecla, textoParaValor, simularCompra, cofrinho, avisoDAE, reservaFolha, previsaoGas, mensagemConvite,
-  codigo4Valido, codigo6Valido, emailValido, segundosDesde, segundosTexto, centavos,
+  reais,
+  partesDinheiro,
+  hojeRecife,
+  somaDias,
+  diasNoMes,
+  dataCurta,
+  mesCurto,
+  diasRestantes,
+  segundaDaSemana,
+  tecla,
+  textoParaValor,
+  simularCompra,
+  cofrinho,
+  avisoDAE,
+  reservaFolha,
+  previsaoGas,
+  mensagemConvite,
+  codigo4Valido,
+  codigo6Valido,
+  emailValido,
+  segundosDesde,
+  segundosTexto,
+  centavos,
 } from './formato'
 
 describe('dinheiro', () => {
@@ -80,7 +100,11 @@ describe('casa', () => {
     expect(reservaFolha(1800)).toEqual({ decimo: 150, ferias: 200, total: 350 })
   })
   it('gás avisa 5 dias antes', () => {
-    expect(previsaoGas(['2026-09-01', '2026-10-01', '2026-10-31'])).toEqual({ media: 30, acaba: '2026-11-30', avisar: '2026-11-25' })
+    expect(previsaoGas(['2026-09-01', '2026-10-01', '2026-10-31'])).toEqual({
+      media: 30,
+      acaba: '2026-11-30',
+      avisar: '2026-11-25',
+    })
     expect(previsaoGas(['2026-10-01']).media).toBeNull()
   })
 })
@@ -90,7 +114,9 @@ describe('convites e códigos', () => {
     const m = mensagemConvite('pessoa', { familia: 'Silva', quem: 'Bruno', link: 'https://x', email: 'bruno@x.com' })
     expect(m).toContain('nosso número do dia')
     expect(m).not.toMatch(/[—–]/)
-    expect(mensagemConvite('equipe', { familia: 'Silva', quem: 'Carla', link: 'https://x', codigo: '4821' })).toContain('4821')
+    expect(mensagemConvite('equipe', { familia: 'Silva', quem: 'Carla', link: 'https://x', codigo: '4821' })).toContain(
+      '4821',
+    )
   })
   it('valida códigos e e-mail', () => {
     expect(codigo6Valido('123456')).toBe(true)

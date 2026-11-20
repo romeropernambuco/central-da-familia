@@ -1,15 +1,27 @@
 // Erro do banco ou da rede em português simples, com o tipo certo pra o app saber o que fazer.
 
 /** A sessão venceu ou foi encerrada: o app volta pra tela de entrar. */
-export class ErroSessao extends Error { constructor(m = 'Sua sessão acabou. Entre de novo.') { super(m); this.name = 'ErroSessao' } }
+export class ErroSessao extends Error {
+  constructor(m = 'Sua sessão acabou. Entre de novo.') {
+    super(m)
+    this.name = 'ErroSessao'
+  }
+}
 /** A resposta não chegou: a operação pode ter sido gravada. */
-export class ErroRede extends Error { constructor(m = 'Não foi possível confirmar. Confira antes de tentar de novo.') { super(m); this.name = 'ErroRede' } }
+export class ErroRede extends Error {
+  constructor(m = 'Não foi possível confirmar. Confira antes de tentar de novo.') {
+    super(m)
+    this.name = 'ErroRede'
+  }
+}
 
 /** O banco escreve sem acento; o app mostra com acento. */
 export const TRADUZ: Record<string, string> = {
   'Codigo errado ou vencido.': 'Código errado ou vencido.',
-  'Muitas tentativas. Peca um codigo novo a quem te convidou.': 'Muitas tentativas. Peça um código novo a quem te convidou.',
-  'Entrada da equipe pausada por 1 hora. Tente mais tarde.': 'Entrada do Assessor da Casa pausada por 1 hora. Tente mais tarde.',
+  'Muitas tentativas. Peca um codigo novo a quem te convidou.':
+    'Muitas tentativas. Peça um código novo a quem te convidou.',
+  'Entrada da equipe pausada por 1 hora. Tente mais tarde.':
+    'Entrada do Assessor da Casa pausada por 1 hora. Tente mais tarde.',
   'Voce ja esta nessa familia.': 'Você já está nessa família.',
   'Esse convite ja foi usado.': 'Esse convite já foi usado.',
   'so o casal convida': 'Só o casal convida.',
@@ -22,15 +34,22 @@ export const TRADUZ: Record<string, string> = {
   'item nao encontrado na lista': 'Esse item não está mais na lista.',
   'prestador nao encontrado': 'Esse serviço não está mais cadastrado.',
   // entrada da equipe pelo link do convite
-  'Abra o link do convite que te mandaram e digite os 4 numeros.': 'Abra o link do convite que te mandaram e digite os 4 números.',
-  'abra a sessao antes (login anonimo)': 'Não foi possível abrir a entrada do Assessor da Casa. Feche e abra o link de novo.',
-  'ja existem 5 codigos abertos nesta familia; use um deles ou espere vencer': 'Já existem 5 códigos abertos nesta família. Use um deles ou espere vencer (24 horas).',
-  'muitos convites abertos agora; tente de novo em alguns minutos': 'Muitos convites abertos agora. Tente de novo em alguns minutos.',
+  'Abra o link do convite que te mandaram e digite os 4 numeros.':
+    'Abra o link do convite que te mandaram e digite os 4 números.',
+  'abra a sessao antes (login anonimo)':
+    'Não foi possível abrir a entrada do Assessor da Casa. Feche e abra o link de novo.',
+  'ja existem 5 codigos abertos nesta familia; use um deles ou espere vencer':
+    'Já existem 5 códigos abertos nesta família. Use um deles ou espere vencer (24 horas).',
+  'muitos convites abertos agora; tente de novo em alguns minutos':
+    'Muitos convites abertos agora. Tente de novo em alguns minutos.',
   // convite por e-mail (casal e pessoa)
   'entre com o e-mail do convite': 'Entre com o mesmo e-mail que recebeu o convite.',
-  'confirme o seu e-mail com o codigo de 6 numeros antes de entrar na familia': 'Confirme o seu e-mail com o código de 6 números antes de entrar na família.',
-  'entre com o codigo de 6 numeros enviado pro e-mail do convite': 'Pra entrar na família, saia e entre de novo com o código de 6 números que chega no e-mail do convite.',
-  'esse e-mail ja foi convidado nesta familia': 'Esse e-mail já foi convidado nesta família. A pessoa só precisa entrar com ele.',
+  'confirme o seu e-mail com o codigo de 6 numeros antes de entrar na familia':
+    'Confirme o seu e-mail com o código de 6 números antes de entrar na família.',
+  'entre com o codigo de 6 numeros enviado pro e-mail do convite':
+    'Pra entrar na família, saia e entre de novo com o código de 6 números que chega no e-mail do convite.',
+  'esse e-mail ja foi convidado nesta familia':
+    'Esse e-mail já foi convidado nesta família. A pessoa só precisa entrar com ele.',
   'a familia ja tem 50 pessoas': 'A família já tem 50 pessoas.',
   'falta o nome (ate 80 letras)': 'Falta o nome (até 80 letras).',
   'papel tem que ser casal, pessoa ou equipe': 'O convite tem que ser para casal, pessoa ou Assessor da Casa.',
@@ -49,16 +68,25 @@ export const TRADUZ: Record<string, string> = {
 }
 
 /** Erros do convite por e-mail que a pessoa precisa ler (os outros são só "não tinha convite"). */
-export const AVISOS_CONVITE = ['entre com o e-mail do convite', 'confirme o seu e-mail com o codigo de 6 numeros antes de entrar na familia', 'entre com o codigo de 6 numeros enviado pro e-mail do convite']
+export const AVISOS_CONVITE = [
+  'entre com o e-mail do convite',
+  'confirme o seu e-mail com o codigo de 6 numeros antes de entrar na familia',
+  'entre com o codigo de 6 numeros enviado pro e-mail do convite',
+]
 
 /** O banco não tem essa função (ou não com esses parâmetros): PostgREST PGRST202 ou Postgres 42883. */
 export function funcaoNaoExiste(e: { message?: string; code?: string } | null | undefined): boolean {
-  return e?.code === 'PGRST202' || e?.code === '42883' || /could not find the function|function .* does not exist|schema cache/i.test(e?.message || '')
+  return (
+    e?.code === 'PGRST202' ||
+    e?.code === '42883' ||
+    /could not find the function|function .* does not exist|schema cache/i.test(e?.message || '')
+  )
 }
 
 // RAISE de validação/permissão usado nas migrações. Outros SQLSTATE só passam pela lista literal TRADUZ.
 const CODIGOS_NEGOCIO = new Set(['P0001', '22023', '42501'])
-const MARCA_TECNICA = /violates|constraint|relation|column|schema|duplicate key|null value|syntax|permission denied|function\s|uuid|jwt|pg_|produto\.|public\.|["“”`]|(?:tabela|table)\s+'[^']+'|Key\s*\(|DETAIL|HINT|CONTEXT/i
+const MARCA_TECNICA =
+  /violates|constraint|relation|column|schema|duplicate key|null value|syntax|permission denied|function\s|uuid|jwt|pg_|produto\.|public\.|["“”`]|(?:tabela|table)\s+'[^']+'|Key\s*\(|DETAIL|HINT|CONTEXT/i
 const DADO_PRIVADO = /[^\s@]+@[^\s@]+|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i
 
 export function traduzErro(e: { message?: string; code?: string; status?: number } | null | undefined): Error {
@@ -67,14 +95,29 @@ export function traduzErro(e: { message?: string; code?: string; status?: number
   const chave = m.replace(/^envelope\b/, 'limite')
   if (Object.prototype.hasOwnProperty.call(TRADUZ, chave)) return new Error(TRADUZ[chave])
   // rede primeiro: Chrome "Failed to fetch", Firefox "NetworkError", Safari e iPhone "Load failed"
-  if (/Failed to fetch|NetworkError|Load failed|network request failed|fetch failed|network connection was lost|timed? ?out/i.test(m)) return new ErroRede()
-  if (e?.status === 401 || e?.code === 'PGRST301' || /JWT|not authenticated|session.?(not.?found|missing|expired)|refresh token|invalid claim/i.test(m)) return new ErroSessao()
+  if (
+    /Failed to fetch|NetworkError|Load failed|network request failed|fetch failed|network connection was lost|timed? ?out/i.test(
+      m,
+    )
+  )
+    return new ErroRede()
+  if (
+    e?.status === 401 ||
+    e?.code === 'PGRST301' ||
+    /JWT|not authenticated|session.?(not.?found|missing|expired)|refresh token|invalid claim/i.test(m)
+  )
+    return new ErroSessao()
   // login por código (Supabase Auth responde em inglês)
-  if (/token has expired or is invalid|otp.*(expired|invalid)|invalid.*otp/i.test(m)) return new Error('Código errado ou vencido. Confira os 6 números ou peça outro código.')
-  if (/rate limit|only request this after|too many requests/i.test(m) || e?.status === 429) return new Error('Muitos pedidos seguidos. Espere 1 minuto e tente de novo.')
-  if (/signups? not allowed|signup is disabled/i.test(m)) return new Error('A entrada de gente nova está desligada no banco. Fale com quem te convidou.')
-  if (/anonymous sign-?ins are disabled/i.test(m)) return new Error('A entrada do Assessor da Casa ainda não está disponível. Fale com quem cuida do app.')
-  if (m.trim() && CODIGOS_NEGOCIO.has(e?.code || '') && !MARCA_TECNICA.test(m) && !DADO_PRIVADO.test(m)) return new Error(m)
+  if (/token has expired or is invalid|otp.*(expired|invalid)|invalid.*otp/i.test(m))
+    return new Error('Código errado ou vencido. Confira os 6 números ou peça outro código.')
+  if (/rate limit|only request this after|too many requests/i.test(m) || e?.status === 429)
+    return new Error('Muitos pedidos seguidos. Espere 1 minuto e tente de novo.')
+  if (/signups? not allowed|signup is disabled/i.test(m))
+    return new Error('A entrada de gente nova está desligada no banco. Fale com quem te convidou.')
+  if (/anonymous sign-?ins are disabled/i.test(m))
+    return new Error('A entrada do Assessor da Casa ainda não está disponível. Fale com quem cuida do app.')
+  if (m.trim() && CODIGOS_NEGOCIO.has(e?.code || '') && !MARCA_TECNICA.test(m) && !DADO_PRIVADO.test(m))
+    return new Error(m)
   let id = 2166136261
   for (const c of `${e?.code || ''}:${m}`) id = Math.imul(id ^ c.charCodeAt(0), 16777619)
   return new Error(`Não foi possível concluir. Diagnóstico: ${(id >>> 0).toString(36).padStart(7, '0')}.`)

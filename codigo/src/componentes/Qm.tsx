@@ -6,7 +6,17 @@ import { useApp } from '../app/contexto'
 import type { LinhaExplicacao } from '../api/tipos'
 
 /** Bolinha "?" ao lado de um número: abre "De onde veio esse número?". */
-export function Qm({ titulo, linhas, nota, texto }: { titulo: string; linhas: LinhaExplicacao[]; nota?: string; texto?: boolean }) {
+export function Qm({
+  titulo,
+  linhas,
+  nota,
+  texto,
+}: {
+  titulo: string
+  linhas: LinhaExplicacao[]
+  nota?: string
+  texto?: boolean
+}) {
   const { explicar } = useApp()
   const abrir = () => explicar({ titulo, linhas, nota })
   if (texto)
@@ -16,6 +26,14 @@ export function Qm({ titulo, linhas, nota, texto }: { titulo: string; linhas: Li
       </button>
     )
   return (
-    <button type="button" className="qm" onClick={abrir} aria-label={`De onde veio esse número? ${textoPrivado(titulo)}`} title="De onde veio esse número?"><Icone nome="ajuda" /></button>
+    <button
+      type="button"
+      className="qm"
+      onClick={abrir}
+      aria-label={`De onde veio esse número? ${textoPrivado(titulo)}`}
+      title="De onde veio esse número?"
+    >
+      <Icone nome="ajuda" />
+    </button>
   )
 }

@@ -4,9 +4,13 @@
 // "Tentar de novo", nunca fica branca.
 import { mostrarFalha } from './falha'
 
-const relogio: Promise<unknown> = import.meta.env.MODE === 'exemplo' || import.meta.env.MODE === 'demo' ? import('./teste/relogio') : Promise.resolve()
+const relogio: Promise<unknown> =
+  import.meta.env.MODE === 'exemplo' || import.meta.env.MODE === 'demo' ? import('./teste/relogio') : Promise.resolve()
 relogio
   .then(() => import('./partida'))
   .then(m => m.iniciar())
   .then(() => window.dispatchEvent(new Event('central:aberta')))
-  .catch(e => { window.dispatchEvent(new Event('central:falhou')); mostrarFalha(document.getElementById('root'), e) })
+  .catch(e => {
+    window.dispatchEvent(new Event('central:falhou'))
+    mostrarFalha(document.getElementById('root'), e)
+  })

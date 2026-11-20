@@ -4,9 +4,16 @@ import { rotaDoHash, rotaPermitida } from '../app/rotas'
 
 describe('erros do banco e da rede', () => {
   it('sem internet no Chrome, no Firefox e no Safari/iPhone vira ErroRede', () => {
-    for (const m of ['TypeError: Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed', 'fetch failed'])
+    for (const m of [
+      'TypeError: Failed to fetch',
+      'NetworkError when attempting to fetch resource.',
+      'Load failed',
+      'fetch failed',
+    ])
       expect(traduzErro({ message: m })).toBeInstanceOf(ErroRede)
-    expect(traduzErro({ message: 'Load failed' }).message).toBe('Não foi possível confirmar. Confira antes de tentar de novo.')
+    expect(traduzErro({ message: 'Load failed' }).message).toBe(
+      'Não foi possível confirmar. Confira antes de tentar de novo.',
+    )
   })
   it('token vencido vira ErroSessao; tranca do banco NÃO manda entrar de novo', () => {
     expect(traduzErro({ message: 'JWT expired', code: 'PGRST301' })).toBeInstanceOf(ErroSessao)
@@ -19,7 +26,9 @@ describe('erros do banco e da rede', () => {
   })
   it('erros do login por código saem em português', () => {
     expect(traduzErro({ message: 'Token has expired or is invalid' }).message).toMatch(/Código errado ou vencido/)
-    expect(traduzErro({ message: 'For security purposes, you can only request this after 43 seconds.' }).message).toMatch(/Espere 1 minuto/)
+    expect(
+      traduzErro({ message: 'For security purposes, you can only request this after 43 seconds.' }).message,
+    ).toMatch(/Espere 1 minuto/)
     expect(traduzErro({ message: 'Anonymous sign-ins are disabled' }).message).toMatch(/Fale com quem cuida do app/)
     expect(traduzErro({ message: 'so o casal convida' }).message).toBe('Só o casal convida.')
     expect(traduzErro(null).message).toMatch(/^Não foi possível concluir\. Diagnóstico: [a-z0-9]{7}\.$/)
@@ -33,7 +42,16 @@ describe('erros do banco e da rede', () => {
 
 describe('rotas por papel', () => {
   it('a equipe só abre a Casa, digite o endereço que digitar', () => {
-    for (const h of ['#/inicio', '#/primeiro-uso', '#/planejamento', '#/cartoes', '#/painel', '#/privacidade', '#/qualquer', ''])
+    for (const h of [
+      '#/inicio',
+      '#/primeiro-uso',
+      '#/planejamento',
+      '#/cartoes',
+      '#/painel',
+      '#/privacidade',
+      '#/qualquer',
+      '',
+    ])
       expect(rotaPermitida(rotaDoHash(h), 'equipe')).toBe(h === '#/privacidade' ? 'privacidade' : 'casa')
   })
   it('endereço desconhecido abre o Início; painel só pro dono', () => {

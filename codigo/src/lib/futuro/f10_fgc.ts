@@ -10,7 +10,10 @@ export const TODOS_OS_BANCOS = 'todos os bancos'
 
 /** Uma conta (sozinha ou conjunta): garantido por titular = min(saldo, 250 mil) ÷ titulares;
  *  fora = max(0, saldo − 250 mil ÷ titulares × titulares). */
-export function fgcConta(saldo: Centavos, titulares = 1): { garantido_por_titular: Centavos; fora: Centavos; alerta: boolean } {
+export function fgcConta(
+  saldo: Centavos,
+  titulares = 1,
+): { garantido_por_titular: Centavos; fora: Centavos; alerta: boolean } {
   centavos(saldo)
   const t = Number.isInteger(titulares) && titulares >= 1 ? titulares : 1
   const coberto = Math.min(Math.max(saldo, 0), LIMITE_FGC)
