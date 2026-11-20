@@ -132,7 +132,8 @@ it('Início antes do Resumo e Escritório com a sala e a lista, usando a fila in
     expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(EQUIPE.length)
     expect(a.el.textContent).toContain('Precisa de você9')
     expect(a.el.textContent).toContain('A equipe, sala por sala')
-    expect(a.ler('data-posto', 'imoveis').getAttribute('aria-label')).toContain('Ainda sem dado')
+    expect(a.ler('data-posto', 'imoveis').getAttribute('aria-label')).toContain('ainda sem dado')
+    expect(a.el.textContent).toContain('9 coisas precisam de você hoje')
   } finally { await a.fechar() }
 })
 
@@ -280,63 +281,66 @@ it.each([['feito', 'Já fiz'], ['depois', 'Depois']])('fila da J usa a opção d
   } finally { await a.fechar() }
 })
 
-it('sentinela da leitura chega à fila, e a invalidação atualiza sem remontar', async () => {
+it('sentinela da leitura chega à fila, ao selo e à manchete da cena original, e a invalidação atualiza sem remontar', async () => {
   const a = montar()
   try {
     await a.render(EscritorioIsometrico)
     await act(async () => vi.dynamicImportSettled())
     expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('78.432,19')
-    expect(a.el.textContent.match(/78\.432,19/g)).toHaveLength(1)
+    // fila, manchete ("Primeiro: ...") e selo do funcionário que precisa de você
+    expect(a.el.textContent.match(/78\.432,19/g)).toHaveLength(3)
+    expect(a.el.textContent).toContain('Primeiro: Gestor do Guardado, R$')
     expect(a.el.textContent).toContain('9.321,01')
+    expect(a.ler('data-posto', 'guardado').textContent).toContain('78.432,19')
     expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('trabalhando')
+    expect(a.ler('data-posto', 'contador').textContent).toBe('Contador')
     expect(a.ler('data-posto', 'cartao').getAttribute('data-estado')).toBe('entregue')
-    expect(fake.montar).toHaveBeenCalledOnce()
+    expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
+    // a aba Escritório não monta mais a cena isométrica resumida
+    expect(fake.montar).not.toHaveBeenCalled()
     await a.atualizar({ ...fonte(), trabalhando: [], precisa_de_voce: [pergunta('novo', 'guardado', 651.83)] })
-    expect(a.ler('data-posto', 'guardado').textContent).toBe('')
+    expect(a.ler('data-posto', 'guardado').textContent).toContain('651,83')
     expect(a.ler('data-posto', 'guardado').getAttribute('data-estado')).toBe('precisa_de_voce')
+    expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('vai_comecar')
     expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('651,83')
-    expect(fake.atualizar.mock.lastCall?.[0].contador).toBe('vai_comecar')
-    expect(fake.montar).toHaveBeenCalledOnce()
     await a.render(EscritorioIsometrico, true)
     expect(a.el.textContent).not.toContain('651,83')
+    expect(a.el.textContent).not.toMatch(/coisas? precisam? de você hoje/)
     expect(a.ler('aria-label', 'Precisa de você').textContent).toContain('••••')
+    expect(a.ler('data-posto', 'guardado').textContent).toContain('••••')
     expect(a.ler('data-posto', 'guardado').getAttribute('aria-label')).not.toContain('651,83')
   } finally { await a.fechar() }
-  expect(fake.destruir).toHaveBeenCalledOnce()
 })
 
-it('toque no posto abre a ficha certa, filtros movem a cena e o fallback é acionável', async () => {
+it('toque na etiqueta abre a ficha certa e, sem WebGL, a lista continua acionável', async () => {
   const a = montar()
   try {
     await a.render(EscritorioIsometrico)
     await act(async () => vi.dynamicImportSettled())
-    const patrimonio = a.el.buscar(n => n.tagName === 'BUTTON' && n.textContent === 'Patrimônio')[0]
-    await act(async () => patrimonio.click())
-    expect(fake.atualizar.mock.lastCall?.[1]).toBe('patrimonio')
     await act(async () => a.ler('data-posto', 'guardado').click())
     await act(async () => vi.dynamicImportSettled())
     expect(a.ler('data-ficha', 'guardado').textContent).toContain('Você confirma guardado-1?')
     await act(async () => a.ler('aria-label', 'Fechar').click())
-    await act(async () => fake.montar.mock.calls[0][0].aoPerderContexto())
-    expect(a.ler('data-renderizacao', 'lista')).toBeDefined()
-    await act(async () => a.ler('data-func', 'imoveis').click())
+    // o DOM de teste não tem WebGL: a cena original cai para a lista e avisa
+    expect(a.ler('data-modo', 'lista')).toBeDefined()
+    expect(a.el.textContent).toContain('A cena 3D não abriu neste aparelho')
+    await act(async () => a.el.buscar(n => n.tagName === 'BUTTON' && n.getAttribute('data-func') === 'imoveis' && !n.getAttribute('data-posto'))[0].click())
     await act(async () => vi.dynamicImportSettled())
     expect(a.ler('data-ficha', 'imoveis').textContent).toContain('Ainda sem dado')
   } finally { await a.fechar() }
 })
 
-it('sem WebGL ou em Só texto ficam a fila e os botões da lista, sem uma segunda montagem da cena', async () => {
+it('em Só texto ficam a fila e os botões da lista, sem cena; desligado tira o escritório do Início', async () => {
   const a = montar()
-  fake.falhar = true
   try {
     await a.render(EscritorioIsometrico)
     await act(async () => vi.dynamicImportSettled())
-    expect(a.ler('data-renderizacao', 'lista')).toBeDefined()
+    expect(a.ler('data-modo', 'lista')).toBeDefined()
     expect(a.ler('data-func', 'imoveis')).toBeDefined()
     await act(async () => definirModoFuncionario('compacto'))
-    expect(a.ler('data-renderizacao', 'lista')).toBeUndefined()
+    expect(a.ler('data-modo', 'lista')).toBeUndefined()
     expect(a.ler('data-func', 'imoveis')).toBeDefined()
-    expect(fake.montar).toHaveBeenCalledOnce()
+    expect(fake.montar).not.toHaveBeenCalled()
     await act(async () => definirModoFuncionario('desligado'))
     await a.render(Inicio)
     expect(a.el.textContent).not.toContain('Escritório da família')

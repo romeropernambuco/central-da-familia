@@ -11,6 +11,10 @@ import { Icone } from '../../componentes/Icone'
 import { PerguntaCard } from '../../componentes/Pergunta'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { Carregando } from '../../componentes/Carregando'
+import { fraseDoDia } from '../../lib/guardado'
+import { textoPrivado } from '../../componentes/privacidade'
+// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
+import { Cena3D, IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
 import { SALAS_NOME, tentarCarregarCena } from './cenaBase'
 import type { montarEscritorioIsometrico } from './cenaIsometrica'
 import { dadosIsometricos, type DadosIsometricos } from './dadosIsometricos'
@@ -47,7 +51,9 @@ function EquipeIsometrica({ dados, selecionar }: { dados: DadosIsometricos; sele
           <ul>{postos.map(({ membro, funcionario }) => <li key={membro.id}>
             <button type="button" data-func={membro.id} onClick={() => selecionar(membro.id)}>
               <img src={retrato(membro.id)} width={36} height={36} alt="" loading="lazy" />
-              <span><b>{membro.nome}</b><small>{funcionario.semDado ? 'Ainda sem dado' : ESTADO[funcionario.estado]}</small></span>
+              <span><b>{membro.nome}</b><small>{funcionario.semDado ? 'Ainda sem dado' : ESTADO[funcionario.estado]}</small>
+                {/* a frase do que ele está fazendo, com o número, como no escritório original */}
+                {!funcionario.semDado && funcionario.frase && funcionario.frase !== membro.papel && <small className="iso-frase">{textoPrivado(funcionario.frase)}</small>}</span>
               <Icone desenho={ArrowUpRight} />
             </button>
           </li>)}</ul>
@@ -118,13 +124,30 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado,
   useEffect(() => { cena.current?.atualizar(estados, vista) }, [estados, vista])
 
   const listar = superficie !== 'inicio' && (superficie === 'escritorio' || !comCena || renderizacao === 'lista')
+  // Aba Escritório: a nossa cena original (bonecos com etiqueta, que andam até a frente e acenam, luz pela hora de Recife).
+  const original = superficie === 'escritorio'
+  const primeiro = dados.fila[0]
+  const valores = useMemo(() => Object.fromEntries([...dados.fila].reverse()
+    .filter(t => t.valor && t.valor !== 'Ainda sem dado').map(t => [t.membro.id, t.valor as string])), [dados.fila])
+  const funcionarios = useMemo(() => dados.postos.map(p => p.funcionario), [dados.postos])
   return <section className={`iso-escritorio iso-${superficie}`} aria-labelledby={titulo}>
     <header className="iso-titulo"><h2 id={titulo}>Escritório da família</h2>
       {ampliar && <button type="button" className="iso-ampliar" onClick={ampliar}><Icone desenho={Maximize2} />Abrir escritório</button>}
     </header>
     <p className="sr" id={descricao}>Escritório isométrico com mesas de trabalho em sete salas interligadas. Há {dados.postos.length} fichas disponíveis neste perfil.</p>
+    {original && dados.temLeitura && <p className="iso-manchete" role="status">
+      <strong>{oculto ? 'Precisa de você hoje' : fraseDoDia(dados.total) + (dados.total > 0 ? ' hoje' : '')}</strong>
+      {primeiro && <span>Primeiro: {primeiro.membro.nome}{primeiro.valor && primeiro.valor !== 'Ainda sem dado' ? `, ${primeiro.valor}` : ''}.</span>}
+    </p>}
     <div className="iso-grade">
-      {comCena && <div className="iso-vista">
+      {comCena && original && <div className="iso-vista">
+        <Cena3D funcionarios={funcionarios} selecionado={selecionado ?? null} aoTocar={id => selecionar(id)} valores={valores} />
+        <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
+          {(['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce'] as EstadoFuncionario[]).map(e =>
+            <li key={e} data-estado={e}><IcoEstado e={e} />{ROTULO_ESTADO[e]}{e === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}</li>)}
+        </ul>
+      </div>}
+      {comCena && !original && <div className="iso-vista">
         {renderizacao === '3d' && <div className="iso-filtros" role="group" aria-label="Salas do escritório">
           <button type="button" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}>Ver tudo</button>
           {salas.map(s => <button key={s} type="button" aria-pressed={vista === s} onClick={() => ir(s)}>{SALAS_NOME[s]}</button>)}

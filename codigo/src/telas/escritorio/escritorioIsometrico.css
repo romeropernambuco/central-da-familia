@@ -140,3 +140,12 @@
   .iso-inicio .iso-etiqueta{pointer-events:none}
   .iso-inicio .iso-toque{display:block;z-index:3}
 }
+
+/* Aba Escritório com a cena original: manchete do dia, legenda dos estados e frase de cada funcionário. */
+.iso-manchete { display: grid; gap: 2px; margin: 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface); }
+.iso-manchete strong { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.iso-manchete span { color: var(--muted); font-size: 14px; }
+.iso-legenda { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; color: var(--muted); font-size: 13px; }
+.iso-legenda li { display: inline-flex; align-items: center; gap: 5px; }
+.iso-legenda li[data-estado="precisa_de_voce"] { color: var(--accent-ink); font-weight: 600; }
+.iso-equipe li small.iso-frase { display: block; color: var(--ink-2); }

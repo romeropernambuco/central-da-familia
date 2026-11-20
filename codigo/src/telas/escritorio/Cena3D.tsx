@@ -26,7 +26,11 @@ const celular = () => window.innerWidth < 900
  * Sem WebGL, com erro ou depois de 8 s sem abrir, a cena some e fica a lista (que está sempre na tela).
  * Cada boneco tem uma etiqueta em HTML presa à cabeça: é ela o alvo de toque (44 px) e o que o leitor de tela lê.
  */
-export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: FuncionarioEsc[]; selecionado: string | null; aoTocar: (id: string) => void }) {
+export function Cena3D({ funcionarios, selecionado, aoTocar, valores }: {
+  funcionarios: FuncionarioEsc[]; selecionado: string | null; aoTocar: (id: string) => void
+  /** Valor da pendência de quem precisa de você: aparece no selo, no lugar do nome (já vem mascarado com o olho fechado). */
+  valores?: Record<string, string>
+}) {
   const caixa = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
   const tags = useRef<Record<string, HTMLElement | null>>({})
@@ -88,11 +92,12 @@ export function Cena3D({ funcionarios, selecionado, aoTocar }: { funcionarios: F
             const precisa = f.estado === 'precisa_de_voce', sel = f.id === selecionado
             // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
             const soIcone = false
+            const selo = (precisa && valores?.[f.id]) || curto(f)
             return (
-              <button key={f.id} type="button" ref={el => { tags.current[f.id] = el }} data-k={`${f.estado}|${sel}|${soIcone}`} data-func={f.id}
+              <button key={f.id} type="button" ref={el => { tags.current[f.id] = el }} data-k={`${f.estado}|${sel}|${soIcone}|${selo}`} data-func={f.id} data-posto={f.id} data-estado={f.estado}
                 className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
                 aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`)} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
-                <IcoEstado e={f.estado} /><span>{curto(f)}</span>
+                <IcoEstado e={f.estado} /><span>{selo}</span>
               </button>
             )
           })}
