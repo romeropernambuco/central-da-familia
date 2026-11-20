@@ -13,6 +13,7 @@ import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
 import { Recebimentos } from './Recebimentos'
+import { gravarLimites, type MudancaLimite } from './limites'
 import { Parametros } from './Parametros'
 import { RumoA2029 } from '../../componentes/RumoA2029'
 import { Reajuste } from './Reajuste'
@@ -82,17 +83,21 @@ export function Planejamento() {
     const ruim = resumo.envelopes.filter(mudaLimite).find(e => !valorDigitadoValido(lim[e.id] || ''))
     if (ruim || !valorDigitadoValido(colchao)) { toast(`Confira o valor de ${ruim ? ruim.nome : 'Reserva'}: use só números e 1 vírgula, tipo 1500,00.`); return }
     setSalvando(true)
+    // 1 função no banco (definir_limite): vale deste mês em diante e não mexe em mês fechado
+    const mudancas: MudancaLimite[] = resumo.envelopes.filter(mudaLimite).map(e => ({ envelope: e.id, antes: centavos(base(e)), depois: textoParaValor(lim[e.id]) })).filter(m => m.depois !== m.antes)
+    const reserva = envColchao && textoParaValor(colchao) !== centavos(colchaoMeta) ? { envelope: envColchao.id, antes: centavos(colchaoMeta), depois: textoParaValor(colchao) } : null
+    let voltar: (() => Promise<void>) | undefined
     const ok = await tentar(async () => {
-      for (const e of resumo.envelopes.filter(mudaLimite)) {
-        const v = textoParaValor(lim[e.id])
-        // 1 função no banco (definir_limite): vale deste mês em diante e não mexe em mês fechado
-        if (v !== centavos(base(e))) await api.definirLimite(familia.id, e.id, v)
-      }
-      if (envColchao && textoParaValor(colchao) !== centavos(colchaoMeta)) await api.salvarEnvelope(familia.id, envColchao.id, { colchao: textoParaValor(colchao) })
+      const r = await gravarLimites(api, familia.id, mudancas, reserva)
+      voltar = r.voltar
+      if (r.erro) throw r.erro
     })
     await recarregar()
     setSalvando(false)
-    if (ok) toast('Limites salvos. O número de hoje já mudou.')
+    // um desfazer só, que volta todos os limites desta gravação (também quando ela parou no meio)
+    const desfazerTudo = voltar && (async () => { await voltar!(); await recarregar() })
+    if (ok) toast('Limites salvos. O número de hoje já mudou.', desfazerTudo)
+    else if (desfazerTudo) toast('Parte dos limites foi salva.', desfazerTudo)
   }
   // regra do salário: só salário entra na sobra; o que entra a mais vai pra reserva. Renda que muda conta o mês fraco.
   const renda = centavos(rendas.filter(r => r.tipo !== 'extra').reduce((s, r) => s + (r.tipo === 'variavel' ? r.fraco || r.valor : r.valor), 0))
@@ -150,7 +155,7 @@ export function Planejamento() {
             const fraco = v.fraco || v.valor, meuEnv = resumo.envelopes.find(e => e.id === familia.envelopeId && !e.casa)
             const aMais = centavos(doTrabalho - fraco)
             return <>
-              {meuEnv && centavos(base(meuEnv)) !== centavos(fraco) && <button className="btn line sm" type="button" style={{ marginTop: 10 }} onClick={() => tentar(async () => { await api.definirLimite(familia.id, meuEnv.id, fraco); await recarregar(); toast(`Combinado do mês: ${reais(fraco)}, o mês fraco.`) })}><Icone nome="abrir" />Usar {reais(fraco)} como combinado</button>}
+              {meuEnv && centavos(base(meuEnv)) !== centavos(fraco) && <button className="btn line sm" type="button" style={{ marginTop: 10 }} onClick={() => tentar(async () => { const r = await gravarLimites(api, familia.id, [{ envelope: meuEnv.id, antes: centavos(base(meuEnv)), depois: fraco }], null); if (r.erro) throw r.erro; await recarregar(); toast(`Combinado do mês: ${reais(fraco)}, o mês fraco.`, r.voltar && (async () => { await r.voltar!(); await recarregar() })) })}><Icone nome="abrir" />Usar {reais(fraco)} como combinado</button>}
               {aMais > 0 && <p className="todo ok" style={{ marginTop: 10 }}><span>Mês bom: entrou {reais(aMais)} a mais que o mês fraco. Isso vai pro guardado e conta para 2029.</span><button className="btn sm line" type="button" onClick={() => abrirLancar({ entrou: true, valor: aMais, descricao: 'Mês bom do trabalho' })}><Icone nome="salvo" />Guardar {reais(aMais)}</button></p>}
             </>
           })()}
