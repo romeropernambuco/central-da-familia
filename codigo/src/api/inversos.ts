@@ -51,14 +51,18 @@ export async function prepararInverso(api: Api, prop: string, args: any[]): Prom
   }
 
   if (prop === 'cartaoSalvar' && id?.id) {
-    const antes = (await api.cartoes(familia)).find(x => x.id === id.id)
+    const achar = async () => (await api.cartoes(familia)).find(x => x.id === id.id)
+    const antes = await achar()
     if (!antes) return
-    const campos = Object.keys(id) as (keyof typeof antes)[]
-    return async () => {
-      const agora = (await api.cartoes(familia)).find(x => x.id === antes.id)
-      if (!agora || !igual(so(agora, campos), so({ ...antes, ...id }, campos))) throw new Error(MUDOU)
+    // O banco ajusta o que recebe (ex.: período da taxa vira vazio sem valor) e a lista esconde cartão desativado.
+    // Por isso o "depois" é fotografado do próprio banco logo após gravar, e não deduzido do que a tela mandou.
+    let depois: unknown
+    let fotografado = false
+    const voltar = async () => {
+      if (!fotografado || !igual(await achar(), depois)) throw new Error(MUDOU)
       await api.cartaoSalvar(familia, antes)
     }
+    return Object.assign(voltar, { aposGravar: async () => { depois = await achar(); fotografado = true } })
   }
 
   if (prop === 'lembreteAdiar') {

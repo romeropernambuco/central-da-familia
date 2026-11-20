@@ -14,6 +14,7 @@ import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../app/dono'
 import { Recebimentos } from './Recebimentos'
 import { gravarLimites, type MudancaLimite } from './limites'
+import { desfazer } from '../../app/desfazer'
 import { Parametros } from './Parametros'
 import { RumoA2029 } from '../../componentes/RumoA2029'
 import { Reajuste } from './Reajuste'
@@ -97,7 +98,8 @@ export function Planejamento() {
     // um desfazer só, que volta todos os limites desta gravação (também quando ela parou no meio)
     const desfazerTudo = voltar && (async () => { await voltar!(); await recarregar() })
     if (ok) toast('Limites salvos. O número de hoje já mudou.', desfazerTudo)
-    else if (desfazerTudo) toast('Parte dos limites foi salva.', desfazerTudo)
+    // gravação que parou no meio: o aviso do erro continua na tela e o desfazer do que entrou fica disponível
+    else if (desfazerTudo) desfazer.registrar({ rotulo: 'Última ação', desfazer: async () => { await desfazerTudo(); return true } })
   }
   // regra do salário: só salário entra na sobra; o que entra a mais vai pra reserva. Renda que muda conta o mês fraco.
   const renda = centavos(rendas.filter(r => r.tipo !== 'extra').reduce((s, r) => s + (r.tipo === 'variavel' ? r.fraco || r.valor : r.valor), 0))

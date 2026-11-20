@@ -4,7 +4,7 @@ import { desfazer } from './desfazer'
 import { ErroRede } from '../api/erros'
 import { apiExemplo, reiniciarExemplo } from '../api/exemplo'
 import { protegerApi } from '../api/protegida'
-import { guardarPendente, pendentesGuardados } from './pendentesGuardados'
+import { guardarPendente, pendentesGuardados, recusadosGuardados, tirarPendente } from './pendentesGuardados'
 
 const guardado = new Map<string, string>()
 beforeEach(() => {
@@ -65,4 +65,38 @@ it('não reenvia o que é de outra pessoa no mesmo aparelho, e o modo exemplo n�
   void exemplo.lancar(gasto('fila-4')).catch(() => {})
   await vi.waitFor(() => expect(pendentes.itens.size).toBe(1))
   expect(chaves()).toEqual([])
+})
+
+const donoDaSessao = async () => { const s = (await apiExemplo.sessao())!; return `${s.userId}|${s.familias[0].id}|${s.familias[0].membroId || ''}` }
+
+it('sair da conta, ou a sessão cair, com gasto pendente NÃO apaga o gasto: ele volta a ser enviado ao entrar de novo', async () => {
+  const antes = real(vi.fn(async () => { throw new ErroRede() }))
+  await antes.sessao()
+  void antes.lancar(gasto('fila-sair')).catch(() => {})
+  await vi.waitFor(() => expect(pendentes.itens.size).toBe(1))
+  pendentes.limpar() // é o que o app faz ao sair e quando a sessão acaba
+  await new Promise(r => setTimeout(r, 20))
+  expect(chaves()).toEqual(['fila-sair'])
+
+  const comRede = vi.fn(apiExemplo.lancar)
+  await real(comRede).sessao()
+  await vi.waitFor(() => expect(chaves()).toEqual([]))
+  expect(comRede.mock.calls.map(c => c[0].chave)).toEqual(['fila-sair'])
+})
+
+it('reenvio que o banco recusa de vez não some: fica marcado com o motivo e o app não insiste sozinho', async () => {
+  const dono = await donoDaSessao()
+  guardarPendente(dono, gasto('fila-recusa'))
+  const recusa = vi.fn(async () => { throw new Error('Esse limite não existe mais.') })
+  const api = real(recusa)
+  await api.sessao()
+  await vi.waitFor(() => expect(recusadosGuardados(dono)).toHaveLength(1))
+  expect(recusadosGuardados(dono)[0]).toMatchObject({ erro: 'Esse limite não existe mais.', dados: { chave: 'fila-recusa', valor: 23 } })
+  expect(pendentesGuardados(dono)).toEqual([])
+  await api.sessao()
+  await new Promise(r => setTimeout(r, 20))
+  expect(recusa).toHaveBeenCalledTimes(1)
+  // a pessoa decide: descartar tira do aparelho
+  tirarPendente('fila-recusa')
+  expect(recusadosGuardados(dono)).toEqual([])
 })

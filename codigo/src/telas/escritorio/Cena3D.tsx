@@ -38,7 +38,21 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, a
   const bloco = useRef<HTMLDivElement>(null)
   const [zoom, setZoom] = useState(1)
   const aproximar = (fator: number) => setZoom(cena.current?.aproximar?.(fator) ?? 1)
-  const telaCheia = () => { const el = bloco.current; if (!el) return; if (document.fullscreenElement === el) void document.exitFullscreen?.(); else void el.requestFullscreen?.().catch(() => { /* sem tela cheia neste navegador */ }) }
+  const [cheia, setCheia] = useState(false)
+  useEffect(() => {
+    const conferir = () => setCheia(!!bloco.current && document.fullscreenElement === bloco.current)
+    document.addEventListener('fullscreenchange', conferir)
+    return () => document.removeEventListener('fullscreenchange', conferir)
+  }, [])
+  const sairDaTelaCheia = () => { if (bloco.current && document.fullscreenElement === bloco.current) void document.exitFullscreen?.() }
+  const telaCheia = () => {
+    const el = bloco.current
+    if (!el) return
+    if (document.fullscreenElement === el) sairDaTelaCheia()
+    else void el.requestFullscreen?.().catch(() => { /* sem tela cheia neste navegador */ })
+  }
+  // a ficha do funcionário abre fora da cena: em tela cheia ela ficaria escondida atrás, então a cena volta ao normal antes
+  const tocarNoFuncionario = (id: string) => { sairDaTelaCheia(); aoTocar(id) }
   const caixa = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
   const tags = useRef<Record<string, HTMLElement | null>>({})
@@ -57,7 +71,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, a
     if (!el || !ids) return
     const sem3d = new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d/.test(location.hash)
     if (sem3d || !temWebGL()) { setModo('lista'); return }
-    setModo('abrindo'); setLeve(null)
+    setModo('abrindo'); setLeve(null); setZoom(1)
     let vivo = true
     const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches
     // o Three.js e o código da cena chegam juntos, só agora: nenhuma outra tela carrega 3D
@@ -66,7 +80,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, a
       try {
         const c = m.montarCena(T, el, {
           funcionarios: paraCena(atuais.current), etiqueta: id => tags.current[id] || null, placa: s => placas.current[s] || null,
-          aoTocar: id => tocar.current(id), escuro: escuroAgora(), celular, hora: horaRecife, parado: reduz,
+          aoTocar: id => { sairDaTelaCheia(); tocar.current(id) }, escuro: escuroAgora(), celular, hora: horaRecife, parado: reduz,
           aoContexto: estado => { if (vivo) setModo(estado === 'falhou' ? 'lista' : estado === 'perdido' ? 'abrindo' : '3d') },
           aoMedir: (fps, degrau) => setLeve(a => (degrau > 0 ? (a && a.degrau === degrau ? a : { fps, degrau }) : null)),
         })
@@ -106,7 +120,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, a
             return (
               <button key={f.id} type="button" ref={el => { tags.current[f.id] = el }} data-k={`${f.estado}|${sel}|${soIcone}|${selo}`} data-func={f.id} data-posto={f.id} data-estado={f.estado}
                 className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
-                aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`)} aria-pressed={sel} onClick={() => aoTocar(f.id)}>
+                aria-label={textoPrivado(`${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`)} aria-pressed={sel} onClick={() => tocarNoFuncionario(f.id)}>
                 <IcoEstado e={f.estado} /><span>{selo}</span>
               </button>
             )
@@ -120,7 +134,7 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, a
           {ampliavel && <>
             <button type="button" className="pill" aria-label="Afastar" disabled={zoom <= 1} onClick={() => aproximar(1 / 1.25)}><Icone desenho={Minus} /></button>
             <button type="button" className="pill" aria-label="Aproximar" disabled={zoom >= 3} onClick={() => aproximar(1.25)}><Icone desenho={Plus} /></button>
-            <button type="button" className="pill" onClick={telaCheia}><Icone desenho={Expand} />Ampliar</button>
+            <button type="button" className="pill" onClick={telaCheia}><Icone desenho={Expand} />{cheia ? 'Reduzir' : 'Ampliar'}</button>
           </>}
         </div>
       )}

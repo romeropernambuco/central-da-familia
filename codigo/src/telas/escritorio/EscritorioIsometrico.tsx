@@ -141,7 +141,7 @@ function PainelIsometrico({ dados, superficie, comCena, selecionar, selecionado,
     </p>}
     <div className={'iso-grade' + (original ? ' iso-grade-ampla' : '')}>
       {comCena && original && <div className="iso-vista">
-        <Cena3D funcionarios={funcionarios} selecionado={selecionado ?? null} aoTocar={id => selecionar(id)} valores={valores} />
+        <Cena3D funcionarios={funcionarios} selecionado={selecionado ?? null} aoTocar={id => selecionar(id)} valores={valores} ampliavel />
         <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
           {(['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce'] as EstadoFuncionario[]).map(e =>
             <li key={e} data-estado={e}><IcoEstado e={e} />{ROTULO_ESTADO[e]}{e === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}</li>)}

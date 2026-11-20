@@ -77,3 +77,36 @@ it('modo exemplo continua no retrato completo: os inversos por ação não entra
   await api.recebimentoMudar!(F, r.id, { apagar: true })
   expect(desfazer.atual).not.toBeNull()
 })
+
+/** O banco real ajusta o que recebe e a lista esconde cartão desativado; o exemplo não. Este invólucro imita os dois. */
+const realComoOBanco = () => protegerApi({
+  ...apiExemplo, modo: 'real',
+  cartaoSalvar: (f, c) => apiExemplo.cartaoSalvar(f, { ...c, taxa_periodo: c.taxa_valor ? c.taxa_periodo : null }),
+  cartoes: async f => (await apiExemplo.cartoes(f)).filter(c => c.ativo !== false),
+})
+
+it('cartão sem anuidade: o desfazer funciona mesmo quando o banco guarda o período da taxa diferente do que a tela mandou', async () => {
+  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  await apiExemplo.cartaoSalvar(F, { ...c, taxa_valor: null, taxa_periodo: null })
+  const antes = (await apiExemplo.cartoes(F)).find(x => x.id === c.id)!
+  await api.cartaoSalvar(F, { ...antes, taxa_periodo: 'ano', dia_fechamento: 7 })
+  expect((await apiExemplo.cartoes(F)).find(x => x.id === c.id)!.dia_fechamento).toBe(7)
+  expect(await desfazer.executar()).toBe(true)
+  expect((await apiExemplo.cartoes(F)).find(x => x.id === c.id)).toEqual(antes)
+})
+
+it('cartão desativado some da lista, e o desfazer traz ele de volta', async () => {
+  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  await api.cartaoSalvar(F, { ...c, ativo: false })
+  expect((await api.cartoes(F)).some(x => x.id === c.id)).toBe(false)
+  expect(await desfazer.executar()).toBe(true)
+  expect((await api.cartoes(F)).some(x => x.id === c.id)).toBe(true)
+})
+
+it('cartão: se outra pessoa mexeu depois, o desfazer recusa', async () => {
+  const api = realComoOBanco(), c = (await apiExemplo.cartoes(F))[0]
+  await api.cartaoSalvar(F, { ...c, dia_fechamento: 7 })
+  await apiExemplo.cartaoSalvar(F, { ...c, dia_fechamento: 9 })
+  expect(await desfazer.executar()).toBe(false)
+  expect(desfazer.mensagem).toContain('confira antes de desfazer')
+})

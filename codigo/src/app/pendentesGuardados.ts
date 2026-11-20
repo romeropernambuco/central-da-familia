@@ -3,29 +3,80 @@ import type { NovoLancamento } from '../api/tipos'
 /**
  * Gasto anotado sem internet fica guardado NESTE aparelho até o banco confirmar.
  * Sem isso, fechar ou recarregar o app perdia o lançamento que ainda estava na fila.
- * Cada item leva o dono (sessão, família, membro): outra pessoa no mesmo aparelho não reenvia o que não é dela.
- * A `chave` do lançamento garante que reenviar nunca grava 2 vezes.
+ *
+ * Regras:
+ * - cada item leva o dono (sessão, família, membro): outra pessoa no mesmo aparelho não reenvia o que não é dela;
+ * - a `chave` do lançamento garante que reenviar nunca grava 2 vezes;
+ * - sair da conta ou a sessão cair NÃO apaga o item: ele é reenviado quando o mesmo dono entrar de novo;
+ * - se o banco recusar de vez um reenvio feito sozinho pelo app, o item fica marcado como recusado, com o motivo,
+ *   para a pessoa ver e decidir (tentar de novo ou descartar). Nada some em silêncio.
  */
 const CHAVE = 'envios_pendentes'
-interface Guardado { dono: string; dados: NovoLancamento }
 
-function ler(): Guardado[] {
+export interface EnvioGuardado {
+  dono: string
+  dados: NovoLancamento
+  /** Motivo da recusa definitiva num reenvio automático. Com ele, o app não tenta de novo sozinho. */
+  erro?: string
+}
+
+const ouvintes = new Set<() => void>()
+/** Avisa quando a lista guardada muda (a faixa de pendentes se redesenha). */
+export function ouvirGuardados(aviso: () => void) {
+  ouvintes.add(aviso)
+  return () => { ouvintes.delete(aviso) }
+}
+
+function ler(): EnvioGuardado[] {
   try {
-    const v = JSON.parse(localStorage.getItem(CHAVE) || '[]')
-    return Array.isArray(v) ? v.filter(x => x && typeof x.dono === 'string' && x.dados && typeof x.dados.chave === 'string') : []
-  } catch { return [] }
+    const lista = JSON.parse(localStorage.getItem(CHAVE) || '[]')
+    if (!Array.isArray(lista)) return []
+    return lista.filter(item => item && typeof item.dono === 'string' && item.dados && typeof item.dados.chave === 'string')
+  } catch {
+    return []
+  }
 }
-function gravar(lista: Guardado[]) {
-  try { if (lista.length) localStorage.setItem(CHAVE, JSON.stringify(lista)); else localStorage.removeItem(CHAVE) } catch { /* sem armazenamento: a fila segue só na memória */ }
+
+function gravar(lista: EnvioGuardado[]) {
+  try {
+    if (lista.length) localStorage.setItem(CHAVE, JSON.stringify(lista))
+    else localStorage.removeItem(CHAVE)
+  } catch {
+    // sem armazenamento neste navegador: a fila segue só na memória
+  }
+  ouvintes.forEach(aviso => aviso())
 }
+
+const semA = (lista: EnvioGuardado[], chave: string) => lista.filter(item => item.dados.chave !== chave)
 
 export function guardarPendente(dono: string, dados: NovoLancamento) {
-  gravar([...ler().filter(x => x.dados.chave !== dados.chave), { dono, dados }])
+  gravar([...semA(ler(), dados.chave), { dono, dados }])
 }
+
+export function marcarRecusado(dono: string, dados: NovoLancamento, erro: string) {
+  gravar([...semA(ler(), dados.chave), { dono, dados, erro }])
+}
+
 export function tirarPendente(chave: string) {
-  const lista = ler(), resto = lista.filter(x => x.dados.chave !== chave)
+  const lista = ler()
+  const resto = semA(lista, chave)
   if (resto.length !== lista.length) gravar(resto)
 }
+
+/** O que ainda falta enviar deste dono (os recusados ficam de fora: esperam a decisão da pessoa). */
 export function pendentesGuardados(dono: string): NovoLancamento[] {
-  return ler().filter(x => x.dono === dono).map(x => x.dados)
+  return ler().filter(item => item.dono === dono && !item.erro).map(item => item.dados)
 }
+
+export function recusadosGuardados(dono: string): EnvioGuardado[] {
+  return dono ? ler().filter(item => item.dono === dono && !!item.erro) : []
+}
+
+let donoAtual = ''
+/** Quem está com a sessão aberta neste aparelho ('' = ninguém, ou modo exemplo). */
+export function definirDonoDosPendentes(dono: string) {
+  if (dono === donoAtual) return
+  donoAtual = dono
+  ouvintes.forEach(aviso => aviso())
+}
+export const donoDosPendentes = () => donoAtual

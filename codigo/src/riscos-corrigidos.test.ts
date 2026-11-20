@@ -1,7 +1,6 @@
 import { afterEach, expect, it } from 'vitest'
 import { esconderValores, linkWhatsApp } from './lib/formato'
 import { igual } from './lib/mescla'
-import protegida from './api/protegida.ts?raw'
 
 afterEach(() => esconderValores(false))
 const texto = (url: string) => decodeURIComponent(url.split('text=')[1])
@@ -14,8 +13,7 @@ it('convite com o olho fechado: mensagem com dado da família vira aviso legíve
   expect(texto(linkWhatsApp('Oi, Caio! Abre este link.'))).toBe('Oi, Caio! Abre este link.')
 })
 
-it('desfazer compara sem depender da ordem das chaves que o banco devolve', () => {
+it('a comparação usada pelo desfazer não depende da ordem das chaves que o banco devolve', () => {
   expect(igual({ a: 1, b: { c: 2, d: 3 } }, { b: { d: 3, c: 2 }, a: 1 })).toBe(true)
-  expect(protegida).toContain("import { igual } from '../lib/mescla'")
-  expect(protegida).not.toContain('JSON.stringify(a) === JSON.stringify(b)')
+  expect(igual({ a: 1 }, { a: 2 })).toBe(false)
 })

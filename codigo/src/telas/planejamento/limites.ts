@@ -6,7 +6,9 @@ export interface MudancaLimite { envelope: string; antes: number; depois: number
 /**
  * Grava vários limites do mês (e a reserva combinada) e devolve UM desfazer que volta todos juntos.
  * Se a gravação parar no meio, o desfazer cobre só o que chegou a ser gravado e o erro vem junto.
- * Ao desfazer, relê o banco: se algum limite já não está como esta gravação deixou, não mexe em nenhum.
+ * Ao desfazer, confere o resumo: se algum limite já não está como esta gravação deixou, não mexe em nenhum.
+ * Limite conhecido: a leitura passa pelo mesmo cache das telas, então uma mudança feita em OUTRO aparelho nos
+ * últimos segundos pode não ser percebida.
  */
 export async function gravarLimites(api: Api, familia: string, limites: MudancaLimite[], reserva: MudancaLimite | null) {
   const feitos: MudancaLimite[] = []; let reservaFeita = false, erro: unknown

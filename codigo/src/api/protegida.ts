@@ -2,26 +2,36 @@ import { invalidarDados, lerCompartilhado, familiaDoId, registrarDono, vincularM
 import { recursosDaMutacao, recursoDaLeitura } from './recursos'
 import { copiarLeitura } from '../lib/resumo/contrato'
 import { salvamento } from '../app/salvamento'
-import { pendentes } from '../app/pendentes'
+import { EnvioInterrompido, pendentes } from '../app/pendentes'
 import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
 import { desfazer } from '../app/desfazer'
 import { igual } from '../lib/mescla'
 import { prepararInverso } from './inversos'
-import { guardarPendente, pendentesGuardados, tirarPendente } from '../app/pendentesGuardados'
+import { definirDonoDosPendentes, guardarPendente, marcarRecusado, pendentesGuardados, tirarPendente } from '../app/pendentesGuardados'
 const copia = <T,>(v: T): T => structuredClone(v)
 export function protegerApi(api: Api): Api {
  let consultaSessao = 0
  // Só o banco real guarda a fila no aparelho: no exemplo os dados nascem de novo a cada abertura.
  const dono = () => { const e = escopoLeitura(api); return api.modo === 'real' && e ? `${e.sessao}|${e.familia}|${e.membro}` : '' }
- const retomar = () => { const d = dono(); if (!d) return
-   for (const n of pendentesGuardados(d)) if (!pendentes.itens.has(n.chave)) void (publica.lancar(n) as Promise<unknown>).catch(() => { /* erro definitivo já tirou da fila */ })
+ // Reenvio automático ao entrar. Recusa definitiva do banco não some: fica marcada, com o motivo, para a pessoa decidir.
+ const sessaoAcabou = (e: unknown) => e instanceof EnvioInterrompido || e instanceof LeituraSubstituida || (e instanceof Error && e.message.startsWith('Sessão encerrada'))
+ const retomar = () => {
+   const d = dono()
+   definirDonoDosPendentes(d)
+   if (!d) return
+   for (const n of pendentesGuardados(d)) {
+     if (pendentes.itens.has(n.chave)) continue
+     void (publica.lancar(n) as Promise<unknown>).catch(e => {
+       if (!sessaoAcabou(e)) marcarRecusado(d, n, e instanceof Error ? e.message : 'O banco não aceitou este gasto.')
+     })
+   }
  }
  const mutacoes = /^(salvar|criar|definir|convidar|cancelar|reenviar|lancar$|apagarLancamento|restaurarLancamento|corrigirLancamento|casaMarcar|guardado(Criar|Movimentar|Encerrar)|recebimento(Criar|Mudar)|objetivoSalvar|desejo(Criar|Mudar)|imovel(Salvar|Tirar)|cartaoSalvar|estoqueItemSalvar|backupRestaurar|anotarCompraEquipe|escritorioResponder|faturaInformar|feira(Registrar|AnexarNota|SemNota)|estoqueContar|lembrete(Criar|Concluir|Adiar|Apagar)|reajuste(Votar|Aplicar))/
  const publica = new Proxy(api, { get(alvo, prop: keyof Api) {
  const f = alvo[prop]
  if (typeof f !== 'function') return f
- if (prop === 'sair') return async () => { limparLeituras(api); return api.sair() }
+ if (prop === 'sair') return async () => { limparLeituras(api); definirDonoDosPendentes(''); return api.sair() }
  if (prop === 'sessao') return async () => {
    const pedido = ++consultaSessao, geracao = geracaoLeitura(api)
    const atual = () => pedido === consultaSessao && geracao === geracaoLeitura(api)
@@ -87,9 +97,18 @@ export function protegerApi(api: Api): Api {
  const guardado = prop === 'lancar' ? dono() : ''
  if (guardado) guardarPendente(guardado, familia)
  let r
- // sem internet a promessa fica em aberto e o item continua guardado; resposta ou erro definitivo tira do aparelho
- try { r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args) }
- finally { if (guardado) tirarPendente(familia.chave) }
+ // Sem internet a promessa fica em aberto e o item continua guardado. Sai do aparelho quando o banco responde ou recusa de vez.
+ // Se a sessão acabar com o envio em aberto, ele NÃO sai: volta a ser enviado quando o mesmo dono entrar.
+ try {
+   r = prop === 'lancar' ? await pendentes.enviar(familia.chave, () => api.lancar(familia)) : await (f as Function).apply(api,args)
+   if (guardado) tirarPendente(familia.chave)
+ } catch (e) {
+   if (guardado && !(e instanceof EnvioInterrompido)) tirarPendente(familia.chave)
+   throw e
+ }
+ // Algumas voltas só conseguem conferir "mudou depois?" comparando com o que o banco guardou de fato.
+ const aposGravar = (inverso as { aposGravar?: () => Promise<void> } | undefined)?.aposGravar
+ if (aposGravar) { try { await aposGravar() } catch { inverso = undefined } }
  if (!sessaoAtual()) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
  if (snapshot && api.backupLer && api.backupRestaurar) {
  const fid = typeof familia === 'string' ? familia : familia.familia

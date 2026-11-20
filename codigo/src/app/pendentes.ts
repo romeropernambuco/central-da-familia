@@ -1,4 +1,8 @@
 import { ErroRede } from '../api/erros'
+/** A sessão acabou com o envio ainda em aberto. O item continua guardado no aparelho para o mesmo dono. */
+export class EnvioInterrompido extends Error {
+  constructor() { super('Sessão encerrada. Confira os lançamentos ao entrar.'); this.name = 'EnvioInterrompido' }
+}
 interface Pendente { executar: () => Promise<unknown>; resolver: (r: any) => void; rejeitar: (e: unknown) => void; promessa: Promise<any> }
 export class FilaPendentes {
  itens = new Map<string,Pendente>(); ocupado = false; geracao = 0
@@ -29,6 +33,6 @@ export class FilaPendentes {
  this.avisar()
  }}finally{this.ocupado=false}
  }
- limpar(){ this.geracao++; for(const i of this.itens.values())i.rejeitar(new Error('Sessão encerrada. Confira os lançamentos ao entrar.'));this.itens.clear();this.avisar() }
+ limpar(){ this.geracao++; for(const i of this.itens.values())i.rejeitar(new EnvioInterrompido());this.itens.clear();this.avisar() }
 }
 export const pendentes=new FilaPendentes()
