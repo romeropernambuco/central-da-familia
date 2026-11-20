@@ -100,11 +100,27 @@ export function Privacidade() {
             <p>{texto}</p>
           </div>
         ))}
-        <h3>Leitura de cupom</h3>
+        <h3>O que não guardamos</h3>
         <p>
-          A foto é enviada para leitura quando você solicita. Confira os dados antes de salvar; o cupom pode conter
-          informações pessoais.
+          Não guardamos senha de banco nem o número do cartão. Do cartão ficam só o apelido, os dias de fechar e de
+          vencer e, se você quiser, os 4 últimos números.
         </p>
+        <h3>Inteligência artificial</h3>
+        <p>
+          A IA só lê a foto do cupom quando você manda, e mostra o resultado para você conferir antes de salvar. As
+          contas de dinheiro são feitas pelo app e pelo banco de dados, nunca pela IA. Se o cupom tiver CPF, a IA não
+          devolve o CPF.
+        </p>
+        {familia?.papel !== 'equipe' && (
+          <>
+            <h3>Seus direitos (LGPD)</h3>
+            <p>
+              {familia?.papel === 'casal'
+                ? 'Você pode baixar tudo a qualquer hora e apagar a família inteira. Apagar é de vez e não tem volta.'
+                : 'Você pode baixar os seus dados a qualquer hora. Apagar a família inteira é com o casal.'}
+            </p>
+          </>
+        )}
       </section>
       {familia?.papel !== 'equipe' && (
         <div className="col">
