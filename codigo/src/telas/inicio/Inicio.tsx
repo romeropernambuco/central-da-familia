@@ -54,7 +54,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       { chave: 'faturas', titulo: 'Faturas previstas', icone: 'cartoes', destino: destinoFaturas, campo: medida(faturas, faturas.valor?.total, 'reais'), tamanho: 'secundario' },
     ] as const satisfies readonly { chave: keyof ResumoFamilia; titulo: string; icone: NomeIcone; destino: DestinoResumo; campo: Parameters<typeof Quantia>[0]['campo']; tamanho: 'principal' | 'secundario'; legenda?: string }[],
     cartoes: [
-      { chave: 'podeGastarHoje', titulo: 'Meu orçamento', legenda: 'Já gasto hoje', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.envelope?.gasto_hoje, 'reais'), Figura: SemGastos },
+      { chave: 'podeGastarHoje', titulo: 'Meu orçamento', legenda: 'Livre no mês', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.envelope?.livre, 'reais'), Figura: SemGastos },
       { chave: 'aplicacoes', titulo: 'Aplicações', legenda: 'Rendimento líquido de hoje', destino: destinoAplicacoes, campo: medida(aplicacoes, aplicacoes.valor?.hoje, 'reais'), Figura: SemAplicacoes },
       { chave: 'faturas', titulo: 'Faturas', legenda: 'Faturas a vencer ou conferir', destino: destinoFaturas, campo: medida(faturas, faturas.valor?.lista.length, 'quantidade'), Figura: SemCartoes },
       { chave: 'imoveis', titulo: 'Imóveis', legenda: 'Aluguel líquido estimado', destino: { rota: 'guardado', secao: 'imoveis' }, campo: medida(imoveis, aluguel?.valor, aluguel?.unidade ?? 'reais'), Figura: SemImoveis },
@@ -68,6 +68,8 @@ function Leitura({ estado, campo, tamanho }: { estado: CampoResumo<unknown>['est
   return <Quantia {...{ campo, tamanho }} />
 }
 
+/** O que as referências do topo, as rotinas, a trilha e a fila "Precisa de você" já mostram: o Resumo da família não repete. */
+const JA_NO_TOPO = ['podeGastarHoje', 'plano2029', 'faturas', 'aplicacoes', 'pendencias'] as const
 const consulta = '(max-width: 899px)'
 function useCelular() {
   const [celular, setCelular] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(consulta).matches)
@@ -134,7 +136,7 @@ function InicioFamilia() {
       </div>
     </PrivacidadePropostas.Provider>
     <div className="view inicio-f29 inicio-j-detalhes">
-      <ResumoApresentacao {...{ resumo, repetir, hoje, oculto }} informarSaldo={casal && api.salvarSaldoConta ? () => setSaldo(true) : undefined} />
+      <ResumoApresentacao {...{ resumo, repetir, hoje, oculto }} jaMostrados={JA_NO_TOPO} informarSaldo={casal && api.salvarSaldoConta ? () => setSaldo(true) : undefined} />
       <UltimosLancamentos />
     </div>
     {saldo && <InformarSaldo fechar={() => setSaldo(false)} />}

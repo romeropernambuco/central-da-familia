@@ -101,7 +101,7 @@ async function montar(m = mundo(), origem?: ReactNode, papel = 'casal', largura?
   let r!: Resumo
   function Captura() { r = useResumoFamilia().resumo; return null }
   let oculto = false
-  const render = async () => { esconderValores(oculto); await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api: m.api, familia, resumo: m.resumo(), versao: 0, oculto, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, toast() {}, recarregar: async () => {}, abrirLancar() {}, sessao: { userId: 'sessao-ficticia', familias: [familia] } } as unknown as Ctx }, createElement(Fragment, null, papel === 'equipe' ? null : createElement(Captura), createElement(largura === undefined ? ResumoFamilia : Inicio), createElement('div', { 'data-origem': true }, origem))))) }
+  const render = async () => { esconderValores(oculto); await act(async () => root.render(createElement(ContextoApp.Provider, { value: { api: m.api, familia, resumo: m.resumo(), versao: 0, oculto, tentar: async (f: () => Promise<unknown>) => { await f(); return true }, toast() {}, recarregar: async () => {}, abrirLancar() {}, sessao: { userId: 'sessao-ficticia', familias: [familia] } } as unknown as Ctx }, createElement(Fragment, null, papel === 'equipe' ? null : createElement(Captura), createElement(telaInicio ? Inicio : ResumoFamilia), createElement('div', { 'data-origem': true }, origem))))) }
   await render()
   if (m.api.modo === 'exemplo') await act(async () => { await new Promise(r => setTimeout(r, 200)) })
   return { m, box, get r() { return r }, render, ocultar: async () => { oculto = !oculto; await render() }, bloco: (k: keyof Resumo) => box.buscar(x => x.getAttribute('data-bloco') === k)[0], origem: () => box.buscar(x => x.getAttribute('data-origem') === 'true')[0] }
@@ -207,7 +207,12 @@ const expandir = async (bloco: NoTeste) => {
   await act(async () => botao.click())
 }
 
+// Os testes deste arquivo conferem o Resumo da família completo; só quem precisa da tela inteira liga o Início.
+let telaInicio = false
+afterEach(() => { telaInicio = false })
+
 it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre vêm do Meu orçamento', async id => {
+  telaInicio = true
   const m = mundoComEnvelopes()
   const e = m.resumo().envelopes.find(e => e.id === id)!
   const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
@@ -223,14 +228,17 @@ it.each(['eu', 'outro'])('f37: envelope %s, disponível, limite, gasto e livre v
     expect(cartao.textContent.replace(/\s/g, '')).toContain(moeda(n))
     expect(a.origem().textContent.replace(/\s/g, '')).toContain(moeda(n))
   }
-  const valorInicio = id === 'eu' ? a.bloco('podeGastarHoje') : cartao
+  // no Início o número de hoje fica só na referência do topo; o cartão do Resumo não repete
+  const valorInicio = id === 'eu' ? a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0] : cartao
   expect(valorInicio.textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
   expect(a.origem().buscar(x => x.getAttribute('aria-label') === reais(e.hoje!)).length).toBeGreaterThan(0)
   if (id === 'eu') {
     await expandir(a.bloco('podeGastarHoje'))
     const inicio = a.box.buscar(x => x.getAttribute('class')?.split(' ').includes('inicio-j-detalhes') === true)[0]
-    expect(inicio.textContent.match(/101,33/g)).toHaveLength(1)
-    expect(inicio.textContent.match(/Hoje você pode gastar/g)).toHaveLength(1)
+    // trava do enxugamento: o número de hoje e o título dele não se repetem abaixo das referências do topo
+    expect(inicio.textContent).not.toMatch(/101,33/)
+    expect(inicio.textContent).not.toContain('Hoje você pode gastar')
+    expect(a.box.buscar(x => ['faturas', 'aplicacoes', 'pendencias'].includes(x.getAttribute('data-bloco') || ''))).toHaveLength(0)
     expect(a.box.buscar(x => x.getAttribute('data-referencia') === 'podeGastarHoje')[0].textContent.replace(/\s/g, '')).toContain(moeda(e.hoje!))
   }
 })

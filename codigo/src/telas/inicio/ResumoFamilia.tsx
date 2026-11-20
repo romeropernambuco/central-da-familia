@@ -86,7 +86,7 @@ export function itensResumo(r: Resumo, hoje: string, oculto: boolean): Item[] {
   const [orcamento, saldo, ...outros] = principais
   return [saldo, orcamento, ...outros, ...complementares].map(chave => montarItem(chave, r[chave], hoje, oculto))
 }
-export function CartaoResumo({ item, campo, repetir, extra, detalhes, oculto }: { item: Item; campo: CampoResumo<unknown>; repetir: () => void; extra?: React.ReactNode; detalhes?: React.ReactNode; oculto?: boolean }) {
+export function CartaoResumo({ item, campo, repetir, extra, detalhes, oculto, semNumero }: { item: Item; campo: CampoResumo<unknown>; repetir: () => void; extra?: React.ReactNode; detalhes?: React.ReactNode; oculto?: boolean; /** o número já está no topo da tela: o cartão fica só com a frase, a conferência e os detalhes */ semNumero?: boolean }) {
   const [aberto, setAberto] = useState(false)
   if (campo.estado === 'restrito') return null
   const pronto = campo.estado === 'pronto', erro = campo.estado === 'erro'
@@ -94,7 +94,7 @@ export function CartaoResumo({ item, campo, repetir, extra, detalhes, oculto }: 
     <a href={enderecoDestino(item.destino)} className="resumo-link">
       <span className="resumo-icone"><Icone nome={item.icone} size={20} aria-hidden="true" /></span>
       <span className="resumo-corpo"><span className="resumo-rotulo">{item.titulo}</span>
-        <strong className="resumo-numero">{pronto ? item.numero : campo.estado === 'carregando' ? <span className="resumo-esqueleto" role="status">Conferindo...</span> : erro ? 'Não foi possível conferir' : campo.motivo || 'Dado indisponível'}</strong>
+        {!(semNumero && pronto) && <strong className="resumo-numero">{pronto ? item.numero : campo.estado === 'carregando' ? <span className="resumo-esqueleto" role="status">Conferindo...</span> : erro ? 'Não foi possível conferir' : campo.motivo || 'Dado indisponível'}</strong>}
         {pronto && <span className="resumo-frase">{item.frase}</span>}
         {pronto && <small className="resumo-meta"><span className="resumo-natureza">{campo.fonte[0]?.natureza}</span>{campo.conferidoEm ? ` · Conferido em ${oculto ? '••••' : dataConferencia(campo.conferidoEm)}` : item.chave === 'saldoConta' ? ' · Sem conferência registrada' : ''}</small>}
       </span>{!detalhes && <Icone nome="abrir" aria-hidden="true" />}
@@ -103,11 +103,13 @@ export function CartaoResumo({ item, campo, repetir, extra, detalhes, oculto }: 
     {pronto && detalhes && <><button type="button" className="resumo-expandir" aria-expanded={aberto} aria-controls={`detalhes-${item.chave}`} onClick={() => setAberto(!aberto)}>{aberto ? 'Recolher detalhes' : 'Ver detalhes'}<Icone nome="abrir" aria-hidden="true" /></button><div className="resumo-detalhes" id={`detalhes-${item.chave}`} hidden={!aberto}>{aberto && detalhes}</div></>}
   </article>
 }
-const BlocoResumo = memo(function BlocoResumo({ chave, campo, hoje, oculto, repetir, informarSaldo, orcamentoAberto }: {
+const BlocoResumo = memo(function BlocoResumo({ chave, campo, hoje, oculto, repetir, informarSaldo, orcamentoAberto, semNumero }: {
   chave: keyof Resumo; campo: Resumo[keyof Resumo]; hoje: string; oculto: boolean;
-  repetir: (k: keyof Resumo) => void; informarSaldo?: () => void; orcamentoAberto?: boolean
+  repetir: (k: keyof Resumo) => void; informarSaldo?: () => void; orcamentoAberto?: boolean; semNumero?: boolean
 }) {
-  const item = montarItem(chave, campo, hoje, oculto)
+  const completo = montarItem(chave, campo, hoje, oculto)
+  // sem o número repetido, o título diz o que o cartão ainda tem a mostrar
+  const item = semNumero && chave === 'podeGastarHoje' ? { ...completo, titulo: 'Seu mês em detalhe' } : semNumero && chave === 'plano2029' ? { ...completo, titulo: 'Plano 2029: como a conta foi feita' } : completo
   const p = chave === 'podeGastarHoje' ? (campo as Resumo['podeGastarHoje']).valor : null
   const plano = chave === 'plano2029' ? (campo as Resumo['plano2029']).valor : null
   const meu = p?.envelope
@@ -125,17 +127,24 @@ const BlocoResumo = memo(function BlocoResumo({ chave, campo, hoje, oculto, repe
   const detalhesPlano = plano && plano.cobre_pct !== null
       ? oculto ? <p>Valores escondidos</p> : <p><PlanoSemMargem centavos={plano.falta_sem_margem} /></p>
       : undefined
-  return <CartaoResumo item={item} campo={campo} oculto={oculto} repetir={() => repetir(chave)}
+  return <CartaoResumo item={item} campo={campo} oculto={oculto} semNumero={semNumero} repetir={() => repetir(chave)}
     extra={informarSaldo ? <button type="button" className="btn primary resumo-informar" onClick={informarSaldo}>Informar saldo</button>
       : chave === 'pendencias' ? <a className="resumo-fila lnk" href="#/escritorio">Ver fila no Escritório</a> : undefined}
-    detalhes={detalhesOrcamento ?? detalhesPlano} />
+    detalhes={detalhesOrcamento ?? (semNumero ? undefined : detalhesPlano)} />
 })
 
-export function ResumoApresentacao({ resumo, hoje, oculto, repetir, informarSaldo }: { resumo: Resumo; hoje: string; oculto: boolean; repetir: (k: keyof Resumo) => void; informarSaldo?: () => void }) {
+/** Cartões que só repetem o que a tela já mostra em cima (número e frase): saem inteiros quando vêm em `jaMostrados`. */
+const SO_REPETEM: readonly (keyof Resumo)[] = ['faturas', 'aplicacoes', 'pendencias']
+
+/**
+ * `jaMostrados`: blocos cujo número a tela já mostra acima (o Início novo tem as referências no topo, as rotinas e a fila).
+ * Quem só repete some; quem tem mais a dizer (ritmo do mês, o que falta confirmar no plano) fica sem o número repetido.
+ */
+export function ResumoApresentacao({ resumo, hoje, oculto, repetir, informarSaldo, jaMostrados = [] }: { resumo: Resumo; hoje: string; oculto: boolean; repetir: (k: keyof Resumo) => void; informarSaldo?: () => void; jaMostrados?: readonly (keyof Resumo)[] }) {
   const orcamento = useOrcamentoAberto()
   const repetirOrcamento = useCallback(() => repetir('podeGastarHoje'), [repetir])
   const datas = Object.values(resumo).flatMap(c => c.estado === 'pronto' && c.conferidoEm ? [c.conferidoEm] : []).sort()
-  const bloco = (chave: keyof Resumo) => <BlocoResumo key={chave} chave={chave} campo={resumo[chave]} hoje={hoje} oculto={oculto} repetir={repetir}
+  const bloco = (chave: keyof Resumo) => jaMostrados.includes(chave) && SO_REPETEM.includes(chave) ? null : <BlocoResumo key={chave} semNumero={jaMostrados.includes(chave)} chave={chave} campo={resumo[chave]} hoje={hoje} oculto={oculto} repetir={repetir}
     informarSaldo={chave === 'saldoConta' ? informarSaldo : undefined} orcamentoAberto={chave === 'podeGastarHoje' ? orcamento.aberto : undefined} />
   return <section className="resumo-familia" aria-label="Resumo da família"><header><h2 className="sec-t">Resumo da família</h2><p className="resumo-conferencia">{datas.length ? `Conferido em ${oculto ? '••••' : dataConferencia(datas[0], hoje)}` : 'Nenhum número conferido manualmente ainda'}</p></header>
     <div className="resumo-grade">{principais.map(bloco)}</div>

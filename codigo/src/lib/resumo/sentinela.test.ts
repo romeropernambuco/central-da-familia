@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../../app/contexto'
 import { Inicio } from '../../telas/inicio/Inicio'
+import { ResumoFamilia } from '../../telas/inicio/ResumoFamilia'
 import { Cartoes } from '../../telas/cartoes/Cartoes'
 import { MeuOrcamento } from '../../telas/meu-orcamento/MeuOrcamento'
 import { Guardado } from '../../telas/guardado/Guardado'
@@ -67,9 +68,12 @@ it('orçamento sentinela percorre a aba, a leitura real do Início e a ficha do 
   const { api, interna } = fonte()
   expect(await lerTela(createElement(MeuOrcamento), api)).toContain('8.765')
   expect(interna.resumoHoje).not.toHaveBeenCalled()
-  expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje')).toContain('8.765')
+  expect(await lerTela(createElement(ResumoFamilia), api, 'podeGastarHoje')).toContain('8.765')
+  // no Início o número fica só no topo: o cartão do Resumo não repete
+  expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje')).not.toContain('8.765')
   expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje', 'data-referencia')).toContain('8.765')
-  expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje', 'data-rotina')).toContain('678,91')
+  expect(await lerTela(createElement(Inicio), api, 'podeGastarHoje', 'data-rotina')).toContain('8.765')
+  expect(await lerTela(createElement(Inicio), api, 'saiu', 'data-frase')).toContain('678,91')
   expect(interna.resumoHoje).toHaveBeenCalledWith(familia.id)
   expect(await lerTela(createElement(NumerosAba, { id: 'anfitriao', fechar() {} }), api)).toContain('8.765')
 })
