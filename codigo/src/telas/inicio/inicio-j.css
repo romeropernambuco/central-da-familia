@@ -52,3 +52,7 @@
 .inicio-j .j-sobre-acoes { display: flex; flex-wrap: wrap; gap: 0 14px; margin-inline-start: auto; }
 .inicio-j .j-sobre-hoje .explica-l { color: var(--destaque); min-height: 44px; padding-inline: 0; }
 @media (max-width: 899px) { .inicio-j .j-sobre-acoes { margin-inline-start: 0; } .inicio-j .j-sobre-hoje { padding: 2px 8px 6px; } }
+.inicio-j .j-saudacao { color: var(--texto); font-weight: 650; }
+.inicio-j .j-plano .linha-2028-resumo { margin-block: 12px 6px; border: 1px solid color-mix(in oklch, var(--borda) 45%, transparent); border-radius: 12px; background: var(--cartao); color: var(--texto); box-shadow: none; }
+.inicio-j .j-plano .linha-2028-resumo small { color: var(--texto-secundario); }
+.inicio-j .j-plano .linha-2028-resumo .tile { color: var(--destaque); }

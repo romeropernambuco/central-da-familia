@@ -14,6 +14,7 @@ import { InformarSaldo } from '../planejamento/SaldoConta'
 import { ResumoApresentacao } from './ResumoFamilia'
 import { UltimosLancamentos } from './UltimosLancamentos'
 import { SobreHoje } from './SobreHoje'
+import { Linha2028Resumo } from '../../componentes/Linha2028'
 import '../../propostas/j/proposta.css'
 import './inicio-j.css'
 
@@ -106,7 +107,7 @@ function InicioFamilia() {
               </a>
             ))}
           </div>
-          {envelopeHoje && <SobreHoje e={envelopeHoje} />}
+          {envelopeHoje && <SobreHoje e={envelopeHoje} placar={casal ? resumo.podeGastarHoje.valor?.placar : null} />}
           <EscritorioInicio {...{ celular, hoje }} />
         </section>
         <section className="j-acompanhamento" aria-labelledby="j-rotinas">
@@ -127,6 +128,7 @@ function InicioFamilia() {
         {casal && <section className="j-plano" aria-labelledby="j-rumo" data-trilha="plano2029">
           <div className="j-plano-topo"><span className="j-plano-icone"><Icone nome="plano2029" /></span><h2 id="j-rumo">Rumo a 2029</h2></div>
           <Trilha plano={cobertura} celular={celular} consultarMargem={() => document.querySelector<HTMLAnchorElement>('[data-referencia="plano2029"]')?.focus()} />
+          <Linha2028Resumo />
           <a className="lnk" href={enderecoDestino(destinoPlano)}>Abrir Plano 2029 <Icone nome="abrir" size={16} /></a>
         </section>}
       </div>

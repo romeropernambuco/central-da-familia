@@ -4,7 +4,7 @@ import sobre from './SobreHoje.tsx?raw'
 
 // Trava de função devolvida (inventário A2.1 a A2.4): o Início novo não pode voltar a perder estas explicações.
 it('o Início mostra a faixa "Sobre o número de hoje" logo abaixo das referências e antes do escritório', () => {
-  const faixa = inicio.indexOf('<SobreHoje e={envelopeHoje} />')
+  const faixa = inicio.indexOf('<SobreHoje e={envelopeHoje}')
   expect(faixa).toBeGreaterThan(inicio.indexOf('className="j-resumo"'))
   expect(faixa).toBeLessThan(inicio.indexOf('<EscritorioInicio'))
 })
@@ -21,4 +21,12 @@ it('a faixa tem as quatro explicações do Início antigo', () => {
 
 it('em mês devendo o topo não chama o valor devido de "Limite de hoje"', () => {
   expect(inicio).toContain("orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Limite de hoje'")
+})
+
+it('o casal, a saudação e o cartão "Até dezembro de 2028" ficam à vista no Início', () => {
+  expect(sobre).toContain("chave: 'casal'")
+  expect(sobre).toContain('O casal, se continuar assim')
+  expect(sobre).toContain('{saudacao()}')
+  expect(inicio).toContain('placar={casal ? resumo.podeGastarHoje.valor?.placar : null}')
+  expect(inicio.indexOf('<Linha2028Resumo />')).toBeGreaterThan(inicio.indexOf('<Trilha'))
 })

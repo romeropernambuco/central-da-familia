@@ -3,7 +3,8 @@ import { useApp } from '../../app/contexto'
 import { comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem } from '../../componentes/EnvelopeCard'
 import { Qm } from '../../componentes/Qm'
 import { textoPrivado } from '../../componentes/privacidade'
-import { fimDoMes, hojeRecife, mesLongo, reais, somaDias } from '../../lib/formato'
+import { fimDoMes, hojeRecife, mesLongo, reais, saudacao, somaDias } from '../../lib/formato'
+import type { projecaoCasal } from '../../lib/resumo/orcamento'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -12,7 +13,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
  * Voltou do Início antigo para dentro do layout novo: "Hoje já saiu", a frase da virada do mês,
  * "De onde veio esse número?" e "Por que mudou?". Só mostra a frase que tem o que dizer.
  */
-export function SobreHoje({ e: escolhido }: { e?: Envelope }) {
+export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: ReturnType<typeof projecaoCasal> }) {
   const { resumo, explicar, familia } = useApp()
   // sem envelope escolhido pela tela: o da própria pessoa, como no Início antigo
   const e = escolhido ?? resumo?.envelopes.find(x => x.id === familia?.envelopeId && !x.casa)
@@ -36,9 +37,18 @@ export function SobreHoje({ e: escolhido }: { e?: Envelope }) {
     const c = comecoDoMes(e.limite_base ?? e.limite_mes, 0, parcela, mesLongo(hoje))
     frases.push({ chave: 'virada-antes', texto: `${cap(mesLongo(primeiroDoMesQueVem()))} começa com ${reais(c.valor)}${c.partes}.` })
   }
+  // o casal, se continuar assim: à vista também no celular (antes ficava dentro de "Seu orçamento e envelopes")
+  if (placar) {
+    const passam = placar.pessoas.filter(p => p.passa)
+    // tem nome de pessoa: com o olho fechado a frase inteira some
+    frases.push({ chave: 'casal', texto: textoPrivado(passam.length
+      ? `O casal, se continuar assim: ${passam.map(p => `${p.nome}${p.eu ? ' (você)' : ''} ${p.excessoAtual === null ? 'vai passar' : 'passou'} ${reais(p.excessoAtual ?? p.excessoPrevisto)}`).join(' e ')}. O que passa sai de ${mesLongo(primeiroDoMesQueVem())}.`
+      : `O casal, se continuar assim: juntos, sobram ${reais(placar.sobra)} no fim do mês.`) })
+  }
   const mudou = e.mudou
   return (
     <div className="j-sobre-hoje" role="group" aria-label="Sobre o número de hoje">
+      {familia?.membroNome && <p className="j-saudacao">{saudacao()}, {textoPrivado(familia.membroNome)}.</p>}
       {frases.map(f => <p key={f.chave} data-frase={f.chave}>{f.texto}</p>)}
       <div className="j-sobre-acoes">
         <Qm texto titulo={devendo ? 'Seu mês' : 'Hoje você pode gastar'} linhas={n.linhas} nota={`A mesma conta do banco da família.${e.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`} />
