@@ -205,7 +205,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       <div className={sessao && familia ? 'central-app' : undefined}>
         {children}
         <BarraDesfazer />
-        <FilaPendentes />
+        <FilaPendentes aoTentarDeNovo={gasto => void tentar(() => api.lancar(gasto))} />
         {exp && (
           <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>
             <p className="corpo"><b>{textoPrivado(exp.titulo, oculto)}</b></p>
