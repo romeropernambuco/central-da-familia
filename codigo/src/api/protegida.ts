@@ -7,6 +7,7 @@ import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
 import { desfazer } from '../app/desfazer'
 import { igual } from '../lib/mescla'
+import { prepararInverso } from './inversos'
 import { guardarPendente, pendentesGuardados, tirarPendente } from '../app/pendentesGuardados'
 const copia = <T,>(v: T): T => structuredClone(v)
 export function protegerApi(api: Api): Api {
@@ -80,6 +81,8 @@ export function protegerApi(api: Api): Api {
  if (antes) { const depois = {...antes,...copia(dados)}; inverso = async () => { if(!igual((await api.desejos!(familia)).find(x=>x.id===id),depois)) throw new Error('Isso mudou depois; confira antes de desfazer'); await api.desejoMudar!(familia,id,{situacao:antes.situacao}) } }
  }
 
+ // Banco real: ações com volta segura pela própria API (o exemplo já volta pelo retrato completo acima).
+ if (!inverso && api.modo === 'real' && !desfazer.ocupado) { try { inverso = await prepararInverso(api, prop, args) } catch { /* sem o "antes" não há desfazer; a ação segue */ } }
  if (!sessaoAtual()) throw new Error('Sessão encerrada. Confira os dados ao entrar.')
  const guardado = prop === 'lancar' ? dono() : ''
  if (guardado) guardarPendente(guardado, familia)
