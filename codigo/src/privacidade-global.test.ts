@@ -103,6 +103,7 @@ const telas = [
   'Reajuste',
   'Recebimentos',
   'Privacidade',
+  'TextosDeConfianca',
   'Escritorio',
   'EscritorioIsometrico',
   'NumerosAba',
@@ -568,9 +569,16 @@ describe('regra do olho em cada tela real', () => {
         // Algumas telas iniciais são formulários vazios e não apresentam dados privados.
         if (
           !nome.startsWith('Agente:') &&
-          !['CadastroAssessor', 'Entrar', 'PrimeiroUso', 'Privacidade', 'Parametros', 'Reajuste', 'Cena3D'].includes(
-            nome,
-          )
+          ![
+            'CadastroAssessor',
+            'Entrar',
+            'PrimeiroUso',
+            'Privacidade',
+            'Parametros',
+            'Reajuste',
+            'TextosDeConfianca',
+            'Cena3D',
+          ].includes(nome)
         )
           expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
         await act(async () => alternar())
