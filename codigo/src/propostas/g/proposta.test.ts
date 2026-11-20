@@ -15,8 +15,8 @@ import { env } from 'node:process'
 import ts from 'typescript'
 import { beforeAll, expect, it, vi } from 'vitest'
 import type { PropsProposta } from '../Propostas'
-import { PrivacidadePropostas } from '../comuns/privacidade'
-import { carregarDadosInicio, type DadosInicio } from '../dadosExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
+import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { DetalheCasa, type Destino } from './DetalheCasa'
 import { Proposta } from './Proposta'
 const css = readFileSync(new URL('./casa-viva.css', import.meta.url), 'utf8') as string
@@ -102,7 +102,11 @@ it.skipIf(!chrome)('mede a primeira dobra, a legibilidade dos valores e os alvos
   const pasta = mkdtempSync(join(raizTemp, 'medicao-casa-viva-'))
   try {
     const arquivo = join(pasta, 'casca.html')
-    const estilos = ['../base.css', '../comuns/escritorio-maquete.css', '../../componentes/ilustracoes/ilustracoes.css']
+    const estilos = [
+      '../base.css',
+      '../../componentes/escritorio/escritorio-maquete.css',
+      '../../componentes/ilustracoes/ilustracoes.css',
+    ]
       .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8'))
       .join('\n')
     const fontes = [

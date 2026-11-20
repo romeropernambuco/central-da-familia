@@ -4,8 +4,8 @@ import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 // @ts-ignore Leitura de código fonte apenas no processo de teste.
 import { readFileSync } from 'node:fs'
 import type { Dispositivo, Tema } from '../Propostas'
-import { PrivacidadePropostas } from '../comuns/privacidade'
-import { carregarDadosInicio, type DadosInicio } from '../dadosExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
+import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { Proposta } from './Proposta'
 import { chromium, verificarNavegador } from './verificarNavegador'
 
@@ -130,7 +130,7 @@ it('prioriza os três níveis de alerta com uma pílula nomeada para cada nível
 
 it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () => {
   const codigo = String(readFileSync(new URL('./Escritorio.tsx', import.meta.url), 'utf8'))
-  expect(codigo).toContain("from '../comuns/Escritorio3D'")
+  expect(codigo).toContain("from '../../componentes/escritorio/Escritorio3D'")
   expect(codigo).not.toMatch(/EscritorioMaquete|\bvalores=/)
   expect(codigo).toMatch(/<Escritorio3D\s+completo[\s\S]*variante="grande"/)
   const html = renderizar('claro', 'desktop')

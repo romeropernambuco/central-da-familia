@@ -1,7 +1,7 @@
 import { Flag } from 'lucide-react'
-import { Icone } from '../../componentes/Icone'
-import { useValoresOcultos, Valor } from '../comuns/privacidade'
-import type { DadosInicio } from '../dadosExemplo'
+import { Icone } from '../Icone'
+import { useValoresOcultos, Valor } from '../escritorio/privacidade'
+import type { DadosInicio } from '../escritorio/dadosDeExemplo'
 import { diferenca } from './modelo'
 
 const anos = [2026, 2027, 2028, 2029]

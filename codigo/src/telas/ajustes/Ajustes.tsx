@@ -6,7 +6,7 @@ import { useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../../componentes/AgenteDaAba'
 import { copiarProtegido } from '../../componentes/privacidade'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
 import {
   MessageCircle,

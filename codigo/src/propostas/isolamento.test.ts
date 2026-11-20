@@ -23,14 +23,12 @@ it('exclui o laboratório do grafo do build real e da entrada direta em produç�
     })
     const saidas = (Array.isArray(real) ? real : [real]).flatMap(r => ('output' in r ? r.output : []))
     expect(saidas.some(a => a.fileName === 'index.html')).toBe(true)
-    // A J fornece as peças visuais do Início. O snapshot, a casca e as telas do laboratório continuam isolados.
-    const compartilhados =
-      /\/src\/propostas\/(?:comuns\/(?:Escritorio3D|EscritorioMaquete|VisorEscritorio|escritorio3d-etiquetas|maquete-desenho|modeloPosto|privacidade|escritorio3d|escritorio-maquete)|j\/(?:Trilha|interface|modelo|proposta))\.(?:ts|tsx|css)$/
+    // Nada da pasta de protótipos entra no app: as peças do Início moram em componentes/escritorio e componentes/painel-inicio.
     for (const saida of saidas) {
       expect(saida.fileName).not.toContain('propostas')
       if (saida.type === 'chunk') {
         const modulos = saida.moduleIds.map(id => id.replace(/\\/g, '/'))
-        expect(modulos.filter(id => id.includes('/src/propostas/') && !compartilhados.test(id))).toEqual([])
+        expect(modulos.filter(id => id.includes('/src/propostas/'))).toEqual([])
         expect(modulos.some(id => id.endsWith('/InicioClassico.tsx'))).toBe(false)
         expect(saida.code).not.toContain('Laboratório de propostas')
       } else {

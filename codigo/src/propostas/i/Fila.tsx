@@ -1,8 +1,8 @@
 import { useId, useState } from 'react'
 import { Icone, icones, type NomeIcone } from '../../componentes/Icone'
 import { TudoEmDia } from '../../componentes/ilustracoes'
-import { useValoresOcultos } from '../comuns/privacidade'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
+import { useValoresOcultos } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 import { Quantia, type reservarQuantias } from './Financeiro'
 
 type Tarefa = NonNullable<DadosInicio['pendencias']['fila']['valor']>[number]

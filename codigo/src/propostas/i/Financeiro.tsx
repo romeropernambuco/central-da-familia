@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Flag } from 'lucide-react'
 import { Icone } from '../../componentes/Icone'
 import { Plano2029 } from '../../componentes/ilustracoes'
-import { useValoresOcultos, Valor } from '../comuns/privacidade'
-import type { Campo, DadosInicio } from '../dadosExemplo'
+import { useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
+import type { Campo, DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 export type CampoFinanceiro = Parameters<typeof Valor>[0]['campo']
 export type Dinheiro = Campo<number, 'reais' | 'centavos'>

@@ -1,5 +1,5 @@
-import type { Campo, DadosInicio, NivelAlerta } from '../dadosExemplo'
-import { responsavelDaTarefa } from '../comuns/modeloPosto'
+import type { Campo, DadosInicio, NivelAlerta } from '../escritorio/dadosDeExemplo'
+import { responsavelDaTarefa } from '../escritorio/modeloPosto'
 
 export type Dinheiro = Campo<number, 'reais' | 'centavos'>
 export type Funcionario = NonNullable<DadosInicio['funcionarios']['valor']>[number]

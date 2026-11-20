@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
-  ChevronRight,
   Droplets,
   HelpCircle,
   Plus,

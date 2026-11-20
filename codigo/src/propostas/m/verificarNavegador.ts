@@ -12,7 +12,7 @@ import { join } from 'node:path'
 import { env } from 'node:process'
 // @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
 import { pathToFileURL } from 'node:url'
-import type { DadosInicio } from '../dadosExemplo'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 export const chromium = [
   env.BROWSER_CHROME,
@@ -217,7 +217,7 @@ export async function verificarNavegador(dados: DadosInicio) {
         import { createRoot } from 'react-dom/client';
         import { flushSync } from 'react-dom';
         import { Proposta } from '/src/propostas/m/Proposta.tsx';
-        import { PrivacidadePropostas } from '/src/propostas/comuns/privacidade.tsx';
+        import { PrivacidadePropostas } from '/src/componentes/escritorio/privacidade.tsx';
         import { medirNumeros } from '/src/propostas/medicao.ts';
         import '/src/propostas/base.css';
         const dados = ${JSON.stringify(dados)};

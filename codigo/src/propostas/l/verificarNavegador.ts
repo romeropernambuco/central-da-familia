@@ -12,7 +12,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 // @ts-ignore APIs do Node usadas apenas no teste de navegador.
 import { env } from 'node:process'
-import type { DadosInicio } from '../dadosExemplo'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 export const chromium = [
   env.BROWSER_CHROME,
@@ -46,7 +46,8 @@ async function montarPagina(snapshots: DadosInicio[]) {
           if (id === entrada)
             return [
               'export { Proposta } from ' + JSON.stringify(resolve(pasta, 'Proposta.tsx')),
-              'export { PrivacidadePropostas } from ' + JSON.stringify(resolve('src/propostas/comuns/privacidade.tsx')),
+              'export { PrivacidadePropostas } from ' +
+                JSON.stringify(resolve('src/componentes/escritorio/privacidade.tsx')),
               'export { medirNumeros } from ' + JSON.stringify(resolve('src/propostas/medicao.ts')),
             ].join('\n')
         },
@@ -75,8 +76,8 @@ async function montarPagina(snapshots: DadosInicio[]) {
     const ler = (arquivo: string) => readFileSync(arquivo, 'utf8')
     const estilos = [
       'src/propostas/base.css',
-      'src/propostas/comuns/escritorio-maquete.css',
-      'src/propostas/comuns/escritorio3d.css',
+      'src/componentes/escritorio/escritorio-maquete.css',
+      'src/componentes/escritorio/escritorio3d.css',
       'src/componentes/ilustracoes/ilustracoes.css',
       pasta + '/proposta.css',
     ].map(ler)

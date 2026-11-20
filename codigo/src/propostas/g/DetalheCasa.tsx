@@ -1,8 +1,8 @@
 ﻿import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { CasaVazia, Plano2029, SemAplicacoes, SemCartoes, SemRecebimentos } from '../../componentes/ilustracoes'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
-import { DetalheFinanceiro, useValoresOcultos, Valor } from '../comuns/privacidade'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
+import { DetalheFinanceiro, useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
 import { Cena, comodos, type Comodo } from './Cena'
 
 export type Destino = Comodo | 'pendencias' | 'plano' | 'mais'

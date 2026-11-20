@@ -1,8 +1,8 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { PrivacidadePropostas } from '../comuns/privacidade'
-import type { DadosInicio } from '../dadosExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import type { Dispositivo, Tema } from '../Propostas'
 import { Proposta } from './Proposta'
 // @ts-ignore Node disponível no executor de testes.
@@ -14,7 +14,7 @@ beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-18T15:00:00Z'))
   try {
-    const { carregarDadosInicio } = await import('../dadosExemplo')
+    const { carregarDadosInicio } = await import('../../componentes/escritorio/dadosDeExemplo')
     exemplo = await carregarDadosInicio()
   } finally {
     vi.useRealTimers()

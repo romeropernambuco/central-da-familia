@@ -27,7 +27,7 @@ import { recebimentosDoMes } from '../lib/resumo/recebimentos'
 import { saldoDasContas } from '../lib/resumo/saldos'
 import { EQUIPE } from '../telas/escritorio/equipe'
 import { completarEquipe } from '../telas/escritorio/useEquipe'
-import { carregarDadosInicio } from './dadosExemplo'
+import { carregarDadosInicio } from '../componentes/escritorio/dadosDeExemplo'
 
 // Descarta metadados e texto. Até valores em listas e séries precisam ter um correspondente na origem.
 function numeros(x: unknown): unknown {
@@ -219,7 +219,7 @@ describe('dados do laboratório', () => {
   })
 
   it('não permite números literais no adaptador', () => {
-    const nome = 'src/propostas/dadosExemplo.ts'
+    const nome = 'src/componentes/escritorio/dadosDeExemplo.ts'
     const fonte = ts.createSourceFile(nome, ts.sys.readFile(nome)!, ts.ScriptTarget.Latest, true)
     const literais: string[] = []
     function visitar(no: ts.Node) {

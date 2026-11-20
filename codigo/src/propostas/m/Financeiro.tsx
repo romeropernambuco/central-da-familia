@@ -1,7 +1,7 @@
 import { ArrowDownLeft, Building2, CreditCard, Flag, Landmark, PiggyBank, Wallet, WalletCards } from 'lucide-react'
 import { CasaVazia, SemAplicacoes, SemCartoes, SemImoveis, SemRecebimentos } from '../../componentes/ilustracoes'
-import type { DadosInicio } from '../dadosExemplo'
-import { Valor } from '../comuns/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { Valor } from '../../componentes/escritorio/privacidade'
 
 type CampoFinanceiro = Parameters<typeof Valor>[0]['campo']
 

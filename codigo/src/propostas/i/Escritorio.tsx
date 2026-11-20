@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icone } from '../../componentes/Icone'
-import { EscritorioMaquete } from '../comuns/EscritorioMaquete'
-import type { DadosInicio } from '../dadosExemplo'
+import { EscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { Medida, type Dinheiro } from './Financeiro'
 import type { Pessoa } from './Fila'
 

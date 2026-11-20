@@ -1,8 +1,8 @@
 ﻿import type { MouseEvent } from 'react'
 import type { NomeIcone } from '../../componentes/Icone'
-import type { DadosInicio } from '../dadosExemplo'
-import { EscritorioMaquete, type PropsEscritorioMaquete } from '../comuns/EscritorioMaquete'
-import { NumeroFinanceiro, Valor } from '../comuns/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { EscritorioMaquete, type PropsEscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import { NumeroFinanceiro, Valor } from '../../componentes/escritorio/privacidade'
 
 export const comodos = [
   {

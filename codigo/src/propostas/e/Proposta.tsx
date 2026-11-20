@@ -10,9 +10,9 @@ import {
   SemCartoes,
   type IlustracaoProps,
 } from '../../componentes/ilustracoes'
-import type { Campo } from '../dadosExemplo'
+import type { Campo } from '../../componentes/escritorio/dadosDeExemplo'
 import type { PropsProposta } from '../Propostas'
-import { useValoresOcultos, Valor } from '../comuns/privacidade'
+import { useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
 import { Escritorio, EstadoDoDia, organizarFila } from './Escritorio'
 import './bento.css'
 

@@ -1,10 +1,10 @@
 import { ArrowUpRight, X } from 'lucide-react'
 import { useEffect, useId, useRef } from 'react'
-import { SALAS_NOME } from '../../telas/escritorio/cenaBase'
-import { POR_ID } from '../../telas/escritorio/equipe'
-import type { DadosInicio } from '../dadosExemplo'
-import { destinoDoPosto, type PessoaDoEscritorio, type TarefaDoEscritorio } from './modeloPosto'
-import { useValoresOcultos, Valor } from './privacidade'
+import { SALAS_NOME } from '../telas/escritorio/cenaBase'
+import { POR_ID } from '../telas/escritorio/equipe'
+import type { DadosInicio } from '../componentes/escritorio/dadosDeExemplo'
+import { destinoDoPosto, type PessoaDoEscritorio, type TarefaDoEscritorio } from '../componentes/escritorio/modeloPosto'
+import { useValoresOcultos, Valor } from '../componentes/escritorio/privacidade'
 
 const estados = {
   vai_comecar: 'Ainda vai começar',

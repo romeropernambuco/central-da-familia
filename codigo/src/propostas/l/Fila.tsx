@@ -1,8 +1,8 @@
 import { ArrowUpRight, Bell, Check, Clock, ClipboardList, ShieldAlert, Undo2, UserRound } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { useValoresOcultos } from '../comuns/privacidade'
-import { responsavelDaTarefa } from '../comuns/modeloPosto'
-import type { DadosInicio } from '../dadosExemplo'
+import { useValoresOcultos } from '../../componentes/escritorio/privacidade'
+import { responsavelDaTarefa } from '../../componentes/escritorio/modeloPosto'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { Medida, type reservarMedidas } from './Financeiro'
 import type { Pessoa } from './Palco'
 

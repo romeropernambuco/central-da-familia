@@ -1,10 +1,10 @@
 import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
-import { Escritorio3D } from '../comuns/Escritorio3D'
-import { FichaPosto } from '../comuns/FichaPosto'
-import { VisorEscritorio } from '../comuns/VisorEscritorio'
-import type { PessoaDoEscritorio, TarefaDoEscritorio } from '../comuns/modeloPosto'
-import type { DadosInicio } from '../dadosExemplo'
+import { Escritorio3D } from '../../componentes/escritorio/Escritorio3D'
+import { FichaPosto } from '../FichaPosto'
+import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
+import type { PessoaDoEscritorio, TarefaDoEscritorio } from '../../componentes/escritorio/modeloPosto'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 export function Escritorio({
   dados,

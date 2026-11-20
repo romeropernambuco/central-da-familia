@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Flag } from 'lucide-react'
 import { Icone } from '../../componentes/Icone'
 import { SemAplicacoes, SemImoveis, SemRecebimentos } from '../../componentes/ilustracoes/figuras'
-import { useValoresOcultos, Valor } from '../comuns/privacidade'
-import type { DadosInicio } from '../dadosExemplo'
+import { useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 type CampoValor = Parameters<typeof Valor>[0]['campo']
 

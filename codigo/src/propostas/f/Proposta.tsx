@@ -5,10 +5,10 @@ import { Icone, icones, type NomeIcone } from '../../componentes/Icone'
 import { AssessorDaCasa, Erro, TudoEmDia } from '../../componentes/ilustracoes'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
 import { chaveSimples } from '../../api/normaliza2'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 import type { PropsProposta } from '../Propostas'
-import { EscritorioMaquete } from '../comuns/EscritorioMaquete'
-import { useValoresOcultos, Valor } from '../comuns/privacidade'
+import { EscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import { useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
 import './proposta.css'
 
 type Pessoa = NonNullable<DadosInicio['funcionarios']['valor']>[number]

@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { Icone, icones, type NomeIcone } from '../../componentes/Icone'
-import { useValoresOcultos } from '../comuns/privacidade'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
+import { useValoresOcultos } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 import { destino } from './destino'
 import { Lacuna, Quantia } from './Plano'
 

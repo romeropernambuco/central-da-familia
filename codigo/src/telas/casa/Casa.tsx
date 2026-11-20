@@ -41,7 +41,7 @@ import { PrecisaDeVoce } from '../escritorio/Escritorio'
 import { Din, Sheet } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
-import type { CasaDaEquipe, Lancamento, MarcaCasa } from '../../api/tipos'
+import type { CasaDaEquipe, MarcaCasa } from '../../api/tipos'
 import type { Folha, PessoaFolha } from '../escritorio/ajudantes'
 import { AcaoConvite } from '../../componentes/AcaoConvite'
 import {

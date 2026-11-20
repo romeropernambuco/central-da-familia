@@ -1,9 +1,9 @@
 import { useState, type ComponentProps, type RefObject } from 'react'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { Bemvindo } from '../../componentes/ilustracoes'
-import { EscritorioMaquete } from '../comuns/EscritorioMaquete'
-import { useValoresOcultos } from '../comuns/privacidade'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
+import { EscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import { useValoresOcultos } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 
 type Pergunta = NonNullable<DadosInicio['pendencias']['fila']['valor']>[number]
 type Tarefa = Pergunta & { nivel: NivelAlerta }

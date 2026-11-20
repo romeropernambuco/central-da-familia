@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
-import type { DadosInicio } from '../dadosExemplo'
-import { NumeroFinanceiro, useValoresOcultos, Valor } from '../comuns/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { NumeroFinanceiro, useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const mes = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })

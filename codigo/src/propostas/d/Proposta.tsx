@@ -12,9 +12,9 @@ import {
   SemRecebimentos,
   TudoEmDia,
 } from '../../componentes/ilustracoes/figuras'
-import { EscritorioMaquete } from '../comuns/EscritorioMaquete'
-import { PrivacidadePropostas, useValoresOcultos, Valor } from '../comuns/privacidade'
-import type { DadosInicio, NivelAlerta } from '../dadosExemplo'
+import { EscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import { PrivacidadePropostas, useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 import type { PropsProposta } from '../Propostas'
 import './rumo.css'
 

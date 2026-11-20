@@ -16,15 +16,7 @@ import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
 import { Linha2028, Renda2029 } from '../../componentes/Linha2028'
 import type { Objetivo, ParametrosObjetivo } from '../../api/tipos'
-import {
-  dataCurta,
-  hojeRecife,
-  mesCurto,
-  reais,
-  textoParaValor,
-  valorDigitadoValido,
-  valorParaTexto,
-} from '../../lib/formato'
+import { dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 
 const MESES = [
   'janeiro',

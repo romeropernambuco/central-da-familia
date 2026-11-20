@@ -7,7 +7,7 @@ import { textoPrivado } from './privacidade'
 import { ChevronRight, Target } from 'lucide-react'
 import { useFuturo } from '../app/useDados2'
 import { useApp } from '../app/contexto'
-import type { FuturoEntrada, FuturoSaida, LinhaMes, RendaDoMes } from '../lib/futuro'
+import type { FuturoEntrada, FuturoSaida, RendaDoMes } from '../lib/futuro'
 import { mesCurto, reais } from '../lib/formato'
 import { GraficoCaixa, mesMaisApertado } from './Graficos'
 

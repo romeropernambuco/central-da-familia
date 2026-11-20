@@ -12,8 +12,8 @@ import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/priv
 // "com contrato" ou "sem contrato: não entra na conta"; folha de adicionar e editar com "?" em cada campo.
 // Quem vê: só o casal (o Guardado já é só do casal; o banco também tranca). Filha e equipe nunca.
 // A tela NUNCA calcula aluguel líquido nem rentabilidade: vêm de futuro() (lib/futuro, saida.imoveis). Só soma valores pra mostrar.
-import { useEffect, useMemo, useState } from 'react'
-import { Building2, Home, Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Building2, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
@@ -23,15 +23,7 @@ import { imovelInvalido, taxaDoTexto, textoDaTaxa } from '../../api/futuro'
 import { fraseRenova } from '../../componentes/Linha2028'
 import type { ImovelTela, NovoImovel, UsoImovel } from '../../api/tipos'
 import type { ImovelSaida } from '../../lib/futuro'
-import {
-  centavos,
-  hojeRecife,
-  mesCurto,
-  reais,
-  textoParaValor,
-  valorDigitadoValido,
-  valorParaTexto,
-} from '../../lib/formato'
+import { hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 
 const USO: { v: UsoImovel; nome: string; ajuda: string }[] = [

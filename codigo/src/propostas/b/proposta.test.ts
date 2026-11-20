@@ -14,8 +14,8 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 // @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { env } from 'node:process'
-import { carregarDadosInicio, type DadosInicio } from '../dadosExemplo'
-import { PrivacidadePropostas } from '../comuns/privacidade'
+import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 import { Proposta } from './Proposta'
 
 const pasta = 'src/propostas/b'
@@ -223,7 +223,7 @@ it.skipIf(!chrome)('mede acima da dobra com o medidor da casca e verifica geomet
   try {
     const estilos = [
       'src/propostas/base.css',
-      'src/propostas/comuns/escritorio-maquete.css',
+      'src/componentes/escritorio/escritorio-maquete.css',
       'src/componentes/ilustracoes/ilustracoes.css',
       pasta + '/proposta.css',
     ]

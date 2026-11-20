@@ -8,8 +8,8 @@ import {
   SemRecebimentos,
   type IlustracaoProps,
 } from '../../componentes/ilustracoes'
-import { NumeroFinanceiro, useValoresOcultos, Valor } from '../comuns/privacidade'
-import type { Campo, DadosInicio } from '../dadosExemplo'
+import { NumeroFinanceiro, useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
+import type { Campo, DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 
 export type Dinheiro = Campo<number, 'reais' | 'centavos'>
 type MedidaMonetaria = { campo: Dinheiro; repetida: boolean }

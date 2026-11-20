@@ -6,8 +6,6 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import tseslint from 'typescript-eslint'
 
-const LABORATORIO = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm']
-
 export default tseslint.config(
   {
     // arquivos gerados, material de referência e um oráculo de teste em CommonJS
@@ -63,21 +61,13 @@ export default tseslint.config(
     },
   },
   {
-    // O app de verdade não pode depender das propostas de laboratório (letras). `comuns` e `j` ainda são usadas
-    // pelo Início e saem dessa pasta numa etapa própria.
+    // O app de verdade não depende da pasta de protótipos. O contrário pode: protótipo usa peça de produção.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/propostas/**'],
     rules: {
       'no-restricted-imports': [
         'error',
-        {
-          patterns: [
-            {
-              group: LABORATORIO.map(l => `**/propostas/${l}/**`),
-              message: 'Produção não importa do laboratório de propostas.',
-            },
-          ],
-        },
+        { patterns: [{ group: ['**/propostas/**'], message: 'Produção não importa da pasta de protótipos.' }] },
       ],
     },
   },

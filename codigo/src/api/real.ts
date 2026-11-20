@@ -6,7 +6,6 @@ import { buscarComPrazo } from './prazo'
 import type {
   Api,
   AvisoCasa,
-  Cartao,
   ChaveConfig,
   Fatura,
   FamiliaMinha,

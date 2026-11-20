@@ -2,8 +2,8 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { reiniciarExemplo } from '../../api/exemplo'
-import { PrivacidadePropostas } from '../comuns/privacidade'
-import { carregarDadosInicio, type DadosInicio } from '../dadosExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
+import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import type { Dispositivo, Tema } from '../Propostas'
 import { Proposta } from './Proposta'
 import ts from 'typescript'
@@ -282,7 +282,11 @@ it.skipIf(!chrome)(
     const pasta = mkdtempSync(join(tmpdir(), 'proposta-e-'))
     try {
       const estilos =
-        ['../base.css', '../comuns/escritorio-maquete.css', '../../componentes/ilustracoes/ilustracoes.css']
+        [
+          '../base.css',
+          '../../componentes/escritorio/escritorio-maquete.css',
+          '../../componentes/ilustracoes/ilustracoes.css',
+        ]
           .map(caminho => readFileSync(new URL(caminho, import.meta.url), 'utf8'))
           .join('\n') +
         '\n' +

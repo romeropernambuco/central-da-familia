@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react'
-import type { Campo } from '../dadosExemplo'
+import type { Campo } from './dadosDeExemplo'
 
 export const PrivacidadePropostas = createContext(false)
 export const useValoresOcultos = () => useContext(PrivacidadePropostas)

@@ -9,7 +9,7 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
@@ -25,10 +25,8 @@ import { cofrinhoDoMes } from '../../lib/plano'
 import type { Lancamento } from '../../api/tipos'
 import {
   centavos,
-  dataCurta,
   diasNoMes,
   diasRestantes,
-  fimDoMes,
   hojeRecife,
   plural,
   reais,

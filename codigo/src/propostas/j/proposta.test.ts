@@ -16,12 +16,16 @@ import { basename, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 // @ts-ignore APIs do Node usadas só pelos testes.
 import { env } from 'node:process'
-import { carregarDadosInicio, comExpedienteExemplo, type DadosInicio } from '../dadosExemplo'
-import { PrivacidadePropostas } from '../comuns/privacidade'
+import {
+  carregarDadosInicio,
+  comExpedienteExemplo,
+  type DadosInicio,
+} from '../../componentes/escritorio/dadosDeExemplo'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 import { Proposta } from './Proposta'
 
-const pasta = 'src/propostas/j'
-const css = ts.sys.readFile(pasta + '/proposta.css')!
+// o estilo do painel foi promovido do laboratório para o Início
+const css = ts.sys.readFile('src/componentes/painel-inicio/painel.css')!
 const cenarios = (['celular', 'desktop'] as const).flatMap(dispositivo =>
   (['escuro', 'claro'] as const).map(tema => ({ tema, dispositivo })),
 )

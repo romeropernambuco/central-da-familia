@@ -12,7 +12,7 @@ import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 // @ts-ignore Os tipos de Node ficam fora do app.
 import { env } from 'node:process'
-import type { DadosInicio } from '../dadosExemplo'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import type { Dispositivo, Tema } from '../Propostas'
 
 export const chrome = [
@@ -179,7 +179,7 @@ export async function medirNoChromium(dados: DadosInicio[], cenarios: { tema: Te
   try {
     const estilos = [
       'src/propostas/base.css',
-      'src/propostas/comuns/escritorio-maquete.css',
+      'src/componentes/escritorio/escritorio-maquete.css',
       'src/componentes/ilustracoes/ilustracoes.css',
       pasta + '/bento.css',
     ]

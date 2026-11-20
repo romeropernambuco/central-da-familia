@@ -20,7 +20,7 @@ import { CalendarClock, Check, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { FonteReceita, NovoRecebimento, RecebimentoTela, TipoRecebimento } from '../../api/tipos'
-import { mesReceitaValido, mesesDaReceita } from '../../api/futuro'
+import { mesReceitaValido } from '../../api/futuro'
 import { useFontesReceita } from '../../app/useFontesReceita'
 import {
   CamposFonteReceita,

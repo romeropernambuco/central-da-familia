@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BellRing, ChevronDown } from 'lucide-react'
 import { Icone } from '../../componentes/Icone'
-import { useValoresOcultos } from '../comuns/privacidade'
-import type { DadosInicio } from '../dadosExemplo'
-import { organizarFila, prioridades, type Funcionario } from './modelo'
-import { Quantia, abrirFoco } from './interface'
+import { useValoresOcultos } from '../../componentes/escritorio/privacidade'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { organizarFila, prioridades, type Funcionario } from '../../componentes/painel-inicio/modelo'
+import { Quantia, abrirFoco } from '../../componentes/painel-inicio/interface'
 
 const pastas = { agora: 'Agora', depois: 'Depois', feitas: 'Feitas' } as const
 type Pasta = keyof typeof pastas

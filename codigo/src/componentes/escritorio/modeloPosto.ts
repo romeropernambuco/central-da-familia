@@ -1,6 +1,6 @@
 import { rotaPermitida, type Rota } from '../../app/rotas'
 import { APELIDO_BANCO, DESTINO_SECRETARIA, POR_ID } from '../../telas/escritorio/equipe'
-import type { DadosInicio } from '../dadosExemplo'
+import type { DadosInicio } from './dadosDeExemplo'
 
 export type PessoaDoEscritorio = NonNullable<DadosInicio['funcionarios']['valor']>[number]
 export type TarefaDoEscritorio = NonNullable<DadosInicio['pendencias']['fila']['valor']>[number]

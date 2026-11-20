@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Icone } from '../../componentes/Icone'
-import { EscritorioMaquete, type PropsEscritorioMaquete } from '../comuns/EscritorioMaquete'
-import type { DadosInicio } from '../dadosExemplo'
+import { EscritorioMaquete, type PropsEscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { destino } from './destino'
 
 type Pessoa = NonNullable<DadosInicio['funcionarios']['valor']>[number]

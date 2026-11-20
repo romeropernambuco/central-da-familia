@@ -1,9 +1,9 @@
 import { BellRing, Keyboard, Pause } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import type { EstadoFuncionario } from '../../api/tipos'
-import { Icone } from '../../componentes/Icone'
+import { Icone } from '../Icone'
 import { POR_ID, type SalaEquipe } from '../../telas/escritorio/equipe'
-import type { Campo, DadosInicio } from '../dadosExemplo'
+import type { Campo, DadosInicio } from './dadosDeExemplo'
 import { PisoMaquete, PostoMaquete, SalaMaquete, SimbolosMaquete, projetar, salas } from './maquete-desenho'
 import { useValoresOcultos, Valor } from './privacidade'
 import './escritorio-maquete.css'
@@ -108,7 +108,7 @@ export function EscritorioMaquete<T extends Funcionario>({
       <defs>
         <SimbolosMaquete id={id} />
         {mostrarPlaquinhas &&
-          Object.entries(estados).map(([estado, { rotulo, ...icone }]) => (
+          Object.entries(estados).map(([estado, { rotulo: _rotulo, ...icone }]) => (
             <g key={estado} id={`${id}-${estado}`}>
               <Icone {...icone} size={12} strokeWidth={2.3} />
             </g>

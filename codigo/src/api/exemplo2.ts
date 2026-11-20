@@ -29,7 +29,6 @@ import type {
 import {
   centavos,
   dataCurta,
-  diaSemana,
   diasEntre,
   fimDoMes,
   FUSO,

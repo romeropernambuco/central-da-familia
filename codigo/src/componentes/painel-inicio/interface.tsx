@@ -1,7 +1,7 @@
 import { useRef } from 'react'
-import { Icone, type NomeIcone } from '../../componentes/Icone'
-import { NumeroFinanceiro, Valor } from '../comuns/privacidade'
-import type { Campo } from '../dadosExemplo'
+import { Icone, type NomeIcone } from '../Icone'
+import { NumeroFinanceiro, Valor } from '../escritorio/privacidade'
+import type { Campo } from '../escritorio/dadosDeExemplo'
 import type { Dinheiro } from './modelo'
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })

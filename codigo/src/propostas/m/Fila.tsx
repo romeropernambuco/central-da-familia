@@ -1,8 +1,8 @@
 import { ArrowUpRight, Bell, Check, Clock, TriangleAlert, UserRound, Wrench } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { TudoEmDia } from '../../componentes/ilustracoes'
-import type { DadosInicio } from '../dadosExemplo'
-import { responsavelDaTarefa, type PessoaDoEscritorio } from '../comuns/modeloPosto'
+import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
+import { responsavelDaTarefa, type PessoaDoEscritorio } from '../../componentes/escritorio/modeloPosto'
 import { Medida } from './Financeiro'
 
 const niveis = {
