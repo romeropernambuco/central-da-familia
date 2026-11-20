@@ -53,7 +53,7 @@ it.each(CASOS_LIGACAO)('insight integrado %s em %s: olho mascara trechos e mant√
 })
 
 const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<string, Record<string, ComponentType<any>>>
-const telas = ['RitmoOrcamento', 'ResumoFamilia', 'OrcamentoResumo', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'InicioClassico', 'UltimosLancamentos', 'EscritorioInicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'EscritorioIsometrico', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
+const telas = ['RitmoOrcamento', 'ResumoFamilia', 'OrcamentoResumo', 'SaldoConta', 'CadastroAssessor', 'Inicio', 'InicioClassico', 'UltimosLancamentos', 'SobreHoje', 'EscritorioInicio', 'Entrar', 'PrimeiroUso', 'Cartoes', 'Casa', 'Desejos', 'Guardado', 'Imoveis', 'FolhaImovel', 'Ajustes', 'Painel', 'Lancar', 'Lancamentos', 'MeuOrcamento', 'Planejamento', 'Parametros', 'Reajuste', 'Recebimentos', 'Privacidade', 'Escritorio', 'EscritorioIsometrico', 'NumerosAba', 'FichaFuncionario', 'CartaoGuardado', 'PrecisaDeVoce', 'Cena3D']
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
 const rotasAgentes = ['inicio', 'lancamentos', 'cartoes', 'casa', 'desejos', 'guardado', 'planejamento', 'orcamento', 'painel', 'ajustes', 'privacidade', 'escritorio']
@@ -213,6 +213,7 @@ describe('regra do olho em cada tela real', () => {
       : nome === 'OrcamentoResumo' ? { hoje: '2026-11-15', aberto: true, campo: { estado: 'pronto', valor: await lerOrcamento(api, familia, '2026-11-15') } }
       : nome === 'EscritorioIsometrico' ? { superficie: 'escritorio' }
       : nome === 'EscritorioInicio' ? { hoje: '2026-11-15', celular: false }
+      : nome === 'SobreHoje' ? { e: { ...resumo.envelopes[0], gasto_hoje: dinheiro, mudou: { ontem: dinheiro, motivo: segredo } } }
       : nome === 'NumerosAba' ? { id: 'analista', fechar() {} } : { aplicado: dinheiro }
     let alternar: () => void = () => {}
     function App() {

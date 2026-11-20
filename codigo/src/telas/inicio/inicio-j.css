@@ -47,3 +47,8 @@
   .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip .numero-principal { font-size: clamp(21px, 7.25vw, 34px); }
   .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip:is(:first-child, :nth-child(2)) { grid-column: span 6; }
 }
+.inicio-j .j-sobre-hoje { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px; padding: 4px 14px 8px; color: var(--texto-secundario); font: 400 14px/1.45 var(--fonte-texto); }
+.inicio-j .j-sobre-hoje p { margin: 0; max-inline-size: 70ch; }
+.inicio-j .j-sobre-acoes { display: flex; flex-wrap: wrap; gap: 0 14px; margin-inline-start: auto; }
+.inicio-j .j-sobre-hoje .explica-l { color: var(--destaque); min-height: 44px; padding-inline: 0; }
+@media (max-width: 899px) { .inicio-j .j-sobre-acoes { margin-inline-start: 0; } .inicio-j .j-sobre-hoje { padding: 2px 8px 6px; } }

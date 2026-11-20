@@ -13,6 +13,7 @@ import { EscritorioInicio } from './EscritorioInicio'
 import { InformarSaldo } from '../planejamento/SaldoConta'
 import { ResumoApresentacao } from './ResumoFamilia'
 import { UltimosLancamentos } from './UltimosLancamentos'
+import { SobreHoje } from './SobreHoje'
 import '../../propostas/j/proposta.css'
 import './inicio-j.css'
 
@@ -46,7 +47,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
   return {
     cobertura, destinoPlano,
     chips: [
-      { chave: 'podeGastarHoje', titulo: 'Limite de hoje', icone: 'orcamento', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'), tamanho: 'principal' },
+      { chave: 'podeGastarHoje', titulo: orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Limite de hoje', icone: 'orcamento', destino: destinoOrcamento, campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'), tamanho: 'principal' },
       { chave: 'plano2029', titulo: 'Plano 2029', icone: 'plano2029', destino: destinoPlano, campo: oficial.campo, legenda: oficial.rotulo + ' · com margem', tamanho: 'principal' },
       { chave: 'aplicacoes', titulo: 'Total aplicado', icone: 'guardado', destino: destinoAplicacoes, campo: medida(aplicacoes, aplicacoes.valor?.total, 'reais'), tamanho: 'secundario' },
       { chave: 'faturas', titulo: 'Faturas previstas', icone: 'cartoes', destino: destinoFaturas, campo: medida(faturas, faturas.valor?.total, 'reais'), tamanho: 'secundario' },
@@ -91,6 +92,7 @@ function InicioFamilia() {
   const [saldo, setSaldo] = useState(false)
   const { chips, cartoes, cobertura, destinoPlano } = referencias(resumo, oculto)
   const casal = familia?.papel === 'casal'
+  const envelopeHoje = resumo.podeGastarHoje.estado === 'restrito' ? null : resumo.podeGastarHoje.valor?.envelope
   return <>
     <PrivacidadePropostas.Provider value={oculto}>
       <div className="j-inicio inicio-j" data-dispositivo={celular ? 'celular' : 'desktop'}>
@@ -104,6 +106,7 @@ function InicioFamilia() {
               </a>
             ))}
           </div>
+          {envelopeHoje && <SobreHoje e={envelopeHoje} />}
           <EscritorioInicio {...{ celular, hoje }} />
         </section>
         <section className="j-acompanhamento" aria-labelledby="j-rotinas">
