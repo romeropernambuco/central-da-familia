@@ -13,8 +13,8 @@ Detalhes: codigo/docs/ORIENTACOES-PARA-PROGRAMADORES.md (leia a parte do assunto
 - lib/: cálculo e regras, sem depender de tela
 - api/ e app/: acesso aos dados, sessão, salvar e desfazer
 - componentes/: peças reutilizáveis
-- propostas/: protótipos. O app não importa das pastas de letra (o verificador barra).
-  Atenção: comuns/ e j/ ainda são usadas pelo Início e vão sair daqui.
+- componentes/escritorio/ e componentes/painel-inicio/: a maquete, o visor e a trilha do Início
+- propostas/: protótipos. O app não importa nada daqui (o verificador barra).
 - ../banco/: mudanças do banco. Só rascunho; nunca aplicar.
 - Dados de exemplo: api/exemplo.ts. Referência visual aprovada: a tela Início.
 
@@ -26,7 +26,7 @@ Detalhes: codigo/docs/ORIENTACOES-PARA-PROGRAMADORES.md (leia a parte do assunto
 4. Comando que destrói trabalho (desfazer à força, envio forçado, apagar pasta ou branch).
 5. Instalar biblioteca ou usar serviço pago.
 6. Alterar, pular ou apagar teste; mexer no verificador ou nos tipos para passar.
-   O verificador aceita no máximo 561 avisos. Esse número só pode cair.
+   O limite de avisos do verificador está em codigo/package.json (546 em 20/11/2026). Só pode cair.
 7. Mexer em arquivo fora da tarefa.
 Para pedir: "Preciso de permissão para X, porque Y. O risco é Z."
 
