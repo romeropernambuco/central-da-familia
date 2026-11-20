@@ -837,3 +837,7 @@ a.card:active{background:var(--raised)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0ms!important;scroll-behavior:auto!important}.btn:active,.tabbar .plus:active{transform:none}}
 
 .rumo-resumo{position:relative;padding-right:56px}.rumo-resumo>.ico{position:absolute;right:20px;top:24px}
+
+/* Cena 3D em tela cheia (botão Ampliar) */
+.cena3d-bloco:fullscreen{background:var(--bg,#0f110e);padding:12px;display:flex;flex-direction:column;gap:10px}
+.cena3d-bloco:fullscreen .cena3d{flex:1;aspect-ratio:auto;max-block-size:none}

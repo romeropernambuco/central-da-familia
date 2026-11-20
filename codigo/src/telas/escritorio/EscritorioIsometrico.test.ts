@@ -239,26 +239,17 @@ it('ficha J mostra o próximo lembrete marcado e conta todas as perguntas da pes
   } finally { await a.fechar() }
 })
 
-it('Início J só monta o 3D quando a câmera entra na área visível', async () => {
+it('Início J usa a cena original do escritório; sem WebGL fica a maquete em desenho, sem etiquetas em dobro', async () => {
   const a = montar()
-  let visibilidade!: (entradas: { isIntersecting: boolean }[]) => void
-  vi.stubGlobal('IntersectionObserver', class {
-    constructor(notificar: typeof visibilidade) { visibilidade = notificar }
-    observe() {}
-    disconnect() {}
-  })
-  vi.stubGlobal('ResizeObserver', class {})
-  vi.stubGlobal('requestAnimationFrame', vi.fn())
-  Object.assign(window, { HTMLCanvasElement: class {}, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) })
   try {
     await a.render(Inicio)
-    expect(a.ler('data-renderizacao', 'carregando')).toBeDefined()
-    await act(async () => visibilidade([{ isIntersecting: false }]))
-    expect(fake.montar).not.toHaveBeenCalled()
-    await act(async () => visibilidade([{ isIntersecting: true }]))
     await act(async () => vi.dynamicImportSettled())
-    expect(fake.montar).toHaveBeenCalledOnce()
-    expect(fake.montar.mock.lastCall?.[0].palco.elenco).toHaveLength(19)
+    // a cena do Início é a mesma da aba Escritório (Cena3D); o motor isométrico resumido não é mais montado ali
+    expect(a.ler('data-modo', 'lista')).toBeDefined()
+    expect(fake.montar).not.toHaveBeenCalled()
+    expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
+    expect(a.el.textContent).not.toContain('A cena 3D não abriu neste aparelho')
+    expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
   } finally { await a.fechar() }
 })
 

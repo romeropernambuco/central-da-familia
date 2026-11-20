@@ -15,6 +15,9 @@ import { destinoDoPosto, resumoDaEquipe } from '../../propostas/comuns/modeloPos
 import { VisorEscritorio } from '../../propostas/comuns/VisorEscritorio'
 import { prioridades } from '../../propostas/j/modelo'
 import { useEquipeCompleta } from '../escritorio/useEquipe'
+import '../escritorio/escritorioIsometrico.css'
+// @ts-ignore a cena é a mesma da aba Escritório
+import { Cena3D, IcoEstado, ROTULO_ESTADO } from '../escritorio/Cena3D.tsx'
 import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
 import type { SalaEquipe } from '../escritorio/equipe'
 import type { PerguntaEsc } from '../../api/tipos'
@@ -47,6 +50,9 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
         : { estado: 'pronto' as const, valor: funcionario.estado, unidade: 'texto' as const, natureza: 'realizado' as const },
     })),
   } as const satisfies Parameters<typeof Escritorio3D>[0]['funcionarios']
+  // o valor da primeira pendência de cada um vai no selo dele, na cena
+  const valores: Record<string, string> = {}
+  for (const t of dados.fila) if (t.valor && t.valor !== 'Ainda sem dado' && !valores[t.membro.id]) valores[t.membro.id] = t.valor
   const [sala, setSala] = useState<SalaEquipe>()
   const [selecao, selecionar] = useState<{ id: string; pergunta?: string }>()
   const [filaAberta, abrirFila] = useState(false)
@@ -91,12 +97,19 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
           }}>Ver decisões <Icone nome="abrir" size={16} /></button>
         </div>
       </div>
-      {comCena ? <VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} folha={ficha}
-        tarefaDaFila={selecao?.pergunta}>
-        {navegacao => <Escritorio3D completo variante="grande" forcarSvg={typeof location !== 'undefined' && (new URLSearchParams(location.search).has('sem3d') || /[?&]sem3d(?:[=&]|$)/.test(location.hash))}
-          {...{ funcionarios, papel, oculto, celular, navegacao }} salaDestacada={sala}
-          postoSelecionado={posto?.membro.id ?? null} onSelecionar={f => abrirPosto(f.id)} />}
-      </VisorEscritorio> : <><ul className="inicio-postos-texto">
+      {comCena ? <>
+        {/* A nossa cena 3D (nome e estado em cada um, anda até a frente e acena). Onde o 3D não abre, fica a maquete em desenho. */}
+        <Cena3D funcionarios={dados.postos.map(p => p.funcionario)} selecionado={posto?.membro.id ?? null} aoTocar={id => abrirPosto(id)} valores={valores} ampliavel
+          reserva={<VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} tarefaDaFila={selecao?.pergunta}>
+            {navegacao => <Escritorio3D completo variante="grande" forcarSvg
+              {...{ funcionarios, papel, oculto, celular, navegacao }} salaDestacada={sala}
+              postoSelecionado={posto?.membro.id ?? null} onSelecionar={f => abrirPosto(f.id)} />}
+          </VisorEscritorio>} />
+        <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
+          {(['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce'] as const).map(s => <li key={s}><IcoEstado e={s} />{ROTULO_ESTADO[s]}{s === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}</li>)}
+        </ul>
+        {ficha}
+      </> : <><ul className="inicio-postos-texto">
         {dados.postos.map(({ membro }) => <li key={membro.id}><button type="button" onClick={() => abrirPosto(membro.id)}>{membro.nome}</button></li>)}
       </ul>{ficha}</>}
     </div>

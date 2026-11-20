@@ -291,9 +291,10 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     if (coletivo) VISTAS[ch.sala] = vistaDe(ch.S.x - 1, ch.S.x + 2.1, 1.95, ch.S.z - 1.5, ch.S.z + 1.35)
   }
   let vAtual = { ...VISTAS[o.mini ? chars[0]?.sala || 'tudo' : 'tudo'] }, vDe: any = null, vPara: any = null, vT0 = 0, camNome = o.mini ? chars[0]?.sala || 'tudo' : 'tudo'
+  let zoom = 1
   function aplicaVista(v: any) {
     if (chars[0]?.limitesMini) { enquadrarMini(cam, el.clientWidth || 1, el.clientHeight || 1, chars[0].limitesMini, coletivo); return }
-    const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a), hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix()
+    const W = el.clientWidth || 1, H = el.clientHeight || 1, a = W / H, m = camNome === 'tudo' ? 1.04 : 1.12, hw = Math.max(v.hw * m, v.hh * m * a) / zoom, hh = hw / a; cam.left = v.cx - hw; cam.right = v.cx + hw; cam.top = v.cy + hh; cam.bottom = v.cy - hh; cam.updateProjectionMatrix()
   }
   function irPara(nome: string) { if (!VISTAS[nome]) nome = 'tudo'; camNome = nome; vDe = { ...vAtual }; vPara = VISTAS[nome]; vT0 = performance.now(); chars.forEach(c => { c.tk = '' }) }
   let largura = 0, altura = 0, dpr = pr
@@ -695,6 +696,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     selecionar(id) { solicitar(); selecionado = id; if (id && MOBILE()) { const ch = chars.find(c => c.id === id); if (ch) irPara(ch.sala) } chars.forEach(c => { c.tk = '' }) },
     irPara(v) { irPara(v); solicitar() },
     tema(d) { setTema(d); solicitar() },
+    aproximar: (fator: number) => { zoom = Math.min(3, Math.max(1, +(zoom * fator).toFixed(3))); aplicaVista(vAtual); chars.forEach(c => { c.tk = '' }); solicitar(); return zoom },
     medir: () => ({ fps, degrau, hist: fpsHist.slice(), ms: +jsMs.toFixed(2), desenhos: renderer.info.render.calls, triangulos: renderer.info.render.triangles }),
     destruir,
   }

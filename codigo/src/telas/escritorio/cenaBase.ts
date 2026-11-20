@@ -27,6 +27,8 @@ export interface Cena {
   atualizar(f: FuncCena[]): void
   selecionar(id: string | null): void
   irPara(vista: string): void
+  /** Multiplica o zoom (1 = planta inteira, até 3) e devolve o zoom que ficou. */
+  aproximar?(fator: number): number
   tema(escuro: boolean): void
   medir(): { fps: number; degrau: number; hist: number[]; ms: number; desenhos: number; triangulos: number }
   destruir(): void

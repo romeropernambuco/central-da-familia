@@ -1,7 +1,7 @@
 import { Icone } from '../../componentes/Icone'
 import { textoPrivado } from '../../componentes/privacidade'
-import { useEffect, useRef, useState } from 'react'
-import { Check, Clock, Hand, Info, Keyboard, Maximize2 } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Check, Clock, Expand, Hand, Info, Keyboard, Maximize2, Minus, Plus } from 'lucide-react'
 import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { FUSO } from '../../lib/formato'
@@ -26,11 +26,19 @@ const celular = () => window.innerWidth < 900
  * Sem WebGL, com erro ou depois de 8 s sem abrir, a cena some e fica a lista (que está sempre na tela).
  * Cada boneco tem uma etiqueta em HTML presa à cabeça: é ela o alvo de toque (44 px) e o que o leitor de tela lê.
  */
-export function Cena3D({ funcionarios, selecionado, aoTocar, valores }: {
+export function Cena3D({ funcionarios, selecionado, aoTocar, valores, reserva, ampliavel }: {
   funcionarios: FuncionarioEsc[]; selecionado: string | null; aoTocar: (id: string) => void
   /** Valor da pendência de quem precisa de você: aparece no selo, no lugar do nome (já vem mascarado com o olho fechado). */
   valores?: Record<string, string>
+  /** O que mostrar quando o 3D não abre neste aparelho, no lugar do aviso (telas sem lista logo abaixo, como o Início). */
+  reserva?: ReactNode
+  /** Mostra aproximar, afastar e tela cheia. */
+  ampliavel?: boolean
 }) {
+  const bloco = useRef<HTMLDivElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const aproximar = (fator: number) => setZoom(cena.current?.aproximar?.(fator) ?? 1)
+  const telaCheia = () => { const el = bloco.current; if (!el) return; if (document.fullscreenElement === el) void document.exitFullscreen?.(); else void el.requestFullscreen?.().catch(() => { /* sem tela cheia neste navegador */ }) }
   const caixa = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
   const tags = useRef<Record<string, HTMLElement | null>>({})
@@ -82,13 +90,15 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores }: {
   const salasUsadas = Object.keys(SALAS).filter(k => funcionarios.some(f => salaDe(f.sala) === k))
 
   return (
-    <div className="cena3d-bloco">
-      {modo === 'lista' && <p className="todo quieto" role="status"><Icone desenho={Info} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span></p>}
+    <div className="cena3d-bloco" ref={bloco}>
+      {modo === 'lista' && reserva}
+      {modo === 'lista' && !reserva && <p className="todo quieto" role="status"><Icone desenho={Info} aria-hidden="true" /><span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span></p>}
       <div className={'cena3d' + (modo === 'lista' ? ' fora' : '')} ref={caixa} data-modo={modo}>
         {modo === 'abrindo' && <p className="cena3d-espera">Abrindo o escritório…</p>}
         <div className="cena3d-tags" hidden={modo !== '3d'}>
           {Object.keys(SALAS).map(k => <span key={k} className="placa" ref={el => { placas.current[k] = el }}>{SALAS[k]}</span>)}
-          {funcionarios.map(f => {
+          {/* com reserva na tela, as etiquetas da cena não ficam duplicadas no documento */}
+          {!(modo === 'lista' && reserva) && funcionarios.map(f => {
             const precisa = f.estado === 'precisa_de_voce', sel = f.id === selecionado
             // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
             const soIcone = false
@@ -107,6 +117,11 @@ export function Cena3D({ funcionarios, selecionado, aoTocar, valores }: {
         <div className="pills cena3d-salas" role="group" aria-label="Aproximar de uma sala">
           <button type="button" className="pill" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}><Icone desenho={Maximize2} />Ver tudo</button>
           {salasUsadas.map(k => <button key={k} type="button" className="pill" aria-pressed={vista === k} onClick={() => ir(k)}>{SALAS[k]}</button>)}
+          {ampliavel && <>
+            <button type="button" className="pill" aria-label="Afastar" disabled={zoom <= 1} onClick={() => aproximar(1 / 1.25)}><Icone desenho={Minus} /></button>
+            <button type="button" className="pill" aria-label="Aproximar" disabled={zoom >= 3} onClick={() => aproximar(1.25)}><Icone desenho={Plus} /></button>
+            <button type="button" className="pill" onClick={telaCheia}><Icone desenho={Expand} />Ampliar</button>
+          </>}
         </div>
       )}
       {modo === '3d' && leve && <p className="sub" role="status">Modo leve ligado: este aparelho estava mostrando {leve.fps} imagens por segundo (o mínimo para ficar suave é 24). A cena ficou mais simples para não travar.</p>}

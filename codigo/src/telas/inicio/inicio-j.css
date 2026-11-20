@@ -56,3 +56,17 @@
 .inicio-j .j-plano .linha-2028-resumo { margin-block: 12px 6px; border: 1px solid color-mix(in oklch, var(--borda) 45%, transparent); border-radius: 12px; background: var(--cartao); color: var(--texto); box-shadow: none; }
 .inicio-j .j-plano .linha-2028-resumo small { color: var(--texto-secundario); }
 .inicio-j .j-plano .linha-2028-resumo .tile { color: var(--destaque); }
+/* Regra do tamanho: a cena ocupa a largura toda do Início, no formato da planta; a fila "Precisa de você" vem logo abaixo. */
+.inicio-j .j-cena-corpo { grid-template-columns: minmax(0, 1fr); }
+.inicio-j .j-palco .cena3d-bloco { padding: 8px 12px 0; }
+.inicio-j .j-palco .cena3d { aspect-ratio: 4 / 3.7; }
+.inicio-j .j-palco .iso-legenda { padding: 0 14px 10px; }
+@media (min-width: 900px) {
+  .inicio-j .j-palco .cena3d { aspect-ratio: 16 / 10.5; max-block-size: 88vh; }
+  .inicio-j .j-decisoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 18px; }
+}
+.inicio-j .cena3d-salas { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 6px; }
+.inicio-j .cena3d-salas .pill { display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding: 0 14px; border: 1px solid var(--borda); border-radius: 999px; background: transparent; color: var(--texto); font: 600 14px/1 var(--fonte-texto); cursor: pointer; }
+.inicio-j .cena3d-salas .pill[aria-pressed="true"] { background: var(--destaque); color: var(--sobre-destaque); border-color: transparent; }
+.inicio-j .cena3d-salas .pill:disabled { opacity: .45; cursor: default; }
+.inicio-j .cena3d-salas .pill:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
