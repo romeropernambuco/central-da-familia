@@ -216,51 +216,54 @@ export function Cena3D({
           <span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span>
         </p>
       )}
-      <div className={'cena3d' + (modo === 'lista' ? ' fora' : '')} ref={caixa} data-modo={modo}>
-        {modo === 'abrindo' && <p className="cena3d-espera">Abrindo o escritório…</p>}
-        <div className="cena3d-tags" hidden={modo !== '3d'}>
-          {Object.keys(SALAS).map(k => (
-            <span
-              key={k}
-              className="placa"
-              ref={el => {
-                placas.current[k] = el
-              }}
-            >
-              {SALAS[k]}
-            </span>
-          ))}
-          {/* com reserva na tela, as etiquetas da cena não ficam duplicadas no documento */}
-          {!(modo === 'lista' && reserva) &&
-            funcionarios.map(f => {
-              const precisa = f.estado === 'precisa_de_voce',
-                sel = f.id === selecionado
-              // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
-              const soIcone = false
-              const selo = (precisa && valores?.[f.id]) || curto(f)
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  ref={el => {
-                    tags.current[f.id] = el
-                  }}
-                  data-k={`${f.estado}|${sel}|${soIcone}|${selo}`}
-                  data-func={f.id}
-                  data-posto={f.id}
-                  data-estado={f.estado}
-                  className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
-                  aria-label={textoPrivado(
-                    `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`,
-                  )}
-                  aria-pressed={sel}
-                  onClick={() => tocarNoFuncionario(f.id)}
-                >
-                  <IcoEstado e={f.estado} />
-                  <span>{selo}</span>
-                </button>
-              )
-            })}
+      {/* No celular a cena fica mais larga que a tela e a pessoa arrasta para o lado: assim os 19 cabem com nome. */}
+      <div className="cena3d-quadro">
+        <div className={'cena3d' + (modo === 'lista' ? ' fora' : '')} ref={caixa} data-modo={modo}>
+          {modo === 'abrindo' && <p className="cena3d-espera">Abrindo o escritório…</p>}
+          <div className="cena3d-tags" hidden={modo !== '3d'}>
+            {Object.keys(SALAS).map(k => (
+              <span
+                key={k}
+                className="placa"
+                ref={el => {
+                  placas.current[k] = el
+                }}
+              >
+                {SALAS[k]}
+              </span>
+            ))}
+            {/* com reserva na tela, as etiquetas da cena não ficam duplicadas no documento */}
+            {!(modo === 'lista' && reserva) &&
+              funcionarios.map(f => {
+                const precisa = f.estado === 'precisa_de_voce',
+                  sel = f.id === selecionado
+                // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
+                const soIcone = false
+                const selo = (precisa && valores?.[f.id]) || curto(f)
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    ref={el => {
+                      tags.current[f.id] = el
+                    }}
+                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}`}
+                    data-func={f.id}
+                    data-posto={f.id}
+                    data-estado={f.estado}
+                    className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
+                    aria-label={textoPrivado(
+                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`,
+                    )}
+                    aria-pressed={sel}
+                    onClick={() => tocarNoFuncionario(f.id)}
+                  >
+                    <IcoEstado e={f.estado} />
+                    <span>{selo}</span>
+                  </button>
+                )
+              })}
+          </div>
         </div>
       </div>
       {modo === '3d' && (

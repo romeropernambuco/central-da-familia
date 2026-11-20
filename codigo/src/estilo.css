@@ -841,3 +841,13 @@ a.card:active{background:var(--raised)}
 /* Cena 3D em tela cheia (botão Ampliar) */
 .cena3d-bloco:fullscreen{background:var(--bg,#0f110e);padding:12px;display:flex;flex-direction:column;gap:10px}
 .cena3d-bloco:fullscreen .cena3d{flex:1;aspect-ratio:auto;max-block-size:none}
+
+/* Cena no celular: mais larga que a tela, com arrasto para o lado, para os 19 aparecerem com nome */
+.cena3d-quadro{border-radius:14px}
+@media (max-width:899px){
+  .cena3d-quadro{overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+  .cena3d-quadro>.cena3d:not(.mini-agente){inline-size:max(100%,640px);aspect-ratio:16 / 11;touch-action:pan-x pan-y}
+  .cena3d-bloco:fullscreen .cena3d-quadro{flex:1;display:flex}
+}
+.cena3d-bloco:fullscreen .cena3d-quadro{flex:1;display:flex}
+.cena3d-bloco:fullscreen .cena3d-quadro>.cena3d{flex:1}
