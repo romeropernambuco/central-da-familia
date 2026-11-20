@@ -10,6 +10,9 @@ import { encerrarAcolhimento } from '../lib/acolhimento'
 import { salvamento } from './salvamento'
 import { FilaPendentes } from '../componentes/FilaPendentes'
 import { FalhasDeLeitura } from '../componentes/FalhasDeLeitura'
+import { limparFalhasDeLeitura } from './falhasDeLeitura'
+import { reenviarRecusado } from './envioGuardado'
+import { definirDonoDosPendentes } from './pendentesGuardados'
 import { pendentes } from './pendentes'
 import { desfazer } from './desfazer'
 import { limparRascunhos } from './rascunhos'
@@ -169,6 +172,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       consultaSessao.current++
       pedido.current++
       limparLeituras(api)
+      limparFalhasDeLeitura()
+      definirDonoDosPendentes('')
       pendentes.limpar()
       desfazer.limpar()
       salvamento.limpar()
@@ -232,6 +237,8 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   }, [api, chaveResumo, equipe, finalizarSessao, guardarResumo])
   const recarregar = useCallback(async () => {
     if (!familia) return
+    // as leituras vão rodar de novo: o que falhar agora volta para a faixa; o que der certo some dela
+    limparFalhasDeLeitura()
     invalidarDados(api, familia.id)
     setVersao(v => v + 1)
     await lerResumo()
@@ -386,7 +393,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       <div className={sessao && familia ? 'central-app' : undefined}>
         {children}
         <BarraDesfazer />
-        <FilaPendentes aoTentarDeNovo={gasto => void tentar(() => api.lancar(gasto))} />
+        <FilaPendentes aoTentarDeNovo={gasto => void tentar(() => reenviarRecusado(novo => api.lancar(novo), gasto))} />
         <FalhasDeLeitura aoTentarDeNovo={() => void recarregar()} />
         {exp && (
           <Sheet titulo={exp.cabeca || 'De onde veio esse número?'} fechar={() => setExp(null)}>

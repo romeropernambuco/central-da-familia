@@ -1,7 +1,7 @@
 import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import type { NovoLancamento } from '../../api/tipos'
-import { avisarQuandoOEnvioTerminar } from './envioGuardado'
-import { FICOU_ESPERANDO, pendentes } from '../../app/pendentes'
+import { avisarQuandoOEnvioTerminar, enviarSemPrenderATela } from '../../app/envioGuardado'
+import { FICOU_ESPERANDO } from '../../app/pendentes'
 import './lancar.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
@@ -310,7 +310,7 @@ export function Lancar() {
         pago_por: pagoPor || null,
       }
       const envio = api.lancar(gasto)
-      const primeiro = await Promise.race([envio, pendentes.ficouEsperando(chave)])
+      const primeiro = await enviarSemPrenderATela(envio, chave)
       if (primeiro === FICOU_ESPERANDO) {
         // Sem internet: o gasto está guardado no aparelho e a fila reenvia sozinha. A pessoa não fica presa em "Salvando".
         limparRascunho()

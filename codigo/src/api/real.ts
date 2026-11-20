@@ -453,7 +453,7 @@ export const apiReal: Api = {
     if (!token) throw new ErroSessao('Sua sessão acabou. Entre de novo para ler o cupom.')
     let r: Response
     try {
-      r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ia-ler-cupom`, {
+      r = await buscarComPrazo()(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ia-ler-cupom`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { ErroRede } from '../../api/erros'
-import { EnvioInterrompido, FICOU_ESPERANDO, FilaPendentes } from '../../app/pendentes'
-import { definirDonoDosPendentes, recusadosGuardados } from '../../app/pendentesGuardados'
-import { avisarQuandoOEnvioTerminar } from './envioGuardado'
+import { ErroRede, ErroSessao } from '../api/erros'
+import { envioContinuaGuardado, EnvioInterrompido, FICOU_ESPERANDO, FilaPendentes } from './pendentes'
+import { definirDonoDosPendentes, recusadosGuardados } from './pendentesGuardados'
+import { avisarQuandoOEnvioTerminar, reenviarRecusado } from './envioGuardado'
 
 const guardado = new Map<string, string>()
 beforeEach(() => {
@@ -26,11 +26,45 @@ const texto = (a: ReturnType<typeof app>) =>
 it('fila: sem internet o envio fica esperando e a tela é liberada; com internet, a espera não dispara', async () => {
   const fila = new FilaPendentes()
   const semRede = fila.enviar('c1', async () => Promise.reject(new ErroRede()))
-  expect(await Promise.race([semRede, fila.ficouEsperando('c1')])).toBe(FICOU_ESPERANDO)
+  expect(await Promise.race([semRede, fila.ficouEsperando('c1', semRede)])).toBe(FICOU_ESPERANDO)
   expect(fila.itens.has('c1')).toBe(true)
 
   const comRede = fila.enviar('c2', async () => 'salvo')
-  expect(await Promise.race([comRede, fila.ficouEsperando('c2')])).toBe('salvo')
+  expect(await Promise.race([comRede, fila.ficouEsperando('c2', comRede)])).toBe('salvo')
+})
+
+it('fila: quem esperava para liberar a tela para de escutar quando o envio termina, dando certo ou não', async () => {
+  const fila = new FilaPendentes()
+  const escutando = () => (fila as unknown as { ouvintes: Set<unknown> }).ouvintes.size
+  const salvou = fila.enviar('c1', async () => 'salvo')
+  void fila.ficouEsperando('c1', salvou)
+  await salvou
+  const recusou = fila.enviar('c2', async () => Promise.reject(new Error('recusado')))
+  void fila.ficouEsperando('c2', recusou)
+  await recusou.catch(() => {})
+  await Promise.resolve()
+  expect(escutando()).toBe(0)
+})
+
+it('sessão vencida no meio de um reenvio não conta como recusa: o gasto continua guardado', () => {
+  expect(envioContinuaGuardado(new ErroSessao())).toBe(true)
+  expect(envioContinuaGuardado(new EnvioInterrompido())).toBe(true)
+  expect(envioContinuaGuardado(new Error('Sessão encerrada. Confira os dados ao entrar.'))).toBe(true)
+  expect(envioContinuaGuardado(new ErroRede())).toBe(false)
+  expect(envioContinuaGuardado(new Error('Esse limite não existe mais.'))).toBe(false)
+})
+
+it('"Tentar de novo" num gasto recusado: se o banco recusar outra vez, ele volta para a faixa com o motivo novo', async () => {
+  definirDonoDosPendentes('sessao|f|m')
+  const lancar = vi.fn(async () => Promise.reject(new Error('Valor acima do permitido.')))
+  await expect(reenviarRecusado(lancar, gasto)).rejects.toThrow('Valor acima do permitido.')
+  expect(recusadosGuardados('sessao|f|m')).toMatchObject([
+    { erro: 'Valor acima do permitido.', dados: { chave: 'c1' } },
+  ])
+  // sessão vencida não vira recusa
+  guardado.clear()
+  await expect(reenviarRecusado(async () => Promise.reject(new ErroSessao()), gasto)).rejects.toBeInstanceOf(ErroSessao)
+  expect(recusadosGuardados('sessao|f|m')).toEqual([])
 })
 
 it('fila: a repetição automática não dispara outra tentativa por cima de um envio que ainda está no ar', async () => {

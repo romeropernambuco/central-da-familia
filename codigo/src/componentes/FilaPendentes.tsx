@@ -19,23 +19,15 @@ export function FilaPendentes({ aoTentarDeNovo }: { aoTentarDeNovo?: (gasto: Nov
   useEffect(() => {
     const atualizar = () => redesenhar(n => n + 1)
     const repetir = () => void pendentes.repetir()
-    // a fila em memória some ao fechar a página: se ainda há envio em aberto, o navegador pergunta antes de sair
-    const segurar = (evento: BeforeUnloadEvent) => {
-      if (!pendentes.itens.size) return
-      evento.preventDefault()
-      evento.returnValue = ''
-    }
     const pararFila = pendentes.ouvir(atualizar)
     const pararGuardados = ouvirGuardados(atualizar)
     const relogio = setInterval(repetir, INTERVALO_DE_NOVA_TENTATIVA_MS)
     addEventListener('online', repetir)
-    addEventListener('beforeunload', segurar)
     return () => {
       pararFila()
       pararGuardados()
       clearInterval(relogio)
       removeEventListener('online', repetir)
-      removeEventListener('beforeunload', segurar)
     }
   }, [])
 
@@ -47,8 +39,8 @@ export function FilaPendentes({ aoTentarDeNovo }: { aoTentarDeNovo?: (gasto: Nov
     <>
       {emEspera > 0 && (
         <div className="todo f32-feedback" role="status">
-          Não foi possível salvar ainda. {emEspera} {emEspera === 1 ? 'pendente' : 'pendentes'}, tentando de novo.
-          Mantenha o app aberto.
+          Não foi possível salvar ainda. {emEspera} {emEspera === 1 ? 'pendente' : 'pendentes'}, tentando de novo. O
+          gasto não se perde se você fechar o app.
           <button type="button" onClick={() => void pendentes.repetir()}>
             <Icone nome="pendente" />
             Tentar agora

@@ -1,3 +1,5 @@
+import { avisarQuandoOEnvioTerminar, enviarSemPrenderATela } from '../app/envioGuardado'
+import { FICOU_ESPERANDO } from '../app/pendentes'
 import { EstadoVazio } from './EstadoVazio'
 import './ler-cupom.css'
 import { Icone } from './Icone'
@@ -59,15 +61,20 @@ export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envel
     try {
       // descrição curta pra caber na lista: "Cupom <loja>" (a loja vem cortada em 20 letras)
       const descricao = lido.loja ? `Cupom ${lido.loja.trim().slice(0, 20)}` : 'Cupom'
-      const r = await api.lancar({
-        familia: familia.id,
-        envelope: env,
-        valor: total,
-        data,
-        descricao,
-        chave: toque.para([env, total, data, descricao].join('|')),
-      })
+      const chave = toque.para([env, total, data, descricao].join('|'))
+      const gasto = { familia: familia.id, envelope: env, valor: total, data, descricao, chave }
+      const envio = api.lancar(gasto)
+      const r = await enviarSemPrenderATela(envio, chave)
       toque.gravou()
+      if (r === FICOU_ESPERANDO) {
+        // sem internet: mesmo caminho da tela de anotar (o gasto fica guardado e a pessoa é avisada depois)
+        fechar()
+        toast(
+          'Sem internet agora. O gasto do cupom ficou guardado neste aparelho e vai ser enviado quando a rede voltar.',
+        )
+        void avisarQuandoOEnvioTerminar(envio, gasto, { toast, recarregar })
+        return
+      }
       fechar()
       await recarregar()
       toast(`${reais(total)} do cupom em ${nomeEnv}.`, async () => {

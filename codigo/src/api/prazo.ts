@@ -7,6 +7,16 @@
 export const PRAZO_PADRAO_MS = 15_000
 /** Funções do servidor que leem foto (cupom, nota) demoram mais que uma leitura comum. */
 export const PRAZO_DE_FUNCAO_MS = 45_000
+/** Envio de arquivo (foto da nota) e operações que mexem na família inteira: rede lenta de celular precisa de folga. */
+export const PRAZO_LONGO_MS = 90_000
+
+const OPERACOES_LONGAS = [
+  '/storage/',
+  '/rpc/exportar_familia',
+  '/rpc/exportar_meu',
+  '/rpc/apagar_familia',
+  '/rpc/backup',
+]
 
 type Buscar = typeof fetch
 
@@ -14,6 +24,7 @@ const enderecoDe = (entrada: Parameters<Buscar>[0]) =>
   typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url
 
 export function prazoPara(endereco: string): number {
+  if (OPERACOES_LONGAS.some(trecho => endereco.includes(trecho))) return PRAZO_LONGO_MS
   return endereco.includes('/functions/') ? PRAZO_DE_FUNCAO_MS : PRAZO_PADRAO_MS
 }
 

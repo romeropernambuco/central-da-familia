@@ -14,7 +14,7 @@ import {
 import { recursosDaMutacao, recursoDaLeitura } from './recursos'
 import { copiarLeitura } from '../lib/resumo/contrato'
 import { salvamento } from '../app/salvamento'
-import { EnvioInterrompido, pendentes } from '../app/pendentes'
+import { envioContinuaGuardado, pendentes } from '../app/pendentes'
 import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
 import { desfazer } from '../app/desfazer'
@@ -36,10 +36,6 @@ export function protegerApi(api: Api): Api {
     return api.modo === 'real' && e ? `${e.sessao}|${e.familia}|${e.membro}` : ''
   }
   // Reenvio automático ao entrar. Recusa definitiva do banco não some: fica marcada, com o motivo, para a pessoa decidir.
-  const sessaoAcabou = (e: unknown) =>
-    e instanceof EnvioInterrompido ||
-    e instanceof LeituraSubstituida ||
-    (e instanceof Error && e.message.startsWith('Sessão encerrada'))
   const retomar = () => {
     const d = dono()
     definirDonoDosPendentes(d)
@@ -47,7 +43,8 @@ export function protegerApi(api: Api): Api {
     for (const n of pendentesGuardados(d)) {
       if (pendentes.itens.has(n.chave)) continue
       void (publica.lancar(n) as Promise<unknown>).catch(e => {
-        if (!sessaoAcabou(e)) marcarRecusado(d, n, e instanceof Error ? e.message : 'O banco não aceitou este gasto.')
+        if (!envioContinuaGuardado(e))
+          marcarRecusado(d, n, e instanceof Error ? e.message : 'O banco não aceitou este gasto.')
       })
     }
   }
@@ -212,7 +209,7 @@ export function protegerApi(api: Api): Api {
                 : await (f as Function).apply(api, args)
             if (guardado) tirarPendente(familia.chave)
           } catch (e) {
-            if (guardado && !(e instanceof EnvioInterrompido)) tirarPendente(familia.chave)
+            if (guardado && !envioContinuaGuardado(e)) tirarPendente(familia.chave)
             throw e
           }
           // Algumas voltas só conseguem conferir "mudou depois?" comparando com o que o banco guardou de fato.

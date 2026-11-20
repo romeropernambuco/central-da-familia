@@ -1,4 +1,4 @@
-import { ErroRede } from '../api/erros'
+import { ErroRede, ErroSessao } from '../api/erros'
 /** A sessão acabou com o envio ainda em aberto. O item continua guardado no aparelho para o mesmo dono. */
 export class EnvioInterrompido extends Error {
   constructor() {
@@ -6,6 +6,16 @@ export class EnvioInterrompido extends Error {
     this.name = 'EnvioInterrompido'
   }
 }
+/**
+ * A falha quer dizer que a sessão acabou (ou a leitura foi trocada), e não que o banco recusou o gasto.
+ * Nesses casos o gasto continua guardado no aparelho e é reenviado quando o mesmo dono entrar de novo.
+ */
+export function envioContinuaGuardado(falha: unknown): boolean {
+  if (falha instanceof EnvioInterrompido || falha instanceof ErroSessao) return true
+  if (!(falha instanceof Error)) return false
+  return falha.name === 'LeituraSubstituida' || falha.message.startsWith('Sessão encerrada')
+}
+
 /** Sinal de que o envio não terminou: ficou guardado, esperando a rede. */
 export const FICOU_ESPERANDO = Symbol('ficou esperando a rede')
 
@@ -66,8 +76,9 @@ export class FilaPendentes {
    * Resolve quando a primeira tentativa deste envio falhou por rede e ele ficou esperando na fila.
    * A tela usa isso para liberar a pessoa ("guardado, envio depois") em vez de ficar presa em "Salvando".
    * Se o envio terminar antes (salvou ou foi recusado), nunca resolve: quem decide é a promessa do próprio envio.
+   * `ateTerminar` é essa promessa: quando ela termina, de qualquer jeito, o ouvinte é desligado.
    */
-  ficouEsperando(chave: string): Promise<typeof FICOU_ESPERANDO> {
+  ficouEsperando(chave: string, ateTerminar: Promise<unknown>): Promise<typeof FICOU_ESPERANDO> {
     return new Promise(resolver => {
       const conferir = () => {
         const item = this.itens.get(chave)
@@ -77,6 +88,7 @@ export class FilaPendentes {
         return true
       }
       const parar = this.ouvir(() => void conferir())
+      void ateTerminar.then(parar, parar)
       conferir()
     })
   }
@@ -94,7 +106,8 @@ export class FilaPendentes {
           this.itens.delete(chave)
           item.resolver(r)
         } catch (e) {
-          if (!(e instanceof ErroRede)) {
+          // se a sessão caiu e outro envio com a mesma chave entrou na fila, esta tentativa velha não mexe nele
+          if (!(e instanceof ErroRede) && this.itens.get(chave) === item) {
             this.itens.delete(chave)
             item.rejeitar(e)
           }
