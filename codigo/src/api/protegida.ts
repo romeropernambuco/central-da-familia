@@ -1,3 +1,4 @@
+import { gravaNoBanco } from './acoes'
 import {
   invalidarDados,
   lerCompartilhado,
@@ -50,8 +51,6 @@ export function protegerApi(api: Api): Api {
       })
     }
   }
-  const mutacoes =
-    /^(salvar|criar|definir|convidar|cancelar|reenviar|lancar$|apagarLancamento|restaurarLancamento|corrigirLancamento|casaMarcar|guardado(Criar|Movimentar|Encerrar)|recebimento(Criar|Mudar)|objetivoSalvar|desejo(Criar|Mudar)|imovel(Salvar|Tirar)|cartaoSalvar|estoqueItemSalvar|backupRestaurar|anotarCompraEquipe|escritorioResponder|faturaInformar|feira(Registrar|AnexarNota|SemNota)|estoqueContar|lembrete(Criar|Concluir|Adiar|Apagar)|reajuste(Votar|Aplicar))/
   const publica = new Proxy(api, {
     get(alvo, prop: keyof Api) {
       const f = alvo[prop]
@@ -107,14 +106,8 @@ export function protegerApi(api: Api): Api {
             if (prop === 'guardadoHoje') for (const a of resultado.aplicacoes) registrarDono(api, a.id, args[0])
             return copiarLeitura(resultado)
           })
-      if (
-        !mutacoes.test(prop) &&
-        prop !== 'guardadoDesfazer' &&
-        prop !== 'cobrirComCasa' &&
-        prop !== 'cobrirImprevisto' &&
-        prop !== 'apagarFamilia'
-      )
-        return f
+      // só o que está na lista declarada de gravações passa pela proteção (ver api/acoes.ts)
+      if (!gravaNoBanco(prop)) return f
       return async (...args: any[]) =>
         salvamento.acompanhar(async () => {
           // Inversos chamam explicitamente a API interna; chamadas públicas sempre passam pelas proteções.
