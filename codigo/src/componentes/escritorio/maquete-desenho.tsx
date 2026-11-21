@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { Roupa, SalaEquipe } from '../../telas/escritorio/equipe'
+import type { Roupa, SalaEquipe } from '../../lib/escritorio/equipe'
 
 type Sala = { id: SalaEquipe; nome: string; x: number; y: number }
 

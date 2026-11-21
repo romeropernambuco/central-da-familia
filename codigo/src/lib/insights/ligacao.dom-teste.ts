@@ -2,7 +2,7 @@
 import { vi } from 'vitest'
 import type { Api } from '../../api/tipos'
 import type { Ctx } from '../../app/contexto'
-import type { Rota } from '../../app/rotas'
+import type { Rota } from '../rotas'
 
 export const CASOS_LIGACAO = [
   ['fatura_vencendo', 'cartoes', 'cartao', 'Já pagou a fatura que vence em breve?'],

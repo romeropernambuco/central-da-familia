@@ -1,4 +1,4 @@
-import { LeituraSubstituida } from './invalidacao'
+import { LeituraSubstituida } from '../lib/invalidacao'
 
 /**
  * Leituras de apoio de uma tela (cartões, faturas, avisos) que falharam.

@@ -1,4 +1,4 @@
-import type { EstadoAgente, EstadoCena } from '../cenaBase'
+import type { EstadoAgente, EstadoCena } from '../../../lib/escritorio/cenaBase'
 
 // A cena completa fala em estados do escritório (fila, trabalhando, entregue, precisa);
 // o mini das outras abas fala em estados de interação. Estas duas funções traduzem de um para o outro.

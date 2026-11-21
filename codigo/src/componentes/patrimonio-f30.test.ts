@@ -5,10 +5,10 @@ import { createElement, type ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../app/contexto'
-import { Imoveis } from '../telas/guardado/Imoveis'
+import { Imoveis } from './Imoveis'
 import { Guardado } from '../telas/guardado/Guardado'
 import { RumoHero } from './RumoA2029'
-import type { RumoCalculado } from '../app/rumo2029'
+import type { RumoCalculado } from '../lib/rumo2029'
 const dados = vi.hoisted(() => ({ lista: [] as any[], estado: 'erro' }))
 vi.mock('../app/useLeituraRemota', () => ({
   useLeituraRemota: () => ({ dado: dados.lista, carregando: false, erro: null }),

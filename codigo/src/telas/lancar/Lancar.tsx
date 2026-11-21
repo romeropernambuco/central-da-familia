@@ -1,7 +1,7 @@
 import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import type { NovoLancamento } from '../../api/tipos'
 import { avisarQuandoOEnvioTerminar, enviarSemPrenderATela } from '../../app/envioGuardado'
-import { FICOU_ESPERANDO } from '../../app/pendentes'
+import { FICOU_ESPERANDO } from '../../api/pendentes'
 import './lancar.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
@@ -37,7 +37,7 @@ import { calcularImpactoDaCompra } from './parcelamento'
 import { LerCupom } from '../../componentes/LerCupom'
 import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
-import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../app/dono'
+import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../lib/dono'
 
 type Rascunho = {
   modo?: 'gasto' | 'entrou'

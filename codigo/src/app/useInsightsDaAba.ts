@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { Api } from '../api/tipos'
 import { lojaEscritorio } from './escritorioCompartilhado'
 import { useApp } from './contexto'
-import { rotaPermitida, type Rota } from './rotas'
+import { rotaPermitida, type Rota } from '../lib/rotas'
 import { ErroSessao } from '../api/erros'
 import { primeiraPerguntaGeral, FALA_ANALISTA } from '../lib/insights/donos'
 import { avaliarInsights } from '../lib/insights/motor'
@@ -14,7 +14,7 @@ import { executarResposta } from '../lib/insights/respostas'
 import { tempoRecife } from '../lib/insights/tempo'
 import type { EventoInsight, Insight } from '../lib/insights/tipos'
 import type { LeiturasInsights } from '../lib/insights/snapshot'
-import { textoPrivado } from '../componentes/privacidade'
+import { textoPrivado } from '../lib/formato'
 
 // Uma sessão de exibição por aba, inclusive quando a ficha e o fundo estão montados.
 // Compartilha a leitura em andamento e a retenção do card visto, sem polling ou novo endpoint.

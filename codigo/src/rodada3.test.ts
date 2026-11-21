@@ -40,7 +40,7 @@ import {
   type AplicacaoBase,
 } from './lib/guardado'
 import { centavos, hojeRecife } from './lib/formato'
-import { rotaPermitida } from './app/rotas'
+import { rotaPermitida } from './lib/rotas'
 import { FAZ } from './telas/escritorio/Ficha'
 import type { EscritorioHoje, PerguntaEsc } from './api/tipos'
 

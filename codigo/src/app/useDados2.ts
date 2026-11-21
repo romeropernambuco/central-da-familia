@@ -1,13 +1,13 @@
 import { useLeituraRemota } from './useLeituraRemota'
-import { aoLimparLeituras, invalidarDados } from './invalidacao'
+import { aoLimparLeituras, invalidarDados } from '../lib/invalidacao'
 import { lojaEscritorio } from './escritorioCompartilhado'
-import { useInvalidacao } from './invalidacao'
+import { useInvalidacao } from './useInvalidacao'
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useApp } from './contexto'
 import type { GuardadoHoje } from '../api/tipos'
 import { ErroSessao } from '../api/erros'
-import type { EntradaPronta } from '../api/futuro'
+import type { EntradaPronta } from '../lib/futuroReceitas'
 import { futuro, type FuturoSaida } from '../lib/futuro'
 
 /** buscando: 1ª leitura · ok · erro: não deu pra buscar (mostra o motivo) · desligado: o banco ainda não tem essa parte. */

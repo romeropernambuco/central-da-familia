@@ -172,7 +172,7 @@ describe('f_12: o reajuste do teto vai pelas 3 funções do banco', () => {
 
 describe('f_11: o dinheiro em conta corrente entra no motor', () => {
   it('saldo_caixa do banco vira o saldo_caixa da entrada e sai do "a confirmar"; sem o campo, 0 e "a confirmar"', async () => {
-    const { entradaDoBanco } = await import('./api/futuro')
+    const { entradaDoBanco } = await import('./lib/futuroReceitas')
     const base: any = {
       hoje: '2026-11-18',
       mes_base: '2026-11',

@@ -17,8 +17,8 @@ import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/form
 import { demoraTexto } from '../../lib/guardado'
 import { EscritorioIsometrico } from './EscritorioIsometrico'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
-import { abaDoHash } from './cenaBase'
-import { DESTINO_SECRETARIA } from './equipe'
+import { abaDoHash } from '../../lib/escritorio/cenaBase'
+import { DESTINO_SECRETARIA } from '../../lib/escritorio/equipe'
 import { umaPorVez } from '../../lib/seguro'
 
 type Aba = 'hoje' | 'relatorio' | 'lembretes'

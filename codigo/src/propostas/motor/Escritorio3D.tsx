@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { SALAS_NOME, tentarCarregarCena } from '../../telas/escritorio/cenaBase'
+import { SALAS_NOME, tentarCarregarCena } from '../../lib/escritorio/cenaBase'
 import type { EstadosIsometricos, NavegacaoIsometrica, montarEscritorioIsometrico } from './cenaIsometrica'
-import { POR_ID } from '../../telas/escritorio/equipe'
-import { SALAS_ISOMETRICAS, type VistaIsometrica } from '../../telas/escritorio/plantaIsometrica'
+import { POR_ID } from '../../lib/escritorio/equipe'
+import { SALAS_ISOMETRICAS, type VistaIsometrica } from '../../lib/escritorio/plantaIsometrica'
 import {
   EscritorioDesenho,
   QuadroDoEscritorio,

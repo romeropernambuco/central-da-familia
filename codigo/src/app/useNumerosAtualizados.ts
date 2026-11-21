@@ -1,19 +1,13 @@
 import { observarPosMutacao } from '../api/posMutacao'
-import { aoLimparLeituras, geracaoLeitura, escopoLeitura } from './invalidacao'
+import { aoLimparLeituras, geracaoLeitura, escopoLeitura } from '../lib/invalidacao'
 import { useEffect, useSyncExternalStore } from 'react'
 import type { Api, ChaveConfig } from '../api/tipos'
-import { dataConferenciaValida, frescor } from '../lib/resumo/conferencia'
+import { dataConferenciaValida, frescor, type GrupoNumero, type NumerosAtualizados } from '../lib/resumo/conferencia'
 export { frescor } from '../lib/resumo/conferencia'
 import { useApp } from './contexto'
 import { useConfig } from './useConfig'
 
-export type GrupoNumero = 'aplicacoes' | 'imoveis' | 'recebimentos' | 'saldo_caixa'
-export interface NumerosAtualizados {
-  aplicacoes: Record<string, string>
-  imoveis: Record<string, string>
-  recebimentos: Record<string, string>
-  saldo_caixa?: string
-}
+export type { GrupoNumero, NumerosAtualizados } from '../lib/resumo/conferencia'
 // Extensões JSON de config_familia: não precisam de coluna nem de mudança da API financeira.
 export const CHAVE_NUMEROS: ChaveConfig = 'numeros_atualizados'
 export const CHAVE_FONTES = 'fontes_receita' as ChaveConfig

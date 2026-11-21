@@ -1,4 +1,4 @@
-import { desfazer } from './app/desfazer'
+import { desfazer } from './api/desfazer'
 import { BarraDesfazer } from './componentes/BarraDesfazer'
 import { Fragment } from 'react'
 import { act, createElement, type ReactElement } from 'react'
@@ -218,7 +218,7 @@ it('4 rascunho recupera tipo de operação', async () => {
   await a.click('Anotar')
   expect(rascunhos.size).toBe(0)
 })
-import { AgenteDaAba } from './componentes/AgenteDaAba'
+import { AgenteDaAba } from './telas/escritorio/AgenteDaAba'
 it('22 Anfitrião não repete frase do papel', async () => {
   const a = await montar(createElement(AgenteDaAba, { rota: 'inicio' }), {
     escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }),
@@ -226,7 +226,7 @@ it('22 Anfitrião não repete frase do papel', async () => {
   expect(a.box.textContent.split('Acompanho o resumo de hoje da família.').length - 1).toBeLessThanOrEqual(1)
 })
 
-import { FolhaImovel } from './telas/guardado/Imoveis'
+import { FolhaImovel } from './componentes/Imoveis'
 it('5 formulário limpa só a própria chave após confirmar', async () => {
   rascunhos.clear()
   rascunhos.set('cadastro:imovel:f:outro:undefined:a', { apelido: 'Outro' })

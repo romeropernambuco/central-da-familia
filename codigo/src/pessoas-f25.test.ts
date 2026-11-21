@@ -1,4 +1,4 @@
-import { desfazer } from './app/desfazer'
+import { desfazer } from './api/desfazer'
 import { BarraDesfazer } from './componentes/BarraDesfazer'
 import { Fragment } from 'react'
 import { act, createElement, type ReactElement } from 'react'
@@ -130,12 +130,12 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
 
 import { Lancar } from './telas/lancar/Lancar'
 import { Privacidade } from './telas/privacidade/Privacidade'
-import { AjudaDaAba } from './componentes/AgenteDaAba'
+import { AjudaDaAba } from './telas/escritorio/AgenteDaAba'
 import { Acolhimento } from './componentes/Acolhimento'
 import { prepararAcolhimento, encerrarAcolhimento } from './lib/acolhimento'
 import { normalizaLancamento } from './api/normaliza'
 import { protegerApi } from './api/protegida'
-import { salvamento } from './app/salvamento'
+import { salvamento } from './api/salvamento'
 import { NomeDaPessoa } from './componentes/NomeDaPessoa'
 afterEach(async () => {
   await act(async () => salvamento.limpar())

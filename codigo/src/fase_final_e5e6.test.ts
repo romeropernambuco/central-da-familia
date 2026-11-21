@@ -3,7 +3,7 @@
 // E6: parâmetros do objetivo (os 2 mudam, com histórico), Focus ao lado, e a entrada do motor igual no exemplo e no banco.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
-import { entradaDoBanco, taxaDoTexto, textoDaTaxa, type FuturoBanco } from './api/futuro'
+import { entradaDoBanco, taxaDoTexto, textoDaTaxa, type FuturoBanco } from './lib/futuroReceitas'
 import { normalizaRecebimento } from './api/normaliza'
 import { situacaoRecebimento } from './telas/planejamento/Recebimentos'
 import { futuro } from './lib/futuro'

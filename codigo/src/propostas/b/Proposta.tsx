@@ -13,7 +13,7 @@ import {
   TudoEmDia,
 } from '../../componentes/ilustracoes'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
-import { podeVerNoMenu, type Rota } from '../../app/rotas'
+import { podeVerNoMenu, type Rota } from '../../lib/rotas'
 import type { Campo, DadosInicio, NivelAlerta } from '../../componentes/escritorio/dadosDeExemplo'
 import type { PropsProposta } from '../Propostas'
 import { EscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'

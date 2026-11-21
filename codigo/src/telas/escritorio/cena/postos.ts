@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ATIVIDADES_MINI, PERFIL_IMOVEIS, faseDoId, montarAtividade } from '../atividadesMini'
-import type { FuncCena, OpcoesCena } from '../cenaBase'
-import { POR_ID } from '../equipe'
+import type { FuncCena, OpcoesCena } from '../../../lib/escritorio/cenaBase'
+import { POR_ID } from '../../../lib/escritorio/equipe'
 import type { composicaoMini } from '../escritorioMini'
 import { criarBoneco } from './boneco'
 import { estadoMini, luzTela } from './estados'

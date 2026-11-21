@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { listaFalada } from '../componentes/FalhasDeLeitura'
 import { falhaDeLeitura, falhasDeLeitura, limparFalhasDeLeitura, ouvirFalhasDeLeitura } from './falhasDeLeitura'
-import { LeituraSubstituida } from './invalidacao'
+import { LeituraSubstituida } from '../lib/invalidacao'
 
 afterEach(() => limparFalhasDeLeitura())
 

@@ -1,4 +1,4 @@
-import type { NovoLancamento } from '../api/tipos'
+import type { NovoLancamento } from './tipos'
 
 /**
  * Gasto anotado sem internet fica guardado NESTE aparelho até o banco confirmar.

@@ -3,9 +3,9 @@ import { chaveSimples } from '../../api/normaliza2'
 import { reais } from '../../lib/formato'
 import { valorDaPendencia } from '../../lib/resumo/pendencias'
 import { textoDeAgente } from '../../lib/textoAgente'
-import { APELIDO_BANCO, EQUIPE, type MembroEquipe } from './equipe'
+import { APELIDO_BANCO, EQUIPE, type MembroEquipe } from '../../lib/escritorio/equipe'
 import { funcionarioAutorizado } from './elencoPorAba'
-import { SALAS_NOME } from './cenaBase'
+import { SALAS_NOME } from '../../lib/escritorio/cenaBase'
 
 export interface PostoIsometrico {
   membro: MembroEquipe

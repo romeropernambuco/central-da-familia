@@ -5,7 +5,7 @@ import { DocumentoTeste, NoTeste } from '../escritorio/numeros.dom-teste'
 import { ContextoApp, type Ctx } from '../../app/contexto'
 import { Recebimentos } from './Recebimentos'
 import type { Api, ChaveConfig, FonteReceita, RecebimentoTela } from '../../api/tipos'
-import { entradaDoBanco } from '../../api/futuro'
+import { entradaDoBanco } from '../../lib/futuroReceitas'
 import { esconderValores } from '../../lib/formato'
 
 const roots: Root[] = []

@@ -9,7 +9,7 @@ import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-test
 import { candidatosInsights } from './motor'
 import { apresentarInsight } from './apresentacao'
 import type { SnapshotInsights } from './tipos'
-import type { Rota } from '../../app/rotas'
+import type { Rota } from '../rotas'
 
 const agora = new Date('2026-12-30T12:00:00-03:00')
 const familia: FamiliaMinha = {

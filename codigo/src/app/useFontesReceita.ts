@@ -1,6 +1,6 @@
 import { useConfig } from './useConfig'
 import { useApp } from './contexto'
-import { lerControleReceitas, lerFontesReceita } from '../api/futuro'
+import { lerControleReceitas, lerFontesReceita } from '../lib/futuroReceitas'
 import type { ControleReceitas, FonteReceita, FontesReceita } from '../api/tipos'
 
 const VAZIO = {}

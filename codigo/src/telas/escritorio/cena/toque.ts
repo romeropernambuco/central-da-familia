@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { OpcoesCena } from '../cenaBase'
+import type { OpcoesCena } from '../../../lib/escritorio/cenaBase'
 
 /**
  * Liga o toque na cena: um toque curto (sem arrastar) num boneco avisa quem montou a cena.

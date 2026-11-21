@@ -5,19 +5,19 @@ import { dirname, extname, resolve } from 'node:path'
 import { expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
+import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 const ciclo = vi.hoisted(() => ({ destruir: vi.fn(), montar: vi.fn(), importarThree: vi.fn() }))
-vi.mock('../telas/escritorio/tres', () => {
+vi.mock('./tres', () => {
   ciclo.importarThree()
   return {}
 })
-vi.mock('../telas/escritorio/cena3d', () => ({ montarCena: ciclo.montar }))
-vi.mock('../telas/escritorio/cenaBase', async original => ({ ...(await original<object>()), temWebGL: () => true }))
+vi.mock('./cena3d', () => ({ montarCena: ciclo.montar }))
+vi.mock('../../lib/escritorio/cenaBase', async original => ({ ...(await original<object>()), temWebGL: () => true }))
 import { MiniAgente } from './AgenteDaAba'
 
 it('carrega Three somente pelo import tardio do mini agente e libera o renderer', () => {
-  const fonte = readFileSync(resolve('src/componentes/AgenteDaAba.tsx'), 'utf8')
-  expect(fonte).toMatch(/import\('\.\.\/telas\/escritorio\/tres'\)/)
+  const fonte = readFileSync(resolve('src/telas/escritorio/AgenteDaAba.tsx'), 'utf8')
+  expect(fonte).toMatch(/import\('\.\/tres'\)/)
   expect(fonte).not.toMatch(/import\s+[^\n]+from\s+['"][^'"]*(?:three|\/tres)['"]/)
   expect(fonte).toContain('liberarRenderer?.()')
   expect(fonte).toContain('cena?.destruir()')
@@ -151,11 +151,11 @@ it('trocar de aba e desmontar libera a cena; sem3d não importa nem monta render
 })
 
 import { renderToStaticMarkup } from 'react-dom/server'
-import { ContextoApp, type Ctx } from '../app/contexto'
-import { App } from '../app/App'
-import { Lancar } from '../telas/lancar/Lancar'
+import { ContextoApp, type Ctx } from '../../app/contexto'
+import { App } from '../../app/App'
+import { Lancar } from '../lancar/Lancar'
 import { AgenteDaAba, definirModoFuncionario } from './AgenteDaAba'
-import { lojaEscritorio } from '../app/escritorioCompartilhado'
+import { lojaEscritorio } from '../../app/escritorioCompartilhado'
 
 const contextoDesign = () =>
   ({

@@ -1,4 +1,4 @@
-import { ErroRede, ErroSessao } from '../api/erros'
+import { ErroRede, ErroSessao } from './erros'
 /** A sessão acabou com o envio ainda em aberto. O item continua guardado no aparelho para o mesmo dono. */
 export class EnvioInterrompido extends Error {
   constructor() {

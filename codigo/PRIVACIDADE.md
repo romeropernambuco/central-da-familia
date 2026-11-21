@@ -133,14 +133,14 @@ A tabela registra todas as ocorrências dos canais pesquisados em telas/componen
 | src/telas/guardado/Guardado.tsx | aria-label | 56, 84, 89, 109, 297, 323 | Frases privadas protegidas; rótulos de ações públicos. |
 | src/telas/guardado/Guardado.tsx | data-* | 69, 108, 279 | Nomes e frases protegidos; IDs/flags técnicos preservados. |
 | src/telas/guardado/Guardado.tsx | toast/erro | 31, 55, 181, 182, 183, 184, 190, 212, 231, 232, 233, 242, 255, 268 | Contexto e/ou textoPrivado na apresentação; validações fixas públicas. |
-| src/telas/guardado/Imoveis.tsx | CampoValor | 156, 162, 163, 181 | Estado original; apresentação protegida centralmente. |
-| src/telas/guardado/Imoveis.tsx | CampoPrivado/Decimal | 155, 164 | Entrada central protegida; datas/números de cadastro explicitamente públicos. |
-| src/telas/guardado/Imoveis.tsx | select/option | 172, 182 | Calendário, sem nome nem dinheiro. |
-| src/telas/guardado/Imoveis.tsx | value | 155, 164, 172, 182 | Dados privados nas primitivas; demais são datas/IDs/enums ou saídas condicionadas. |
-| src/telas/guardado/Imoveis.tsx | placeholder | 155 | Máscara central ou exemplo fixo público. |
-| src/telas/guardado/Imoveis.tsx | aria-label | 99 | Frases privadas protegidas; rótulos de ações públicos. |
-| src/telas/guardado/Imoveis.tsx | data-* | 98 | Nomes e frases protegidos; IDs/flags técnicos preservados. |
-| src/telas/guardado/Imoveis.tsx | toast/erro | 73, 78 | Contexto e/ou textoPrivado na apresentação; validações fixas públicas. |
+| src/componentes/Imoveis.tsx | CampoValor | 156, 162, 163, 181 | Estado original; apresentação protegida centralmente. |
+| src/componentes/Imoveis.tsx | CampoPrivado/Decimal | 155, 164 | Entrada central protegida; datas/números de cadastro explicitamente públicos. |
+| src/componentes/Imoveis.tsx | select/option | 172, 182 | Calendário, sem nome nem dinheiro. |
+| src/componentes/Imoveis.tsx | value | 155, 164, 172, 182 | Dados privados nas primitivas; demais são datas/IDs/enums ou saídas condicionadas. |
+| src/componentes/Imoveis.tsx | placeholder | 155 | Máscara central ou exemplo fixo público. |
+| src/componentes/Imoveis.tsx | aria-label | 99 | Frases privadas protegidas; rótulos de ações públicos. |
+| src/componentes/Imoveis.tsx | data-* | 98 | Nomes e frases protegidos; IDs/flags técnicos preservados. |
+| src/componentes/Imoveis.tsx | toast/erro | 73, 78 | Contexto e/ou textoPrivado na apresentação; validações fixas públicas. |
 | src/telas/inicio/Inicio.tsx | aria-label | 67 | Frases privadas protegidas; rótulos de ações públicos. |
 | src/telas/lancamentos/Lancamentos.tsx | title | 105, 107 | Texto privado protegido; demais rótulos públicos. |
 | src/telas/lancamentos/Lancamentos.tsx | aria-label | 75, 105, 107, 108, 142 | Frases privadas protegidas; rótulos de ações públicos. |
@@ -241,7 +241,7 @@ O olho protege a apresentação e os canais de saída do app, não é criptograf
 - codigo/src/telas/escritorio/Ficha.tsx
 - codigo/src/telas/escritorio/NumerosAba.tsx
 - codigo/src/telas/guardado/Guardado.tsx
-- codigo/src/telas/guardado/Imoveis.tsx
+- codigo/src/componentes/Imoveis.tsx
 - codigo/src/telas/inicio/Inicio.tsx
 - codigo/src/telas/lancamentos/Lancamentos.tsx
 - codigo/src/telas/lancar/Lancar.tsx

@@ -6,7 +6,7 @@ import { frescor, type GrupoNumero, type useNumerosAtualizados } from '../app/us
 import type { FuturoEntrada } from '../lib/futuro'
 import { textoPrivado } from './privacidade'
 import { Din, Sheet } from './base'
-import { FolhaImovel } from '../telas/guardado/Imoveis'
+import { FolhaImovel } from './Imoveis'
 import type { ImovelTela } from '../api/tipos'
 
 export interface NumeroParaConferir {

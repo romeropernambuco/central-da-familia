@@ -6,7 +6,7 @@ import {
   proximoMes,
   type FuturoEntrada,
   type FuturoSaida,
-} from '../lib/futuro'
+} from './futuro'
 
 /** Valores em centavos; faltas negativas significam sobra. A decisão é a folga do motor, com margem. */
 export function numerosRumo2029(s: FuturoSaida, e: FuturoEntrada) {

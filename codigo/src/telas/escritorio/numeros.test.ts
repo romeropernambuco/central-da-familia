@@ -6,8 +6,8 @@ import { esconderValores, hojeRecife } from '../../lib/formato'
 import { NumerosAba } from './NumerosAba'
 import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 import type { Api, FamiliaMinha } from '../../api/tipos'
-import { rotaDoHash, rotaPermitida, type Rota } from '../../app/rotas'
-import { EQUIPE } from './equipe'
+import { rotaDoHash, rotaPermitida, type Rota } from '../../lib/rotas'
+import { EQUIPE } from '../../lib/escritorio/equipe'
 import { numerosDaAba, numerosExemplo } from './numeros'
 
 vi.mock('../../app/contexto', () => ({ useApp: vi.fn() }))

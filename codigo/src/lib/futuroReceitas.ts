@@ -2,15 +2,7 @@
 // devolve. O modo exemplo monta o MESMO formato do banco e passa por aqui também: as 2 pontas saem iguais.
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
-import {
-  Dec,
-  PADROES_ECONOMISTA,
-  folha13,
-  type FuturoEntrada,
-  type Imovel,
-  type Parametros,
-  type Taxa,
-} from '../lib/futuro'
+import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from './futuro'
 import type {
   CenarioReceitas,
   ControleReceitas,
@@ -19,7 +11,7 @@ import type {
   FocusAno,
   NovoImovel,
   ParametrosObjetivo,
-} from './tipos'
+} from '../api/tipos'
 
 /** O BANCO aceita a chave aliq_renda (IR de 2029 em diante, texto decimal, opcional) nos parâmetros do objetivo desde a f_13.
  *  Se um dia precisar voltar a não mandar (banco sem a f_13), basta pôr false: o campo fica travado no padrão de 15%. */
@@ -435,4 +427,16 @@ export function imovelInvalido(d: NovoImovel): string {
   if ((d.venda_valor == null) !== (d.venda_mes == null)) return 'Na venda planejada, diga o valor e o mês.'
   if (d.venda_valor != null && !(d.venda_valor > 0)) return 'O valor da venda tem que ser maior que zero.'
   return ''
+}
+
+/** A entrada do motor com as receitas do cenário escolhido (Garantido, Com previstos ou Com tudo). */
+export function entradaDoCenario(
+  p: EntradaPronta,
+  c: CenarioReceitas,
+  fontes = p.fontesReceita ?? {},
+  controle = p.controleReceitas ?? {},
+): FuturoEntrada | null {
+  return p.entrada
+    ? { ...p.entrada, recebimentos: prepararReceitas(p.receitasBase ?? p.entrada.recebimentos, fontes, controle, c) }
+    : null
 }

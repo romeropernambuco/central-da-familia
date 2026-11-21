@@ -1,7 +1,7 @@
 import inventario from './inventarioModelos.json'
 import type { Papel } from '../../api/tipos'
-import { SO_CASAL, type Rota } from '../../app/rotas'
-import { APELIDO_BANCO, POR_ID, type SalaEquipe } from './equipe'
+import { SO_CASAL, type Rota } from '../../lib/rotas'
+import { APELIDO_BANCO, POR_ID, type SalaEquipe } from '../../lib/escritorio/equipe'
 
 export const SALA_POR_ABA: Record<string, SalaEquipe> = {
   inicio: 'gestao',

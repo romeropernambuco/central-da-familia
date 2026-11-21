@@ -6,7 +6,7 @@ import { useApp } from '../app/contexto'
 import { gerarCopia, validarCopia, previaCopia, type Copia } from '../app/backup'
 import { Sheet } from './base'
 import { textoPrivado } from '../lib/formato'
-import { desfazer } from '../app/desfazer'
+import { desfazer } from '../api/desfazer'
 import { limparRascunhos } from '../app/rascunhos'
 export function Backup() {
   const { api, familia, oculto, recarregar, trocarSessao } = useApp()

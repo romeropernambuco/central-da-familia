@@ -7,7 +7,7 @@ export const PERFIL_IMOVEIS = {
   roupa: { camisa: 0x9bbb99, calca: 0x34343c, pele: 0xb98562, cabelo: 0x231a14, estilo: 'curto' },
 } as const
 
-import type { Rota } from '../../app/rotas'
+import type { Rota } from '../rotas'
 // A LISTA ÚNICA da equipe do Escritório (C2, 14/11). Daqui saem: o nome curto da etiqueta, a sala, a mesa (e a rota),
 // a roupa do boneco 3D, o objeto de trabalho e a aba aberta pela ficha.
 // O protótipo publicado conserva os 13 originais; a equipe do app evolui só no fonte.

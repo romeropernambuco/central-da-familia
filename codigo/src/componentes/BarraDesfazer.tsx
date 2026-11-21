@@ -1,8 +1,8 @@
 import './apoio-f32.css'
 import { Icone } from './Icone'
-import { salvamento } from '../app/salvamento'
+import { salvamento } from '../api/salvamento'
 import { useEffect, useState } from 'react'
-import { desfazer } from '../app/desfazer'
+import { desfazer } from '../api/desfazer'
 export function BarraDesfazer() {
   const [, mudar] = useState(0)
   const [pausado, pausar] = useState(false)

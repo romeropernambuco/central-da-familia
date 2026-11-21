@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest'
-import { desfazer } from '../app/desfazer'
-import { pendentes } from '../app/pendentes'
+import { desfazer } from './desfazer'
+import { pendentes } from './pendentes'
 import { apiExemplo, reiniciarExemplo } from './exemplo'
 import { protegerApi } from './protegida'
 

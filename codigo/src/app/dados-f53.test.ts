@@ -6,10 +6,10 @@ import { criarGuardaConfig } from '../lib/seguro'
 import { faturasAConferir } from '../lib/resumo/faturas'
 import { totaisDoMes } from '../lib/resumo/movimentacao'
 import { lerDadosInsights } from '../lib/insights/leitura'
-import { definirEscopoLeitura, escopoLeitura } from './invalidacao'
+import { definirEscopoLeitura, escopoLeitura } from '../lib/invalidacao'
 import { lojaEscritorio } from './escritorioCompartilhado'
 import { acompanharConferencias } from './useNumerosAtualizados'
-import { desfazer } from './desfazer'
+import { desfazer } from '../api/desfazer'
 import { criarCacheModelos } from '../telas/escritorio/modelosEscritorio'
 
 const familia = { id: 'f', membroId: 'm', papel: 'casal' } as FamiliaMinha

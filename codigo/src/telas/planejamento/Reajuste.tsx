@@ -14,7 +14,7 @@ import { useApp } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { useFuturo } from '../../app/useDados2'
 import { reajustarTeto } from '../../lib/futuro'
-import { taxaDoTexto, textoDaTaxa } from '../../api/futuro'
+import { taxaDoTexto, textoDaTaxa } from '../../lib/futuroReceitas'
 import { CampoValor } from '../../componentes/base'
 import type { Envelope, Objetivo, ReajusteSituacao } from '../../api/tipos'
 import {

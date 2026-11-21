@@ -2,7 +2,7 @@
 // E2: o casal LÊ tudo com o nome do dono e ESCREVE só no seu e na Casa. E3: consertos 1 a 10 da rodada 3 (menos o 7, que vai pra E4).
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
-import { aplicacaoMinha, cartaoMeu, escreveNo, mexeNoLancamento, rotuloDono } from './app/dono'
+import { aplicacaoMinha, cartaoMeu, escreveNo, mexeNoLancamento, rotuloDono } from './lib/dono'
 import { comecoDoMes, fraseEstouro, numeroEnvelope, tetoDoMes } from './componentes/EnvelopeCard'
 import { todoDia } from './lib/formato'
 import type { Envelope, FamiliaMinha } from './api/tipos'
@@ -36,7 +36,7 @@ const fam = (x: Partial<FamiliaMinha>): FamiliaMinha => ({
   ...x,
 })
 
-describe('E2: regra do dono na tela (app/dono.ts)', () => {
+describe('E2: regra do dono na tela (lib/dono.ts)', () => {
   it('sem o campo do banco: o casal escreve no seu e na Casa; a filha só no dela; a equipe só na Casa', () => {
     const ana = fam({}),
       bia = fam({ papel: 'pessoa', envelopeId: 'env-bia' }),

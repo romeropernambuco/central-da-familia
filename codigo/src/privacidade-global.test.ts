@@ -1,4 +1,4 @@
-import { AgenteDaAba, AGENTE_POR_ABA } from './componentes/AgenteDaAba'
+import { AgenteDaAba, AGENTE_POR_ABA } from './telas/escritorio/AgenteDaAba'
 import { act, createElement, useState, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
@@ -70,7 +70,7 @@ it.each(CASOS_LIGACAO)(
   },
 )
 
-const modulos = import.meta.glob('./telas/**/*.tsx', { eager: true }) as Record<
+const modulos = import.meta.glob(['./telas/**/*.tsx', './componentes/Imoveis.tsx'], { eager: true }) as Record<
   string,
   Record<string, ComponentType<any>>
 >
@@ -399,7 +399,8 @@ describe('regra do olho em cada tela real', () => {
   it('cada tela: HTML completo, fechado → aberto → fechado sem remontar', async () => {
     expect(
       Object.entries(modulos)
-        .filter(([, m]) => !telas.some(nome => m[nome]))
+        // o agente da aba mora junto das telas do Escritório e é exercitado mais abaixo, rota por rota
+        .filter(([, m]) => !m.AgenteDaAba && !telas.some(nome => m[nome]))
         .map(([arquivo]) => arquivo),
     ).toEqual([])
     for (const nome of [...telas, ...rotasAgentes.map(r => 'Agente:' + r)]) {

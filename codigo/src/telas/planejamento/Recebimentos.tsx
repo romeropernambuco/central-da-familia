@@ -13,14 +13,14 @@ import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // dono (regra F4 do ECONOMISTA, que mora em lib/futuro: a tela só chama mesDoRecebimento e não faz conta de 2029).
 import { useRef, useState } from 'react'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
-import { invalidarDados } from '../../app/invalidacao'
+import { invalidarDados } from '../../lib/invalidacao'
 import { ErroRede } from '../../api/erros'
 import { novoUuid } from '../../lib/seguro'
 import { CalendarClock, Check, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { FonteReceita, NovoRecebimento, RecebimentoTela, TipoRecebimento } from '../../api/tipos'
-import { mesReceitaValido } from '../../api/futuro'
+import { mesReceitaValido } from '../../lib/futuroReceitas'
 import { useFontesReceita } from '../../app/useFontesReceita'
 import {
   CamposFonteReceita,

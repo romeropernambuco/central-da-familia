@@ -1,4 +1,4 @@
-import { useInvalidacao } from './invalidacao'
+import { useInvalidacao } from './useInvalidacao'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from './contexto'
 import { criarGuardaConfig } from '../lib/seguro'

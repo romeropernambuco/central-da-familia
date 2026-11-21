@@ -21,7 +21,7 @@ describe('nenhuma identidade anônima sem chamado', () => {
     'telas/planejamento/Parametros.tsx',
     'telas/planejamento/Recebimentos.tsx',
     'telas/guardado/Guardado.tsx',
-    'telas/guardado/Imoveis.tsx',
+    'componentes/Imoveis.tsx',
     'telas/desejos/Desejos.tsx',
     'telas/cartoes/Cartoes.tsx',
     'telas/meu-orcamento/MeuOrcamento.tsx',

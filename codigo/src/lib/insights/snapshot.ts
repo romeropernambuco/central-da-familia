@@ -12,8 +12,8 @@ import type {
 } from '../../api/tipos'
 import type { FuturoEntrada, FuturoSaida } from '../futuro'
 import { reais, simularCompra } from '../formato'
-import { numerosRumo2029 } from '../../app/rumo2029'
-import { cartaoMeu } from '../../app/dono'
+import { numerosRumo2029 } from '../rumo2029'
+import { cartaoMeu } from '../dono'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { FaturaInsight, SnapshotInsights } from './tipos'
 

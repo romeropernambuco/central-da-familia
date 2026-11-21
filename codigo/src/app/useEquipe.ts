@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useApp } from '../../app/contexto'
-import type { Estoque, FuncionarioEsc, RecebimentoTela } from '../../api/tipos'
-import { dataCurta, hojeRecife, reais } from '../../lib/formato'
-import { SALAS_NOME } from './cenaBase'
-import { EQUIPE, POR_ID } from './equipe'
+import { useApp } from './contexto'
+import type { Estoque, FuncionarioEsc, RecebimentoTela } from '../api/tipos'
+import { dataCurta, hojeRecife, reais } from '../lib/formato'
+import { SALAS_NOME } from '../lib/escritorio/cenaBase'
+import { EQUIPE, POR_ID } from '../lib/escritorio/equipe'
 
 const mesAno = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
 const n = (v: number, um: string, mais: string) => (v === 1 ? `1 ${um}` : `${v} ${mais}`)

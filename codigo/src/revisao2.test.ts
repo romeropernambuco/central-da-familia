@@ -7,7 +7,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { lancarComChave, normalizaCupom, normalizaLancamento, normalizaResumo, type RpcCru } from './api/normaliza'
 import { AVISOS_CONVITE, TRADUZ, funcaoNaoExiste, traduzErro } from './api/erros'
 import { CONVITE_EXEMPLO, apiExemplo, exemploComoEquipe, reiniciarExemplo } from './api/exemplo'
-import { conviteDoHash, ehLinkEquipe, rotaDoHash, rotaPermitida } from './app/rotas'
+import { conviteDoHash, ehLinkEquipe, rotaDoHash, rotaPermitida } from './lib/rotas'
 import { criarChaveToque, criarGuardaConfig, novoUuid, resumoSemDinheiro } from './lib/seguro'
 import { canon, igual, mesclar3 } from './lib/mescla'
 import {

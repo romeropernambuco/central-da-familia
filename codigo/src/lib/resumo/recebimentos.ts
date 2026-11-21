@@ -1,5 +1,5 @@
 import type { ControleReceitas, FontesReceita, RecebimentoTela } from '../../api/tipos'
-import { mesesDaReceita } from '../../api/futuro'
+import { mesesDaReceita } from '../futuroReceitas'
 import { camposAusentes } from './contrato'
 export function mesesPendentes(r: RecebimentoTela, fontes: FontesReceita, controle: ControleReceitas) {
   return mesesDaReceita(r.mes_previsto, fontes[r.id]).filter(

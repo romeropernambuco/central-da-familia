@@ -1,6 +1,6 @@
 # Maquete do escritório
 
-`EscritorioMaquete` desenha os postos a partir de `dados.funcionarios`. O cadastro em `telas/escritorio/equipe.ts` fornece a roupa e a posição da mesa. Nome, sala e estado de hoje vêm do snapshot. As cores da sala seguem os tokens da proposta e o `color-scheme` do tema.
+`EscritorioMaquete` desenha os postos a partir de `dados.funcionarios`. O cadastro em `lib/escritorio/equipe.ts` fornece a roupa e a posição da mesa. Nome, sala e estado de hoje vêm do snapshot. As cores da sala seguem os tokens da proposta e o `color-scheme` do tema.
 
 ## Props
 

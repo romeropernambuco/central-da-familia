@@ -14,8 +14,8 @@ import {
   type Cena,
   type EstadoCena,
   type FuncCena,
-} from './cenaBase'
-import { nomeCurto } from './equipe'
+} from '../../lib/escritorio/cenaBase'
+import { nomeCurto } from '../../lib/escritorio/equipe'
 
 const ESTADO: Record<EstadoFuncionario, EstadoCena> = {
   vai_comecar: 'fila',

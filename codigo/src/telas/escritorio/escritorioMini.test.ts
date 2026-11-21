@@ -20,12 +20,12 @@ import {
   LIMITES_MINI,
 } from './escritorioMini'
 import { ATIVIDADES_MINI, PERFIL_IMOVEIS } from './atividadesMini'
-import type { SalaEquipe } from './equipe'
+import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import inventario from './inventarioModelos.json'
 import { montarCena } from './cena3d'
-import { EQUIPE } from './equipe'
+import { EQUIPE } from '../../lib/escritorio/equipe'
 import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from './elencoPorAba'
-import { rotaPermitida, type Rota } from '../../app/rotas'
+import { rotaPermitida, type Rota } from '../../lib/rotas'
 // @ts-ignore: script JS do build.
 import { gravarSw, versaoDosModelos } from '../../../scripts/sw.mjs'
 

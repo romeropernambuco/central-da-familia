@@ -2,7 +2,7 @@
 // O movimento dos bonecos. Cada quadro calcula uma pose-alvo (ângulo de cada junta) e o boneco vai até ela aos poucos:
 // é isso que deixa o levantar, o andar e o acenar suaves, sem animação gravada.
 import { ATIVIDADES_MINI } from '../atividadesMini'
-import type { EstadoAgente, EstadoCena } from '../cenaBase'
+import type { EstadoAgente, EstadoCena } from '../../../lib/escritorio/cenaBase'
 import { ESCALA_FUNCIONARIO_MINI } from '../escritorioMini'
 import { HIP_PE, HIP_SENTADO } from './boneco'
 import { estadoLegado, luzTela } from './estados'

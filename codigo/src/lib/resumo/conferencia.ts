@@ -1,6 +1,14 @@
 import { hojeRecife } from '../formato'
-import type { NumerosAtualizados } from '../../app/useNumerosAtualizados'
 import type { conferenciasDoPlano } from './plano2029'
+
+/** A data em que cada número foi conferido pela última vez, por grupo. */
+export type GrupoNumero = 'aplicacoes' | 'imoveis' | 'recebimentos' | 'saldo_caixa'
+export interface NumerosAtualizados {
+  aplicacoes: Record<string, string>
+  imoveis: Record<string, string>
+  recebimentos: Record<string, string>
+  saldo_caixa?: string
+}
 
 export const dataConferenciaValida = (v: unknown): v is string => {
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}(T|$)/.test(v) || !Number.isFinite(Date.parse(v))) return false

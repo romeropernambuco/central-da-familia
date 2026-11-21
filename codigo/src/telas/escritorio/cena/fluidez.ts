@@ -1,4 +1,4 @@
-import { MedidorFPS } from '../cenaBase'
+import { MedidorFPS } from '../../../lib/escritorio/cenaBase'
 
 /**
  * Vigia a fluidez: mede as imagens por segundo uma vez por segundo e, se ficar abaixo de 24 por quatro medidas

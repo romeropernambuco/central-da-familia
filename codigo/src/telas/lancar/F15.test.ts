@@ -1,4 +1,4 @@
-import { desfazer } from '../../app/desfazer'
+import { desfazer } from '../../api/desfazer'
 import { BarraDesfazer } from '../../componentes/BarraDesfazer'
 import { Fragment } from 'react'
 import { act, createElement, type ReactElement } from 'react'

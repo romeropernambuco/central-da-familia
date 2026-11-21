@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
   pendentes: [] as (() => void)[],
   app: {} as any,
 }))
-vi.mock('../../app/contexto', () => ({ useApp: () => h.app }))
+vi.mock('./contexto', () => ({ useApp: () => h.app }))
 vi.mock('react', () => ({
   useState: (inicial: unknown) => {
     const i = h.indice++
@@ -32,7 +32,7 @@ vi.mock('react', () => ({
   useMemo: (fn: () => unknown) => fn(),
 }))
 import { useEquipeCompleta } from './useEquipe'
-import { hojeRecife } from '../../lib/formato'
+import { hojeRecife } from '../lib/formato'
 const pendente = <T>() => {
   let resolver!: (v: T) => void, rejeitar!: (e: Error) => void
   const promise = new Promise<T>((r, j) => {

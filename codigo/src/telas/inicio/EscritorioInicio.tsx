@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
 import { Hand } from 'lucide-react'
-import { ir } from '../../app/rotas'
+import { ir } from '../../lib/rotas'
 import { useApp } from '../../app/contexto'
-import { useInvalidacao } from '../../app/invalidacao'
+import { useInvalidacao } from '../../app/useInvalidacao'
 import { useEscritorio } from '../../app/useDados2'
-import { useModoFuncionario } from '../../componentes/AgenteDaAba'
+import { useModoFuncionario } from '../escritorio/AgenteDaAba'
 import { Icone } from '../../componentes/Icone'
 import { FuncIco, PerguntaCard } from '../../componentes/Pergunta'
 import { Sheet } from '../../componentes/base'
@@ -14,12 +14,12 @@ import { EscritorioDesenho } from '../../componentes/escritorio/EscritorioDesenh
 import { destinoDoPosto, resumoDaEquipe } from '../../componentes/escritorio/modeloPosto'
 import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
 import { prioridades } from '../../componentes/painel-inicio/modelo'
-import { useEquipeCompleta } from '../escritorio/useEquipe'
+import { useEquipeCompleta } from '../../app/useEquipe'
 import '../escritorio/escritorioIsometrico.css'
 // @ts-ignore a cena é a mesma da aba Escritório
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from '../escritorio/Cena3D.tsx'
 import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
-import type { SalaEquipe } from '../escritorio/equipe'
+import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import type { PerguntaEsc } from '../../api/tipos'
 
 const nivel = (p: PerguntaEsc, hoje: string) =>

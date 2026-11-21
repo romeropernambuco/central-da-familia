@@ -23,12 +23,12 @@ import type {
 import { hojeRecife } from '../lib/formato'
 import { motivoSemRender } from '../lib/guardado'
 import { registrarContrato } from '../lib/resumo/contrato'
-import { APELIDO_BANCO } from '../telas/escritorio/equipe'
+import { APELIDO_BANCO } from '../lib/escritorio/equipe'
 
 const num = (v: unknown) => Number(v) || 0
 const txt = (v: unknown) => (v == null ? '' : String(v))
 /** O banco chama os funcionários por nomes compridos; as telas usam os curtos. */
-// C2 (14/11): a lista vem da fonte única da equipe (telas/escritorio/equipe.ts)
+// C2 (14/11): a lista vem da fonte única da equipe (lib/escritorio/equipe.ts)
 const APELIDO: Record<string, string> = APELIDO_BANCO
 const NOME_NO_BANCO: Record<string, string> = Object.fromEntries(Object.entries(APELIDO).map(([a, b]) => [b, a]))
 export const idFunc = (v: unknown) => APELIDO[txt(v)] || txt(v)

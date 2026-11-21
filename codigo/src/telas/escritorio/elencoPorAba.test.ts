@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { elencoDaAba, PRINCIPAL_POR_ABA, SALA_POR_ABA } from './elencoPorAba'
-import { POR_ID } from './equipe'
+import { POR_ID } from '../../lib/escritorio/equipe'
 
 const papeis = ['casal', 'pessoa', 'equipe'] as const
 for (const rota of Object.keys(SALA_POR_ABA))

@@ -53,7 +53,7 @@ export const ATIVIDADES_MINI: Record<string, AtividadeMini> = {
 }
 
 /** Metadados para a frente do cadastro; não consulta nem representa dados reais. */
-export { PERFIL_IMOVEIS } from './equipe'
+export { PERFIL_IMOVEIS } from '../../lib/escritorio/equipe'
 
 export const LIMITE_MESHES_MINI = 150
 /** Hash estável: mini de um único funcionário não perde a defasagem da equipe. */

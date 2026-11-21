@@ -6,7 +6,7 @@ import { candidatosInsights } from './motor'
 import { montarSnapshot } from './snapshot'
 import { apresentarInsight } from './apresentacao'
 import { futuro, type FuturoEntrada } from '../futuro'
-import { numerosRumo2029 } from '../../app/rumo2029'
+import { numerosRumo2029 } from '../rumo2029'
 import { reais } from '../formato'
 import type { FamiliaMinha, PerguntaEsc } from '../../api/tipos'
 

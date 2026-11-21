@@ -1,25 +1,25 @@
 import { act, createElement, Fragment, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { expect, it, vi } from 'vitest'
-import { ContextoApp, type Ctx } from '../app/contexto'
-import { lojaEscritorio } from '../app/escritorioCompartilhado'
-import type { Rota } from '../app/rotas'
-import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
-import { CASOS_LIGACAO, contextoLigacao } from '../lib/insights/ligacao.dom-teste'
-import { chaveArmazenamento, lerMemoria } from '../lib/insights/memoria'
+import { ContextoApp, type Ctx } from '../../app/contexto'
+import { lojaEscritorio } from '../../app/escritorioCompartilhado'
+import type { Rota } from '../../lib/rotas'
+import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
+import { CASOS_LIGACAO, contextoLigacao } from '../../lib/insights/ligacao.dom-teste'
+import { chaveArmazenamento, lerMemoria } from '../../lib/insights/memoria'
 import { AgenteDaAba, MiniAgente, ControleFuncionarios, migrarModoFuncionario } from './AgenteDaAba'
-import { elencoDaAba, SALA_POR_ABA, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
-import { rotaPermitida } from '../app/rotas'
-import { Sheet } from './base'
-import { FichaFuncionario } from '../telas/escritorio/Ficha'
-import { useEscritorio } from '../app/useDados2'
-import * as composicao from '../telas/escritorio/elencoPorAba'
-import { FALA_ANALISTA } from '../lib/insights/donos'
-import { RumoHero } from './RumoA2029'
+import { elencoDaAba, SALA_POR_ABA, PRINCIPAL_POR_ABA } from './elencoPorAba'
+import { rotaPermitida } from '../../lib/rotas'
+import { Sheet } from '../../componentes/base'
+import { FichaFuncionario } from './Ficha'
+import { useEscritorio } from '../../app/useDados2'
+import * as composicao from './elencoPorAba'
+import { FALA_ANALISTA } from '../../lib/insights/donos'
+import { RumoHero } from '../../componentes/RumoA2029'
 
 const cena = vi.hoisted(() => ({ montar: vi.fn(), definir: vi.fn(), destruir: vi.fn() }))
-vi.mock('../telas/escritorio/tres', () => ({}))
-vi.mock('../telas/escritorio/cena3d', () => ({ montarCena: cena.montar }))
+vi.mock('./tres', () => ({}))
+vi.mock('./cena3d', () => ({ montarCena: cena.montar }))
 
 function ambiente(webgl = false) {
   const doc = new DocumentoTeste(),

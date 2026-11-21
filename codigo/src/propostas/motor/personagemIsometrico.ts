@@ -1,4 +1,4 @@
-import type { MembroEquipe } from '../../telas/escritorio/equipe'
+import type { MembroEquipe } from '../../lib/escritorio/equipe'
 import type * as Tres from '../../telas/escritorio/tres'
 
 export type PecaIsometrica = (pai: any, cor: number, dimensoes: number[], posicao: number[]) => any

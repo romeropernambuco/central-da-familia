@@ -1,12 +1,12 @@
-// C2 (14/11): lista única da equipe. O app (telas/escritorio/equipe.ts) e a página publicada (paineis/escritorio3d) têm
+// C2 (14/11): lista única da equipe. O app (lib/escritorio/equipe.ts) e a página publicada (paineis/escritorio3d) têm
 // os mesmos funcionários; quem não tem dado no banco aparece com "ainda sem dado" e nenhum número.
 import { describe, expect, it } from 'vitest'
 // @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node (a pasta de trabalho é codigo/)
 import { readFileSync } from 'node:fs'
 // @ts-ignore: idem
 import { createHash } from 'node:crypto'
-import { EQUIPE, POR_ID } from './telas/escritorio/equipe'
-import { completarEquipe } from './telas/escritorio/useEquipe'
+import { EQUIPE, POR_ID } from './lib/escritorio/equipe'
+import { completarEquipe } from './app/useEquipe'
 import { FAZ } from './telas/escritorio/Ficha'
 import type { FuncionarioEsc } from './api/tipos'
 

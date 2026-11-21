@@ -10,14 +10,14 @@ import { ContextoApp, type Ctx } from '../app/contexto'
 import { apiExemplo } from '../api/exemplo'
 import { Cadastro, FichaFuncionario } from '../telas/escritorio/Ficha'
 import { Guardado } from '../telas/guardado/Guardado'
-import { Imoveis } from '../telas/guardado/Imoveis'
-import { AgenteDaAba, AGENTE_POR_ABA } from './AgenteDaAba'
+import { Imoveis } from './Imoveis'
+import { AgenteDaAba, AGENTE_POR_ABA } from '../telas/escritorio/AgenteDaAba'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { useEscritorio } from '../app/useDados2'
 import { PerguntaCard } from './Pergunta'
 import { hojeRecife, esconderValores, reais } from '../lib/formato'
 import type { Api, ImovelTela } from '../api/tipos'
-import type { Rota } from '../app/rotas'
+import type { Rota } from '../lib/rotas'
 
 afterEach(() => {
   vi.unstubAllGlobals()

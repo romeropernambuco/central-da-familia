@@ -1,5 +1,5 @@
-import type { NomeIcone } from '../componentes/Icone'
-import { podeVerNoMenu, rotaPermitida, type Rota } from './rotas'
+import type { NomeIcone } from './Icone'
+import { podeVerNoMenu, rotaPermitida, type Rota } from '../lib/rotas'
 
 type Grupo = 'Dia a dia' | 'Patrimônio' | 'Equipe' | 'Conta'
 interface Aba {

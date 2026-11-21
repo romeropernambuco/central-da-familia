@@ -1,6 +1,5 @@
-import { useSyncExternalStore } from 'react'
 import type { Api, FamiliaMinha } from '../api/tipos'
-import { recursosResumo } from '../lib/resumo/recursos'
+import { recursosResumo } from './resumo/recursos'
 
 export interface EscopoLeitura {
   sessao: string
@@ -185,16 +184,17 @@ export function invalidarDados(api: Api, familia: string, recursos?: readonly st
   else for (const r of l.recursos.keys()) l.recursos.set(r, (l.recursos.get(r) || 0) + 1)
   l.ouvintes.forEach(f => f())
 }
-export function useInvalidacao(api: Api, familia: string, recurso?: string) {
+/** Para quem quer ser avisado quando um recurso (ou a família inteira) fica velho: assina e lê a versão. */
+export function observarInvalidacao(api: Api, familia: string, recurso?: string) {
   const l = loja(api, familia)
   if (recurso && !l.recursos.has(recurso)) l.recursos.set(recurso, 0)
-  const snapshot = () => (recurso ? l.recursos.get(recurso) || 0 : l.versao)
-  return useSyncExternalStore(
-    f => {
+  return {
+    assinar: (f: () => void) => {
       l.ouvintes.add(f)
-      return () => l.ouvintes.delete(f)
+      return () => {
+        l.ouvintes.delete(f)
+      }
     },
-    snapshot,
-    snapshot,
-  )
+    versao: () => (recurso ? l.recursos.get(recurso) || 0 : l.versao),
+  }
 }

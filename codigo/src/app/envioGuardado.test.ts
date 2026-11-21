@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { ErroRede, ErroSessao } from '../api/erros'
-import { envioContinuaGuardado, EnvioInterrompido, FICOU_ESPERANDO, FilaPendentes } from './pendentes'
-import { definirDonoDosPendentes, recusadosGuardados } from './pendentesGuardados'
+import { envioContinuaGuardado, EnvioInterrompido, FICOU_ESPERANDO, FilaPendentes } from '../api/pendentes'
+import { definirDonoDosPendentes, recusadosGuardados } from '../api/pendentesGuardados'
 import { avisarQuandoOEnvioTerminar, reenviarRecusado } from './envioGuardado'
 
 const guardado = new Map<string, string>()

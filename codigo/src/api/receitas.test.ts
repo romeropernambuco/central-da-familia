@@ -6,7 +6,7 @@ import {
   mesesDaReceita,
   prepararReceitas,
   type FuturoBanco,
-} from './futuro'
+} from '../lib/futuroReceitas'
 import { calcularCenariosReceitas } from '../app/useCenarioReceitas'
 import type { FonteReceita } from './tipos'
 import { futuro } from '../lib/futuro'

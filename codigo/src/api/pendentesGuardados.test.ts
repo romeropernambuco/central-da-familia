@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { pendentes } from './pendentes'
 import { desfazer } from './desfazer'
-import { ErroRede } from '../api/erros'
-import { apiExemplo, reiniciarExemplo } from '../api/exemplo'
-import { protegerApi } from '../api/protegida'
+import { ErroRede } from './erros'
+import { apiExemplo, reiniciarExemplo } from './exemplo'
+import { protegerApi } from './protegida'
 import { guardarPendente, pendentesGuardados, recusadosGuardados, tirarPendente } from './pendentesGuardados'
 
 const guardado = new Map<string, string>()

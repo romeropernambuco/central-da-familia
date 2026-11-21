@@ -6,8 +6,8 @@ import {
   type EstadosIsometricos,
   type OpcoesIsometricas,
 } from './cenaIsometrica'
-import { EQUIPE } from '../../telas/escritorio/equipe'
-import { SALAS_ISOMETRICAS } from '../../telas/escritorio/plantaIsometrica'
+import { EQUIPE } from '../../lib/escritorio/equipe'
+import { SALAS_ISOMETRICAS } from '../../lib/escritorio/plantaIsometrica'
 
 class Elemento extends EventTarget {
   dataset: Record<string, string> = {}

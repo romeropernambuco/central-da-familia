@@ -9,7 +9,7 @@ import { carregarDadosInicio } from '../../componentes/escritorio/dadosDeExemplo
 import { Escritorio3D, type PropsEscritorio3D } from './Escritorio3D'
 import type { PropsEscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
 import { distribuirEtiquetas } from './escritorio3d-etiquetas'
-import { POR_ID } from '../../telas/escritorio/equipe'
+import { POR_ID } from '../../lib/escritorio/equipe'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 
 const cena = vi.hoisted(() => ({

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { mesReceitaValido } from '../api/futuro'
-import { rotaDoHash, rotaPermitida, type Rota } from './rotas'
+import { mesReceitaValido } from '../lib/futuroReceitas'
+import { rotaDoHash, rotaPermitida, type Rota } from '../lib/rotas'
 export interface DestinoResumo {
   rota: Rota
   secao: string

@@ -1,5 +1,5 @@
-import { PLANTA, SALAS_ISOMETRICAS } from '../../telas/escritorio/plantaIsometrica'
-import type { SalaEquipe } from '../../telas/escritorio/equipe'
+import { PLANTA, SALAS_ISOMETRICAS } from '../../lib/escritorio/plantaIsometrica'
+import type { SalaEquipe } from '../../lib/escritorio/equipe'
 
 type Caixa = (cor: number, dimensoes: number[], posicao: number[]) => { rotation: { y: number; z: number } }
 const PAREDE = 0xf1eadf,

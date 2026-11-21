@@ -1,4 +1,4 @@
-import { validarEstado } from './validarEstado'
+import { validarEstado } from '../lib/validarEstado'
 import pacote from '../../package.json'
 import type { Api } from '../api/tipos'
 export const FORMATO = 1

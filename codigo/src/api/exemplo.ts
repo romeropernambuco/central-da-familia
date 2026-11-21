@@ -1,7 +1,7 @@
 // Banco de exemplo em memória: Família Silva. Imita as funções do CONTRATO.md
 // pra o app rodar sem rede (só nos builds de exemplo e demo: npm run build:exemplo). Nada sai do aparelho.
-import { pendentes } from '../app/pendentes'
-import { validarEstado } from '../app/validarEstado'
+import { pendentes } from './pendentes'
+import { validarEstado } from '../lib/validarEstado'
 import type {
   DesejoTela,
   ImovelTela,
@@ -24,7 +24,7 @@ import type {
 } from './tipos'
 import { validarNome, podeEditarNome } from '../lib/nomePessoa'
 import * as ex2 from './exemplo2'
-import { entradaDoBanco, imovelInvalido, type FuturoBanco } from './futuro'
+import { entradaDoBanco, imovelInvalido, type FuturoBanco } from '../lib/futuroReceitas'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
 import { novoUuid } from '../lib/seguro'
 import {

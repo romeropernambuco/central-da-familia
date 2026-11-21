@@ -4,7 +4,7 @@ import '@fontsource-variable/inter'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
 import { Acolhimento } from '../componentes/Acolhimento'
-import { AgenteDaAba, AjudaDaAba } from '../componentes/AgenteDaAba'
+import { AgenteDaAba, AjudaDaAba } from '../telas/escritorio/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef } from 'react'
 import { FlaskConical } from 'lucide-react'
 import { useApp } from './contexto'
@@ -32,12 +32,12 @@ const Privacidade = lazy(() => import('../telas/privacidade/Privacidade').then(m
 const Ajustes = lazy(() => import('../telas/ajustes/Ajustes').then(m => ({ default: m.Ajustes })))
 const Desejos = lazy(() => import('../telas/desejos/Desejos').then(m => ({ default: m.Desejos })))
 import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
-import { rotaDoHash, rotaPermitida, type Rota } from './rotas'
+import { rotaDoHash, rotaPermitida, type Rota } from '../lib/rotas'
 import { ehAtalho, lerAtalho } from '../lib/atalho'
-export type { Rota } from './rotas'
+export type { Rota } from '../lib/rotas'
 
 import { Carregando } from '../componentes/Carregando'
-import { GRUPOS, menuDoPapel } from './menu'
+import { GRUPOS, menuDoPapel } from '../componentes/menu'
 
 const TITULO: Record<string, [string, string]> = {
   lancamentos: ['gastos e entradas que vocês anotaram', 'Gastos e entradas'],
@@ -54,8 +54,8 @@ const TITULO: Record<string, [string, string]> = {
 }
 
 const hashClassico = (hash: string) => /^#\/?inicio-classico(?:\?|$)/.test(hash)
-import { ir } from './rotas'
-export { ir } from './rotas'
+import { ir } from '../lib/rotas'
+export { ir } from '../lib/rotas'
 
 export function App() {
   const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto } = useApp()

@@ -5,7 +5,7 @@ import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { projecao } from './lib/plano'
 import { esconderValores, mascararTexto, reais, todoDia } from './lib/formato'
 import { numeroEnvelope, fraseEstouro } from './componentes/EnvelopeCard'
-import { podeVerNoMenu, rotaPermitida } from './app/rotas'
+import { podeVerNoMenu, rotaPermitida } from './lib/rotas'
 
 const F = 'fam-silva'
 const em = (dia: string, hora = 10) => {

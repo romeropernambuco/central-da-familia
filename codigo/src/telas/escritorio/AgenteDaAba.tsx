@@ -1,27 +1,27 @@
-import './agente-cartao.css'
-import { Icone, desenhoFuncionario } from './Icone'
-import { nomeInformado } from '../lib/nomePessoa'
-import { Conferencia } from './Conferencia'
+import '../../componentes/agente-cartao.css'
+import { Icone, desenhoFuncionario } from '../../componentes/Icone'
+import { nomeInformado } from '../../lib/nomePessoa'
+import { Conferencia } from '../../componentes/Conferencia'
 import { ChevronDown } from 'lucide-react'
-import { nomesPrivados, textoDeAgente } from '../lib/textoAgente'
+import { nomesPrivados, textoDeAgente } from '../../lib/textoAgente'
 import { lazy, Suspense, memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { useApp } from '../app/contexto'
-import { useEscritorio } from '../app/useDados2'
-import { useInsightsDaAba } from '../app/useInsightsDaAba'
-import { lojaEscritorio } from '../app/escritorioCompartilhado'
-import type { Rota } from '../app/rotas'
-import { rotaPermitida } from '../app/rotas'
-import { composicaoMini, elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from '../telas/escritorio/elencoPorAba'
-import { APELIDO_BANCO, EQUIPE, type SalaEquipe } from '../telas/escritorio/equipe'
-import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../telas/escritorio/cenaBase'
-import { donoDaPergunta } from '../telas/escritorio/donoDaPergunta'
-import { PerguntaCard, respostasConfirmadas } from './Pergunta'
-import { textoPrivado } from './privacidade'
-import { Sheet } from './base'
-import { Carregando } from './Carregando'
-import { reduzirFoto } from '../lib/foto'
-const Cadastro = lazy(() => import('../telas/escritorio/Ficha').then(m => ({ default: m.Cadastro })))
-const NumerosAba = lazy(() => import('../telas/escritorio/NumerosAba').then(m => ({ default: m.NumerosAba })))
+import { useApp } from '../../app/contexto'
+import { useEscritorio } from '../../app/useDados2'
+import { useInsightsDaAba } from '../../app/useInsightsDaAba'
+import { lojaEscritorio } from '../../app/escritorioCompartilhado'
+import type { Rota } from '../../lib/rotas'
+import { rotaPermitida } from '../../lib/rotas'
+import { composicaoMini, elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from './elencoPorAba'
+import { APELIDO_BANCO, EQUIPE, type SalaEquipe } from '../../lib/escritorio/equipe'
+import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../../lib/escritorio/cenaBase'
+import { donoDaPergunta } from './donoDaPergunta'
+import { PerguntaCard, respostasConfirmadas } from '../../componentes/Pergunta'
+import { textoPrivado } from '../../componentes/privacidade'
+import { Sheet } from '../../componentes/base'
+import { Carregando } from '../../componentes/Carregando'
+import { reduzirFoto } from '../../lib/foto'
+const Cadastro = lazy(() => import('./Ficha').then(m => ({ default: m.Cadastro })))
+const NumerosAba = lazy(() => import('./NumerosAba').then(m => ({ default: m.NumerosAba })))
 
 export const AGENTE_POR_ABA = PRINCIPAL_POR_ABA
 const CONVITE: Record<string, string> = {
@@ -609,7 +609,7 @@ export const MiniAgente = memo(function MiniAgente({
     setLista(false)
     liberarRenderer?.()
     const cancelar = tentarCarregarCena(
-      () => Promise.all([import('../telas/escritorio/tres'), import('../telas/escritorio/cena3d')]),
+      () => Promise.all([import('./tres'), import('./cena3d')]),
       ([T, modulo]) => {
         const opcoes = {
           mini: true,

@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react'
-import { futuro, type FuturoEntrada, type FuturoSaida } from '../lib/futuro'
-import { prepararReceitas, type EntradaPronta } from '../api/futuro'
+import { futuro, type FuturoSaida } from '../lib/futuro'
+import { entradaDoCenario, type EntradaPronta } from '../lib/futuroReceitas'
 import type { CenarioReceitas, ControleReceitas, FontesReceita } from '../api/tipos'
 
 export const CENARIOS_RECEITAS = { garantido: 'Garantido', previstos: 'Com previstos', tudo: 'Com tudo' } as const
@@ -15,16 +15,6 @@ function assinar(f: () => void) {
     ouvintes.delete(f)
     window.removeEventListener('storage', f)
   }
-}
-export function entradaDoCenario(
-  p: EntradaPronta,
-  c: CenarioReceitas,
-  fontes = p.fontesReceita ?? {},
-  controle = p.controleReceitas ?? {},
-): FuturoEntrada | null {
-  return p.entrada
-    ? { ...p.entrada, recebimentos: prepararReceitas(p.receitasBase ?? p.entrada.recebimentos, fontes, controle, c) }
-    : null
 }
 export function lerPreferenciaReceitas(): CenarioReceitas {
   try {

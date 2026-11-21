@@ -11,7 +11,7 @@ import { Casa } from './telas/casa/Casa'
 import { NumerosAba } from './telas/escritorio/NumerosAba'
 import { Escritorio } from './telas/escritorio/Escritorio'
 import { Privacidade } from './telas/privacidade/Privacidade'
-import { definirModoFuncionario } from './componentes/AgenteDaAba'
+import { definirModoFuncionario } from './telas/escritorio/AgenteDaAba'
 const h = vi.hoisted(() => ({ g: null as any, estado: 'ok', motivo: 'segredo', e: null as any, atualizar: vi.fn() }))
 vi.mock('./app/useDados2', () => ({
   useGuardado: () => ({ ...h, motivo: 'segredo' }),

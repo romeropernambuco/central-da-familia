@@ -1,6 +1,7 @@
 import { ErroSessao } from '../api/erros'
 import { useApp } from './contexto'
-import { useInvalidacao, lerCompartilhado, invalidarDados, geracaoLeitura, LeituraSubstituida } from './invalidacao'
+import { lerCompartilhado, invalidarDados, geracaoLeitura, LeituraSubstituida } from '../lib/invalidacao'
+import { useInvalidacao } from './useInvalidacao'
 import { useEffect, useState } from 'react'
 
 /** Estado pertence ao contexto que o carregou; falha conserva o último resultado desse contexto. */

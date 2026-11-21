@@ -1,5 +1,5 @@
 import type { Papel, PerguntaEsc } from '../../api/tipos'
-import type { Rota } from '../../app/rotas'
+import type { Rota } from '../rotas'
 
 /** Fronteira do motor: dinheiro SOMENTE em centavos inteiros seguros. Ausência não é zero. */
 export interface FaturaInsight {

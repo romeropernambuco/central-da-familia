@@ -1,5 +1,5 @@
 import { totalPendencias } from '../lib/resumo/pendencias'
-import { aoLimparLeituras, escopoLeitura, LeituraSubstituida } from './invalidacao'
+import { aoLimparLeituras, escopoLeitura, LeituraSubstituida } from '../lib/invalidacao'
 import type { Api } from '../api'
 import type { EscritorioHoje } from '../api/tipos'
 import type { Leitura } from './useDados2'

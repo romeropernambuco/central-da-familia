@@ -12,7 +12,7 @@ import { ResumoDoMes } from '../../telas/lancamentos/Lancamentos'
 import { NumerosAba } from '../../telas/escritorio/NumerosAba'
 import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-teste'
 import { protegerApi } from '../../api/protegida'
-import { definirEscopoLeitura } from '../../app/invalidacao'
+import { definirEscopoLeitura } from '../invalidacao'
 import { normalizaGuardado } from '../../api/normaliza2'
 import type { Api, FamiliaMinha, ResumoHoje } from '../../api/tipos'
 

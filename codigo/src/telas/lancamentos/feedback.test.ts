@@ -1,5 +1,5 @@
-import { salvamento } from '../../app/salvamento'
-import { desfazer } from '../../app/desfazer'
+import { salvamento } from '../../api/salvamento'
+import { desfazer } from '../../api/desfazer'
 import { BarraDesfazer } from '../../componentes/BarraDesfazer'
 import { Fragment } from 'react'
 import { act, createElement, type ReactElement } from 'react'

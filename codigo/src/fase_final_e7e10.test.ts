@@ -23,7 +23,7 @@ import { reajustarTeto, avaliarAntecipacao } from './lib/futuro'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { reais } from './lib/formato'
 const reaisDe = (c: number) => reais(c / 100)
-import { rotaDoHash, rotaPermitida } from './app/rotas'
+import { rotaDoHash, rotaPermitida } from './lib/rotas'
 
 const NB = /[\s ]/
 const limpa = (s: string | null) => (s || '').replace(/ /g, ' ')
@@ -787,7 +787,7 @@ describe('Revisão E12 (C2): desejo "feito" não conta 2 vezes', () => {
     expect(tres.folga).toBe(so.folga)
   })
   it('IR padrão da projeção é o do ECONOMISTA (22,5%), editável', async () => {
-    const { PARAMETROS_INICIAIS } = await import('./api/futuro')
+    const { PARAMETROS_INICIAIS } = await import('./lib/futuroReceitas')
     expect(PARAMETROS_INICIAIS.aliq_proj).toBe('0.225')
   })
 })
@@ -803,7 +803,7 @@ describe('Revisão E12: 2 impostos, até 2028 (aliq_proj) e depois de 2029 (aliq
     reiniciarExemplo()
     let p = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!.parametros
     expect([p.aliq_proj, p.aliq_renda]).toEqual(['0.225', '0.15'])
-    const { PARAMETROS_INICIAIS } = await import('./api/futuro')
+    const { PARAMETROS_INICIAIS } = await import('./lib/futuroReceitas')
     await apiExemplo.objetivoSalvar!('fam-silva', { ...PARAMETROS_INICIAIS, aliq_renda: '0.175' })
     p = (await apiExemplo.futuroEntradas!('fam-silva')).entrada!.parametros
     expect([p.aliq_proj, p.aliq_renda]).toEqual(['0.225', '0.175'])

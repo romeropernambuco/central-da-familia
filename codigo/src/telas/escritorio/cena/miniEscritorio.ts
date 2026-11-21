@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // O escritório de verdade do mini (o funcionário que aparece nas outras abas): sala, mesa e cadeira vêm de modelos
 // carregados depois. Enquanto não chegam, ou se a montagem falhar, fica a cena simples de caixas.
-import { POR_ID } from '../equipe'
+import { POR_ID } from '../../../lib/escritorio/equipe'
 import {
   caixaReal,
   type composicaoMini,

@@ -1,4 +1,4 @@
-import { useInvalidacao } from '../../app/invalidacao'
+import { useInvalidacao } from '../../app/useInvalidacao'
 import { ConferenciaFaturas } from '../../componentes/ConferenciasResumo'
 import { proximaFatura } from '../../lib/resumo/faturas'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
@@ -15,7 +15,7 @@ import { useApp } from '../../app/contexto'
 import { Din, Sheet } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
-import { cartaoMeu } from '../../app/dono'
+import { cartaoMeu } from '../../lib/dono'
 import type { Cartao, Fatura } from '../../api/tipos'
 import {
   agruparFaturas,

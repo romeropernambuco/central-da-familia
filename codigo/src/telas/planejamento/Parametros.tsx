@@ -11,7 +11,13 @@ import { useApp } from '../../app/contexto'
 import { CampoValor } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { PADROES_ECONOMISTA } from '../../lib/futuro'
-import { BANCO_GUARDA_ALIQ_RENDA, PARAMETROS_INICIAIS, VIRADA, taxaDoTexto, textoDaTaxa } from '../../api/futuro'
+import {
+  BANCO_GUARDA_ALIQ_RENDA,
+  PARAMETROS_INICIAIS,
+  VIRADA,
+  taxaDoTexto,
+  textoDaTaxa,
+} from '../../lib/futuroReceitas'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
 import { Linha2028, Renda2029 } from '../../componentes/Linha2028'

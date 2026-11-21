@@ -29,7 +29,7 @@ it.each([
   expect(achados).toEqual([])
 })
 it.each([
-  ['src/componentes/AgenteDaAba.tsx', ['Preciso de ajuda', 'Ver tarefas', 'Completo', 'Só texto', 'Desligado']],
+  ['src/telas/escritorio/AgenteDaAba.tsx', ['Preciso de ajuda', 'Ver tarefas', 'Completo', 'Só texto', 'Desligado']],
   ['src/lib/insights/motor.ts', ['Ver compras desta fatura']],
   ['src/telas/lancar/Lancar.tsx', ['Rascunho recuperado', 'Descartar']],
   ['src/api/exemplo2.ts', ['Não perguntar de novo sobre isso']],
@@ -43,7 +43,7 @@ it.each([
   'src/api/exemplo.ts',
   'src/api/exemplo2.ts',
   ...arquivos('src/lib/insights').filter(p => !/\.test\.|dom-teste/.test(p)),
-  'src/telas/escritorio/equipe.ts',
+  'src/lib/escritorio/equipe.ts',
 ])('guarda falas: até duas frases e sem pressão em %s', p => {
   const fonte = ts.createSourceFile(p, ler(p), ts.ScriptTarget.Latest, true)
   const violacoes: string[] = []

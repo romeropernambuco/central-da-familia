@@ -197,7 +197,7 @@ describe('CampoValor montado com contexto real', () => {
   )
 })
 import { Escritorio } from './Escritorio'
-import { EQUIPE } from './equipe'
+import { EQUIPE } from '../../lib/escritorio/equipe'
 import { apiExemplo } from '../../api/exemplo'
 
 // Inclui propriedades DOM (value) e todos os atributos, nao apenas textContent.

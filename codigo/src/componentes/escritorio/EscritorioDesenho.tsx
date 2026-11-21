@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { NavegacaoIsometrica } from '../../telas/escritorio/plantaIsometrica'
+import type { NavegacaoIsometrica } from '../../lib/escritorio/plantaIsometrica'
 import { EscritorioMaquete, type PropsEscritorioMaquete } from './EscritorioMaquete'
 import './escritorio3d.css'
 

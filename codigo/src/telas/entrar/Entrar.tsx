@@ -11,7 +11,7 @@ import { ArrowLeft, Mail, Users } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { Marca } from '../../componentes/Marca'
 import { codigo4Valido, codigo6Valido, emailValido } from '../../lib/formato'
-import { conviteDoHash, ehLinkEquipe } from '../../app/rotas'
+import { conviteDoHash, ehLinkEquipe } from '../../lib/rotas'
 import { CONVITE_EXEMPLO } from '../../api/conviteExemplo'
 
 type Passo = 'email' | 'codigo' | 'equipe'

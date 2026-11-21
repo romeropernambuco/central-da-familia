@@ -4,7 +4,7 @@
 import * as T from 'three'
 // @ts-ignore: Three sem tipos locais.
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import type { SalaEquipe } from './equipe'
+import type { SalaEquipe } from '../../lib/escritorio/equipe'
 
 // Composição pura compartilhada com a legenda, sem antecipar a carga de Three.
 import { VARIANTES, bytesDaSala } from './elencoPorAba'

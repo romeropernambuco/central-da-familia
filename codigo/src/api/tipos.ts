@@ -765,7 +765,7 @@ export interface Api {
   objetivo?(familia: string): Promise<Objetivo>
   objetivoSalvar?(familia: string, p: ParametrosObjetivo): Promise<void>
   /** Os DADOS pro motor de 2029 (produto.futuro_entradas, f_08), já no formato de lib/futuro. A tela só chama futuro(). */
-  futuroEntradas?(familia: string): Promise<import('./futuro').EntradaPronta>
+  futuroEntradas?(familia: string): Promise<import('../lib/futuroReceitas').EntradaPronta>
   /* E7 (F8, f_12): o reajuste do teto. 1 voto por adulto (só o próprio); aplicar só com todos no mesmo teto, a partir do
      mês de vigência, e só nos limites que a pessoa ajusta (nunca no do outro adulto). mes_vigencia 'AAAA-MM'. */
   reajusteSituacao?(familia: string, mes_vigencia: string): Promise<ReajusteSituacao>

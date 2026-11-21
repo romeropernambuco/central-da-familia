@@ -1,6 +1,6 @@
 import type { Api, FamiliaMinha } from '../../api/tipos'
-import { lerControleReceitas, lerFontesReceita } from '../../api/futuro'
-import { entradaDoCenario } from '../../app/useCenarioReceitas'
+import { lerControleReceitas, lerFontesReceita } from '../futuroReceitas'
+import { entradaDoCenario } from '../futuroReceitas'
 import { futuro } from '../futuro'
 import { FUSO, hojeRecife, segundaDaSemana, somaDias } from '../formato'
 import { destaqueOrcamento, disponivelHojeCasa, envelopesVisiveis, projecaoCasal } from './orcamento'
@@ -15,7 +15,7 @@ import { totalPendencias } from './pendencias'
 import { conferenciasDoPlano, numerosRumo2029 } from './plano2029'
 import { saldoDasContas } from './saldos'
 import { camposAusentes } from './contrato'
-import { lerCompartilhado } from '../../app/invalidacao'
+import { lerCompartilhado } from '../invalidacao'
 export function lerLancamentosMes(api: Api, id: string, mes: string) {
   return lerCompartilhado(api, id, 'lancamentos', ['inicio-mes', mes], () => api.lancamentos(id, mes))
 }

@@ -10,14 +10,14 @@ import {
   escopoLeitura,
   geracaoLeitura,
   LeituraSubstituida,
-} from '../app/invalidacao'
+} from '../lib/invalidacao'
 import { recursosDaMutacao, recursoDaLeitura } from './recursos'
 import { copiarLeitura } from '../lib/resumo/contrato'
-import { salvamento } from '../app/salvamento'
-import { envioContinuaGuardado, pendentes } from '../app/pendentes'
+import { salvamento } from './salvamento'
+import { envioContinuaGuardado, pendentes } from './pendentes'
 import type { Api } from './tipos'
 import { publicarPosMutacao } from './posMutacao'
-import { desfazer } from '../app/desfazer'
+import { desfazer } from './desfazer'
 import { igual } from '../lib/mescla'
 import { prepararInverso } from './inversos'
 import {
@@ -26,7 +26,7 @@ import {
   marcarRecusado,
   pendentesGuardados,
   tirarPendente,
-} from '../app/pendentesGuardados'
+} from './pendentesGuardados'
 const copia = <T>(v: T): T => structuredClone(v)
 export function protegerApi(api: Api): Api {
   let consultaSessao = 0

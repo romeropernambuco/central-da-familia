@@ -12,10 +12,10 @@
 // Não importa o Three.js: recebe as peças prontas (ver tres.ts), pra o 3D só carregar nesta tela.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Cena, OpcoesCena, EstadoAgente } from './cenaBase'
-import { POR_ID } from './equipe'
+import type { Cena, OpcoesCena, EstadoAgente } from '../../lib/escritorio/cenaBase'
+import { POR_ID } from '../../lib/escritorio/equipe'
 import { composicaoMini } from './escritorioMini'
-import type { SalaEquipe } from './equipe'
+import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import { criarCamera } from './cena/camera'
 import { estadoLegado, estadoMini } from './cena/estados'
 import { criarEtiquetas } from './cena/etiquetas'

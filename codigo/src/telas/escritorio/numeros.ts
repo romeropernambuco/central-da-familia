@@ -5,7 +5,7 @@ import { lerLancamentosMes, lerMes, lerTotaisRecebimentos } from '../../lib/resu
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { FUSO } from '../../lib/formato'
 import type { Api, FamiliaMinha } from '../../api/tipos'
-import type { Rota } from '../../app/rotas'
+import type { Rota } from '../../lib/rotas'
 import { hojeRecife } from '../../lib/formato'
 
 export type Indicador = { nome: string; texto: string; valor?: never } | { nome: string; valor: number; texto?: never }

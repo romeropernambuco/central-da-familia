@@ -1,5 +1,5 @@
 ﻿import { describe, expect, it } from 'vitest'
-import { entradaDoBanco, type FuturoBanco } from './api/futuro'
+import { entradaDoBanco, type FuturoBanco } from './lib/futuroReceitas'
 import { cabeDesejo, futuro, reajustarTeto, type Desejo } from './lib/futuro'
 
 // Valores inventados, em centavos. Sem juros, inflação ou outros movimentos.

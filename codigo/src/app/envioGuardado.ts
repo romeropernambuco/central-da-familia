@@ -1,7 +1,7 @@
 import type { NovoLancamento } from '../api/tipos'
 import { reais } from '../lib/formato'
-import { envioContinuaGuardado, FICOU_ESPERANDO, pendentes } from './pendentes'
-import { donoDosPendentes, marcarRecusado } from './pendentesGuardados'
+import { envioContinuaGuardado, FICOU_ESPERANDO, pendentes } from '../api/pendentes'
+import { donoDosPendentes, marcarRecusado } from '../api/pendentesGuardados'
 
 interface Avisos {
   toast: (mensagem: string) => void

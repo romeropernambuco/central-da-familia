@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as Three from './tres'
 import { montarCena } from './cena3d'
-import { MedidorFPS, type OpcoesCena } from './cenaBase'
-import { EQUIPE } from './equipe'
+import { MedidorFPS, type OpcoesCena } from '../../lib/escritorio/cenaBase'
+import { EQUIPE } from '../../lib/escritorio/equipe'
 import { ATIVIDADES_MINI, faseDoId, LIMITE_MESHES_MINI } from './atividadesMini'
 // @ts-ignore: o projeto não instala tipos do Three.
 import { Box3, Vector3, InstancedMesh } from 'three'

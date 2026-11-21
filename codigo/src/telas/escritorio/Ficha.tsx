@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Check, ChevronRight, Pencil, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
-import { cartaoMeu } from '../../app/dono'
+import { cartaoMeu } from '../../lib/dono'
 import { perguntaDaLinha, perguntasVistas } from '../../app/useDados2'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Contagem, FuncIco, PerguntaCard, type Responder } from '../../componentes/Pergunta'
@@ -50,7 +50,7 @@ import type { Folha } from './ajudantes'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
 import { NumerosAba } from './NumerosAba'
-import { EQUIPE } from './equipe'
+import { EQUIPE } from '../../lib/escritorio/equipe'
 
 /** O que cada funcionário faz e quando cobra: 3 linhas, sempre na 1ª pessoa. */
 // C2: o "O que eu faço e quando" de cada um vem da lista única (equipe.ts)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ErroRede, ErroSessao, sessaoVale, traduzErro } from './erros'
-import { rotaDoHash, rotaPermitida } from '../app/rotas'
+import { rotaDoHash, rotaPermitida } from '../lib/rotas'
 
 describe('erros do banco e da rede', () => {
   it('sem internet no Chrome, no Firefox e no Safari/iPhone vira ErroRede', () => {

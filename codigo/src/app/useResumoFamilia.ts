@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useApp } from './contexto'
-import { invalidarDados } from './invalidacao'
+import { invalidarDados } from '../lib/invalidacao'
 import { useLeituraRemota } from './useLeituraRemota'
 import { useNumerosAtualizados, type NumerosAtualizados } from './useNumerosAtualizados'
 import { FUSO, fimDoMes, somaDias } from '../lib/formato'

@@ -6,7 +6,7 @@ import { useApp } from '../app/contexto'
 import { FUSO, dataCurta, hojeRecife, mesLongo, reais, fimDoMes } from '../lib/formato'
 import { Din } from './base'
 import { Qm } from './Qm'
-import { donoDo, escreveNo } from '../app/dono'
+import { donoDo, escreveNo } from '../lib/dono'
 
 const REGRA = { diario: 'por dia', semanal: 'por semana', mensal: 'no mês' }
 

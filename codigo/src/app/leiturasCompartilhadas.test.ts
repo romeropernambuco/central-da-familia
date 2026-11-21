@@ -1,11 +1,17 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { definirEscopoLeitura, invalidarDados, lerCompartilhado, limparLeituras, metadadosLeitura } from './invalidacao'
+import {
+  definirEscopoLeitura,
+  invalidarDados,
+  lerCompartilhado,
+  limparLeituras,
+  metadadosLeitura,
+} from '../lib/invalidacao'
 import { protegerApi } from '../api/protegida'
 import { numerosDaAba } from '../telas/escritorio/numeros'
 import { recursosDaMutacao } from '../api/recursos'
 import type { Api, FamiliaMinha, GuardadoHoje } from '../api/tipos'
-import { desfazer } from './desfazer'
-import { pendentes } from './pendentes'
+import { desfazer } from '../api/desfazer'
+import { pendentes } from '../api/pendentes'
 const familia = { id: 'f', membroId: 'm', papel: 'casal' } as FamiliaMinha
 const adiado = <T>() => {
   let resolver!: (d: T) => void

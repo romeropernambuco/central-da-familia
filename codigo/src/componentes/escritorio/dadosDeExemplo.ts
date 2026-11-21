@@ -12,8 +12,8 @@ import { totalPendencias } from '../../lib/resumo/pendencias'
 import { porDiaDe } from '../../lib/resumo/porDia'
 import { recebimentosDoMes } from '../../lib/resumo/recebimentos'
 import type { CampoResumo, FonteResumo } from '../../lib/resumo/tipos'
-import { EQUIPE } from '../../telas/escritorio/equipe'
-import { completarEquipe } from '../../telas/escritorio/useEquipe'
+import { EQUIPE } from '../../lib/escritorio/equipe'
+import { completarEquipe } from '../../app/useEquipe'
 
 type Natureza = FonteResumo['natureza']
 type Unidade = 'reais' | 'centavos' | 'percentual' | 'quantidade' | 'data' | 'mes' | 'texto' | 'indicador'

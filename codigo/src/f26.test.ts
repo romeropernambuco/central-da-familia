@@ -1,9 +1,9 @@
 import { it, expect, vi, afterEach } from 'vitest'
 import { protegerApi } from './api/protegida'
 import { apiExemplo, reiniciarExemplo, exemploComo } from './api/exemplo'
-import { desfazer } from './app/desfazer'
-import { salvamento } from './app/salvamento'
-import { FilaPendentes } from './app/pendentes'
+import { desfazer } from './api/desfazer'
+import { salvamento } from './api/salvamento'
+import { FilaPendentes } from './api/pendentes'
 import { rascunhos } from './app/rascunhos'
 afterEach(() => {
   desfazer.limpar()

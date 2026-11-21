@@ -9,7 +9,7 @@ import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
 // E8: aba Desejos, a calculadora pra todos. "Quero R$ 50.000 pra viajar": cabe? de onde volta (contrato antecipado,
 // investimento, venda)? quanto tira de 2029? Os dados vão pra tabela desejos (f_06): o casal vê todos com o nome do dono,
 // a filha vê só os dela (sem 2029: só "dá pra comprar com o seu"), e só o dono mexe.
-// A tela NUNCA calcula 2029: só chama cabeDesejo() (e avaliarAntecipacao(), do mesmo motor) de lib/futuro com a entrada de api/futuro.ts.
+// A tela NUNCA calcula 2029: só chama cabeDesejo() (e avaliarAntecipacao(), do mesmo motor) de lib/futuro com a entrada de lib/futuroReceitas.ts.
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Sparkles } from 'lucide-react'
 import { useApp } from '../../app/contexto'

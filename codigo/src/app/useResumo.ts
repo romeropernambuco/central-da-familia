@@ -3,7 +3,8 @@ import type { Api } from '../api'
 import { ErroRede, ErroSessao } from '../api/erros'
 import type { ResumoHoje, Sessao } from '../api/tipos'
 import { limparFalhasDeLeitura } from './falhasDeLeitura'
-import { geracaoLeitura, invalidarDados, LeituraSubstituida, useInvalidacao } from './invalidacao'
+import { geracaoLeitura, invalidarDados, LeituraSubstituida } from '../lib/invalidacao'
+import { useInvalidacao } from './useInvalidacao'
 import { useRetomada } from './useRetomada'
 
 interface Ligacoes {
