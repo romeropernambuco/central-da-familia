@@ -3,17 +3,17 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, expect, it, vi } from 'vitest'
 import { build } from 'vite'
 import ts from 'typescript'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { tmpdir } from 'node:os'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { join } from 'node:path'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore Os testes usam Node, que fica fora dos tipos do app.
+// @ts-expect-error Os testes usam Node, que fica fora dos tipos do app.
 import { env } from 'node:process'
 import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'

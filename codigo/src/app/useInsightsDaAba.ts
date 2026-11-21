@@ -100,7 +100,7 @@ export function useInsightsDaAba(rota: Rota) {
   useEffect(() => {
     if (rota === 'inicio' && pode && familia && typeof api.escritorioHoje === 'function')
       void loja.ler(api, familia.id, versao)
-  }, [rota, pode, api, familia?.id, familia?.papel, versao, loja])
+  }, [rota, pode, api, versao, loja, familia])
   const primeiraPerguntaInicio =
     rota === 'inicio' && pode && familia
       ? primeiraPerguntaGeral(fila.dado?.precisa_de_voce || [], familia.papel, agora, oculto, loja.travas)

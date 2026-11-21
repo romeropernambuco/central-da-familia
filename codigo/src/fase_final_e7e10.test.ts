@@ -1,7 +1,7 @@
 // E7 a E10 (TELAS 2, 13/11). Todo número é de exemplo (casos do ECONOMISTA ou família de exemplo).
 // A tela nunca calcula 2029: estes testes conferem que as frases saem do que o motor devolve, com os números dos casos.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node
+// @ts-expect-error: o projeto não tem os tipos do Node; o Vitest roda em Node
 import { readFileSync } from 'node:fs'
 import { fraseImpacto, perdaPorMes } from './componentes/Impacto2029'
 import { frasesCorte, frasesLinha, frasesRenda, mesAno } from './componentes/Linha2028'
@@ -25,8 +25,8 @@ import { reais } from './lib/formato'
 const reaisDe = (c: number) => reais(c / 100)
 import { rotaDoHash, rotaPermitida } from './lib/rotas'
 
-const NB = /[\s ]/
-const limpa = (s: string | null) => (s || '').replace(/ /g, ' ')
+const NB = /[\s\u00a0]/
+const limpa = (s: string | null) => (s || '').replace(/\u00a0/g, ' ')
 /** Entrada do motor com os padrões dos casos do ECONOMISTA (Focus 06/11/2026). Exemplo. */
 function entrada(extra: Partial<FuturoEntrada> = {}, piso = 0): FuturoEntrada {
   return {

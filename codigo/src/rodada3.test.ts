@@ -1,7 +1,7 @@
 // Rodada 3 (CONTRATO2 seção C e CONTRATO3): contas do Guardado, formatações, Escritório que guarda as respostas,
 // falas no padrão das 4 partes e faxina de termos. O último teste escreve escritorio2/FALAS.md.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-// @ts-ignore: o projeto não traz os tipos do Node; o Vitest roda em Node
+// @ts-expect-error: o projeto não traz os tipos do Node; o Vitest roda em Node
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 const join = (...p: string[]) => p.join('/')
 const __dirname = 'src'

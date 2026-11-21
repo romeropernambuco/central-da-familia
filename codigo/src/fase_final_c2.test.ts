@@ -1,9 +1,9 @@
 // C2 (14/11): lista única da equipe. O app (lib/escritorio/equipe.ts) e a página publicada (paineis/escritorio3d) têm
 // os mesmos funcionários; quem não tem dado no banco aparece com "ainda sem dado" e nenhum número.
 import { describe, expect, it } from 'vitest'
-// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node (a pasta de trabalho é codigo/)
+// @ts-expect-error: o projeto não tem os tipos do Node; o Vitest roda em Node (a pasta de trabalho é codigo/)
 import { readFileSync } from 'node:fs'
-// @ts-ignore: idem
+// @ts-expect-error: idem
 import { createHash } from 'node:crypto'
 import { EQUIPE, POR_ID } from './lib/escritorio/equipe'
 import { completarEquipe } from './app/useEquipe'

@@ -13,10 +13,9 @@ import { PerguntaCard } from '../../componentes/Pergunta'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { Carregando } from '../../componentes/Carregando'
 import { fraseDoDia } from '../../lib/guardado'
-// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
+// @ts-expect-error: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
 import { dadosIsometricos, type DadosIsometricos } from './dadosIsometricos'
-import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import { SALAS_NOME } from '../../lib/escritorio/cenaBase'
 import { SALAS_ISOMETRICAS } from '../../lib/escritorio/plantaIsometrica'
 import { useEquipeCompleta } from '../../app/useEquipe'

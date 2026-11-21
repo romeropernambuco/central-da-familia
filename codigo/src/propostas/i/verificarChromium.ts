@@ -1,16 +1,16 @@
 import { rollup } from 'rollup'
 import ts from 'typescript'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { tmpdir } from 'node:os'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { join, resolve } from 'node:path'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore Os tipos de Node ficam fora do app.
+// @ts-expect-error Os tipos de Node ficam fora do app.
 import { env } from 'node:process'
 import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import type { Dispositivo, Tema } from '../Propostas'

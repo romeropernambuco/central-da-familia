@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { build, type Plugin } from 'vite'
 import configurar from '../../vite.config'
-// @ts-ignore: os testes rodam em Node, sem @types/node no TypeScript do app.
+// @ts-expect-error: os testes rodam em Node, sem @types/node no TypeScript do app.
 import { realpathSync } from 'node:fs'
 
 it('exclui o laboratório do grafo do build real e da entrada direta em produção', async () => {

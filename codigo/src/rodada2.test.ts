@@ -102,7 +102,7 @@ describe('A2: a filha (papel pessoa) só vê o dela', () => {
         expect(txt).not.toMatch(/Ana|Bruno|Nubank|Itaú|anuidade|feira|seguro|reserva|Carla|guardado/i)
         expect(esc.precisa_de_voce.every(p => p.funcionario === 'contador')).toBe(true)
         expect(esc.funcionarios.map(f => f.id)).toEqual(['contador'])
-        const vals = [...txt.matchAll(/R\$[\s ]*([\d.]+)/g)].map(m => Number(m[1].replace(/\./g, '')))
+        const vals = [...txt.matchAll(/R\$[\s\u00a0]*([\d.]+)/g)].map(m => Number(m[1].replace(/\./g, '')))
         expect(vals.every(v => v <= 300)).toBe(true)
       }
   })

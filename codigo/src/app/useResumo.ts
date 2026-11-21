@@ -65,7 +65,7 @@ export function useResumo(api: Api, sessao: Sessao | null, { pedido, finalizarSe
       setFalhaResumo({ origem: chaveResumo, motivo })
       setErro(motivo)
     }
-  }, [api, chaveResumo, equipe, finalizarSessao, guardarResumo, pedido, setErro])
+  }, [api, chaveResumo, equipe, familia, finalizarSessao, guardarResumo, pedido, setErro])
   const recarregar = useCallback(async () => {
     if (!familia) return
     // as leituras vão rodar de novo: o que falhar agora volta para a faixa; o que der certo some dela
@@ -73,7 +73,7 @@ export function useResumo(api: Api, sessao: Sessao | null, { pedido, finalizarSe
     invalidarDados(api, familia.id)
     setVersao(v => v + 1)
     await lerResumo()
-  }, [api, chaveResumo, lerResumo])
+  }, [api, familia, lerResumo])
 
   useEffect(() => {
     void lerResumo()

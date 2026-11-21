@@ -2,17 +2,17 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import ts from 'typescript'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { tmpdir } from 'node:os'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { join } from 'node:path'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore Os testes usam Node, sem tipos de Node no tsconfig do app.
+// @ts-expect-error Os testes usam Node, sem tipos de Node no tsconfig do app.
 import { env } from 'node:process'
 import { carregarDadosInicio, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'

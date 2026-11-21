@@ -9,7 +9,6 @@ import { DocumentoTeste, NoTeste } from './telas/escritorio/numeros.dom-teste'
 import { ContextoApp, type Ctx } from './app/contexto'
 import { apiExemplo } from './api/exemplo'
 import type { Api } from './api/tipos'
-import { Casa } from './telas/casa/Casa'
 const roots: Root[] = []
 afterEach(async () => {
   await act(async () => desfazer.limpar())

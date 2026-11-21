@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-// @ts-ignore Node disponível no executor de testes.
+// @ts-expect-error Node disponível no executor de testes.
 import { readFileSync } from 'node:fs'
 import { Ilustracao, ilustracoes } from './index'
 import { EstadoVazio } from '../EstadoVazio'

@@ -3,7 +3,6 @@
  * Geometrias/materiais pertencem à montagem, nunca a um cache global entre contextos.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-ignore: Three r160 é distribuído sem tipos neste projeto.
 import { InstancedMesh, Matrix4 } from 'three'
 
 export interface AtividadeMini {

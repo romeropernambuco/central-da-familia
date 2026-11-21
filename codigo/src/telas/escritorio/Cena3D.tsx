@@ -29,7 +29,7 @@ export const ROTULO_ESTADO: Record<EstadoFuncionario, string> = {
   entregue: 'entregue',
   precisa_de_voce: 'precisa de você',
 }
-export function IcoEstado({ e, size = 14 }: { e: EstadoFuncionario; size?: number }) {
+export function IcoEstado({ e }: { e: EstadoFuncionario; size?: number }) {
   return e === 'precisa_de_voce' ? (
     <Icone desenho={Hand} />
   ) : e === 'entregue' ? (

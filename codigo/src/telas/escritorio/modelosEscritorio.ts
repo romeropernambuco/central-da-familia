@@ -1,6 +1,5 @@
 /** Este módulo só é importado pelo chunk tardio da cena. Nada usa rede externa. */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-ignore: Three r160 sem declarações de tipos no projeto.
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 type Entrada = { usuarios: number; controller: AbortController; promessa: Promise<any>; modelo?: any }

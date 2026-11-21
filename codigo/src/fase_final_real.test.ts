@@ -1,7 +1,7 @@
 // Revisão E4 a E6 (D1 e D2): a consulta que o real.ts MONTA pro Supabase, lida por um cliente de mentira que anota
 // cada chamada (tabela, filtros, ordem, paginação). Nenhuma rede; nenhum dado real.
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node
+// @ts-expect-error: o projeto não tem os tipos do Node; o Vitest roda em Node
 import { readFileSync } from 'node:fs'
 
 type Chamada = { tabela: string; passos: [string, unknown[]][] }

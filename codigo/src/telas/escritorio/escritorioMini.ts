@@ -1,8 +1,6 @@
 /** Cenografia em unidades do boneco; o kit é medido DEPOIS das transformações glTF. */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-ignore: Three sem tipos locais.
 import * as T from 'three'
-// @ts-ignore: Three sem tipos locais.
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { SalaEquipe } from '../../lib/escritorio/equipe'
 
@@ -378,7 +376,6 @@ export function montarEscritorioMini(
       // GLTFLoader divide os primitives em meshes; a paleta vira cores de vértice.
       const materiais = Array.isArray(m.material) ? m.material : [m.material]
       if (materiais.length !== 1) throw Error('primitive inesperado')
-      const material = materiais[0]
       const monitor = m.parent?.name.startsWith('computerScreen') || m.name.startsWith('computerScreen')
       const k = tipoMaterial(m, monitor)
       partes[k].push(colorida(m, m.matrixWorld))

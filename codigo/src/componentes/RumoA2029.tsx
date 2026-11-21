@@ -60,7 +60,7 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
         familia!.id,
         entrada.aplicacoes.map(a => a.id),
       )
-  }, [api, familia?.id, entrada])
+  }, [api, entrada, familia])
   useEffect(() => {
     if (
       !compacto &&

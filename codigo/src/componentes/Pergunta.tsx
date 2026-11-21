@@ -79,7 +79,7 @@ export function Contagem({
         .estoque(familia.id)
         .then(x => setItens(x.itens.filter(i => i.ativo)))
         .catch((x: Error) => setErro(x.message))
-  }, [api, familia?.id])
+  }, [api, familia])
   if (erro)
     return (
       <div role="alert">

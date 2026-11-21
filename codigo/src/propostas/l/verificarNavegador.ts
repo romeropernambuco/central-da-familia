@@ -1,16 +1,16 @@
 import { rollup } from 'rollup'
 import ts from 'typescript'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { spawn } from 'node:child_process'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { tmpdir } from 'node:os'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { dirname, join, resolve } from 'node:path'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore APIs do Node usadas apenas no teste de navegador.
+// @ts-expect-error APIs do Node usadas apenas no teste de navegador.
 import { env } from 'node:process'
 import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 

@@ -12,7 +12,7 @@ import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { futuro, type LinhaMes } from './lib/futuro'
 import type { NovoImovel } from './api/tipos'
 
-const limpa = (s: string | null) => (s || '').replace(/ /g, ' ')
+const limpa = (s: string | null) => (s || '').replace(/\u00a0/g, ' ')
 
 describe('Gráfico A: o gasto do mês acumulado', () => {
   it('parcela e compra grande (fora do porDia) entram no dia 1 e a ponta de hoje bate com o gasto do mês', () => {

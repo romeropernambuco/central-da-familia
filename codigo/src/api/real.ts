@@ -162,7 +162,7 @@ export const apiReal: Api = {
       return { userId: u.id, email: null, familias, dono: false }
     }
     // Painel dos 4 números: só aparece se a função deixar (dono do produto)
-    let dono = false
+    let dono: boolean
     try {
       await rpc('numeros_semana')
       dono = true

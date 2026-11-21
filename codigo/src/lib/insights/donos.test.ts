@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-// @ts-ignore: Node é o executor do Vitest; o app não depende destes tipos.
+// @ts-expect-error: Node é o executor do Vitest; o app não depende destes tipos.
 import { readFileSync } from 'node:fs'
 import { DONOS_INSIGHTS, donoDoInsight, primeiraPerguntaGeral, FALA_ANALISTA } from './donos'
 import { candidatosInsights } from './motor'

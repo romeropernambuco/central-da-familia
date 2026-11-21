@@ -246,7 +246,7 @@ export function Lancar() {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, equipe, hoje])
+  }, [api, equipe, hoje, familia])
   const valor = textoParaValor(txt)
   // E2: lança só no seu, na Casa e no sem dono; o limite do outro é só pra ler
   const envs = (resumo?.envelopes || []).filter(e => (!equipe || e.casa) && escreveNo(e, familia))
@@ -750,7 +750,7 @@ export function Lancar() {
 
 /** R11+G12: dinheiro que entrou a mais vai pro guardado (E3, conserto 4: "reserva" é só o dinheiro da Casa que nunca se gasta). Não muda o que dá pra gastar (regra do salário). */
 function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: React.ReactNode; confirmar: () => void }) {
-  const { api, familia, sessao } = useSessaoAtual()
+  const { api, familia } = useSessaoAtual()
   const { fecharLancar, toast, recarregar, tentar } = useAcoes()
   const { g } = useGuardado()
   const { familia: fam } = useSessaoAtual()

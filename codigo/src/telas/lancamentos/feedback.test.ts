@@ -133,11 +133,10 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
   return { box, render, click, change, submit, find, ctx }
 }
 
-import { Lancamentos, ResumoDoMes, FaixaDoMes, totaisDoMes, FechamentoRegistrado } from './Lancamentos'
+import { Lancamentos, ResumoDoMes, FaixaDoMes, FechamentoRegistrado } from './Lancamentos'
 import { Entrar, AvisoConvite } from '../entrar/Entrar'
 import { MetaDoDesejo, ProgressoMeta, MeuOrcamento } from '../meu-orcamento/MeuOrcamento'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { frasesDesejo } from '../desejos/Desejos'
 
 it('resumo real separa recebido, pendente certo, incerto e virada de ano', async () => {
   vi.useFakeTimers({ toFake: ['Date'] })

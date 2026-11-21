@@ -1,13 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-// @ts-ignore: APIs de teste do Node.
+// @ts-expect-error: APIs de teste do Node.
 import { readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-// @ts-ignore: APIs de teste do Node.
+// @ts-expect-error: APIs de teste do Node.
 import { resolve } from 'node:path'
-// @ts-ignore: API de teste do Node.
+// @ts-expect-error: API de teste do Node.
 import { tmpdir } from 'node:os'
-// @ts-ignore: Three sem tipos locais.
 import * as T from 'three'
-// @ts-ignore: Three sem tipos locais.
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { criarCacheModelos, modelosEscritorio } from './modelosEscritorio'
 import {
@@ -26,7 +24,7 @@ import { montarCena } from './cena3d'
 import { EQUIPE } from '../../lib/escritorio/equipe'
 import { elencoDaAba, funcionarioAutorizado, PRINCIPAL_POR_ABA } from './elencoPorAba'
 import { rotaPermitida, type Rota } from '../../lib/rotas'
-// @ts-ignore: script JS do build.
+// @ts-expect-error: script JS do build.
 import { gravarSw, versaoDosModelos } from '../../../scripts/sw.mjs'
 
 const pasta = resolve('public/modelos/escritorio')
@@ -481,7 +479,7 @@ describe('identidades das salas — regressões da frente salas', () => {
     [303, 128],
     [152, 112],
     [80, 64],
-  ])('as 21 duplas diferem em pelo menos 4% da silhueta a %s×%s', async (w, h) => {
+  ])('as 21 duplas diferem em pelo menos 4% da silhueta a %s×%s', async (w, _h) => {
     // Liga as proporções novas ao contêiner real, mantendo o oráculo anterior.
     if (w !== 303) {
       const css = readFileSync(resolve('src/componentes/agente-cartao.css'), 'utf8')

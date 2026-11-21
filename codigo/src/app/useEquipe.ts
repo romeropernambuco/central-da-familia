@@ -55,7 +55,7 @@ export function useEquipeCompleta(
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, versao, invalidacao, n, consultarExtras])
+  }, [api, versao, invalidacao, n, consultarExtras, familia])
   const dados =
     resultado?.familia === familia?.id && resultado?.versao === versao && resultado?.invalidacao === invalidacao
       ? resultado.dados

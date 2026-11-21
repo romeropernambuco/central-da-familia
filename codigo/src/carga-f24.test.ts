@@ -1,7 +1,6 @@
 import { it, expect, vi } from 'vitest'
-// @ts-ignore Node usado somente no teste
+// @ts-expect-error Node usado somente no teste
 import { readFileSync } from 'node:fs'
-// @ts-ignore Three sem tipos locais
 import * as T from 'three'
 import { criarCacheModelos } from './telas/escritorio/modelosEscritorio'
 it('conserva bytes locais entre visitas e descarta texturas no último usuário', async () => {

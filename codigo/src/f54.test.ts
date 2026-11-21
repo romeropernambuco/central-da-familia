@@ -1,7 +1,7 @@
 import { act, createElement, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-// @ts-ignore Node é fornecido pelo Vitest.
+// @ts-expect-error Node é fornecido pelo Vitest.
 import { readFileSync } from 'node:fs'
 import { App } from './app/App'
 import { ContextoApp, type Ctx } from './app/contexto'

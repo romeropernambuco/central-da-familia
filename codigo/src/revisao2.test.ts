@@ -1,8 +1,8 @@
 // Rodada 2 da revisão: 1 teste (ou mais) para cada item ligado nesta rodada.
 import { beforeEach, describe, expect, it } from 'vitest'
-// @ts-ignore: o projeto não tem os tipos do Node; o Vitest roda em Node
+// @ts-expect-error: o projeto não tem os tipos do Node; o Vitest roda em Node
 import { execSync } from 'node:child_process'
-// @ts-ignore
+// @ts-expect-error: o projeto não tem os tipos do Node; o Vitest roda em Node
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { lancarComChave, normalizaCupom, normalizaLancamento, normalizaResumo, type RpcCru } from './api/normaliza'
 import { AVISOS_CONVITE, TRADUZ, funcaoNaoExiste, traduzErro } from './api/erros'

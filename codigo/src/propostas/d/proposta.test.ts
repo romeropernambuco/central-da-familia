@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-// @ts-ignore: a suíte roda em Node e o tsconfig do app exclui os tipos globais de Node.
+// @ts-expect-error: a suíte roda em Node e o tsconfig do app exclui os tipos globais de Node.
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'

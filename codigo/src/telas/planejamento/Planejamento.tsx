@@ -125,7 +125,7 @@ export function Planejamento() {
       .entrouAMais?.(familia.id, hojeRecife().slice(0, 7))
       .then(setExtra)
       .catch(falhaDeLeitura('o que entrou a mais no mês'))
-  }, [api, familia?.id, versao])
+  }, [api, familia, versao])
 
   if (!resumo || !familia)
     return (

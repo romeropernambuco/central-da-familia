@@ -89,6 +89,6 @@ npm run verificar
 Ele roda, nesta ordem: tipos (`typecheck`), regras de casa (`lint`), formatação (`format:check`) e testes (`test`).
 
 - `npm run format` arruma a formatação sozinho.
-- O `lint` aceita no máximo 516 avisos, que é a dívida conhecida em 21/11/2026. O número só pode cair: quando
+- O `lint` aceita no máximo 354 avisos, que é a dívida conhecida em 21/11/2026. O número só pode cair: quando
   resolver avisos, baixe o limite em `package.json`. Não suba o limite para fazer uma mudança passar.
 - O CSS ainda não é formatado automaticamente, porque vários testes leem o CSS como texto.

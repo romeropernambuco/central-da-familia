@@ -38,7 +38,7 @@ function faixa(dia: string, e: Envelope, extra: { placar?: ReturnType<typeof pro
   )
   return html
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;| /g, ' ')
+    .replace(/&nbsp;|\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
 }
 

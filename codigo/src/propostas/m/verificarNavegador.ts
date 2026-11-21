@@ -1,16 +1,16 @@
 import { build } from 'vite'
 import react from '@vitejs/plugin-react'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { tmpdir } from 'node:os'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { join } from 'node:path'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { env } from 'node:process'
-// @ts-ignore Dependência do ambiente de teste, fora dos tipos do navegador.
+// @ts-expect-error Dependência do ambiente de teste, fora dos tipos do navegador.
 import { pathToFileURL } from 'node:url'
 import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 

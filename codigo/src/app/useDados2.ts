@@ -20,7 +20,6 @@ const semFuncao = (m: string) => /ainda não tem essa função/i.test(m)
 
 function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, recurso: string) {
   const { api, familia } = useSessaoAtual()
-  const { tentar } = useAcoes()
   const { versao } = useDadosDoDia()
   const r = useLeituraRemota(recurso, familia && buscar ? () => buscar(familia.id) : null, [api, versao], recurso)
   return {
@@ -64,13 +63,13 @@ export function useEscritorio() {
   const r = useSyncExternalStore(loja.assinar, loja.snapshot)
   useEffect(() => {
     if (familia) void loja.ler(api, familia.id, versao + invalidacao)
-  }, [loja, api, familia?.id, versao, invalidacao])
+  }, [loja, api, versao, invalidacao, familia])
   const atualizar = useCallback(() => {
     if (familia) {
       invalidarDados(api, familia.id, ['escritorio'])
       void loja.ler(api, familia.id)
     }
-  }, [loja, api, familia?.id])
+  }, [familia, api, loja])
   const responder = useCallback(
     async (pergunta: string, opcao: string, dados?: Record<string, unknown>) => {
       if (!familia || loja.travas.has(pergunta)) return false
@@ -109,7 +108,7 @@ export function useEscritorio() {
       }
       return volta || true
     },
-    [api, familia?.id, tentar, recarregar, toast, loja],
+    [familia, loja, tentar, toast, api, recarregar],
   )
   const equipe = familia?.papel === 'equipe'
   const dado =

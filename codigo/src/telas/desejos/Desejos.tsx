@@ -601,9 +601,7 @@ export function Desejos() {
           ) : (
             <ul className="list">
               {lista.map(d => {
-                const m = desejoDoMotor(d, d.id, d.dono_membro)
                 const r = daLista.get(d.id) ?? null
-                const dono = d.meu ? 'seu' : `de ${d.dono_nome || ''}`
                 const volta =
                   d.volta_de === 'nada'
                     ? ''

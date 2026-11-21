@@ -16,7 +16,6 @@ import { chaveSimples } from '../../api/normaliza2'
 import { dataCurta, diaSemana, FUSO, hojeRecife, somaDias } from '../../lib/formato'
 import { demoraTexto } from '../../lib/guardado'
 import { EscritorioIsometrico } from './EscritorioIsometrico'
-// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { abaDoHash } from '../../lib/escritorio/cenaBase'
 import { DESTINO_SECRETARIA } from '../../lib/escritorio/equipe'
 import { umaPorVez } from '../../lib/seguro'
@@ -119,7 +118,7 @@ function RelatorioPeriodo({ dias }: { dias: number }) {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, versao, dias, n])
+  }, [api, versao, dias, n, familia])
   const nome = (id: string) =>
     e?.funcionarios.find(f => f.id === id || chaveSimples(f.nome) === chaveSimples(id))?.nome || id
   const idDe = (id: string) =>
@@ -316,7 +315,7 @@ function Lembretes() {
   const { api, familia } = useSessaoAtual()
   const { tentar, recarregar, toast } = useAcoes()
   const { versao } = useDadosDoDia()
-  const { oculto } = useOlhoApp()
+  useOlhoApp() // assina o olho: o relatório é redesenhado ao fechar ou abrir
   const mostrar = textoPrivado
   const [lista, setLista] = useState<Lembrete[] | null>(null)
   const [erro, setErro] = useState('')
@@ -343,7 +342,7 @@ function Lembretes() {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, versao])
+  }, [api, familia, versao])
   if (familia?.papel !== 'casal')
     return (
       <div className="card">

@@ -1,6 +1,6 @@
-// @ts-ignore Node é fornecido pelo executor externo do Vitest.
+// @ts-expect-error Node é fornecido pelo executor externo do Vitest.
 import { existsSync, readFileSync } from 'node:fs'
-// @ts-ignore Node é fornecido pelo executor externo do Vitest.
+// @ts-expect-error Node é fornecido pelo executor externo do Vitest.
 import { dirname, extname, resolve } from 'node:path'
 import { expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'

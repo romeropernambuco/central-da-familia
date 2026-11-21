@@ -50,7 +50,8 @@ export function useSessao(api: Api, { setToast, pedido, aoEncerrar }: Ligacoes) 
       const geracao = geracaoLeitura(api)
       definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null)
       if (geracao !== geracaoLeitura(api)) pedido.current++
-      setSessao(s)
+      // sessão igual à que já estava: guarda o mesmo objeto, para ninguém buscar tudo de novo à toa
+      setSessao(antes => (antes && s && JSON.stringify(antes) === JSON.stringify(s) ? antes : s))
       setErro(null)
     } catch (e) {
       if (meu !== consultaSessao.current || e instanceof LeituraSubstituida) return

@@ -34,7 +34,7 @@ interface Loja {
   ouvintes: Set<() => void>
   fila: Promise<unknown>
 }
-let lojas = new WeakMap<Api, Map<string, Loja>>()
+const lojas = new WeakMap<Api, Map<string, Loja>>()
 function loja(api: Api, fid: string) {
   let familias = lojas.get(api)
   if (!familias) {

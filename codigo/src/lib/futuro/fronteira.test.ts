@@ -1,5 +1,5 @@
 // Pedidos do REVISOR 2 (fase_final/revisao/E4_E10.md, item 2, B3 e observação do cabeDesejo). Todo número é exemplo.
-// @ts-ignore Node usado somente no teste
+// @ts-expect-error Node usado somente no teste
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import * as motor from './index'

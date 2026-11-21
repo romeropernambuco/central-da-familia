@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
-// @ts-ignore Leitura de código fonte apenas no processo de teste.
+// @ts-expect-error Leitura de código fonte apenas no processo de teste.
 import { readFileSync } from 'node:fs'
 import type { Dispositivo, Tema } from '../Propostas'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'

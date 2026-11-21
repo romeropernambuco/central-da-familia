@@ -172,7 +172,7 @@ function Feira() {
   useEffect(() => {
     if (familia && familia.papel === 'casal')
       api.avisosCasa(familia.id).then(setAvisos).catch(falhaDeLeitura('os avisos da casa'))
-  }, [api, familia?.id, versao])
+  }, [api, familia, versao])
   const veioEquipe = avisos.filter(a => a.tipo === 'casa_presenca' && a.data === hoje).map(a => a.nome)
   const veio = [...new Set([...(pres[hoje] || []), ...veioEquipe])]
   const equipe = familia?.papel === 'equipe'
@@ -719,7 +719,7 @@ function Gas() {
         .avisosCasa(familia.id)
         .then(a => setDaEquipe(a.filter(x => x.tipo === 'casa_gas').map(x => x.data)))
         .catch(falhaDeLeitura('os avisos de gás'))
-  }, [api, familia?.id, versao])
+  }, [api, familia, versao])
   // trocas anotadas pelo casal (config) + trocas avisadas pela equipe (eventos)
   const gas = { trocas: [...new Set([...gasCfg.trocas, ...daEquipe])].sort() }
   const p = previsaoGas(gas.trocas)
@@ -968,7 +968,7 @@ function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: Pessoa
  *  Lê e marca pelo banco (casa_da_equipe e casa_marcar), na mesma lista que o casal usa. */
 function CasaEquipe() {
   const { api, familia } = useSessaoAtual()
-  const { toast, abrirLancar, recarregar } = useAcoes()
+  const { toast, recarregar } = useAcoes()
   const { versao } = useDadosDoDia()
   const [marca, setMarca] = useState<{ familia: string; casa: CasaDaEquipe } | null>(null)
   const {

@@ -33,7 +33,7 @@ export function numeroEnvelope(
   e: Envelope,
   diasRestantes: number,
   hoje: string,
-  fuso: string,
+  _fuso: string,
 ): {
   valor: number
   rotulo: string

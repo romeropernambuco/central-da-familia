@@ -23,7 +23,6 @@ import { porDiaDe } from '../../lib/resumo/porDia'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../lib/dono'
 import { cofrinhoDoMes } from '../../lib/plano'
-import type { Lancamento } from '../../api/tipos'
 import {
   centavos,
   diasNoMes,

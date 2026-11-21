@@ -1,16 +1,16 @@
 import { createElement, type ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-// @ts-ignore: os testes rodam em Node e o tsconfig do app exclui seus tipos.
+// @ts-expect-error: os testes rodam em Node e o tsconfig do app exclui seus tipos.
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore: idem.
+// @ts-expect-error: idem.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore: idem.
+// @ts-expect-error: idem.
 import { tmpdir } from 'node:os'
-// @ts-ignore: idem.
+// @ts-expect-error: idem.
 import { dirname, join } from 'node:path'
-// @ts-ignore: idem.
+// @ts-expect-error: idem.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore: idem.
+// @ts-expect-error: idem.
 import { env } from 'node:process'
 import ts from 'typescript'
 import { beforeAll, expect, it, vi } from 'vitest'

@@ -117,7 +117,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   useEffect(() => {
     if (!familia || familia.papel !== 'casal') return
     api.objetivo?.(familia.id).then(setObj).catch(falhaDeLeitura('o objetivo de 2029'))
-  }, [api, familia?.id])
+  }, [api, familia])
   useEffect(() => {
     if (!familia || familia.papel !== 'casal' || !api.reajusteSituacao) return
     let vivo = true

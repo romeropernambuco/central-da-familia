@@ -648,7 +648,7 @@ function contaEnvelope(e: EnvBase, hoje: string): Envelope {
   const seg0 = segundaDaSemana(hoje)
   base.pontual_mes = centavos(parcelas + pontuais.reduce((t, l) => t + l.valor, 0))
   base.pontual_semana = centavos(pontuais.filter(l => l.data >= seg0).reduce((t, l) => t + l.valor, 0))
-  let hojeV = 0
+  let hojeV: number
   if (e.regra === 'diario') {
     // mês passado que passou do combinado sai deste (como _diario)
     const ant = mesAnterior(mes)

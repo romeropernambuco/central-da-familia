@@ -413,7 +413,9 @@ describe('regra do olho em cada tela real', () => {
       const api = Object.fromEntries(
         Object.entries(apiExemplo).map(([k, v]) => [
           k,
-          typeof v === 'function' ? async (...args: unknown[]) => semear(await (v as Function)(...args)) : v,
+          typeof v === 'function'
+            ? async (...args: unknown[]) => semear(await (v as (...a: unknown[]) => unknown)(...args))
+            : v,
         ]),
       ) as unknown as Api
       api.saldosConta = async () => [{ id: 'conta-privada', nome: segredo, valor: dinheiro, conferidoEm: '2026-11-14' }]

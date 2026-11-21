@@ -132,7 +132,7 @@ it.each(['<b>Teste</b>', '!!!', '\u200b'])('17 rejeita nome inválido %s', n => 
   expect(() => validarNome(n)).toThrow()
 })
 
-// @ts-ignore node só no teste
+// @ts-expect-error node só no teste
 import { readFileSync } from 'node:fs'
 it('20 módulo inicial tem recuperação independente do bundle', () => {
   const html = readFileSync('index.html', 'utf8')
@@ -147,7 +147,7 @@ it('21 navegador cobre módulo inicial e rota lazy', () => {
   expect(teste).toContain('rota lazy')
 })
 
-// @ts-ignore script de build
+// @ts-expect-error script de build
 import { arquivosEssenciais } from '../scripts/sw.mjs'
 it('19 precache exclui rotas lazy e inclui imports estáticos', () => {
   const files = ['index.html', 'assets/main.js', 'assets/base.js', 'assets/Lancar.js', 'assets/main.css', 'icone.png']

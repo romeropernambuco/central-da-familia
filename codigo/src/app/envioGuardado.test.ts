@@ -21,7 +21,7 @@ afterEach(() => {
 const gasto = { familia: 'f', envelope: 'e', valor: 23, data: '2026-11-16', descricao: 'Fictício', chave: 'c1' }
 const app = () => ({ toast: vi.fn(), recarregar: vi.fn(async () => {}) })
 const texto = (a: ReturnType<typeof app>) =>
-  String(a.toast.mock.calls[a.toast.mock.calls.length - 1]?.[0]).replace(/ /g, ' ')
+  String(a.toast.mock.calls[a.toast.mock.calls.length - 1]?.[0]).replace(/\u00a0/g, ' ')
 
 it('fila: sem internet o envio fica esperando e a tela é liberada; com internet, a espera não dispara', async () => {
   const fila = new FilaPendentes()

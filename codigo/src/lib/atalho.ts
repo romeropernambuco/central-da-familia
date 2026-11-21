@@ -34,7 +34,7 @@ function pegar(q: string, chave: 'valor' | 'loja' | 'cartao'): string | undefine
 
 /** "R$ 1.234,56", "1234,56", "1,234.56", "12.34", "12" viram número. null se não for um valor com até 2 casas. */
 export function lerValor(t: string): number | null {
-  let s = t.replace(/R\$|\s| /g, '')
+  const s = t.replace(/R\$|\s|\u00a0/g, '')
   if (!s || !/^\d[\d.,]*$/.test(s)) return null
   const v = s.lastIndexOf(','),
     p = s.lastIndexOf('.')

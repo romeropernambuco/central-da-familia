@@ -206,7 +206,7 @@ export function protegerApi(api: Api): Api {
             r =
               prop === 'lancar'
                 ? await pendentes.enviar(familia.chave, () => api.lancar(familia))
-                : await (f as Function).apply(api, args)
+                : await (f as (...a: unknown[]) => unknown).apply(api, args)
             if (guardado) tirarPendente(familia.chave)
           } catch (e) {
             if (guardado && !envioContinuaGuardado(e)) tirarPendente(familia.chave)

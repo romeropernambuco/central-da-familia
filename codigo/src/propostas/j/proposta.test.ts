@@ -4,17 +4,17 @@ import { beforeAll, expect, it, vi } from 'vitest'
 import ts from 'typescript'
 import { build } from 'vite'
 import react from '@vitejs/plugin-react'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { tmpdir } from 'node:os'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { basename, join } from 'node:path'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { pathToFileURL } from 'node:url'
-// @ts-ignore APIs do Node usadas só pelos testes.
+// @ts-expect-error APIs do Node usadas só pelos testes.
 import { env } from 'node:process'
 import {
   carregarDadosInicio,

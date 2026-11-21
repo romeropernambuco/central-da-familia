@@ -156,7 +156,7 @@ const indicadores = [
 
 function Maquete({ dados, casal }: Pick<PropsProposta, 'dados'> & { casal: boolean }) {
   const [sala, setSala] = useState<Sala>()
-  const oculto = useValoresOcultos()
+  useValoresOcultos() // assina o olho: a prévia é redesenhada ao fechar ou abrir
   const cenaId = useId()
   const campos = {
     hoje: dados.hojePodeGastar.valor,

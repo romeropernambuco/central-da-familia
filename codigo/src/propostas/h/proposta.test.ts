@@ -5,7 +5,7 @@ import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 import type { DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import type { Dispositivo, Tema } from '../Propostas'
 import { Proposta } from './Proposta'
-// @ts-ignore Node disponível no executor de testes.
+// @ts-expect-error Node disponível no executor de testes.
 import { readFileSync } from 'node:fs'
 
 const css = readFileSync('src/propostas/h/instrumentos.css', 'utf8') as string

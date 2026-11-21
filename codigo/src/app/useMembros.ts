@@ -63,7 +63,7 @@ export function useMembros() {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, pode, versao, n])
+  }, [api, pode, versao, n, familia])
   return Object.assign(
     (id?: string | null) =>
       id === familia?.membroId
@@ -95,6 +95,6 @@ export function useAdultos(): number | null {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, pode])
+  }, [api, familia, pode])
   return n
 }

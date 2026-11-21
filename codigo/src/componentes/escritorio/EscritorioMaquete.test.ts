@@ -1,4 +1,4 @@
-// @ts-ignore: teste executado no Node, fora dos tipos de navegador do app.
+// @ts-expect-error: teste executado no Node, fora dos tipos de navegador do app.
 import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'

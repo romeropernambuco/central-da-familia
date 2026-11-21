@@ -4,9 +4,9 @@ import { mascararTexto, PONTOS } from '../lib/olho'
 // qualquer "R$ 1.234,56" em texto, aria-label ou title vira "R$ •••" enquanto o olho estiver fechado, e volta ao abrir.
 
 const ATRS = ['aria-label', 'title', 'placeholder']
-const TEM_VALOR = /R\$[\s ]*[\d.]+/
+const TEM_VALOR = /R\$[\s\u00a0]*[\d.]+/
 // número solto logo depois de um texto que termina em "R$" (JSX "R$ {valor}" vira 2 pedaços de texto)
-const SO_NUMERO = /^[\s ]*\d(?:[\d.]*\d)?(,\d{1,2})?/
+const SO_NUMERO = /^[\s\u00a0]*\d(?:[\d.]*\d)?(,\d{1,2})?/
 
 const textos = new WeakMap<Text, string>()
 const atributos = new WeakMap<Element, Record<string, string>>()
@@ -17,7 +17,7 @@ function mascararNo(t: Text) {
   if (TEM_VALOR.test(v)) novo = mascararTexto(v)
   else {
     const ant = t.previousSibling
-    if (ant && ant.nodeType === 3 && /R\$[\s ]*$/.test(ant.nodeValue || '') && SO_NUMERO.test(v))
+    if (ant && ant.nodeType === 3 && /R\$[\s\u00a0]*$/.test(ant.nodeValue || '') && SO_NUMERO.test(v))
       novo = v.replace(SO_NUMERO, PONTOS)
   }
   if (novo !== v) {
@@ -44,7 +44,10 @@ function varrer(raiz: Node) {
   if (raiz.nodeType !== 1) return
   mascararEl(raiz as Element)
   const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
-  for (let n = w.nextNode(); n; n = w.nextNode()) n.nodeType === 3 ? mascararNo(n as Text) : mascararEl(n as Element)
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (n.nodeType === 3) mascararNo(n as Text)
+    else mascararEl(n as Element)
+  }
 }
 function restaurar(raiz: Node) {
   const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)

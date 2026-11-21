@@ -71,7 +71,7 @@ export function Cartoes() {
     return () => {
       vivo = false
     }
-  }, [api, chave, versao, n, invalidacao])
+  }, [api, chave, versao, n, invalidacao, familia])
   const hoje = hojeRecife()
   const casal = familia?.papel === 'casal'
   // "E se eu comprar?" é com o seu cartão: o do outro só aparece pra ler

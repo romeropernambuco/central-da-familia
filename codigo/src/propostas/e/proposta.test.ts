@@ -7,17 +7,17 @@ import { carregarDadosInicio, type DadosInicio } from '../../componentes/escrito
 import type { Dispositivo, Tema } from '../Propostas'
 import { Proposta } from './Proposta'
 import ts from 'typescript'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { spawnSync } from 'node:child_process'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { tmpdir } from 'node:os'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { join } from 'node:path'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { env } from 'node:process'
-// @ts-ignore Importação Node usada apenas nos testes.
+// @ts-expect-error Importação Node usada apenas nos testes.
 import { pathToFileURL } from 'node:url'
 
 let exemplo: DadosInicio

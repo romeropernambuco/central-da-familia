@@ -6,7 +6,7 @@ import { reiniciarExemplo } from '../../api/exemplo'
 import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 import { carregarDadosInicio, type Campo, type DadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { Proposta } from './Proposta'
-// @ts-ignore Node é usado apenas nos testes, sem @types/node no app.
+// @ts-expect-error Node é usado apenas nos testes, sem @types/node no app.
 import { readFileSync } from 'node:fs'
 
 const css: string = readFileSync(new URL('./painel-calmo.css', import.meta.url), 'utf8').trimStart()

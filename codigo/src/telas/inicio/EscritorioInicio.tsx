@@ -17,7 +17,7 @@ import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
 import { prioridades } from '../../componentes/painel-inicio/modelo'
 import { useEquipeCompleta } from '../../app/useEquipe'
 import '../escritorio/escritorioIsometrico.css'
-// @ts-ignore a cena é a mesma da aba Escritório
+// @ts-expect-error a cena é a mesma da aba Escritório
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from '../escritorio/Cena3D.tsx'
 import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
 import type { SalaEquipe } from '../../lib/escritorio/equipe'

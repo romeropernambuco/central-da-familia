@@ -1,7 +1,7 @@
 // Roda o service worker de verdade (o modelo carimbado) com cache e rede de mentira.
 import { describe, expect, it } from 'vitest'
 import modelo from './sw.modelo.js?raw'
-// @ts-ignore: script de build em JS puro
+// @ts-expect-error: script de build em JS puro
 import { montarSw, cascaDoManifesto } from '../scripts/sw.mjs'
 
 const PASTA = 'https://exemplo.github.io/central-da-familia/app/'

@@ -109,15 +109,6 @@ const emRecife = (dia: string, hora = 9) => `${dia}T${String(hora).padStart(2, '
 const dow = (iso: string) => new Date(iso + 'T12:00:00Z').getUTCDay()
 /** R$ sem centavos quando é redondo: "R$ 1.000", "R$ 312,40". */
 const rs = (v: number) => reais(v)
-const dias = (n: number) => (n === 1 ? '1 dia' : `${n} dias`)
-const quandoVence = (falta: number) =>
-  falta === 0
-    ? 'vence hoje'
-    : falta === 1
-      ? 'vence amanhã'
-      : falta > 0
-        ? `vence em ${dias(falta)}`
-        : `venceu há ${dias(-falta)}`
 
 function criar(): Estado {
   const hoje = hojeRecife(),
@@ -466,7 +457,6 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
           ],
     })
   } else if (feira && !feira.tem_nota && !feira.sem_nota_motivo) {
-    const qual = eq ? `A feira de ${dataCurta(feira.data)}` : `A feira de ${dataCurta(feira.data)} (${rs(feira.valor)})`
     P({
       id: `feira_nota:${feira.id}`,
       funcionario: 'fiscal',
@@ -521,7 +511,6 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
 
   /* Comprador: prestador (véspera e no dia) e gás */
   for (const p of (cfg.casa_prestadores || []) as any[]) {
-    const quem = `${String(p.servico).toLowerCase()} (${p.nome})`
     if (m.papel?.() === 'pessoa') continue
     if ((hd + 1) % 7 === p.dia && !eq)
       P({
@@ -599,10 +588,6 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
     const d0 = hojeRecife(new Date(l.quando)),
       n = Math.max(0, diasEntre(d0, hoje))
     const t = l.titulo.charAt(0).toLowerCase() + l.titulo.slice(1)
-    const rep =
-      l.repetir === 'nunca'
-        ? ''
-        : `, e volta ${{ dia: 'todo dia', semana: 'toda semana', mes: 'todo mês', ano: 'todo ano' }[l.repetir]}`
     P({
       id: `lembrete:${l.id}`,
       funcionario: 'secretaria',
@@ -916,7 +901,6 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
 
   /* E4 (rodada 2, só no exemplo): dinheiro que entrou a mais e ficou na conta. Quem fala é o Gestor do Guardado */
   for (const x of m.entradasNaConta?.() || []) {
-    const de = x.de.charAt(0).toLowerCase() + x.de.slice(1)
     P({
       id: `entrou_extra:${x.id}`,
       funcionario: 'guardado',

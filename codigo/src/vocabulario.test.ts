@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest'
 import ts from 'typescript'
-// @ts-ignore: Vitest executa em Node; o app não inclui tipos do Node.
+// @ts-expect-error: Vitest executa em Node; o app não inclui tipos do Node.
 import { readdirSync, readFileSync } from 'node:fs'
-// @ts-ignore: idem
+// @ts-expect-error: idem
 import { join } from 'node:path'
 
 // Só texto de produto: comentários, imports, ids, rotas, chaves e papéis do banco não são rótulos.

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import ts from 'typescript'
-// @ts-ignore: testes executados em Node; o projeto não inclui @types/node.
+// @ts-expect-error: testes executados em Node; o projeto não inclui @types/node.
 import { readFileSync, readdirSync } from 'node:fs'
 const ler = (p: string): string => readFileSync(p, 'utf8')
 function arquivos(p: string): string[] {

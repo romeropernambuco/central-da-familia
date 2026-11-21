@@ -14,7 +14,7 @@ import { EscritorioIsometrico } from './EscritorioIsometrico'
 import { EQUIPE } from '../../lib/escritorio/equipe'
 import { dadosIsometricos } from './dadosIsometricos'
 import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
-// @ts-ignore: script Node usado na geração do build.
+// @ts-expect-error: script Node usado na geração do build.
 import { arquivosEssenciais } from '../../../scripts/sw.mjs'
 
 const fake = vi.hoisted(() => ({

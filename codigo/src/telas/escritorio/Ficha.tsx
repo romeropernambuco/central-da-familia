@@ -3,7 +3,6 @@ import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
 import { rascunhos } from '../../app/rascunhos'
-import { validarNome } from '../../lib/nomePessoa'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { rotuloDeOpcao, textoDeAgente } from '../../lib/textoAgente'
 import { abrirAtalhoGuardado } from '../guardado/atalhos'
@@ -48,7 +47,7 @@ import {
 } from '../../lib/formato'
 import { rendeQuanto } from '../../lib/guardado'
 import type { Folha } from './ajudantes'
-// @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
+// @ts-expect-error: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
 import { NumerosAba } from './NumerosAba'
 import { EQUIPE } from '../../lib/escritorio/equipe'
