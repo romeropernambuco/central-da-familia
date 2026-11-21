@@ -8,7 +8,7 @@
 
 
 > central-da-familia@0.1.0 lint
-> eslint src --max-warnings 528
+> eslint src --max-warnings 526
 
 
 C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\api\dadosTeste.ts
@@ -642,16 +642,17 @@ C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas
   7:1  warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
 
 C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\escritorio\cena3d.ts
-   40:8   warning  Function 'montarCena' has too many lines (967). Maximum allowed is 120    max-lines-per-function
-   40:8   warning  Function 'montarCena' has a complexity of 31. Maximum allowed is 25       complexity
-  123:9   warning  'vAtual' is never reassigned. Use 'const' instead                         prefer-const
-  270:5   warning  Function 'atualizaChar' has too many lines (142). Maximum allowed is 120  max-lines-per-function
-  421:5   warning  Function 'atualizaMini' has too many lines (138). Maximum allowed is 120  max-lines-per-function
-  421:5   warning  Function 'atualizaMini' has a complexity of 71. Maximum allowed is 25     complexity
-  435:1   warning  File has too many lines (991). Maximum allowed is 400                     max-lines
-  669:5   warning  Function 'quadro' has a complexity of 34. Maximum allowed is 25           complexity
-  777:45  warning  Async arrow function has too many lines (159). Maximum allowed is 120     max-lines-per-function
-  777:45  warning  Async arrow function has a complexity of 29. Maximum allowed is 25        complexity
+   15:33  warning  'EstadoCena' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   40:8   warning  Function 'montarCena' has too many lines (657). Maximum allowed is 120        max-lines-per-function
+   40:8   warning  Function 'montarCena' has a complexity of 31. Maximum allowed is 25           complexity
+  123:9   warning  'vAtual' is never reassigned. Use 'const' instead                             prefer-const
+  354:5   warning  Function 'quadro' has a complexity of 34. Maximum allowed is 25               complexity
+  436:1   warning  File has too many lines (681). Maximum allowed is 400                         max-lines
+  462:45  warning  Async arrow function has too many lines (159). Maximum allowed is 120         max-lines-per-function
+  462:45  warning  Async arrow function has a complexity of 29. Maximum allowed is 25            complexity
+
+C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\escritorio\cena\movimento.ts
+  328:8  warning  Function 'moverNoMini' has a complexity of 41. Maximum allowed is 25  complexity
 
 C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\escritorio\dadosIsometricos.ts
   48:59  warning  Arrow function has a complexity of 34. Maximum allowed is 25  complexity
@@ -812,7 +813,7 @@ C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\vocab
   3:1  warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
   5:1  warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
 
-✖ 526 problems (0 errors, 526 warnings)
+✖ 525 problems (0 errors, 525 warnings)
   0 errors and 2 warnings potentially fixable with the `--fix` option.
 
 
@@ -828,11 +829,13 @@ All matched files use Prettier code style!
 
 [1m[7m[36m RUN [39m[27m[22m [36mv2.1.8 [39m[90mC:/Users/Romero Albuquerque/Documents/GitHub/central-da-familia/codigo[39m
 
- [32m✓[39m src/telas/escritorio/cena3d.test.ts [2m([22m[2m83 tests[22m[2m)[22m[33m 705[2mms[22m[39m
- [32m✓[39m src/telas/lancamentos/feedback.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 633[2mms[22m[39m
- [32m✓[39m src/revisao2.test.ts [2m([22m[2m34 tests[22m[2m)[22m[33m 1886[2mms[22m[39m
-   [33m[2m✓[22m[39m 1. equipe entra pelo link do convite + código[2m > [22mcada Assessor da Casa entra e registra presença com o próprio nome, sem dinheiro [33m512[2mms[22m[39m
-   [33m[2m✓[22m[39m 1. equipe: resumo só com nomes e lançamento sem valor[2m > [22mno exemplo, a equipe recebe o mesmo formato do banco: nomes e nenhum valor [33m470[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/cena3d.test.ts [2m([22m[2m83 tests[22m[2m)[22m[33m 729[2mms[22m[39m
+ [32m✓[39m src/revisao2.test.ts [2m([22m[2m34 tests[22m[2m)[22m[33m 1788[2mms[22m[39m
+   [33m[2m✓[22m[39m 1. equipe entra pelo link do convite + código[2m > [22mcada Assessor da Casa entra e registra presença com o próprio nome, sem dinheiro [33m470[2mms[22m[39m
+   [33m[2m✓[22m[39m 1. equipe: resumo só com nomes e lançamento sem valor[2m > [22mno exemplo, a equipe recebe o mesmo formato do banco: nomes e nenhum valor [33m465[2mms[22m[39m
+ [32m✓[39m src/telas/lancamentos/feedback.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 705[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/EscritorioIsometrico.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1729[2mms[22m[39m
+   [33m[2m✓[22m[39m Início J distingue a equipe das tarefas, usa a mesma fila do Escritório e respeita o olho [33m333[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/familia.test.ts[2m > [22m[2mf37: envelope eu, disponível, limite, gasto e livre vêm do Meu orçamento
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -842,8 +845,6 @@ All matched files use Prettier code style!
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/telas/escritorio/EscritorioIsometrico.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1744[2mms[22m[39m
-   [33m[2m✓[22m[39m Início J distingue a equipe das tarefas, usa a mesma fila do Escritório e respeita o olho [33m378[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/familia.test.ts[2m > [22m[2mf37: envelope outro, disponível, limite, gasto e livre vêm do Meu orçamento
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -853,11 +854,11 @@ All matched files use Prettier code style!
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/componentes/AgenteDaAba.ligacao.test.ts [2m([22m[2m58 tests[22m[2m)[22m[33m 2402[2mms[22m[39m
-   [33m[2m✓[22m[39m integração final: Início segue primeira pergunta autorizada, Painel usa fala do dono e legenda segue degradação [33m301[2mms[22m[39m
- [32m✓[39m src/lib/futuro/motor_f13.test.ts [2m([22m[2m12 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m[33m 1156[2mms[22m[39m
-   [33m[2m✓[22m[39m F13 — propriedades por aplicação com semente fixa[2m > [22mconserva principal e juros líquidos de cada produto na transferência e nos fluxos (80 carteiras) [33m386[2mms[22m[39m
-   [33m[2m✓[22m[39m F13 — propriedades por aplicação com semente fixa[2m > [22mmais saldo nunca reduz o patrimônio; ganhos respeitam a taxa individual e param no vencimento (80 pares) [33m311[2mms[22m[39m
+ [32m✓[39m src/componentes/AgenteDaAba.ligacao.test.ts [2m([22m[2m58 tests[22m[2m)[22m[33m 2456[2mms[22m[39m
+   [33m[2m✓[22m[39m integração final: Início segue primeira pergunta autorizada, Painel usa fala do dono e legenda segue degradação [33m370[2mms[22m[39m
+ [32m✓[39m src/lib/futuro/motor_f13.test.ts [2m([22m[2m12 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m[33m 1182[2mms[22m[39m
+   [33m[2m✓[22m[39m F13 — propriedades por aplicação com semente fixa[2m > [22mconserva principal e juros líquidos de cada produto na transferência e nos fluxos (80 carteiras) [33m453[2mms[22m[39m
+   [33m[2m✓[22m[39m F13 — propriedades por aplicação com semente fixa[2m > [22mmais saldo nunca reduz o patrimônio; ganhos respeitam a taxa individual e param no vencimento (80 pares) [33m302[2mms[22m[39m
 [90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mrespostas legíveis e privadas em AgenteDaAba, olho inicial true
 [22m[39mWarning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
 
@@ -928,14 +929,18 @@ This ensures that you're testing the behavior the user would see in the browser.
     at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
     at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
 
- [32m✓[39m src/melhorias.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 4161[2mms[22m[39m
-   [33m[2m✓[22m[39m R1, R2, R3 (E2): o casal lê tudo com o dono; escreve no seu e na Casa[2m > [22mlançar, corrigir e apagar no limite do outro é recusado (igual a f_02) [33m375[2mms[22m[39m
-   [33m[2m✓[22m[39m R1, R2, R3 (E2): o casal lê tudo com o dono; escreve no seu e na Casa[2m > [22mGuardado com dono (E2): ela lê as 5 aplicações, com o titular; guarda, tira e encerra só na dela e na do casal [33m507[2mms[22m[39m
-   [33m[2m✓[22m[39m R6: estouro com valor, de onde sai e o amanhã[2m > [22mCobrir com a sobra da Casa (só no exemplo) zera o devendo e o Desfazer volta [33m307[2mms[22m[39m
-   [33m[2m✓[22m[39m R10+G5: parcelado 1x a 12x, parcela no mês de cada fatura[2m > [22mno exemplo, lançar 6x no cartão conta R$ 200 no mês e as faturas levam R$ 200 cada [33m308[2mms[22m[39m
-   [33m[2m✓[22m[39m R11+G12: entrou dinheiro vai pro guardado e não muda o gasto[2m > [22mpresente de R$ 500: guardado +500, número de hoje igual; Desfazer tira [33m474[2mms[22m[39m
-   [33m[2m✓[22m[39m R12: corrigir lançamento[2m > [22mtroca R$ 85 por R$ 58 e o resumo acompanha; corrigir de volta desfaz [33m466[2mms[22m[39m
-   [33m[2m✓[22m[39m R4: convite sem armadilha[2m > [22mlista quem entrou e quem espera; e-mail repetido avisa; cancelar libera convidar de novo [33m342[2mms[22m[39m
+ [32m✓[39m src/melhorias.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 4131[2mms[22m[39m
+   [33m[2m✓[22m[39m R1, R2, R3 (E2): o casal lê tudo com o dono; escreve no seu e na Casa[2m > [22mlançar, corrigir e apagar no limite do outro é recusado (igual a f_02) [33m379[2mms[22m[39m
+   [33m[2m✓[22m[39m R1, R2, R3 (E2): o casal lê tudo com o dono; escreve no seu e na Casa[2m > [22mGuardado com dono (E2): ela lê as 5 aplicações, com o titular; guarda, tira e encerra só na dela e na do casal [33m527[2mms[22m[39m
+   [33m[2m✓[22m[39m R11+G12: entrou dinheiro vai pro guardado e não muda o gasto[2m > [22mpresente de R$ 500: guardado +500, número de hoje igual; Desfazer tira [33m463[2mms[22m[39m
+   [33m[2m✓[22m[39m R12: corrigir lançamento[2m > [22mtroca R$ 85 por R$ 58 e o resumo acompanha; corrigir de volta desfaz [33m455[2mms[22m[39m
+   [33m[2m✓[22m[39m R4: convite sem armadilha[2m > [22mlista quem entrou e quem espera; e-mail repetido avisa; cancelar libera convidar de novo [33m347[2mms[22m[39m
+ [32m✓[39m src/fase_final_e7e10.test.ts [2m([22m[2m54 tests[22m[2m)[22m[33m 3687[2mms[22m[39m
+   [33m[2m✓[22m[39m E7: o exemplo imita as regras da f_12 (com a R1)[2m > [22m1 voto por adulto (votar de novo troca só o seu), aprovado só com os 2 no mesmo teto e IPCA, aplicar só quando vale e nunca no limite do outro [33m541[2mms[22m[39m
+   [33m[2m✓[22m[39m E8: tranca dos desejos no exemplo (igual a f_06)[2m > [22msó o dono muda: Ana não mexe no desejo do Bruno; desejo novo entra na conta de 2029 (futuroEntradas) [33m368[2mms[22m[39m
+   [33m[2m✓[22m[39m Revisão E12: contraste do verde, 1 adulto, IPCA como número e prazo de aplicar[2m > [22mexemplo (f_14): votos "0.045" e "0.0450" aprovam; aplicar até o último dia do mês de vale_a_partir, no dia seguinte é recusado [33m332[2mms[22m[39m
+   [33m[2m✓[22m[39m Decisão: voto vencido, "Votar de novo" com a vigência no mês que vem[2m > [22mvencido, votar de novo, os 2 aprovam e vale no mês seguinte (mesmas recusas do banco) [33m331[2mms[22m[39m
+   [33m[2m✓[22m[39m f_14: voto_aberto é a fonte principal para achar o voto refeito (a config fica de apoio)[2m > [22mvotar de novo sem a config gravada: o outro adulto acha pelo voto_aberto e aprova [33m471[2mms[22m[39m
 [90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mrespostas legíveis e privadas em AgenteDaAba, olho inicial false
 [22m[39mWarning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
 
@@ -950,70 +955,9 @@ This ensures that you're testing the behavior the user would see in the browser.
     at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
     at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
     at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
-Warning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
 
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
-Warning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
-Warning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
-Warning: An update to PerguntaCard inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at PerguntaCard (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\Pergunta.tsx:217:3)
-    at div
-    at section
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\privacidade-global.test.ts:290:51)
-
- [32m✓[39m src/fase_final_e7e10.test.ts [2m([22m[2m54 tests[22m[2m)[22m[33m 3692[2mms[22m[39m
-   [33m[2m✓[22m[39m E7: o exemplo imita as regras da f_12 (com a R1)[2m > [22m1 voto por adulto (votar de novo troca só o seu), aprovado só com os 2 no mesmo teto e IPCA, aplicar só quando vale e nunca no limite do outro [33m514[2mms[22m[39m
-   [33m[2m✓[22m[39m E8: tranca dos desejos no exemplo (igual a f_06)[2m > [22msó o dono muda: Ana não mexe no desejo do Bruno; desejo novo entra na conta de 2029 (futuroEntradas) [33m350[2mms[22m[39m
-   [33m[2m✓[22m[39m Revisão E12: 2 impostos, até 2028 (aliq_proj) e depois de 2029 (aliq_renda)[2m > [22mvazio vale o padrão; mudar um não mexe no outro (exemplo grava, entrada leva os 2) [33m306[2mms[22m[39m
-   [33m[2m✓[22m[39m Decisão: voto vencido, "Votar de novo" com a vigência no mês que vem[2m > [22mvencido, votar de novo, os 2 aprovam e vale no mês seguinte (mesmas recusas do banco) [33m375[2mms[22m[39m
-   [33m[2m✓[22m[39m f_14: voto_aberto é a fonte principal para achar o voto refeito (a config fica de apoio)[2m > [22mvotar de novo sem a config gravada: o outro adulto acha pelo voto_aberto e aprova [33m472[2mms[22m[39m
- [32m✓[39m src/componentes/AgenteDaAba.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 476[2mms[22m[39m
- [32m✓[39m src/propostas/c/proposta.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 1048[2mms[22m[39m
+ [32m✓[39m src/componentes/AgenteDaAba.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 519[2mms[22m[39m
+ [32m✓[39m src/propostas/c/proposta.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 938[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mas 21 duplas diferem em pelo menos 4% da silhueta a 303×128
 [22m[39mSILHUETA casa cartoes [33m0.2562351667568805[39m
 SILHUETA casa caixa [33m0.1451195437595964[39m
@@ -1037,6 +981,7 @@ SILHUETA recepcao gestao [33m0.2604704760391004[39m
 SILHUETA recepcao apoio [33m0.3459315872867928[39m
 SILHUETA gestao apoio [33m0.33588512950696126[39m
 
+ [32m✓[39m src/propostas/d/proposta.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 1002[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mas 21 duplas diferem em pelo menos 4% da silhueta a 152×112
 [22m[39mSILHUETA casa cartoes [33m0.2562351667568805[39m
 SILHUETA casa caixa [33m0.1451195437595964[39m
@@ -1060,17 +1005,8 @@ SILHUETA recepcao gestao [33m0.2604704760391004[39m
 SILHUETA recepcao apoio [33m0.3459315872867928[39m
 SILHUETA gestao apoio [33m0.33588512950696126[39m
 
- [32m✓[39m src/propostas/d/proposta.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 851[2mms[22m[39m
- [32m✓[39m src/propostas/e/proposta.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 2645[2mms[22m[39m
-   [33m[2m✓[22m[39m mede a primeira tela com o CSS e o medidor do laboratório em Chromium [33m1972[2mms[22m[39m
-[90mstdout[2m | src/propostas/e/proposta.test.ts[2m > [22m[2mmede a primeira tela com o CSS e o medidor do laboratório em Chromium
-[22m[39mProposta E · claro · celular · 4 acima da dobra
-Proposta E · escuro · celular · 4 acima da dobra
-Proposta E · claro · desktop · 4 acima da dobra
-Proposta E · escuro · desktop · 4 acima da dobra
-
- [32m✓[39m src/telas/planejamento/correcoes.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 1730[2mms[22m[39m
-   [33m[2m✓[22m[39m A: envio duplo chama uma vez e tentativa reutiliza a chave [33m670[2mms[22m[39m
+ [32m✓[39m src/telas/planejamento/correcoes.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 1501[2mms[22m[39m
+   [33m[2m✓[22m[39m A: envio duplo chama uma vez e tentativa reutiliza a chave [33m423[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mas 21 duplas diferem em pelo menos 4% da silhueta a 80×64
 [22m[39mSILHUETA casa cartoes [33m0.2562351667568805[39m
 SILHUETA casa caixa [33m0.1451195437595964[39m
@@ -1124,23 +1060,35 @@ SILHUETA gestao apoio [33m0.33588512950696126[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2musina: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA usina [33m1.3119013453832598[39m
 
+[90mstdout[2m | src/propostas/e/proposta.test.ts[2m > [22m[2mmede a primeira tela com o CSS e o medidor do laboratório em Chromium
+[22m[39mProposta E · claro · celular · 4 acima da dobra
+Proposta E · escuro · celular · 4 acima da dobra
+Proposta E · claro · desktop · 4 acima da dobra
+Proposta E · escuro · desktop · 4 acima da dobra
+
+ [32m✓[39m src/propostas/e/proposta.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 3934[2mms[22m[39m
+   [33m[2m✓[22m[39m mede a primeira tela com o CSS e o medidor do laboratório em Chromium [33m3276[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2msecretaria: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA secretaria [33m1.22625020633599[39m
 
+ [32m✓[39m src/propostas/b/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 3141[2mms[22m[39m
+   [33m[2m✓[22m[39m mede acima da dobra com o medidor da casca e verifica geometria e alvos no navegador [33m2294[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mpresenca: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA presenca [33m1.2742396399324372[39m
 
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mauditor: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA auditor [33m1.48592803634066[39m
 
- [32m✓[39m src/propostas/motor/cenaIsometrica.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1285[2mms[22m[39m
-   [33m[2m✓[22m[39m vinte montagens liberam todos os lotes, canvases, observadores e contextos [33m482[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2manfitriao: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA anfitriao [33m1.3101238728201217[39m
 
+ [32m✓[39m src/propostas/g/proposta.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 2560[2mms[22m[39m
+   [33m[2m✓[22m[39m mede a primeira dobra, a legibilidade dos valores e os alvos na geometria real da casca [33m1700[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2msonhadora: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA sonhadora [33m1.3161263961007668[39m
 
+ [32m✓[39m src/propostas/motor/cenaIsometrica.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1094[2mms[22m[39m
+   [33m[2m✓[22m[39m vinte montagens liberam todos os lotes, canvases, observadores e contextos [33m520[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2manalista: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA analista [33m1.3151677622111648[39m
 
@@ -1150,13 +1098,9 @@ SILHUETA gestao apoio [33m0.33588512950696126[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mprotetora: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA protetora [33m1.3152467784857897[39m
 
- [32m✓[39m src/propostas/b/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 3804[2mms[22m[39m
-   [33m[2m✓[22m[39m mede acima da dobra com o medidor da casca e verifica geometria e alvos no navegador [33m2760[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2midentidades das salas — regressões da frente salas[2m > [22m[2mimoveis: escala medida de cabeça/monitor, contatos e projeções nos três tamanhos
 [22m[39mESCALA imoveis [33m1.313970958849537[39m
 
- [32m✓[39m src/propostas/g/proposta.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 2844[2mms[22m[39m
-   [33m[2m✓[22m[39m mede a primeira dobra, a legibilidade dos valores e os alvos na geometria real da casca [33m2258[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2mcasa compõe peças, mede tampo/assento e respeita orçamento
 [22m[39mSALA casa {"calls":27,"triangles":3103,"bytes":146044,"tampo":0.708699703425169,"assento":0.43480249772816915}
 
@@ -1186,15 +1130,6 @@ CUSTO_ID contador {"calls":25,"triangles":2449}
 [22m[39mCAMERA colchao [[303,128,65.85],[303,180,61.06],[560,180,65.85]]
 CUSTO_ID colchao {"calls":25,"triangles":2293}
 
-[90mstdout[2m | src/propostas/k/proposta.test.ts[2m > [22m[2mmede na casca e exercita abas, navegação, fila, teclado e balões no Chromium
-[22m[39mK claro celular — 5 números acima da dobra
-K claro desktop — 7 números acima da dobra
-K escuro celular — 5 números acima da dobra
-K escuro desktop — 7 números acima da dobra
-K celular por aba diretamente da casca — Escritório 0, Plano 4
-
- [32m✓[39m src/propostas/k/proposta.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 9791[2mms[22m[39m
-   [33m[2m✓[22m[39m mede na casca e exercita abas, navegação, fila, teclado e balões no Chromium [33m9344[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2mtesoureiro: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA tesoureiro [[303,128,63.59],[303,180,62.48],[560,180,63.59]]
 CUSTO_ID tesoureiro {"calls":25,"triangles":2221}
@@ -1203,15 +1138,24 @@ CUSTO_ID tesoureiro {"calls":25,"triangles":2221}
 [22m[39mCAMERA folha [[303,128,64.82],[303,180,64.82],[560,180,64.82]]
 CUSTO_ID folha {"calls":28,"triangles":3127}
 
+ [32m✓[39m src/lib/futuro/patrimonio.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 340[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2mcomprador: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA comprador [[303,128,65.28],[303,180,60.86],[560,180,65.28]]
 CUSTO_ID comprador {"calls":28,"triangles":2971}
 
+[90mstdout[2m | src/propostas/k/proposta.test.ts[2m > [22m[2mmede na casca e exercita abas, navegação, fila, teclado e balões no Chromium
+[22m[39mK claro celular — 5 números acima da dobra
+K claro desktop — 7 números acima da dobra
+K escuro celular — 5 números acima da dobra
+K escuro desktop — 7 números acima da dobra
+K celular por aba diretamente da casca — Escritório 0, Plano 4
+
+ [32m✓[39m src/propostas/k/proposta.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 9917[2mms[22m[39m
+   [33m[2m✓[22m[39m mede na casca e exercita abas, navegação, fila, teclado e balões no Chromium [33m9402[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2mfiscal: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA fiscal [[303,128,65.44],[303,180,61.04],[560,180,65.44]]
 CUSTO_ID fiscal {"calls":30,"triangles":3031}
 
- [32m✓[39m src/lib/futuro/patrimonio.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 348[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2mcartao: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA cartao [[303,128,63.12],[303,180,62.11],[560,180,63.12]]
 CUSTO_ID cartao {"calls":25,"triangles":2655}
@@ -1228,6 +1172,8 @@ CUSTO_ID guardado {"calls":26,"triangles":3557}
 [22m[39mCAMERA usina [[303,128,64.33],[303,180,61.6],[560,180,64.33]]
 CUSTO_ID usina {"calls":28,"triangles":3085}
 
+ [32m✓[39m src/lib/insights/motor.test.ts [2m([22m[2m55 tests[22m[2m)[22m[33m 933[2mms[22m[39m
+   [33m[2m✓[22m[39m propriedade: 2000 snapshots determinísticos, incompletos/corrompidos, nunca lançam e no máximo um por rota [33m807[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2msecretaria: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA secretaria [[303,128,67.03],[303,180,60.01],[560,180,67.03]]
 CUSTO_ID secretaria {"calls":24,"triangles":2437}
@@ -1240,16 +1186,16 @@ CUSTO_ID presenca {"calls":23,"triangles":2413}
 [22m[39mCAMERA auditor [[303,128,68.64],[303,180,66.25],[560,180,68.64]]
 CUSTO_ID auditor {"calls":25,"triangles":2461}
 
+ [32m✓[39m src/propostas/motor/escritorio3d.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 289[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2manfitriao: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA anfitriao [[303,128,66.98],[303,180,60.78],[560,180,66.98]]
 CUSTO_ID anfitriao {"calls":25,"triangles":2501}
 
- [32m✓[39m src/lib/insights/motor.test.ts [2m([22m[2m55 tests[22m[2m)[22m[33m 1109[2mms[22m[39m
-   [33m[2m✓[22m[39m propriedade: 2000 snapshots determinísticos, incompletos/corrompidos, nunca lançam e no máximo um por rota [33m1023[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2msonhadora: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA sonhadora [[303,128,66.23],[303,180,60.19],[560,180,66.23]]
 CUSTO_ID sonhadora {"calls":25,"triangles":2525}
 
+ [32m✓[39m src/lib/insights/integracao.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 120[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mescritório real no mini (renderer simulado, GLBs locais reais)[2m > [22m[2manalista: câmera real, 3 proporções, resize e quatro estados
 [22m[39mCAMERA analista [[303,128,67.65],[303,180,59.59],[560,180,67.65]]
 CUSTO_ID analista {"calls":28,"triangles":2585}
@@ -1266,8 +1212,6 @@ CUSTO_ID protetora {"calls":23,"triangles":2229}
 [22m[39mCAMERA imoveis [[303,128,65.92],[303,180,61.19],[560,180,65.92]]
 CUSTO_ID imoveis {"calls":27,"triangles":2989}
 
- [32m✓[39m src/lib/insights/integracao.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 81[2mms[22m[39m
- [32m✓[39m src/propostas/motor/escritorio3d.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 408[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2msala compartilhada[2m > [22m[2mcasa: custos coletivos
 [22m[39mCOLETIVO casa {"calls":33,"triangles":4616} {"calls":11,"triangles":3452}
 ALTURA_COLETIVO casa [33m303[39m [33m128[39m [33m0.6156600257616123[39m
@@ -1325,6 +1269,7 @@ ALTURA_COLETIVO apoio [33m560[39m [33m180[39m [33m0.6242887028725053[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'cartoes' N=2: postos, peças e previsão pura
 [22m[39mORCAMENTO_N cartoes [33m2[39m [33m2[39m {"calls":29,"triangles":3928}
 
+ [32m✓[39m src/propostas/a/proposta.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 696[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'cartoes' N=3: postos, peças e previsão pura
 [22m[39mORCAMENTO_N cartoes [33m3[39m [33m3[39m {"calls":39,"triangles":5489}
 
@@ -1358,7 +1303,6 @@ ALTURA_COLETIVO apoio [33m560[39m [33m180[39m [33m0.6242887028725053[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'gestao' N=1: postos, peças e previsão pura
 [22m[39mORCAMENTO_N gestao [33m1[39m [33m1[39m {"calls":25,"triangles":2501}
 
- [32m✓[39m src/propostas/a/proposta.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 1122[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'gestao' N=2: postos, peças e previsão pura
 [22m[39mORCAMENTO_N gestao [33m2[39m [33m2[39m {"calls":30,"triangles":3906}
 
@@ -1368,16 +1312,11 @@ ALTURA_COLETIVO apoio [33m560[39m [33m180[39m [33m0.6242887028725053[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'apoio' N=1: postos, peças e previsão pura
 [22m[39mORCAMENTO_N apoio [33m1[39m [33m1[39m {"calls":23,"triangles":2217}
 
-[90mstdout[2m | src/propostas/j/proposta.test.ts[2m > [22m[2mmede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium
-[22m[39mJ celular escuro: 4 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50)
-J celular claro: 4 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50)
-J desktop escuro: 6 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50 · R$ 312,40 · R$ 20.035,34)
-J desktop claro: 6 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50 · R$ 312,40 · R$ 20.035,34)
-
- [32m✓[39m src/propostas/j/proposta.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 13202[2mms[22m[39m
-   [33m[2m✓[22m[39m mede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium [33m12598[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'apoio' N=2: postos, peças e previsão pura
 [22m[39mORCAMENTO_N apoio [33m2[39m [33m2[39m {"calls":28,"triangles":3622}
+
+[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'apoio' N=3: postos, peças e previsão pura
+[22m[39mORCAMENTO_N apoio [33m3[39m [33m3[39m {"calls":38,"triangles":5183}
 
 [90mstdout[2m | src/propostas/f/proposta.test.ts[2m > [22m[2musa o medidor da casca e verifica contagem, encaixe e alvos com nome nos quatro quadros
 [22m[39mF claro celular: 5 números acima da dobra
@@ -1385,23 +1324,32 @@ F claro desktop: 7 números acima da dobra
 F escuro celular: 5 números acima da dobra
 F escuro desktop: 7 números acima da dobra
 
- [32m✓[39m src/propostas/f/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1925[2mms[22m[39m
-   [33m[2m✓[22m[39m usa o medidor da casca e verifica contagem, encaixe e alvos com nome nos quatro quadros [33m1429[2mms[22m[39m
-[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcontrato do compositor compartilhado[2m > [22m[2m'apoio' N=3: postos, peças e previsão pura
-[22m[39mORCAMENTO_N apoio [33m3[39m [33m3[39m {"calls":38,"triangles":5183}
-
+ [32m✓[39m src/propostas/f/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1935[2mms[22m[39m
+   [33m[2m✓[22m[39m usa o medidor da casca e verifica contagem, encaixe e alvos com nome nos quatro quadros [33m1382[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'contador' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","contador"] {"desenhos":32,"triangulos":4146,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
+[90mstdout[2m | src/propostas/j/proposta.test.ts[2m > [22m[2mmede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium
+[22m[39mJ celular escuro: 4 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50)
+J celular claro: 4 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50)
+J desktop escuro: 6 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50 · R$ 312,40 · R$ 20.035,34)
+J desktop claro: 6 números acima da dobra (R$ 0,00 · R$ 16.102,53 · R$ 75.590,28 · R$ 1.551,50 · R$ 312,40 · R$ 20.035,34)
+
+ [32m✓[39m src/propostas/j/proposta.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 13202[2mms[22m[39m
+   [33m[2m✓[22m[39m mede a casca e exercita navegação, teclado nativo, fila e privacidade no Chromium [33m12517[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'colchao' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","colchao"] {"desenhos":32,"triangulos":3990,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'tesoureiro' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","tesoureiro"] {"desenhos":32,"triangulos":3918,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
+ [32m✓[39m src/lib/insights/hook.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 166[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'folha' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","folha"] {"desenhos":31,"triangulos":4098,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
+ [32m✓[39m src/telas/planejamento/receitas.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1892[2mms[22m[39m
+   [33m[2m✓[22m[39m Chegou exige conferência; corrige reais e data, trava duplo toque e oferece desfazer [33m379[2mms[22m[39m
+   [33m[2m✓[22m[39m conferir uma ocorrência não cria linhas nem quita a série e desfazer preserva outra ocorrência [33m395[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'comprador' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","comprador"] {"desenhos":31,"triangulos":3942,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
@@ -1414,23 +1362,19 @@ F escuro desktop: 7 números acima da dobra
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'assistente' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","assistente"] {"desenhos":31,"triangulos":3942,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
- [32m✓[39m src/lib/futuro/casos.test.ts [2m([22m[2m40 tests[22m[2m)[22m[90m 94[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'guardado' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","guardado"] {"desenhos":31,"triangulos":4498,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
+ [32m✓[39m src/lib/futuro/casos.test.ts [2m([22m[2m40 tests[22m[2m)[22m[90m 96[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'imoveis' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","imoveis"] {"desenhos":32,"triangulos":3930,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
- [32m✓[39m src/lib/insights/hook.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 217[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'usina' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","usina"] {"desenhos":33,"triangulos":4026,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'secretaria' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","secretaria"] {"desenhos":31,"triangulos":4014,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
- [32m✓[39m src/telas/planejamento/receitas.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 2216[2mms[22m[39m
-   [33m[2m✓[22m[39m Chegou exige conferência; corrige reais e data, trava duplo toque e oferece desfazer [33m755[2mms[22m[39m
-   [33m[2m✓[22m[39m conferir uma ocorrência não cria linhas nem quita a série e desfazer preserva outra ocorrência [33m313[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'presenca' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","presenca"] {"desenhos":30,"triangulos":3990,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
@@ -1449,18 +1393,17 @@ F escuro desktop: 7 números acima da dobra
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ 'anfitriao', 'protetora' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO gestao ["anfitriao","protetora"] {"desenhos":30,"triangulos":3894,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
- [32m✓[39m src/lib/resumo/familia.test.ts [2m([22m[2m121 tests[22m[2m)[22m[33m 13982[2mms[22m[39m
-   [33m[2m✓[22m[39m f37: envelope eu, disponível, limite, gasto e livre vêm do Meu orçamento [33m306[2mms[22m[39m
-   [33m[2m✓[22m[39m f37: Plano expande o valor sem margem da aba Planejamento e preserva o principal [33m769[2mms[22m[39m
-   [33m[2m✓[22m[39m ação gasto invalida e atualiza resumo junto da leitura da aba [33m637[2mms[22m[39m
-   [33m[2m✓[22m[39m ação fatura invalida e atualiza resumo junto da leitura da aba [33m521[2mms[22m[39m
-   [33m[2m✓[22m[39m ação recebimento invalida e atualiza resumo junto da leitura da aba [33m689[2mms[22m[39m
-   [33m[2m✓[22m[39m ação aplicação invalida e atualiza resumo junto da leitura da aba [33m569[2mms[22m[39m
-   [33m[2m✓[22m[39m ação feira invalida e atualiza resumo junto da leitura da aba [33m502[2mms[22m[39m
-   [33m[2m✓[22m[39m ação estoque invalida e atualiza resumo junto da leitura da aba [33m515[2mms[22m[39m
-   [33m[2m✓[22m[39m ação saldo invalida e atualiza resumo junto da leitura da aba [33m596[2mms[22m[39m
-   [33m[2m✓[22m[39m saldo no exemplo percorre formulário, estado, resumo e motor; desfazer restaura ambos [33m712[2mms[22m[39m
-   [33m[2m✓[22m[39m f53.12: exemplo conserva o saldo negativo na edição [33m320[2mms[22m[39m
+ [32m✓[39m src/lib/resumo/familia.test.ts [2m([22m[2m121 tests[22m[2m)[22m[33m 13718[2mms[22m[39m
+   [33m[2m✓[22m[39m f37: envelope eu, disponível, limite, gasto e livre vêm do Meu orçamento [33m401[2mms[22m[39m
+   [33m[2m✓[22m[39m f37: Plano expande o valor sem margem da aba Planejamento e preserva o principal [33m686[2mms[22m[39m
+   [33m[2m✓[22m[39m ação gasto invalida e atualiza resumo junto da leitura da aba [33m697[2mms[22m[39m
+   [33m[2m✓[22m[39m ação fatura invalida e atualiza resumo junto da leitura da aba [33m549[2mms[22m[39m
+   [33m[2m✓[22m[39m ação recebimento invalida e atualiza resumo junto da leitura da aba [33m694[2mms[22m[39m
+   [33m[2m✓[22m[39m ação aplicação invalida e atualiza resumo junto da leitura da aba [33m540[2mms[22m[39m
+   [33m[2m✓[22m[39m ação feira invalida e atualiza resumo junto da leitura da aba [33m522[2mms[22m[39m
+   [33m[2m✓[22m[39m ação estoque invalida e atualiza resumo junto da leitura da aba [33m525[2mms[22m[39m
+   [33m[2m✓[22m[39m ação saldo invalida e atualiza resumo junto da leitura da aba [33m552[2mms[22m[39m
+   [33m[2m✓[22m[39m saldo no exemplo percorre formulário, estado, resumo e motor; desfazer restaura ambos [33m623[2mms[22m[39m
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'casa' [ 'fiscal', 'comprador' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO casa ["fiscal","comprador"] {"desenhos":35,"triangulos":4472,"alturas":[0.6175027530163986,0.5568213558466959,0.6175027530163986]}
 
@@ -1475,6 +1418,13 @@ F escuro desktop: 7 números acima da dobra
 
 [90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'patrimonio' [ 'guardado', 'imoveis' ]: três proporções, estados e contato por posto
 [22m[39mELENCO_MEDIDO patrimonio ["guardado","imoveis"] {"desenhos":33,"triangulos":4986,"alturas":[0.6146424564782199,0.5557943806113539,0.6146424564782199]}
+
+ [32m✓[39m src/pessoas-f25.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 136[2mms[22m[39m
+[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'caixa' [ 'tesoureiro', 'colchao' ]: três proporções, estados e contato por posto
+[22m[39mELENCO_MEDIDO caixa ["tesoureiro","colchao"] {"desenhos":32,"triangulos":3762,"alturas":[0.621691420920401,0.556032766468054,0.621691420920401]}
+
+[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ Array(3) ]: três proporções, estados e contato por posto
+[22m[39mELENCO_MEDIDO gestao ["anfitriao","sonhadora","presenca"] {"desenhos":40,"triangulos":5467,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
 
 [90mstderr[2m | src/f54.test.ts[2m > [22m[2mas rotas do menu funcionam no desktop e no celular para casal (dono: true)
 [22m[39mWarning: A suspended resource finished loading inside a test, but the event was not wrapped in act(...).
@@ -1498,90 +1448,81 @@ act(() => {
 
 This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
 
-[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'caixa' [ 'tesoureiro', 'colchao' ]: três proporções, estados e contato por posto
-[22m[39mELENCO_MEDIDO caixa ["tesoureiro","colchao"] {"desenhos":32,"triangulos":3762,"alturas":[0.621691420920401,0.556032766468054,0.621691420920401]}
-
-[90mstdout[2m | src/telas/escritorio/escritorioMini.test.ts[2m > [22m[2mcâmera e contato do elenco[2m > [22m[2m'gestao' [ Array(3) ]: três proporções, estados e contato por posto
-[22m[39mELENCO_MEDIDO gestao ["anfitriao","sonhadora","presenca"] {"desenhos":40,"triangulos":5467,"alturas":[0.6134704174432193,0.554583927006846,0.6134704174432193]}
-
- [32m✓[39m src/rodada3.test.ts [2m([22m[2m46 tests[22m[2m)[22m[33m 15722[2mms[22m[39m
-   [33m[2m✓[22m[39m Guardado no exemplo: dia útil e sábado[2m > [22mguardar com a mesma chave do toque não grava 2 vezes; tirar mais do que tem é recusado [33m487[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_nota: sem_nota some da fila e aparece em "O que você já me respondeu" [33m533[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_nota: anexar_nota some da fila e aparece em "O que você já me respondeu" [33m518[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_feita: foi_feita some da fila e aparece em "O que você já me respondeu" [33m605[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22msecretaria: lembrete:lb1 feito some da fila e aparece em "O que você já me respondeu" [33m510[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22msecretaria: lembrete:lb1 adiar_para some da fila e aparece em "O que você já me respondeu" [33m450[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: vence:g2 renovar some da fila e aparece em "O que você já me respondeu" [33m490[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: reserva_parada: deixar_na_conta some da fila e aparece em "O que você já me respondeu" [33m627[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcartao: anuidade:car-nu lembrar_isencao some da fila e aparece em "O que você já me respondeu" [33m524[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcartao: fatura:car-nu paguei_outro_dia some da fila e aparece em "O que você já me respondeu" [33m488[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfolha: dae: paguei_guia some da fila e aparece em "O que você já me respondeu" [33m736[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfolha: salario:f1 paguei_hoje some da fila e aparece em "O que você já me respondeu" [33m564[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcomprador: prestador_veio:p2 veio some da fila e aparece em "O que você já me respondeu" [33m588[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcomprador: prestador_vespera:p1 ja_mandei some da fila e aparece em "O que você já me respondeu" [33m744[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: conferir_saldo: saldo_conferido some da fila e aparece em "O que você já me respondeu" [33m530[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcontador: lancou: hoje_nao_gastei some da fila e aparece em "O que você já me respondeu" [33m694[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mGuardião da Reserva: pergunta quando o livre do mês fica menor que a reserva, e guarda de onde o dinheiro volta [33m318[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mrespondida 2 vezes é recusada; resposta que pede dado sem o dado é recusada [33m391[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22madiar volta na hora certa, com outra frase e lembrando a resposta anterior [33m825[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcorrigir guarda a resposta antiga, grava uma linha nova e passa a valer a nova [33m621[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mlembrete: criar em 3 campos, a Secretária cobra na hora, repete e apagar some [33m518[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mAnalista de Cartão: cadastra cartão com anuidade, informa o valor do banco e pergunta da diferença [33m676[2mms[22m[39m
-   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mFiscal da Feira: cobra 1 coisa por vez, na ordem: feita, nota, estoque. Com tudo em dia, só mostra o que fez [33m1154[2mms[22m[39m
-   [33m[2m✓[22m[39m falas dos funcionários: 4 partes, sem termo difícil, botão com verbo[2m > [22mpercorre o exemplo em 6 datas, confere cada frase e escreve escritorio2/FALAS.md [33m1363[2mms[22m[39m
- [32m✓[39m src/pessoas-f25.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 208[2mms[22m[39m
- [32m✓[39m src/fase_final_telas4.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 897[2mms[22m[39m
- [32m✓[39m src/fase_final_telas.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 913[2mms[22m[39m
- [32m✓[39m src/telas/escritorio/escritorioMini.test.ts [2m([22m[2m134 tests[22m[2m)[22m[33m 18128[2mms[22m[39m
-   [33m[2m✓[22m[39m integração final: 12 abas x 4 perfis, orçamento real e 20 trocas com descarte completo [33m4382[2mms[22m[39m
-   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 303×128 [33m1370[2mms[22m[39m
-   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 152×112 [33m1365[2mms[22m[39m
-   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 80×64 [33m1398[2mms[22m[39m
- [32m✓[39m src/fase_final_real.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 220[2mms[22m[39m
- [32m✓[39m src/propostas/l/proposta.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 4576[2mms[22m[39m
-   [33m[2m✓[22m[39m mede alvos, texto e primeira dobra e exercita menu, fila e posto com teclado [33m3955[2mms[22m[39m
- [32m✓[39m src/rodada2.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 8893[2mms[22m[39m
-   [33m[2m✓[22m[39m A1: a equipe nunca vê R$[2m > [22mresumo, Casa, Escritório, feiras e lançamento da equipe sem nenhum valor [33m1417[2mms[22m[39m
-   [33m[2m✓[22m[39m A1: a equipe nunca vê R$[2m > [22mcontagem com "Acabou"/"Pouco" entra na lista de compras na hora e a confirmação diz quanto falta [33m352[2mms[22m[39m
-   [33m[2m✓[22m[39m A2: a filha (papel pessoa) só vê o dela[2m > [22mresumo, lançamentos, cartões, faturas, config e Escritório: nada dos pais nem da Casa [33m2083[2mms[22m[39m
-   [33m[2m✓[22m[39m A3 (E2): o casal lê os 2 cartões com o dono; o Analista de Cartão fala só do seu[2m > [22mAna e Bruno leem Nubank e Itaú com o titular; o Analista de Cartão de cada um só fala do dele [33m1268[2mms[22m[39m
-   [33m[2m✓[22m[39m A3 (E2): o casal lê os 2 cartões com o dono; o Analista de Cartão fala só do seu[2m > [22mregra do salário: o Bruno tem R$ 300 na conta; o Gestor pergunta, ele guarda e a regra fica cumprida [33m317[2mms[22m[39m
-   [33m[2m✓[22m[39m A4 e A5: olho e nada negativo[2m > [22mnenhum "-R$": reais negativo vira "passou", e as falas e explicações do exemplo não têm sinal de menos [33m2143[2mms[22m[39m
- [32m✓[39m src/propostas/h/proposta.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 969[2mms[22m[39m
+ [32m✓[39m src/rodada3.test.ts [2m([22m[2m46 tests[22m[2m)[22m[33m 15566[2mms[22m[39m
+   [33m[2m✓[22m[39m Guardado no exemplo: dia útil e sábado[2m > [22mguardar com a mesma chave do toque não grava 2 vezes; tirar mais do que tem é recusado [33m476[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_nota: sem_nota some da fila e aparece em "O que você já me respondeu" [33m545[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_nota: anexar_nota some da fila e aparece em "O que você já me respondeu" [33m501[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfiscal: feira_feita: foi_feita some da fila e aparece em "O que você já me respondeu" [33m612[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22msecretaria: lembrete:lb1 feito some da fila e aparece em "O que você já me respondeu" [33m501[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22msecretaria: lembrete:lb1 adiar_para some da fila e aparece em "O que você já me respondeu" [33m443[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: vence:g2 renovar some da fila e aparece em "O que você já me respondeu" [33m518[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: reserva_parada: deixar_na_conta some da fila e aparece em "O que você já me respondeu" [33m546[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcartao: anuidade:car-nu lembrar_isencao some da fila e aparece em "O que você já me respondeu" [33m512[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcartao: fatura:car-nu paguei_outro_dia some da fila e aparece em "O que você já me respondeu" [33m587[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfolha: dae: paguei_guia some da fila e aparece em "O que você já me respondeu" [33m673[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mfolha: salario:f1 paguei_hoje some da fila e aparece em "O que você já me respondeu" [33m622[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcomprador: prestador_veio:p2 veio some da fila e aparece em "O que você já me respondeu" [33m587[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcomprador: prestador_vespera:p1 ja_mandei some da fila e aparece em "O que você já me respondeu" [33m686[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mguardado: conferir_saldo: saldo_conferido some da fila e aparece em "O que você já me respondeu" [33m740[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcontador: lancou: hoje_nao_gastei some da fila e aparece em "O que você já me respondeu" [33m607[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mGuardião da Reserva: pergunta quando o livre do mês fica menor que a reserva, e guarda de onde o dinheiro volta [33m326[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mrespondida 2 vezes é recusada; resposta que pede dado sem o dado é recusada [33m368[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22madiar volta na hora certa, com outra frase e lembrando a resposta anterior [33m736[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mcorrigir guarda a resposta antiga, grava uma linha nova e passa a valer a nova [33m603[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mlembrete: criar em 3 campos, a Secretária cobra na hora, repete e apagar some [33m538[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mAnalista de Cartão: cadastra cartão com anuidade, informa o valor do banco e pergunta da diferença [33m600[2mms[22m[39m
+   [33m[2m✓[22m[39m Escritório: a resposta fica guardada com o funcionário certo[2m > [22mFiscal da Feira: cobra 1 coisa por vez, na ordem: feita, nota, estoque. Com tudo em dia, só mostra o que fez [33m1157[2mms[22m[39m
+   [33m[2m✓[22m[39m falas dos funcionários: 4 partes, sem termo difícil, botão com verbo[2m > [22mpercorre o exemplo em 6 datas, confere cada frase e escreve escritorio2/FALAS.md [33m1333[2mms[22m[39m
+ [32m✓[39m src/fase_final_telas4.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 957[2mms[22m[39m
+ [32m✓[39m src/fase_final_telas.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 946[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/escritorioMini.test.ts [2m([22m[2m134 tests[22m[2m)[22m[33m 17854[2mms[22m[39m
+   [33m[2m✓[22m[39m integração final: 12 abas x 4 perfis, orçamento real e 20 trocas com descarte completo [33m4532[2mms[22m[39m
+   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 303×128 [33m1216[2mms[22m[39m
+   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 152×112 [33m1137[2mms[22m[39m
+   [33m[2m✓[22m[39m identidades das salas — regressões da frente salas[2m > [22mas 21 duplas diferem em pelo menos 4% da silhueta a 80×64 [33m1340[2mms[22m[39m
+ [32m✓[39m src/propostas/l/proposta.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 4654[2mms[22m[39m
+   [33m[2m✓[22m[39m mede alvos, texto e primeira dobra e exercita menu, fila e posto com teclado [33m3907[2mms[22m[39m
+ [32m✓[39m src/fase_final_real.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 210[2mms[22m[39m
+ [32m✓[39m src/propostas/h/proposta.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 950[2mms[22m[39m
+ [32m✓[39m src/rodada2.test.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 8683[2mms[22m[39m
+   [33m[2m✓[22m[39m A1: a equipe nunca vê R$[2m > [22mresumo, Casa, Escritório, feiras e lançamento da equipe sem nenhum valor [33m1343[2mms[22m[39m
+   [33m[2m✓[22m[39m A1: a equipe nunca vê R$[2m > [22mcontagem com "Acabou"/"Pouco" entra na lista de compras na hora e a confirmação diz quanto falta [33m315[2mms[22m[39m
+   [33m[2m✓[22m[39m A2: a filha (papel pessoa) só vê o dela[2m > [22mresumo, lançamentos, cartões, faturas, config e Escritório: nada dos pais nem da Casa [33m1967[2mms[22m[39m
+   [33m[2m✓[22m[39m A3 (E2): o casal lê os 2 cartões com o dono; o Analista de Cartão fala só do seu[2m > [22mAna e Bruno leem Nubank e Itaú com o titular; o Analista de Cartão de cada um só fala do dele [33m1301[2mms[22m[39m
+   [33m[2m✓[22m[39m A4 e A5: olho e nada negativo[2m > [22mnenhum "-R$": reais negativo vira "passou", e as falas e explicações do exemplo não têm sinal de menos [33m2101[2mms[22m[39m
+   [33m[2m✓[22m[39m B e C: contas novas[2m > [22mE7: na 3ª cobrança aparece "isso já é decidido" e ele cala o assunto [33m308[2mms[22m[39m
  [32m✓[39m src/app/dados-f53.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 33[2mms[22m[39m
- [32m✓[39m src/telas/lancar/F15.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 657[2mms[22m[39m
- [32m✓[39m src/f26-ui.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 158[2mms[22m[39m
- [32m✓[39m src/telas/escritorio/privacidade.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 10718[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mhoje: HTML e formularios protegidos [33m472[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mrelatorio: HTML e formularios protegidos [33m492[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mrelatorio sem clipboard: HTML e formularios protegidos [33m455[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mlembretes: HTML e formularios protegidos [33m425[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcontador: HTML e formularios protegidos [33m441[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcolchao: HTML e formularios protegidos [33m490[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mtesoureiro: HTML e formularios protegidos [33m456[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mfolha: HTML e formularios protegidos [33m434[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcomprador: HTML e formularios protegidos [33m438[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mfiscal: HTML e formularios protegidos [33m592[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcartao: HTML e formularios protegidos [33m462[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22massistente: HTML e formularios protegidos [33m434[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mguardado: HTML e formularios protegidos [33m431[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22musina: HTML e formularios protegidos [33m430[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22msecretaria: HTML e formularios protegidos [33m463[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mpresenca: HTML e formularios protegidos [33m429[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mauditor: HTML e formularios protegidos [33m430[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22manfitriao: HTML e formularios protegidos [33m423[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22msonhadora: HTML e formularios protegidos [33m426[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22manalista: HTML e formularios protegidos [33m423[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mzelador: HTML e formularios protegidos [33m434[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mprotetora: HTML e formularios protegidos [33m463[2mms[22m[39m
-   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mimoveis: HTML e formularios protegidos [33m424[2mms[22m[39m
- [32m✓[39m src/propostas/dadosExemplo.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1413[2mms[22m[39m
-   [33m[2m✓[22m[39m dados do laboratório[2m > [22mespelha todos os números de seletores e payloads da família de exemplo [33m721[2mms[22m[39m
-   [33m[2m✓[22m[39m dados do laboratório[2m > [22mpassa a mostrar o saldo de exemplo após cadastro, inclusive saldo zero [33m603[2mms[22m[39m
- [32m✓[39m src/f26.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 311[2mms[22m[39m
- [32m✓[39m src/fase_final_c2.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 24[2mms[22m[39m
- [32m✓[39m src/lib/futuro/virada.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 6424[2mms[22m[39m
-   [33m[2m✓[22m[39m erro 4: "cabe" nunca num mês em que a linha sem o desejo já fica devendo[2m > [22mem 80 cenários sorteados, caberia_em nunca cai num mês em que a linha sem o desejo fica devendo dali em diante [33m6099[2mms[22m[39m
+ [32m✓[39m src/telas/lancar/F15.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 481[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/privacidade.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 10634[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mhoje: HTML e formularios protegidos [33m484[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mrelatorio: HTML e formularios protegidos [33m445[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mrelatorio sem clipboard: HTML e formularios protegidos [33m436[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mlembretes: HTML e formularios protegidos [33m430[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcontador: HTML e formularios protegidos [33m453[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcolchao: HTML e formularios protegidos [33m438[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mtesoureiro: HTML e formularios protegidos [33m437[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mfolha: HTML e formularios protegidos [33m467[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcomprador: HTML e formularios protegidos [33m443[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mfiscal: HTML e formularios protegidos [33m538[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mcartao: HTML e formularios protegidos [33m458[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22massistente: HTML e formularios protegidos [33m426[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mguardado: HTML e formularios protegidos [33m439[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22musina: HTML e formularios protegidos [33m435[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22msecretaria: HTML e formularios protegidos [33m445[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mpresenca: HTML e formularios protegidos [33m431[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mauditor: HTML e formularios protegidos [33m433[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22manfitriao: HTML e formularios protegidos [33m420[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22msonhadora: HTML e formularios protegidos [33m441[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22manalista: HTML e formularios protegidos [33m436[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mzelador: HTML e formularios protegidos [33m452[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mprotetora: HTML e formularios protegidos [33m435[2mms[22m[39m
+   [33m[2m✓[22m[39m varredura das superficies reais com olho fechado[2m > [22mimoveis: HTML e formularios protegidos [33m435[2mms[22m[39m
+ [32m✓[39m src/propostas/dadosExemplo.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1500[2mms[22m[39m
+   [33m[2m✓[22m[39m dados do laboratório[2m > [22mespelha todos os números de seletores e payloads da família de exemplo [33m827[2mms[22m[39m
+   [33m[2m✓[22m[39m dados do laboratório[2m > [22mpassa a mostrar o saldo de exemplo após cadastro, inclusive saldo zero [33m618[2mms[22m[39m
+ [32m✓[39m src/f26-ui.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 172[2mms[22m[39m
+ [32m✓[39m src/f26.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 320[2mms[22m[39m
+ [32m✓[39m src/fase_final_c2.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 26[2mms[22m[39m
 [90mstdout[2m | src/propostas/i/proposta.test.ts[2m > [22m[2mmede na casca e exercita navegação, maquete e fila montadas no Chromium
 [22m[39mI exemplo claro celular: 2 números acima da dobra
 I exemplo claro desktop: 8 números acima da dobra
@@ -1592,63 +1533,63 @@ I com decisões claro desktop: 8 números acima da dobra
 I com decisões escuro celular: 2 números acima da dobra
 I com decisões escuro desktop: 8 números acima da dobra
 
- [32m✓[39m src/propostas/i/proposta.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 3627[2mms[22m[39m
-   [33m[2m✓[22m[39m mede na casca e exercita navegação, maquete e fila montadas no Chromium [33m2961[2mms[22m[39m
- [32m✓[39m src/fase_final_e5e6.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 946[2mms[22m[39m
+ [32m✓[39m src/propostas/i/proposta.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 3573[2mms[22m[39m
+   [33m[2m✓[22m[39m mede na casca e exercita navegação, maquete e fila montadas no Chromium [33m2958[2mms[22m[39m
+ [32m✓[39m src/lib/futuro/virada.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 6402[2mms[22m[39m
+   [33m[2m✓[22m[39m erro 4: "cabe" nunca num mês em que a linha sem o desejo já fica devendo[2m > [22mem 80 cenários sorteados, caberia_em nunca cai num mês em que a linha sem o desejo fica devendo dali em diante [33m6043[2mms[22m[39m
  [32m✓[39m src/sw.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 9[2mms[22m[39m
- [32m✓[39m src/componentes/agente-interacoes.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 21249[2mms[22m[39m
-   [33m[2m✓[22m[39m equipe só monta agente em Casa e a feira não pede nem envia dinheiro [33m5635[2mms[22m[39m
-   [33m[2m✓[22m[39m Cartões informa valor do banco em reais e data de pagamento [33m614[2mms[22m[39m
-   [33m[2m✓[22m[39m pergunta pendente da Secretária responde feito pelo contrato original, mesmo fora das primeiras três [33m514[2mms[22m[39m
-   [33m[2m✓[22m[39m pergunta pendente da Secretária responde adiar_para pelo contrato original, mesmo fora das primeiras três [33m615[2mms[22m[39m
-   [33m[2m✓[22m[39m Tesoureiro confere data e valor antes de confirmar recebimento em reais [33m743[2mms[22m[39m
+ [32m✓[39m src/fase_final_e5e6.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 969[2mms[22m[39m
+   [33m[2m✓[22m[39m E6: objetivo 2029, histórico e Focus[2m > [22mos 2 mudam e o histórico guarda quem, antes e depois; filha não vê [33m352[2mms[22m[39m
+ [32m✓[39m src/lib/futuro/propriedades.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 19102[2mms[22m[39m
+   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mdesvio maior nunca dá renda maior (200 sorteios) [33m8924[2mms[22m[39m
+   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mdesvio mais cedo pesa mais (ou igual) na virada [33m557[2mms[22m[39m
+   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mconferência F6: diferença entre 2 rodadas da linha bate com o valor na virada (até R$ 0,01 por mês) [33m2202[2mms[22m[39m
+   [33m[2m✓[22m[39m linha mês a mês[2m > [22mconserva o dinheiro em todo mês e emenda os meses (100 sorteios) [33m1775[2mms[22m[39m
+   [33m[2m✓[22m[39m linha mês a mês[2m > [22msoma dos recebimentos certos da linha é a soma dos cadastrados no período (nenhum some) [33m932[2mms[22m[39m
+   [33m[2m✓[22m[39m patrimônio, folga e desejos[2m > [22mdesejo com volta certa maior que a saída tira menos da renda que o mesmo desejo incerto [33m819[2mms[22m[39m
+   [33m[2m✓[22m[39m patrimônio, folga e desejos[2m > [22mcabe? pequeno cabe; enorme ainda não cabe e diz o 1º mês abaixo do piso [33m447[2mms[22m[39m
+   [33m[2m✓[22m[39m cabe? compara com a linha sem o desejo (REVISOR C3)[2m > [22mdesejo de R$ 0,01 nunca muda o veredito da base (60 sorteios) [33m2687[2mms[22m[39m
+   [33m[2m✓[22m[39m cabe? compara com a linha sem o desejo (REVISOR C3)[2m > [22mdesejo que derruba um mês bom continua "ainda não cabe" e diz quando caberia [33m424[2mms[22m[39m
+ [32m✓[39m src/componentes/agente-interacoes.test.ts [2m([22m[2m29 tests[22m[2m)[22m[33m 20910[2mms[22m[39m
+   [33m[2m✓[22m[39m equipe só monta agente em Casa e a feira não pede nem envia dinheiro [33m5585[2mms[22m[39m
+   [33m[2m✓[22m[39m Cartões informa valor do banco em reais e data de pagamento [33m523[2mms[22m[39m
+   [33m[2m✓[22m[39m pergunta pendente da Secretária responde feito pelo contrato original, mesmo fora das primeiras três [33m550[2mms[22m[39m
+   [33m[2m✓[22m[39m pergunta pendente da Secretária responde adiar_para pelo contrato original, mesmo fora das primeiras três [33m541[2mms[22m[39m
+   [33m[2m✓[22m[39m Tesoureiro confere data e valor antes de confirmar recebimento em reais [33m717[2mms[22m[39m
    [33m[2m✓[22m[39m Secretária cria lembrete com o horário de Recife convertido para ISO [33m484[2mms[22m[39m
-   [33m[2m✓[22m[39m Fiscal registra feira, anexa a nota de exemplo e salva a contagem [33m518[2mms[22m[39m
-   [33m[2m✓[22m[39m Gestor abre aplicação e aporte na mesma aba, enviando reais [33m623[2mms[22m[39m
-   [33m[2m✓[22m[39m imóvel novo/edição=false valida valor inválido e entrega reais ao salvar [33m522[2mms[22m[39m
-   [33m[2m✓[22m[39m imóvel novo/edição=true valida valor inválido e entrega reais ao salvar [33m527[2mms[22m[39m
-   [33m[2m✓[22m[39m reabre o mesmo atalho Nova aplicação depois de fechar, sem hashchange artificial [33m544[2mms[22m[39m
-   [33m[2m✓[22m[39m reabre o mesmo atalho Guardar dinheiro depois de fechar, sem hashchange artificial [33m527[2mms[22m[39m
-   [33m[2m✓[22m[39m reabre o mesmo atalho Tirar dinheiro depois de fechar, sem hashchange artificial [33m569[2mms[22m[39m
+   [33m[2m✓[22m[39m Fiscal registra feira, anexa a nota de exemplo e salva a contagem [33m505[2mms[22m[39m
+   [33m[2m✓[22m[39m Gestor abre aplicação e aporte na mesma aba, enviando reais [33m607[2mms[22m[39m
+   [33m[2m✓[22m[39m imóvel novo/edição=false valida valor inválido e entrega reais ao salvar [33m483[2mms[22m[39m
+   [33m[2m✓[22m[39m imóvel novo/edição=true valida valor inválido e entrega reais ao salvar [33m487[2mms[22m[39m
+   [33m[2m✓[22m[39m reabre o mesmo atalho Nova aplicação depois de fechar, sem hashchange artificial [33m566[2mms[22m[39m
+   [33m[2m✓[22m[39m reabre o mesmo atalho Guardar dinheiro depois de fechar, sem hashchange artificial [33m516[2mms[22m[39m
+   [33m[2m✓[22m[39m reabre o mesmo atalho Tirar dinheiro depois de fechar, sem hashchange artificial [33m556[2mms[22m[39m
    [33m[2m✓[22m[39m duas instancias reais compartilham leitura e trava do lembrete recorrente; falha na releitura=false [33m442[2mms[22m[39m
-   [33m[2m✓[22m[39m duas instancias reais compartilham leitura e trava do lembrete recorrente; falha na releitura=true [33m455[2mms[22m[39m
-   [33m[2m✓[22m[39m agente da aba e ficha real nao duplicam a pergunta acionavel da Secretaria [33m500[2mms[22m[39m
-   [33m[2m✓[22m[39m ficha aberta tem a pergunta e todos os botoes dentro do dialogo, sem resposta fora [33m479[2mms[22m[39m
-   [33m[2m✓[22m[39m duplo clique dentro da ficha envia exatamente uma resposta compartilhada [33m492[2mms[22m[39m
-   [33m[2m✓[22m[39m fechar ficha devolve ao agente a propriedade exclusiva da pergunta [33m480[2mms[22m[39m
-   [33m[2m✓[22m[39m falha na releitura da ficha conserva a trava inclusive ao devolver ao agente [33m503[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: leitura rejeitada em imoveis não parece vazio e pode tentar novamente [33m480[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: leitura rejeitada em cartoes não parece vazio e pode tentar novamente [33m483[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: Não gastei não conquista primeiro gasto; lançamento real conquista [33m1061[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: rascunho recupera valor protegido, oferece olho na folha e descarta [33m617[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: compra da equipe recupera só texto e limpa após salvar [33m964[2mms[22m[39m
-   [33m[2m✓[22m[39m UX: olho fechado retira link privado de convite e bloqueia compartilhamento [33m470[2mms[22m[39m
-   [33m[2m✓[22m[39m f32: conversa tem painel próprio e recolher preserva o controle acessível [33m459[2mms[22m[39m
-   [33m[2m✓[22m[39m 15: recolher e expandir informam estado acessível [33m449[2mms[22m[39m
-   [33m[2m✓[22m[39m 3: agente com falha não anuncia sem pendências e pode repetir [33m479[2mms[22m[39m
- [32m✓[39m src/f54.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 6822[2mms[22m[39m
-   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para casal (dono: true) [33m3082[2mms[22m[39m
-   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para casal (dono: false) [33m1997[2mms[22m[39m
-   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para pessoa (dono: false) [33m570[2mms[22m[39m
-   [33m[2m✓[22m[39m 8: últimos lançamentos usa botão compartilhado e cartão sem fatura tem texto próprio [33m425[2mms[22m[39m
- [32m✓[39m src/lib/futuro/propriedades.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 19605[2mms[22m[39m
-   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mdesvio maior nunca dá renda maior (200 sorteios) [33m9257[2mms[22m[39m
-   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mdesvio mais cedo pesa mais (ou igual) na virada [33m493[2mms[22m[39m
-   [33m[2m✓[22m[39m desvio e renda de 2029[2m > [22mconferência F6: diferença entre 2 rodadas da linha bate com o valor na virada (até R$ 0,01 por mês) [33m2374[2mms[22m[39m
-   [33m[2m✓[22m[39m linha mês a mês[2m > [22mconserva o dinheiro em todo mês e emenda os meses (100 sorteios) [33m1745[2mms[22m[39m
-   [33m[2m✓[22m[39m linha mês a mês[2m > [22msoma dos recebimentos certos da linha é a soma dos cadastrados no período (nenhum some) [33m877[2mms[22m[39m
-   [33m[2m✓[22m[39m patrimônio, folga e desejos[2m > [22mdesejo com volta certa maior que a saída tira menos da renda que o mesmo desejo incerto [33m950[2mms[22m[39m
-   [33m[2m✓[22m[39m patrimônio, folga e desejos[2m > [22mcabe? pequeno cabe; enorme ainda não cabe e diz o 1º mês abaixo do piso [33m391[2mms[22m[39m
-   [33m[2m✓[22m[39m cabe? compara com a linha sem o desejo (REVISOR C3)[2m > [22mdesejo de R$ 0,01 nunca muda o veredito da base (60 sorteios) [33m2779[2mms[22m[39m
-   [33m[2m✓[22m[39m cabe? compara com a linha sem o desejo (REVISOR C3)[2m > [22mdesejo que derruba um mês bom continua "ainda não cabe" e diz quando caberia [33m347[2mms[22m[39m
- [32m✓[39m src/telas/planejamento/conferencia.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 488[2mms[22m[39m
-   [33m[2m✓[22m[39m conferência que falha mantém envio bloqueado; só lista confirmada sem correspondência libera nova tentativa [33m371[2mms[22m[39m
- [32m✓[39m src/telas/casa/Casa.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 199[2mms[22m[39m
- [32m✓[39m src/lib/seguro.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 38[2mms[22m[39m
- [32m✓[39m src/app/leiturasCompartilhadas.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 20[2mms[22m[39m
- [32m✓[39m src/app/seguranca-f23.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 424[2mms[22m[39m
- [32m✓[39m src/lib/insights/adiamento.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 252[2mms[22m[39m
- [32m✓[39m src/componentes/escritorio/EscritorioMaquete.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 176[2mms[22m[39m
+   [33m[2m✓[22m[39m duas instancias reais compartilham leitura e trava do lembrete recorrente; falha na releitura=true [33m462[2mms[22m[39m
+   [33m[2m✓[22m[39m agente da aba e ficha real nao duplicam a pergunta acionavel da Secretaria [33m464[2mms[22m[39m
+   [33m[2m✓[22m[39m ficha aberta tem a pergunta e todos os botoes dentro do dialogo, sem resposta fora [33m505[2mms[22m[39m
+   [33m[2m✓[22m[39m duplo clique dentro da ficha envia exatamente uma resposta compartilhada [33m495[2mms[22m[39m
+   [33m[2m✓[22m[39m fechar ficha devolve ao agente a propriedade exclusiva da pergunta [33m477[2mms[22m[39m
+   [33m[2m✓[22m[39m falha na releitura da ficha conserva a trava inclusive ao devolver ao agente [33m505[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: leitura rejeitada em imoveis não parece vazio e pode tentar novamente [33m504[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: leitura rejeitada em cartoes não parece vazio e pode tentar novamente [33m469[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: Não gastei não conquista primeiro gasto; lançamento real conquista [33m1050[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: rascunho recupera valor protegido, oferece olho na folha e descarta [33m575[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: compra da equipe recupera só texto e limpa após salvar [33m984[2mms[22m[39m
+   [33m[2m✓[22m[39m UX: olho fechado retira link privado de convite e bloqueia compartilhamento [33m476[2mms[22m[39m
+   [33m[2m✓[22m[39m f32: conversa tem painel próprio e recolher preserva o controle acessível [33m454[2mms[22m[39m
+   [33m[2m✓[22m[39m 15: recolher e expandir informam estado acessível [33m461[2mms[22m[39m
+   [33m[2m✓[22m[39m 3: agente com falha não anuncia sem pendências e pode repetir [33m463[2mms[22m[39m
+ [32m✓[39m src/telas/casa/Casa.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 138[2mms[22m[39m
+ [32m✓[39m src/f54.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 6802[2mms[22m[39m
+   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para casal (dono: true) [33m2917[2mms[22m[39m
+   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para casal (dono: false) [33m2102[2mms[22m[39m
+   [33m[2m✓[22m[39m as rotas do menu funcionam no desktop e no celular para pessoa (dono: false) [33m607[2mms[22m[39m
+   [33m[2m✓[22m[39m 8: últimos lançamentos usa botão compartilhado e cartão sem fatura tem texto próprio [33m453[2mms[22m[39m
+ [32m✓[39m src/telas/planejamento/conferencia.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 433[2mms[22m[39m
+   [33m[2m✓[22m[39m API real + formulário: gravação com resposta perdida confere antes da nova tentativa e termina com um registro [33m368[2mms[22m[39m
+ [32m✓[39m src/app/leiturasCompartilhadas.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/componentes/escritorio/EscritorioMaquete.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 171[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2morçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1667,6 +1608,8 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
+ [32m✓[39m src/lib/insights/adiamento.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 301[2mms[22m[39m
+ [32m✓[39m src/lib/seguro.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 37[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2morçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1676,8 +1619,7 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/telas/escritorio/numeros.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1306[2mms[22m[39m
-   [33m[2m✓[22m[39m funcionários das abas[2m > [22mo provedor de exemplo existente atende todas as abas sem dados reais [33m1209[2mms[22m[39m
+ [32m✓[39m src/app/seguranca-f23.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 429[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2morçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1687,7 +1629,8 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/componentes/seguranca-f23-ui.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 283[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/numeros.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1303[2mms[22m[39m
+   [33m[2m✓[22m[39m funcionários das abas[2m > [22mo provedor de exemplo existente atende todas as abas sem dados reais [33m1181[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2mGuardado sentinela chega à aba, cartão e funcionário pela leitura real
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1715,18 +1658,6 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/lib/futuro/fronteira.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 209[2mms[22m[39m
-[90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2mfaturas sentinela chegam à aba, referência e rotina, com valores e contagem protegidos pelo olho
-[22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
-    at ul
-    at section
-    at UltimosLancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\UltimosLancamentos.tsx:22:71)
-    at div
-    at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
-    at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
-
- [32m✓[39m src/app/envioGuardado.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 15[2mms[22m[39m
- [32m✓[39m src/lib/insights/donos.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 131[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2mfaturas sentinela chegam à aba, referência e rotina, com valores e contagem protegidos pelo olho
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1745,6 +1676,16 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
+[90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2mfaturas sentinela chegam à aba, referência e rotina, com valores e contagem protegidos pelo olho
+[22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at ul
+    at section
+    at UltimosLancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\UltimosLancamentos.tsx:22:71)
+    at div
+    at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
+    at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
+
+ [32m✓[39m src/componentes/seguranca-f23-ui.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 287[2mms[22m[39m
 [90mstderr[2m | src/lib/resumo/sentinela.test.ts[2m > [22m[2mmovimentação sentinela chega ao Início, à faixa da aba e ao funcionário
 [22m[39mWarning: Encountered two children with the same key, `g`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
     at ul
@@ -1754,74 +1695,79 @@ I com decisões escuro desktop: 8 números acima da dobra
     at InicioFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:188:73)
     at Inicio (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\inicio\Inicio.tsx:178:53)
 
- [32m✓[39m src/api/receitas.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 343[2mms[22m[39m
- [32m✓[39m src/lib/resumo/sentinela.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 901[2mms[22m[39m
-   [33m[2m✓[22m[39m orçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário [33m412[2mms[22m[39m
- [32m✓[39m src/lib/futuro/casos_revisao.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 158[2mms[22m[39m
+ [32m✓[39m src/lib/resumo/sentinela.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1027[2mms[22m[39m
+   [33m[2m✓[22m[39m orçamento sentinela percorre a aba, a leitura real do Início e a ficha do funcionário [33m465[2mms[22m[39m
+ [32m✓[39m src/app/envioGuardado.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/lib/futuro/fronteira.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 193[2mms[22m[39m
+ [32m✓[39m src/api/receitas.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 293[2mms[22m[39m
+ [32m✓[39m src/lib/insights/donos.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 111[2mms[22m[39m
+ [32m✓[39m src/lib/futuro/casos_revisao.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 151[2mms[22m[39m
  [32m✓[39m src/lib/formato.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 34[2mms[22m[39m
- [32m✓[39m src/componentes/ux-cobertura.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 23185[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em inicio, privada, sem rede ou escrita, Escape devolve foco [33m1652[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em lancamentos, privada, sem rede ou escrita, Escape devolve foco [33m945[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em orcamento, privada, sem rede ou escrita, Escape devolve foco [33m1059[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em casa, privada, sem rede ou escrita, Escape devolve foco [33m1105[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em cartoes, privada, sem rede ou escrita, Escape devolve foco [33m960[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em guardado, privada, sem rede ou escrita, Escape devolve foco [33m980[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em planejamento, privada, sem rede ou escrita, Escape devolve foco [33m1293[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em desejos, privada, sem rede ou escrita, Escape devolve foco [33m961[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em escritorio, privada, sem rede ou escrita, Escape devolve foco [33m971[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em ajustes, privada, sem rede ou escrita, Escape devolve foco [33m1165[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em privacidade, privada, sem rede ou escrita, Escape devolve foco [33m982[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em painel, privada, sem rede ou escrita, Escape devolve foco [33m938[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em entrar, privada, sem rede ou escrita, Escape devolve foco [33m488[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em primeiro-uso, privada, sem rede ou escrita, Escape devolve foco [33m916[2mms[22m[39m
+ [32m✓[39m src/auditoria-f20-ui.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 5440[2mms[22m[39m
+   [33m[2m✓[22m[39m 2: cache com falha avisa e permite repetir [33m330[2mms[22m[39m
+   [33m[2m✓[22m[39m 3: distingue erro e permite repetir [33m841[2mms[22m[39m
+   [33m[2m✓[22m[39m 3: distingue erro e permite repetir [33m454[2mms[22m[39m
+   [33m[2m✓[22m[39m 6: imóvel explica venda com contrato [33m367[2mms[22m[39m
+   [33m[2m✓[22m[39m 8: só texto não oferece abrir cena [33m335[2mms[22m[39m
+   [33m[2m✓[22m[39m 10 e 11: cópia respeita dono, período e retorno do clipboard [33m313[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/useEquipe.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/componentes/ux-cobertura.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 22848[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em inicio, privada, sem rede ou escrita, Escape devolve foco [33m1684[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em lancamentos, privada, sem rede ou escrita, Escape devolve foco [33m923[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em orcamento, privada, sem rede ou escrita, Escape devolve foco [33m1086[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em casa, privada, sem rede ou escrita, Escape devolve foco [33m932[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em cartoes, privada, sem rede ou escrita, Escape devolve foco [33m947[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em guardado, privada, sem rede ou escrita, Escape devolve foco [33m942[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em planejamento, privada, sem rede ou escrita, Escape devolve foco [33m1118[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em desejos, privada, sem rede ou escrita, Escape devolve foco [33m960[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em escritorio, privada, sem rede ou escrita, Escape devolve foco [33m957[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em ajustes, privada, sem rede ou escrita, Escape devolve foco [33m935[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em privacidade, privada, sem rede ou escrita, Escape devolve foco [33m1050[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em painel, privada, sem rede ou escrita, Escape devolve foco [33m1148[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em entrar, privada, sem rede ou escrita, Escape devolve foco [33m484[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura ajuda: folha fixa em primeiro-uso, privada, sem rede ou escrita, Escape devolve foco [33m894[2mms[22m[39m
    [33m[2m✓[22m[39m cobertura foco: navegação foca título e preserva edição em INPUT [33m519[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura foco: navegação foca título e preserva edição em TEXTAREA [33m522[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura foco: navegação foca título e preserva edição em SELECT [33m506[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura modos: Ajustes muda o agente vivo sem remontar página [33m568[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: storage cheio não impede editar e salvar [33m591[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: storage indisponível não impede editar e salvar [33m579[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: não restaura outro usuario [33m1086[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: não restaura outro familia [33m1141[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: salvar apaga e não recupera na próxima montagem [33m1104[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: descartar apaga e não recupera na próxima montagem [33m1069[2mms[22m[39m
-   [33m[2m✓[22m[39m cobertura rascunho: formulários pessoal/equipe isolados e sem valor em atributos ou logs com olho fechado [33m1081[2mms[22m[39m
- [32m✓[39m src/auditoria-f20-ui.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 5548[2mms[22m[39m
-   [33m[2m✓[22m[39m 2: cache com falha avisa e permite repetir [33m366[2mms[22m[39m
-   [33m[2m✓[22m[39m 3: distingue erro e permite repetir [33m953[2mms[22m[39m
-   [33m[2m✓[22m[39m 3: distingue erro e permite repetir [33m416[2mms[22m[39m
-   [33m[2m✓[22m[39m 3: números não usam exemplo após erro real [33m328[2mms[22m[39m
-   [33m[2m✓[22m[39m 6: imóvel explica venda com contrato [33m370[2mms[22m[39m
- [32m✓[39m src/telas/escritorio/useEquipe.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 33[2mms[22m[39m
- [32m✓[39m src/telas/inicio/SobreHoje.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 60[2mms[22m[39m
- [32m✓[39m src/nome-pessoa.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1506[2mms[22m[39m
-   [33m[2m✓[22m[39m identidade editável[2m > [22matualiza membro, sessão, renda textual, convites e fala do funcionário [33m413[2mms[22m[39m
-   [33m[2m✓[22m[39m identidade editável[2m > [22maltera convite e cadastra autor antigo sem membro no exemplo [33m308[2mms[22m[39m
- [32m✓[39m src/telas/escritorio/elencoPorAba.test.ts [2m([22m[2m80 tests[22m[2m)[22m[90m 27[2mms[22m[39m
- [32m✓[39m src/fase_final_e4.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 615[2mms[22m[39m
-   [33m[2m✓[22m[39m E4: no exemplo, R$ 1.200 em 6x no Nubank (fecha 3, vence 10)[2m > [22mfaturas de dezembro a maio com R$ 200 cada; novembro não conta nada; dezembro abate R$ 200 no dia 1 [33m340[2mms[22m[39m
- [32m✓[39m src/componentes/ilustracoes/ilustracoes.test.ts [2m([22m[2m38 tests[22m[2m)[22m[33m 582[2mms[22m[39m
-   [33m[2m✓[22m[39m a galeria é uma entrada DEV isolada, sem import no app nem export no índice [33m543[2mms[22m[39m
- [32m✓[39m src/futuro_parcelas.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 30[2mms[22m[39m
- [32m✓[39m src/componentes/patrimonio-f30.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 74[2mms[22m[39m
- [32m✓[39m src/telas/cartoes/Cartoes.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 195[2mms[22m[39m
- [32m✓[39m src/app/sincroniaResumo.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 186[2mms[22m[39m
- [32m✓[39m src/app/pendentesGuardados.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1216[2mms[22m[39m
-   [33m[2m✓[22m[39m gasto anotado sem internet sobrevive a fechar o app e é reenviado, uma vez só, ao abrir de novo [33m327[2mms[22m[39m
- [32m✓[39m src/telas/cartoes/visual-f31.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 77[2mms[22m[39m
- [32m✓[39m src/api/erros.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
- [32m✓[39m src/api/erros-negocio.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 16[2mms[22m[39m
- [32m✓[39m src/lib/resumo/paridade.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 40[2mms[22m[39m
- [32m✓[39m src/nomes-formulario.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1914[2mms[22m[39m
-   [33m[2m✓[22m[39m salva pela folha: lista e fala viva usam nome novo sem recarregar página [33m728[2mms[22m[39m
-   [33m[2m✓[22m[39m falha de membros mostra tentativa e recupera a lista, sem pessoa genérica [33m469[2mms[22m[39m
-   [33m[2m✓[22m[39m cadastro de assessor no real usa configuração existente e preserva salário fora do formulário [33m715[2mms[22m[39m
- [32m✓[39m src/api/inversos.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 2839[2mms[22m[39m
-   [33m[2m✓[22m[39m recebimento: marcar como certo tem desfazer que volta o valor anterior e não gera outro desfazer [33m312[2mms[22m[39m
-   [33m[2m✓[22m[39m lembrete adiado volta para a hora de antes [33m321[2mms[22m[39m
-   [33m[2m✓[22m[39m cartão: mudar os dias volta o cadastro inteiro de antes [33m320[2mms[22m[39m
-   [33m[2m✓[22m[39m fatura: valor informado pela primeira vez não tem volta (o banco não sabe tirar); pagamento marcado tem [33m343[2mms[22m[39m
-   [33m[2m✓[22m[39m cartão sem anuidade: o desfazer funciona mesmo quando o banco guarda o período da taxa diferente do que a tela mandou [33m452[2mms[22m[39m
-   [33m[2m✓[22m[39m cartão desativado some da lista, e o desfazer traz ele de volta [33m350[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura foco: navegação foca título e preserva edição em TEXTAREA [33m558[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura foco: navegação foca título e preserva edição em SELECT [33m537[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura modos: Ajustes muda o agente vivo sem remontar página [33m496[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: storage cheio não impede editar e salvar [33m584[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: storage indisponível não impede editar e salvar [33m572[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: não restaura outro usuario [33m1166[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: não restaura outro familia [33m1106[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: salvar apaga e não recupera na próxima montagem [33m1112[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: descartar apaga e não recupera na próxima montagem [33m1078[2mms[22m[39m
+   [33m[2m✓[22m[39m cobertura rascunho: formulários pessoal/equipe isolados e sem valor em atributos ou logs com olho fechado [33m1057[2mms[22m[39m
+ [32m✓[39m src/nome-pessoa.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1526[2mms[22m[39m
+   [33m[2m✓[22m[39m identidade editável[2m > [22matualiza membro, sessão, renda textual, convites e fala do funcionário [33m482[2mms[22m[39m
+ [32m✓[39m src/telas/inicio/SobreHoje.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32m✓[39m src/componentes/patrimonio-f30.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 99[2mms[22m[39m
+ [32m✓[39m src/fase_final_e4.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 657[2mms[22m[39m
+   [33m[2m✓[22m[39m E4: no exemplo, R$ 1.200 em 6x no Nubank (fecha 3, vence 10)[2m > [22mfaturas de dezembro a maio com R$ 200 cada; novembro não conta nada; dezembro abate R$ 200 no dia 1 [33m352[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/elencoPorAba.test.ts [2m([22m[2m80 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/componentes/ilustracoes/ilustracoes.test.ts [2m([22m[2m38 tests[22m[2m)[22m[33m 695[2mms[22m[39m
+   [33m[2m✓[22m[39m a galeria é uma entrada DEV isolada, sem import no app nem export no índice [33m654[2mms[22m[39m
+ [32m✓[39m src/futuro_parcelas.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m src/telas/cartoes/Cartoes.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 191[2mms[22m[39m
+ [32m✓[39m src/app/sincroniaResumo.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 177[2mms[22m[39m
+ [32m✓[39m src/api/erros.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/app/pendentesGuardados.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1217[2mms[22m[39m
+   [33m[2m✓[22m[39m gasto anotado sem internet sobrevive a fechar o app e é reenviado, uma vez só, ao abrir de novo [33m305[2mms[22m[39m
+   [33m[2m✓[22m[39m sair da conta, ou a sessão cair, com gasto pendente NÃO apaga o gasto: ele volta a ser enviado ao entrar de novo [33m302[2mms[22m[39m
+ [32m✓[39m src/api/erros-negocio.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/telas/cartoes/visual-f31.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 72[2mms[22m[39m
+ [32m✓[39m src/lib/resumo/paridade.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/nomes-formulario.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1898[2mms[22m[39m
+   [33m[2m✓[22m[39m salva pela folha: lista e fala viva usam nome novo sem recarregar página [33m775[2mms[22m[39m
+   [33m[2m✓[22m[39m falha de membros mostra tentativa e recupera a lista, sem pessoa genérica [33m460[2mms[22m[39m
+   [33m[2m✓[22m[39m cadastro de assessor no real usa configuração existente e preserva salário fora do formulário [33m662[2mms[22m[39m
+ [32m✓[39m src/api/inversos.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 2806[2mms[22m[39m
+   [33m[2m✓[22m[39m recebimento: marcar como certo tem desfazer que volta o valor anterior e não gera outro desfazer [33m347[2mms[22m[39m
+   [33m[2m✓[22m[39m lembrete adiado volta para a hora de antes [33m301[2mms[22m[39m
+   [33m[2m✓[22m[39m cartão: mudar os dias volta o cadastro inteiro de antes [33m310[2mms[22m[39m
+   [33m[2m✓[22m[39m fatura: valor informado pela primeira vez não tem volta (o banco não sabe tirar); pagamento marcado tem [33m358[2mms[22m[39m
+   [33m[2m✓[22m[39m cartão sem anuidade: o desfazer funciona mesmo quando o banco guarda o período da taxa diferente do que a tela mandou [33m431[2mms[22m[39m
+   [33m[2m✓[22m[39m cartão desativado some da lista, e o desfazer traz ele de volta [33m359[2mms[22m[39m
+ [32m✓[39m src/api/prazo.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 14[2mms[22m[39m
 [90mstderr[2m | src/falha.test.ts[2m > [22m[2mC6: tela de falha em vez de tela branca[2m > [22m[2mpedaço do app que não baixou: mensagem de internet e botão Tentar de novo que recarrega
 [22m[39mCentral da Família não abriu: TypeError: Failed to fetch dynamically imported module: https://x/assets/partida-abc.js
     at [90mC:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\[39msrc\falha.test.ts:29:7
@@ -1861,33 +1807,34 @@ I com decisões escuro desktop: 8 números acima da dobra
     at runFiles [90m(file:///C:/Users/Romero%20Albuquerque/Documents/GitHub/central-da-familia/codigo/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
     at startTests [90m(file:///C:/Users/Romero%20Albuquerque/Documents/GitHub/central-da-familia/codigo/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
 
- [32m✓[39m src/falha.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 11[2mms[22m[39m
- [32m✓[39m src/api/prazo.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
- [32m✓[39m src/auditoria-f20.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 266[2mms[22m[39m
- [32m✓[39m src/api/erros-real.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 616[2mms[22m[39m
- [32m✓[39m src/carga-f24.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 13[2mms[22m[39m
- [32m✓[39m src/api/acoes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
- [32m✓[39m src/telas/privacidade/textos.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 26[2mms[22m[39m
- [32m✓[39m src/telas/escritorio/cenaBase.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 11[2mms[22m[39m
- [32m✓[39m src/componentes/dinheiro-f29.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 377[2mms[22m[39m
-   [33m[2m✓[22m[39m o vazio do Início usa EstadoVazio com ilustração e conserva a ação [33m336[2mms[22m[39m
- [32m✓[39m src/ux-guardas.test.ts [2m([22m[2m33 tests[22m[2m)[22m[33m 1981[2mms[22m[39m
- [32m✓[39m src/telas/planejamento/limites.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1201[2mms[22m[39m
-   [33m[2m✓[22m[39m vários limites gravados de uma vez voltam todos juntos com um desfazer só [33m417[2mms[22m[39m
-   [33m[2m✓[22m[39m se um limite mudou depois, o desfazer recusa e não mexe em nenhum [33m308[2mms[22m[39m
-   [33m[2m✓[22m[39m gravação que para no meio devolve o erro e um desfazer só do que foi gravado [33m472[2mms[22m[39m
- [32m✓[39m src/lib/foto.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
- [32m✓[39m src/api/prazoPorTipo.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/falha.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/auditoria-f20.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 275[2mms[22m[39m
+ [32m✓[39m src/api/erros-real.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 613[2mms[22m[39m
+ [32m✓[39m src/api/acoes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/telas/privacidade/textos.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/telas/escritorio/cenaBase.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/carga-f24.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/componentes/dinheiro-f29.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 367[2mms[22m[39m
+   [33m[2m✓[22m[39m o vazio do Início usa EstadoVazio com ilustração e conserva a ação [33m324[2mms[22m[39m
+ [32m✓[39m src/ux-guardas.test.ts [2m([22m[2m33 tests[22m[2m)[22m[33m 1654[2mms[22m[39m
+ [32m✓[39m src/telas/planejamento/limites.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1093[2mms[22m[39m
+   [33m[2m✓[22m[39m vários limites gravados de uma vez voltam todos juntos com um desfazer só [33m423[2mms[22m[39m
+   [33m[2m✓[22m[39m se um limite mudou depois, o desfazer recusa e não mexe em nenhum [33m303[2mms[22m[39m
+   [33m[2m✓[22m[39m gravação que para no meio devolve o erro e um desfazer só do que foi gravado [33m365[2mms[22m[39m
  [32m✓[39m src/lib/resumo/divergencias.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 34[2mms[22m[39m
- [32m✓[39m src/componentes/visual-f27.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/componentes/visual-f27.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/app/falhasDeLeitura.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/api/prazoPorTipo.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/lib/foto.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 7[2mms[22m[39m
  [32m✓[39m src/lib/resumo/contrato.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 5[2mms[22m[39m
  [32m✓[39m src/telas/cartoes/simulacao.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
- [32m✓[39m src/app/falhasDeLeitura.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
- [32m✓[39m src/componentes/visual-f32.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/componentes/visual-f32.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/app/useAdultos-f24.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
  [32m✓[39m src/riscos-corrigidos.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
- [32m✓[39m src/app/useAdultos-f24.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
- [32m✓[39m src/lib/resumo/arquitetura.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
- [32m✓[39m src/lib/resumo/caracterizacao.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m src/lib/resumo/caracterizacao.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m src/lib/resumo/arquitetura.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/vocabulario.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1573[2mms[22m[39m
+   [33m[2m✓[22m[39m vocabulário visível não reintroduz profissões ou nomes antigos do papel [33m1572[2mms[22m[39m
 [90mstdout[2m | src/propostas/m/proposta.test.ts[2m > [22m[2mmede o layout e aciona menu, funcionário e fila no Chromium
 [22m[39mM · claro · 375px · 3 acima da dobra
 M · claro · 390px · 3 acima da dobra
@@ -1898,35 +1845,33 @@ M · escuro · 390px · 3 acima da dobra
 M · escuro · 1280px · 3 acima da dobra
 M · escuro · 1440px · 3 acima da dobra
 
- [32m✓[39m src/propostas/m/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 11394[2mms[22m[39m
-   [33m[2m✓[22m[39m mede o layout e aciona menu, funcionário e fila no Chromium [33m10827[2mms[22m[39m
- [32m✓[39m src/vocabulario.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1446[2mms[22m[39m
-   [33m[2m✓[22m[39m vocabulário visível não reintroduz profissões ou nomes antigos do papel [33m1445[2mms[22m[39m
- [32m✓[39m src/nomes-varredura.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 17[2mms[22m[39m
- [32m✓[39m src/propostas/isolamento.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 7080[2mms[22m[39m
-   [33m[2m✓[22m[39m exclui o laboratório do grafo do build real e da entrada direta em produção [33m7079[2mms[22m[39m
- [32m✓[39m src/componentes/RumoA2029.test.ts [2m([22m[2m37 tests[22m[2m)[22m[33m 35039[2mms[22m[39m
-   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: cobre [33m2288[2mms[22m[39m
-   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: não cobre [33m1946[2mms[22m[39m
-   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: sobra [33m2087[2mms[22m[39m
-   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: sem dados [33m2250[2mms[22m[39m
-   [33m[2m✓[22m[39m troca sincroniza cartão e seletor, preserva oficial, persiste e informa cenário e base do gráfico [33m4646[2mms[22m[39m
-   [33m[2m✓[22m[39m fontes por cenário preservam certeza e não duplicam recorrência já acumulada nas aplicações [33m3824[2mms[22m[39m
-   [33m[2m✓[22m[39m agente real fala o mesmo Garantido do cartão, Início e Painel; cenário alternativo e olho não mudam sua base [33m3249[2mms[22m[39m
-   [33m[2m✓[22m[39m hero cobre: frase, barra, premissas e gráfico textual vêm de cenário fabricado rico [33m1433[2mms[22m[39m
-   [33m[2m✓[22m[39m hero não cobre: falta por mês, limite dez/2031 e renda nunca ganha garantia [33m713[2mms[22m[39m
-   [33m[2m✓[22m[39m hero sem dados e gasto zero orienta completar sem inventar cobertura [33m698[2mms[22m[39m
-   [33m[2m✓[22m[39m decomposição com origens mantém garantido, previsto e incerto separados e exclui salário/aluguel duplicado [33m1079[2mms[22m[39m
-   [33m[2m✓[22m[39m sem fontes e com fontes corrompidas não presume recorrência nem soma renda certa de origem desconhecida [33m1487[2mms[22m[39m
-   [33m[2m✓[22m[39m alavancas têm efeito reproduzível no motor, ordenam até três e não mudam entrada [33m1336[2mms[22m[39m
-   [33m[2m✓[22m[39m guardar e antecipar são hipóteses independentes calculadas com fluxos reais do motor [33m1892[2mms[22m[39m
-   [33m[2m✓[22m[39m quando cobre respeita a primeira ultrapassagem, término de contratos e taxas estendidas declaradas [33m629[2mms[22m[39m
-   [33m[2m✓[22m[39m folha real mostra cores e limites, destinos existentes e marca apenas o item escolhido [33m856[2mms[22m[39m
-   [33m[2m✓[22m[39m folha reutiliza formulário de imóvel real, salva e atualiza conferência [33m1563[2mms[22m[39m
-   [33m[2m✓[22m[39m olho fechado mascara frase, valores, nomes, status, premissas, largura e geometria do gráfico [33m726[2mms[22m[39m
-   [33m[2m✓[22m[39m papel pessoa não monta nem busca dados financeiros [33m572[2mms[22m[39m
-   [33m[2m✓[22m[39m papel equipe não monta nem busca dados financeiros [33m541[2mms[22m[39m
-   [33m[2m✓[22m[39m exemplo é identificado, não decide alerta de frescor e marca só na memória [33m598[2mms[22m[39m
+ [32m✓[39m src/propostas/m/proposta.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 11402[2mms[22m[39m
+   [33m[2m✓[22m[39m mede o layout e aciona menu, funcionário e fila no Chromium [33m10870[2mms[22m[39m
+ [32m✓[39m src/nomes-varredura.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/propostas/isolamento.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 6953[2mms[22m[39m
+   [33m[2m✓[22m[39m exclui o laboratório do grafo do build real e da entrada direta em produção [33m6952[2mms[22m[39m
+ [32m✓[39m src/componentes/RumoA2029.test.ts [2m([22m[2m37 tests[22m[2m)[22m[33m 34633[2mms[22m[39m
+   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: cobre [33m2261[2mms[22m[39m
+   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: não cobre [33m1821[2mms[22m[39m
+   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: sobra [33m2145[2mms[22m[39m
+   [33m[2m✓[22m[39m fonte única em cartão, seletor, Início e Painel: sem dados [33m2403[2mms[22m[39m
+   [33m[2m✓[22m[39m troca sincroniza cartão e seletor, preserva oficial, persiste e informa cenário e base do gráfico [33m4399[2mms[22m[39m
+   [33m[2m✓[22m[39m fontes por cenário preservam certeza e não duplicam recorrência já acumulada nas aplicações [33m3738[2mms[22m[39m
+   [33m[2m✓[22m[39m agente real fala o mesmo Garantido do cartão, Início e Painel; cenário alternativo e olho não mudam sua base [33m3294[2mms[22m[39m
+   [33m[2m✓[22m[39m hero cobre: frase, barra, premissas e gráfico textual vêm de cenário fabricado rico [33m1460[2mms[22m[39m
+   [33m[2m✓[22m[39m hero não cobre: falta por mês, limite dez/2031 e renda nunca ganha garantia [33m740[2mms[22m[39m
+   [33m[2m✓[22m[39m hero sem dados e gasto zero orienta completar sem inventar cobertura [33m685[2mms[22m[39m
+   [33m[2m✓[22m[39m decomposição com origens mantém garantido, previsto e incerto separados e exclui salário/aluguel duplicado [33m1157[2mms[22m[39m
+   [33m[2m✓[22m[39m sem fontes e com fontes corrompidas não presume recorrência nem soma renda certa de origem desconhecida [33m1348[2mms[22m[39m
+   [33m[2m✓[22m[39m alavancas têm efeito reproduzível no motor, ordenam até três e não mudam entrada [33m1510[2mms[22m[39m
+   [33m[2m✓[22m[39m guardar e antecipar são hipóteses independentes calculadas com fluxos reais do motor [33m1737[2mms[22m[39m
+   [33m[2m✓[22m[39m quando cobre respeita a primeira ultrapassagem, término de contratos e taxas estendidas declaradas [33m580[2mms[22m[39m
+   [33m[2m✓[22m[39m folha real mostra cores e limites, destinos existentes e marca apenas o item escolhido [33m876[2mms[22m[39m
+   [33m[2m✓[22m[39m folha reutiliza formulário de imóvel real, salva e atualiza conferência [33m1647[2mms[22m[39m
+   [33m[2m✓[22m[39m olho fechado mascara frase, valores, nomes, status, premissas, largura e geometria do gráfico [33m741[2mms[22m[39m
+   [33m[2m✓[22m[39m papel pessoa não monta nem busca dados financeiros [33m537[2mms[22m[39m
+   [33m[2m✓[22m[39m papel equipe não monta nem busca dados financeiros [33m543[2mms[22m[39m
+   [33m[2m✓[22m[39m exemplo é identificado, não decide alerta de frescor e marca só na memória [33m587[2mms[22m[39m
 [90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mf71: bruno conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar
 [22m[39mWarning: An update to Guardado inside a test was not wrapped in act(...).
 
@@ -1938,6 +1883,638 @@ act(() => {
 /* assert on the output */
 
 This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at span
+    at p
+    at section
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at span
+    at p
+    at section
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at span
+    at p
+    at section
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to Imoveis inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Imoveis (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Imoveis.tsx:67:20)
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to Imoveis inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Imoveis (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Imoveis.tsx:67:20)
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at span
+    at p
+    at section
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at span
+    at p
+    at section
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at li
+    at ul
+    at section
+    at div
+    at div
+    at div
     at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
     at Suspense
     at div
@@ -1978,9 +2555,7 @@ This ensures that you're testing the behavior the user would see in the browser.
     at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
     at div
     at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-
-[90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mf71: ana conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar
-[22m[39mWarning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
+Warning: An update to Imoveis inside a test was not wrapped in act(...).
 
 When testing, code that causes React state updates should be wrapped into act(...):
 
@@ -1990,115 +2565,16 @@ act(() => {
 /* assert on the output */
 
 This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at main
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at Imoveis (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Imoveis.tsx:67:20)
     at div
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at main
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
     at div
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to AgenteAutorizado inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AgenteAutorizado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:224:29)
-    at AgenteDaAba (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\AgenteDaAba.tsx:203:24)
-    at main
-    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
     at div
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to MeuOrcamento inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at MeuOrcamento (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\meu-orcamento\MeuOrcamento.tsx:52:119)
+    at Guardado (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\guardado\Guardado.tsx:53:85)
     at Suspense
     at div
     at main
     at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
     at div
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to Provedor inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to Provedor inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to Provedor inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to Provedor inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
-Warning: An update to Provedor inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
     at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
 
 [90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mf71: ana conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar
@@ -2346,6 +2822,249 @@ act(() => {
 /* assert on the output */
 
 This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
+    at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
+Warning: An update to NomeDaPessoa inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at NomeDaPessoa (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\componentes\NomeDaPessoa.tsx:22:3)
+    at small
+    at span
+    at li
+    at ul
+    at div
+    at section
+    at div
+    at div
+    at LancamentosFamilia (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:68:107)
+    at Lancamentos (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\telas\lancamentos\Lancamentos.tsx:49:46)
+    at Suspense
+    at div
+    at main
+    at App (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\App.tsx:78:109)
+    at div
     at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
 
 [90mstderr[2m | src/privacidade-global.test.ts[2m > [22m[2mf71: equipe conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar
@@ -2906,16 +3625,17 @@ This ensures that you're testing the behavior the user would see in the browser.
     at div
     at Provedor (C:\Users\Romero Albuquerque\Documents\GitHub\central-da-familia\codigo\src\app\contexto.tsx:43:21)
 
- [32m✓[39m src/privacidade-global.test.ts [2m([22m[2m27 tests[22m[2m)[22m[33m 57325[2mms[22m[39m
-   [33m[2m✓[22m[39m respostas legíveis e privadas em AgenteDaAba, olho inicial true [33m313[2mms[22m[39m
-   [33m[2m✓[22m[39m regra do olho em cada tela real[2m > [22mcada tela: HTML completo, fechado → aberto → fechado sem remontar [33m51932[2mms[22m[39m
-   [33m[2m✓[22m[39m estrutura real: nomes e teclado com olho inicial true [33m403[2mms[22m[39m
-   [33m[2m✓[22m[39m estrutura real: nomes e teclado com olho inicial false [33m364[2mms[22m[39m
-   [33m[2m✓[22m[39m f71: bruno conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar [33m1392[2mms[22m[39m
-   [33m[2m✓[22m[39m f71: ana conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar [33m908[2mms[22m[39m
+ [32m✓[39m src/privacidade-global.test.ts [2m([22m[2m27 tests[22m[2m)[22m[33m 57382[2mms[22m[39m
+   [33m[2m✓[22m[39m respostas legíveis e privadas em AgenteDaAba, olho inicial true [33m320[2mms[22m[39m
+   [33m[2m✓[22m[39m respostas legíveis e privadas em AgenteDaAba, olho inicial false [33m371[2mms[22m[39m
+   [33m[2m✓[22m[39m regra do olho em cada tela real[2m > [22mcada tela: HTML completo, fechado → aberto → fechado sem remontar [33m51957[2mms[22m[39m
+   [33m[2m✓[22m[39m estrutura real: nomes e teclado com olho inicial true [33m343[2mms[22m[39m
+   [33m[2m✓[22m[39m estrutura real: nomes e teclado com olho inicial false [33m311[2mms[22m[39m
+   [33m[2m✓[22m[39m f71: bruno conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar [33m1553[2mms[22m[39m
+   [33m[2m✓[22m[39m f71: ana conserva cabeçalho, estrutura e privacidade nas abas autorizadas e em Anotar [33m865[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m115 passed[39m[22m[90m (115)[39m
 [2m      Tests [22m [1m[32m1844 passed[39m[22m[2m | [22m[90m3 todo[39m[90m (1847)[39m
-[2m   Start at [22m 06:42:31
-[2m   Duration [22m 62.70s[2m (transform 16.54s, setup 0ms, collect 83.90s, tests 358.17s, environment 30ms, prepare 23.41s)[22m
+[2m   Start at [22m 06:47:22
+[2m   Duration [22m 63.39s[2m (transform 17.17s, setup 0ms, collect 84.39s, tests 354.26s, environment 30ms, prepare 22.91s)[22m
 
