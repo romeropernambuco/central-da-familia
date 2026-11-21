@@ -10,7 +10,7 @@ import { FuncIco, PerguntaCard } from '../../componentes/Pergunta'
 import { Sheet } from '../../componentes/base'
 import { diasEntre, hojeRecife } from '../../lib/formato'
 import { totalPendencias } from '../../lib/resumo/pendencias'
-import { Escritorio3D } from '../../componentes/escritorio/Escritorio3D'
+import { EscritorioDesenho } from '../../componentes/escritorio/EscritorioDesenho'
 import { destinoDoPosto, resumoDaEquipe } from '../../componentes/escritorio/modeloPosto'
 import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
 import { prioridades } from '../../componentes/painel-inicio/modelo'
@@ -67,7 +67,7 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
             natureza: 'realizado' as const,
           },
     })),
-  } as const satisfies Parameters<typeof Escritorio3D>[0]['funcionarios']
+  } as const satisfies Parameters<typeof EscritorioDesenho>[0]['funcionarios']
   // o valor da primeira pendência de cada um vai no selo dele, na cena
   const valores: Record<string, string> = {}
   for (const t of dados.fila)
@@ -185,10 +185,9 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
               reserva={
                 <VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} tarefaDaFila={selecao?.pergunta}>
                   {navegacao => (
-                    <Escritorio3D
+                    <EscritorioDesenho
                       completo
                       variante="grande"
-                      forcarSvg
                       {...{ funcionarios, papel, oculto, celular, navegacao }}
                       salaDestacada={sala}
                       postoSelecionado={posto?.membro.id ?? null}

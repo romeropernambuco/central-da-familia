@@ -3,14 +3,14 @@ import { createRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Simulate } from 'react-dom/test-utils'
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest'
-import type { OpcoesIsometricas } from '../../telas/escritorio/cenaIsometrica'
+import type { OpcoesIsometricas } from './cenaIsometrica'
 import { DocumentoTeste, NoTeste } from '../../telas/escritorio/numeros.dom-teste'
-import { carregarDadosInicio } from './dadosDeExemplo'
+import { carregarDadosInicio } from '../../componentes/escritorio/dadosDeExemplo'
 import { Escritorio3D, type PropsEscritorio3D } from './Escritorio3D'
-import type { PropsEscritorioMaquete } from './EscritorioMaquete'
+import type { PropsEscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
 import { distribuirEtiquetas } from './escritorio3d-etiquetas'
 import { POR_ID } from '../../telas/escritorio/equipe'
-import { PrivacidadePropostas } from './privacidade'
+import { PrivacidadePropostas } from '../../componentes/escritorio/privacidade'
 
 const cena = vi.hoisted(() => ({
   montar: vi.fn(),
@@ -19,7 +19,7 @@ const cena = vi.hoisted(() => ({
   falhar: false,
 }))
 vi.mock('../../telas/escritorio/tres', () => ({}))
-vi.mock('../../telas/escritorio/cenaIsometrica', () => ({
+vi.mock('./cenaIsometrica', () => ({
   montarEscritorioIsometrico: (_t: unknown, _el: HTMLElement, opcoes: OpcoesIsometricas) => {
     cena.montar(opcoes)
     if (cena.falhar) throw new Error('Contexto WebGL indisponível')

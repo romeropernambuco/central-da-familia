@@ -28,13 +28,6 @@ vi.mock('./tres', () => {
   fake.importarThree()
   return {}
 })
-vi.mock('./cenaIsometrica', () => ({
-  montarEscritorioIsometrico: (_t: unknown, _el: unknown, opcoes: unknown) => {
-    fake.montar(opcoes)
-    if (fake.falhar) throw new Error('WebGL indisponível')
-    return { atualizar: fake.atualizar, destruir: fake.destruir, navegar() {} }
-  },
-}))
 vi.mock('../inicio/ResumoFamilia', () => {
   const Resumo = () => createElement('h2', null, 'Resumo da família')
   return { ResumoFamilia: Resumo, ResumoApresentacao: Resumo }
@@ -167,13 +160,13 @@ it('f54: Início clássico fora da área visível mostra o painel estático sem 
     expect(observe).toHaveBeenCalledOnce()
     await act(async () => visibilidade([{ isIntersecting: false }]))
     expect(fake.importarThree).not.toHaveBeenCalled()
-    expect(fake.montar).not.toHaveBeenCalled()
+    expect(a.ler('class', 'cena3d-bloco')).toBeUndefined()
+    expect(a.ler('data-posto', 'contador')).toBeUndefined()
     await act(async () => visibilidade([{ isIntersecting: true }]))
     await act(async () => vi.dynamicImportSettled())
-    expect(fake.importarThree).toHaveBeenCalledOnce()
-    expect(fake.montar).toHaveBeenCalledOnce()
-    expect(fake.montar.mock.calls[0][0].etiqueta('contador')).toBe(a.ler('data-posto', 'contador'))
-    expect(a.ler('data-posto', 'contador').textContent).toBe('')
+    // entrou na área visível: é a mesma cena da aba Escritório, com um botão por funcionário
+    expect(a.ler('class', 'cena3d-bloco')).toBeDefined()
+    expect(a.ler('data-posto', 'contador')).toBeDefined()
     expect(disconnect).toHaveBeenCalled()
   } finally {
     await a.fechar()
@@ -206,7 +199,6 @@ it('Início J usa o SVG sem WebGL, tem todos os postos e abre o destino real da 
     await a.render(Inicio)
     expect(a.ler('data-renderizacao', 'svg')).toBeDefined()
     expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
-    expect(fake.montar).not.toHaveBeenCalled()
     await act(async () => a.ler('data-posto', 'cartao').click())
     expect(a.ler('data-ficha', 'cartao').textContent).toContain('Conferido')
     await act(async () => a.ler('aria-label', 'Abrir Cartões').click())
@@ -330,7 +322,6 @@ it('Início J usa a cena original do escritório; sem WebGL fica a maquete em de
     await act(async () => vi.dynamicImportSettled())
     // a cena do Início é a mesma da aba Escritório (Cena3D); o motor isométrico resumido não é mais montado ali
     expect(a.ler('data-modo', 'lista')).toBeDefined()
-    expect(fake.montar).not.toHaveBeenCalled()
     expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
     expect(a.el.textContent).not.toContain('A cena 3D não abriu neste aparelho')
     expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
@@ -379,7 +370,6 @@ it('sentinela da leitura chega à fila, ao selo e à manchete da cena original, 
     expect(a.ler('data-posto', 'cartao').getAttribute('data-estado')).toBe('entregue')
     expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
     // a aba Escritório não monta mais a cena isométrica resumida
-    expect(fake.montar).not.toHaveBeenCalled()
     await a.atualizar({ ...fonte(), trabalhando: [], precisa_de_voce: [pergunta('novo', 'guardado', 651.83)] })
     expect(a.ler('data-posto', 'guardado').textContent).toContain('651,83')
     expect(a.ler('data-posto', 'guardado').getAttribute('data-estado')).toBe('precisa_de_voce')
@@ -432,7 +422,6 @@ it('em Só texto ficam a fila e os botões da lista, sem cena; desligado tira o 
     await act(async () => definirModoFuncionario('compacto'))
     expect(a.ler('data-modo', 'lista')).toBeUndefined()
     expect(a.ler('data-func', 'imoveis')).toBeDefined()
-    expect(fake.montar).not.toHaveBeenCalled()
     await act(async () => definirModoFuncionario('desligado'))
     await a.render(Inicio)
     expect(a.el.textContent).not.toContain('Escritório da família')

@@ -1,6 +1,6 @@
 import { BellRing, Check, Clock, DoorOpen, Keyboard, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { Escritorio3D } from '../../componentes/escritorio/Escritorio3D'
+import { Escritorio3D } from '../motor/Escritorio3D'
 import { FichaPosto } from '../FichaPosto'
 import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
 import type { PessoaDoEscritorio, TarefaDoEscritorio } from '../../componentes/escritorio/modeloPosto'

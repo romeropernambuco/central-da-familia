@@ -130,7 +130,7 @@ it('prioriza os três níveis de alerta com uma pílula nomeada para cada nível
 
 it('usa a API compartilhada, com toda a equipe e sem balões financeiros', () => {
   const codigo = String(readFileSync(new URL('./Escritorio.tsx', import.meta.url), 'utf8'))
-  expect(codigo).toContain("from '../../componentes/escritorio/Escritorio3D'")
+  expect(codigo).toContain("from '../motor/Escritorio3D'")
   expect(codigo).not.toMatch(/EscritorioMaquete|\bvalores=/)
   expect(codigo).toMatch(/<Escritorio3D\s+completo[\s\S]*variante="grande"/)
   const html = renderizar('claro', 'desktop')

@@ -1,14 +1,19 @@
-import type * as Tres from './tres'
+import type * as Tres from '../../telas/escritorio/tres'
 import type { EstadoFuncionario } from '../../api/tipos'
-import { EQUIPE, type MembroEquipe, type SalaEquipe } from './equipe'
-import { faseDoId } from './atividadesMini'
+import { EQUIPE, type MembroEquipe, type SalaEquipe } from '../../telas/escritorio/equipe'
+import { faseDoId } from '../../telas/escritorio/atividadesMini'
 import { montarCadeira, montarMesa, montarPredio, montarSala } from './mobiliarioIsometrico'
 import { personagemIsometrico, type PecaIsometrica } from './personagemIsometrico'
-import { PLANTA, SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometrica'
+import {
+  PLANTA,
+  SALAS_ISOMETRICAS,
+  type NavegacaoIsometrica,
+  type VistaIsometrica,
+} from '../../telas/escritorio/plantaIsometrica'
 
 export const ORCAMENTO_ISOMETRICO = { desenhos: 32, triangulos: 45000 }
 export type EstadosIsometricos = Readonly<Partial<Record<string, EstadoFuncionario>>>
-export type NavegacaoIsometrica = { zoom: number; x: number; y: number }
+export type { NavegacaoIsometrica }
 export interface PostoProjetado {
   id: string
   x: number

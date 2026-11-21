@@ -13,3 +13,5 @@ export const PLANTA: Record<SalaEquipe, { x: number; z: number; fundo: number; p
 
 export const SALAS_ISOMETRICAS = Object.keys(PLANTA) as SalaEquipe[]
 export type VistaIsometrica = 'tudo' | SalaEquipe
+/** Aproximação e deslocamento do quadro do escritório (1 = planta inteira; x e y em fração do quadro). */
+export type NavegacaoIsometrica = { zoom: number; x: number; y: number }

@@ -1,7 +1,7 @@
 import { Maximize2, Minimize2, Minus, Plus } from 'lucide-react'
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { SALAS_NOME } from '../../telas/escritorio/cenaBase'
-import type { NavegacaoIsometrica } from '../../telas/escritorio/cenaIsometrica'
+import type { NavegacaoIsometrica } from '../../telas/escritorio/plantaIsometrica'
 import type { SalaEquipe } from '../../telas/escritorio/equipe'
 
 const inicial = { zoom: 1, x: 0, y: 0 }

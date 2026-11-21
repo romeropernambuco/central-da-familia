@@ -1,13 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import * as T from './tres'
+import * as T from '../../telas/escritorio/tres'
 import {
   montarEscritorioIsometrico,
   ORCAMENTO_ISOMETRICO,
   type EstadosIsometricos,
   type OpcoesIsometricas,
 } from './cenaIsometrica'
-import { EQUIPE } from './equipe'
-import { SALAS_ISOMETRICAS } from './plantaIsometrica'
+import { EQUIPE } from '../../telas/escritorio/equipe'
+import { SALAS_ISOMETRICAS } from '../../telas/escritorio/plantaIsometrica'
 
 class Elemento extends EventTarget {
   dataset: Record<string, string> = {}

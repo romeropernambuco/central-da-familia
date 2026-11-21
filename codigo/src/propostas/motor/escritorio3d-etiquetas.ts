@@ -1,4 +1,4 @@
-import type { PostoProjetado } from '../../telas/escritorio/cenaIsometrica'
+import type { PostoProjetado } from './cenaIsometrica'
 
 interface Posicao {
   x: number

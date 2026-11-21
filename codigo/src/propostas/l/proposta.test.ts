@@ -141,7 +141,7 @@ it('usa somente a API do escritório 3D e mantém as restrições visuais locais
     .map(arquivo => ts.sys.readFile('src/propostas/l/' + arquivo))
     .join('\n')
   const css = ts.sys.readFile('src/propostas/l/proposta.css')!
-  expect(fonte).toContain("from '../../componentes/escritorio/Escritorio3D'")
+  expect(fonte).toContain("from '../motor/Escritorio3D'")
   expect(fonte).toMatch(/<Escritorio3D\s+completo[\s\S]*onSelecionar/)
   expect(fonte).not.toMatch(/EscritorioMaquete|from .*api\//u)
   expect(fonte).not.toMatch(/\p{Extended_Pictographic}/u)

@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { SALAS_NOME, tentarCarregarCena } from '../../telas/escritorio/cenaBase'
-import type {
-  EstadosIsometricos,
-  NavegacaoIsometrica,
-  montarEscritorioIsometrico,
-} from '../../telas/escritorio/cenaIsometrica'
+import type { EstadosIsometricos, NavegacaoIsometrica, montarEscritorioIsometrico } from './cenaIsometrica'
 import { POR_ID } from '../../telas/escritorio/equipe'
 import { SALAS_ISOMETRICAS, type VistaIsometrica } from '../../telas/escritorio/plantaIsometrica'
-import { EscritorioMaquete, type PropsEscritorioMaquete } from './EscritorioMaquete'
+import {
+  EscritorioDesenho,
+  QuadroDoEscritorio,
+  valoresPermitidos,
+} from '../../componentes/escritorio/EscritorioDesenho'
+import type { PropsEscritorioMaquete } from '../../componentes/escritorio/EscritorioMaquete'
 import { distribuirEtiquetas } from './escritorio3d-etiquetas'
-import { useValoresOcultos, Valor } from './privacidade'
-import './escritorio3d.css'
+import { useValoresOcultos, Valor } from '../../componentes/escritorio/privacidade'
+import '../../componentes/escritorio/escritorio3d.css'
 
 type Funcionario = NonNullable<PropsEscritorioMaquete['funcionarios']['valor']>[number]
 
@@ -60,7 +61,6 @@ export function Escritorio3D<T extends Funcionario>({
 }: PropsEscritorio3D<T>) {
   const [reduzir, reduzirMovimento] = useState(() => !podeMontarCena() || window.matchMedia(REDUZIR).matches)
   const [falhou, marcarFalha] = useState(false)
-  const valoresPermitidos = props.papel === 'equipe' || props.papel === null ? undefined : valores
   const salaDestacada = panorama && !completo ? undefined : props.salaDestacada
 
   useEffect(() => {
@@ -72,41 +72,22 @@ export function Escritorio3D<T extends Funcionario>({
     return () => preferencia.removeEventListener('change', atualizar)
   }, [])
 
+  if (forcarSvg || reduzir || falhou)
+    return (
+      <EscritorioDesenho
+        {...props}
+        {...{ altura, valores, panorama, completo, celular, navegacao, postoSelecionado }}
+      />
+    )
   return (
-    <div
-      className="escritorio3d"
-      data-variante={props.variante ?? 'media'}
-      data-completo={completo || undefined}
-      data-celular={celular || undefined}
-      data-panorama={panorama || undefined}
-      style={
-        {
-          '--escritorio3d-altura': altura === undefined ? undefined : `${altura}px`,
-          '--escritorio3d-zoom': navegacao?.zoom,
-          '--escritorio3d-x': `${(navegacao?.x ?? 0) * 100}%`,
-          '--escritorio3d-y': `${(navegacao?.y ?? 0) * 100}%`,
-        } as CSSProperties
-      }
-      data-renderizacao={forcarSvg || reduzir || falhou ? 'svg' : undefined}
-    >
-      {forcarSvg || reduzir || falhou ? (
-        <EscritorioMaquete
-          {...props}
-          salaDestacada={salaDestacada}
-          mostrarPlaquinhas={false}
-          detalhesSobDemanda
-          valores={valoresPermitidos}
-          postoSelecionado={postoSelecionado}
-        />
-      ) : (
-        <Palco3D
-          {...props}
-          salaDestacada={salaDestacada}
-          valores={valoresPermitidos}
-          {...{ panorama, completo, celular, navegacao, postoSelecionado, marcarFalha }}
-        />
-      )}
-    </div>
+    <QuadroDoEscritorio {...{ altura, panorama, completo, celular, navegacao }} variante={props.variante}>
+      <Palco3D
+        {...props}
+        salaDestacada={salaDestacada}
+        valores={valoresPermitidos(props.papel, valores)}
+        {...{ panorama, completo, celular, navegacao, postoSelecionado, marcarFalha }}
+      />
+    </QuadroDoEscritorio>
   )
 }
 
@@ -161,7 +142,7 @@ function Palco3D<T extends Funcionario>({
       if (cancelar || !entradas.some(e => e.isIntersecting)) return
       carregar.disconnect()
       cancelar = tentarCarregarCena(
-        () => Promise.all([import('../../telas/escritorio/tres'), import('../../telas/escritorio/cenaIsometrica')]),
+        () => Promise.all([import('../../telas/escritorio/tres'), import('./cenaIsometrica')]),
         ([T, modulo]) => {
           const { estados, vista, elenco, pagina } = atuais.current
           cena.current = modulo.montarEscritorioIsometrico(T, el, {

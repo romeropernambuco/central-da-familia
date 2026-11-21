@@ -15,11 +15,10 @@ import { fraseDoDia } from '../../lib/guardado'
 import { textoPrivado } from '../../componentes/privacidade'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
-import { SALAS_NOME, tentarCarregarCena } from './cenaBase'
-import type { montarEscritorioIsometrico } from './cenaIsometrica'
 import { dadosIsometricos, type DadosIsometricos } from './dadosIsometricos'
 import type { SalaEquipe } from './equipe'
-import { SALAS_ISOMETRICAS, type VistaIsometrica } from './plantaIsometrica'
+import { SALAS_NOME } from './cenaBase'
+import { SALAS_ISOMETRICAS } from './plantaIsometrica'
 import { useEquipeCompleta } from './useEquipe'
 import './escritorioIsometrico.css'
 
@@ -41,7 +40,6 @@ const ICONES_SALA = {
   apoio: 'ajustes',
 } as const
 type Selecionar = (id: string, pergunta?: string) => void
-type CenaIsometrica = ReturnType<typeof montarEscritorioIsometrico>
 type Superficie = 'inicio' | 'escritorio' | 'folha'
 
 const retrato = (id: string) => `${import.meta.env.BASE_URL}retratos-escritorio/${id}.webp`
@@ -106,29 +104,9 @@ function PainelIsometrico({
   const titulo = useId(),
     descricao = useId()
   const palco = useRef<HTMLDivElement>(null)
-  const etiquetas = useRef(new Map<string, HTMLElement>())
-  const placas = useRef(new Map<SalaEquipe, HTMLElement>())
-  const cena = useRef<CenaIsometrica | null>(null)
-  const tocar = useRef(selecionar)
-  tocar.current = selecionar
-  const [apontado, apontar] = useState<string | null>(null)
-  const [focado, focar] = useState<string | null>(null)
-  const [vista, ir] = useState<VistaIsometrica>('tudo')
-  const [renderizacao, renderizar] = useState<'carregando' | '3d' | 'lista'>('carregando')
   const [visivel, marcarVisivel] = useState(
     () => superficie !== 'inicio' || typeof IntersectionObserver === 'undefined',
   )
-  const estados = useMemo(
-    () => Object.fromEntries(dados.postos.map(({ funcionario: f }) => [f.id, f.estado])),
-    [dados.postos],
-  )
-  const atuais = useRef({ estados, vista })
-  atuais.current = { estados, vista }
-  const salas = SALAS_ISOMETRICAS.filter(s => dados.postos.some(p => p.membro.sala === s))
-
-  const detalhe = [apontado, focado, selecionado]
-    .map(id => dados.postos.find(({ membro }) => membro.id === id && (vista === 'tudo' || vista === membro.sala)))
-    .find(Boolean)
   useEffect(() => {
     if (visivel || !comCena || !palco.current) return
     const observador = new IntersectionObserver(entradas => {
@@ -138,46 +116,8 @@ function PainelIsometrico({
     return () => observador.disconnect()
   }, [comCena, visivel])
 
-  useEffect(() => {
-    const el = palco.current
-    if (!comCena || !visivel || !el) return
-    renderizar('carregando')
-    if (
-      typeof window.WebGLRenderingContext === 'undefined' ||
-      new URLSearchParams(window.location?.search).has('sem3d') ||
-      /[?&]sem3d/.test(window.location?.hash || '')
-    ) {
-      renderizar('lista')
-      return
-    }
-    const cancelar = tentarCarregarCena(
-      () => Promise.all([import('./tres'), import('./cenaIsometrica')]),
-      ([T, m]) => {
-        cena.current = m.montarEscritorioIsometrico(T, el, {
-          ...atuais.current,
-          etiqueta: id => etiquetas.current.get(id) ?? null,
-          placa: sala => placas.current.get(sala) ?? null,
-          aoTocar: id => tocar.current(id),
-          aoPerderContexto: () => {
-            renderizar('lista')
-          },
-        })
-        renderizar('3d')
-      },
-      () => renderizar('lista'),
-    )
-    return () => {
-      cancelar()
-      cena.current?.destruir()
-      cena.current = null
-    }
-  }, [comCena, superficie, visivel])
-  useEffect(() => {
-    cena.current?.atualizar(estados, vista)
-  }, [estados, vista])
-
-  const listar = superficie !== 'inicio' && (superficie === 'escritorio' || !comCena || renderizacao === 'lista')
-  // Aba Escritório: a nossa cena original (bonecos com etiqueta, que andam até a frente e acenam, luz pela hora de Recife).
+  // No Início a equipe aparece só na cena; na aba Escritório e na folha ampliada, a lista sala por sala vem logo abaixo.
+  const listar = superficie !== 'inicio'
   const original = superficie === 'escritorio'
   const primeiro = dados.fila[0]
   const valores = useMemo(
@@ -220,120 +160,30 @@ function PainelIsometrico({
         </p>
       )}
       <div className={'iso-grade' + (original ? ' iso-grade-ampla' : '')}>
-        {comCena && original && (
-          <div className="iso-vista">
-            <Cena3D
-              funcionarios={funcionarios}
-              selecionado={selecionado ?? null}
-              aoTocar={id => selecionar(id)}
-              valores={valores}
-              ampliavel
-            />
-            <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
-              {(['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce'] as EstadoFuncionario[]).map(e => (
-                <li key={e} data-estado={e}>
-                  <IcoEstado e={e} />
-                  {ROTULO_ESTADO[e]}
-                  {e === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {comCena && !original && (
-          <div className="iso-vista">
-            {renderizacao === '3d' && (
-              <div className="iso-filtros" role="group" aria-label="Salas do escritório">
-                <button type="button" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}>
-                  Ver tudo
-                </button>
-                {salas.map(s => (
-                  <button key={s} type="button" aria-pressed={vista === s} onClick={() => ir(s)}>
-                    {SALAS_NOME[s]}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="iso-palco" ref={palco} data-renderizacao={renderizacao} aria-describedby={descricao}>
-              {!visivel ? (
-                <p className="iso-aviso">Escritório da família</p>
-              ) : (
-                renderizacao === 'carregando' && (
-                  <p className="iso-aviso" role="status">
-                    Abrindo o escritório…
-                  </p>
-                )
-              )}
-              {renderizacao === 'lista' && (
-                <p className="iso-aviso" role="status">
-                  {superficie === 'inicio'
-                    ? 'Abra o escritório para ver a lista da equipe.'
-                    : 'A equipe está disponível na lista abaixo.'}
-                </p>
-              )}
-              <div className="iso-etiquetas" hidden={renderizacao !== '3d'}>
-                {salas.map(s => (
-                  <span
-                    key={s}
-                    className="iso-placa"
-                    aria-hidden="true"
-                    hidden={vista !== 'tudo' && vista !== s}
-                    ref={el => {
-                      if (el) placas.current.set(s, el)
-                      else placas.current.delete(s)
-                    }}
-                  >
-                    <Icone nome={ICONES_SALA[s]} />
-                    {SALAS_NOME[s]}
-                  </span>
-                ))}
-                {dados.postos.map(({ membro: m, funcionario: f }) => (
-                  <button
-                    key={m.id}
-                    data-posto={m.id}
-                    data-estado={f.estado}
-                    type="button"
-                    className="iso-etiqueta"
-                    hidden={vista !== 'tudo' && vista !== m.sala}
-                    onClick={() => selecionar(m.id)}
-                    ref={el => {
-                      if (el) etiquetas.current.set(m.id, el)
-                      else etiquetas.current.delete(m.id)
-                    }}
-                    onPointerEnter={e => {
-                      if (e.pointerType !== 'touch') apontar(m.id)
-                    }}
-                    onPointerLeave={() => apontar(null)}
-                    onFocus={() => {
-                      apontar(null)
-                      focar(m.id)
-                    }}
-                    onBlur={() => focar(null)}
-                    aria-label={`${m.nome}. ${f.semDado ? 'Ainda sem dado' : ESTADO[f.estado]}. Abrir ficha.`}
-                  />
-                ))}
-              </div>
-              {ampliar && (
-                <button
-                  type="button"
-                  className="iso-toque"
-                  aria-label="Abrir escritório em tela cheia"
-                  onClick={ampliar}
+        {comCena && (
+          <div className="iso-vista" ref={palco}>
+            {/* A cena é uma só no app inteiro. No Início ela só é montada quando entra na área visível da tela. */}
+            {visivel ? (
+              <>
+                <Cena3D
+                  funcionarios={funcionarios}
+                  selecionado={selecionado ?? null}
+                  aoTocar={id => selecionar(id)}
+                  valores={valores}
+                  ampliavel={superficie !== 'inicio'}
                 />
-              )}
-            </div>
-            {renderizacao === '3d' && (
-              <div className="iso-detalhe" aria-live="polite">
-                {detalhe && (
-                  <>
-                    <strong>{detalhe.membro.nome}</strong>
-                    <span>
-                      {detalhe.membro.papel} ·{' '}
-                      {detalhe.funcionario.semDado ? 'Ainda sem dado' : ESTADO[detalhe.funcionario.estado]}
-                    </span>
-                  </>
-                )}
-              </div>
+                <ul className="iso-legenda" aria-label="O que cada sinal quer dizer">
+                  {(['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce'] as EstadoFuncionario[]).map(e => (
+                    <li key={e} data-estado={e}>
+                      <IcoEstado e={e} />
+                      {ROTULO_ESTADO[e]}
+                      {e === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="iso-aviso">Escritório da família</p>
             )}
           </div>
         )}
