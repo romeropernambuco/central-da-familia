@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import '../../componentes/agente-cartao.css'
 import { Icone, desenhoFuncionario } from '../../componentes/Icone'
 import { nomeInformado } from '../../lib/nomePessoa'
@@ -16,7 +17,6 @@ import { APELIDO_BANCO, EQUIPE, type SalaEquipe } from '../../lib/escritorio/equ
 import { temWebGL, tentarCarregarCena, type Cena, type EstadoAgente } from '../../lib/escritorio/cenaBase'
 import { donoDaPergunta } from './donoDaPergunta'
 import { PerguntaCard, respostasConfirmadas } from '../../componentes/Pergunta'
-import { textoPrivado } from '../../componentes/privacidade'
 import { Sheet } from '../../componentes/base'
 import { Carregando } from '../../componentes/Carregando'
 import { reduzirFoto } from '../../lib/foto'

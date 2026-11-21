@@ -1,9 +1,9 @@
+import { esconderValores } from '../olho'
 import { describe, expect, it } from 'vitest'
 import { avaliarInsights, candidatosInsights, ETIQUETA_EXEMPLO } from './motor'
 import { apresentarInsight } from './apresentacao'
 import { instante, tempoRecife } from './tempo'
 import { registrarEvento } from './memoria'
-import { esconderValores } from '../formato'
 import type { FaturaInsight, SnapshotInsights, TipoInsight } from './tipos'
 
 const agora = '2026-12-30T12:00:00-03:00'

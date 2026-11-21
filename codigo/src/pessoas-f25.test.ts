@@ -1,3 +1,4 @@
+import { esconderValores } from './lib/olho'
 import { desfazer } from './api/desfazer'
 import { BarraDesfazer } from './componentes/BarraDesfazer'
 import { Fragment } from 'react'
@@ -276,7 +277,6 @@ it('convite acolhe com nome, família, escopo e primeira ação só nesta sessã
 })
 
 import { PrimeiroUso } from './telas/primeiro-uso/PrimeiroUso'
-import { esconderValores } from './lib/formato'
 it('Casa soma pagamento explícito separado do valor apenas anotado e mascara com olho fechado', async () => {
   const env: any = {
     id: 'c',

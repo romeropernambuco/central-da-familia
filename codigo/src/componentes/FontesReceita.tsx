@@ -1,9 +1,10 @@
+import { textoPrivado } from '../lib/olho'
 import { Icone } from './Icone'
 import { useRef, useState } from 'react'
 import { useApp } from '../app/contexto'
 import type { FonteReceita, RecebimentoTela } from '../api/tipos'
 import { mesReceitaValido } from '../lib/futuroReceitas'
-import { CampoPrivado, textoPrivado } from './privacidade'
+import { CampoPrivado } from './privacidade'
 import { CampoValor, Din, Sheet } from './base'
 import { hojeRecife, mesCurto, textoParaValor, valorDigitadoValido } from '../lib/formato'
 

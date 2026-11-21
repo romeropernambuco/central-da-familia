@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import { mesesPendentes, recebimentoAtual, recebimentosDoMes } from '../../lib/resumo/recebimentos'
 import { useDestino } from '../../app/destinos'
 import './planejamento.css'
@@ -6,7 +7,7 @@ import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 // E5 (fase final): recebimentos com data, um bloco dentro do Planejamento (sem tela nova).
 // Regra do dono (13/11): até dez/2028 entram recebimentos com data que o dono marca como certos; o plano conta só esses.
 // Casal LÊ todos, com o nome do dono; só o dono lança e mexe. Atrasado nunca some: vai pro mês seguinte e vira pergunta ao

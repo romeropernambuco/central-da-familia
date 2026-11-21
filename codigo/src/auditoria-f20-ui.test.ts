@@ -1,4 +1,5 @@
 ﻿import { act, createElement } from 'react'
+import { esconderValores } from './lib/olho'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, it, expect, vi } from 'vitest'
 import { DocumentoTeste, NoTeste } from './telas/escritorio/numeros.dom-teste'
@@ -230,7 +231,6 @@ it('11: período pendente não recebe título novo em resultado antigo', async (
   await act(async () => completar({ funcionarios: [], diario: [] }))
   expect(box.textContent).toContain('Perguntas feitas')
 })
-import { esconderValores } from './lib/formato'
 it('4: guardado oculto protege meses, curva, barras e lista diária', async () => {
   ctx.oculto = true
   esconderValores(true)

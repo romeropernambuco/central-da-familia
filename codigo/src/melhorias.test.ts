@@ -1,8 +1,9 @@
 // Testes das melhorias do protótipo (13/11). Família de EXEMPLO: Ana com teto R$\u00a05.500 por dia, todo número inventado.
+import { esconderValores } from './lib/olho'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { cofrinhoDoMes, gastosDoMes, gastoSemana, parcelasDe, pesoDia, plano, projecao } from './lib/plano'
-import { centavos, esconderValores, mesDaFatura, reais } from './lib/formato'
+import { centavos, mesDaFatura, reais } from './lib/formato'
 import { fraseEstouro, numeroEnvelope } from './componentes/EnvelopeCard'
 import { marcoGuardado } from './lib/guardado'
 

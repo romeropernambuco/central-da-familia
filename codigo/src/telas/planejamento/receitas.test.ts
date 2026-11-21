@@ -1,3 +1,4 @@
+import { esconderValores } from '../../lib/olho'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -6,7 +7,6 @@ import { ContextoApp, type Ctx } from '../../app/contexto'
 import { Recebimentos } from './Recebimentos'
 import type { Api, ChaveConfig, FonteReceita, RecebimentoTela } from '../../api/tipos'
 import { entradaDoBanco } from '../../lib/futuroReceitas'
-import { esconderValores } from '../../lib/formato'
 
 const roots: Root[] = []
 const props = (n: NoTeste) => Object.entries(n).find(([k]) => k.startsWith('__reactProps'))![1] as any

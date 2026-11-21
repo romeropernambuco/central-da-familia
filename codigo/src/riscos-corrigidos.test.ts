@@ -1,5 +1,6 @@
+import { esconderValores } from './lib/olho'
 import { afterEach, expect, it } from 'vitest'
-import { esconderValores, linkWhatsApp } from './lib/formato'
+import { linkWhatsApp } from './lib/formato'
 import { igual } from './lib/mescla'
 
 afterEach(() => esconderValores(false))

@@ -1,9 +1,10 @@
+import { textoPrivado, PONTOS } from '../lib/olho'
 import { rascunhos } from '../app/rascunhos'
-import { textoPrivado } from '../lib/formato'
 import { createContext, useEffect, useRef, useState, type ReactNode, type ButtonHTMLAttributes } from 'react'
 import { useApp } from '../app/contexto'
+import { useOculto } from '../app/useOculto'
 import { X } from 'lucide-react'
-import { milhar, partesDinheiro, reais, valoresOcultos } from '../lib/formato'
+import { milhar, partesDinheiro, reais } from '../lib/formato'
 import type { LinhaExplicacao } from '../api/tipos'
 import { Icone, type NomeIcone } from './Icone'
 
@@ -104,10 +105,11 @@ export function Din({
   className?: string
   /** linha que tira da conta: "menos R$ 970" (nunca o sinal de menos) */ menos?: boolean
 }) {
-  if (useApp()?.oculto ?? valoresOcultos())
+  if (useOculto())
     return (
       <span className={`din ${tam || ''} ${className}`} aria-label="valor escondido">
-        <span className="cur">R$</span>•••
+        <span className="cur">R$</span>
+        {PONTOS}
       </span>
     )
   const p = partesDinheiro(v)
@@ -329,7 +331,7 @@ export function CampoValor({
         disabled={desligado}
         aria-label={rotulo}
         readOnly={mascarado}
-        placeholder={mascarado ? '•••' : undefined}
+        placeholder={mascarado ? PONTOS : undefined}
         value={mascarado ? '' : milhar(valor, assinado)}
         onChange={e => {
           if (mascarado) return

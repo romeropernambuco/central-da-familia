@@ -1,3 +1,4 @@
+import { textoPrivado, PONTOS } from '../../lib/olho'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
@@ -7,7 +8,7 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { rotuloDeOpcao, textoDeAgente } from '../../lib/textoAgente'
 import { abrirAtalhoGuardado } from '../guardado/atalhos'
 import { Recebimentos } from '../planejamento/Recebimentos'
-import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Check, ChevronRight, Pencil, Plus } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -654,7 +655,7 @@ function CadCartao() {
         semEditar={f => doOutro(cartoes?.find(c => c.id === f.cartao_id))}
         vazio={faturas ? 'Nenhuma fatura com valor neste mês nem no próximo.' : 'Buscando as faturas…'}
         titulo={f => {
-          if (oculto) return '\u2022\u2022\u2022'
+          if (oculto) return PONTOS
           const c = cartoes?.find(x => x.id === f.cartao_id)
           return `${f.cartao}${doOutro(c) && c?.titular ? ` de ${c.titular}` : ''} · ${mesCurto(f.mes + '-01')}`
         }}
@@ -1243,7 +1244,7 @@ function CadContador() {
         </>
       )}
       sub={r =>
-        `${outros.includes(r) ? `de ${oculto ? '\u2022\u2022\u2022' : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`
+        `${outros.includes(r) ? `de ${oculto ? PONTOS : r.dono} · ` : ''}${r.dia ? `todo dia ${r.dia}` : 'sem dia marcado'}`
       }
       lado={r => <Din v={r.valor} />}
       campos={[

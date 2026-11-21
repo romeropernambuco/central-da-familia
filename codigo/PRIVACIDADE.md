@@ -4,9 +4,11 @@
 
 O estado oculto do ContextoApp é a fonte do olho. O provedor sincroniza a política de formato antes de renderizar os filhos. Não há mais chamada à varredura/MutationObserver de app/mascara.ts: a proteção acontece na renderização React, sem uma janela de texto integral no DOM e sem disputar alterações com o React.
 
-- lib/formato.ts: reais (texto de dinheiro), textoPrivado (nome, descrição ou frase privada, também em atributos), copiarProtegido (único acesso ao clipboard) e linkWhatsApp (mensagem segura enquanto fechado).
+- lib/olho.ts: a casa única da regra. Guarda se o olho está fechado, as máscaras (PONTOS, PONTOS_LONGOS, VALOR_OCULTO), textoPrivado (nome, descrição ou frase privada, também em atributos), mascararTexto (valor dentro de frase) e copiarProtegido (único acesso ao clipboard). Nenhum outro arquivo escreve pontinhos à mão nem cria cópia dessas funções: o teste src/olho.test.ts reprova.
+- lib/formato.ts: reais (texto de dinheiro) e linkWhatsApp (mensagem segura enquanto fechado); os dois perguntam a lib/olho.ts.
+- app/useOculto.ts: useOculto responde "o olho está fechado?" para qualquer peça, inclusive fora do app.
 - componentes/base.tsx: Din (dinheiro visual e aria-label) e CampoValor (única entrada monetária, com milhar).
-- componentes/privacidade.tsx: CampoPrivado, CampoDecimal e reexports das primitivas. CampoDecimal é exclusivamente para taxas/percentuais, sem prefixo R$.
+- componentes/privacidade.tsx: CampoPrivado e CampoDecimal. CampoDecimal é exclusivamente para taxas/percentuais, sem prefixo R$.
 - Campos vazios permanecem editáveis. Campos existentes ficam vazios/readOnly com placeholder de máscara. A edição iniciada vazia continua durante a digitação. Alternar o olho reinicia esse modo antes do próximo commit React. O estado original nunca recebe a máscara; abrir restaura o original e salvar sem tocar conserva os dados.
 - textoPrivado recebe o texto completo quando uma frase pode carregar nomes. Não se tenta descobrir nomes por expressão regular. Valores de identificadores internos, datas, meses e enums continuam intactos.
 
@@ -230,6 +232,8 @@ O olho protege a apresentação e os canais de saída do app, não é criptograf
 - codigo/src/componentes/base.tsx
 - codigo/src/componentes/privacidade.tsx
 - codigo/src/lib/formato.ts
+- codigo/src/lib/olho.ts
+- codigo/src/olho.test.ts
 - codigo/src/privacidade-global.test.ts
 - codigo/src/telas/ajustes/Ajustes.tsx
 - codigo/src/telas/cartoes/Cartoes.tsx

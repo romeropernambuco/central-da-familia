@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
@@ -7,7 +8,6 @@ import { useApp } from '../../app/contexto'
 import { useEscritorio } from '../../app/useDados2'
 import { PerguntaCard } from '../../componentes/Pergunta'
 import { fraseDoDia } from '../../lib/guardado'
-import { textoPrivado } from '../../componentes/privacidade'
 import { donoDaPergunta } from './donoDaPergunta'
 import type { PerguntaEsc, FuncionarioEsc } from '../../api/tipos'
 const nomeDoDono = (p: PerguntaEsc, fs: FuncionarioEsc[]) => donoDaPergunta(p, fs)?.nome || p.funcionario

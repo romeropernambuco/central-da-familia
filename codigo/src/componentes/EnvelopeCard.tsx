@@ -1,6 +1,6 @@
+import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
 import { Icone } from './Icone'
-import { textoPrivado } from './privacidade'
 import type { Envelope } from '../api/tipos'
 import { useApp } from '../app/contexto'
 import { FUSO, dataCurta, hojeRecife, mesLongo, reais, fimDoMes } from '../lib/formato'

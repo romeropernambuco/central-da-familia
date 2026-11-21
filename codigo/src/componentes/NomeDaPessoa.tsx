@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import './apoio-f32.css'
 import { Icone } from './Icone'
 import { useRef, useState } from 'react'
@@ -7,7 +8,7 @@ import { useMembros } from '../app/useMembros'
 import { nomeInformado } from '../lib/nomePessoa'
 import { useEdicaoNome } from '../app/useEdicaoNome'
 import { Sheet } from './base'
-import { CampoPrivado, textoPrivado } from './privacidade'
+import { CampoPrivado } from './privacidade'
 
 /** Folha de identidade compartilhada: nunca contém valores. */
 export function NomeDaPessoa({

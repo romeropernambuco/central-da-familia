@@ -1,3 +1,4 @@
+import { PONTOS } from '../../lib/olho'
 import { createContext, useContext, type ReactNode } from 'react'
 import type { Campo } from './dadosDeExemplo'
 
@@ -20,7 +21,7 @@ export function NumeroFinanceiro({ children, className }: { children: ReactNode;
     >
       {oculto ? (
         <span role="img" aria-label="Valor oculto">
-          •••
+          {PONTOS}
         </span>
       ) : (
         children

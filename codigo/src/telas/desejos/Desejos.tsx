@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import './desejos.css'
 import { totaisDesejos } from '../../lib/resumo/desejos'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
@@ -5,7 +6,7 @@ import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { MetaDoDesejo } from '../meu-orcamento/MeuOrcamento'
-import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 // E8: aba Desejos, a calculadora pra todos. "Quero R$ 50.000 pra viajar": cabe? de onde volta (contrato antecipado,
 // investimento, venda)? quanto tira de 2029? Os dados vão pra tabela desejos (f_06): o casal vê todos com o nome do dono,
 // a filha vê só os dela (sem 2029: só "dá pra comprar com o seu"), e só o dono mexe.

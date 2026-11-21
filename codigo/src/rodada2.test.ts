@@ -1,9 +1,10 @@
 // Rodada 2 (13/11): os itens A (privacidade, olho, nada negativo) e as contas novas. Família de EXEMPLO, todo número inventado.
 // A varredura das telas e folhas abertas no navegador está em testes/varredura2.cjs (Playwright, 390 px).
+import { esconderValores, mascararTexto } from './lib/olho'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { projecao } from './lib/plano'
-import { esconderValores, mascararTexto, reais, todoDia } from './lib/formato'
+import { reais, todoDia } from './lib/formato'
 import { numeroEnvelope, fraseEstouro } from './componentes/EnvelopeCard'
 import { podeVerNoMenu, rotaPermitida } from './lib/rotas'
 

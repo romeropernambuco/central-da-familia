@@ -1,11 +1,11 @@
+import { copiarProtegido, textoPrivado } from '../../lib/olho'
 import './ajustes.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../escritorio/AgenteDaAba'
-import { copiarProtegido } from '../../componentes/privacidade'
-import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 import { useState } from 'react'
 import type { ConviteFamilia } from '../../api/tipos'
 import {

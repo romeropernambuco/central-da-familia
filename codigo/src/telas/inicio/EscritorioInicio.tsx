@@ -1,3 +1,4 @@
+import { PONTOS_LONGOS } from '../../lib/olho'
 import { useMemo, useRef, useState } from 'react'
 import { Hand } from 'lucide-react'
 import { ir } from '../../lib/rotas'
@@ -434,7 +435,7 @@ function FichaDadosPosto({
           <dt>Pendências</dt>
           <dd>
             {oculto ? (
-              <span aria-label="Quantidade oculta">••••</span>
+              <span aria-label="Quantidade oculta">{PONTOS_LONGOS}</span>
             ) : filaParcial ? (
               `${pendencias} na fila visível`
             ) : (

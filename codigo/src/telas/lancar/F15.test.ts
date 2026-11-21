@@ -1,3 +1,4 @@
+import { esconderValores } from '../../lib/olho'
 import { desfazer } from '../../api/desfazer'
 import { BarraDesfazer } from '../../componentes/BarraDesfazer'
 import { Fragment } from 'react'
@@ -130,7 +131,6 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
 
 import { Lancar } from './Lancar'
 import { calcularImpactoDaCompra } from './parcelamento'
-import { esconderValores } from '../../lib/formato'
 
 it.each([
   [1, 120, '2026-11-15', 120],

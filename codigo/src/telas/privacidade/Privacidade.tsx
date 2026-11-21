@@ -1,17 +1,17 @@
+import { copiarProtegido, textoPrivado, valoresOcultos } from '../../lib/olho'
 import { TextosDeConfianca } from './TextosDeConfianca'
 import './privacidade.css'
 import { PrivacidadeOlho } from '../../componentes/ilustracoes'
 import { Icone } from '../../componentes/Icone'
 import { resumoPrivacidade, VERSAO_PRIVACIDADE } from './resumos'
 import { Backup } from '../../componentes/Backup'
-import { copiarProtegido } from '../../componentes/privacidade'
-import { textoPrivado, CampoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
 import { useApp } from '../../app/contexto'
 
 import { Sheet } from '../../componentes/base'
-import { hojeRecife, valoresOcultos } from '../../lib/formato'
+import { hojeRecife } from '../../lib/formato'
 
 /** Privacidade: termo em 1 tela, baixar os dados da família e apagar a família inteira. */
 export function Privacidade() {

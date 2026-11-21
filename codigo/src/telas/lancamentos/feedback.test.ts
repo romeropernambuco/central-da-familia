@@ -1,3 +1,4 @@
+import { esconderValores } from '../../lib/olho'
 import { salvamento } from '../../api/salvamento'
 import { desfazer } from '../../api/desfazer'
 import { BarraDesfazer } from '../../componentes/BarraDesfazer'
@@ -136,7 +137,6 @@ import { Lancamentos, ResumoDoMes, FaixaDoMes, totaisDoMes, FechamentoRegistrado
 import { Entrar, AvisoConvite } from '../entrar/Entrar'
 import { MetaDoDesejo, ProgressoMeta, MeuOrcamento } from '../meu-orcamento/MeuOrcamento'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { esconderValores } from '../../lib/formato'
 import { frasesDesejo } from '../desejos/Desejos'
 
 it('resumo real separa recebido, pendente certo, incerto e virada de ano', async () => {

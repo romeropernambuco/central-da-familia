@@ -1,3 +1,4 @@
+import { esconderValores } from '../lib/olho'
 import { rascunhos } from '../app/rascunhos'
 import { Ajustes } from '../telas/ajustes/Ajustes'
 import { Cartoes } from '../telas/cartoes/Cartoes'
@@ -15,7 +16,7 @@ import { AgenteDaAba, AGENTE_POR_ABA } from '../telas/escritorio/AgenteDaAba'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
 import { useEscritorio } from '../app/useDados2'
 import { PerguntaCard } from './Pergunta'
-import { hojeRecife, esconderValores, reais } from '../lib/formato'
+import { hojeRecife, reais } from '../lib/formato'
 import type { Api, ImovelTela } from '../api/tipos'
 import type { Rota } from '../lib/rotas'
 

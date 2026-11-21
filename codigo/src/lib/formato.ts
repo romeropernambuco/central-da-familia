@@ -1,3 +1,4 @@
+import { valoresOcultos, VALOR_OCULTO } from './olho'
 // Formatação e pequenas contas de tela. A conta de dinheiro de verdade é do banco;
 // aqui só fica o que o app precisa pra mostrar, simular ou medir.
 
@@ -37,18 +38,11 @@ export function partesDinheiro(v: number): { sinal: string; inteiro: string; cen
   return { sinal, inteiro: txt, cents: c ? ',' + String(c).padStart(2, '0') : '' }
 }
 
-/** N12: olho fechado troca todo valor por "R$ •••" (fila do mercado, criança olhando). Fica só neste aparelho. */
-let valoresEscondidos = false
-export const esconderValores = (sim: boolean) => {
-  valoresEscondidos = sim
-}
-export const valoresOcultos = () => valoresEscondidos
-
 /** Espaço que não quebra: "R$" nunca fica sozinho no fim da linha (letra grande). */
 export const NBSP = '\u00a0'
 /** "R$ 1.234" ou "R$ 45,90". Nunca sinal de menos na tela: valor negativo vira "passou R$ 10". */
 export function reais(v: number): string {
-  if (valoresEscondidos) return `R$${NBSP}•••`
+  if (valoresOcultos()) return VALOR_OCULTO
   const p = partesDinheiro(v)
   return `${p.sinal ? 'passou ' : ''}R$${NBSP}${p.inteiro}${p.cents}`
 }
@@ -57,10 +51,6 @@ export function valorComCentavos(v: number): string {
   return centavos(Number(v) || 0)
     .toFixed(2)
     .replace('.', ',')
-}
-/** Olho fechado: troca "R$ 1.234,56" dentro de qualquer texto (fala de funcionário, aviso) por "R$ •••". */
-export function mascararTexto(s: string): string {
-  return s.replace(/(passou\s)?R\$[\s\u00a0]*\d(?:[\d.]*\d)?(,\d{1,2})?/g, `R$${NBSP}•••`)
 }
 
 /** Hoje no fuso de Recife, no formato 2026-11-11. */
@@ -355,31 +345,4 @@ export function agruparFaturas<F extends { mes: string; total: number }>(
     else out.push({ tipo: 'zeros', de: f.mes, ate: f.mes })
   }
   return out
-}
-
-/** Texto privado também em atributos. Nunca altera o dado de origem. */
-export function textoPrivado<T>(texto: T, oculto = valoresOcultos()): T {
-  return (oculto && typeof texto === 'string' && texto !== '' ? '•••' : texto) as T
-}
-
-/** Único acesso ao clipboard; sem versão segura explícita, bloqueia com aviso. */
-export async function copiarProtegido(
-  texto: string,
-  protegido?: string,
-  avisar: (s: string) => void = s => {
-    if (typeof window !== 'undefined') window.alert?.(s)
-  },
-  oculto = valoresOcultos(),
-): Promise<boolean> {
-  if (oculto && protegido === undefined) {
-    avisar('Abra o olho para copiar este conteúdo privado.')
-    return false
-  }
-  try {
-    await navigator.clipboard.writeText(oculto ? protegido! : texto)
-    return true
-  } catch {
-    avisar('Não foi possível copiar. Tente novamente.')
-    return false
-  }
 }

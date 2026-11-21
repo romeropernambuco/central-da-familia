@@ -1,4 +1,4 @@
-import { mascararTexto, valoresOcultos } from './formato'
+import { mascararTexto, valoresOcultos, PONTOS } from './olho'
 
 /** Fragmentos vêm dos dados estruturados, nunca de adivinhação de nomes pela capitalização. */
 export function nomesPrivados(dados: unknown): string[] {
@@ -24,7 +24,7 @@ export function textoDeAgente(texto: string, privados: readonly string[], oculto
   const escapados = nomes.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   return mascararTexto(
     escapados.length
-      ? texto.replace(new RegExp('(?<![\\p{L}\\p{N}])(?:' + escapados.join('|') + ')(?![\\p{L}\\p{N}])', 'giu'), '•••')
+      ? texto.replace(new RegExp('(?<![\\p{L}\\p{N}])(?:' + escapados.join('|') + ')(?![\\p{L}\\p{N}])', 'giu'), PONTOS)
       : texto,
   )
 }
@@ -38,5 +38,5 @@ export function privadosNoTexto(textos: string[], dados: unknown, extras: string
 
 export function rotuloDeOpcao(texto: string, indice: number, privados: readonly string[], oculto = valoresOcultos()) {
   const seguro = textoDeAgente(texto, privados, oculto)
-  return oculto && !seguro.replace(/•••|R\$|[\s\p{P}\p{S}]/gu, '') ? `Opção ${indice + 1}` : seguro
+  return oculto && !seguro.replace(/R\$|[\s\p{P}\p{S}]/gu, '') ? `Opção ${indice + 1}` : seguro
 }

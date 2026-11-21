@@ -1,7 +1,7 @@
 // A cena leva o próprio estilo: assim ela aparece certa em qualquer tela que a use, sem depender de outra ter carregado o CSS.
+import { textoPrivado } from '../../lib/olho'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
-import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Check, Clock, Expand, Hand, Info, Keyboard, Maximize2, Minus, Plus } from 'lucide-react'
 import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'

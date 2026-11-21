@@ -1,3 +1,4 @@
+import { esconderValores } from '../../lib/olho'
 import { Simulate } from 'react-dom/test-utils'
 import { CampoValor } from '../../componentes/base'
 import { act, createElement, useState } from 'react'
@@ -5,7 +6,6 @@ import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
 import { ContextoApp, type Ctx } from '../../app/contexto'
 import { FichaFuncionario } from './Ficha'
-import { esconderValores } from '../../lib/formato'
 import { DocumentoTeste, NoTeste } from './numeros.dom-teste'
 import type { Api, EscritorioHoje, FuncionarioEsc } from '../../api/tipos'
 

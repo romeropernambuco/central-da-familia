@@ -1,3 +1,4 @@
+import { PONTOS_LONGOS } from '../../lib/olho'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useApp } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
@@ -104,7 +105,7 @@ export function InformarSaldo({ fechar }: { fechar: () => void }) {
               <option value="">Nova conta</option>
               {lista.map(c => (
                 <option key={c.id} value={c.id}>
-                  {oculto ? '••••' : c.nome}
+                  {oculto ? PONTOS_LONGOS : c.nome}
                 </option>
               ))}
             </select>
@@ -168,11 +169,13 @@ export function SaldoConta() {
       ) : r.dado?.contas.length ? (
         <>
           <strong>
-            {oculto ? '••••' : r.dado.saldo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {oculto
+              ? PONTOS_LONGOS
+              : r.dado.saldo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </strong>
           <p>
             {r.dado.saldo.conferidoEm ? (
-              <>Conferido em {oculto ? '••••' : dataConferencia(r.dado.saldo.conferidoEm)}</>
+              <>Conferido em {oculto ? PONTOS_LONGOS : dataConferencia(r.dado.saldo.conferidoEm)}</>
             ) : (
               'Sem conferência registrada'
             )}

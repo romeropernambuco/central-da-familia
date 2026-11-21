@@ -1,3 +1,4 @@
+import { textoPrivado, PONTOS } from '../lib/olho'
 import { totalImoveis, patrimonioTotal } from '../lib/resumo/imoveis'
 import '../telas/guardado/guardado.css'
 import { EstadoVazio } from './EstadoVazio'
@@ -6,7 +7,7 @@ import { Icone } from './Icone'
 import { useRascunho } from '../app/useRascunho'
 import { NomeDaPessoa } from './NomeDaPessoa'
 import { useLeituraRemota } from '../app/useLeituraRemota'
-import { textoPrivado, CampoPrivado, CampoDecimal } from './privacidade'
+import { CampoPrivado, CampoDecimal } from './privacidade'
 // RODADA_PATRIMONIO (ordem do dono, 14/11): o bloco "Imóveis" dentro do Guardado (não é tela nova).
 // Lista com apelido, dono, valor, aluguel líquido por mês, rentabilidade ao ano comparada com a das aplicações e o selo
 // "com contrato" ou "sem contrato: não entra na conta"; folha de adicionar e editar com "?" em cada campo.
@@ -205,7 +206,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                     {m && i.uso !== 'mora' && m.aluguel_liquido_mes > 0 && (
                       <small className="imo-renda">
                         Aluguel líquido <strong>{reais(m.aluguel_liquido_mes / 100)}</strong> por mês · rende{' '}
-                        <strong>{oculto ? '•••' : pctAno(m.rentabilidade_ano)}</strong> ao ano
+                        <strong>{oculto ? PONTOS : pctAno(m.rentabilidade_ano)}</strong> ao ano
                         {m.taxa_real_aplicacoes
                           ? oculto
                             ? '; rendimento oculto'
@@ -236,7 +237,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       {taxaAplic && imoveis.some(i => i.uso !== 'mora') && (
         <p className="sub" style={{ marginTop: 8 }}>
           A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e
-          imposto. O dinheiro aplicado rende {oculto ? '•••' : pctAno(taxaAplic)} ao ano acima da inflação.
+          imposto. O dinheiro aplicado rende {oculto ? PONTOS : pctAno(taxaAplic)} ao ano acima da inflação.
         </p>
       )}
       {folha && (

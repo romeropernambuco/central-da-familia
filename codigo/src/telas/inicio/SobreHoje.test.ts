@@ -1,9 +1,9 @@
+import { esconderValores } from '../../lib/olho'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { Envelope, ResumoHoje } from '../../api/tipos'
 import { ContextoApp, type Ctx } from '../../app/contexto'
-import { esconderValores } from '../../lib/formato'
 import { projecaoCasal } from '../../lib/resumo/orcamento'
 import { SobreHoje } from './SobreHoje'
 

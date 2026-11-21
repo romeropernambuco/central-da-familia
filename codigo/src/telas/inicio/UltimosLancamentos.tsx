@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import './inicio.css'
 import { lerLancamentosMes } from '../../lib/resumo/leituras'
 import { useApp } from '../../app/contexto'
@@ -5,7 +6,6 @@ import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Botao, Din } from '../../componentes/base'
 import { EstadoVazioVisual } from '../../componentes/EstadoVazioVisual'
 import { SemGastos } from '../../componentes/ilustracoes/figuras'
-import { textoPrivado } from '../../componentes/privacidade'
 import { dataCurta, hojeRecife, mesAnterior } from '../../lib/formato'
 export function UltimosLancamentos() {
   const { api, familia, versao, abrirLancar } = useApp()

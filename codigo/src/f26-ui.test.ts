@@ -1,3 +1,4 @@
+import { esconderValores } from './lib/olho'
 import { desfazer } from './api/desfazer'
 import { BarraDesfazer } from './componentes/BarraDesfazer'
 import { Fragment } from 'react'
@@ -129,7 +130,6 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
 }
 
 import { Privacidade } from './telas/privacidade/Privacidade'
-import { esconderValores } from './lib/formato'
 it('12 confirma saída conforme olho atual após leitura', async () => {
   const p = pendente<any>(),
     confirm = vi.fn(() => false)

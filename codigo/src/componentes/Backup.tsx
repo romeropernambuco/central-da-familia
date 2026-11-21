@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import './apoio-f32.css'
 import { Icone } from './Icone'
 import { EstadoVazio } from './EstadoVazio'
@@ -5,7 +6,6 @@ import { useState } from 'react'
 import { useApp } from '../app/contexto'
 import { gerarCopia, validarCopia, previaCopia, type Copia } from '../app/backup'
 import { Sheet } from './base'
-import { textoPrivado } from '../lib/formato'
 import { desfazer } from '../api/desfazer'
 import { limparRascunhos } from '../app/rascunhos'
 export function Backup() {

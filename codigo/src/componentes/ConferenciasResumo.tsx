@@ -1,10 +1,10 @@
+import { textoPrivado, PONTOS_LONGOS } from '../lib/olho'
 import { rotulosCasa } from '../lib/resumo/casa'
 import { useApp } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { lerCasa, lerFaturas } from '../lib/resumo/leituras'
 import { hojeRecife, plural } from '../lib/formato'
 import { CabecalhoCartao, Din, Botao } from './base'
-import { textoPrivado } from './privacidade'
 export function ConferenciaFaturas() {
   const { api, familia, versao } = useApp()
   const r = useLeituraRemota(
@@ -74,7 +74,7 @@ export function ConferenciaCasa() {
         r.dado && (
           <p className="sub">
             {oculto
-              ? '••••'
+              ? PONTOS_LONGOS
               : `${rotulosCasa(r.dado).feira} · ${plural(r.dado.nota, 'nota pendente', 'notas pendentes')} · ${rotulosCasa(r.dado).estoque}${r.dado.falta === null ? '' : ` · ${plural(r.dado.falta, 'item em falta', 'itens em falta')}`}`}
           </p>
         )

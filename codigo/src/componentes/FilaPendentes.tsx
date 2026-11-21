@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import './apoio-f32.css'
 import { useEffect, useState } from 'react'
 import { pendentes } from '../api/pendentes'
@@ -5,7 +6,6 @@ import { donoDosPendentes, ouvirGuardados, recusadosGuardados, tirarPendente } f
 import type { NovoLancamento } from '../api/tipos'
 import { reais } from '../lib/formato'
 import { Icone } from './Icone'
-import { textoPrivado } from './privacidade'
 
 const INTERVALO_DE_NOVA_TENTATIVA_MS = 5000
 

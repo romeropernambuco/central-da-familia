@@ -1,10 +1,10 @@
+import { esconderValores } from '../../lib/olho'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Cartoes } from './Cartoes'
 import { PrecisaDeVoce } from '../escritorio/PrecisaDeVoce'
 import { LerCupom } from '../../componentes/LerCupom'
-import { esconderValores } from '../../lib/formato'
 
 const m = vi.hoisted(() => ({ app: vi.fn(), escritorio: vi.fn(), estados: [] as unknown[] }))
 vi.mock('../../app/contexto', () => ({ useApp: m.app }))

@@ -1,7 +1,7 @@
+import { textoPrivado } from '../../lib/olho'
 import './painel.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
-import { textoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { CircleCheck, TriangleAlert, Lock } from 'lucide-react'
 import { useApp } from '../../app/contexto'

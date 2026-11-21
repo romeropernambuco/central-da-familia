@@ -1,3 +1,4 @@
+import { PONTOS } from '../../lib/olho'
 import { BellRing, Keyboard, Pause } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import type { EstadoFuncionario } from '../../api/tipos'
@@ -171,7 +172,11 @@ export function EscritorioMaquete<T extends Funcionario>({
                       data-atenuada={focoDa(sala.id).atenuada || undefined}
                       style={{ left: x + 38 - vx, top: y - 102 - vy }}
                     >
-                      {oculto || olhoFechado ? <span aria-label="Valor oculto">•••</span> : <Valor campo={valor} />}
+                      {oculto || olhoFechado ? (
+                        <span aria-label="Valor oculto">{PONTOS}</span>
+                      ) : (
+                        <Valor campo={valor} />
+                      )}
                     </span>
                   )
                 )
@@ -235,7 +240,11 @@ export function EscritorioMaquete<T extends Funcionario>({
               </span>
               {valorDetalhe && (
                 <span className="escritorio3d-valor">
-                  {oculto || olhoFechado ? <span aria-label="Valor oculto">•••</span> : <Valor campo={valorDetalhe} />}
+                  {oculto || olhoFechado ? (
+                    <span aria-label="Valor oculto">{PONTOS}</span>
+                  ) : (
+                    <Valor campo={valorDetalhe} />
+                  )}
                 </span>
               )}
             </>

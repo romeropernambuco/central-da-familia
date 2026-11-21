@@ -1,6 +1,6 @@
+import { textoPrivado } from '../lib/olho'
 import './RumoA2029.css'
 import { Icone } from './Icone'
-import { textoPrivado } from './privacidade'
 // E7: a linha do caixa mês a mês até dez/2028 (F4), o "fica devendo até MM/AAAA" (F9) e a folga de 2029 (F5).
 // No Início: 1 linha. No Planejamento: a linha desenhada, mês a mês, com o piso tracejado.
 // A tela NUNCA calcula 2029: recebe a saída de futuro() (lib/futuro) e só escreve e desenha.

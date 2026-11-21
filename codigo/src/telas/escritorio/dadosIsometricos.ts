@@ -1,3 +1,4 @@
+import { PONTOS_LONGOS } from '../../lib/olho'
 import type { EntregaEsc, EscritorioHoje, EstadoFuncionario, FuncionarioEsc, Papel, PerguntaEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
 import { reais } from '../../lib/formato'
@@ -39,7 +40,7 @@ export function dadosIsometricos(
         texto: oculto
           ? 'Tarefa pendente'
           : textoDeAgente(p.assunto || p.pergunta, p.trechosPrivados || [], papel === 'equipe'),
-        valor: papel === 'equipe' ? null : oculto ? '••••' : valor === null ? 'Ainda sem dado' : reais(valor),
+        valor: papel === 'equipe' ? null : oculto ? PONTOS_LONGOS : valor === null ? 'Ainda sem dado' : reais(valor),
       },
     ]
   })

@@ -1,6 +1,6 @@
+import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
 import { useApp } from '../app/contexto'
-import { textoPrivado } from './privacidade'
 import type { Envelope } from '../api/tipos'
 import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
 import { GraficoMes } from './Graficos'

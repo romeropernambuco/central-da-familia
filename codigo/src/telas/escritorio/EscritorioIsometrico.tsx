@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Hand, Maximize2 } from 'lucide-react'
 import { useApp } from '../../app/contexto'
@@ -12,7 +13,6 @@ import { PerguntaCard } from '../../componentes/Pergunta'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { Carregando } from '../../componentes/Carregando'
 import { fraseDoDia } from '../../lib/guardado'
-import { textoPrivado } from '../../componentes/privacidade'
 // @ts-ignore: extensão explícita distingue Cena3D.tsx de cena3d.ts no Windows (Vite resolve .tsx).
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from './Cena3D.tsx'
 import { dadosIsometricos, type DadosIsometricos } from './dadosIsometricos'

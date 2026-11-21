@@ -1,5 +1,5 @@
+import { esconderValores } from '../lib/olho'
 import { useCallback, useState } from 'react'
-import { esconderValores } from '../lib/formato'
 
 /**
  * O olho fechado: valores escondidos neste aparelho (N12). A escolha fica guardada no aparelho e vale também para

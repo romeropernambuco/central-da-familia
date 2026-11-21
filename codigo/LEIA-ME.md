@@ -64,6 +64,8 @@ O upload de pasta pelo Safari falha com frequência, então faça o upload pelo 
 
 ## Pra quem mexe no código
 
+- **Camadas:** as pastas de `src` formam degraus e cada uma só usa o que está abaixo: `lib` (contas e regras puras) < `api` (conversa com o banco) < `app` (estado do app) < `componentes` (peças) < `telas`. A casca (`app/App.tsx` e `app/contexto.tsx`) é a única exceção. `src/camadas.test.ts` reprova qualquer importação que suba um degrau.
+- **Olho fechado:** a regra mora só em `src/lib/olho.ts`. Tela nova usa `textoPrivado`, `reais`, `Din` e os campos de `componentes/privacidade.tsx`; nunca escreve pontinhos à mão (`src/olho.test.ts` reprova). Detalhes em `PRIVACIDADE.md`.
 - **Escritório 3D:** o Three.js (pacote `three`, versão 0.160) só é baixado quando a pessoa abre a tela Escritório (`src/telas/escritorio/tres.ts` e `cena3d.ts` entram por `import()`). Sem WebGL, ou com `?sem3d` no endereço, fica a lista. A cena mede as imagens por segundo e liga o modo leve sozinha abaixo de 24.
 - **Guardado, Escritório, fichas e lembretes:** telas em `src/telas/guardado` e `src/telas/escritorio`; contas em `src/lib/guardado.ts`; modo exemplo em `src/api/exemplo2.ts`.
 - `src/rodada3.test.ts` também escreve `escritorio2/FALAS.md` (todas as falas dos funcionários, conferidas).

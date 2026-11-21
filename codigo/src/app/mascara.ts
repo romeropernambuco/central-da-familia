@@ -1,7 +1,7 @@
+import { mascararTexto, PONTOS } from '../lib/olho'
 // N12 (rodada 2): o olho esconde TODO valor da tela, inclusive o que vem pronto em frase (fala do funcionário do
 // Escritório, aviso depois de salvar, ficha). O <Din> e o reais() já escondem sozinhos; isto pega o resto:
 // qualquer "R$ 1.234,56" em texto, aria-label ou title vira "R$ •••" enquanto o olho estiver fechado, e volta ao abrir.
-import { mascararTexto } from '../lib/formato'
 
 const ATRS = ['aria-label', 'title', 'placeholder']
 const TEM_VALOR = /R\$[\s ]*[\d.]+/
@@ -18,7 +18,7 @@ function mascararNo(t: Text) {
   else {
     const ant = t.previousSibling
     if (ant && ant.nodeType === 3 && /R\$[\s ]*$/.test(ant.nodeValue || '') && SO_NUMERO.test(v))
-      novo = v.replace(SO_NUMERO, '•••')
+      novo = v.replace(SO_NUMERO, PONTOS)
   }
   if (novo !== v) {
     textos.set(t, v)
@@ -51,7 +51,7 @@ function restaurar(raiz: Node) {
   for (let n: Node | null = raiz; n; n = w.nextNode()) {
     if (n.nodeType === 3) {
       const o = textos.get(n as Text)
-      if (o != null && (n as Text).nodeValue?.includes('•••')) (n as Text).nodeValue = o
+      if (o != null && (n as Text).nodeValue?.includes(PONTOS)) (n as Text).nodeValue = o
       textos.delete(n as Text)
     } else if (n.nodeType === 1) {
       const o = atributos.get(n as Element)

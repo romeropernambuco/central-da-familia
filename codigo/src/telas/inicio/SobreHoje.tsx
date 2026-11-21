@@ -1,8 +1,8 @@
+import { textoPrivado } from '../../lib/olho'
 import type { Envelope } from '../../api/tipos'
 import { useApp } from '../../app/contexto'
 import { comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem } from '../../componentes/EnvelopeCard'
 import { Qm } from '../../componentes/Qm'
-import { textoPrivado } from '../../componentes/privacidade'
 import { fimDoMes, hojeRecife, mesLongo, reais, saudacao, somaDias } from '../../lib/formato'
 import type { projecaoCasal } from '../../lib/resumo/orcamento'
 

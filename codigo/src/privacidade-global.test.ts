@@ -1,3 +1,4 @@
+import { esconderValores, copiarProtegido } from './lib/olho'
 import { AgenteDaAba, AGENTE_POR_ABA } from './telas/escritorio/AgenteDaAba'
 import { act, createElement, useState, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -8,14 +9,12 @@ vi.hoisted(() => {
   vi.setSystemTime(new Date('2026-11-15T12:00:00-03:00'))
 })
 import { ContextoApp, type Ctx } from './app/contexto'
-import { esconderValores } from './lib/formato'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { protegerApi } from './api/protegida'
 import type { Api } from './api/tipos'
 import { DocumentoTeste, NoTeste } from './telas/escritorio/numeros.dom-teste'
 import { PerguntaCard } from './componentes/Pergunta'
 import { Privacidade } from './telas/privacidade/Privacidade'
-import { copiarProtegido } from './componentes/privacidade'
 import { App as AppReal } from './app/App'
 import { Provedor } from './app/contexto'
 import { Cadastro, FichaFuncionario } from './telas/escritorio/Ficha'

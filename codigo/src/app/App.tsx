@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import './navegacao.css'
 import './abas.css'
 import '@fontsource-variable/inter'
@@ -11,7 +12,6 @@ import { useApp } from './contexto'
 import { Sheet } from '../componentes/base'
 import { OlhoDaAba, SeloDaAba } from '../componentes/ControlesDaAba'
 import { Marca } from '../componentes/Marca'
-import { textoPrivado } from '../componentes/privacidade'
 import { Entrar } from '../telas/entrar/Entrar'
 const PrimeiroUso = lazy(() => import('../telas/primeiro-uso/PrimeiroUso').then(m => ({ default: m.PrimeiroUso })))
 const Inicio = lazy(() => import('../telas/inicio/Inicio').then(m => ({ default: m.Inicio })))

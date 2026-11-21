@@ -1,8 +1,9 @@
+import { textoPrivado } from '../../lib/olho'
 import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import './planejamento.css'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
+import { CampoDecimal } from '../../componentes/privacidade'
 // E7 (F8): o reajuste do teto, sugerido no mês do reajuste (padrão janeiro) pela inflação do ano anterior. Vale só com
 // os 2 do casal aprovando no mesmo teto, a partir do mês de vigência; aí cada um aplica no que ajusta. Com a f_12 quem
 // decide é o banco: reajuste_situacao, reajuste_votar (1 voto por adulto, só o próprio) e reajuste_aplicar (recusa sem

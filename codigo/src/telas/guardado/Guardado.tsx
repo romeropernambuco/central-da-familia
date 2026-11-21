@@ -1,3 +1,4 @@
+import { textoPrivado, PONTOS } from '../../lib/olho'
 import { aoLimparLeituras } from '../../lib/invalidacao'
 import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
@@ -7,7 +8,7 @@ import { Icone } from '../../componentes/Icone'
 import { useRascunho } from '../../app/useRascunho'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { ouvirAtalhoGuardado } from './atalhos'
-import { textoPrivado, CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
+import { CampoPrivado, CampoDecimal } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowDownToLine,
@@ -328,7 +329,7 @@ export function Guardado() {
                 >
                   {g.por_dia_30.map(d => (
                     <li key={d.data}>
-                      {dataCurta(d.data)}: {oculto ? '•••' : reais(d.liquido)}
+                      {dataCurta(d.data)}: {oculto ? PONTOS : reais(d.liquido)}
                     </li>
                   ))}
                 </ul>

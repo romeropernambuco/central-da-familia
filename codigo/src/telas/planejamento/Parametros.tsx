@@ -1,7 +1,8 @@
+import { textoPrivado } from '../../lib/olho'
 import './planejamento.css'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { CampoDecimal, textoPrivado } from '../../componentes/privacidade'
+import { CampoDecimal } from '../../componentes/privacidade'
 // E6 (fase final, parte de tela): os parâmetros do objetivo 2029 dentro do Planejamento. Os 2 do casal mudam; o banco
 // guarda quem mudou, quando, antes e depois; o Focus aparece ao lado de cada taxa. A tela NUNCA calcula 2029: só chama
 // futuro() de lib/futuro com a entrada que api.futuroEntradas() montou e escreve o resultado.

@@ -1,3 +1,4 @@
+import { textoPrivado } from '../../lib/olho'
 import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
 import { Icone } from '../../componentes/Icone'
@@ -6,7 +7,6 @@ import { useApp } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { Din } from '../../componentes/base'
 import { reais } from '../../lib/formato'
-import { textoPrivado } from '../../componentes/privacidade'
 
 export function CartaoGuardado() {
   const { familia } = useApp()

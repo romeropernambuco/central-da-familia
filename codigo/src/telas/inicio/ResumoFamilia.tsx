@@ -1,3 +1,4 @@
+import { PONTOS_LONGOS } from '../../lib/olho'
 import { useResumoFamilia } from '../../app/useResumoFamilia'
 import { useApp } from '../../app/contexto'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
@@ -16,7 +17,7 @@ import './resumo.css'
 const RitmoOrcamento = lazy(() => import('./RitmoOrcamento'))
 
 const dinheiro = (v: number, oculto: boolean) =>
-  oculto ? '••••' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  oculto ? PONTOS_LONGOS : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const valor = (d: Dinheiro, oculto: boolean) => dinheiro(d.unidade === 'centavos' ? d.valor / 100 : d.valor, oculto)
 interface Item {
   chave: keyof Resumo
@@ -38,7 +39,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   }),
   podeGastarHoje: (campo, _hoje, oculto) => {
     const p = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'podeGastarHoje',
       titulo: !oculto && p?.devendo ? 'Este mês fica devendo' : 'Hoje você pode gastar',
@@ -50,7 +51,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   },
   faturas: (campo, _hoje, oculto) => {
     const f = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'faturas',
       titulo: 'Faturas a vencer/conferir',
@@ -76,7 +77,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   }),
   recebimentos: (campo, hoje, oculto) => {
     const rec = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'recebimentos',
       titulo: 'Recebimentos previstos',
@@ -103,7 +104,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   },
   plano2029: (campo, _hoje, oculto) => {
     const plano = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'plano2029',
       titulo: 'Plano 2029',
@@ -128,7 +129,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   casa: (campo, _hoje, oculto) => {
     const c = campo.valor
     const rotulos = c && rotulosCasa(c)
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'casa',
       titulo: 'Casa',
@@ -152,7 +153,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
     }
   },
   imoveis: (campo, _hoje, oculto) => {
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'imoveis',
       titulo: 'Imóveis',
@@ -168,7 +169,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   },
   movimentacaoMes: (campo, hoje, oculto) => {
     const m = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'movimentacaoMes',
       titulo: 'Gastos e entradas do mês',
@@ -182,7 +183,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   },
   desejos: (campo, _hoje, oculto) => {
     const d = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'desejos',
       titulo: 'Desejos',
@@ -194,7 +195,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
   },
   pendencias: (campo, _hoje, oculto) => {
     const fila = campo.valor
-    const privado = (t: string) => (oculto ? '••••' : t)
+    const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'pendencias',
       titulo: 'Precisa de você',
@@ -264,7 +265,7 @@ export function CartaoResumo({
             <small className="resumo-meta">
               <span className="resumo-natureza">{campo.fonte[0]?.natureza}</span>
               {campo.conferidoEm
-                ? ` · Conferido em ${oculto ? '••••' : dataConferencia(campo.conferidoEm)}`
+                ? ` · Conferido em ${oculto ? PONTOS_LONGOS : dataConferencia(campo.conferidoEm)}`
                 : item.chave === 'saldoConta'
                   ? ' · Sem conferência registrada'
                   : ''}
@@ -453,7 +454,7 @@ export function ResumoApresentacao({
         <h2 className="sec-t">Resumo da família</h2>
         <p className="resumo-conferencia">
           {datas.length
-            ? `Conferido em ${oculto ? '••••' : dataConferencia(datas[0], hoje)}`
+            ? `Conferido em ${oculto ? PONTOS_LONGOS : dataConferencia(datas[0], hoje)}`
             : 'Nenhum número conferido manualmente ainda'}
         </p>
       </header>

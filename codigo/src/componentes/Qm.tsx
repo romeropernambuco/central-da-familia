@@ -1,6 +1,6 @@
+import { textoPrivado } from '../lib/olho'
 import './apoio-f32.css'
 import { Icone } from './Icone'
-import { textoPrivado } from './privacidade'
 import { HelpCircle } from 'lucide-react'
 import { useApp } from '../app/contexto'
 import type { LinhaExplicacao } from '../api/tipos'

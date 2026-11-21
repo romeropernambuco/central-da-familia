@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import { Icone } from './Icone'
 import { useApp } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
@@ -5,7 +6,7 @@ import { CENARIOS_RECEITAS, useCenarioReceitas } from '../app/useCenarioReceitas
 import { textoDaTaxa } from '../lib/futuroReceitas'
 import type { CenarioReceitas, ControleReceitas, FontesReceita } from '../api/tipos'
 import { Din } from './base'
-import { mesCurto, textoPrivado } from '../lib/formato'
+import { mesCurto } from '../lib/formato'
 import { numerosRumo2029 } from '../lib/rumo2029'
 
 export function CenariosReceitas({

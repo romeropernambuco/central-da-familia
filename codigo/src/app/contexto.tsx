@@ -1,3 +1,4 @@
+import { textoPrivado } from '../lib/olho'
 import { geracaoLeitura, LeituraSubstituida } from '../lib/invalidacao'
 import { FilaPendentes } from '../componentes/FilaPendentes'
 import { FalhasDeLeitura } from '../componentes/FalhasDeLeitura'
@@ -13,7 +14,6 @@ import { useAvisos } from './useAvisos'
 import { useOlho } from './useOlho'
 import { useResumo } from './useResumo'
 import { useSessao } from './useSessao'
-import { textoPrivado } from '../lib/formato'
 
 export interface PreLancar {
   envelope?: string

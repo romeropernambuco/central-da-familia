@@ -1,3 +1,4 @@
+import { textoPrivado, PONTOS } from '../../lib/olho'
 import { falhaDeLeitura } from '../../app/falhasDeLeitura'
 import type { NovoLancamento } from '../../api/tipos'
 import { avisarQuandoOEnvioTerminar, enviarSemPrenderATela } from '../../app/envioGuardado'
@@ -8,7 +9,7 @@ import { Icone } from '../../componentes/Icone'
 import { useMembros } from '../../app/useMembros'
 import { valorForaPadrao } from '../../app/valorForaPadrao'
 import { rascunhos } from '../../app/rascunhos'
-import { CampoPrivado, textoPrivado } from '../../componentes/privacidade'
+import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
@@ -417,7 +418,7 @@ export function Lancar() {
           <span className="cur">R$</span>
           <span className="num">
             {oculto && valor ? (
-              '•••'
+              PONTOS
             ) : (
               <>
                 {(int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}

@@ -1,3 +1,4 @@
+import { esconderValores } from '../lib/olho'
 import { rascunhos } from '../app/rascunhos'
 import { act, createElement, Fragment, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -10,7 +11,7 @@ import { AgenteDaAba } from '../telas/escritorio/AgenteDaAba'
 import { Ajustes } from '../telas/ajustes/Ajustes'
 import { Lancar } from '../telas/lancar/Lancar'
 import { DocumentoTeste, NoTeste } from '../telas/escritorio/numeros.dom-teste'
-import { esconderValores, hojeRecife } from '../lib/formato'
+import { hojeRecife } from '../lib/formato'
 afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
