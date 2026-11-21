@@ -1,21 +1,8 @@
-import {
-  invalidarDados,
-  limparLeituras,
-  definirEscopoLeitura,
-  useInvalidacao,
-  LeituraSubstituida,
-  geracaoLeitura,
-} from './invalidacao'
-import { encerrarAcolhimento } from '../lib/acolhimento'
-import { salvamento } from './salvamento'
+import { geracaoLeitura, LeituraSubstituida } from './invalidacao'
 import { FilaPendentes } from '../componentes/FilaPendentes'
 import { FalhasDeLeitura } from '../componentes/FalhasDeLeitura'
-import { limparFalhasDeLeitura } from './falhasDeLeitura'
 import { reenviarRecusado } from './envioGuardado'
-import { definirDonoDosPendentes } from './pendentesGuardados'
-import { pendentes } from './pendentes'
 import { desfazer } from './desfazer'
-import { limparRascunhos } from './rascunhos'
 import { BarraDesfazer } from '../componentes/BarraDesfazer'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Api } from '../api'
@@ -24,7 +11,8 @@ import { Explicacao, Sheet } from '../componentes/base'
 import { ErroRede, ErroSessao } from '../api/erros'
 import { useAvisos } from './useAvisos'
 import { useOlho } from './useOlho'
-import { useRetomada } from './useRetomada'
+import { useResumo } from './useResumo'
+import { useSessao } from './useSessao'
 import { textoPrivado } from '../lib/formato'
 
 export interface PreLancar {
@@ -73,173 +61,34 @@ export const ContextoApp = createContext<Ctx | null>(null)
 export const useApp = () => useContext(ContextoApp)!
 
 export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
-  const [sessao, setSessao] = useState<Sessao | null>(null)
-  const [resumo, setResumo] = useState<ResumoHoje | null>(null)
-  const [versao, setVersao] = useState(0)
   const { toastE, setToast, toast, revisarDesfazer } = useAvisos()
   const [lancarAberto, setLancar] = useState<PreLancar | null>(null)
   const [exp, setExp] = useState<Explicar | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
-  const familia = sessao?.familias[0] || null
-  const chaveResumo = JSON.stringify([api.modo, sessao?.userId, familia?.id, familia?.membroId, familia?.papel])
-  const [origemResumo, setOrigemResumo] = useState('')
-  const [falhaResumo, setFalhaResumo] = useState<{ origem: string; motivo: string } | null>(null)
-  const guardarResumo = useCallback(
-    (r: ResumoHoje) => {
-      setResumo(r)
-      setOrigemResumo(chaveResumo)
-    },
-    [chaveResumo],
-  )
   const { oculto, alternarOculto } = useOlho()
 
-  const invalidacao = useInvalidacao(api, familia?.id || '', 'resumo')
-  const equipe = familia?.papel === 'equipe'
-  const [semRede, setSemRede] = useState(() => typeof navigator !== 'undefined' && navigator.onLine === false)
+  // a sessão e o resumo dividem o contador de buscas e se avisam quando a sessão acaba
   const pedido = useRef(0)
-
-  const saindo = useRef(false)
-  const consultaSessao = useRef(0)
-  useEffect(
-    () => () => {
-      consultaSessao.current++
-      pedido.current++
-    },
-    [api],
-  )
-  const sessaoAtual = useRef(sessao)
-  sessaoAtual.current = sessao
-  const trocarSessao = useCallback(async () => {
-    if (saindo.current) return
-    const meu = ++consultaSessao.current
-    setToast(null) // O aviso pertence à pessoa que iniciou esta ação.
-    try {
-      const s = await api.sessao()
-      if (meu !== consultaSessao.current) return
-      const geracao = geracaoLeitura(api)
-      definirEscopoLeitura(api, s?.userId || '', s?.familias[0] || null)
-      if (geracao !== geracaoLeitura(api)) pedido.current++
-      setSessao(s)
-      setErro(null)
-    } catch (e) {
-      if (meu !== consultaSessao.current || e instanceof LeituraSubstituida) return
-      // Oscilação de rede com a pessoa já dentro do app: ela continua onde estava, com o que já tinha carregado.
-      // Cair para a tela de entrar aqui fazia parecer que a conta tinha saído.
-      if (e instanceof ErroRede && sessaoAtual.current) {
-        setToast({ msg: 'Sem internet agora. Mostrando o que já estava carregado.', id: Date.now() })
-        return
-      }
-      pedido.current++
-      limparLeituras(api)
-      setSessao(null)
-      // sessão vencida não é erro pra mostrar: a tela de entrar já explica
-      setErro(e instanceof ErroSessao ? null : (e as Error).message)
-    }
-  }, [api, setToast])
-
-  const encerrarSessao = useCallback(
-    (avisar: boolean) => {
-      consultaSessao.current++
-      pedido.current++
-      limparLeituras(api)
-      limparFalhasDeLeitura()
-      definirDonoDosPendentes('')
-      pendentes.limpar()
-      desfazer.limpar()
-      salvamento.limpar()
-      encerrarAcolhimento()
-      limparRascunhos()
-      setResumo(null)
-      setFalhaResumo(null)
-      setLancar(null)
-      setExp(null)
-      setSessao(null)
-      setErro(null)
-      setToast(avisar ? { msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() } : null)
-    },
-    [api, setToast],
-  )
-  const finalizarSessao = useCallback(
-    async (avisar: boolean) => {
-      if (saindo.current) return
-      saindo.current = true
-      encerrarSessao(avisar)
-      try {
-        await api.sair()
-      } catch {
-        /* a sessão do app já foi limpa */
-      } finally {
-        saindo.current = false
-      }
-    },
-    [api, encerrarSessao],
-  )
-
-  const sair = useCallback(() => finalizarSessao(false), [finalizarSessao])
-  const lerResumo = useCallback(async () => {
-    if (!familia) return
-    // 2 buscas ao mesmo tempo (foco + lançamento, ou 2 celulares): só a última pedida vale, a mais velha é descartada
-    const meu = ++pedido.current,
-      geracao = geracaoLeitura(api)
-    const atual = () => meu === pedido.current && geracao === geracaoLeitura(api)
-    if (equipe) {
-      setResumo(null)
-      return
-    }
-    try {
-      const r = await api.resumoHoje(familia.id)
-      if (!atual()) return
-      guardarResumo(r)
-      setFalhaResumo(null)
-      setErro(null)
-      setSemRede(false)
-    } catch (e) {
-      if (!atual() || e instanceof LeituraSubstituida) return
-      if (e instanceof ErroSessao) {
-        await finalizarSessao(true)
-        return
-      }
-      if (e instanceof ErroRede) setSemRede(true)
-      const motivo = (e as Error).message
-      setFalhaResumo({ origem: chaveResumo, motivo })
-      setErro(motivo)
-    }
-  }, [api, chaveResumo, equipe, finalizarSessao, guardarResumo])
-  const recarregar = useCallback(async () => {
-    if (!familia) return
-    // as leituras vão rodar de novo: o que falhar agora volta para a faixa; o que der certo some dela
-    limparFalhasDeLeitura()
-    invalidarDados(api, familia.id)
-    setVersao(v => v + 1)
-    await lerResumo()
-  }, [api, chaveResumo, lerResumo])
-
-  useEffect(() => {
-    try {
-      localStorage.removeItem('marco_visto')
-    } catch {
-      /* sem armazenamento */
-    }
-  }, [])
-  useEffect(() => {
-    trocarSessao()
-  }, [trocarSessao])
-  useEffect(() => {
-    void lerResumo()
-    return () => {
-      pedido.current++
-    }
-  }, [lerResumo, invalidacao])
-  // o login caiu sozinho (token vencido ou encerrado em outro aparelho)
-  useEffect(
-    () =>
-      api.aoSairSessao?.(() => {
-        if (!saindo.current) encerrarSessao(true)
-      }),
-    [api, encerrarSessao],
-  )
-
-  useRetomada(familia?.id, recarregar, setSemRede)
+  const aoEncerrar = useRef(() => {})
+  const { sessao, familia, erro, setErro, trocarSessao, finalizarSessao, sair } = useSessao(api, {
+    setToast,
+    pedido,
+    aoEncerrar,
+  })
+  const {
+    resumo,
+    erroResumo,
+    versao,
+    nomesMudaram,
+    recarregar,
+    semRede,
+    setSemRede,
+    limpar: limparResumo,
+  } = useResumo(api, sessao, { pedido, finalizarSessao, setErro })
+  aoEncerrar.current = () => {
+    limparResumo()
+    setLancar(null)
+    setExp(null)
+  }
 
   const tentar = useCallback(
     async (f: () => Promise<unknown>) => {
@@ -258,7 +107,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
         return false
       }
     },
-    [api, finalizarSessao, setToast],
+    [api, finalizarSessao, setSemRede, setToast],
   )
 
   useEffect(() => {
@@ -276,15 +125,15 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     api,
     sessao,
     familia,
-    resumo: origemResumo === chaveResumo ? resumo : null,
+    resumo,
     versao,
-    nomesMudaram: () => setVersao(v => v + 1),
+    nomesMudaram,
     recarregar,
     trocarSessao,
     sair,
     toast,
     erro,
-    erroResumo: falhaResumo?.origem === chaveResumo ? falhaResumo.motivo : null,
+    erroResumo,
     tentar,
     semRede,
     // E3 (conserto 6): o aviso de baixo some ao abrir o Corrigir (não fica por cima da folha nem do botão de salvar)
