@@ -158,6 +158,17 @@ describe('contexto em partes: só é desenhado de novo quem assina a parte que m
     expect(desenhos.dados).toBeGreaterThan(0)
     for (const k of Object.keys(antes) as (keyof ParteAcoes)[]) expect(acoes[k], k).toBe(antes[k])
   })
+  it('conferir a sessao de novo e ela vir igual: a familia continua o mesmo objeto e ninguem e redesenhado', async () => {
+    // varias telas refazem a busca quando a familia muda; se ela virasse objeto novo a cada conferencia, buscariam a toa
+    await montar(app())
+    const antes = inteiro.familia
+    await act(async () => {
+      await acoes.trocarSessao()
+    })
+    await assentar()
+    expect(inteiro.familia).toBe(antes)
+    expect(desenhos.sessao).toBe(0)
+  })
   it('quem pega tudo recebe os mesmos campos de antes', async () => {
     await montar(app())
     expect(Object.keys(inteiro).sort()).toEqual(

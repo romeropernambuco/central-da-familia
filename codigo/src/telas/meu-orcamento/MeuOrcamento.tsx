@@ -48,7 +48,7 @@ export function MeuOrcamento() {
     familia ? () => api.lancamentos(familia.id, hojeRecife().slice(0, 7)) : null,
     [api, versao],
   )
-  const lanc = leitura.dado || []
+  const lanc = useMemo(() => leitura.dado || [], [leitura.dado])
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
   const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
@@ -70,7 +70,7 @@ export function MeuOrcamento() {
     const anot = new Set([...Object.keys(porDia), ...(semGasto || [])])
     // R8: o cofrinho bate com o mês: dia acima do valor come a sobra dos outros dias
     return { porDia, base, fechados, anot, cof: cofrinhoDoMes(porDia, base, fechados, anot) }
-  }, [lanc, env?.id, env?.limite_base, env?.limite_mes, hoje, semGasto])
+  }, [lanc, env, hoje, semGasto, mes])
 
   if (erroResumo)
     return (

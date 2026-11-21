@@ -221,7 +221,7 @@ export function PerguntaCard({
           setGravando(false)
         }
       }),
-    [responder, p.id, aoResponder, loja, quem],
+    [responder, p.id, p.funcionario, aoResponder, loja, quem],
   )
   // corrigindo uma resposta antiga: vai junto pra o diário guardar a antiga e valer a nova
   const extra = corrige ? { corrige: true } : undefined

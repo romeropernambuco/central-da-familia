@@ -1022,8 +1022,9 @@ function CasaEquipe() {
     setMarca(null)
     cancelar()
     setConfirmarGas(false)
+    const contador = pedido
     return () => {
-      pedido.current++
+      contador.current++
     }
   }, [api, familia?.id, versao])
   const hoje = casa?.hoje || hojeRecife()

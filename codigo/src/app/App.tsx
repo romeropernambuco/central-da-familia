@@ -100,9 +100,11 @@ export function App() {
     ver()
     addEventListener('hashchange', ver)
     return () => removeEventListener('hashchange', ver)
-  }, [familia?.id])
+  }, [abrirLancar, familia])
+  const folhaAberta = useRef(false)
+  folhaAberta.current = !!lancarAberto
   useEffect(() => {
-    if (lancarAberto || document.activeElement?.closest('input,textarea,select,[role="dialog"]')) return
+    if (folhaAberta.current || document.activeElement?.closest('input,textarea,select,[role="dialog"]')) return
     tituloRef.current?.focus?.({ preventScroll: true })
   }, [rota])
   useEffect(() => {

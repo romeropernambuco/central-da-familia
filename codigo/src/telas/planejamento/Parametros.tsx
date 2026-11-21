@@ -172,7 +172,7 @@ function ParametrosFamilia() {
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, versao, n])
+  }, [api, familia, versao, n, anos])
   // E7: a única conta de 2029 é a do motor (useFuturo chama futuro()); a tela só desenha
   const { ent, saida, estado: estFuturo, motivo: motivoFuturo, atualizar } = useFuturo()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "os 2" nem "vocês"

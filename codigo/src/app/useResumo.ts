@@ -77,8 +77,9 @@ export function useResumo(api: Api, sessao: Sessao | null, { pedido, finalizarSe
 
   useEffect(() => {
     void lerResumo()
+    const contador = pedido
     return () => {
-      pedido.current++
+      contador.current++
     }
   }, [lerResumo, invalidacao, pedido])
 

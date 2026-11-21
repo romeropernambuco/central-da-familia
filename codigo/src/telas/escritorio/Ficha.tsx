@@ -111,7 +111,7 @@ export function FichaFuncionario({
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, f.id, versao, tudo, f.ultimas_respostas])
+  }, [api, familia, f.id, versao, tudo, f.ultimas_respostas, chaveLeitura])
   const respostas = diario?.chave === chaveLeitura ? diario.linhas : tudo ? null : f.ultimas_respostas || null
   const verTudo = () => setExpandido(chaveLeitura)
   const hoje = hojeRecife()

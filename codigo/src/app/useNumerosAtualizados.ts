@@ -1,6 +1,6 @@
 import { observarPosMutacao } from '../api/posMutacao'
 import { aoLimparLeituras, geracaoLeitura, escopoLeitura } from '../lib/invalidacao'
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Api, ChaveConfig } from '../api/tipos'
 import { dataConferenciaValida, frescor, type GrupoNumero, type NumerosAtualizados } from '../lib/resumo/conferencia'
 export { frescor } from '../lib/resumo/conferencia'
@@ -149,8 +149,10 @@ export function useNumerosAtualizados(agora: () => Date = () => new Date()) {
   }
   if (l.dados.saldo_caixa && (!dados.saldo_caixa || l.dados.saldo_caixa > dados.saldo_caixa))
     dados.saldo_caixa = l.dados.saldo_caixa
+  const relogio = useRef(agora)
+  relogio.current = agora
   useEffect(() => {
-    if (familia?.papel === 'casal') acompanharConferencias(api, fid, [], agora)
+    if (familia?.papel === 'casal') acompanharConferencias(api, fid, [], () => relogio.current())
   }, [api, fid, familia?.papel])
   return {
     dados,

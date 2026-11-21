@@ -9,11 +9,13 @@ export function BarraDesfazer() {
   useEffect(() => desfazer.ouvir(() => mudar(n => n + 1)), [])
   useEffect(() => salvamento.ouvir(() => mudar(n => n + 1)), [])
   const a = desfazer.atual
+  const comErro = desfazer.erro,
+    ocupado = desfazer.ocupado
   useEffect(() => {
-    if (!a || pausado || desfazer.erro || desfazer.ocupado) return
+    if (!a || pausado || comErro || ocupado) return
     const t = setTimeout(() => desfazer.dispensar(), 10000)
     return () => clearTimeout(t)
-  }, [a, pausado, desfazer.erro, desfazer.ocupado])
+  }, [a, pausado, comErro, ocupado])
   if (!a)
     return salvamento.estado ? (
       <p className="todo f32-feedback" role="status">

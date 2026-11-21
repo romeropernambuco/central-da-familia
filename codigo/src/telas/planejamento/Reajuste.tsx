@@ -135,7 +135,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     return () => {
       vivo = false
     }
-  }, [api, familia?.id, vigencia])
+  }, [api, familia, hoje, vigencia])
   if (!familia || familia.papel !== 'casal' || !ent?.entrada || !lido || !lidoSit || !api.reajusteVotar) return null
 
   const vig = ativa ?? vigencia
