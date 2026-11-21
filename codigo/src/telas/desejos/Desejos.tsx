@@ -13,7 +13,7 @@ import { CampoPrivado } from '../../componentes/privacidade'
 // A tela NUNCA calcula 2029: só chama cabeDesejo() (e avaliarAntecipacao(), do mesmo motor) de lib/futuro com a entrada de lib/futuroReceitas.ts.
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Sparkles } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { useFuturo } from '../../app/useDados2'
 import { useAdultos } from '../../app/useMembros'
@@ -215,7 +215,10 @@ const VAZIO = {
 }
 
 export function Desejos() {
-  const { api, familia, resumo, versao, tentar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast } = useAcoes()
+  const { resumo, versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const { ent, saida: saidaF, estado: estFuturo, motivo: motivoFuturo } = useFuturo()
   const casal = familia?.papel === 'casal'
   const adultos = useAdultos()

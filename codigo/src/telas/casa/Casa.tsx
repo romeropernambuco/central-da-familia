@@ -35,7 +35,7 @@ import {
   Copy,
 } from 'lucide-react'
 import { LerCupom } from '../../componentes/LerCupom'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { PrecisaDeVoce } from '../escritorio/Escritorio'
 import { Din, Sheet } from '../../componentes/base'
@@ -81,7 +81,7 @@ const novoId = () => novoUuid().slice(0, 8)
 
 /** Casa: feira da semana, prestadores, gás e Folha da Casa. A equipe tem a tela dela (CasaEquipe), sem nenhum valor em dinheiro. */
 export function Casa() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const equipe = familia?.papel === 'equipe'
   // A2: a pessoa da família (filha) vê só a lista e o gás: sem valor, sem Serviços, sem Folha, sem "Gerar código"
   const soCasal = familia?.papel === 'casal'
@@ -142,7 +142,10 @@ const FalhaConfig = ({ m }: { m: string }) =>
   ) : null
 
 function Feira() {
-  const { api, familia, resumo, versao, tentar, toast, oculto, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast, recarregar } = useAcoes()
+  const { resumo, versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const hoje = hojeRecife()
   const [lista, setLista, falhaLista] = useConfig<Item[]>('casa_lista', [])
   const [pres, setPres] = useConfig<Record<string, string[]>>('casa_presenca', {})
@@ -560,7 +563,9 @@ function proxDia(hoje: string, dow: number): string {
 }
 
 function Prestadores() {
-  const { abrirLancar, resumo, oculto } = useApp()
+  const { abrirLancar } = useAcoes()
+  const { resumo } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const hoje = hojeRecife()
   const [ps, setPs, falhaPs] = useConfig<Prestador[]>('casa_prestadores', [])
   const [novo, setNovo] = useState(false)
@@ -703,7 +708,8 @@ function NovoPrestador({ fechar, salvar }: { fechar: () => void; salvar: (p: Pre
 }
 
 function Gas() {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const hoje = hojeRecife()
   const [gasCfg, setGas, falhaGas] = useConfig<{ trocas: string[] }>('casa_gas', { trocas: [] })
   const [daEquipe, setDaEquipe] = useState<string[]>([])
@@ -961,7 +967,9 @@ function NovaPessoa({ fechar, salvar }: { fechar: () => void; salvar: (p: Pessoa
 /** Tela da equipe da casa: lista, compras, prestadores, gás e presença. Nenhum valor em dinheiro aparece aqui.
  *  Lê e marca pelo banco (casa_da_equipe e casa_marcar), na mesma lista que o casal usa. */
 function CasaEquipe() {
-  const { api, familia, versao, toast, abrirLancar, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { toast, abrirLancar, recarregar } = useAcoes()
+  const { versao } = useDadosDoDia()
   const [marca, setMarca] = useState<{ familia: string; casa: CasaDaEquipe } | null>(null)
   const {
     dado: leitura,
@@ -1310,7 +1318,8 @@ function CasaEquipe() {
 }
 
 export function EstadoEstoqueEquipe() {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const equipe = familia?.papel === 'equipe'
   const { dado, erro, carregando, repetir } = useLeituraRemota(
     `${familia?.id}:estoque`,

@@ -12,7 +12,7 @@ import { valorDigitadoValido } from '../../lib/formato'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
 import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
@@ -37,7 +37,10 @@ import {
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e conquistas. Abre no limite de quem olha (R2). */
 export function MeuOrcamento() {
-  const { api, familia, resumo, erroResumo, recarregar, versao, abrirLancar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, abrirLancar, toast } = useAcoes()
+  const { resumo, erroResumo, versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const pessoais = (resumo?.envelopes || []).filter(e => !e.casa)
   const [envId, setEnvId] = useState<string | null>(null)
   const env = pessoais.find(e => e.id === envId) || pessoais.find(e => e.id === familia?.envelopeId) || pessoais[0]
@@ -461,7 +464,8 @@ export type MetaPessoal = {
 export type Metas = Record<string, MetaPessoal>
 
 export function MetaDoDesejo({ desejo }: { desejo: DesejoTela }) {
-  const { familia, toast } = useApp()
+  const { familia } = useSessaoAtual()
+  const { toast } = useAcoes()
   const [metas, salvar, falha, leu] = useConfig<Metas>('metas_pessoais', {})
   const [ocupado, setOcupado] = useState(false)
   if (familia?.papel !== 'pessoa' || !familia.envelopeId || !desejo.meu) return null
@@ -513,7 +517,7 @@ export function ProgressoMeta({
   salvar: (meta: MetaPessoal) => Promise<boolean>
   editavel: boolean
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const [valor, setValor] = useRascunho('cadastro:meta:valor', ''),
     [ocupado, setOcupado] = useState(false)
   const [falha, setFalha] = useState('')

@@ -8,7 +8,7 @@ import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../telas/escritorio/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef } from 'react'
 import { FlaskConical } from 'lucide-react'
-import { useApp } from './contexto'
+import { useAcoes, useDadosDoDia, useFolhaLancar, useOlhoApp, useSessaoAtual } from './contexto'
 import { Sheet } from '../componentes/base'
 import { OlhoDaAba, SeloDaAba } from '../componentes/ControlesDaAba'
 import { Marca } from '../componentes/Marca'
@@ -58,7 +58,11 @@ import { ir } from '../lib/rotas'
 export { ir } from '../lib/rotas'
 
 export function App() {
-  const { sessao, familia, api, lancarAberto, erro, abrirLancar, semRede, oculto } = useApp()
+  const { sessao, familia, api, erro } = useSessaoAtual()
+  const { abrirLancar } = useAcoes()
+  const { semRede } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
+  const { lancarAberto } = useFolhaLancar()
   const tituloRef = useRef<HTMLHeadingElement>(null)
   const destino = useDestino()
   useEffect(() => {

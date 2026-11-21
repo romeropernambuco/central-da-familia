@@ -6,7 +6,7 @@ import { Icone } from './Icone'
 // A tela NUNCA calcula 2029: recebe a saída de futuro() (lib/futuro) e só escreve e desenha.
 import { ChevronRight, Target } from 'lucide-react'
 import { useFuturo } from '../app/useDados2'
-import { useApp } from '../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../app/contexto'
 import type { FuturoEntrada, FuturoSaida, RendaDoMes } from '../lib/futuro'
 import { mesCurto, reais } from '../lib/formato'
 import { GraficoCaixa, mesMaisApertado } from './Graficos'
@@ -80,7 +80,7 @@ export function frasesCorte(a: NonNullable<FuturoSaida['ajustes_falta']>): {
 
 /** Planejamento: a linha mês a mês até dez/2028, as frases do motor e a lista de cada mês (aberta num toque). */
 export function Linha2028({ saida, entrada }: { saida: FuturoSaida; entrada: FuturoEntrada }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   if (oculto) return <p className="todo">Gráfico e valores escondidos.</p>
   const f = frasesLinha(saida)
   const pisoMeses = entrada.parametros.piso_meses
@@ -271,7 +271,7 @@ export function frasesRenda(r: RendaDoMes): { rende: string; folga: string; taxa
 
 /** Planejamento depois da virada: o bloco renda no lugar da linha até 2028. */
 export function Renda2029({ saida }: { saida: FuturoSaida }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   if (oculto) return <p className="todo">Renda e valores escondidos.</p>
   const r = saida.renda
   if (!r) return null
@@ -320,7 +320,7 @@ export function Renda2029({ saida }: { saida: FuturoSaida }) {
 
 /** Início: 1 linha que leva ao Planejamento. Só o casal (a filha não vê 2029). */
 export function Linha2028Resumo() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const { saida } = useFuturo()
   if (familia?.papel !== 'casal' || !saida) return null
   // modo renda (depois da virada): 1 linha com a renda do mês

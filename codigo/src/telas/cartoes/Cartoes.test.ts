@@ -15,7 +15,18 @@ vi.mock('react', async importOriginal => ({
   useState: mocks.useState,
   useEffect: mocks.useEffect,
 }))
-vi.mock('../../app/contexto', () => ({ useApp: mocks.useApp }))
+vi.mock('../../app/contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = mocks.useApp
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 vi.mock('../../componentes/Qm', () => ({ Qm: () => null }))
 // Sequência de estados congelada do simulador. Conferência coberta pela integração f35.
 vi.mock('../../componentes/ConferenciasResumo', () => ({ ConferenciaFaturas: () => null }))

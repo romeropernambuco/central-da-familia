@@ -84,6 +84,7 @@ export function useResumo(api: Api, sessao: Sessao | null, { pedido, finalizarSe
 
   useRetomada(familia?.id, recarregar, setSemRede)
 
+  const nomesMudaram = useCallback(() => setVersao(v => v + 1), [])
   /** Apaga o resumo e a falha guardada: usado quando a sessão acaba. */
   const limpar = useCallback(() => {
     setResumo(null)
@@ -94,7 +95,7 @@ export function useResumo(api: Api, sessao: Sessao | null, { pedido, finalizarSe
     resumo: origemResumo === chaveResumo ? resumo : null,
     erroResumo: falhaResumo?.origem === chaveResumo ? falhaResumo.motivo : null,
     versao,
-    nomesMudaram: () => setVersao(v => v + 1),
+    nomesMudaram,
     recarregar,
     semRede,
     setSemRede,

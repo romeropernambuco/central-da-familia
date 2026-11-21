@@ -4,7 +4,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import type { Api, ChaveConfig } from '../api/tipos'
 import { dataConferenciaValida, frescor, type GrupoNumero, type NumerosAtualizados } from '../lib/resumo/conferencia'
 export { frescor } from '../lib/resumo/conferencia'
-import { useApp } from './contexto'
+import { useSessaoAtual } from './contexto'
 import { useConfig } from './useConfig'
 
 export type { GrupoNumero, NumerosAtualizados } from '../lib/resumo/conferencia'
@@ -125,7 +125,7 @@ export function acompanharConferencias(
 }
 
 export function useNumerosAtualizados(agora: () => Date = () => new Date()) {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const [config, , erroLeitura, lido] = useConfig<unknown>(CHAVE_NUMEROS, {})
   const fid = familia?.id ?? '',
     l = loja(api, fid)

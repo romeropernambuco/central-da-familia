@@ -6,7 +6,7 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useState } from 'react'
 import { BellRing, Copy, Plus, Trash2 } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useEscritorio } from '../../app/useDados2'
 import { Vazio } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
@@ -90,7 +90,9 @@ function Relatorio() {
   )
 }
 function RelatorioPeriodo({ dias }: { dias: number }) {
-  const { api, familia, versao, sessao, oculto } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   // R15: "demora pra responder" soa como bronca: só o dono do produto vê
   const dono = !!sessao?.dono
   const [n, setN] = useState(0)
@@ -311,7 +313,10 @@ const localDeRecife = (iso: string) =>
 
 /** Lembretes: 3 campos (o quê, quando, repetir). A Secretária cobra na hora marcada, todo dia, até você responder. */
 function Lembretes() {
-  const { api, familia, versao, tentar, recarregar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const mostrar = textoPrivado
   const [lista, setLista] = useState<Lembrete[] | null>(null)
   const [erro, setErro] = useState('')

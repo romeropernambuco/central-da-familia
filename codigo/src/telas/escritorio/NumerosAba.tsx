@@ -5,7 +5,7 @@ import { Icone } from '../../componentes/Icone'
 import './escritorio.css'
 import { useEffect, useState } from 'react'
 import { Din } from '../../componentes/base'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { ir } from '../../lib/rotas'
 import { rotaPermitida } from '../../lib/rotas'
 import { ErroSessao } from '../../api/erros'
@@ -13,7 +13,9 @@ import { POR_ID } from '../../lib/escritorio/equipe'
 import type { Indicador } from './numeros'
 
 export function NumerosAba({ id, fechar }: { id: string; fechar: () => void }) {
-  const { api, familia, sessao, versao, tentar } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { tentar } = useAcoes()
+  const { versao } = useDadosDoDia()
   const invalidacao = useInvalidacao(api, familia?.id || '')
   const membro = POR_ID[id]
   const [resultado, setResultado] = useState<{ numeros: Indicador[]; exemplo: boolean } | null>(null)

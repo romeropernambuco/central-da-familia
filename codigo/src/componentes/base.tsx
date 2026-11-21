@@ -1,7 +1,7 @@
 import { textoPrivado, PONTOS } from '../lib/olho'
 import { rascunhos } from '../app/rascunhos'
 import { createContext, useEffect, useRef, useState, type ReactNode, type ButtonHTMLAttributes } from 'react'
-import { useApp } from '../app/contexto'
+import { useOlhoApp } from '../app/contexto'
 import { useOculto } from '../app/useOculto'
 import { X } from 'lucide-react'
 import { milhar, partesDinheiro, reais } from '../lib/formato'
@@ -314,7 +314,7 @@ export function CampoValor({
   assinado?: boolean
 }) {
   // Ocultar somente a apresentação: o estado original continua disponível ao salvar e ao abrir o olho.
-  const oculto = useApp()?.oculto ?? false
+  const oculto = useOlhoApp()?.oculto ?? false
   const [digitandoOculto, setDigitandoOculto] = useState(false)
   const [olhoAnterior, setOlhoAnterior] = useState(oculto)
   if (olhoAnterior !== oculto) {

@@ -1,5 +1,5 @@
 import { ErroSessao } from '../api/erros'
-import { useApp } from './contexto'
+import { useAcoes, useSessaoAtual } from './contexto'
 import { lerCompartilhado, invalidarDados, geracaoLeitura, LeituraSubstituida } from '../lib/invalidacao'
 import { useInvalidacao } from './useInvalidacao'
 import { useEffect, useState } from 'react'
@@ -11,7 +11,8 @@ export function useLeituraRemota<T>(
   dependencias: readonly unknown[],
   recurso?: string,
 ) {
-  const ctx = useApp()
+  const ctx = useSessaoAtual()
+  const acoes = useAcoes()
   const invalidacao = useInvalidacao(ctx?.api || apiAusente, ctx?.familia?.id || '', recurso)
   const escopo = JSON.stringify([
     ctx?.api?.modo,
@@ -44,7 +45,7 @@ export function useLeituraRemota<T>(
         .catch((e: Error) => {
           if (atual() && !(e instanceof LeituraSubstituida)) {
             if (e instanceof ErroSessao)
-              void ctx?.tentar(async () => {
+              void acoes?.tentar(async () => {
                 throw e
               })
             setR(a => ({ ...a, erro: e.message, carregando: false }))

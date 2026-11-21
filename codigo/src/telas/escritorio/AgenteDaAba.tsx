@@ -6,7 +6,7 @@ import { Conferencia } from '../../componentes/Conferencia'
 import { ChevronDown } from 'lucide-react'
 import { nomesPrivados, textoDeAgente } from '../../lib/textoAgente'
 import { lazy, Suspense, memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useEscritorio } from '../../app/useDados2'
 import { useInsightsDaAba } from '../../app/useInsightsDaAba'
 import { lojaEscritorio } from '../../app/escritorioCompartilhado'
@@ -106,7 +106,7 @@ const SOBRE: Record<string, string> = {
   painel: 'Aqui o dono acompanha os indicadores do app.',
 }
 export function AjudaDaAba({ rota }: { rota: string }) {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const [aberta, setAberta] = useState(false)
   return (
     <>
@@ -148,7 +148,7 @@ export function AjudaDaAba({ rota }: { rota: string }) {
 }
 let liberarRenderer: (() => void) | undefined
 export function AgenteDaAba({ rota, semCena }: { rota: Rota; semCena?: boolean }) {
-  const { familia, sessao, api } = useApp()
+  const { familia, sessao, api } = useSessaoAtual()
   if (familia?.papel === 'equipe' && rota === 'privacidade') return null
   if (!familia || rotaPermitida(rota, familia.papel, sessao?.dono) !== rota || !AGENTE_POR_ABA[rota]) return null
   return (
@@ -160,7 +160,8 @@ export function AgenteDaAba({ rota, semCena }: { rota: Rota; semCena?: boolean }
   )
 }
 function AgenteAutorizado({ rota, semCena }: { rota: Rota; semCena?: boolean }) {
-  const { familia, api, oculto, sessao } = useApp()
+  const { familia, api, sessao } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const [subaba, setSubaba] = useState<string>()
   useEffect(() => {
     if (rota !== 'casa') return

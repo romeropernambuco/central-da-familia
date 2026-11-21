@@ -1,11 +1,11 @@
 import { useState, type SetStateAction } from 'react'
-import { useApp } from './contexto'
+import { useSessaoAtual } from './contexto'
 import { rascunhos } from './rascunhos'
 export function useRascunho<T>(
   chave: string,
   inicial: T | (() => T),
 ): [T, ((v: SetStateAction<T>) => void) & { limpar: () => void }] {
-  const ctx = useApp()
+  const ctx = useSessaoAtual()
   const k = chave + ':' + ctx?.sessao?.userId + ':' + ctx?.familia?.id
   const [v, setV] = useState<T>(() =>
     rascunhos.has(k) ? (rascunhos.get(k) as T) : typeof inicial === 'function' ? (inicial as () => T)() : inicial,

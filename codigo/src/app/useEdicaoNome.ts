@@ -1,12 +1,13 @@
 import type { PessoaNome } from '../api/tipos'
-import { useApp } from './contexto'
+import { useAcoes, useSessaoAtual } from './contexto'
 import { invalidarNomes } from './useMembros'
 import { podeEditarNome, validarNome } from '../lib/nomePessoa'
 import { lojaEscritorio } from './escritorioCompartilhado'
 
 /** A configuração já pode ser alterada pelo casal; identidade de login exige capacidade própria. */
 export function useEdicaoNome(p: PessoaNome) {
-  const { api, familia, trocarSessao, recarregar, nomesMudaram } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { trocarSessao, recarregar, nomesMudaram } = useAcoes()
   const config = ['assessor', 'prestador', 'renda'].includes(p.tipo) && familia?.papel === 'casal'
   const permitido = podeEditarNome(familia, p) && (!!api.salvarNomePessoa || config)
   const salvar = async (nome: string, funcao: string) => {

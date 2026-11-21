@@ -3,7 +3,18 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, expect, it, vi } from 'vitest'
 import type { Envelope } from '../api/tipos'
 const estado = vi.hoisted(() => ({ oculto: false }))
-vi.mock('../app/contexto', () => ({ useApp: () => ({ oculto: estado.oculto, familia: { papel: 'casal' } }) }))
+vi.mock('../app/contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = () => ({ oculto: estado.oculto, familia: { papel: 'casal' } })
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 vi.mock('../app/useMembros', () => ({ useAdultos: () => 2 }))
 import { EnvelopeCard } from './EnvelopeCard'
 import { FaixaDoMes } from '../telas/lancamentos/Lancamentos'

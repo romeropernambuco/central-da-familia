@@ -1,4 +1,4 @@
-import { useApp } from '../../app/contexto'
+import { useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { lerLancamentosMes } from '../../lib/resumo/leituras'
 import { porDiaDe } from '../../lib/resumo/porDia'
@@ -16,7 +16,8 @@ export function RitmoOrcamento({
   hoje: string
   valoresNoOrcamento?: ValoresDoRitmo
 }) {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const r = useLeituraRemota(
     'inicio-ritmo',
     familia ? () => lerLancamentosMes(api, familia.id, hoje.slice(0, 7)) : null,

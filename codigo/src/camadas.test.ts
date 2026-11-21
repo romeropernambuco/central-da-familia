@@ -53,6 +53,32 @@ function subidas() {
   return achadas.sort()
 }
 
+/**
+ * A família de exemplo (dados inventados para demonstração) não pode entrar no app de verdade.
+ * Quem não é teste só pode pegar dela o FORMATO (import type), nunca o conteúdo.
+ * Lista fechada de quem pode carregar o conteúdo: só pode diminuir.
+ */
+const PODE_CARREGAR_EXEMPLO = [
+  'api/index.ts', // escolhe o banco e só carrega o exemplo nos builds de exemplo e demo
+  'api/exemplo.ts',
+  'api/exemplo2.ts',
+  'componentes/escritorio/dadosDeExemplo.ts', // monta os dados das prévias
+  'telas/entrar/Entrar.tsx', // só o código de convite de demonstração (api/conviteExemplo)
+  'telas/escritorio/numeros.ts', // numerosExemplo: carrega só quando chamado, e hoje só um teste chama
+]
+function exemploNoApp() {
+  const achadas: string[] = []
+  const comConteudo = /(?:^|\n)\s*import\s+(?!type\b)[^'"]*?from\s*['"](\.[^'"]*[Ee]xemplo[^'"]*)['"]/g
+  const tardio = /import\(\s*['"](\.[^'"]*[Ee]xemplo[^'"]*)['"]\s*\)/g
+  for (const [chave, codigo] of Object.entries(fontes)) {
+    const arquivo = chave.slice(2)
+    if (deTeste(arquivo) || PODE_CARREGAR_EXEMPLO.includes(arquivo)) continue
+    for (const m of [...codigo.matchAll(comConteudo), ...codigo.matchAll(tardio)])
+      achadas.push(`${arquivo} carrega ${m[1]}`)
+  }
+  return achadas.sort()
+}
+
 describe('camadas: cada pasta só usa o que está abaixo dela', () => {
   it('nenhuma importação sobe um degrau', () => {
     expect(subidas()).toEqual([])
@@ -60,6 +86,10 @@ describe('camadas: cada pasta só usa o que está abaixo dela', () => {
   it('a casca continua sendo só os dois arquivos combinados', () => {
     expect(CASCA).toEqual(['app/App.tsx', 'app/contexto.tsx'])
     for (const arquivo of CASCA) expect(fontes[`./${arquivo}`], arquivo).toBeTruthy()
+  })
+  it('a família de exemplo não entra no app de verdade: fora da lista, só o formato', () => {
+    expect(exemploNoApp()).toEqual([])
+    for (const arquivo of PODE_CARREGAR_EXEMPLO) expect(fontes[`./${arquivo}`], arquivo).toBeTruthy()
   })
   it('o vocabulário não carrega código que roda: só formatos', () => {
     const tipos = fontes[`./${VOCABULARIO}.ts`]

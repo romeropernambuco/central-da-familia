@@ -15,7 +15,7 @@ import { CampoPrivado, CampoDecimal } from './privacidade'
 // A tela NUNCA calcula aluguel líquido nem rentabilidade: vêm de futuro() (lib/futuro, saida.imoveis). Só soma valores pra mostrar.
 import { useMemo, useState } from 'react'
 import { Building2, Plus } from 'lucide-react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useFuturo } from '../app/useDados2'
 import { useAdultos } from '../app/useMembros'
 import { CampoValor, Din, Sheet } from './base'
@@ -70,7 +70,10 @@ export function seloImovel(
 }
 
 export function Imoveis({ aplicado }: { aplicado: number }) {
-  const { api, familia, versao, tentar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast } = useAcoes()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const { saida, atualizar } = useFuturo()
   const adultos = useAdultos()
   const [n, setN] = useState(0)

@@ -8,7 +8,7 @@ import { CampoDecimal } from '../../componentes/privacidade'
 // futuro() de lib/futuro com a entrada que api.futuroEntradas() montou e escreve o resultado.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Save, Target } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { CampoValor } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { PADROES_ECONOMISTA } from '../../lib/futuro'
@@ -98,12 +98,14 @@ function mudancas(a: ParametrosObjetivo | null, d: ParametrosObjetivo): string {
 }
 
 export function Parametros() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   return <ParametrosFamilia key={`${familia?.id}:${familia?.papel}`} />
 }
 
 function ParametrosFamilia() {
-  const { api, familia, versao, tentar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast } = useAcoes()
+  const { versao } = useDadosDoDia()
   const [obj, setObj] = useState<Objetivo | null>(null)
   const [f, setF] = useState<Record<string, string>>({})
   const [travado, setTravado] = useState(false)

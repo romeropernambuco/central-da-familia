@@ -10,7 +10,7 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Plus, Save, Target, Wallet, Shield, CircleCheck } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../lib/dono'
@@ -60,7 +60,10 @@ function lista(v: unknown): any[] {
 /** Planejamento: limites dos envelopes, colchão, rendas, metas e previsão dos próximos meses. */
 export function Planejamento() {
   const destino = useDestino()
-  const { api, familia, resumo, recarregar, toast, versao, tentar, abrirLancar, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, toast, tentar, abrirLancar } = useAcoes()
+  const { resumo, versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const [salvando, setSalvando] = useState(false)
   const [lim, setLim] = useState<Record<string, string>>({})
   const [colchao, setColchao] = useState('')

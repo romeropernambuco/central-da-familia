@@ -4,7 +4,7 @@ import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useSessaoAtual } from '../../app/contexto'
 import { useEscritorio } from '../../app/useDados2'
 import { PerguntaCard } from '../../componentes/Pergunta'
 import { fraseDoDia } from '../../lib/guardado'
@@ -14,7 +14,7 @@ const nomeDoDono = (p: PerguntaEsc, fs: FuncionarioEsc[]) => donoDaPergunta(p, f
 
 export function PrecisaDeVoce({ equipe }: { equipe?: boolean }) {
   const { e, estado, responder } = useEscritorio()
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   // QA E11 (erro 6): depois de responder (ex.: a nota da feira), a confirmação fica no próprio cartão, ao lado da contagem nova
   // (o aviso de baixo some em 4 s; aqui fica até a próxima resposta)
   const [feito, setFeito] = useState('')

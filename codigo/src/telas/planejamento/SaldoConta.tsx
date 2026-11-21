@@ -1,6 +1,6 @@
 import { PONTOS_LONGOS } from '../../lib/olho'
 import { useEffect, useId, useRef, useState } from 'react'
-import { useApp } from '../../app/contexto'
+import { useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { CampoValor, Sheet } from '../../componentes/base'
 import { CampoPrivado } from '../../componentes/privacidade'
@@ -9,7 +9,8 @@ import { lerSaldo } from '../../lib/resumo/leituras'
 import { novoUuid } from '../../lib/seguro'
 import './saldo.css'
 export function InformarSaldo({ fechar }: { fechar: () => void }) {
-  const { api, familia, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const [nome, setNome] = useState(''),
     [v, setV] = useState(''),
     [data, setData] = useState(hojeRecife())
@@ -146,7 +147,9 @@ export function InformarSaldo({ fechar }: { fechar: () => void }) {
   )
 }
 export function SaldoConta() {
-  const { api, familia, versao, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const [informar, setInformar] = useState(false)
   const r = useLeituraRemota(
     'saldo-contas',

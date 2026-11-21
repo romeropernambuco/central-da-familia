@@ -10,7 +10,7 @@ import { CampoPrivado } from './privacidade'
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type Ref } from 'react'
 import { Camera, Check, Copy } from 'lucide-react'
 import type { EstadoItem, ItemEstoque, OpcaoPergunta, Pede, PerguntaEsc } from '../api/tipos'
-import { useApp } from '../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { CampoValor, ContextoDialogo, superficieDialogo } from './base'
 import { umaPorVez } from '../lib/seguro'
 import { reduzirFoto } from '../lib/foto'
@@ -69,7 +69,7 @@ export function Contagem({
   salvar: (itens: { item_id: string; estado: EstadoItem }[]) => void
   gravando: boolean
 }) {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const [itens, setItens] = useState<ItemEstoque[] | null>(null)
   const [marca, setMarca] = useState<Record<string, EstadoItem>>({})
   const [erro, setErro] = useState('')
@@ -163,7 +163,10 @@ export function PerguntaCard({
   aoExibir?: () => void
   primeiraResposta?: Ref<HTMLButtonElement>
 }) {
-  const { abrirLancar, familia, api, tentar, oculto, sessao, resumo } = useApp()
+  const { familia, api, sessao } = useSessaoAtual()
+  const { abrirLancar, tentar } = useAcoes()
+  const { resumo } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const privados = [...(p.trechosPrivados || []), ...nomesPrivados([familia, sessao, resumo])]
   const fala = (texto: string) =>
     p.trechosPrivados ? textoDeAgente(texto, privados, oculto) : textoPrivado(texto, oculto)

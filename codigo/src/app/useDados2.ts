@@ -4,7 +4,7 @@ import { lojaEscritorio } from './escritorioCompartilhado'
 import { useInvalidacao } from './useInvalidacao'
 // Leitura do Guardado e do Escritório (CONTRATO2.md). Rebusca a cada mudança do app (`versao`): lançamento, resposta, volta pra frente, virada do dia.
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
-import { useApp } from './contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from './contexto'
 import type { GuardadoHoje } from '../api/tipos'
 import { ErroSessao } from '../api/erros'
 import type { EntradaPronta } from '../lib/futuroReceitas'
@@ -19,7 +19,9 @@ export const perguntaDaLinha = new Map<string, string>()
 const semFuncao = (m: string) => /ainda não tem essa função/i.test(m)
 
 function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, recurso: string) {
-  const { api, familia, versao, tentar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar } = useAcoes()
+  const { versao } = useDadosDoDia()
   const r = useLeituraRemota(recurso, familia && buscar ? () => buscar(familia.id) : null, [api, versao], recurso)
   return {
     dado: r.dado,
@@ -35,7 +37,7 @@ function useLeitura<T>(buscar: ((familia: string) => Promise<T>) | null, recurso
 
 /** O dinheiro guardado e quanto rendeu hoje. Só o casal: a equipe e as outras pessoas nem perguntam ao banco. */
 export function useGuardado(): { g: GuardadoHoje | null; estado: Leitura; motivo: string; atualizar: () => void } {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const pode = familia?.papel === 'casal'
   const r = useLeitura<GuardadoHoje>(pode ? f => api.guardadoHoje(f) : null, 'guardado')
   return { g: r.dado, estado: r.estado, motivo: r.motivo, atualizar: r.atualizar }
@@ -43,7 +45,9 @@ export function useGuardado(): { g: GuardadoHoje | null; estado: Leitura; motivo
 
 /** Quem precisa de você hoje. A equipe recebe só as perguntas da Casa, sem nenhum valor. */
 export function useEscritorio() {
-  const { api, familia, versao, recarregar, tentar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, tentar, toast } = useAcoes()
+  const { versao } = useDadosDoDia()
   const invalidacao = useInvalidacao(api, familia?.id || '')
   const loja = lojaEscritorio(api, familia?.id || '')
   loja.equipe = familia?.papel === 'equipe'
@@ -133,7 +137,7 @@ export function useFuturo(): {
   motivo: string
   atualizar: () => void
 } {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const pode = familia?.papel === 'casal' && !!api.futuroEntradas
   const r = useLeitura<EntradaPronta>(pode ? f => api.futuroEntradas!(f) : null, 'projecao')
   const saida = useMemo(() => {

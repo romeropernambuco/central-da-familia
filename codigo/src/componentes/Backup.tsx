@@ -3,13 +3,15 @@ import './apoio-f32.css'
 import { Icone } from './Icone'
 import { EstadoVazio } from './EstadoVazio'
 import { useState } from 'react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { gerarCopia, validarCopia, previaCopia, type Copia } from '../app/backup'
 import { Sheet } from './base'
 import { desfazer } from '../api/desfazer'
 import { limparRascunhos } from '../app/rascunhos'
 export function Backup() {
-  const { api, familia, oculto, recarregar, trocarSessao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, trocarSessao } = useAcoes()
+  const { oculto } = useOlhoApp()
   const [copia, setCopia] = useState<Copia | null>(null),
     [antes, setAntes] = useState<Copia | null>(null)
   const [conf, setConf] = useState(''),

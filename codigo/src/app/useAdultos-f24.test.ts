@@ -10,9 +10,18 @@ vi.mock('react', () => ({
     h.efeito = f
   },
 }))
-vi.mock('./contexto', () => ({
-  useApp: () => ({ api: { membros: h.membros }, familia: { id: 'ficticia', papel: 'casal' } }),
-}))
+vi.mock('./contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = () => ({ api: { membros: h.membros }, familia: { id: 'ficticia', papel: 'casal' } })
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 import { useAdultos } from './useMembros'
 it.each([false, true])('ignora leitura tardia ao trocar a aba (rejeição=%s)', async falha => {
   h.set.mockClear()

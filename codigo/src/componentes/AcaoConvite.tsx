@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useApp } from '../app/contexto'
+import { useAcoes } from '../app/contexto'
 
 /** Link de WhatsApp com dado da família: com o olho fechado não abre mensagem trocada, pede para abrir o olho. */
 export function AcaoConvite({
@@ -15,7 +15,7 @@ export function AcaoConvite({
   aoAbrir?: () => void
   children: ReactNode
 }) {
-  const { toast } = useApp()
+  const { toast } = useAcoes()
   return oculto ? (
     <button className={classe} type="button" onClick={() => toast('Abra o olho para compartilhar este convite.')}>
       {children}

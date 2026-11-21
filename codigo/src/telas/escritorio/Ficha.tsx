@@ -11,7 +11,7 @@ import { Recebimentos } from '../planejamento/Recebimentos'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Check, ChevronRight, Pencil, Plus } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { cartaoMeu } from '../../lib/dono'
 import { perguntaDaLinha, perguntasVistas } from '../../app/useDados2'
@@ -80,7 +80,9 @@ export function FichaFuncionario({
   omitirNumeros?: boolean
 }) {
   const destino = useDestino()
-  const { api, familia, versao, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const mostrar = textoPrivado
   const fala = (texto: string) =>
     f.trechosPrivados ? textoDeAgente(texto, f.trechosPrivados, oculto) : textoPrivado(texto, oculto)
@@ -315,7 +317,9 @@ function Lista<T>({
   semEditar,
   extra,
 }: PropsLista<T>) {
-  const { tentar, recarregar, toast, oculto, familia, sessao } = useApp()
+  const { familia, sessao } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
+  const { oculto } = useOlhoApp()
   const [aberto, setAberto] = useState<string | null>(null) // chave do item em edição, ou '+' pra novo
   const [form, setF] = useState<Form>({})
   const chaveRascunho = (k: string | null) =>
@@ -492,7 +496,8 @@ export function Cadastro({ id }: { id: string }) {
 
 /** Busca que se refaz a cada mudança do app. */
 function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const [resultado, setResultado] = useState<{ familia: string; versao: number; valor: T } | null>(null)
   useEffect(() => {
     setResultado(null)
@@ -514,7 +519,8 @@ function useBusca<T>(buscar: (familia: string) => Promise<T>): T | null {
 
 /* Analista de Cartão: cartões (com mensalidade ou anuidade) e a fatura do mês como veio no banco */
 function CadCartao() {
-  const { api, familia, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   // E2: o casal vê os cartões de todos, com o nome do dono; edita e informa fatura só do seu (e dos sem dono)
   const doOutro = (c?: Cartao) => !!c && !cartaoMeu(c, familia)
   const cartoes = useBusca<Cartao[]>(f => api.cartoes(f))
@@ -714,7 +720,8 @@ function CadCartao() {
 
 /* Ajudante da Feira: feiras (com a nota), contagens do estoque e itens da casa */
 function CadFiscal() {
-  const { api, familia, tentar, recarregar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
   const equipe = familia?.papel === 'equipe'
   const feiras = useBusca<Feira[]>(f => api.feiras(f))
   const est = useBusca<Estoque>(f => api.estoque(f))
@@ -1049,7 +1056,7 @@ function CadComprador() {
 }
 
 function CadGuardado() {
-  const { api } = useApp()
+  const { api } = useSessaoAtual()
   const g = useBusca<GuardadoHoje>(f => api.guardadoHoje(f))
   return (
     <div className="cad" data-cad="Aplicações">
@@ -1113,7 +1120,7 @@ const localDeRecife = (iso: string) =>
     .format(new Date(iso))
     .replace(' ', 'T')
 function CadSecretaria() {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const lista = useBusca<Lembrete[]>(f => api.lembretes(f))
   return (
     <Lista<Lembrete>
@@ -1163,7 +1170,8 @@ function CadSecretaria() {
 }
 
 function CadReserva() {
-  const { api, familia, resumo } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { resumo } = useDadosDoDia()
   const [ondeSalvo, salvar] = useConfig<string>('reserva_onde', 'conta')
   const env =
     resumo?.envelopes.find(e => e.casa && (e.colchao_meta || 0) > 0) ||
@@ -1213,7 +1221,8 @@ interface Renda {
   dono?: string
 }
 function CadContador() {
-  const { familia, oculto } = useApp()
+  const { familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const [todas, salvarTodas, , lidoR] = useConfig<Renda[]>('rendas', [])
   // E2 (regra nova, 13/11): o casal vê a renda de cada um, com o nome; cada um mexe só na sua (a do outro continua guardada)
   const rendas = todas.filter(r => !r.dono || r.dono === familia?.membroNome)

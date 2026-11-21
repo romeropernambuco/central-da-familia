@@ -4,7 +4,7 @@ import './casa.css'
 import { useRascunho } from '../../app/useRascunho'
 import { validarNome } from '../../lib/nomePessoa'
 import { useState } from 'react'
-import { useApp } from '../../app/contexto'
+import { useAcoes } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { Sheet } from '../../componentes/base'
@@ -12,7 +12,7 @@ import { novoUuid } from '../../lib/seguro'
 import type { Folha } from '../escritorio/ajudantes'
 
 export function CadastroAssessor({ fechar }: { fechar: () => void }) {
-  const { toast } = useApp()
+  const { toast } = useAcoes()
   const [folha, salvar, falha, lido] = useConfig<Folha>('casa_folha', { pessoas: [], daePaga: {} })
   const [nome, setNome] = useRascunho('cadastro:assessor:nome', ''),
     [funcao, setFuncao] = useRascunho('cadastro:assessor:funcao', ''),

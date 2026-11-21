@@ -1,6 +1,6 @@
 import { PONTOS_LONGOS } from '../../lib/olho'
 import { useResumoFamilia } from '../../app/useResumoFamilia'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { dataConferencia, plural } from '../../lib/formato'
@@ -467,7 +467,7 @@ export function ResumoApresentacao({
 }
 function ResumoAutorizado() {
   const { resumo, repetir, hoje, api, familia } = useResumoFamilia()
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const [saldo, setSaldo] = useState(false)
   const abrirSaldo = useCallback(() => setSaldo(true), [])
   return (
@@ -484,7 +484,7 @@ function ResumoAutorizado() {
   )
 }
 export function ResumoFamilia() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   return familia && familia.papel !== 'equipe' ? (
     <ResumoAutorizado key={`${familia.id}:${familia.membroId}:${familia.papel}`} />
   ) : null

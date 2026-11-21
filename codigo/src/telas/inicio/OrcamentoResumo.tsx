@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useId, useState } from 'react'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { Din } from '../../componentes/base'
 import { EnvelopeCard } from '../../componentes/EnvelopeCard'
 import { Icone } from '../../componentes/Icone'
@@ -15,7 +15,7 @@ function consultarLargura() {
 }
 
 export function useOrcamentoAberto() {
-  const { familia, sessao } = useApp() ?? {}
+  const { familia, sessao } = useSessaoAtual() ?? {}
   const chave = JSON.stringify([sessao?.userId, familia?.id, familia?.membroId, familia?.papel])
   const [largo, setLargo] = useState(() => consultarLargura()?.matches ?? false)
   const [escolha, setEscolha] = useState(() => escolhas.get(chave))
@@ -48,7 +48,8 @@ export const OrcamentoResumo = memo(function OrcamentoResumo({
   aberto: boolean
   alternar: () => void
 }) {
-  const { familia, oculto } = useApp() ?? {}
+  const { familia } = useSessaoAtual() ?? {}
+  const { oculto } = useOlhoApp() ?? {}
   const id = useId()
   if (campo.estado === 'restrito' || !familia || familia.papel === 'equipe') return null
 

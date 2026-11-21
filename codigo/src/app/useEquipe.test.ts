@@ -7,7 +7,18 @@ const h = vi.hoisted(() => ({
   pendentes: [] as (() => void)[],
   app: {} as any,
 }))
-vi.mock('./contexto', () => ({ useApp: () => h.app }))
+vi.mock('./contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = () => h.app
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 vi.mock('react', () => ({
   useState: (inicial: unknown) => {
     const i = h.indice++

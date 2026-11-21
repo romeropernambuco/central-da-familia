@@ -1,12 +1,12 @@
 import { useConfig } from './useConfig'
-import { useApp } from './contexto'
+import { useSessaoAtual } from './contexto'
 import { lerControleReceitas, lerFontesReceita } from '../lib/futuroReceitas'
 import type { ControleReceitas, FonteReceita, FontesReceita } from '../api/tipos'
 
 const VAZIO = {}
 /** Montar somente na superfície do casal. useConfig conserva a mescla entre aparelhos. */
 export function useFontesReceita() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const [bruto, gravar, erro, lido] = useConfig<unknown>('fontes_receita', VAZIO)
   const [brutoControle, gravarControle, erroControle, leuControle] = useConfig<unknown>('receitas_controle', VAZIO)
   const { fontes, corrompida } = lerFontesReceita(bruto)

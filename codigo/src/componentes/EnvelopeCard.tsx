@@ -2,7 +2,7 @@ import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
 import { Icone } from './Icone'
 import type { Envelope } from '../api/tipos'
-import { useApp } from '../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { FUSO, dataCurta, hojeRecife, mesLongo, reais, fimDoMes } from '../lib/formato'
 import { Din } from './base'
 import { Qm } from './Qm'
@@ -53,7 +53,8 @@ export function EnvelopeCard({
   onClick?: () => void
   resumo?: { compacto: boolean; principal?: number }
 }) {
-  const { familia, oculto } = useApp()
+  const { familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const classe = resumo ? `card env ${resumo.compacto ? 'env-compacto' : 'env-destaque'}` : 'card env'
   // E2 (regra nova, 13/11): o limite do outro aparece com o nome dele e sem nenhum botão de mexer
   const doOutro = !escreveNo(e, familia),

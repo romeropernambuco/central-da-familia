@@ -11,7 +11,18 @@ import { rotaDoHash, rotaPermitida, type Rota } from '../../lib/rotas'
 import { EQUIPE } from '../../lib/escritorio/equipe'
 import { numerosDaAba, numerosExemplo } from './numeros'
 
-vi.mock('../../app/contexto', () => ({ useApp: vi.fn() }))
+vi.mock('../../app/contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = vi.fn()
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 vi.mock('../../app/App', () => ({ ir: vi.fn() }))
 
 const familia: FamiliaMinha = {

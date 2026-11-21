@@ -1,6 +1,6 @@
 import { textoPrivado } from '../lib/olho'
 import { Icone } from './Icone'
-import { useApp } from '../app/contexto'
+import { useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { CENARIOS_RECEITAS, useCenarioReceitas } from '../app/useCenarioReceitas'
 import { textoDaTaxa } from '../lib/futuroReceitas'
@@ -18,7 +18,9 @@ export function CenariosReceitas({
   controle: ControleReceitas
   revisao: number
 }) {
-  const { api, familia, versao, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const leitura = useLeituraRemota(
     `receitas:${api.modo}:${familia!.id}`,
     api.futuroEntradas ? () => api.futuroEntradas!(familia!.id) : null,

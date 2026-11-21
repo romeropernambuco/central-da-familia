@@ -6,7 +6,7 @@ import { AjudaDaAba } from '../escritorio/AgenteDaAba'
 import { CampoPrivado, CampoValor } from '../../componentes/privacidade'
 import { useState } from 'react'
 import { ArrowRight, MessageCircle, Clock } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { ir } from '../../lib/rotas'
 import { Marca } from '../../componentes/Marca'
 import { Din } from '../../componentes/base'
@@ -25,7 +25,9 @@ const linkApp = () => location.origin + location.pathname
 
 /** Primeiro uso em 5 minutos: família, limites, 2ª pessoa e família amiga. */
 export function PrimeiroUso() {
-  const { api, sessao, trocarSessao, recarregar, toast, sair, oculto } = useApp()
+  const { api, sessao } = useSessaoAtual()
+  const { trocarSessao, recarregar, toast, sair } = useAcoes()
+  const { oculto } = useOlhoApp()
   const [passo, setPasso] = useState(1)
   // R4: antes de criar uma família nova, pergunta se alguém da casa já convidou (evita família paralela)
   const [jaPerguntou, setJaPerguntou] = useState(false)

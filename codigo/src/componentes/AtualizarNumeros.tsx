@@ -2,7 +2,7 @@ import { textoPrivado } from '../lib/olho'
 import { EstadoVazio } from './EstadoVazio'
 import { Icone } from './Icone'
 import { useState } from 'react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { frescor, type GrupoNumero, type useNumerosAtualizados } from '../app/useNumerosAtualizados'
 import type { FuturoEntrada } from '../lib/futuro'
 import { Din, Sheet } from './base'
@@ -67,7 +67,9 @@ export function AtualizarNumeros({
   fechar: () => void
   agora?: () => Date
 }) {
-  const { api, familia, oculto, tentar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar } = useAcoes()
+  const { oculto } = useOlhoApp()
   const [ocupado, setOcupado] = useState(''),
     [aviso, setAviso] = useState('')
   const [imovel, setImovel] = useState<ImovelTela | null>(null)

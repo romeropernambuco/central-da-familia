@@ -3,11 +3,12 @@ import './apoio-f32.css'
 import { Bemvindo } from './ilustracoes'
 import { Icone } from './Icone'
 import { useState } from 'react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useSessaoAtual } from '../app/contexto'
 import { temAcolhimento, encerrarAcolhimento } from '../lib/acolhimento'
 import { NomeDaPessoa } from './NomeDaPessoa'
 export function Acolhimento() {
-  const { familia, abrirLancar } = useApp()
+  const { familia } = useSessaoAtual()
+  const { abrirLancar } = useAcoes()
   const [aberto, setAberto] = useState(temAcolhimento)
   if (!aberto || !familia) return null
   const assessor = familia.papel === 'equipe'

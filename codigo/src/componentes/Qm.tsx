@@ -2,7 +2,7 @@ import { textoPrivado } from '../lib/olho'
 import './apoio-f32.css'
 import { Icone } from './Icone'
 import { HelpCircle } from 'lucide-react'
-import { useApp } from '../app/contexto'
+import { useAcoes } from '../app/contexto'
 import type { LinhaExplicacao } from '../api/tipos'
 
 /** Bolinha "?" ao lado de um número: abre "De onde veio esse número?". */
@@ -17,7 +17,7 @@ export function Qm({
   nota?: string
   texto?: boolean
 }) {
-  const { explicar } = useApp()
+  const { explicar } = useAcoes()
   const abrir = () => explicar({ titulo, linhas, nota })
   if (texto)
     return (

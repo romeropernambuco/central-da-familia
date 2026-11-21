@@ -12,7 +12,7 @@ import { CampoValor, CampoPrivado } from '../../componentes/privacidade'
 import { compromissoNesteMes, fraseParcelamento, mesesDaSimulacao } from './simulacao'
 import { useEffect, useState } from 'react'
 import { CreditCard, Plus, ShoppingBag, CircleCheck, TriangleAlert } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { Din, Sheet } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
 import { Qm } from '../../componentes/Qm'
@@ -35,7 +35,10 @@ const MESES_SIMULACAO = 14
 
 /** Cartões: faturas dos próximos 6 meses e "E se eu comprar?" ligado ao colchão. */
 export function Cartoes() {
-  const { api, familia, resumo, versao, recarregar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, toast } = useAcoes()
+  const { resumo, versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const invalidacao = useInvalidacao(api, familia?.id || '')
   const [cartoes, setCartoes] = useState<Cartao[]>([])
   const [faturas, setFaturas] = useState<Fatura[]>([])
@@ -307,7 +310,7 @@ function Simulador({
   fechar: () => void
   dono?: string
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const [txt, setTxt] = useState('')
   const [parc, setParc] = useState(1)
   const [cid, setCid] = useState(cartoes[0]?.id)

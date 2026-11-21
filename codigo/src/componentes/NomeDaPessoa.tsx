@@ -3,7 +3,7 @@ import './apoio-f32.css'
 import { Icone } from './Icone'
 import { useRef, useState } from 'react'
 import type { PessoaNome } from '../api/tipos'
-import { useApp } from '../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useMembros } from '../app/useMembros'
 import { nomeInformado } from '../lib/nomePessoa'
 import { useEdicaoNome } from '../app/useEdicaoNome'
@@ -22,7 +22,8 @@ export function NomeDaPessoa({
   editar?: boolean
   mudou?: () => void
 }) {
-  const { oculto, familia } = useApp()
+  const { familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const membros = useMembros()
   const atual = pessoa.tipo === 'membro' ? (membros(pessoa.id) ?? pessoa.nome) : pessoa.nome
   const tem = nomeInformado(atual)

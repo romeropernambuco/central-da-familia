@@ -17,7 +17,7 @@ import { mesCurto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 import { useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, History, Pencil } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { cartaoMeu, donoDo, mexeNoLancamento, rotuloDono } from '../../lib/dono'
 import { Din } from '../../componentes/base'
@@ -26,7 +26,7 @@ import { centavos, dataCurta, diaSemana, hojeRecife, mesAnterior, mesLongo, reai
 
 /** Lançamentos do mês com lixeira: apagar não some de vez, dá pra trazer de volta. */
 export function Lancamentos() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const [mes, setMes] = useState(() => hojeRecife().slice(0, 7))
   useEffect(() => {
     const atualizar = () => setMes(hojeRecife().slice(0, 7))
@@ -41,7 +41,9 @@ export function Lancamentos() {
 }
 
 function LancamentosFamilia() {
-  const { api, familia, resumo, versao, recarregar, toast, tentar, abrirLancar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, toast, tentar, abrirLancar } = useAcoes()
+  const { resumo, versao } = useDadosDoDia()
   const invalidacao = useInvalidacao(api, familia?.id || '')
   const [falha, setFalha] = useState('')
   const [carregou, setCarregou] = useState(false)
@@ -499,7 +501,8 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
 }
 
 export function ResumoDoMes() {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const hoje = hojeRecife(),
     atual = hoje.slice(0, 7)
   const destino = useDestino()
@@ -571,7 +574,8 @@ export function ResumoDoMes() {
 
 /** Consulta o texto que o fechamento existente deixou no diário; não calcula nem registra um fechamento novo. */
 export function FechamentoRegistrado({ mes }: { mes: string }) {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const hoje = hojeRecife(),
     permitido = familia?.papel === 'casal' && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) && mes < hoje.slice(0, 7)
   const { dado, erro, carregando, repetir } = useLeituraRemota(

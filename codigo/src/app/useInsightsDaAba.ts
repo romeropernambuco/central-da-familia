@@ -2,7 +2,7 @@ import { textoPrivado } from '../lib/olho'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { Api } from '../api/tipos'
 import { lojaEscritorio } from './escritorioCompartilhado'
-import { useApp } from './contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from './contexto'
 import { rotaPermitida, type Rota } from '../lib/rotas'
 import { ErroSessao } from '../api/erros'
 import { primeiraPerguntaGeral, FALA_ANALISTA } from '../lib/insights/donos'
@@ -60,7 +60,10 @@ function sessaoInsights(api: Api, escopo: string, chave: string) {
 /** Não monta UI nem escreve durante a avaliação. A tela recebe PerguntaEsc + responder.
  * chamar marcarVista(p.id) APÓS exibir (não durante render); ver integração em lib/insights/README.md. */
 export function useInsightsDaAba(rota: Rota) {
-  const { api, familia, sessao, versao, resumo, oculto, tentar, recarregar, explicar } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { tentar, recarregar, explicar } = useAcoes()
+  const { versao, resumo } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const [agora, setAgora] = useState(() => Date.now())
   const [dados, setDados] = useState<{
     escopo: string

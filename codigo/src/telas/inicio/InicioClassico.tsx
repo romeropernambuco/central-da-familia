@@ -1,14 +1,14 @@
 import { UltimosLancamentos } from './UltimosLancamentos'
 import { ResumoFamilia } from './ResumoFamilia'
 import './inicio.css'
-import { useApp } from '../../app/contexto'
+import { useSessaoAtual } from '../../app/contexto'
 import { lazy, Suspense } from 'react'
 const EscritorioIsometrico = lazy(() =>
   import('../escritorio/EscritorioIsometrico').then(m => ({ default: m.EscritorioIsometrico })),
 )
 export { porDiaDe } from '../../lib/resumo/porDia'
 export function InicioClassico() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   return familia?.papel !== 'equipe' ? <InicioFamilia /> : null
 }
 function InicioFamilia() {

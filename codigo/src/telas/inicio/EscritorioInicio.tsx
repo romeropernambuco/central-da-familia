@@ -2,7 +2,7 @@ import { PONTOS_LONGOS } from '../../lib/olho'
 import { useMemo, useRef, useState } from 'react'
 import { Hand } from 'lucide-react'
 import { ir } from '../../lib/rotas'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useInvalidacao } from '../../app/useInvalidacao'
 import { useEscritorio } from '../../app/useDados2'
 import { useModoFuncionario } from '../escritorio/AgenteDaAba'
@@ -38,7 +38,8 @@ export function EscritorioInicio({ celular, hoje }: { celular: boolean; hoje: st
 }
 
 function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; hoje: string; comCena: boolean }) {
-  const { api, familia, sessao, oculto } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const papel = familia!.papel
   const dono = !!sessao?.dono
   const casal = papel === 'casal'

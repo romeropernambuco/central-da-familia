@@ -3,7 +3,7 @@ import './RumoA2029.css'
 import { Icone } from './Icone'
 // E7: 1 linha "isso tira R$ X por mês da renda de 2029, pra sempre" (F6). Vai no estouro, no Lançar quando o gasto é
 // grande e no Desejo. A tela NUNCA calcula 2029: só chama impacto2029() de lib/futuro com a entrada de lib/futuroReceitas.ts.
-import { useApp } from '../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useFuturo } from '../app/useDados2'
 import { impacto2029, type Centavos, type FuturoEntrada } from '../lib/futuro'
 import { hojeRecife, reais } from '../lib/formato'
@@ -56,7 +56,8 @@ export function Impacto2029({
   prefixo?: string
   className?: string
 }) {
-  const { familia, oculto } = useApp()
+  const { familia } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const { ent } = useFuturo()
   if (familia?.papel !== 'casal' || !ent?.entrada) return null
   const r = impactoDoMotor(ent.entrada, valor, mes)

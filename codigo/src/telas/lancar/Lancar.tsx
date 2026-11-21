@@ -15,7 +15,7 @@ import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
 import { Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
 import { OlhoDaAba, SeloDaAba } from '../../componentes/ControlesDaAba'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useFolhaLancar, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { useConfig } from '../../app/useConfig'
 import { Sheet } from '../../componentes/base'
@@ -107,7 +107,11 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
 
 /** Lançar: valor + 1 toque no envelope. Também corrige um lançamento (R12) e anota dinheiro que entrou (R11). */
 export function Lancar() {
-  const { api, familia, resumo, fecharLancar, lancarAberto, toast, recarregar, tentar, oculto, sessao } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { fecharLancar, toast, recarregar, tentar } = useAcoes()
+  const { resumo } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
+  const { lancarAberto } = useFolhaLancar()
   const corr = lancarAberto?.corrigir
   const chaveRascunho =
     sessao?.userId && familia?.id && !corr && familia.papel !== 'equipe' && !lancarAberto?.atalho
@@ -746,9 +750,10 @@ export function Lancar() {
 
 /** R11+G12: dinheiro que entrou a mais vai pro guardado (E3, conserto 4: "reserva" é só o dinheiro da Casa que nunca se gasta). Não muda o que dá pra gastar (regra do salário). */
 function EntrouDinheiro({ valor, visor, confirmar }: { valor: number; visor: React.ReactNode; confirmar: () => void }) {
-  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { fecharLancar, toast, recarregar, tentar } = useAcoes()
   const { g } = useGuardado()
-  const { familia: fam } = useApp()
+  const { familia: fam } = useSessaoAtual()
   const [entradas, salvarEntradas] = useConfig<
     { id: string; data: string; valor: number; de: string; destino: string }[]
   >('entradas', [])
@@ -889,7 +894,9 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
  * Ela diz o que comprou, se foi a feira da semana ou coisa da casa, e tira a foto da nota. O casal confere o valor pela foto.
  */
 function AnotarCompra() {
-  const { api, familia, sessao, fecharLancar, toast, recarregar, tentar, oculto } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { fecharLancar, toast, recarregar, tentar } = useAcoes()
+  const { oculto } = useOlhoApp()
   const chave =
     sessao?.userId && familia?.id ? 'compra-equipe:' + JSON.stringify([api.modo, sessao.userId, familia.id]) : ''
   const [rascunho] = useState(() => {

@@ -4,13 +4,13 @@ import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useEffect, useState } from 'react'
 import { CircleCheck, TriangleAlert, Lock } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useSessaoAtual } from '../../app/contexto'
 import type { Numero } from '../../api/tipos'
 import { RumoA2029 } from '../../componentes/RumoA2029'
 
 /** Painel dos 4 números: só o dono do produto vê (a função do banco recusa os outros). */
 export function Painel() {
-  const { api, sessao } = useApp()
+  const { api, sessao } = useSessaoAtual()
   const [nums, setNums] = useState<Numero[] | null>(null)
   const [erro, setErro] = useState('')
   useEffect(() => {

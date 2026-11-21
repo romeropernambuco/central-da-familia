@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useApp } from './contexto'
+import { useDadosDoDia, useSessaoAtual } from './contexto'
 import type { Estoque, FuncionarioEsc, RecebimentoTela } from '../api/tipos'
 import { dataCurta, hojeRecife, reais } from '../lib/formato'
 import { SALAS_NOME } from '../lib/escritorio/cenaBase'
@@ -18,7 +18,8 @@ export function useEquipeCompleta(
   consultarExtras = true,
   invalidacao = 0,
 ): FuncionarioEsc[] & { falhou?: boolean; carregando?: boolean; repetir?: () => void } {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   type Dados = {
     rec: RecebimentoTela[] | null
     est: Estoque | null

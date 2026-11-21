@@ -23,7 +23,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { enderecoDoAtalho } from '../../lib/atalho'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { Sheet } from '../../componentes/base'
 import { dataCurta, emailValido, linkWhatsApp, mensagemConvite, somaDias } from '../../lib/formato'
@@ -32,7 +32,10 @@ import { AcaoConvite } from '../../componentes/AcaoConvite'
 
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
-  const { api, familia, sessao, sair, toast, tentar, oculto, versao } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { sair, toast, tentar } = useAcoes()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   // o convite é gravado ANTES de abrir o WhatsApp: se o banco recusar (e-mail repetido, sem internet), o motivo aparece na hora
   const [convidado, setConvidado] = useState<{ nome: string; email: string } | null>(null)
   const [convidando, setConvidando] = useState(false)
@@ -330,7 +333,9 @@ function MembrosDaFamilia() {
 
 /** R4 + C20: quem está na família e como está cada convite. Reenviar avisa; cancelar pede confirmação. */
 function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () => void }) {
-  const { api, familia, tentar, toast, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast } = useAcoes()
+  const { oculto } = useOlhoApp()
   const setN = (_f: (x: number) => number) => mudou()
   const [cancelar, setCancelar] = useState<ConviteFamilia | null>(null)
   if (!lista || !familia) return null
@@ -456,7 +461,7 @@ export const PASSOS_ATALHO = [
   'Pra testar, pague algo pequeno com Apple Pay. O iPhone abre o app com o Anotar preenchido: confira e toque no seu nome para salvar. Nada é salvo sozinho.',
 ]
 function AtalhoIphone() {
-  const { toast } = useApp()
+  const { toast } = useAcoes()
   const base = location.origin + location.pathname
   const endereco = enderecoDoAtalho(base)
   const copiar = async () => {

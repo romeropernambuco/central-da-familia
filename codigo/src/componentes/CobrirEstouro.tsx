@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Envelope } from '../api/tipos'
-import { useApp } from '../app/contexto'
+import { useAcoes, useSessaoAtual } from '../app/contexto'
 import { useAdultos } from '../app/useMembros'
 import { hojeRecife, mesLongo, reais } from '../lib/formato'
 import { comecoDoMes, primeiroDoMesQueVem } from './EnvelopeCard'
@@ -9,7 +9,8 @@ import { Impacto2029 } from './Impacto2029'
 
 /** R6: passou do combinado. Padrão: sai do mês que vem (o banco já faz). Opção: cobrir com a sobra da Casa (só no exemplo). */
 export function CobrirEstouro({ e, valor }: { e: Envelope; valor: number }) {
-  const { api, familia, tentar, toast, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast, recarregar } = useAcoes()
   const [ok, setOk] = useState(false)
   const adultos = useAdultos()
   const prox = primeiroDoMesQueVem()

@@ -7,7 +7,7 @@ import { Icone } from './Icone'
 import { useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../lib/seguro'
 import { Camera, ImageUp, Receipt, Check, TriangleAlert } from 'lucide-react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../app/contexto'
 import { escreveNo } from '../lib/dono'
 import { Sheet } from './base'
 import type { CupomLido } from '../api/tipos'
@@ -16,7 +16,9 @@ import { dataDoCupom, reduzirFoto } from '../lib/foto'
 
 /** Ler cupom com foto: reduz a foto, a IA lê, a pessoa confere e só então lança (1 lançamento com a soma). */
 export function LerCupom({ fechar, envelopePadrao }: { fechar: () => void; envelopePadrao?: string }) {
-  const { api, familia, resumo, recarregar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar, toast } = useAcoes()
+  const { resumo } = useDadosDoDia()
   const camera = useRef<HTMLInputElement>(null)
   const galeria = useRef<HTMLInputElement>(null)
   const [etapa, setEtapa] = useState<'foto' | 'lendo' | 'conferir'>('foto')

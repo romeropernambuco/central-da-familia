@@ -1,8 +1,9 @@
-import { useApp } from '../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { Icone } from './Icone'
 
 export function SeloDaAba() {
-  const { api, semRede } = useApp()
+  const { api } = useSessaoAtual()
+  const { semRede } = useDadosDoDia()
   const exemplo = api.modo === 'exemplo'
   return (
     <span className={'sync' + (exemplo ? ' ex' : semRede ? ' off' : '')} role="status">
@@ -13,7 +14,8 @@ export function SeloDaAba() {
 }
 
 export function OlhoDaAba({ curto = false }: { curto?: boolean }) {
-  const { oculto, alternarOculto } = useApp()
+  const { alternarOculto } = useAcoes()
+  const { oculto } = useOlhoApp()
   const rotulo = (oculto ? 'Mostrar' : 'Esconder') + (curto ? ' valores' : ' os valores')
   return (
     <button

@@ -1,6 +1,6 @@
 // Identidade dos membros, sem inferir quem pagou a partir de quem anotou.
 import { useEffect, useState } from 'react'
-import { useApp } from './contexto'
+import { useDadosDoDia, useSessaoAtual } from './contexto'
 import type { Api } from '../api/tipos'
 
 const ouvintes = new Set<() => void>()
@@ -26,7 +26,8 @@ export function invalidarNomes() {
   ouvintes.forEach(f => f())
 }
 export function useMembros() {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const [ms, setMs] = useState<{ id: string; user_id?: string; nome: string }[]>([])
   const pode = familia?.papel === 'casal'
   const [carregando, setCarregando] = useState(false)
@@ -76,7 +77,7 @@ export function useMembros() {
 
 /** E3 (conserto 8): quantos adultos tem o casal. Família de 1 adulto não vê "Do casal" nem "vocês". null = ainda buscando. */
 export function useAdultos(): number | null {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   const [n, setN] = useState<number | null>(null)
   const pode = familia?.papel === 'casal'
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
-import { useApp } from '../app/contexto'
+import { useOlhoApp } from '../app/contexto'
 // C3 e pacote 2 do design (REFERENCIAS.md, padrões A, B e C): 3 gráficos em SVG feito à mão, sem biblioteca.
 // A: o gasto do mês acumulado, pontilhado até o fim do mês, combinado tracejado, âmbar só se passar (Início e Meu orçamento).
 // B: o caixa mês a mês até 12/2028 com a faixa do piso, bolinhas nos recebimentos e o degrau de 2029 (Planejamento).
@@ -56,7 +56,7 @@ function Quadro({
   leitura: (i: number | null) => ReactNode
   desenho: (w: number, h: number, ativo: number | null, xDe: (px: number) => number) => ReactNode
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const [ref, w] = useLargura()
   const [ativo, setAtivo] = useState<number | null>(null)
   if (oculto) return <p className="sub">Gráfico oculto.</p>

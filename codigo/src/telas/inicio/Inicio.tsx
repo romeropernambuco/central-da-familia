@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useResumoFamilia } from '../../app/useResumoFamilia'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { SemAplicacoes, SemCartoes, SemGastos, SemImoveis } from '../../componentes/ilustracoes/figuras'
@@ -165,14 +165,14 @@ function useCelular() {
 }
 
 export function Inicio() {
-  const { familia, sessao } = useApp()
+  const { familia, sessao } = useSessaoAtual()
   if (!familia || familia.papel === 'equipe') return null
   return <InicioFamilia key={JSON.stringify([sessao?.userId, familia.id, familia.membroId, familia.papel])} />
 }
 
 function InicioFamilia() {
   const { resumo, repetir, hoje, api, familia } = useResumoFamilia()
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const celular = useCelular()
   const [saldo, setSaldo] = useState(false)
   const { chips, cartoes, cobertura, destinoPlano } = referencias(resumo, oculto)

@@ -18,7 +18,7 @@ import { invalidarDados } from '../../lib/invalidacao'
 import { ErroRede } from '../../api/erros'
 import { novoUuid } from '../../lib/seguro'
 import { CalendarClock, Check, Plus } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { FonteReceita, NovoRecebimento, RecebimentoTela, TipoRecebimento } from '../../api/tipos'
 import { mesReceitaValido } from '../../lib/futuroReceitas'
@@ -178,7 +178,7 @@ function MudarReceb({
 }
 
 export function Recebimentos() {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   if (!api.recebimentos || familia?.papel !== 'casal') return null
   return <RecebimentosCasal key={`${api.modo}:${familia.id}`} />
 }
@@ -186,7 +186,9 @@ export function Recebimentos() {
 function RecebimentosCasal() {
   const destino = useDestino()
   const periodo = destino.secao === 'recebimentos' && destino.periodo
-  const { api, familia, versao, tentar, toast, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast, recarregar } = useAcoes()
+  const { versao } = useDadosDoDia()
   const fontes = useFontesReceita()
   const [n, setN] = useState(0)
   const [novo, setNovo] = useState(false)

@@ -3,13 +3,13 @@ import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
 import { Icone } from '../../componentes/Icone'
 import { Landmark, ChevronRight } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useSessaoAtual } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
 import { Din } from '../../componentes/base'
 import { reais } from '../../lib/formato'
 
 export function CartaoGuardado() {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   const { g, estado } = useGuardado()
   if (familia?.papel !== 'casal' || estado === 'desligado' || !g) return null
   const vazio = !g.aplicacoes.length

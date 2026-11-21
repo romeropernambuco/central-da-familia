@@ -1,7 +1,7 @@
 import { textoPrivado } from '../lib/olho'
 import { Icone } from './Icone'
 import { useRef, useState } from 'react'
-import { useApp } from '../app/contexto'
+import { useOlhoApp } from '../app/contexto'
 import type { FonteReceita, RecebimentoTela } from '../api/tipos'
 import { mesReceitaValido } from '../lib/futuroReceitas'
 import { CampoPrivado } from './privacidade'
@@ -127,7 +127,7 @@ export function ConfirmarReceita({
   confirmar: (m: string, valor: number, data: string) => Promise<boolean>
   fechar: () => void
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const [mes, setMes] = useState(meses[0] || r.mes_previsto)
   const [valor, setValor] = useState(String(r.valor).replace('.', ','))
   // Não preencher com hoje: exige a data que o dono conferiu.

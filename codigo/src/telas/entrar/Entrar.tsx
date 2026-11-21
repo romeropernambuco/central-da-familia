@@ -9,7 +9,7 @@ import { prepararAcolhimento } from '../../lib/acolhimento'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Mail, Users } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useSessaoAtual } from '../../app/contexto'
 import { Marca } from '../../componentes/Marca'
 import { codigo4Valido, codigo6Valido, emailValido } from '../../lib/formato'
 import { conviteDoHash, ehLinkEquipe } from '../../lib/rotas'
@@ -19,7 +19,8 @@ type Passo = 'email' | 'codigo' | 'equipe'
 
 /** Entrar: e-mail com código de 6 números; a equipe da casa abre o link do convite e digita o código de 4 números. */
 export function Entrar() {
-  const { api, trocarSessao, toast } = useApp()
+  const { api } = useSessaoAtual()
+  const { trocarSessao, toast } = useAcoes()
   // o convite da equipe vem no link (#/equipe?c=<id>): a tela lê o id e pede só os 4 números
   const [convite, setConvite] = useState<string | null>(() => conviteDoHash(location.hash))
   const [passo, setPasso] = useState<Passo>(() => (ehLinkEquipe(location.hash) ? 'equipe' : 'email'))

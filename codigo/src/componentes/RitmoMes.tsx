@@ -1,6 +1,6 @@
 import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
-import { useApp } from '../app/contexto'
+import { useOlhoApp } from '../app/contexto'
 import type { Envelope } from '../api/tipos'
 import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
 import { GraficoMes } from './Graficos'
@@ -31,7 +31,7 @@ export function marcaDaSemana(hoje: string): number {
 
 /** A barra: quanto já saiu (largura) e a marca de onde deveria estar hoje (traço). Passou da marca: âmbar. */
 function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo: string }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   if (oculto) return <p className="sub">Gráfico oculto.</p>
   const f = Math.max(0, Math.min(1, feito)),
     m = Math.max(0, Math.min(1, marca))

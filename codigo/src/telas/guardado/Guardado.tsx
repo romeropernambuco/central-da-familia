@@ -21,7 +21,7 @@ import {
   ShieldAlert,
   X,
 } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useFuturo, useGuardado } from '../../app/useDados2'
 import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
@@ -57,7 +57,10 @@ type Folha =
 
 /** Guardado (a caixinha): a resposta de "quanto rendeu hoje?" em 1 número. Só o casal abre. */
 export function Guardado() {
-  const { api, sessao, familia, explicar, resumo, oculto } = useApp()
+  const { api, sessao, familia } = useSessaoAtual()
+  const { explicar } = useAcoes()
+  const { resumo } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const { g, estado, atualizar } = useGuardado()
   // E7 (F10): o aviso do FGC vem do motor (futuro().avisos_fgc); a tela só escreve
   const { saida } = useFuturo()
@@ -493,7 +496,8 @@ const TIPOS: TipoAplicacao[] = ['caixinha', 'cdb', 'lci_lca', 'tesouro_selic', '
 
 /** Nova aplicação em 4 campos: onde está, que tipo é, quanto rende e quanto tem lá. */
 function NovaAplicacao({ fechar }: { fechar: () => void }) {
-  const { api, familia, tentar, recarregar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
   const [titular, setTitular] = useRascunho<'eu' | 'casal'>('cadastro:aplicacao:titular', 'eu')
   // E3 (conserto 8): família de 1 adulto não tem "Do casal"
   const adultos = useAdultos()
@@ -664,7 +668,8 @@ function Movimentar({
   inicial?: GuardadoAplicacao
   fechar: () => void
 }) {
-  const { api, tentar, recarregar, toast } = useApp()
+  const { api } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
   const [appId, setAppId] = useState(inicial?.id || g.aplicacoes[0]?.id || '')
   const [valor, setValor] = useState('')
   const [erro, setErro] = useState('')
@@ -763,7 +768,8 @@ function Aplicacao({
   fechar: () => void
   mover: (t: 'aporte' | 'resgate') => void
 }) {
-  const { api, familia, tentar, recarregar, toast } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, recarregar, toast } = useAcoes()
   const minha = aplicacaoMinha(a, familia)
   const [certeza, setCerteza] = useState(false)
   const encerrar = async () => {
@@ -853,7 +859,7 @@ export { CartaoGuardado } from './CartaoGuardado'
 
 /** G10: a linha do saldo subindo nos últimos 30 dias (SVG simples, sem biblioteca). */
 function LinhaSaldo({ s }: { s: { data: string; saldo: number }[] }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   if (oculto) return <p className="sub">Gráfico oculto.</p>
   const v = s.filter(x => x.saldo > 0)
   if (v.length < 2) return <p className="sub">Ainda sem 30 dias de histórico.</p>

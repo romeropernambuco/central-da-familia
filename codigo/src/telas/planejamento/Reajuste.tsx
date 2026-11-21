@@ -11,7 +11,7 @@ import { CampoDecimal } from '../../componentes/privacidade'
 // reajuste_teto guarda só o que é pra mostrar (inflação, teto de antes, onde já aplicou).
 import { useEffect, useState } from 'react'
 import { CalendarClock, Check } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useSessaoAtual } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
 import { useFuturo } from '../../app/useDados2'
 import { reajustarTeto } from '../../lib/futuro'
@@ -95,7 +95,8 @@ export function situacaoReajuste(sit: ReajusteSituacao | null, hoje?: string): P
 }
 
 export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mudaLimite: (e: Envelope) => boolean }) {
-  const { api, familia, tentar, toast, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { tentar, toast, recarregar } = useAcoes()
   const { ent } = useFuturo()
   const [cfg, salvar, , lido] = useConfig<ReajusteCfg>('reajuste_teto', {})
   const [obj, setObj] = useState<Objetivo | null>(null)

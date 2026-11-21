@@ -1,6 +1,6 @@
 import { textoPrivado } from '../../lib/olho'
 import type { Envelope } from '../../api/tipos'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem } from '../../componentes/EnvelopeCard'
 import { Qm } from '../../componentes/Qm'
 import { fimDoMes, hojeRecife, mesLongo, reais, saudacao, somaDias } from '../../lib/formato'
@@ -14,7 +14,9 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
  * "De onde veio esse número?" e "Por que mudou?". Só mostra a frase que tem o que dizer.
  */
 export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: ReturnType<typeof projecaoCasal> }) {
-  const { resumo, explicar, familia } = useApp()
+  const { familia } = useSessaoAtual()
+  const { explicar } = useAcoes()
+  const { resumo } = useDadosDoDia()
   // sem envelope escolhido pela tela: o da própria pessoa, como no Início antigo
   const e = escolhido ?? resumo?.envelopes.find(x => x.id === familia?.envelopeId && !x.casa)
   if (!resumo || !e) return null

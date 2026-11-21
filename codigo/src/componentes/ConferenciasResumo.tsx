@@ -1,12 +1,13 @@
 import { textoPrivado, PONTOS_LONGOS } from '../lib/olho'
 import { rotulosCasa } from '../lib/resumo/casa'
-import { useApp } from '../app/contexto'
+import { useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { lerCasa, lerFaturas } from '../lib/resumo/leituras'
 import { hojeRecife, plural } from '../lib/formato'
 import { CabecalhoCartao, Din, Botao } from './base'
 export function ConferenciaFaturas() {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const r = useLeituraRemota(
     'faturas-conferir',
     familia?.papel === 'casal' ? () => lerFaturas(api, familia.id, hojeRecife()) : null,
@@ -53,7 +54,9 @@ export function ConferenciaFaturas() {
   )
 }
 export function ConferenciaCasa() {
-  const { api, familia, versao, oculto } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
+  const { oculto } = useOlhoApp()
   const r = useLeituraRemota(
     'casa-conferir',
     familia?.papel === 'casal' ? () => lerCasa(api, familia.id, hojeRecife()) : null,

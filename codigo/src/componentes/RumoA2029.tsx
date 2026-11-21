@@ -3,7 +3,7 @@ import { EstadoVazio } from './EstadoVazio'
 import { Icone } from './Icone'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Target } from 'lucide-react'
-import { useApp } from '../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useFuturo } from '../app/useDados2'
 import { CENARIOS_RECEITAS, useCenarioReceitas } from '../app/useCenarioReceitas'
 import { entradaDoCenario } from '../lib/futuroReceitas'
@@ -22,14 +22,16 @@ const percentual = (n: number) => `${Math.floor(n).toLocaleString('pt-BR')}%`
 
 /** A barreira vem antes dos hooks de leitura: pessoa/equipe nem buscam config ou valores do casal. */
 export function RumoA2029({ compacto = false, oficial = false }: { compacto?: boolean; oficial?: boolean }) {
-  const { familia } = useApp()
+  const { familia } = useSessaoAtual()
   return familia?.papel === 'casal' ? (
     <RumoDaFamilia key={familia.id} compacto={compacto} oficial={oficial || compacto} />
   ) : null
 }
 
 function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: boolean }) {
-  const { api, familia, oculto, recarregar } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { recarregar } = useAcoes()
+  const { oculto } = useOlhoApp()
   const { ent, estado, atualizar } = useFuturo()
   const [fontes, , erroFontes, fontesLidas] = useConfig<unknown>(CHAVE_FONTES, {})
   const cenarios = useCenarioReceitas(ent)
@@ -134,7 +136,7 @@ export function RumoHero({
   abrir: () => void
   atualizar?: () => void
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const id = useId(),
     privado = (s: string) => textoPrivado(s, oculto)
   if (oculto)

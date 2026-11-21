@@ -1,6 +1,6 @@
 import { useInvalidacao } from './useInvalidacao'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useApp } from './contexto'
+import { useAcoes, useDadosDoDia, useSessaoAtual } from './contexto'
 import { criarGuardaConfig } from '../lib/seguro'
 import type { ChaveConfig } from '../api/tipos'
 
@@ -11,7 +11,9 @@ import type { ChaveConfig } from '../api/tipos'
  * Devolve [valor, salvar, falha da leitura, já leu].
  */
 export function useConfig<T>(chave: ChaveConfig, padrao: T): [T, (v: T) => Promise<boolean>, string, boolean] {
-  const { api, familia, sessao, tentar, versao, toast } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { tentar, toast } = useAcoes()
+  const { versao } = useDadosDoDia()
   const [v, setV] = useState<T>(padrao)
   const [falha, setFalha] = useState('')
   const [lido, setLido] = useState(false)

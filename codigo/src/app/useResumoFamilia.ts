@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useApp } from './contexto'
+import { useDadosDoDia, useSessaoAtual } from './contexto'
 import { invalidarDados } from '../lib/invalidacao'
 import { useLeituraRemota } from './useLeituraRemota'
 import { useNumerosAtualizados, type NumerosAtualizados } from './useNumerosAtualizados'
@@ -41,7 +41,8 @@ function useCampo<K extends keyof ResumoFamilia>(
   hoje: string,
   conferir: NumerosAtualizados,
 ): { campo: ResumoFamilia[K]; repetir: () => void } {
-  const { api, familia, versao } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { versao } = useDadosDoDia()
   const permitido = !!familia && familia.papel !== 'equipe' && (!soCasal.has(chave) || familia.papel === 'casal')
   const buscar = async (): Promise<unknown> => {
     const id = familia!.id
@@ -168,7 +169,7 @@ function useCampo<K extends keyof ResumoFamilia>(
   return { campo: campo as ResumoFamilia[K], repetir }
 }
 export function useResumoFamilia() {
-  const { api, familia } = useApp()
+  const { api, familia } = useSessaoAtual()
   // O hook só é montado pela superfície autorizada; a barreira do Assessor antecede qualquer config.
   const conferencia = useNumerosAtualizados()
   const hoje = leitura.relogioResumo()

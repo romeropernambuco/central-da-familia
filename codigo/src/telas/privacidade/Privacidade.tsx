@@ -8,14 +8,16 @@ import { Backup } from '../../componentes/Backup'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 
 import { Sheet } from '../../componentes/base'
 import { hojeRecife } from '../../lib/formato'
 
 /** Privacidade: termo em 1 tela, baixar os dados da família e apagar a família inteira. */
 export function Privacidade() {
-  const { api, familia, trocarSessao, toast, oculto, sair } = useApp()
+  const { api, familia } = useSessaoAtual()
+  const { trocarSessao, toast, sair } = useAcoes()
+  const { oculto } = useOlhoApp()
   // QA E11 (erro 7): família de 1 adulto lê "você", nunca "vocês dois"
 
   const [apagar, setApagar] = useState(false)

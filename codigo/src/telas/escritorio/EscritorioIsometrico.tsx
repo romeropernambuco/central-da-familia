@@ -1,7 +1,7 @@
 import { textoPrivado } from '../../lib/olho'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Hand, Maximize2 } from 'lucide-react'
-import { useApp } from '../../app/contexto'
+import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useDestino } from '../../app/destinos'
 import { useInvalidacao } from '../../app/useInvalidacao'
 import { useEscritorio } from '../../app/useDados2'
@@ -100,7 +100,7 @@ function PainelIsometrico({
   selecionado?: string
   ampliar?: () => void
 }) {
-  const { oculto } = useApp()
+  const { oculto } = useOlhoApp()
   const titulo = useId(),
     descricao = useId()
   const palco = useRef<HTMLDivElement>(null)
@@ -225,7 +225,7 @@ function PainelIsometrico({
 }
 
 export function EscritorioIsometrico({ superficie }: { superficie: 'inicio' | 'escritorio' }) {
-  const { familia, sessao } = useApp()
+  const { familia, sessao } = useSessaoAtual()
   const modo = useModoFuncionario()
   if (!familia || (superficie === 'inicio' && modo === 'desligado')) return null
   return (
@@ -238,7 +238,8 @@ export function EscritorioIsometrico({ superficie }: { superficie: 'inicio' | 'e
 }
 
 function EscritorioAutorizado({ superficie, comCena }: { superficie: 'inicio' | 'escritorio'; comCena: boolean }) {
-  const { api, familia, sessao, oculto } = useApp()
+  const { api, familia, sessao } = useSessaoAtual()
+  const { oculto } = useOlhoApp()
   const destino = useDestino()
   const invalidacao = useInvalidacao(api, familia!.id)
   const { e, perguntas, estado, atualizar, responder } = useEscritorio()

@@ -7,7 +7,18 @@ import { PrecisaDeVoce } from '../escritorio/PrecisaDeVoce'
 import { LerCupom } from '../../componentes/LerCupom'
 
 const m = vi.hoisted(() => ({ app: vi.fn(), escritorio: vi.fn(), estados: [] as unknown[] }))
-vi.mock('../../app/contexto', () => ({ useApp: m.app }))
+vi.mock('../../app/contexto', () => {
+  // o contexto de mentira responde igual por inteiro e por parte
+  const useApp = m.app
+  return {
+    useApp,
+    useSessaoAtual: useApp,
+    useAcoes: useApp,
+    useDadosDoDia: useApp,
+    useOlhoApp: useApp,
+    useFolhaLancar: useApp,
+  }
+})
 vi.mock('../../app/useDados2', () => ({ useEscritorio: m.escritorio }))
 vi.mock('../../componentes/Qm', () => ({ Qm: () => null }))
 vi.mock('react', async original => ({
