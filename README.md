@@ -26,6 +26,8 @@ Leia este arquivo inteiro antes de mexer em qualquer coisa aqui.
 
 Tabelas que existem hoje: `pessoas`, `convites`, `docs`, `docs_historico`, `escritorio_funcionarios`, `escritorio_turnos`.
 
+O mesmo banco tem também o esquema `produto` (app de envelopes: famílias, membros, lançamentos, cartões, guardado, casa, escritório). Etiquetas de viagem e evento moram lá: ver `docs/etiquetas.md`.
+
 ## Como os dados ficam guardados
 
 Tudo grava numa tabela só, `docs`, com 3 chaves: `painel`, `colecao`, `doc_id`, e o conteúdo em `dados`.
