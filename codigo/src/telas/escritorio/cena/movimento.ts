@@ -380,3 +380,26 @@ export function moverNoMini(ch: any, dt: number, ritmo: Ritmo, { DIR, ponteiro }
   if (ch.escritorio && st === 'trabalhando') apoiarMaos(ch, t, quadril, escalaBoneco, reduz)
   microvida(ch, micro, st, ritmo)
 }
+
+/** Com movimento reduzido ninguém anda: cada um aparece direto no lugar que o estado pede. */
+export function fixarSemMovimento(ch: any) {
+  ch.path = null
+  ch.loc = ch.st === 'precisa' ? 'frente' : 'sentado'
+  ch.b.r.position.copy(ch.loc === 'frente' ? ch.F : ch.S)
+  ch.b.r.rotation.y = ch.loc === 'frente' ? Math.PI / 4 : 0
+}
+
+/**
+ * Escolhe quem se mexe quando há limite de bonecos animados (celular e modo leve). Quem está andando sempre anima;
+ * depois vêm quem precisa de você, o selecionado e quem está trabalhando.
+ */
+export function escolherAnimados(chars: any[], limite: number, selecionado: string | null) {
+  const vez = (c: any) =>
+    c.path ? 0 : c.st === 'precisa' ? 1 : c.id === selecionado ? 2 : c.st === 'trabalhando' ? 3 : 4
+  chars
+    .slice()
+    .sort((a, b) => vez(a) - vez(b))
+    .forEach((c, i) => {
+      c.anim = i < limite || !!c.path
+    })
+}

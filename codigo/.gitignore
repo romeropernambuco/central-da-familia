@@ -2,3 +2,4 @@ node_modules
 dist
 dist-*
 testes/prints
+verificar.log

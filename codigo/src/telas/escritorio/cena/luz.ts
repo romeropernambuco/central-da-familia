@@ -54,3 +54,15 @@ export function aplicarLuzDaHora(h: number, escuro: boolean, { sol, hemi, lampad
   vidro.emissiveIntensity = dia ? 0.25 + 0.3 * k : 0.02
   vidro.color.setHex(dia ? 0xbfd8e6 : 0x2b3a4e)
 }
+
+/** Segundo degrau do modo leve: a cena fica sem sombras. */
+export function desligarSombras(renderer: any, sol: any, scene: any) {
+  renderer.shadowMap.enabled = false
+  sol.castShadow = false
+  sol.shadow.dispose()
+  sol.shadow.map = null
+  sol.shadow.mapPass = null
+  scene.traverse((x: any) => {
+    if (x.material) x.material.needsUpdate = true
+  })
+}

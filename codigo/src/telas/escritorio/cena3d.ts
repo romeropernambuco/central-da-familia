@@ -13,29 +13,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Cena, OpcoesCena, EstadoAgente } from './cenaBase'
-import { MedidorFPS } from './cenaBase'
 import { POR_ID } from './equipe'
-import {
-  caixaReal,
-  composicaoMini,
-  montarEscritorioMini,
-  fundirGrupos,
-  fundirRamo,
-  enquadrarMini,
-  criarApoioDasMaos,
-  ESCALA_FUNCIONARIO_MINI,
-} from './escritorioMini'
+import { composicaoMini } from './escritorioMini'
 import type { SalaEquipe } from './equipe'
-import { criarBoneco } from './cena/boneco'
 import { criarCamera } from './cena/camera'
 import { estadoLegado, estadoMini } from './cena/estados'
 import { criarEtiquetas } from './cena/etiquetas'
-import { aplicarLuzDaHora, criarLuzes } from './cena/luz'
-import { lerp, moverNaCena, moverNoMini, mudarMini } from './cena/movimento'
+import { criarFluidez } from './cena/fluidez'
+import { aplicarLuzDaHora, criarLuzes, desligarSombras } from './cena/luz'
+import { carregarEscritorioMini } from './cena/miniEscritorio'
+import { escolherAnimados, fixarSemMovimento, moverNaCena, moverNoMini, mudarMini } from './cena/movimento'
 import { montarPostos } from './cena/postos'
 import { criarPecas } from './cena/pecas'
 import { SALAS } from './cena/planta'
 import { montarPredio } from './cena/predio'
+import { criarRetornos } from './cena/retornos'
+import { ligarToque } from './cena/toque'
+import { criarVista } from './cena/vista'
 
 export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
   const salaPedida = o.sala || POR_ID[o.funcionarios[0]?.id]?.sala || o.funcionarios[0]?.sala || 'recepcao'
@@ -118,41 +112,14 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       }
     })
 
-    /* câmera isométrica */
+    /* câmera isométrica: o enquadramento vivo está em cena/vista.ts */
     const { cam, VISTAS, DIR, miniCamera } = criarCamera(T, chars, !!o.mini, coletivo)
-    let vAtual = { ...VISTAS[o.mini ? chars[0]?.sala || 'tudo' : 'tudo'] },
-      vDe: any = null,
-      vPara: any = null,
-      vT0 = 0,
-      camNome = o.mini ? chars[0]?.sala || 'tudo' : 'tudo'
-    let zoom = 1
-    function aplicaVista(v: any) {
-      if (chars[0]?.limitesMini) {
-        enquadrarMini(cam, el.clientWidth || 1, el.clientHeight || 1, chars[0].limitesMini, coletivo)
-        return
-      }
-      const W = el.clientWidth || 1,
-        H = el.clientHeight || 1,
-        a = W / H,
-        m = camNome === 'tudo' ? 1.04 : 1.12,
-        hw = Math.max(v.hw * m, v.hh * m * a) / zoom,
-        hh = hw / a
-      cam.left = v.cx - hw
-      cam.right = v.cx + hw
-      cam.top = v.cy + hh
-      cam.bottom = v.cy - hh
-      cam.updateProjectionMatrix()
-    }
-    function irPara(nome: string) {
-      if (!VISTAS[nome]) nome = 'tudo'
-      camNome = nome
-      vDe = { ...vAtual }
-      vPara = VISTAS[nome]
-      vT0 = performance.now()
-      chars.forEach(c => {
-        c.tk = ''
-      })
-    }
+    const vista = criarVista(cam, el, VISTAS, chars, !!o.mini, coletivo)
+    /* fluidez: alivia em 3 degraus se a cena ficar lenta (ver cena/fluidez.ts) */
+    const fluidez = criarFluidez(degrau => {
+      if (degrau === 1) tamanho()
+      if (degrau === 2) desligarSombras(renderer, sol, scene)
+    }, o.aoMedir)
     let largura = 0,
       altura = 0,
       dpr = pr
@@ -160,7 +127,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       const W = el.clientWidth,
         H = el.clientHeight
       if (!W || !H) return
-      const novo = Math.min(window.devicePixelRatio || 1, degrau > 0 ? 1 : MOBILE() ? 1.5 : 2)
+      const novo = Math.min(window.devicePixelRatio || 1, fluidez.degrau > 0 ? 1 : MOBILE() ? 1.5 : 2)
       if (novo !== dpr) {
         dpr = novo
         renderer.setPixelRatio(dpr)
@@ -169,7 +136,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         largura = W
         altura = H
         renderer.setSize(W, H, false)
-        aplicaVista(vAtual)
+        vista.aplicar()
       }
     }
     const redimensionar = () => {
@@ -185,51 +152,9 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     /* etiquetas em HTML presas à cabeça de cada boneco e nome da sala no piso */
     const posicionarEtiquetas = criarEtiquetas(T, cam, el, o)
     let selecionado: string | null = null
-    const atualizaTags = () => posicionarEtiquetas(chars, selecionado, camNome)
 
     /* toque num boneco */
-    const ray = new T.Raycaster(),
-      ndc = new T.Vector2()
-    const ponteiro = { x: 0, y: 0, dentro: false }
-    const acompanhar = (ev: PointerEvent) => {
-      if (!o.mini || reduz) return
-      const r = tela3d.getBoundingClientRect()
-      ponteiro.x = Math.max(-1, Math.min(1, ((ev.clientX - r.left) / r.width) * 2 - 1))
-      ponteiro.y = Math.max(-1, Math.min(1, ((ev.clientY - r.top) / r.height) * 2 - 1))
-      ponteiro.dentro = true
-    }
-    const saiu = () => {
-      ponteiro.dentro = false
-    }
-    if (o.mini) {
-      tela3d.addEventListener('pointermove', acompanhar)
-      tela3d.addEventListener('pointerleave', saiu)
-      limpezas.push(() => {
-        tela3d.removeEventListener('pointermove', acompanhar)
-        tela3d.removeEventListener('pointerleave', saiu)
-      })
-    }
-    let down: { x: number; y: number } | null = null
-    const aoDescer = (ev: PointerEvent) => {
-      down = { x: ev.clientX, y: ev.clientY }
-    }
-    const aoSubir = (ev: PointerEvent) => {
-      if (!down || Math.abs(ev.clientX - down.x) + Math.abs(ev.clientY - down.y) > 10) return
-      const r = tela3d.getBoundingClientRect()
-      ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1)
-      ray.setFromCamera(ndc, cam)
-      const hit = ray.intersectObjects(
-        chars.map(c => c.b.r),
-        true,
-      )
-      if (hit.length) o.aoTocar(hit[0].object.userData.id)
-    }
-    tela3d.addEventListener('pointerdown', aoDescer)
-    tela3d.addEventListener('pointerup', aoSubir)
-    limpezas.push(() => {
-      tela3d.removeEventListener('pointerdown', aoDescer)
-      tela3d.removeEventListener('pointerup', aoSubir)
-    })
+    const ponteiro = ligarToque(T, tela3d, cam, chars, o, limpezas, () => reduz)
 
     /* sol, céu e lâmpadas pela hora */
     let escuro = o.escuro
@@ -243,77 +168,55 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
 
     /* movimento: ver cena/movimento.ts */
     const atualizaChar = (ch: any, t: number, dt: number) =>
-      o.mini ? moverNoMini(ch, dt, { reduz, degrau, fps }, { DIR, ponteiro }) : moverNaCena(ch, t, dt, reduz)
+      o.mini
+        ? moverNoMini(ch, dt, { reduz, degrau: fluidez.degrau, fps: fluidez.fps }, { DIR, ponteiro })
+        : moverNaCena(ch, t, dt, reduz)
 
-    /* laço */
+    /* laço de desenho */
     let visivel = true,
       ult = 0,
       tAcum = 0,
-      fps = 0,
-      baixo = 0,
-      degrau = 0,
       segAnim = 0,
       segLuz = 0,
       jsMs = 0,
       raf = 0,
       vivo = true
-    const fpsHist: number[] = []
-    const retornos = new Map<string, { timer?: ReturnType<typeof setTimeout>; restante: number; inicio: number }>()
-    function sincronizarRetornos() {
-      retornos.forEach((r, id) => {
-        const pode = visivel && !document.hidden && !perdido
-        if (!pode && r.timer !== undefined) {
-          clearTimeout(r.timer)
-          r.timer = undefined
-          r.restante = Math.max(0, r.restante - (performance.now() - r.inicio))
-        }
-        if (pode && r.timer === undefined) {
-          r.inicio = performance.now()
-          r.timer = setTimeout(() => {
-            retornos.delete(id)
-            definirEstado(id, 'trabalhando')
-          }, r.restante)
-        }
-      })
-    }
-    limpezas.push(() => {
-      retornos.forEach(r => clearTimeout(r.timer))
-      retornos.clear()
-    })
     let perdido = false
     let recuperacao: ReturnType<typeof setTimeout> | undefined
-    const medidor = new MedidorFPS()
+    const retornos = criarRetornos(
+      () => visivel && !document.hidden && !perdido,
+      id => definirEstado(id, 'trabalhando'),
+    )
+    limpezas.push(retornos.limpar)
     function pausar() {
       cancelAnimationFrame(raf)
       raf = 0
       ult = 0
-      medidor.pausar()
-      baixo = 0
+      fluidez.pausar()
     }
     function solicitar() {
       if (!vivo || destruida || perdido || !visivel || document.hidden || raf) return
       if (reduz) quadro(performance.now())
       else raf = requestAnimationFrame(quadro)
     }
+    /** Para, acerta os temporizadores e recomeça: usado quando muda a visibilidade ou a preferência de movimento. */
+    const retomar = () => {
+      pausar()
+      retornos.sincronizar()
+      solicitar()
+    }
     const mudouMovimento = () => {
       reduz = movimento.matches
-      pausar()
-      sincronizarRetornos()
-      solicitar()
+      retomar()
     }
     movimento.addEventListener('change', mudouMovimento)
     limpezas.push(() => movimento.removeEventListener('change', mudouMovimento))
-    const visibilidade = () => {
-      pausar()
-      sincronizarRetornos()
-      solicitar()
-    }
-    document.addEventListener('visibilitychange', visibilidade)
+    document.addEventListener('visibilitychange', retomar)
     const perdeu = (ev: Event) => {
       ev.preventDefault()
       perdido = true
       pausar()
-      sincronizarRetornos()
+      retornos.sincronizar()
       o.aoContexto?.('perdido')
       clearTimeout(recuperacao)
       recuperacao = setTimeout(() => {
@@ -329,7 +232,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       perdido = false
       o.aoContexto?.('restaurado')
       tamanho()
-      sincronizarRetornos()
+      retornos.sincronizar()
       solicitar()
     }
     tela3d.addEventListener('webglcontextlost', perdeu)
@@ -338,7 +241,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       vivo = false
       pausar()
       clearTimeout(recuperacao)
-      document.removeEventListener('visibilitychange', visibilidade)
+      document.removeEventListener('visibilitychange', retomar)
       tela3d.removeEventListener('webglcontextlost', perdeu)
       tela3d.removeEventListener('webglcontextrestored', restaurou)
     })
@@ -346,11 +249,23 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       'IntersectionObserver' in window
         ? new IntersectionObserver(en => {
             visivel = en[0].isIntersecting
-            visibilidade()
+            retomar()
           })
         : null
     limpezas.push(() => io?.disconnect())
     io?.observe(el)
+    function animar(dt: number) {
+      /* no celular, no máximo 8 bonecos animados ao mesmo tempo; no modo mais leve, 4 */
+      segAnim -= dt
+      if (segAnim <= 0) {
+        segAnim = 1
+        escolherAnimados(chars, fluidez.degrau >= 3 ? 4 : MOBILE() ? 8 : 99, selecionado)
+      }
+      for (const ch of chars) {
+        if (reduz && !o.mini) fixarSemMovimento(ch)
+        atualizaChar(ch, tAcum, reduz ? 1 : dt)
+      }
+    }
     function quadro(agora: number) {
       raf = 0
       if (!vivo || destruida || perdido || !visivel || document.hidden) {
@@ -367,40 +282,8 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         segLuz = 30
         luzDaHora(o.hora())
       }
-      /* no celular, no máximo 8 bonecos animados ao mesmo tempo; no modo mais leve, 4 */
-      segAnim -= dt
-      if (segAnim <= 0) {
-        segAnim = 1
-        let lim = MOBILE() ? 8 : 99
-        if (degrau >= 3) lim = 4
-        const pr2 = (c: any) =>
-          c.path ? 0 : c.st === 'precisa' ? 1 : c.id === selecionado ? 2 : c.st === 'trabalhando' ? 3 : 4
-        chars
-          .slice()
-          .sort((a, b) => pr2(a) - pr2(b))
-          .forEach((c, i) => {
-            c.anim = i < lim || !!c.path
-          })
-      }
-      for (let i = 0; i < chars.length; i++) {
-        const ch = chars[i]
-        if (reduz && !o.mini) {
-          ch.path = null
-          ch.loc = ch.st === 'precisa' ? 'frente' : 'sentado'
-          ch.b.r.position.copy(ch.loc === 'frente' ? ch.F : ch.S)
-          ch.b.r.rotation.y = ch.loc === 'frente' ? Math.PI / 4 : 0
-        }
-        atualizaChar(ch, tAcum, reduz ? 1 : dt)
-      }
-      if (vPara) {
-        const k = reduz ? 1 : Math.min(1, (agora - vT0) / 1200),
-          e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
-        ;['cx', 'cy', 'hw', 'hh'].forEach(n => {
-          vAtual[n] = lerp(vDe[n], vPara[n], e)
-        })
-        aplicaVista(vAtual)
-        if (k >= 1) vPara = null
-      }
+      animar(dt)
+      vista.avancar(agora, reduz)
       try {
         renderer.render(scene, cam)
       } catch {
@@ -408,37 +291,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         destruir()
         return
       }
-      atualizaTags()
+      posicionarEtiquetas(chars, selecionado, vista.nome)
       jsMs = jsMs * 0.95 + (performance.now() - agora0) * 0.05
-      /* fluidez: mede 1 vez por segundo e alivia em 3 degraus se ficar abaixo de 24 imagens por segundo */
-      const amostra = reduz ? null : medidor.quadro(agora)
-      if (amostra !== null) {
-        fps = amostra
-        fpsHist.push(fps)
-        if (fpsHist.length > 60) fpsHist.shift()
-        if (fps < 24) {
-          baixo++
-          if (baixo >= 4 && degrau < 3) {
-            degrau++
-            baixo = 0
-            if (degrau === 1) {
-              tamanho()
-            }
-            if (degrau === 2) {
-              renderer.shadowMap.enabled = false
-              sol.castShadow = false
-              sol.shadow.dispose()
-              sol.shadow.map = null
-              sol.shadow.mapPass = null
-              scene.traverse((x: any) => {
-                if (x.material) x.material.needsUpdate = true
-              })
-            }
-          }
-        } else baixo = 0
-        o.aoMedir?.(fps, degrau)
-      }
-      if (!reduz) solicitar()
+      if (reduz) return
+      fluidez.quadro(agora)
+      solicitar()
     }
     let consultaDpr: MediaQueryList | undefined
     const mudouDpr = () => {
@@ -455,176 +312,25 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     tamanho()
     solicitar()
 
-    if (o.mini && chars.length) {
-      const controller = new AbortController()
-      limpezas.push(() => controller.abort())
-      void import('./modelosEscritorio')
-        .then(async ({ modelosEscritorio }) => {
-          if (destruida) return
-          const { nomesDaSala } = await import('./escritorioMini')
-          if (destruida) return
-          const modelos = await modelosEscritorio.adquirir(nomesDaSala(chars[0].sala), controller.signal).pronto
-          if (!modelos || destruida) return
-          const escritorio = montarEscritorioMini(
-            chars[0].sala,
-            modelos,
-            POR_ID[chars[0].id]?.roupa.camisa || 0x6474a0,
-            criarBoneco(T, pecas, true),
-            composicao!,
-          )
-          if (destruida) {
-            escritorio.destruir()
-            return
-          }
-          limpezas.push(escritorio.destruir)
-          // Medidas sem alterar os pivôs; rollback conserva o fallback se a fusão falhar.
-          const preparados: any[] = []
-          try {
-            for (const ch of chars) {
-              const indice = chars.indexOf(ch),
-                posto = composicao!.postos[indice],
-                dados = escritorio.postos[indice]
-              const objeto = ch.trabalho.raiz,
-                medido = caixaReal(objeto.clone(true)),
-                centro = medido.getCenter(new T.Vector3())
-              const escala = ch.sala === 'caixa' ? 0.42 : 0.52
-              preparados.push({
-                ch,
-                objeto,
-                escala,
-                posicao: new T.Vector3(
-                  (ch.id === 'imoveis' ? 0.04 : ch.sala === 'caixa' ? -0.18 : -0.28) - centro.x * escala,
-                  dados.tampo - medido.min.y * escala,
-                  (ch.id === 'imoveis' ? 0.43 : 0.53) - centro.z * escala,
-                ),
-                posto,
-                dados,
-              })
-            }
-          } catch {
-            escritorio.destruir()
-            return
-          }
-          const anteriores: any[] = []
-          for (const ch of chars)
-            for (const raiz of [ch.b.r, ch.palco])
-              raiz.traverse((n: any) =>
-                anteriores.push({
-                  n,
-                  filhos: [...n.children],
-                  pos: n.position.clone(),
-                  escala: n.scale.clone(),
-                  rot: n.quaternion.clone(),
-                  visivel: n.visible,
-                  sombra: n.castShadow,
-                }),
-              )
-          try {
-            // Uma única sala/lease para o elenco; cada posto conserva coordenadas locais para o IK.
-            const objetos = [...scene.children].filter(
-              x => !x.isLight && x !== sol.target && !chars.some(ch => x === ch.b.r || x === ch.palco),
-            )
-            const origem = coletivo
-              ? new T.Vector3(SALAS[chars[0].sala].cx, 0, SALAS[chars[0].sala].cz - 1.72)
-              : chars[0].S
-            escritorio.raiz.position.copy(origem)
-            scene.add(escritorio.raiz)
-            const limites = caixaReal(escritorio.raiz)
-            for (const { ch, objeto, escala, posicao, posto, dados } of preparados) {
-              objeto.scale.setScalar(escala)
-              objeto.position.copy(posicao)
-              fundirGrupos(objeto, guardar)
-              fundirGrupos(ch.cafe, guardar)
-              fundirGrupos(ch.sinal, guardar)
-              ch.b.r.children
-                .filter((m: any) => m.isMesh)
-                .forEach((m: any) => {
-                  m.visible = false
-                })
-              ch.b.r.traverse((m: any) => {
-                m.castShadow = false
-              })
-              ch.folgaQuadril = 0.26 * Math.cos(1.5) + 0.1 * Math.sin(1.5)
-              ch.b.r.scale.setScalar(ESCALA_FUNCIONARIO_MINI * posto.escala)
-              ch.b.r.position.z = ch.S.z + 0.1 * posto.escala
-              ch.palco.scale.setScalar(posto.escala)
-              ch.apoiarMao = criarApoioDasMaos()
-              ch.maoL = new T.Vector3()
-              ch.maoR = new T.Vector3()
-              if (ch.id === 'imoveis') ch.apoiarMaoR = criarApoioDasMaos(0.325)
-              for (const perna of [ch.b.pL, ch.b.pR])
-                perna.k.scale.y =
-                  (dados.assento / ESCALA_FUNCIONARIO_MINI +
-                    ch.folgaQuadril -
-                    0.26 * Math.cos(1.5) -
-                    dados.piso / ESCALA_FUNCIONARIO_MINI) /
-                  0.29
-              ch.escritorio = { ...dados, tela: escritorio.tela }
-              ch.pose = {}
-              ch.rotacao = 0
-              atualizaChar(ch, 0, 0)
-              if (coletivo) {
-                // Pernas sentadas são rígidas; cabelo e olhos se juntam à cabeça móvel.
-                const pernas = new T.Group()
-                ch.b.hips.add(pernas)
-                for (const perna of [ch.b.pL, ch.b.pR]) {
-                  pernas.add(perna.o.clone(true))
-                  perna.o.visible = false
-                }
-                fundirRamo(pernas, guardar)
-                fundirRamo(ch.b.head, guardar)
-                ch.cafe.visible = false
-                ch.relogio.visible = false
-              }
-              limites.union(caixaReal(ch.b.r)).union(caixaReal(ch.palco))
-              limites.max.y = Math.max(
-                limites.max.y,
-                ch.S.y + (dados.assento + 1.24 * ESCALA_FUNCIONARIO_MINI) * posto.escala,
-              )
-            }
-            if (!coletivo) {
-              DIR.y *= 0.3
-              DIR.normalize()
-            }
-            cam.position.copy(DIR).multiplyScalar(40)
-            cam.lookAt(0, 0, 0)
-            cam.updateMatrixWorld(true)
-            chars[0].limitesMini = limites
-            vPara = null
-            aplicaVista(vAtual)
-            objetos.forEach(x => {
-              x.visible = false
-            })
-            solicitar()
-          } catch (erro) {
-            scene.remove(escritorio.raiz)
-            escritorio.destruir()
-            for (const { n, filhos, pos, escala, rot, visivel, sombra } of anteriores) {
-              n.clear()
-              if (filhos.length) n.add(...filhos)
-              n.position.copy(pos)
-              n.scale.copy(escala)
-              n.quaternion.copy(rot)
-              n.visible = visivel
-              n.castShadow = sombra
-            }
-            chars.forEach(ch => {
-              ch.escritorio = null
-              ch.limitesMini = null
-              ch.pose = {}
-            })
-            DIR.set(...(coletivo ? [0, 0.24, 1] : miniCamera?.direcao || [1, 0.86, 1])).normalize()
-            cam.position.copy(DIR).multiplyScalar(40)
-            cam.lookAt(0, 0, 0)
-            cam.updateMatrixWorld(true)
-            aplicaVista(vAtual)
-            throw erro
-          }
-        })
-        .catch(() => {
-          controller.abort() /* fallback em falha de carga */
-        })
-    }
+    if (o.mini && chars.length)
+      carregarEscritorioMini({
+        T,
+        scene,
+        sol,
+        cam,
+        chars,
+        pecas,
+        guardar,
+        limpezas,
+        composicao: composicao!,
+        coletivo,
+        DIR,
+        miniCamera,
+        vista,
+        destruida: () => destruida,
+        posar: ch => atualizaChar(ch, 0, 0),
+        solicitar,
+      })
 
     // Sem loop com movimento reduzido; apenas a celebração tem um retorno pontual.
     function definirEstado(id: string, estado: EstadoAgente) {
@@ -632,8 +338,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       const ch = chars.find(c => c.id === id)
       if (!ch) return
       if (o.mini && ch.estado === estado) return
-      clearTimeout(retornos.get(id)?.timer)
-      retornos.delete(id)
+      retornos.cancelar(id)
       if (o.mini) mudarMini(ch, estado)
       else {
         ch.st = estadoLegado(estado)
@@ -641,20 +346,11 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         ch.retornaTrabalho = estado === 'resolvido'
         if (ch.retornaTrabalho) ch.festa = 1.6
       }
-      if (reduz && estado === 'resolvido') {
-        retornos.set(id, { restante: 1600, inicio: 0 })
-        sincronizarRetornos()
-      }
+      if (reduz && estado === 'resolvido') retornos.agendar(id)
       solicitar()
     }
     // Também cobre a montagem já em entregue.
-    if (o.mini && reduz)
-      chars
-        .filter(ch => ch.estado === 'resolvido')
-        .forEach(ch => {
-          retornos.set(ch.id, { restante: 1600, inicio: 0 })
-          sincronizarRetornos()
-        })
+    if (o.mini && reduz) chars.filter(ch => ch.estado === 'resolvido').forEach(ch => retornos.agendar(ch.id))
 
     return {
       definirEstado,
@@ -672,8 +368,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
           }
           if (ch.st === n.estado) return
           ch.retornaTrabalho = false
-          clearTimeout(retornos.get(n.id)?.timer)
-          retornos.delete(n.id)
+          retornos.cancelar(n.id)
           if (n.estado === 'entregue' && ch.st === 'precisa') ch.festa = 0
           if (n.estado === 'entregue' && ch.st === 'trabalhando') ch.festa = 1.6
           ch.st = n.estado
@@ -683,16 +378,14 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       selecionar(id) {
         solicitar()
         selecionado = id
-        if (id && MOBILE()) {
-          const ch = chars.find(c => c.id === id)
-          if (ch) irPara(ch.sala)
-        }
+        const ch = id && MOBILE() ? chars.find(c => c.id === id) : null
+        if (ch) vista.irPara(ch.sala)
         chars.forEach(c => {
           c.tk = ''
         })
       },
       irPara(v) {
-        irPara(v)
+        vista.irPara(v)
         solicitar()
       },
       tema(d) {
@@ -700,18 +393,14 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         solicitar()
       },
       aproximar: (fator: number) => {
-        zoom = Math.min(3, Math.max(1, +(zoom * fator).toFixed(3)))
-        aplicaVista(vAtual)
-        chars.forEach(c => {
-          c.tk = ''
-        })
+        const zoom = vista.aproximar(fator)
         solicitar()
         return zoom
       },
       medir: () => ({
-        fps,
-        degrau,
-        hist: fpsHist.slice(),
+        fps: fluidez.fps,
+        degrau: fluidez.degrau,
+        hist: fluidez.historico(),
         ms: +jsMs.toFixed(2),
         desenhos: renderer.info.render.calls,
         triangulos: renderer.info.render.triangles,
