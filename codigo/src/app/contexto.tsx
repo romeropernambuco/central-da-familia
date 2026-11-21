@@ -22,8 +22,9 @@ import type { Api } from '../api'
 import type { FamiliaMinha, LinhaExplicacao, ResumoHoje, Sessao } from '../api/tipos'
 import { Explicacao, Sheet } from '../componentes/base'
 import { ErroRede, ErroSessao } from '../api/erros'
-import { comIntervalo } from '../lib/seguro'
-import { esconderValores, hojeRecife } from '../lib/formato'
+import { useAvisos } from './useAvisos'
+import { useOlho } from './useOlho'
+import { useRetomada } from './useRetomada'
 import { textoPrivado } from '../lib/formato'
 
 export interface PreLancar {
@@ -34,11 +35,6 @@ export interface PreLancar {
   /** R12: corrigir este lançamento */ corrigir?: import('../api/tipos').Lancamento
   /** R11: abre direto em "Entrou dinheiro" */ entrou?: boolean
   /** E9: veio do Atalho do iPhone (nunca salva sozinho) */ atalho?: { cartao?: string; erro?: string }
-}
-interface Toast {
-  msg: string
-  desfazer?: () => void | Promise<void>
-  id: number
 }
 interface Explicar {
   titulo: string
@@ -80,8 +76,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [resumo, setResumo] = useState<ResumoHoje | null>(null)
   const [versao, setVersao] = useState(0)
-  const [revisaoDesfazer, revisarDesfazer] = useState(0)
-  const [toastE, setToast] = useState<Toast | null>(null)
+  const { toastE, setToast, toast, revisarDesfazer } = useAvisos()
   const [lancarAberto, setLancar] = useState<PreLancar | null>(null)
   const [exp, setExp] = useState<Explicar | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -96,32 +91,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     },
     [chaveResumo],
   )
-  const [oculto, setOculto] = useState(() => {
-    try {
-      const o = localStorage.getItem('esconder_valores') === '1'
-      esconderValores(o)
-      return o
-    } catch {
-      return false
-    }
-  })
-  const alternarOculto = useCallback(
-    () =>
-      setOculto(o => {
-        const n = !o
-        esconderValores(n)
-        try {
-          localStorage.setItem('esconder_valores', n ? '1' : '0')
-        } catch {
-          /* sem armazenamento */
-        }
-        return n
-      }),
-    [],
-  )
-
-  // olho fechado: além do <Din>, esconde todo "R$ 1.234" que vem pronto em frase (Escritório, avisos, fichas)
-  esconderValores(oculto)
+  const { oculto, alternarOculto } = useOlho()
 
   const invalidacao = useInvalidacao(api, familia?.id || '', 'resumo')
   const equipe = familia?.papel === 'equipe'
@@ -165,7 +135,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       // sessão vencida não é erro pra mostrar: a tela de entrar já explica
       setErro(e instanceof ErroSessao ? null : (e as Error).message)
     }
-  }, [api])
+  }, [api, setToast])
 
   const encerrarSessao = useCallback(
     (avisar: boolean) => {
@@ -187,7 +157,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
       setErro(null)
       setToast(avisar ? { msg: 'Sua sessão acabou. Entre de novo.', id: Date.now() } : null)
     },
-    [api],
+    [api, setToast],
   )
   const finalizarSessao = useCallback(
     async (avisar: boolean) => {
@@ -269,67 +239,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
     [api, encerrarSessao],
   )
 
-  // O número de hoje não pode ficar velho: busca de novo quando o app volta pra frente, quando a internet volta
-  // e quando vira o dia em Recife (app aberto de um dia pro outro mostrava o "pode gastar" de ontem).
-  useEffect(() => {
-    if (!familia) return
-    const pode = comIntervalo(4000)
-    let dia = hojeRecife()
-    const voltar = () => {
-      if (document.visibilityState === 'visible' && pode()) recarregar()
-    }
-    const rede = () => {
-      setSemRede(navigator.onLine === false)
-      if (navigator.onLine !== false) recarregar()
-    }
-    const relogio = setInterval(() => {
-      const h = hojeRecife()
-      if (h !== dia) {
-        dia = h
-        recarregar()
-      }
-    }, 30000)
-    document.addEventListener('visibilitychange', voltar)
-    addEventListener('focus', voltar)
-    addEventListener('online', rede)
-    addEventListener('offline', rede)
-    return () => {
-      clearInterval(relogio)
-      document.removeEventListener('visibilitychange', voltar)
-      removeEventListener('focus', voltar)
-      removeEventListener('online', rede)
-      removeEventListener('offline', rede)
-    }
-  }, [familia?.id, recarregar])
-
-  useEffect(() => {
-    const f = () => setToast(t => (t?.desfazer ? t : null))
-    addEventListener('hashchange', f)
-    return () => removeEventListener('hashchange', f)
-  }, [])
-  const toast = useCallback((msg: string, inverso?: () => void | Promise<void>) => {
-    if (inverso) {
-      desfazer.registrar({
-        rotulo: 'Última ação',
-        desfazer: async () => {
-          await inverso()
-          return true
-        },
-      })
-      setToast(null)
-    } else setToast({ msg, id: Date.now() })
-  }, [])
-  // E3 (conserto 6): com o aviso na tela, a página ganha folga embaixo: nada fica escondido atrás dele (Lançar um gasto, Por que mudou?)
-  useEffect(() => {
-    document.body.classList.toggle('com-aviso', !!toastE || !!desfazer.atual)
-    return () => document.body.classList.remove('com-aviso')
-  }, [toastE, revisaoDesfazer])
-  useEffect(() => {
-    if (!toastE) return
-    // com Desfazer o aviso fica 10 s (dá tempo de ler e tocar); sem, 4 s
-    const t = setTimeout(() => setToast(null), toastE.desfazer ? 10000 : 4000)
-    return () => clearTimeout(t)
-  }, [toastE])
+  useRetomada(familia?.id, recarregar, setSemRede)
 
   const tentar = useCallback(
     async (f: () => Promise<unknown>) => {
@@ -348,7 +258,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
         return false
       }
     },
-    [api, finalizarSessao],
+    [api, finalizarSessao, setToast],
   )
 
   useEffect(() => {
@@ -361,7 +271,7 @@ export function Provedor({ api, children }: { api: Api; children: ReactNode }) {
         void recarregar()
       }
     })
-  }, [recarregar, trocarSessao])
+  }, [recarregar, revisarDesfazer, trocarSessao])
   const v: Ctx = {
     api,
     sessao,
