@@ -40,6 +40,13 @@ Para pedir: "Preciso de permissão para X, porque Y. O risco é Z."
 - Resultado de ajudante é rascunho: confira antes de me repetir.
 - Quem ajuda na casa nunca vê dinheiro. O olho fechado esconde tudo.
 
+## Trabalho longo (sem o dono por perto)
+- A fila está em docs/FILA.md. Pegue o primeiro item livre, de cima para baixo.
+- Item da fila já é plano aprovado: não precisa mandar plano antes. Item "(espera o dono)" não anda.
+- A regra "Nunca sem o meu pode" continua valendo inteira. Bateu nela: anote em "Perguntas para o dono" e siga com o próximo item livre.
+- Termine cada item com a verificação passando, um commit local e o item movido para "Feito".
+- O banco ainda não tem dados da família (22/11/2026). Mesmo assim, nada roda nele sem o meu "pode".
+
 ## Pronto =
 Verificação passou, com a saída colada + prints em 1280 e 375, com valores visíveis e escondidos
 + inventário conferido + teste de comportamento + relatório de entrega preenchido (parte 11 das orientações).
