@@ -26,7 +26,9 @@ export interface PropsProposta {
   dispositivo: Dispositivo
 }
 
-const letras = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'] as const
+// Só ficam as propostas com o escritório 3D (J é o padrão mínimo do dono). As outras estão na marcação
+// git `arquivo-propostas-2026-11-22`.
+const letras = ['j', 'l', 'm'] as const
 type Letra = (typeof letras)[number]
 type Escolha = Letra | 'atual' | 'comparar'
 const abas: { id: Escolha; texto: string }[] = [
@@ -40,24 +42,14 @@ function propostaDe(id: Letra) {
   return lazy(async () => ({ default: (await modulos[`./${id}/Proposta.tsx`]()).Proposta }))
 }
 const propostas = {
-  a: propostaDe('a'),
-  b: propostaDe('b'),
-  c: propostaDe('c'),
-  d: propostaDe('d'),
-  e: propostaDe('e'),
-  f: propostaDe('f'),
-  g: propostaDe('g'),
-  h: propostaDe('h'),
-  i: propostaDe('i'),
   j: propostaDe('j'),
-  k: propostaDe('k'),
   l: propostaDe('l'),
   m: propostaDe('m'),
 }
 const comEscritorioCompleto = (id: Escolha) => id === 'j' || id === 'l' || id === 'm'
 
 function lerEscolha(): Escolha {
-  return abas.find(aba => location.hash === `#/${aba.id}`)?.id ?? 'a'
+  return abas.find(aba => location.hash === `#/${aba.id}`)?.id ?? 'j'
 }
 
 function Quadro({

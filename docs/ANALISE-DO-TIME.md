@@ -60,10 +60,10 @@ A pergunta que este documento responde: **o que falta para a Central funcionar b
 
 9. **O código está bom para uma pessoa com IA tocando, mas tem dívidas que travam um time.**
    - 33 arquivos com mais de 400 linhas. O Anotar tem 1.116 e a Casa tem 1.350.
-   - **O Escritório 3D é uns 20% do app** e baixa 512 KB só da biblioteca 3D, em todas as abas. Proposta: o 3D abre só quando a pessoa pede, e a lista com os 19 continua sempre à vista.
+   - **O Escritório 3D é uns 20% do app** e baixa 512 KB só da biblioteca 3D. **Decisão do dono (22/11): tudo que é 3D do painel é importante e fica como está.** O trabalho no 3D é por dentro: tipos certos e desempenho em celular simples, sem tirar nada da cena.
    - **O dinheiro é calculado de dois jeitos.** O plano de 2029 usa centavos exatos; o resto do app usa número quebrado, que pode errar 1 centavo (o Codex mostrou 10,075 virar 10,07). Proposta: um único jeito, em centavos.
-   - **Um ponto sobre o meu próprio trabalho.** A queda dos avisos do verificador de 343 para 195 foi real, feita em 2 commits de conserto de tipos. Mas 15 arquivos da cena 3D têm a regra de tipos desligada no arquivo inteiro desde 21/11, e escondem 154 tipos frouxos que não entram na conta. Isso tem que entrar na fila.
-   - **Os protótipos antigos (`src/propostas`, 1,5 MB, 100 arquivos) podem sair.** São eles que deixam a verificação do GitHub vermelha. Apagar precisa do seu "pode".
+   - **Um ponto sobre o meu próprio trabalho, conferido em 22/11.** A queda dos avisos do verificador de 343 para 195 foi real: os 2 commits que baixaram o teto (646ad4b e d1f6e4d) tiraram 77 e 58 tipos frouxos, sem desligar nenhuma regra. À parte disso, 15 arquivos da cena 3D têm a regra de tipos desligada no arquivo inteiro desde 21/11 (154 tipos frouxos fora da conta). Esses arquivos são importantes: o conserto é dar tipo certo a eles, sem mudar a cena.
+   - **Protótipos (feito em 22/11, com o "pode" do dono).** Saíram os 10 sem 3D (A a I e K). Ficaram J (o padrão mínimo do Escritório), L, M e o motor 3D. Todos continuam guardados na marcação git `arquivo-propostas-2026-11-22`.
 
 10. **O que já consertei hoje, dos achados do Codex.** Eram defeitos do código que fiz hoje; já estão testados e serão publicados junto com este relatório.
     - **Aluguel contado em dobro** quando o mesmo mês era marcado em 2 celulares: agora conta 1 vez.
@@ -136,10 +136,8 @@ Cada etapa é feita por mim (ou pelo Codex), verificada, revisada por outro agen
 7. **Cobrador Educado e Reunião do Mês**, as duas ideias mais baratas e que mais mostram o Escritório trabalhando.
 8. **Qualidade do código:**
    - um só jeito de contar dinheiro, em centavos;
-   - 3D só quando pedido;
    - dividir os arquivos gigantes, a começar pelo Anotar;
-   - religar a regra de tipos na cena 3D;
-   - apagar os protótipos (seu "pode").
+   - dar tipo certo aos 15 arquivos da cena 3D e religar a regra, sem mudar a cena.
 9. **Para vender:**
    - cadastro sozinho;
    - cobrança;
