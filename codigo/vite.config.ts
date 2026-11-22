@@ -10,8 +10,9 @@ const swDoBuild = (pasta: string, exemplo: boolean) => ({
   name: 'central-sw',
   apply: 'build' as const,
   writeBundle() {
-    const backend = exemplo ? ['relogio', 'exemplo'] : ['real']
-    const r = gravarSw(pasta, 'src/sw.modelo.js', ['partida', 'Inicio', 'EscritorioIsometrico', ...backend])
+    // o pedaço separado do escritório isométrico só existe no build de exemplo (Início clássico); em produção ele vai junto da tela Escritório
+    const backend = exemplo ? ['EscritorioIsometrico', 'relogio', 'exemplo'] : ['real']
+    const r = gravarSw(pasta, 'src/sw.modelo.js', ['partida', 'Inicio', ...backend])
     console.log(`sw.js versão ${r.versao}, ${r.casca.length} arquivos na casca`)
   },
 })
