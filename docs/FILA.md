@@ -10,28 +10,15 @@ Situação em 22/11/2026:
 
 ## 1. Agora
 
-1. **Publicar o conserto do "Guardar em" do Dinheiro na rua** (espera o dono).
-   - Pronto quando: a versão do commit 53e013a está no site oficial e o `sw.js` no ar mostra a versão nova.
-2. **Colar extrato do banco** (livre).
-   - O dono copia o extrato do app do banco (texto, CSV ou OFX) e cola numa folha do Anotar.
-   - O app separa data, descrição e valor, sem mandar nada para serviço externo.
-   - A pessoa confere a lista, escolhe o limite de cada linha (o app sugere pelo nome da loja) e salva tudo de uma vez.
-   - Linha repetida (mesma data, valor e descrição de um gasto já anotado) aparece marcada e não salva em dobro.
-   - Pronto quando: 3 formatos de extrato inventados viram a lista certa nos testes; salvar em lote usa a mesma chave por linha (não duplica se a internet cair); olho fechado esconde tudo; prints em 375 e 1280.
-3. **Imóveis alugados** (livre no código; o banco espera o dono).
-   - Aluguel do mês por imóvel: nasce sozinho a cada mês; a pessoa marca "chegou" ou ele aparece como atrasado (ideia do OpenProperty).
-   - Gastos do imóvel (IPTU, condomínio, obra) no mesmo caderno.
-   - Quanto rende por ano sobre o valor do imóvel, ao lado do que o banco pagaria.
-   - Pronto quando: na família de exemplo, 7 imóveis mostram recebido, atrasado e rendimento; contas com teste; prints.
-   - A tabela de imóveis já está no banco (f_15, aplicada em 22/11/2026).
+1. **Escritório avisa o prazo do Dinheiro na rua**: 15 dias antes e no dia em que vence.
+2. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
 
 ## 2. Em seguida
 
-1. **Escritório avisa o prazo do Dinheiro na rua**: 15 dias antes e no dia em que vence.
-2. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
-3. **Empresas**: o mesmo caderno do Dinheiro na rua, tipo empresa, com a retirada do mês entrando como renda (certa ou incerta).
-4. **Investimentos além da renda fixa**: ações, fundos, dólar e previdência com o saldo informado à mão; vencimentos num calendário só.
-5. **Etiqueta sem internet**: a troca de etiqueta e o valor em moeda de fora entram na fila de envio, junto com o gasto.
+1. **Empresas**: o mesmo caderno do Dinheiro na rua, tipo empresa, com a retirada do mês entrando como renda (certa ou incerta).
+2. **Investimentos além da renda fixa**: ações, fundos, dólar e previdência com o saldo informado à mão; vencimentos num calendário só.
+3. **Etiqueta sem internet**: a troca de etiqueta e o valor em moeda de fora entram na fila de envio, junto com o gasto.
+4. **Aluguel no Escritório**: o funcionário do Guardado avisa no Início quando um aluguel passa do dia sem chegar.
 
 ## 3. Qualidade do código
 
@@ -61,10 +48,14 @@ Situação em 22/11/2026:
 (Anote aqui o que ficou para ele decidir, com a data. Não pare o trabalho por isso.)
 
 - 22/11/2026: aplicar a correção das etiquetas na cópia de segurança (item 1 de "Do dono").
-- 22/11/2026: publicar o conserto do "Guardar em" do Dinheiro na rua (item 1 de "Agora").
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
 ## Feito
 
 - 22/11/2026: migrações f_01 a f_15 aplicadas no banco, em ordem. 758 testes do banco, 0 falhas. Dados não mudaram.
 - 22/11/2026: etiquetas de viagem; Dinheiro na rua; tipos frouxos de 343 para 195 avisos; portões rodam no Windows.
+- 22/11/2026: conserto do "Guardar em" do Dinheiro na rua publicado (sw 0d2b80d3abfc).
+- 22/11/2026: Colar extrato do banco no Anotar (texto, CSV e OFX; sugere o limite; não salva repetido).
+- 22/11/2026: Caderno do aluguel em cada imóvel alugado: "chegou" mês a mês, atrasado pelo dia combinado,
+  despesas do imóvel e o que sobrou no ano em % do valor. Resumo do mês no topo dos Imóveis.
+  Guarda na configuração da família (`aluguel_caderno`), sem mudar o banco.

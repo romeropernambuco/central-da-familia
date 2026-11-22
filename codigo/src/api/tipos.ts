@@ -624,6 +624,8 @@ export type ChaveConfig =
   | 'numeros_atualizados'
   /** Dinheiro na rua: negócios em que saiu dinheiro que tem que voltar (lib/dinheiroNaRua). Só o casal. */
   | 'dinheiro_na_rua'
+  /** Caderno do aluguel: recebido mês a mês e despesas de cada imóvel alugado (lib/aluguel). Só o casal. */
+  | 'aluguel_caderno'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'

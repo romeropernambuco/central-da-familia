@@ -26,6 +26,7 @@ import type { ImovelTela, NovoImovel, UsoImovel } from '../api/tipos'
 import type { ImovelSaida } from '../lib/futuro'
 import { hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../lib/formato'
 import { mesMais } from '../lib/plano'
+import { FolhaAluguel, ResumoAluguel, SituacaoAluguel, useCadernoAluguel } from './AluguelImovel'
 
 const USO: { v: UsoImovel; nome: string; ajuda: string }[] = [
   { v: 'mora', nome: 'A família mora', ajuda: 'Onde vocês moram: o valor aparece no patrimônio, mas não dá renda.' },
@@ -91,6 +92,9 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
   const renovaDe = (id: string) =>
     saida?.gatilhos?.find(g => g.origem === 'imovel' && g.id === id && g.motivo === 'renova o contrato') ?? null
   const doMotor = useMemo(() => new Map((saida?.imoveis || []).map(x => [x.id, x])), [saida])
+  // caderno do aluguel: o que chegou mês a mês e as despesas de cada imóvel alugado
+  const aluguel = useCadernoAluguel()
+  const [aluguelDe, setAluguelDe] = useState<ImovelTela | null>(null)
 
   // filha e equipe nunca veem imóveis
   if (!familia || familia.papel !== 'casal' || !api.imoveis) return null
@@ -160,6 +164,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
           </div>
         </dl>
       )}
+      {lista && aluguel.lido && <ResumoAluguel imoveis={imoveis} caderno={aluguel.caderno} />}
       <p className="sub imo-frase">
         O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas
         cadastradas.
@@ -225,6 +230,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                     {selo && (
                       <small className={'imo-selo ' + (selo.entra ? 'ok' : 'warn')}>{textoPrivado(selo.texto)}</small>
                     )}
+                    {aluguel.lido && <SituacaoAluguel imovel={i} caderno={aluguel.caderno} />}
                   </span>
                   <span className="v">
                     <Din v={i.valor} />
@@ -232,6 +238,11 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
                   <Icone nome="abrir" className="f30-seta" />
                 </button>
                 {!i.meu && <NomeDaPessoa pessoa={{ tipo: 'membro', id: i.dono_membro, nome: i.dono_nome }} />}
+                {i.uso === 'aluga' && aluguel.lido && (
+                  <button className="lnk aluguel-abrir" type="button" onClick={() => setAluguelDe(i)}>
+                    Caderno do aluguel: mês a mês e despesas
+                  </button>
+                )}
               </li>
             )
           })}
@@ -242,6 +253,14 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
           A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e
           imposto. O dinheiro aplicado rende {oculto ? PONTOS : pctAno(taxaAplic)} ao ano acima da inflação.
         </p>
+      )}
+      {aluguelDe && (
+        <FolhaAluguel
+          imovel={aluguelDe}
+          caderno={aluguel.caderno}
+          salvar={aluguel.salvar}
+          fechar={() => setAluguelDe(null)}
+        />
       )}
       {folha && (
         <FolhaImovel

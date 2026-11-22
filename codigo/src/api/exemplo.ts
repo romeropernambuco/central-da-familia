@@ -208,6 +208,29 @@ function criarDados() {
           { id: 'm1', nome: 'Viagem de julho', valor: 6000, guardado: 1800 },
           { id: 'm2', nome: 'Material escolar', valor: 1200, guardado: 900 },
         ],
+        // Caderno do aluguel (exemplo, número inventado): a sala chegou em dia; o apartamento atrasou este mês
+        aluguel_caderno: {
+          im1: {
+            dia_vencimento: 5,
+            recebimentos: [0, 1, 2, 3, 4, 5].map(i => ({
+              mes: mesMais(hoje.slice(0, 7), -i),
+              data: mesMais(hoje.slice(0, 7), -i) + '-04',
+              valor: 3000,
+            })),
+            despesas: [{ id: 'dx1', data: somaDias(hoje, -40), valor: 1200, descricao: 'IPTU (exemplo)' }],
+          },
+          im2: {
+            dia_vencimento: 10,
+            recebimentos: [1, 2, 3].map(i => ({
+              mes: mesMais(hoje.slice(0, 7), -i),
+              data: mesMais(hoje.slice(0, 7), -i) + '-09',
+              valor: 4000,
+            })),
+            despesas: [
+              { id: 'dx2', data: somaDias(hoje, -15), valor: 650, descricao: 'Conserto do chuveiro (exemplo)' },
+            ],
+          },
+        },
         // Dinheiro na rua (exemplo, número inventado): 1 negócio no prazo e 1 que já devolveu uma parte
         dinheiro_na_rua: [
           {
