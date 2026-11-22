@@ -626,6 +626,8 @@ export type ChaveConfig =
   | 'dinheiro_na_rua'
   /** Só a família de exemplo guarda aqui o caderno do aluguel; no banco real ele mora em produto.aluguel_* (22/11/2026). */
   | 'aluguel_caderno'
+  /** Viagens planejadas: pacote parcelado, custos lá, mês da viagem (lib/viagem.ts, 22/11/2026). */
+  | 'viagens'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'

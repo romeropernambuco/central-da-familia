@@ -933,17 +933,19 @@ export const apiReal: Api = {
   },
 
   async futuroEntradas(familia) {
-    const [j, fontes_receita, receitas_controle, caderno] = await Promise.all([
+    const [j, fontes_receita, receitas_controle, caderno, viagens] = await Promise.all([
       rpc<FuturoBanco>('futuro_entradas', { familia }),
       this.config(familia, 'fontes_receita', {}),
       this.config(familia, 'receitas_controle', {}),
       // "não me pagou": o plano não conta com o aluguel do imóvel com problema até a volta (sem o caderno, segue sem)
       rpc('aluguel_da_familia', { familia }).catch(() => null),
+      // viagens planejadas ficam na config da família; sem a leitura, o plano segue sem elas
+      this.config<unknown>(familia, 'viagens', []).catch(() => []),
     ])
     const problemas = Object.fromEntries(Object.entries(lerCaderno(caderno)).map(([id, c]) => [id, c.problema]))
     return entradaDoBanco(
       comProblemasDoAluguel(
-        { ...j, config: { ...j.config, fontes_receita, receitas_controle } },
+        { ...j, config: { ...j.config, fontes_receita, receitas_controle, viagens } },
         problemas,
         hojeRecife().slice(0, 7),
       ),

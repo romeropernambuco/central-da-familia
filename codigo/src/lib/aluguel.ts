@@ -59,6 +59,8 @@ export interface ProblemaAluguel {
   divida: number
   /** o que aconteceu: notificação, audiência, acordo (até 30 anotações) */
   andamento: AndamentoProblema[]
+  /** a causa na justiça: multa, juros, honorários, expectativa (lib/causaAluguel.ts lê e confere) */
+  causa?: unknown
 }
 /** O mês está dentro do problema: do 1º mês sem receber até o mês anterior à volta (sem volta: até resolver). */
 export const semReceberNoMes = (c: CadernoImovel, mes: string) =>
@@ -236,6 +238,15 @@ export function receberDaDivida(
         ...p,
         divida: Math.max(0, c2(p.divida - valor)),
         andamento: [...p.andamento, { data: hoje, texto }].slice(-30),
+        // a causa desconta o que já voltou do pedido
+        ...(p.causa && typeof p.causa === 'object'
+          ? {
+              causa: {
+                ...(p.causa as object),
+                recuperado: c2((Number((p.causa as { recuperado?: unknown }).recuperado) || 0) + valor),
+              },
+            }
+          : {}),
       },
     },
     entrada: { id, data: hoje, valor: c2(valor), de: 'Dívida do inquilino', destino: 'aluguel atrasado' },
@@ -288,6 +299,7 @@ export function lerProblema(v: unknown): ProblemaAluguel | null {
           .map(a => ({ data: a.data.slice(0, 10), texto: a.texto.trim().slice(0, 200) }))
           .slice(-30)
       : [],
+    ...(p.causa && typeof p.causa === 'object' && !Array.isArray(p.causa) ? { causa: p.causa } : {}),
   }
 }
 

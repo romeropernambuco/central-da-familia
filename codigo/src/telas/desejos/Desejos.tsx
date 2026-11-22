@@ -25,6 +25,7 @@ import type { DesejoTela, NovoDesejo, SituacaoDesejo, VoltaDe } from '../../api/
 import { centavos, hojeRecife, mesCurto, plural, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 import { folgaNoMes } from '../../lib/gordura'
+import { ViagensPlanejadas } from '../../componentes/ViagensPlanejadas'
 
 const VOLTA: { v: VoltaDe; nome: string; ajuda: string }[] = [
   { v: 'nada', nome: 'Não volta', ajuda: 'O dinheiro sai e pronto (viagem, presente, reforma).' },
@@ -726,6 +727,7 @@ export function Desejos() {
             </p>
           )}
         </section>
+        <ViagensPlanejadas />
       </div>
     </div>
   )

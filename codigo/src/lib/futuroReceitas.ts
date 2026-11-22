@@ -4,6 +4,7 @@
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from './futuro'
 import { salariosAteAVirada } from './futuroSalario'
+import { viagensNoPlano } from './viagem'
 import type {
   CenarioReceitas,
   ControleReceitas,
@@ -182,6 +183,8 @@ export interface FuturoBanco {
     rendas?: unknown
     fontes_receita?: unknown
     receitas_controle?: unknown
+    /** viagens planejadas (lib/viagem.ts): parcelas e custos lá */
+    viagens?: unknown
   } | null
   parcelas_futuras: { parcelas_lista: { mes_fatura: string; valor_centavos: number }[] }[]
   desejos: {
@@ -357,6 +360,9 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       VIRADA,
     ),
   )
+  // viagem planejada: parcelas da compra antecipada e custos lá, da sobra do mês (regra do dono, 22/11)
+  const viagens = viagensNoPlano(j.config?.viagens, m0)
+  compromissos.push(...viagens.compromissos)
 
   const fontes = lerFontesReceita(j.config?.fontes_receita),
     controle = lerControleReceitas(j.config?.receitas_controle)
@@ -392,7 +398,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       recebimentos: prepararReceitas(receitasBase, fontes.fontes, controle.controle),
       compromissos,
       dividas: [],
-      desvios: [],
+      desvios: viagens.desvios,
       desejos: (j.desejos || []).map(d => ({
         id: String(d.id),
         dono: String(d.dono_membro),

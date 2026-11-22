@@ -250,6 +250,28 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
         1,
       )
     }
+    // Causa na justiça (22/11): cada mês sem pagar aumenta o pedido; o Ajudante dos Imóveis lembra de passar ao advogado
+    for (const a of lista(s.causas)) {
+      if (!a || !id(a.id) || typeof a.nome !== 'string' || !mesValido(a.mes) || !inteiro(a.pedido) || a.pedido <= 0)
+        continue
+      const valor =
+        'R$ ' + (a.pedido / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      add(
+        'aluguel_atrasado',
+        'guardado',
+        'imoveis',
+        ['aluguel_atrasado', a.id, a.mes, 'causa'],
+        a.nunca
+          ? 'O pedido da causa do aluguel ainda não foi passado ao advogado. Vamos mandar?'
+          : 'O pedido da causa do aluguel subiu este mês. Vamos passar o valor novo ao advogado?',
+        { tipo: 'atalho', destino: '#/guardado' },
+        [op('abrir', 'Abrir a causa no caderno do aluguel')],
+        `Imóvel: ${a.nome}. Pedido de hoje: ${valor}, com aluguéis, multa, juros e honorários.`,
+        [a.nome],
+        undefined,
+        1,
+      )
+    }
     for (const c of lista(s.contratos)) {
       if (
         !id(c.id) ||

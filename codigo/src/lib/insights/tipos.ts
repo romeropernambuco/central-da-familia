@@ -37,6 +37,8 @@ export interface SnapshotInsights {
   negocios?: readonly { id: string; nome: string; prazo: string; naRua: number }[]
   /** Aluguel do mês que passou do dia combinado sem chegar (caderno do aluguel): mês AAAA-MM e dias de atraso. */
   alugueis?: readonly { id: string; nome: string; mes: string; dias: number }[]
+  /** Causa do aluguel cujo pedido subiu desde que a família passou ao advogado (centavos; mês AAAA-MM). */
+  causas?: readonly { id: string; nome: string; mes: string; pedido: number; nunca: boolean }[]
   objetivo?: {
     mes: string
     projetado: number | null

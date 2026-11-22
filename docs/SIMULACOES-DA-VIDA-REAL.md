@@ -71,6 +71,13 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
 - **Família sem meta:** o sistema identifica sozinho quando daria para viver do que rende, mantendo a sobra de hoje.
   Feito no Rumo a 2029 (lib/viverDeRenda.ts).
 - **Empresas:** pró-labore ainda não definido; a usina e o empréstimo que a empresa paga entram como recebimento mensal.
+- **A causa do aluguel:** o app monta o pedido mês a mês (aluguéis, encargos, multa e juros do contrato, honorários de
+  10% da Lei 8.245/91, art. 62), diz a regra de cada parte, separa o que é da família do que é do advogado (Lei 8.906/94,
+  art. 23), guarda a expectativa e avisa todo mês em que o pedido subiu: "passe o valor novo ao advogado"
+  (lib/causaAluguel.ts). Correção monetária fica com o advogado.
+- **Viagem:** planejada com antecedência, pacote parcelado no cartão e custos lá num cofrinho mês a mês. Entra no plano;
+  o app diz se cabe na sobra sem tocar na gordura, quanto a família precisa ganhar a mais por mês se não cabe, e se à
+  vista com desconto compensa mais do que parcelar deixando o dinheiro render (lib/viagem.ts, aba Desejos).
 
 ## O que este documento NÃO resolve
 

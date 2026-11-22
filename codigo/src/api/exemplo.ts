@@ -2017,6 +2017,7 @@ export const apiExemplo: Api = {
         rendas: db.config.rendas,
         fontes_receita: db.config.fontes_receita,
         receitas_controle: db.config.receitas_controle,
+        viagens: db.config.viagens,
       },
       parcelas_futuras: vivos()
         .filter(l => (l.parcelas || 1) > 1 && faturaDoLanc(l))

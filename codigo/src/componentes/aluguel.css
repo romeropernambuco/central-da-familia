@@ -43,6 +43,29 @@
   display: grid;
   gap: 16px;
 }
+/* a causa na justiça (22/11): o pedido de hoje, as partes e as regras */
+.causa-aluguel {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+.causa-aluguel .lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.causa-linhas .li {
+  padding: 4px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.causa-regras ul {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+}
 .aluguel-meses {
   list-style: none;
   margin: 0;

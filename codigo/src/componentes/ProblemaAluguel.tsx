@@ -17,6 +17,7 @@ import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoPrivado } from './privacidade'
 import { FolhaRecebiDivida } from './RecebiDaDivida'
+import { CausaDoAluguel } from './CausaAluguel'
 
 type Lembrar = 'semana' | 'mes' | 'nunca'
 const ORDEM: EtapaProblema[] = ['cobrando', 'acordo', 'advogado', 'despejo', 'vazio', 'reforma']
@@ -119,6 +120,7 @@ function ProblemaAberto({
           O inquilino deve <Din v={p.divida} />: a receber, pode não voltar. Não entra no guardado nem no plano.
         </p>
       )}
+      <CausaDoAluguel imovel={imovel} c={c} p={p} gravar={gravar} />
       {p.andamento.length > 0 && (
         <ul className="list problema-andamento">
           {p.andamento
@@ -232,6 +234,8 @@ function FolhaProblema({
         ...(p?.andamento || []),
         ...(!p || p.etapa !== etapa ? [{ data: hoje, texto: `Providência: ${ETAPAS[etapa].frase}` }] : []),
       ].slice(-30),
+      // mudar a providência não apaga a causa (multa, juros, expectativa) já anotada
+      ...(p?.causa ? { causa: p.causa } : {}),
     }
     const ok = await gravar({ ...c, problema: novo })
     // a Secretária lembra de acompanhar (cobrar o advogado, o inquilino, o acordo) até a família concluir
