@@ -9,6 +9,11 @@
   "display": "standalone",
   "background_color": "#F1F3EF",
   "theme_color": "#F1F3EF",
+  "shortcuts": [
+    { "name": "Anotar gasto", "short_name": "Anotar", "url": "./#/lancar" },
+    { "name": "Gastos e entradas", "short_name": "Gastos", "url": "./#/lancamentos" },
+    { "name": "Guardado", "short_name": "Guardado", "url": "./#/guardado" }
+  ],
   "icons": [
     {
       "src": "icone-192.png",

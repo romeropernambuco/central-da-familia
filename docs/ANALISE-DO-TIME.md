@@ -8,6 +8,12 @@ A pergunta que este documento responde: **o que falta para a Central funcionar b
 
 ## O que este documento conclui
 
+**Andamento em 22/11/2026, com o "pode" do dono:**
+- **Feito:** 3 das 4 portas (apagar a família só pela função; entrada antiga da equipe desligada; etiquetas gravadas
+  no repositório); correção das etiquetas na cópia de segurança; Dinheiro na rua e aluguel em tabelas; avisos no
+  celular; protótipos sem 3D apagados.
+- **Falta, só o dono:** tornar o repositório privado no GitHub.
+
 1. **Há 4 portas abertas que precisam ser fechadas antes do primeiro cliente.** Nenhuma delas afeta você hoje, porque só a sua família usa. Com um cliente pagante, qualquer uma delas mata o produto. Todas dependem do seu "pode", porque mexem no banco real ou no GitHub.
    - **Qualquer adulto do casal apaga a família inteira com um comando**, sem lixeira e sem volta. Confirmei: `banco/migracoes/..._produto_05...sql`, linhas 42 e 43. A confirmação de digitar o nome existe só na tela; quem chama o banco direto pula ela.
    - **A entrada antiga da equipe aceita só um código de 4 números**, que vale para todas as famílias ao mesmo tempo. Com muitas famílias, um estranho pode cair como "equipe" na casa de outra. O conserto já está escrito (bloco 6 de `banco/sql/RODAR_NO_SUPABASE.sql`).

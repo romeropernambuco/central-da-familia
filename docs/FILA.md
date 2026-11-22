@@ -12,18 +12,12 @@ Situação em 22/11/2026:
 
 O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md` (22/11/2026).
 
-1. **Fechar as 4 portas antes de qualquer cliente** (espera o dono: banco real e GitHub).
-   - Tirar o `grant delete` em `produto.familias` (apagar só pela função, com prazo de 30 dias).
-   - Fechar a entrada antiga da equipe (bloco 6 de `banco/sql/RODAR_NO_SUPABASE.sql`).
-   - Repositório privado (há e-mail pessoal em `banco/migracoes/20261107044716_...`).
-   - Gravar no repositório as tabelas de etiquetas que só existem no banco.
-2. **Tabelas no lugar do JSON** para `dinheiro_na_rua`, `aluguel_caderno` e `casa_folha`; "Guardar em" num passo só
-   (espera o dono: banco real). O Codex reproduziu perda de gravação com 2 celulares.
-3. **Notificações, atalhos no ícone e "compartilhar com a Central"** (espera o dono: serviço de notificação).
-4. **Anotar mais rápido**: salvar sempre à vista, últimos "O que foi?" como toque, detalhes recolhidos (livre).
-5. **Meta com ano escolhido pela família** e primeiro uso que pergunta a renda antes dos limites (livre; o dono segue em 2029).
-6. **Colar extrato sem internet**: acompanhar a recusa do banco como o Anotar já faz (livre).
-7. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
+1. **Tornar o repositório privado no GitHub** (só o dono: este navegador não tem a conta dele).
+   GitHub → o repositório → Settings → Danger Zone → Change visibility → Private. Depois, conferir que a Vercel publica.
+2. **Anotar mais rápido**: salvar sempre à vista, últimos "O que foi?" como toque, detalhes recolhidos (livre).
+3. **Meta com ano escolhido pela família** e primeiro uso que pergunta a renda antes dos limites (livre; o dono segue em 2029).
+4. **Colar extrato sem internet**: acompanhar a recusa do banco como o Anotar já faz (livre).
+5. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
 
 ## 2. Em seguida
 
@@ -49,9 +43,7 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 ## 4. Do dono (não é programação)
 
-1. Aplicar a correção que devolve as etiquetas à cópia de segurança:
-   `banco/migracoes/20261122120000_produto_etiquetas_no_exportar_depois_da_f03.sql` (pronta; espera o "pode").
-2. Ligar o botão "apagar a família" (função `apagar_familia`, do pacote `revisao/sql/RODAR_NO_SUPABASE.sql`, bloco 2).
+1. Ligar o botão "apagar a família" (função `apagar_familia`, do pacote `revisao/sql/RODAR_NO_SUPABASE.sql`, bloco 2).
 3. Decidir a regra das parcelas futuras em 2029.
 4. Decidir se apaga `src/propostas/motor/` e `app/mascara.ts`.
 
@@ -59,7 +51,8 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 (Anote aqui o que ficou para ele decidir, com a data. Não pare o trabalho por isso.)
 
-- 22/11/2026: as 4 portas (item 1 de "Agora"), tabelas no lugar do JSON (item 2), notificações (item 3), apagar `src/propostas/`.
+- 22/11/2026: tornar o repositório privado (item 1 de "Agora"): só o dono consegue.
+- 22/11/2026: ligar os avisos no próprio celular (Privacidade → Avisos no celular) para conferir a 1ª entrega às 19h.
 
 - 22/11/2026: aplicar a correção das etiquetas na cópia de segurança (item 1 de "Do dono").
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
@@ -78,3 +71,11 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 - 22/11/2026: análise do time (5 especialistas + Codex) em `docs/ANALISE-DO-TIME.md`. Consertos do Codex no código do dia:
   aluguel contado em dobro, extrato "amount" de conta, data impossível no extrato, toque duplo na despesa, olho fechado
   na ficha do negócio e no aviso do fundo garantidor.
+- 22/11/2026 (com o "pode" do dono): correção das etiquetas na cópia de segurança aplicada; portas fechadas no banco
+  (apagar a família só pela função, com o nome escrito; entrada antiga da equipe desligada); as 3 migrações das
+  etiquetas, que só estavam no banco, gravadas no repositório.
+- 22/11/2026: Dinheiro na rua e caderno do aluguel em tabelas (cada gravação muda só o que mudou; 2 celulares não
+  perdem nada; aluguel 1 por mês; "Guardar em" numa operação só). Autoteste no banco.
+- 22/11/2026: avisos no celular: função do servidor avisos-celular, todo dia às 19h, sem valor e sem nome; cifra
+  conferida com o exemplo oficial da RFC 8291. Atalhos no ícone do app (Anotar, Gastos, Guardado).
+- 22/11/2026: protótipos sem 3D (A a I e K) apagados; J, L, M e o motor 3D ficam (marcação arquivo-propostas-2026-11-22).

@@ -6,6 +6,14 @@ import { diasEntre, mesAnterior } from '../formato'
 import { tempoRecife } from './tempo'
 import { emCentavos, type LeiturasInsights } from './snapshot'
 
+/** O Guardado e o Dinheiro na rua (o banco de exemplo antigo pode não ter os negócios). */
+async function lerGuardado(api: Api, familia: string, ler: <T>(fn: () => Promise<T>) => Promise<T | undefined>) {
+  return {
+    guardado: await ler(() => api.guardadoHoje(familia)),
+    negocios: api.negocios ? await ler(() => api.negocios!(familia)) : undefined,
+  }
+}
+
 /** Mesmos endpoints já usados nas telas. Falha fica ausente, nunca recebe dados fictícios.
  * Leituras são restritas à aba e ao papel antes de qualquer chamada. */
 export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Rota, agora: unknown) {
@@ -22,10 +30,7 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
   if (rota === 'casa' && (familia.papel === 'casal' || familia.papel === 'equipe'))
     dados.feiras = await ler(() => api.feiras(familia.id))
   if (familia.papel !== 'casal') return { dados, erros }
-  if (rota === 'guardado') {
-    dados.guardado = await ler(() => api.guardadoHoje(familia.id))
-    if (api.negocios) dados.negocios = await ler(() => api.negocios!(familia.id))
-  }
+  if (rota === 'guardado') Object.assign(dados, await lerGuardado(api, familia.id, ler))
   if (rota === 'planejamento' || rota === 'guardado') {
     const [rec, f] = await Promise.all([
       rota === 'planejamento' && api.recebimentos ? ler(() => api.recebimentos!(familia.id)) : undefined,

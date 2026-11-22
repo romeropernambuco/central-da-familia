@@ -236,16 +236,15 @@ function NovoMovimento({
   const anotar = () =>
     trava(async () => {
       const v = textoParaValor(valor)
-      if (!valorDigitadoValido(valor) || v <= 0) {
-        setErro('Digite o valor. Ex.: 5000.')
-        return
-      }
-      if (!quando || quando > hoje) {
-        setErro('A data não pode ser depois de hoje.')
-        return
-      }
+      const falta =
+        !valorDigitadoValido(valor) || v <= 0
+          ? 'Digite o valor. Ex.: 5000.'
+          : !quando || quando > hoje
+            ? 'A data não pode ser depois de hoje.'
+            : ''
+      setErro(falta)
+      if (falta) return
       setGravando(true)
-      setErro('')
       const m: MovimentoNegocio = {
         id: novoUuid(),
         data: quando,

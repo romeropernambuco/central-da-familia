@@ -31,6 +31,34 @@ async function guardar(req, resposta) {
   catch { /* quota ou cache indisponível: a resposta da rede continua válida */ }
 }
 
+// Avisos no celular: o servidor manda só o assunto (sem valor e sem nome). Tocar abre a Central.
+self.addEventListener('push', e => {
+  const d = (() => {
+    try { return (e.data && e.data.json()) || {} } catch { return {} }
+  })()
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Central da Família', {
+    body: d.texto || 'A Central tem avisos para você.',
+    icon: PASTA + 'icone-192.png',
+    badge: PASTA + 'icone-192.png',
+    tag: 'central-avisos',
+    data: { abrir: new URL(d.abrir || './', PASTA).href },
+  }))
+})
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const alvo = (e.notification.data && e.notification.data.abrir) || PASTA
+  e.waitUntil((async () => {
+    for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) {
+      if (c.url.startsWith(PASTA) && 'focus' in c) {
+        if ('navigate' in c) await c.navigate(alvo).catch(() => {})
+        return c.focus()
+      }
+    }
+    return self.clients.openWindow(alvo)
+  })())
+})
+
 self.addEventListener('fetch', e => {
   const req = e.request
   if (req.method !== 'GET' || !req.url.startsWith(PASTA)) return

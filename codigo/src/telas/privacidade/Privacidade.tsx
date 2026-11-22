@@ -5,6 +5,7 @@ import { PrivacidadeOlho } from '../../componentes/ilustracoes'
 import { Icone } from '../../componentes/Icone'
 import { resumoPrivacidade, VERSAO_PRIVACIDADE } from './resumos'
 import { Backup } from '../../componentes/Backup'
+import { AvisosNoCelular } from '../../componentes/AvisosNoCelular'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useState } from 'react'
 import { Download, Trash2, ShieldCheck, Copy } from 'lucide-react'
@@ -120,6 +121,7 @@ export function Privacidade() {
             </button>
           </section>
           <Backup />
+          <AvisosNoCelular />
           {!casal && (
             <section className="card">
               <p className="sub">Quem pode apagar tudo é o casal.</p>

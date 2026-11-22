@@ -123,6 +123,10 @@ export const ACOES_QUE_PASSAM_DIRETO = [
   'entrarEquipe',
   'lerCupom',
   'notaSubir',
+  // avisos no celular: só a inscrição deste aparelho, nenhum dado da família muda
+  'celularChavePublica',
+  'celularLigar',
+  'celularDesligar',
 ] as const satisfies readonly Acao[]
 
 const gravam: ReadonlySet<string> = new Set(ACOES_QUE_GRAVAM)

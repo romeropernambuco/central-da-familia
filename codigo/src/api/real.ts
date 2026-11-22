@@ -1076,6 +1076,16 @@ export const apiReal: Api = {
   async negocioVoltaGuardar(familia, negocio, m, aplicacao) {
     await rpc('negocio_volta_guardar', { familia, negocio, movimento: m, aplicacao })
   },
+  // ---------- Avisos no celular: o servidor (função avisos-celular) manda às 19h, sem valor e sem nome ----------
+  async celularChavePublica() {
+    return (await rpc<string | null>('celular_chave_publica', {})) ?? null
+  },
+  async celularLigar(familia, i) {
+    await rpc('celular_ligar', { familia, inscricao: i })
+  },
+  async celularDesligar(endpoint) {
+    await rpc('celular_desligar', { endpoint })
+  },
   async aluguelCaderno(familia) {
     return rpc('aluguel_da_familia', { familia })
   },

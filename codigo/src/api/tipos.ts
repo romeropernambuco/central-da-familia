@@ -834,6 +834,10 @@ export interface Api {
     aplicacao: string,
     nota: string,
   ): Promise<void>
+  /* Avisos no celular (Web Push, produto.celulares). A chave pública do servidor; ligar e desligar este aparelho. */
+  celularChavePublica?(): Promise<string | null>
+  celularLigar?(familia: string, i: { endpoint: string; p256dh: string; auth: string }): Promise<void>
+  celularDesligar?(endpoint: string): Promise<void>
   /* Caderno do aluguel (produto.aluguel_imovel, aluguel_recebimentos, aluguel_despesas). Só o casal. */
   aluguelCaderno?(familia: string): Promise<unknown>
   /** Grava o caderno de 1 imóvel; apaga só os meses e as despesas listados. */
