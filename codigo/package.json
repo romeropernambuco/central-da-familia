@@ -16,7 +16,7 @@
     "teste:final": "vite build --mode exemplo && node testes/varredura3.cjs",
     "zip": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --max-warnings 343",
+    "lint": "eslint src --max-warnings 255",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "verificar": "npm run typecheck && npm run lint && npm run format:check && npm test"

@@ -10,8 +10,8 @@ export interface EscopoLeitura {
 type Registro = {
   recurso: string
   familia: string
-  promessa?: Promise<any>
-  dado?: any
+  promessa?: Promise<unknown>
+  dado?: unknown
   pronto: boolean
   pedido: number
   estado: 'carregando' | 'pronto' | 'erro'
@@ -111,8 +111,8 @@ export function lerCompartilhado<T>(
   const chave = JSON.stringify([api.modo, m.geracao, e, familia, recurso, parametros])
   let r = m.registros.get(chave)
   if (!opcoes?.fresco) {
-    if (r?.promessa) return r.promessa
-    if (r?.pronto) return Promise.resolve(r.dado)
+    if (r?.promessa) return r.promessa as Promise<T>
+    if (r?.pronto) return Promise.resolve(r.dado as T)
   }
   r = { familia, recurso, pronto: false, pedido: 0, estado: 'carregando', consultadoEm: null }
   m.registros.set(chave, r)

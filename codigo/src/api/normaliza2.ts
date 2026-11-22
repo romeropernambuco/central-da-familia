@@ -20,6 +20,7 @@ import type {
   Repetir,
   TipoAplicacao,
 } from './tipos'
+import { cru, lista, type Cru } from './cru'
 import { hojeRecife } from '../lib/formato'
 import { motivoSemRender } from '../lib/guardado'
 import { registrarContrato } from '../lib/resumo/contrato'
@@ -27,6 +28,8 @@ import { APELIDO_BANCO } from '../lib/escritorio/equipe'
 
 const num = (v: unknown) => Number(v) || 0
 const txt = (v: unknown) => (v == null ? '' : String(v))
+/** Texto que passa como veio; vazio ou ausente vira nada. */
+const txtOuNada = (v: unknown) => (v as string) || null
 /** O banco chama os funcionários por nomes compridos; as telas usam os curtos. */
 // C2 (14/11): a lista vem da fonte única da equipe (lib/escritorio/equipe.ts)
 const APELIDO: Record<string, string> = APELIDO_BANCO
@@ -45,18 +48,20 @@ const TIPOS: TipoAplicacao[] = ['caixinha', 'cdb', 'lci_lca', 'poupanca', 'tesou
 const ESTADOS: EstadoFuncionario[] = ['vai_comecar', 'trabalhando', 'entregue', 'precisa_de_voce']
 const REPETIR: Repetir[] = ['nunca', 'dia', 'semana', 'mes', 'ano']
 
-export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
-  const aplicacoes = (Array.isArray(r?.aplicacoes) ? r.aplicacoes : []).map((a: any) => ({
+export function normalizaGuardado(bruto: unknown, hoje = hojeRecife()): GuardadoHoje {
+  const r = cru(bruto),
+    cdi = cru(r.cdi_usado)
+  const aplicacoes = lista(r.aplicacoes).map(a => ({
     id: txt(a.id),
     nome: txt(a.nome),
     banco: txt(a.banco),
-    tipo: (TIPOS.includes(a.tipo) ? a.tipo : 'caixinha') as TipoAplicacao,
+    tipo: (TIPOS.includes(a.tipo as TipoAplicacao) ? a.tipo : 'caixinha') as TipoAplicacao,
     pct_cdi: num(a.pct_cdi),
     saldo: num(a.saldo),
     rendeu_hoje_liquido: num(a.rendeu_hoje_liquido),
     rendeu_mes_liquido: num(a.rendeu_mes_liquido),
     ir_faixa: num(a.ir_faixa),
-    vence_em: a.vence_em || null,
+    vence_em: txtOuNada(a.vence_em),
     liquidez: a.liquidez === 'vencimento' ? ('vencimento' as const) : ('diaria' as const),
     fgc_ok: a.fgc_ok !== false,
     // C2 (revisão E2/E3): o banco manda titular_membro (id) e, quando vier, a lista titulares [{membro_id, nome}]; null = do casal
@@ -74,45 +79,48 @@ export function normalizaGuardado(r: any, hoje = hojeRecife()): GuardadoHoje {
       a.titular_nome != null
         ? txt(a.titular_nome)
         : a.titular_membro != null && Array.isArray(a.titulares)
-          ? (a.titulares.find((t: any) => String(t?.membro_id) === String(a.titular_membro))?.nome ?? null)
+          ? ((lista(a.titulares).find(t => String(t?.membro_id) === String(a.titular_membro))?.nome ?? null) as
+              string | null)
           : null,
   }))
-  const hojeLiq = num(r?.rendeu_hoje_liquido)
+  const hojeLiq = num(r.rendeu_hoje_liquido)
   // o banco diz por que rendeu 0; se o campo não vier, o app deduz pelo calendário (sábado, domingo, feriado)
-  const dito = r?.motivo_zero ?? r?.motivo ?? r?.por_que_zero ?? r?.aviso ?? null
+  const dito = r.motivo_zero ?? r.motivo ?? r.por_que_zero ?? r.aviso ?? null
   const motivo = dito ? txt(dito) : hojeLiq === 0 && aplicacoes.length ? motivoSemRender(hoje) : null
   return registrarContrato(
     {
-      total: num(r?.total),
-      rendeu_hoje_bruto: num(r?.rendeu_hoje_bruto),
+      total: num(r.total),
+      rendeu_hoje_bruto: num(r.rendeu_hoje_bruto),
       rendeu_hoje_liquido: hojeLiq,
-      rendeu_mes_liquido: num(r?.rendeu_mes_liquido),
-      rendeu_desde_inicio_liquido: num(r?.rendeu_desde_inicio_liquido),
+      rendeu_mes_liquido: num(r.rendeu_mes_liquido),
+      rendeu_desde_inicio_liquido: num(r.rendeu_desde_inicio_liquido),
       cdi_usado: {
-        data: txt(r?.cdi_usado?.data),
-        pct_ano: num(r?.cdi_usado?.pct_ano),
-        fonte: txt(r?.cdi_usado?.fonte),
+        data: txt(cdi.data),
+        pct_ano: num(cdi.pct_ano),
+        fonte: txt(cdi.fonte),
       },
-      por_dia_30: (r?.por_dia_30 || []).map((d: any) => ({ data: txt(d.data), liquido: num(d.liquido) })),
+      por_dia_30: lista(r.por_dia_30).map(d => ({ data: txt(d.data), liquido: num(d.liquido) })),
       aplicacoes,
-      explicacao: (r?.explicacao || []).map((x: any) => ({ linha: semSigla(txt(x.linha)), valor: num(x.valor) })),
-      atualizado_em: txt(r?.atualizado_em),
+      explicacao: lista(r.explicacao).map(x => ({ linha: semSigla(txt(x.linha)), valor: num(x.valor) })),
+      atualizado_em: txt(r.atualizado_em),
       motivo_zero: motivo ? motivo.charAt(0).toUpperCase() + motivo.slice(1) : null,
     },
-    Array.isArray(r?.aplicacoes) ? r : { ...r, aplicacoes: undefined },
+    Array.isArray(r.aplicacoes) ? r : { ...r, aplicacoes: undefined },
     ['aplicacoes'],
     ['total', 'rendeu_hoje_liquido', 'rendeu_mes_liquido', 'rendeu_desde_inicio_liquido'],
   )
 }
 
-export function normalizaCusto(r: any): CustoDoGasto {
+export function normalizaCusto(bruto: unknown): CustoDoGasto {
+  const r = cru(bruto)
   // banco: {tem_guardado, ate_fim_do_mes:{liquido}, em_12_meses:{liquido}}; sem Guardado (ou pessoa e equipe) vem só {tem_guardado:false}
-  const v = (x: any) => num(typeof x === 'object' && x ? x.liquido : x)
-  if (r?.tem_guardado === false) return { ate_fim_do_mes: 0, em_12_meses: 0 }
-  return { ate_fim_do_mes: v(r?.ate_fim_do_mes), em_12_meses: v(r?.em_12_meses) }
+  const v = (x: unknown) => num(typeof x === 'object' && x ? cru(x).liquido : x)
+  if (r.tem_guardado === false) return { ate_fim_do_mes: 0, em_12_meses: 0 }
+  return { ate_fim_do_mes: v(r.ate_fim_do_mes), em_12_meses: v(r.em_12_meses) }
 }
 
-function normalizaPergunta(p: any, semDinheiro: boolean): PerguntaEsc {
+function normalizaPergunta(p: Cru, semDinheiro: boolean): PerguntaEsc {
+  const partes = cru(p.partes)
   const pede = (v: unknown) => (['data', 'valor', 'texto'].includes(v as string) ? (v as Pede) : undefined)
   const abre = (v: unknown) =>
     ['lancar', 'guardado', 'cartao', 'nota', 'contagem'].includes(v as string) ? (v as Abre) : undefined
@@ -123,46 +131,45 @@ function normalizaPergunta(p: any, semDinheiro: boolean): PerguntaEsc {
     contexto: txt(p.contexto),
     // equipe da casa: mesmo que o banco mande, o valor em dinheiro não entra na memória do aparelho
     ...(p.valor != null && !semDinheiro ? { valor: num(p.valor) } : {}),
-    opcoes: (p.opcoes || []).map((o: any) => ({
+    opcoes: lista(p.opcoes).map(o => ({
       id: txt(o.id),
       rotulo: txt(o.rotulo),
       ...(pede(o.pede) ? { pede: pede(o.pede) } : {}),
       ...(pede(o.pede2) ? { pede2: pede(o.pede2) } : {}),
       ...(abre(o.abre) ? { abre: abre(o.abre) } : {}),
     })),
-    vence_em: p.vence_em || null,
+    vence_em: txtOuNada(p.vence_em),
     atrasado_dias: num(p.atrasado_dias),
     ...(p.mensagem ? { mensagem: txt(p.mensagem) } : {}),
     ...(p.curta || p.assunto ? { assunto: txt(p.curta || p.assunto) } : {}),
-    ...(p.partes
-      ? { partes: { vi: txt(p.partes.vi), importa: txt(p.partes.importa), sugiro: txt(p.partes.sugiro) } }
-      : {}),
+    ...(p.partes ? { partes: { vi: txt(partes.vi), importa: txt(partes.importa), sugiro: txt(partes.sugiro) } } : {}),
     espera_dias: num(p.espera_dias ?? p.dias_esperando),
   }
 }
 
-export function normalizaEscritorio(r: any, semDinheiro = false): EscritorioHoje {
+export function normalizaEscritorio(bruto: unknown, semDinheiro = false): EscritorioHoje {
+  const r = cru(bruto)
   return registrarContrato(
     {
-      precisa_de_voce: (r?.precisa_de_voce || []).map((p: any) => normalizaPergunta(p, semDinheiro)),
+      precisa_de_voce: lista(r.precisa_de_voce).map(p => normalizaPergunta(p, semDinheiro)),
       trabalhando: semDinheiro
         ? []
-        : (r?.trabalhando || []).map((t: any) => ({
+        : lista(r.trabalhando).map(t => ({
             funcionario: idFunc(t.funcionario ?? t.id),
             resumo: txt(t.resumo || t.frase) || undefined,
           })),
       entregue: semDinheiro
         ? []
-        : (r?.entregue || []).map((e: any) => ({
+        : lista(r.entregue).map(e => ({
             funcionario: idFunc(e.funcionario),
             resumo: txt(e.resumo),
             numero: e.numero == null ? null : num(e.numero),
           })),
-      funcionarios: (r?.funcionarios || []).map((f: any) => ({
+      funcionarios: lista(r.funcionarios).map(f => ({
         id: idFunc(f.id),
         nome: txt(f.nome),
         sala: txt(f.sala),
-        estado: (ESTADOS.includes(f.estado) ? f.estado : 'vai_comecar') as EstadoFuncionario,
+        estado: (ESTADOS.includes(f.estado as EstadoFuncionario) ? f.estado : 'vai_comecar') as EstadoFuncionario,
         frase: txt(f.frase || f.fez_hoje || f.sem_pergunta),
         ...(Array.isArray(f.faz) && f.faz.length ? { faz: f.faz.map(txt) } : {}),
         ...(f.cadastro_resumo && !semDinheiro
@@ -170,7 +177,7 @@ export function normalizaEscritorio(r: any, semDinheiro = false): EscritorioHoje
               cadastro_resumo:
                 typeof f.cadastro_resumo === 'string'
                   ? f.cadastro_resumo
-                  : txt(f.cadastro_resumo?.titulo ?? f.cadastro_resumo?.texto),
+                  : txt(cru(f.cadastro_resumo).titulo ?? cru(f.cadastro_resumo).texto),
             }
           : {}),
         ...(Array.isArray(f.ultimas_respostas)
@@ -178,12 +185,13 @@ export function normalizaEscritorio(r: any, semDinheiro = false): EscritorioHoje
           : {}),
       })),
     },
-    r,
+    bruto,
     ['precisa_de_voce'],
   )
 }
 
-export function normalizaLinha(d: any): LinhaDiario {
+export function normalizaLinha(bruto: unknown): LinhaDiario {
+  const d = bruto as Cru
   // banco: {id, quando, data:"12/11", hora:"10:05", pergunta_curta, pergunta, resposta, por, anotado:"anotado às 10:05"}
   const hoje = hojeRecife(),
     ddmm = `${hoje.slice(8)}/${hoje.slice(5, 7)}`
@@ -198,90 +206,96 @@ export function normalizaLinha(d: any): LinhaDiario {
     pergunta: txt(d.pergunta),
     resposta: txt(d.resposta),
     quando: txt(d.quando),
-    adiado_ate: d.adiado_ate || null,
-    respondido_por: d.por || d.respondido_por_nome || d.respondido_por || null,
+    adiado_ate: txtOuNada(d.adiado_ate),
+    respondido_por: txtOuNada(d.por || d.respondido_por_nome || d.respondido_por),
   }
 }
 const numOuNada = (v: unknown) => (v == null || v === '' ? null : num(v))
 /** Cartão: aceita os nomes antigos (dia_fechamento, dia_vencimento) e os do CONTRATO3 (dia_fecha, dia_vence). */
-export function normalizaCartao(c: any): Cartao {
+export function normalizaCartao(bruto: unknown): Cartao {
+  const c = bruto as Cru
   return {
     id: txt(c.id),
     nome: txt(c.apelido ?? c.nome),
     dia_fechamento: numOuNada(c.dia_fecha ?? c.dia_fechamento),
     dia_vencimento: numOuNada(c.dia_vence ?? c.dia_vencimento),
-    banco: c.banco || null,
-    titular: c.titular_nome || null,
-    titular_id: c.titular_membro || null,
+    banco: txtOuNada(c.banco),
+    titular: txtOuNada(c.titular_nome),
+    titular_id: txtOuNada(c.titular_membro),
     limite: numOuNada(c.limite),
     taxa_valor: numOuNada(c.taxa_valor),
     taxa_periodo: c.taxa_periodo === 'ano' ? 'ano' : c.taxa_periodo === 'mes' ? 'mes' : null,
     taxa_mes: numOuNada(c.taxa_mes),
     taxa_isenta_acima: numOuNada(c.taxa_isenta_acima),
-    final4: c.final4 || null,
+    final4: txtOuNada(c.final4),
     ativo: c.ativo !== false,
   }
 }
-export const normalizaFaturaBanco = (f: any): FaturaBanco =>
-  registrarContrato(
+export const normalizaFaturaBanco = (bruto: unknown): FaturaBanco => {
+  const f = bruto as Cru
+  return registrarContrato(
     {
       cartao_id: txt(f.cartao_id),
       mes: txt(f.mes).slice(0, 7),
       valor_banco: numOuNada(f.valor_banco),
-      paga_em: f.paga_em || null,
-      paga_por: f.paga_por_nome || f.paga_por || null,
+      paga_em: txtOuNada(f.paga_em),
+      paga_por: txtOuNada(f.paga_por_nome || f.paga_por),
     },
     { ...f, valor_banco: 'valor_banco' in f ? true : undefined, paga_em: 'paga_em' in f ? true : undefined },
     ['cartao_id', 'mes', 'valor_banco', 'paga_em'],
   )
+}
 /** Feira: o valor vem do lançamento ligado e só chega pro casal. */
-export function normalizaFeira(f: any, semDinheiro = false): Feira {
-  const v = f.valor ?? f.lancamentos?.valor ?? f.lancamento?.valor
+export function normalizaFeira(bruto: unknown, semDinheiro = false): Feira {
+  const f = bruto as Cru
+  const v = f.valor ?? cru(f.lancamentos).valor ?? cru(f.lancamento).valor
   return {
     id: txt(f.id),
     semana: txt(f.semana),
     data: txt(f.data),
     ...(v != null && !semDinheiro ? { valor: num(v) } : {}),
-    loja: f.loja || null,
+    loja: txtOuNada(f.loja),
     tem_nota: !!(f.tem_nota ?? f.nota_caminho),
-    sem_nota_motivo: f.sem_nota_motivo || null,
-    feita_por: f.feita_por_nome || f.feita_por || null,
+    sem_nota_motivo: txtOuNada(f.sem_nota_motivo),
+    feita_por: txtOuNada(f.feita_por_nome || f.feita_por),
   }
 }
-export const normalizaItem = (i: any): ItemEstoque => ({
+export const normalizaItem = (i: Cru): ItemEstoque => ({
   id: txt(i.id),
   nome: txt(i.nome),
   categoria: txt(i.categoria || 'Despensa'),
   ativo: i.ativo !== false,
 })
-export const normalizaContagem = (c: any): Contagem => ({
+export const normalizaContagem = (c: Cru): Contagem => ({
   id: txt(c.id),
   semana: txt(c.semana),
   data: txt(c.data),
-  contado_por: c.contado_por_nome || c.contado_por || null,
-  itens: (c.itens || []).map((i: any) => ({
+  contado_por: txtOuNada(c.contado_por_nome || c.contado_por),
+  itens: lista(c.itens).map(i => ({
     item_id: txt(i.item_id),
-    estado: (['tem', 'pouco', 'acabou'].includes(i.estado) ? i.estado : 'tem') as EstadoItem,
+    estado: (['tem', 'pouco', 'acabou'].includes(i.estado as string) ? i.estado : 'tem') as EstadoItem,
   })),
 })
 
-export function normalizaLembrete(l: any): Lembrete {
+export function normalizaLembrete(bruto: unknown): Lembrete {
+  const l = bruto as Cru
   return {
     id: txt(l.id),
     titulo: txt(l.titulo),
-    detalhe: l.detalhe || null,
+    detalhe: txtOuNada(l.detalhe),
     quando: txt(l.quando),
-    repetir: (REPETIR.includes(l.repetir) ? l.repetir : 'nunca') as Repetir,
+    repetir: (REPETIR.includes(l.repetir as Repetir) ? l.repetir : 'nunca') as Repetir,
     para: txt(l.para || 'eu'),
-    funcionario: l.funcionario || null,
-    feito_em: l.feito_em || null,
+    funcionario: txtOuNada(l.funcionario),
+    feito_em: txtOuNada(l.feito_em),
   }
 }
 
-export function normalizaRelatorio(r: any): RelatorioEsc {
-  const fs: any[] = r?.funcionarios || r?.por_funcionario || []
-  const diario: any[] = r?.diario || r?.linha_do_tempo || []
-  const minutos = (f: any): number | null => {
+export function normalizaRelatorio(bruto: unknown): RelatorioEsc {
+  const r = cru(bruto)
+  const fs = lista(r.funcionarios || r.por_funcionario)
+  const diario = lista(r.diario || r.linha_do_tempo)
+  const minutos = (f: Cru): number | null => {
     if (f.tempo_medio_min != null) return num(f.tempo_medio_min)
     if (f.tempo_medio_horas != null) return num(f.tempo_medio_horas) * 60
     if (f.tempo_medio_segundos != null) return num(f.tempo_medio_segundos) / 60

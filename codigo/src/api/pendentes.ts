@@ -23,9 +23,9 @@ interface Pendente {
   executar: () => Promise<unknown>
   /** Uma tentativa deste envio está no ar agora: a repetição automática não dispara outra por cima. */
   emVoo: boolean
-  resolver: (r: any) => void
+  resolver: (r: unknown) => void
   rejeitar: (e: unknown) => void
-  promessa: Promise<any>
+  promessa: Promise<unknown>
 }
 export class FilaPendentes {
   itens = new Map<string, Pendente>()
@@ -44,13 +44,13 @@ export class FilaPendentes {
   async enviar<T>(chave: string, executar: () => Promise<T>): Promise<T> {
     const geracao = this.geracao
     const antigo = this.itens.get(chave)
-    if (antigo) return antigo.promessa
+    if (antigo) return antigo.promessa as Promise<T>
     let resolver!: (r: T) => void, rejeitar!: (e: unknown) => void
     const promessa = new Promise<T>((sim, nao) => {
       resolver = sim
       rejeitar = nao
     })
-    const item: Pendente = { executar, resolver, rejeitar, promessa, emVoo: true }
+    const item: Pendente = { executar, resolver: resolver as (r: unknown) => void, rejeitar, promessa, emVoo: true }
     this.itens.set(chave, item)
     void (async () => {
       try {

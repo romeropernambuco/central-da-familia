@@ -21,7 +21,7 @@ export function recursoDaLeitura(nome: string): string | undefined {
     } as Record<string, string>
   )[nome]
 }
-export function recursosDaMutacao(nome: string, args: any[]): string[] | undefined {
+export function recursosDaMutacao(nome: string, args: unknown[]): string[] | undefined {
   if (nome === 'salvarSaldoConta') return ['saldos', 'projecao', 'plano2029']
   if (/Lancamento|^lancar$|definirLimite|salvarEnvelope/.test(nome))
     return ['lancamentos', 'resumo', 'faturas', 'pendencias', 'escritorio', 'projecao']

@@ -1,5 +1,15 @@
 // Arruma as respostas do banco no formato que as telas usam. Sem Supabase aqui: dá pra testar sozinho.
-import type { CasaDaEquipe, CupomLido, Lancamento, NovoLancamento, RecebimentoTela, ResumoHoje } from './tipos'
+import type {
+  CasaDaEquipe,
+  CupomLido,
+  Envelope,
+  Lancamento,
+  NovoLancamento,
+  RecebimentoTela,
+  ResumoHoje,
+  TipoRecebimento,
+} from './tipos'
+import { cru, lista } from './cru'
 import { hojeRecife } from '../lib/formato'
 import { funcaoNaoExiste } from './erros'
 
@@ -7,19 +17,21 @@ import { registrarContrato } from '../lib/resumo/contrato'
 
 const num = (v: unknown) => Number(v) || 0
 
-export function normalizaResumo(r: any): ResumoHoje {
+export function normalizaResumo(bruto: unknown): ResumoHoje {
+  const r = cru(bruto)
   return registrarContrato(
     {
-      pode_gastar_hoje: num(r?.pode_gastar_hoje),
-      livre_mes: num(r?.livre_mes),
-      colchao: num(r?.colchao),
-      dias_restantes: num(r?.dias_restantes),
+      pode_gastar_hoje: num(r.pode_gastar_hoje),
+      livre_mes: num(r.livre_mes),
+      colchao: num(r.colchao),
+      dias_restantes: num(r.dias_restantes),
       // equipe da casa: o banco manda {so_nomes: true} e só id, nome, regra e casa de cada envelope (nenhum número)
-      ...(r?.so_nomes ? { so_nomes: true } : {}),
-      envelopes: (Array.isArray(r?.envelopes) ? r.envelopes : []).map((e: any) =>
+      ...(r.so_nomes ? { so_nomes: true } : {}),
+      envelopes: lista(r.envelopes).map(e =>
         registrarContrato(
           {
-            ...e,
+            // os campos que a tela só repassa (id, nome, regra, casa) seguem como vieram
+            ...(e as unknown as Envelope),
             limite_mes: num(e.limite_mes),
             gasto_mes: num(e.gasto_mes),
             livre: num(e.livre),
@@ -31,16 +43,16 @@ export function normalizaResumo(r: any): ResumoHoje {
                       ? null
                       : typeof e.dono === 'string'
                         ? e.dono
-                        : e.dono.nome == null
+                        : cru(e.dono).nome == null
                           ? null
-                          : String(e.dono.nome),
+                          : String(cru(e.dono).nome),
                   dono_id:
-                    e.dono && typeof e.dono === 'object' && e.dono.membro_id != null
-                      ? String(e.dono.membro_id)
-                      : (e.dono_id ?? null),
+                    e.dono && typeof e.dono === 'object' && cru(e.dono).membro_id != null
+                      ? String(cru(e.dono).membro_id)
+                      : ((e.dono_id ?? null) as string | null),
                 }
               : {}),
-            ...(typeof e?.escreve === 'boolean' ? { escreve: e.escreve } : {}),
+            ...(typeof e.escreve === 'boolean' ? { escreve: e.escreve } : {}),
             limite_base: e.limite_base == null ? undefined : num(e.limite_base),
             colchao_meta: e.colchao_meta == null ? undefined : num(e.colchao_meta),
             // por dia: o banco manda valor_dia (o dia inteiro) e hoje (o dia menos o que já saiu hoje). O app mostra o que ainda pode.
@@ -77,73 +89,81 @@ export function normalizaResumo(r: any): ResumoHoje {
               ],
         ),
       ),
-      explicacao: (r?.explicacao || []).map((x: any) => ({ linha: String(x.linha), valor: num(x.valor) })),
+      explicacao: lista(r.explicacao).map(x => ({ linha: String(x.linha), valor: num(x.valor) })),
     },
-    Array.isArray(r?.envelopes) ? r : { ...r, envelopes: undefined },
+    Array.isArray(r.envelopes) ? r : { ...r, envelopes: undefined },
     ['envelopes'],
-    r?.so_nomes ? [] : ['pode_gastar_hoje', 'livre_mes', 'colchao', 'dias_restantes'],
+    r.so_nomes ? [] : ['pode_gastar_hoje', 'livre_mes', 'colchao', 'dias_restantes'],
   )
 }
 
-export function normalizaCasa(r: any): CasaDaEquipe {
+export function normalizaCasa(bruto: unknown): CasaDaEquipe {
+  const r = cru(bruto),
+    gas = cru(r.gas),
+    presenca = cru(r.presenca)
   return {
-    hoje: r?.hoje || hojeRecife(),
-    eu: r?.eu ?? null,
-    lista: (r?.lista || []).map((i: any) => ({ id: String(i.id), nome: String(i.nome || ''), ok: !!i.ok })),
-    comprado: (r?.comprado || []).map((c: any) => ({ data: String(c.data), nome: String(c.nome) })),
-    prestadores: (r?.prestadores || []).map((p: any) => ({
+    hoje: (r.hoje as string) || hojeRecife(),
+    eu: (r.eu ?? null) as string | null,
+    lista: lista(r.lista).map(i => ({ id: String(i.id), nome: String(i.nome || ''), ok: !!i.ok })),
+    comprado: lista(r.comprado).map(c => ({ data: String(c.data), nome: String(c.nome) })),
+    prestadores: lista(r.prestadores).map(p => ({
       id: String(p.id),
       nome: String(p.nome || ''),
       servico: String(p.servico || ''),
       dia: Number(p.dia) || 0,
       proxima_visita: String(p.proxima_visita),
-      ultima_vez: p.ultima_vez || null,
+      ultima_vez: (p.ultima_vez as string) || null,
     })),
     gas: {
-      trocas: r?.gas?.trocas || [],
-      media_dias: r?.gas?.media_dias ?? null,
-      proxima_troca: r?.gas?.proxima_troca ?? null,
-      avisar_em: r?.gas?.avisar_em ?? null,
+      trocas: (gas.trocas as string[]) || [],
+      media_dias: (gas.media_dias ?? null) as number | null,
+      proxima_troca: (gas.proxima_troca ?? null) as string | null,
+      avisar_em: (gas.avisar_em ?? null) as string | null,
     },
-    presenca: { hoje: r?.presenca?.hoje || [], meu_ponto: r?.presenca?.meu_ponto || {} },
+    presenca: {
+      hoje: (presenca.hoje as string[]) || [],
+      meu_ponto: (presenca.meu_ponto as CasaDaEquipe['presenca']['meu_ponto']) || {},
+    },
   }
 }
 
 /** Lançamento que volta do banco. Pra equipe ele vem sem `valor` (e sem cartão): fica 0 e a tela da equipe nunca mostra. */
-export function normalizaLancamento(l: any): Lancamento {
+export function normalizaLancamento(bruto: unknown): Lancamento {
+  const l = cru(bruto)
   return registrarContrato(
     {
-      id: String(l?.id),
-      ...(l?.autor != null ? { autor: String(l.autor) } : {}),
-      pago_por: l?.pago_por == null ? null : String(l.pago_por),
-      envelope_id: l?.envelope_id,
-      cartao_id: l?.cartao_id ?? null,
-      valor: num(l?.valor),
-      data: String(l?.data || ''),
-      descricao: l?.descricao ?? null,
-      apagado_em: l?.apagado_em ?? null,
-      criado_em: String(l?.criado_em || ''),
-      ...(Number(l?.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}),
+      id: String(l.id),
+      ...(l.autor != null ? { autor: String(l.autor) } : {}),
+      pago_por: l.pago_por == null ? null : String(l.pago_por),
+      envelope_id: l.envelope_id as string,
+      cartao_id: (l.cartao_id ?? null) as string | null,
+      valor: num(l.valor),
+      data: String(l.data || ''),
+      descricao: (l.descricao ?? null) as string | null,
+      apagado_em: (l.apagado_em ?? null) as string | null,
+      criado_em: String(l.criado_em || ''),
+      ...(Number(l.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}),
     },
-    l,
+    bruto,
     ['data'],
     ['valor'],
   )
 }
 
-export function normalizaCupom(j: any): CupomLido {
+export function normalizaCupom(bruto: unknown): CupomLido {
+  const j = cru(bruto)
   return {
-    itens: (j?.itens || []).map((i: any) => ({
+    itens: lista(j.itens).map(i => ({
       nome: String(i.nome || 'Item'),
       valor: num(i.valor),
-      qtd: i.qtd ?? null,
+      qtd: (i.qtd ?? null) as number | null,
     })),
-    total: num(j?.total),
-    data: j?.data || null,
-    loja: j?.loja || null,
-    aviso: j?.aviso,
-    soma_dos_itens: j?.soma_dos_itens == null ? undefined : num(j.soma_dos_itens),
-    total_confere: typeof j?.total_confere === 'boolean' ? j.total_confere : undefined,
+    total: num(j.total),
+    data: (j.data as string) || null,
+    loja: (j.loja as string) || null,
+    aviso: j.aviso as string | undefined,
+    soma_dos_itens: j.soma_dos_itens == null ? undefined : num(j.soma_dos_itens),
+    total_confere: typeof j.total_confere === 'boolean' ? j.total_confere : undefined,
   }
 }
 
@@ -180,58 +200,63 @@ export async function lancarComChave(
 
 /** E5: linha de produto.recebimentos (centavos inteiros, mês como data do dia 1) no formato da tela (reais, 'AAAA-MM'). */
 export function normalizaRecebimento(
-  r: any,
+  bruto: unknown,
   membros: { id: string; nome: string }[],
   eu: string | null,
 ): RecebimentoTela {
+  const r = cru(bruto)
   const mes = (d: unknown) => (d ? String(d).slice(0, 7) : null)
   return registrarContrato(
     {
-      id: String(r?.id),
-      dono_membro: String(r?.dono_membro),
-      dono_nome: membros.find(m => m.id === String(r?.dono_membro))?.nome ?? null,
-      descricao: String(r?.descricao || ''),
-      valor: num(r?.valor_centavos) / 100,
-      mes_previsto: mes(r?.mes_previsto) || '',
-      mes_novo: mes(r?.mes_novo),
-      tipo: ['salario', 'contrato', 'retorno', 'outro'].includes(r?.tipo) ? r.tipo : 'outro',
-      certo: !!r?.certo,
-      recebido_em: r?.recebido_em ?? null,
-      valor_recebido: r?.valor_recebido_centavos == null ? null : num(r.valor_recebido_centavos) / 100,
-      meu: !!eu && String(r?.dono_membro) === eu,
+      id: String(r.id),
+      dono_membro: String(r.dono_membro),
+      dono_nome: membros.find(m => m.id === String(r.dono_membro))?.nome ?? null,
+      descricao: String(r.descricao || ''),
+      valor: num(r.valor_centavos) / 100,
+      mes_previsto: mes(r.mes_previsto) || '',
+      mes_novo: mes(r.mes_novo),
+      tipo: ['salario', 'contrato', 'retorno', 'outro'].includes(r.tipo as string)
+        ? (r.tipo as TipoRecebimento)
+        : 'outro',
+      certo: !!r.certo,
+      recebido_em: (r.recebido_em ?? null) as string | null,
+      valor_recebido: r.valor_recebido_centavos == null ? null : num(r.valor_recebido_centavos) / 100,
+      meu: !!eu && String(r.dono_membro) === eu,
     },
-    r,
+    bruto,
     ['id', 'mes_previsto'],
-    ['valor_centavos', ...(r?.valor_recebido_centavos == null ? [] : ['valor_recebido_centavos'])],
+    ['valor_centavos', ...(r.valor_recebido_centavos == null ? [] : ['valor_recebido_centavos'])],
   )
 }
 
 /** f_12: o que reajuste_situacao (e reajuste_votar) devolve, no formato da tela. Centavos continuam centavos. */
-export function normalizaReajuste(r: any): import('./tipos').ReajusteSituacao {
+export function normalizaReajuste(bruto: unknown): import('./tipos').ReajusteSituacao {
+  const r = cru(bruto),
+    aberto = cru(r.voto_aberto)
   const n = (v: unknown) => (v == null ? null : Number(v))
   return {
-    mes_vigencia: String(r?.mes_vigencia || '').slice(0, 7),
-    aprovado: !!r?.aprovado,
-    teto_aprovado: n(r?.teto_aprovado_centavos),
-    ipca_aprovado: r?.ipca_aprovado == null ? null : String(r.ipca_aprovado),
-    vale_a_partir: r?.vale_a_partir ? String(r.vale_a_partir).slice(0, 7) : null,
-    ja_vale: !!r?.ja_vale,
-    aplicar_ate: r?.aplicar_ate ? String(r.aplicar_ate).slice(0, 10) : null,
-    vencido: !!r?.vencido,
-    votos: (r?.votos || []).map((v: any) => ({
+    mes_vigencia: String(r.mes_vigencia || '').slice(0, 7),
+    aprovado: !!r.aprovado,
+    teto_aprovado: n(r.teto_aprovado_centavos),
+    ipca_aprovado: r.ipca_aprovado == null ? null : String(r.ipca_aprovado),
+    vale_a_partir: r.vale_a_partir ? String(r.vale_a_partir).slice(0, 7) : null,
+    ja_vale: !!r.ja_vale,
+    aplicar_ate: r.aplicar_ate ? String(r.aplicar_ate).slice(0, 10) : null,
+    vencido: !!r.vencido,
+    votos: lista(r.votos).map(v => ({
       membro_id: String(v.membro_id),
       nome: String(v.nome ?? ''),
       teto: Number(v.teto_centavos) || 0,
       ipca: v.ipca == null ? null : String(v.ipca),
       votou_em: String(v.votou_em ?? ''),
     })),
-    faltam: (r?.faltam || []).map((v: any) => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
-    voto_aberto: r?.voto_aberto?.mes_vigencia
+    faltam: lista(r.faltam).map(v => ({ membro_id: String(v.membro_id), nome: String(v.nome ?? '') })),
+    voto_aberto: aberto.mes_vigencia
       ? {
-          mes_vigencia: String(r.voto_aberto.mes_vigencia).slice(0, 7),
-          teto: Number(r.voto_aberto.teto_centavos) || 0,
-          ipca: r.voto_aberto.ipca == null ? null : String(r.voto_aberto.ipca),
-          votou: (r.voto_aberto.votou || []).map((v: any) => ({
+          mes_vigencia: String(aberto.mes_vigencia).slice(0, 7),
+          teto: Number(aberto.teto_centavos) || 0,
+          ipca: aberto.ipca == null ? null : String(aberto.ipca),
+          votou: lista(aberto.votou).map(v => ({
             membro_id: String(v.membro_id),
             nome: String(v.nome ?? ''),
           })),

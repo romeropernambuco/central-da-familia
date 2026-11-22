@@ -1,19 +1,23 @@
 import { prepararAcolhimento } from '../lib/acolhimento'
 // Banco de verdade: Supabase, schema `produto`. As contas vêm das funções (RPC) do CONTRATO.md;
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 import { buscarComPrazo } from './prazo'
 import type {
   Api,
   AvisoCasa,
   ChaveConfig,
   Fatura,
+  DesejoTela,
   FamiliaMinha,
+  HistoricoObjetivo,
   Lancamento,
   Numero,
   Papel,
   ParametrosObjetivo,
   Sessao,
+  SituacaoDesejo,
+  UsoImovel,
 } from './tipos'
 import {
   BANCO_GUARDA_ALIQ_ALUGUEL,
@@ -47,20 +51,26 @@ import {
   normalizaLancamento,
   normalizaRecebimento,
   normalizaResumo,
+  type RpcCru,
 } from './normaliza'
+type RespostaCrua = Awaited<ReturnType<RpcCru>>
+import { cru, lista, type Cru } from './cru'
 import { registrarContrato } from '../lib/resumo/contrato'
 
-let cli: SupabaseClient<any, any, any> | null = null
-function sb(): SupabaseClient<any, any, any> {
+const criarCliente = (url: string, chave: string) =>
+  createClient(url, chave, {
+    db: { schema: 'produto' },
+    auth: { persistSession: true, autoRefreshToken: true },
+    global: { fetch: buscarComPrazo() },
+  })
+type Cliente = ReturnType<typeof criarCliente>
+let cli: Cliente | null = null
+function sb(): Cliente {
   if (!cli) {
     const url = import.meta.env.VITE_SUPABASE_URL as string
     const chave = import.meta.env.VITE_SUPABASE_ANON_KEY as string
     if (!url || !chave) throw new Error('Falta VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY no arquivo .env')
-    cli = createClient<any, any, any>(url, chave, {
-      db: { schema: 'produto' },
-      auth: { persistSession: true, autoRefreshToken: true },
-      global: { fetch: buscarComPrazo() },
-    })
+    cli = criarCliente(url, chave)
   }
   return cli!
 }
@@ -123,12 +133,12 @@ export const apiReal: Api = {
         .eq('ativo', true)
         .order('criado_em')
       if (error) erro(error)
-      return (membros || []).map((m: any) => ({
-        id: m.familia_id,
-        nome: m.familias?.nome || 'Família',
-        papel: m.papel,
-        membroNome: m.nome,
-        envelopeId: m.envelope_id,
+      return lista(membros).map(m => ({
+        id: m.familia_id as string,
+        nome: (cru(m.familias).nome as string) || 'Família',
+        papel: m.papel as Papel,
+        membroNome: m.nome as string,
+        envelopeId: m.envelope_id as string | null,
         membroId: m.id ? String(m.id) : null,
       }))
     }
@@ -140,7 +150,7 @@ export const apiReal: Api = {
       }
     }
     // convidado por e-mail que entrou mas o convite não ligou na hora (internet caiu): tenta de novo antes de mostrar "criar família"
-    if (pedido === consultaSessao && !familias.length && !(u as any).is_anonymous && u.email) {
+    if (pedido === consultaSessao && !familias.length && !u.is_anonymous && u.email) {
       try {
         const r = await rpc<{ familias?: unknown[] }>('entrar_por_convite')
         if (pedido === consultaSessao && r?.familias?.length) {
@@ -152,7 +162,7 @@ export const apiReal: Api = {
       }
     }
     // equipe que errou o código fica com login anônimo sem família: não é sessão (senão caía no "criar família")
-    if (!sessaoVale(!!(u as any).is_anonymous, familias.length)) {
+    if (!sessaoVale(!!u.is_anonymous, familias.length)) {
       lembra([])
       return null
     }
@@ -265,9 +275,9 @@ export const apiReal: Api = {
   },
   async lancar(n) {
     // 1 gravação só, com a chave do toque: repetir a mesma chave (internet caiu no meio) devolve o mesmo lançamento
-    let r: { data: any; error: { message?: string; code?: string } | null }
+    let r: RespostaCrua
     try {
-      r = (await lancarComChave((nome, args) => sb().rpc(nome, args) as any, n)) as any
+      r = await lancarComChave((nome, args) => sb().rpc(nome, args) as unknown as Promise<RespostaCrua>, n)
     } catch (x) {
       throw traduzErro(x as Error)
     }
@@ -279,12 +289,12 @@ export const apiReal: Api = {
         const { error } = await sb()
           .from('lancamentos')
           .update({ pago_por: n.pago_por })
-          .eq('id', r.data?.lancamento?.id)
+          .eq('id', cru(cru(r.data).lancamento).id)
           .eq('familia_id', n.familia)
           .select('id')
           .single()
         if (error) throw new Error('Gasto salvo, mas o pagador não foi gravado. Informar de novo')
-        r.data.lancamento.pago_por = n.pago_por
+        cru(cru(r.data).lancamento).pago_por = n.pago_por
       }
       try {
         await informar()
@@ -295,9 +305,9 @@ export const apiReal: Api = {
     }
     // equipe: o banco devolve o lançamento sem `valor` e o resumo com so_nomes
     return {
-      lancamento: normalizaLancamento(r.data?.lancamento),
-      resumo: normalizaResumo(r.data?.resumo),
-      repetido: !!r.data?.repetido,
+      lancamento: normalizaLancamento(cru(r.data).lancamento),
+      resumo: normalizaResumo(cru(r.data).resumo),
+      repetido: !!cru(r.data).repetido,
       avisoPagador,
       repetirPagador,
     }
@@ -325,7 +335,7 @@ export const apiReal: Api = {
         .range(p * 1000, p * 1000 + 999)
       if (error) erro(error)
       out.push(
-        ...(data || []).map((l: any) => {
+        ...lista(data).map(l => {
           const normalizado = normalizaLancamento(l)
           if (eu && l.autor) normalizado.meu = l.autor === eu
           return normalizado
@@ -347,7 +357,7 @@ export const apiReal: Api = {
     // que só o casal lê: se a leitura for recusada (pessoa da família), o cartão aparece sem os valores.
     const { data, error } = await sb().from('cartoes').select('*').eq('familia_id', familia).order('nome')
     if (error) erro(error)
-    let custos: any[] = []
+    let custos: Cru[] = []
     try {
       const c = await sb().from('cartao_custos').select('*').eq('familia_id', familia)
       custos = c.data || []
@@ -360,13 +370,13 @@ export const apiReal: Api = {
     } catch {
       /* sem a lista: o cartão aparece sem o nome do titular */
     }
-    return (data || [])
-      .map((c: any) =>
+    return lista(data)
+      .map(c =>
         normalizaCartao({
           ...c,
           ...(custos.find(x => x.cartao_id === c.id) || {}),
           id: c.id,
-          titular_nome: nomes.get(c.titular_membro),
+          titular_nome: nomes.get(c.titular_membro as string),
         }),
       )
       .filter(c => c.ativo !== false)
@@ -379,11 +389,11 @@ export const apiReal: Api = {
   },
   async faturas(familia, meses) {
     // banco: {regra, faturas:[{cartao_id, cartao, ativo, mes 'AAAA-MM', fecha_em, vence_em, total, compras}]}
-    const r = await rpc<any>('faturas', { familia, meses })
-    const lista: any[] = r?.faturas || []
+    const r = cru(await rpc('faturas', { familia, meses }))
+    const linhas = lista(r.faturas)
     const hoje = hojeRecife()
     return registrarContrato(
-      lista.map(f =>
+      linhas.map(f =>
         registrarContrato(
           {
             cartao_id: f.cartao_id,
@@ -438,10 +448,10 @@ export const apiReal: Api = {
       sb().from('membros').select('user_id, nome').eq('familia_id', familia),
     ])
     if (ev.error) erro(ev.error)
-    const nomes = new Map((mb.data || []).map((m: any) => [m.user_id, m.nome]))
-    return (ev.data || []).map((e: any) => ({
+    const nomes = new Map(lista(mb.data).map(m => [m.user_id, m.nome as string]))
+    return lista(ev.data).map(e => ({
       tipo: e.tipo as AvisoCasa,
-      data: hojeRecife(new Date(e.criado_em)),
+      data: hojeRecife(new Date(e.criado_em as string)),
       nome: nomes.get(e.user_id) || '',
     }))
   },
@@ -465,14 +475,14 @@ export const apiReal: Api = {
     } catch {
       throw new ErroRede(MSG_CUPOM.rede)
     }
-    let j: any = null
+    let j: unknown = null
     try {
       j = await r.json()
     } catch {
       /* sem corpo */
     }
     if (r.status === 401) throw new ErroSessao(mensagemCupom(401))
-    if (!r.ok) throw new Error(mensagemCupom(r.status, j?.erro))
+    if (!r.ok) throw new Error(mensagemCupom(r.status, cru(j).erro as string | undefined))
     return normalizaCupom(j)
   },
 
@@ -527,23 +537,25 @@ export const apiReal: Api = {
   },
   async escritorioResponder(familia, pergunta_id, opcao, dados) {
     // banco: {ok, corrigiu, efeito:{mensagem?...}, anotado, escritorio}. Responder de novo a mesma pergunta corrige.
-    const r = await rpc<any>('escritorio_responder', { familia, pergunta_id, opcao, dados: dados || {} })
+    const r = cru(await rpc('escritorio_responder', { familia, pergunta_id, opcao, dados: dados || {} }))
+    const efeito = cru(r.efeito),
+      anotado = cru(r.anotado)
     return {
-      ...(r?.efeito?.mensagem ? { mensagem: String(r.efeito.mensagem) } : {}),
-      ...(r?.anotado?.id ? { diario_id: String(r.anotado.id) } : {}),
+      ...(efeito.mensagem ? { mensagem: String(efeito.mensagem) } : {}),
+      ...(anotado.id ? { diario_id: String(anotado.id) } : {}),
     }
   },
   async escritorioRelatorio(familia, de, ate) {
     return normalizaRelatorio(await rpc('escritorio_relatorio', { familia, de, ate }))
   },
   async escritorioDiario(familia, funcionario, limite, antes) {
-    const r = await rpc<any>('escritorio_diario', {
+    const r = await rpc<unknown>('escritorio_diario', {
       familia,
       funcionario: idFuncNoBanco(funcionario),
       limite,
       antes: antes || null,
     })
-    return ((Array.isArray(r) ? r : r?.itens || r?.diario) || []).map(normalizaLinha)
+    return lista(Array.isArray(r) ? r : cru(r).itens || cru(r).diario).map(normalizaLinha)
   },
 
   // ---------- CONTRATO3: cadastro do Analista de Cartão e do Fiscal da Feira ----------
@@ -556,7 +568,7 @@ export const apiReal: Api = {
       .in('papel', ['casal', 'pessoa'])
       .order('criado_em')
     if (error) erro(error)
-    return (data || []).map((m: any) => ({
+    return lista(data).map(m => ({
       id: String(m.id),
       ...(m.user_id ? { user_id: String(m.user_id) } : {}),
       nome: String(m.nome ?? ''),
@@ -616,7 +628,7 @@ export const apiReal: Api = {
       .order('data', { ascending: false })
       .limit(26)
     if (error) erro(error)
-    return (data || []).map((f: any) => normalizaFeira(f, eq))
+    return lista(data).map(f => normalizaFeira(f, eq))
   },
   async feiraRegistrar(familia, f) {
     await rpc('feira_registrar', {
@@ -710,13 +722,13 @@ export const apiReal: Api = {
 
   async numerosSemana() {
     // banco: {ativacao:{valor,...}, retencao_30:{valor}, tempo_medio:{valor}, erros_conta:{valor, turno_atrasado}}; valor null = ainda sem família pra medir
-    const r = await rpc<any>('numeros_semana')
-    const v = (o: any) => (o?.valor == null ? null : num(o.valor))
-    const ativ = v(r?.ativacao),
-      ret = v(r?.retencao_30),
-      t = v(r?.tempo_medio),
-      e = v(r?.erros_conta) ?? 0
-    const atrasado = !!r?.erros_conta?.turno_atrasado
+    const r = cru(await rpc('numeros_semana'))
+    const v = (o: unknown) => (cru(o).valor == null ? null : num(cru(o).valor))
+    const ativ = v(r.ativacao),
+      ret = v(r.retencao_30),
+      t = v(r.tempo_medio),
+      e = v(r.erros_conta) ?? 0
+    const atrasado = !!cru(r.erros_conta).turno_atrasado
     return [
       {
         chave: 'ativacao',
@@ -725,7 +737,7 @@ export const apiReal: Api = {
         texto: ativ == null ? 'sem dado' : ativ + '%',
         meta: 'meta 80%',
         ok: ativ != null && ativ >= 80,
-        explicacao: `Famílias que lançaram 10 gastos na 1ª semana: ${num(r?.ativacao?.familias_ativadas)} de ${num(r?.ativacao?.familias_com_7_dias)}.`,
+        explicacao: `Famílias que lançaram 10 gastos na 1ª semana: ${num(cru(r.ativacao).familias_ativadas)} de ${num(cru(r.ativacao).familias_com_7_dias)}.`,
       },
       {
         chave: 'retencao',
@@ -734,7 +746,7 @@ export const apiReal: Api = {
         texto: ret == null ? 'sem dado' : ret + '%',
         meta: 'meta 60%',
         ok: ret != null && ret >= 60,
-        explicacao: `Famílias que usaram entre o dia 30 e o 36: ${num(r?.retencao_30?.familias_usando)} de ${num(r?.retencao_30?.familias_com_37_dias)}.`,
+        explicacao: `Famílias que usaram entre o dia 30 e o 36: ${num(cru(r.retencao_30).familias_usando)} de ${num(cru(r.retencao_30).familias_com_37_dias)}.`,
       },
       {
         chave: 'tempo',
@@ -743,7 +755,7 @@ export const apiReal: Api = {
         texto: t == null ? 'sem dado' : String(t).replace('.', ',') + ' s',
         meta: 'meta abaixo de 10 s',
         ok: t != null && t < 10,
-        explicacao: `Média do toque no + até salvar, em ${num(r?.tempo_medio?.lancamentos_medidos)} lançamentos dos últimos 7 dias.`,
+        explicacao: `Média do toque no + até salvar, em ${num(cru(r.tempo_medio).lancamentos_medidos)} lançamentos dos últimos 7 dias.`,
       },
       {
         chave: 'erros',
@@ -771,7 +783,7 @@ export const apiReal: Api = {
     const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
     const eu = await meuMembro(familia)
     return registrarContrato(
-      (data || []).map((r: any) =>
+      lista(data).map(r =>
         registrarContrato(normalizaRecebimento(r, ms, eu), r, ['id', 'valor_centavos', 'mes_previsto', 'certo']),
       ),
       { data },
@@ -807,7 +819,7 @@ export const apiReal: Api = {
         conferir: async () => {
           const { data, error } = await sb().from('recebimentos').select('id').eq('familia_id', familia).eq('id', id)
           if (error) erro(error)
-          return (data || []).some((c: any) => c.id === id)
+          return lista(data).some(c => c.id === id)
         },
       })
     }
@@ -850,18 +862,18 @@ export const apiReal: Api = {
       sb().from('membros').select('user_id, nome').eq('familia_id', familia),
     ])
     if (o.error) erro(o.error)
-    const nomes = new Map((mb.data || []).map((m: any) => [m.user_id, m.nome]))
-    const focus = new Map<number, any>()
+    const nomes = new Map(lista(mb.data).map(m => [m.user_id, m.nome as string]))
+    const focus = new Map<number, Cru>()
     for (const x of f.data || []) if (!focus.has(x.ano)) focus.set(x.ano, x)
     return {
       parametros: (o.data?.parametros as ParametrosObjetivo) ?? null,
-      historico: (h.data || []).map((x: any) => ({
+      historico: lista(h.data).map(x => ({
         quem: nomes.get(x.quem) ?? null,
-        quando: x.quando,
-        antes: x.antes,
-        depois: x.depois,
+        quando: x.quando as string,
+        antes: x.antes as HistoricoObjetivo['antes'],
+        depois: x.depois as HistoricoObjetivo['depois'],
       })),
-      focus: [...focus.values()].map((x: any) => ({
+      focus: [...focus.values()].map(x => ({
         ano: Number(x.ano),
         selic_fim: String(x.selic_fim),
         ipca: String(x.ipca),
@@ -916,7 +928,7 @@ export const apiReal: Api = {
     const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
     const eu = await meuMembro(familia)
     const reaisDe = (c: unknown) => (c == null ? null : num(c) / 100)
-    return (data || []).map((d: any) => ({
+    return lista(data).map(d => ({
       id: String(d.id),
       dono_membro: String(d.dono_membro),
       dono_nome: ms.find(m => m.id === String(d.dono_membro))?.nome ?? null,
@@ -924,12 +936,12 @@ export const apiReal: Api = {
       nome: String(d.nome),
       valor: num(d.valor_centavos) / 100,
       mes: String(d.mes).slice(0, 7),
-      volta_de: d.volta_de,
+      volta_de: d.volta_de as DesejoTela['volta_de'],
       volta: num(d.volta_centavos) / 100,
       volta_mes: d.volta_mes ? String(d.volta_mes).slice(0, 7) : null,
       antecipado: reaisDe(d.antecipado_centavos),
       volta_certa: !!d.volta_certa,
-      situacao: d.situacao,
+      situacao: d.situacao as SituacaoDesejo,
     }))
   },
   async desejoCriar(familia, d) {
@@ -979,7 +991,7 @@ export const apiReal: Api = {
     const ms = await this.membros(familia).catch(() => [] as { id: string; nome: string }[])
     const eu = await meuMembro(familia)
     return registrarContrato(
-      (data || []).map((i: any) =>
+      lista(data).map(i =>
         registrarContrato(
           {
             id: String(i.id),
@@ -988,7 +1000,7 @@ export const apiReal: Api = {
             meu: !!eu && String(i.dono_membro) === eu,
             apelido: String(i.apelido),
             valor: num(i.valor_estimado_centavos) / 100,
-            uso: i.uso,
+            uso: i.uso as UsoImovel,
             aluguel: num(i.aluguel_centavos) / 100,
             custos: num(i.custos_centavos) / 100,
             vacancia: String(i.vacancia ?? '0'),

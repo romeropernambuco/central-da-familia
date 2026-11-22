@@ -26,7 +26,7 @@ Detalhes: codigo/docs/ORIENTACOES-PARA-PROGRAMADORES.md (leia a parte do assunto
 4. Comando que destrói trabalho (desfazer à força, envio forçado, apagar pasta ou branch).
 5. Instalar biblioteca ou usar serviço pago.
 6. Alterar, pular ou apagar teste; mexer no verificador ou nos tipos para passar.
-   O limite de avisos do verificador está em codigo/package.json (343 em 21/11/2026). Só pode cair.
+   O limite de avisos do verificador está em codigo/package.json (255 em 21/11/2026). Só pode cair.
 7. Mexer em arquivo fora da tarefa.
 Para pedir: "Preciso de permissão para X, porque Y. O risco é Z."
 
