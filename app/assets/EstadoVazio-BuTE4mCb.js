@@ -1,1 +1,0 @@
-import{e,aF as o,j as t,aG as r}from"./partida-D_E3yzzI.js";const i=Object.freeze({...o});function n({nome:a,...s}){return e.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(r,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
