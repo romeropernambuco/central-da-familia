@@ -10,7 +10,20 @@ Situação em 22/11/2026:
 
 ## 1. Agora
 
-1. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
+O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md` (22/11/2026).
+
+1. **Fechar as 4 portas antes de qualquer cliente** (espera o dono: banco real e GitHub).
+   - Tirar o `grant delete` em `produto.familias` (apagar só pela função, com prazo de 30 dias).
+   - Fechar a entrada antiga da equipe (bloco 6 de `banco/sql/RODAR_NO_SUPABASE.sql`).
+   - Repositório privado (há e-mail pessoal em `banco/migracoes/20261107044716_...`).
+   - Gravar no repositório as tabelas de etiquetas que só existem no banco.
+2. **Tabelas no lugar do JSON** para `dinheiro_na_rua`, `aluguel_caderno` e `casa_folha`; "Guardar em" num passo só
+   (espera o dono: banco real). O Codex reproduziu perda de gravação com 2 celulares.
+3. **Notificações, atalhos no ícone e "compartilhar com a Central"** (espera o dono: serviço de notificação).
+4. **Anotar mais rápido**: salvar sempre à vista, últimos "O que foi?" como toque, detalhes recolhidos (livre).
+5. **Meta com ano escolhido pela família** e primeiro uso que pergunta a renda antes dos limites (livre; o dono segue em 2029).
+6. **Colar extrato sem internet**: acompanhar a recusa do banco como o Anotar já faz (livre).
+7. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
 
 ## 2. Em seguida
 
@@ -46,6 +59,8 @@ Situação em 22/11/2026:
 
 (Anote aqui o que ficou para ele decidir, com a data. Não pare o trabalho por isso.)
 
+- 22/11/2026: as 4 portas (item 1 de "Agora"), tabelas no lugar do JSON (item 2), notificações (item 3), apagar `src/propostas/`.
+
 - 22/11/2026: aplicar a correção das etiquetas na cópia de segurança (item 1 de "Do dono").
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
@@ -60,3 +75,6 @@ Situação em 22/11/2026:
   Guarda na configuração da família (`aluguel_caderno`), sem mudar o banco.
 - 22/11/2026: o Gestor do Guardado avisa o prazo do Dinheiro na rua: 15 dias antes, no dia (aviso próprio, volta mesmo
   se já respondeu antes) e depois que passou. Só com dinheiro ainda fora; respeita o silêncio das 22h às 7h.
+- 22/11/2026: análise do time (5 especialistas + Codex) em `docs/ANALISE-DO-TIME.md`. Consertos do Codex no código do dia:
+  aluguel contado em dobro, extrato "amount" de conta, data impossível no extrato, toque duplo na despesa, olho fechado
+  na ficha do negócio e no aviso do fundo garantidor.

@@ -147,8 +147,15 @@ export function lerCaderno(v: unknown): Caderno {
     if (!c || typeof c !== 'object') continue
     out[id] = {
       dia_vencimento: Number.isInteger(c.dia_vencimento) ? (c.dia_vencimento as number) : DIA_PADRAO,
+      // o mesmo mês marcado em 2 celulares chega 2 vezes depois de juntar: fica o último, para não contar em dobro
       recebimentos: Array.isArray(c.recebimentos)
-        ? c.recebimentos.filter(r => r && /^\d{4}-\d{2}$/.test(r.mes) && typeof r.valor === 'number')
+        ? [
+            ...new Map(
+              c.recebimentos
+                .filter(r => r && /^\d{4}-\d{2}$/.test(r.mes) && typeof r.valor === 'number')
+                .map(r => [r.mes, r] as const),
+            ).values(),
+          ]
         : [],
       despesas: Array.isArray(c.despesas)
         ? c.despesas.filter(d => d && typeof d.id === 'string' && typeof d.valor === 'number')

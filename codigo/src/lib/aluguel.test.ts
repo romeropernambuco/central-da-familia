@@ -123,3 +123,18 @@ describe('os aluguéis do mês, todos os imóveis', () => {
     })
   })
 })
+
+it('o mesmo mês marcado em 2 celulares conta 1 vez só', () => {
+  const c = lerCaderno({
+    a: {
+      dia_vencimento: 10,
+      recebimentos: [
+        { mes: '2026-10', data: '2026-10-08', valor: 100 },
+        { mes: '2026-10', data: '2026-10-09', valor: 100 },
+      ],
+      despesas: [],
+    },
+  }).a
+  expect(c.recebimentos).toEqual([{ mes: '2026-10', data: '2026-10-09', valor: 100 }])
+  expect(contaDoAno(c, 0, HOJE).recebido).toBe(100)
+})

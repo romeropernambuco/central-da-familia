@@ -200,18 +200,20 @@ function DespesasDoImovel({ c, gravar }: { c: CadernoImovel; gravar: (c: Caderno
   const [desc, setDesc] = useState('')
   const [erro, setErro] = useState('')
   const hoje = hojeRecife()
+  const trava = useMemo(() => umaPorVez((f: () => Promise<void>) => f()), [])
   const despesas = [...c.despesas].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 20)
-  const anotar = async () => {
-    if (!valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return setErro('Digite o valor. Ex.: 350.')
-    if (!desc.trim()) return setErro('Diga do que foi. Ex.: IPTU, condomínio, conserto.')
-    setErro('')
-    const d = { id: novoUuid(), data: hoje, valor: textoParaValor(valor), descricao: desc.trim().slice(0, 60) }
-    if (await gravar({ ...c, despesas: [...c.despesas, d] })) {
-      setValor('')
-      setDesc('')
-      toast(`Despesa anotada: ${reais(d.valor)}.`)
-    }
-  }
+  const anotar = () =>
+    trava(async () => {
+      if (!valorDigitadoValido(valor) || textoParaValor(valor) <= 0) return setErro('Digite o valor. Ex.: 350.')
+      if (!desc.trim()) return setErro('Diga do que foi. Ex.: IPTU, condomínio, conserto.')
+      setErro('')
+      const d = { id: novoUuid(), data: hoje, valor: textoParaValor(valor), descricao: desc.trim().slice(0, 60) }
+      if (await gravar({ ...c, despesas: [...c.despesas, d] })) {
+        setValor('')
+        setDesc('')
+        toast(`Despesa anotada: ${reais(d.valor)}.`)
+      }
+    })
   return (
     <section aria-labelledby="alDesp" className="aluguel-despesas">
       <h3 id="alDesp" className="lbl">

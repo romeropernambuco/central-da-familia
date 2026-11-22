@@ -110,3 +110,20 @@ describe('ajuda para salvar', () => {
     expect(jaAnotado(l, [{ data: '2026-11-20', valor: 12.5, apagado_em: '2026-11-21' }])).toBe(false)
   })
 })
+
+describe('casos que o Codex achou', () => {
+  it('conta em inglês (amount negativo = saída) não vira fatura', () => {
+    const conta =
+      'date,description,amount\n2026-11-10,Mercado,-19.90\n2026-11-11,Padaria,-8.00\n2026-11-12,Salario,100.00'
+    const l = lerExtrato(conta, '2026-11-22')
+    expect(l.find(x => x.descricao === 'Mercado')).toMatchObject({ valor: 19.9, entrada: false })
+    expect(l.find(x => x.descricao === 'Salario')).toMatchObject({ valor: 100, entrada: true })
+    const fatura = 'date,title,amount\n2026-11-10,Mercado,19.90\n2026-11-11,Pagamento recebido,-500.00'
+    expect(lerExtrato(fatura, '2026-11-22').find(x => x.descricao === 'Mercado')).toMatchObject({ entrada: false })
+  })
+  it('linha com data que não existe é ignorada, não herda a data de cima', () => {
+    const l = lerExtrato('20/11 Padaria -12,50\n31/02 Posto -100,00', '2026-11-22')
+    expect(l).toHaveLength(1)
+    expect(l[0].descricao).toBe('Padaria')
+  })
+})

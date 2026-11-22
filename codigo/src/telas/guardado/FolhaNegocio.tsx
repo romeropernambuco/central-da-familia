@@ -117,7 +117,13 @@ function NumerosDoNegocio({ n, c, taxaAno }: { n: Negocio; c: ContaNegocio; taxa
   return (
     <section className="rua-numeros" aria-labelledby="ruaNumero">
       <h3 id="ruaNumero" className="lbl">
-        {fechado ? (c.resultado >= 0 ? 'Lucro do negócio' : 'Faltou voltar') : 'Falta voltar'}
+        {fechado
+          ? oculto
+            ? 'Resultado do negócio'
+            : c.resultado >= 0
+              ? 'Lucro do negócio'
+              : 'Faltou voltar'
+          : 'Falta voltar'}
       </h3>
       <div className="numrow">
         <Din v={fechado ? Math.abs(c.resultado) : c.na_rua} tam="hero" />

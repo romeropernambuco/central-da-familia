@@ -773,6 +773,7 @@ function Aplicacao({
 }) {
   const { api, familia } = useSessaoAtual()
   const { tentar, recarregar, toast } = useAcoes()
+  const { oculto } = useOlhoApp()
   const minha = aplicacaoMinha(a, familia)
   const [certeza, setCerteza] = useState(false)
   const encerrar = async () => {
@@ -813,11 +814,13 @@ function Aplicacao({
           : a.vence_em
             ? `Vence em ${dataBr(a.vence_em)}.`
             : 'Só sai no vencimento.'}{' '}
-        {a.fgc_ok
-          ? a.tipo === 'tesouro_selic'
-            ? 'Garantido pelo governo federal.'
-            : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.'
-          : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}
+        {oculto
+          ? 'A proteção do fundo garantidor aparece com o olho aberto.'
+          : a.fgc_ok
+            ? a.tipo === 'tesouro_selic'
+              ? 'Garantido pelo governo federal.'
+              : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.'
+            : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}
       </p>
       {/* E2: no nome do outro é só pra ler (o banco também tranca) */}
       {!minha ? (

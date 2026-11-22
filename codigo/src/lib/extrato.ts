@@ -126,19 +126,24 @@ function deCsv(linhas: string[], hoje: string): LinhaExtrato[] | null {
   const iValor = acha(/^valor/, /^amount$/, /^quantia/)
   const iDesc = acha(/descri/, /^title$/, /hist[oó]rico/, /estabelecimento/, /^memo/)
   if (iData < 0 || iValor < 0) return null
-  const cartao = cab.includes('title') || cab.includes('amount')
-  const out: LinhaExtrato[] = []
-  for (const l of linhas.slice(1)) {
+  const brutas = linhas.slice(1).flatMap(l => {
     const c = celulas(l, sep)
     const data = lerData(c[iData] || '', hoje)
     const v = lerValor(c[iValor] || '')
-    if (!data || v == null || v === 0) continue
-    const descricao = limpa(c[iDesc] || '') || 'Movimento do extrato'
-    // fatura: compra é positiva e pagamento ou estorno é negativo; conta: saída é negativa
-    const entrada = cartao ? v < 0 : v > 0
-    out.push({ data, descricao, valor: c2(Math.abs(v)), entrada })
-  }
-  return out
+    return !data || v == null || v === 0
+      ? []
+      : [{ data, v, descricao: limpa(c[iDesc] || '') || 'Movimento do extrato' }]
+  })
+  // Fatura (Nubank: date/title/amount) tem compra positiva e pagamento ou estorno negativo; conta tem saída negativa.
+  // Só "amount", sem "title", pode ser os 2: é fatura quando quase tudo é positivo.
+  const positivos = brutas.filter(b => b.v > 0).length
+  const cartao = cab.includes('title') || (cab.includes('amount') && positivos > brutas.length * 0.7)
+  return brutas.map(b => ({
+    data: b.data,
+    descricao: b.descricao,
+    valor: c2(Math.abs(b.v)),
+    entrada: cartao ? b.v < 0 : b.v > 0,
+  }))
 }
 
 const VALOR_NA_LINHA =
@@ -156,6 +161,8 @@ function deTexto(linhas: string[], hoje: string): LinhaExtrato[] {
         linha,
       )
     const data = dataNoComeco ? lerData(dataNoComeco[1], hoje) : null
+    // "31/02 Padaria 10,00": a data existe na linha mas não no calendário; não pega a data da linha de cima
+    if (dataNoComeco && !data && /^\d{1,2}\/\d{1,2}/.test(dataNoComeco[1])) continue
     let resto = dataNoComeco && data ? linha.slice(dataNoComeco[0].length).trim() : linha
     if (data) dataAtual = data
     const v = VALOR_NA_LINHA.exec(resto)
