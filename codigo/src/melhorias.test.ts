@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiExemplo, exemploComo, reiniciarExemplo } from './api/exemplo'
 import { cofrinhoDoMes, gastosDoMes, gastoSemana, parcelasDe, pesoDia, plano, projecao } from './lib/plano'
 import { centavos, mesDaFatura, reais } from './lib/formato'
-import { fraseEstouro, numeroEnvelope } from './componentes/EnvelopeCard'
+import { fraseEstouro, numeroEnvelope, porqueEstouro } from './componentes/EnvelopeCard'
 import { marcoGuardado } from './lib/guardado'
 
 const F = 'fam-silva'
@@ -204,9 +204,11 @@ describe('R6: estouro com valor, de onde sai e o amanhã', () => {
     expect(n.devendo).toBe(517) // C1: teto 6.000 -> 5.500 (era 217, depois 717). E4 (decisão do dono, 13/11, TIME.md): a parcela do tênis de 12/11 no Nubank (fecha 3) cai na fatura de dezembro, não mais em novembro: novembro fica R$ 200 menor
     // rodada 2: sem "Sem culpa", com o próximo passo: de onde sai e com quanto dezembro começa
     // E3 (conserto 2): a parcela de dezembro (R$ 200 do tênis em 6x) entra na frase; era "começa com R$ 4.783 em 01/12."
-    expect(fraseEstouro(e, n)).toMatch(
-      /^Passou R\$\s517 do combinado\. Sai do mês de dezembro: ele começa com R\$\s4\.783 em 01\/12 \(R\$\s517 de novembro e R\$\s200 de parcela\)\.$/,
-    ) // E4: 517 + a 1ª parcela em dezembro
+    // painel claro (22/11): à vista o quanto passou e o começo de dezembro; a conta vai para o "Por quê?"
+    expect(fraseEstouro(e, n)).toMatch(/^Passou R\$\s517 do combinado\. Dezembro começa com R\$\s4\.783\.$/) // E4: 517 + a 1ª parcela em dezembro
+    expect(porqueEstouro(e, n)).toMatch(
+      /^O que passou sai de dezembro: em 01\/12 ele começa com R\$\s5\.500 menos R\$\s517 de novembro e R\$\s200 de parcela\.$/,
+    )
   })
   it('passou só o dia: diz quanto passou e o valor de amanhã', async () => {
     em('2026-11-18')

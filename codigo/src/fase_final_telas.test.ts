@@ -132,7 +132,8 @@ describe('E3 (conserto 2): virada do mês com 1 número só', () => {
     const n30 = numeroEnvelope(e30, 1)
     expect(e30.parcelas_mes_que_vem).toBe(200)
     const frase = fraseEstouro(e30, n30)!
-    const comeca30 = /começa com R\$\s([\d.]+(,\d+)?)/.exec(frase)![1]
+    // a frase agora termina no número ("começa com R$ 4.783."): o ponto final não entra no valor
+    const comeca30 = /começa com R\$\s([\d.]*\d(,\d+)?)/.exec(frase)![1]
     em('2026-12-01', 9)
     exemploComo('ana')
     const e1 = (await apiExemplo.resumoHoje(F)).envelopes.find(e => e.id === 'env-ana')!

@@ -159,8 +159,8 @@ it('resumo real separa recebido, pendente certo, incerto e virada de ano', async
       chave === 'entradas' ? [{ valor: 10, data: '2027-01-01' }] : padrao,
   } as unknown as Partial<Api>
   const a = await montar(createElement(ResumoDoMes), api)
-  expect(a.box.textContent).toContain('Realizado')
-  expect(a.box.textContent).toContain('Previsto')
+  expect(a.box.textContent).toContain('Até hoje') // era "Realizado"
+  expect(a.box.textContent).toContain('Ainda vai entrar') // era "Previsto"
   expect(a.box.textContent).toContain('R$40')
   expect(a.box.textContent).not.toContain('999')
   await a.click('Mês anterior')
@@ -181,7 +181,7 @@ it('resumo com falha nao mostra zero nem vazio', async () => {
     },
   })
   expect(a.box.textContent).toContain('Os registros continuam guardados')
-  expect(a.box.textContent).not.toContain('Realizado')
+  expect(a.box.textContent).not.toContain('Até hoje')
 })
 it('gas pede confirmacao, permite desfazer e so envia depois do prazo', async () => {
   const casa: any = {
@@ -303,8 +303,8 @@ it('cartoes informa explicitamente o mes verificado', async () => {
       target: { value: '100' },
     }),
   )
-  expect(a.box.textContent).toContain('Verificado só em nov/26')
-  expect(a.box.textContent).toContain('sem avaliar se cabem')
+  expect(a.box.textContent).toContain('vale só para nov/26')
+  expect(a.box.textContent).toContain('sem dizer se cabem')
 })
 
 import { EstadoEstoqueEquipe } from '../casa/Casa'
@@ -407,16 +407,18 @@ it.each([
   await a.click('3x')
   const previa = a.box.buscar(n => n.tagName === 'P' && !!n.getAttribute('class')?.includes('parc-fatura'))[0]
     ?.textContent
-  expect(previa).toContain('Esta compra de')
+  // painel claro (22/11): o número primeiro; a regra do dia 1 da fatura fica no "Por quê?"
+  expect(previa).toMatch(/^R\$\s100 em 3 parcelas de R\$\s33,33/)
+  expect(a.box.textContent).toContain('Cada parcela sai do limite no dia 1 do mês da fatura.')
   expect(previa).toContain(`de ${de} a ${ate}`)
-  expect(previa?.replace(/\u00a0/g, ' ')).toContain('a primeira parcela é R$ 33,34')
+  expect(previa?.replace(/\u00a0/g, ' ')).toContain('a primeira é R$ 33,34')
   expect(a.box.textContent.replace(/\u00a0/g, ' ')).toContain(
     de === 'nov/26' ? 'Neste mês conta R$ 33,34.' : 'Neste mês não conta nada.',
   )
   await a.click('Salvar em Pessoal')
   expect(lancar).toHaveBeenCalledWith(expect.objectContaining({ valor: 100, parcelas: 3, data: hoje, cartao: 'c' }))
   expect(toast.mock.calls[0][0]).toBe(
-    `${previa} Cada parcela sai do limite no dia 1 do mês da fatura. ${de === 'nov/26' ? 'Neste mês conta R$\u00a033,34.' : 'Neste mês não conta nada.'}`,
+    `${previa} ${de === 'nov/26' ? 'Neste mês conta R$\u00a033,34.' : 'Neste mês não conta nada.'}`,
   )
   expect(toast.mock.calls[0][0]).not.toContain('hoje não muda')
   const b = await montar(createElement(Cartoes), api, { resumo })
@@ -593,7 +595,7 @@ it('mes sem fechamento registrado explica ausencia sem inventar saldo', async ()
     escritorioRelatorio: async () => ({ funcionarios: [], diario: [] }),
   })
   expect(a.box.textContent).toContain('Isso não significa saldo zero')
-  expect(a.box.textContent).toContain('não é possível fechar esse mês por esta tela')
+  expect(a.box.textContent).toContain('Esse mês não tem fechamento salvo')
 })
 
 it.each(['pessoa', 'equipe'])('fechamento familiar nao e consultado por %s', async papel => {

@@ -132,7 +132,7 @@ export function frasesDesejo(
   const t = c.tira_por_mes_2029
   linhas.push(
     t === null
-      ? 'Nesse cenário o rendimento não repõe a inflação.'
+      ? 'Hoje o rendimento não repõe a inflação.'
       : t > 0
         ? `Tira ${r$(t)} por mês ${de}, para sempre.`
         : t < 0

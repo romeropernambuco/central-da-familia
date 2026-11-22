@@ -1,7 +1,15 @@
 import { textoPrivado } from '../../lib/olho'
 import type { Envelope } from '../../api/tipos'
 import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
-import { comecoDoMes, fraseEstouro, numeroEnvelope, primeiroDoMesQueVem } from '../../componentes/EnvelopeCard'
+import {
+  comecoDoMes,
+  fraseEstouro,
+  numeroEnvelope,
+  porqueEstouro,
+  primeiroDoMesQueVem,
+} from '../../componentes/EnvelopeCard'
+import '../../componentes/planilha.css'
+import { Fragment } from 'react'
 import { Qm } from '../../componentes/Qm'
 import { fimDoMes, hojeRecife, mesLongo, reais, saudacao, somaDias } from '../../lib/formato'
 import type { projecaoCasal } from '../../lib/resumo/orcamento'
@@ -23,9 +31,10 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
   const n = numeroEnvelope(e, resumo.dias_restantes),
     hoje = hojeRecife()
   const devendo = n.estado === 'devendo'
-  const frases: { chave: string; texto: string }[] = []
+  // texto à vista curto; a conta, quando houver, vai para o "Por quê?" fechado
+  const frases: { chave: string; texto: string; porque?: string }[] = []
   const estouro = fraseEstouro(e, n)
-  if (estouro) frases.push({ chave: 'estouro', texto: estouro })
+  if (estouro) frases.push({ chave: 'estouro', texto: estouro, porque: porqueEstouro(e, n) ?? undefined })
   if (!devendo && (e.gasto_hoje || 0) > 0)
     frases.push({
       chave: 'saiu',
@@ -36,10 +45,17 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
   if (!devendo && ant && Number(hoje.slice(8)) <= 3) {
     const falta = e.falta_mes_anterior || 0,
       mesAnt = mesLongo(ant.mes + '-01')
-    const c = comecoDoMes(e.limite_base ?? e.limite_mes, falta, e.parcelas_mes || 0, mesAnt)
+    const lim = e.limite_base ?? e.limite_mes
+    const c = comecoDoMes(lim, falta, e.parcelas_mes || 0, mesAnt)
+    const mesAtual = cap(mesLongo(hoje))
     frases.push({
       chave: 'virada',
-      texto: `${cap(mesAnt)}: ${reais(ant.gasto)} de ${reais(ant.limite)}${falta ? `, passou ${reais(falta)}` : ', dentro'}. ${cap(mesLongo(hoje))} começa com ${reais(c.valor)}${c.partes}.`,
+      texto: `${cap(mesAnt)} ${falta ? `passou ${reais(falta)} do combinado` : `fechou dentro do combinado: ${reais(ant.gasto)} de ${reais(ant.limite)}`}. ${mesAtual} começa com ${reais(c.valor)}.`,
+      porque: falta
+        ? `${cap(mesAnt)}: gastou ${reais(ant.gasto)} de ${reais(ant.limite)}.${c.partes ? ` ${mesAtual}: ${reais(lim)} menos ${c.partes.trim().slice(1, -1)}.` : ''}`
+        : c.partes
+          ? `${mesAtual}: ${reais(lim)} menos ${c.partes.trim().slice(1, -1)}.`
+          : undefined,
     })
   }
   // 2 últimos dias: com quanto o mês que vem começa, já com a parcela que cai nele
@@ -73,9 +89,15 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
         </p>
       )}
       {frases.map(f => (
-        <p key={f.chave} data-frase={f.chave}>
-          {f.texto}
-        </p>
+        <Fragment key={f.chave}>
+          <p data-frase={f.chave}>{f.texto}</p>
+          {f.porque && (
+            <details className="salario-porque">
+              <summary>Por quê?</summary>
+              <p className="sub">{textoPrivado(f.porque)}</p>
+            </details>
+          )}
+        </Fragment>
       ))}
       <div className="j-sobre-acoes">
         <Qm

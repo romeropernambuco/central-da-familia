@@ -14,7 +14,7 @@ export function fraseImpacto(
   prefixo = '',
   modo: 'projecao' | 'renda' = 'projecao',
 ): string | null {
-  if (perda === null) return 'Nesse cenário o rendimento não repõe a inflação: o app não diz quanto isso tira de 2029.'
+  if (perda === null) return 'Hoje o rendimento não repõe a inflação, então não dá para dizer quanto isso tira de 2029.'
   if (perda <= 0) return null
   // modo renda (depois da virada): o dinheiro sai de agora e tira da renda de hoje em diante
   return `${prefixo}${prefixo ? 'isso' : 'Isso'} tira ${reais(perda / 100)} por mês da renda${modo === 'renda' ? '' : ' de 2029'}, para sempre.`

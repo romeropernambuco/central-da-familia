@@ -2,6 +2,7 @@ import { textoPrivado, PONTOS } from '../../lib/olho'
 import { aoLimparLeituras } from '../../lib/invalidacao'
 import { totaisGuardado } from '../../lib/resumo/guardado'
 import './guardado.css'
+import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
@@ -29,11 +30,12 @@ import { Imoveis } from '../../componentes/Imoveis'
 import { SalarioDaGordura } from '../../componentes/SalarioDaGordura'
 import { SeparacaoDoMes } from '../../componentes/SeparacaoDoMes'
 import { DinheiroNaRua } from './DinheiroNaRua'
+import { FichaAplicacao } from '../../componentes/FichaAplicacao'
 import { aplicacaoMinha } from '../../lib/dono'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { Api, GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
-import { dataBr, dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
+import { dataCurta, hojeRecife, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import {
   CDI_DIA_PADRAO,
   ROTULO_TIPO,
@@ -102,25 +104,21 @@ export function Guardado() {
   if (familia?.papel !== 'casal')
     return (
       <div className="card">
-        <>
-          <EstadoVazio
-            ilustracao="SemAplicacoes"
-            titulo="Vamos cuidar do seu guardado"
-            frase="O Guardado mostra o dinheiro da família. Só o casal vê esta tela."
-          />
-        </>
+        <EstadoVazio
+          ilustracao="SemAplicacoes"
+          titulo="Vamos cuidar do seu guardado"
+          frase="O Guardado mostra o dinheiro da família. Só o casal vê esta tela."
+        />
       </div>
     )
   if (estado === 'desligado')
     return (
       <div className="card">
-        <>
-          <EstadoVazio
-            ilustracao="SemAplicacoes"
-            titulo="Vamos cuidar do seu guardado"
-            frase="O Guardado ainda está sendo ligado no banco da família. Assim que ligar, aparece aqui quanto o dinheiro guardado rendeu hoje."
-          />
-        </>
+        <EstadoVazio
+          ilustracao="SemAplicacoes"
+          titulo="Vamos cuidar do seu guardado"
+          frase="O Guardado ainda está sendo ligado. Logo aparece aqui quanto o dinheiro rendeu hoje."
+        />
       </div>
     )
   if (estado === 'erro')
@@ -142,7 +140,7 @@ export function Guardado() {
     )
 
   const abrirConta = () =>
-    explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g)} ${TORNEIRA}` })
+    explicar({ titulo: 'Rendeu hoje', linhas: g.explicacao, nota: `${taxaTexto(g, true)} ${TORNEIRA}` })
 
   if (!g.aplicacoes.length)
     return (
@@ -469,12 +467,14 @@ export function Guardado() {
 /** B15: as palavras do Guardado em 1 frase simples cada (fica no "O que é CDB, CDI, LCA?"). */
 const PALAVRAS =
   'CDI: a taxa que os bancos usam entre si; o que rende é medido por ela (100% do CDI = rende igual a essa taxa). CDB: você empresta dinheiro pro banco e ele te devolve com rendimento. LCA e LCI: parecido com o CDB, mas sem imposto de renda; o dinheiro vai pra agricultura ou pra imóveis. Tesouro Selic: você empresta pro governo; dá pra tirar quase quando quiser. Caixinha: o cofrinho do app do banco; rende todo dia e dá pra tirar na hora. Reserva: o dinheiro que a família combinou nunca gastar (fica de fora do número de hoje). Guardado: o que entra a mais vem pra cá, rende e conta pra 2029.'
-/** "Taxa usada: CDI de 10/11, 13,65% ao ano (0,050788% por dia útil). Fonte: Banco Central." */
-function taxaTexto(g: GuardadoHoje): string {
+/** Rodapé: "Taxa dos bancos de 10/11: 13,65% ao ano." Na conta (completo): + o CDI explicado, o dia útil e a fonte. */
+function taxaTexto(g: GuardadoHoje, completo = false): string {
   const c = g.cdi_usado
-  if (!c.pct_ano) return 'Taxa usada: ainda sem a taxa do dia.'
+  if (!c.pct_ano) return 'Ainda sem a taxa dos bancos de hoje.'
+  const curto = `Taxa dos bancos${c.data ? ` de ${dataCurta(c.data)}` : ''}: ${pct(c.pct_ano)} ao ano.`
+  if (!completo) return curto
   const fonte = /manual/i.test(c.fonte) ? 'digitada à mão, com o valor do Banco Central' : c.fonte || 'Banco Central'
-  return `Taxa usada: CDI (a taxa que os bancos usam pra pagar quem guarda dinheiro)${c.data ? ` de ${dataCurta(c.data)}` : ''}, ${pct(c.pct_ano)} ao ano (${pct(cdiDiaDoAno(c.pct_ano) * 100, 6)} por dia útil). Fonte: ${fonte}.`
+  return `${curto} É o CDI, ${pct(cdiDiaDoAno(c.pct_ano) * 100, 6)} por dia útil. Fonte: ${fonte}.`
 }
 
 function GuardadoVazio({ g, comecar }: { g: GuardadoHoje; comecar: () => void }) {
@@ -493,11 +493,13 @@ function GuardadoVazio({ g, comecar }: { g: GuardadoHoje; comecar: () => void })
         />
         <div className="guard-ex">
           <p>
-            <b>Exemplo de conta:</b> {reais(ex.valor)} guardados numa caixinha que paga 100% do CDI (a taxa que os
-            bancos usam pra pagar quem guarda dinheiro) rendem perto de <b>{reais(ex.porDia)} por dia útil</b> e{' '}
+            <b>Exemplo:</b> {reais(ex.valor)} numa caixinha rendem perto de <b>{reais(ex.porDia)} por dia útil</b> e{' '}
             <b>{reais(ex.porMes)} por mês</b>, já sem o imposto.
           </p>
-          <p className="sub">{TORNEIRA}</p>
+          <details className="salario-porque">
+            <summary>Por quê?</summary>
+            <p className="sub">A caixinha do exemplo paga 100% da taxa dos bancos (o CDI). {TORNEIRA}</p>
+          </details>
         </div>
         <Botao variante="primario" type="button" onClick={comecar}>
           <Icone desenho={Plus} />
@@ -817,24 +819,7 @@ function Aplicacao({
           <Din v={a.rendeu_mes_liquido} />
         </li>
       </ul>
-      <p className="sub">
-        <b>{ROTULO_TIPO[a.tipo]}</b> no {textoPrivado(a.banco)}, {rendeQuanto(a)}.{' '}
-        {a.ir_faixa > 0
-          ? `Imposto de renda de ${pct(a.ir_faixa, 1).replace(',0%', '%')} sobre o rendimento (cai quanto mais tempo fica guardado).`
-          : 'Não paga imposto de renda.'}{' '}
-        {a.liquidez === 'diaria'
-          ? 'Pode tirar quando quiser.'
-          : a.vence_em
-            ? `Vence em ${dataBr(a.vence_em)}.`
-            : 'Só sai no vencimento.'}{' '}
-        {oculto
-          ? 'A proteção do fundo garantidor aparece com o olho aberto.'
-          : a.fgc_ok
-            ? a.tipo === 'tesouro_selic'
-              ? 'Garantido pelo governo federal.'
-              : 'Protegido pelo fundo que devolve até R$ 250 mil por banco se o banco quebrar.'
-            : 'Atenção: passou de R$ 250 mil neste banco. Acima disso, o fundo que protege quem guarda dinheiro não cobre.'}
-      </p>
+      <FichaAplicacao a={a} oculto={oculto} />
       {/* E2: no nome do outro é só pra ler (o banco também tranca) */}
       {!minha ? (
         <p className="todo" data-do-outro={textoPrivado(a.titular_nome)}>
@@ -938,16 +923,21 @@ function AvisoFGC({ avisos }: { avisos: FuturoSaida['avisos_fgc'] }) {
   return (
     <section className="todo warn aviso-fgc" aria-labelledby="gFgc" style={{ marginBottom: 12 }}>
       <Icone desenho={ShieldAlert} aria-hidden="true" />
-      <span>
-        <b id="gFgc">Aviso do fundo que protege quem guarda dinheiro (FGC).</b> Se um banco quebrar, ele devolve até R$
-        250 mil por pessoa em cada banco.
+      <div>
+        <b id="gFgc">Parte do dinheiro está fora da garantia.</b> Repartir entre bancos protege tudo.
         <ul className="fgc-lista">
           {f.map((x, i) => (
             <li key={i}>{textoPrivado(x)}</li>
           ))}
         </ul>
-        É só um aviso: o dinheiro continua onde está. Repartir entre bancos deixa tudo dentro da garantia.
-      </span>
+        <details className="salario-porque">
+          <summary>Por quê?</summary>
+          <p className="sub">
+            Se um banco quebrar, o fundo que protege quem guarda (FGC) devolve até R$ 250 mil por pessoa em cada banco.
+            É só um aviso: o dinheiro continua onde está.
+          </p>
+        </details>
+      </div>
     </section>
   )
 }

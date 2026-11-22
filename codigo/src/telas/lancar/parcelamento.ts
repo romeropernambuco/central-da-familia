@@ -17,12 +17,14 @@ export function calcularImpactoDaCompra(
   const contaNoMes = compromissoNesteMes(valor, simulacao.length ? parcelas : 1, hoje, simulacao)
   const mes = mesCurto(quando.slice(0, 7) + '-01')
   const frase =
-    simulacao.length > 1
-      ? fraseParcelamento(valor, simulacao)
-      : `Esta compra de ${reais(valor)} em 1 vez tira ${reais(valor)} do seu orçamento no mês de ${mes}.`
+    simulacao.length > 1 ? fraseParcelamento(valor, simulacao) : `${reais(valor)} à vista: sai do seu limite de ${mes}.`
   const impacto =
     simulacao.length > 1
-      ? `Cada parcela sai do limite no dia 1 do mês da fatura. ${contaNoMes ? `Neste mês conta ${reais(contaNoMes)}.` : 'Neste mês não conta nada.'}`
-      : 'À vista, o valor todo conta na data da compra.'
-  return { simulacao, contaNoMes, frase, impacto, confirmacao: `${frase} ${impacto}` }
+      ? contaNoMes
+        ? `Neste mês conta ${reais(contaNoMes)}.`
+        : 'Neste mês não conta nada.'
+      : 'Conta no dia da compra.'
+  // a regra fica no "Por quê?" fechado da tela, fora da frase à vista
+  const porque = simulacao.length > 1 ? 'Cada parcela sai do limite no dia 1 do mês da fatura.' : ''
+  return { simulacao, contaNoMes, frase, impacto, porque, confirmacao: `${frase} ${impacto}` }
 }

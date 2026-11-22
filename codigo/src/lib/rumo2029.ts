@@ -40,7 +40,7 @@ export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown,
   const recorrentes = receitasNoMes(e, lerFontes(config), referencia).map(r => ({
     ...r,
     entra: false,
-    nota: 'Fora da renda mensal direta. Entradas até dez/2028 já compõem as aplicações, conforme o cenário.',
+    nota: 'Até 12/2028 já está nas aplicações; não soma na renda de 2029.',
   }))
   const linha =
     detalhes && referencia <= '2031-12'
@@ -79,7 +79,7 @@ export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown,
             })),
           ],
         }),
-        premissa: 'Depósitos no fim de cada mês até dez/2028; hipótese independente com margem de segurança.',
+        premissa: 'Guardando no fim de cada mês até 12/2028.',
       })
     const corte = Math.min(e.parametros.gasto_2029_hoje, s.ajustes_falta?.cortar_por_mes_2029 ?? 0)
     if (corte > 0)
@@ -91,7 +91,7 @@ export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown,
           ...e,
           parametros: { ...e.parametros, gasto_2029_hoje: e.parametros.gasto_2029_hoje - corte },
         }),
-        premissa: 'Hipótese independente, com inflação e margem de segurança do motor.',
+        premissa: 'Gastando menos todo mês, já contando a inflação até 2029.',
       })
     for (const i of e.imoveis ?? []) {
       if (i.uso === 'mora' || i.aluguel_bruto <= 0 || (i.tem_contrato && (i.contrato_ate ?? '') >= '2029-12')) continue
@@ -103,7 +103,7 @@ export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown,
           ...e,
           imoveis: e.imoveis!.map(x => (x.id === i.id ? { ...x, tem_contrato: true, contrato_ate: '2029-12' } : x)),
         }),
-        premissa: 'Hipótese de contrato, com os mesmos custos, vacância e imposto; não é promessa.',
+        premissa: 'Se o imóvel tiver contrato, com os mesmos custos e imposto.',
       })
     }
     for (const r of e.recebimentos) {
@@ -124,7 +124,7 @@ export function rumoDoCenario(e: FuturoEntrada, s: FuturoSaida, config: unknown,
           ...e,
           recebimentos: e.recebimentos.map(x => (x.id === r.id ? { ...x, mes_novo: antecipar } : x)),
         }),
-        premissa: `Hipótese de recebimento em ${antecipar}, mesmo valor, sem custo de antecipação e sem mudar o cadastro.`,
+        premissa: `Se o dinheiro chegar em ${antecipar.slice(5)}/${antecipar.slice(0, 4)}, pelo mesmo valor.`,
       })
     }
   }
@@ -361,8 +361,7 @@ export function calcularRumo(e: FuturoEntrada, config: unknown, detalhes = true)
         texto: 'Guardar a mais por mês',
         valor: guardar,
         efeito: efeito(nova),
-        premissa:
-          'Depósitos no fim de cada mês até dez/2028; valor sugerido pelo motor, sem incluir as receitas recorrentes.',
+        premissa: 'Guardando no fim de cada mês até 12/2028.',
       })
     }
     const corte = Math.min(e.parametros.gasto_2029_hoje, base.saida.ajustes_falta?.cortar_por_mes_2029 ?? 0)
@@ -375,7 +374,7 @@ export function calcularRumo(e: FuturoEntrada, config: unknown, detalhes = true)
           ...e,
           parametros: { ...e.parametros, gasto_2029_hoje: e.parametros.gasto_2029_hoje - corte },
         }),
-        premissa: 'Redução simulada no gasto necessário; inclui a margem sugerida pelo motor e a inflação até 2029.',
+        premissa: 'Gastando menos todo mês, já contando a inflação até 2029.',
       })
     for (const i of e.imoveis ?? []) {
       if (i.uso === 'mora' || i.aluguel_bruto <= 0 || (i.tem_contrato && (i.contrato_ate ?? '') >= '2029-12')) continue
@@ -388,8 +387,7 @@ export function calcularRumo(e: FuturoEntrada, config: unknown, detalhes = true)
         texto: `Se houver contrato até dez/2029: ${i.apelido}`,
         valor: 0,
         efeito: efeito(nova),
-        premissa:
-          'Hipótese de contrato, mesmo aluguel, custos, vacância e imposto; não é uma orientação de venda ou aluguel.',
+        premissa: 'Se o imóvel tiver contrato, com o mesmo aluguel, custos e imposto.',
       })
     }
     for (const r of e.recebimentos) {
@@ -409,7 +407,7 @@ export function calcularRumo(e: FuturoEntrada, config: unknown, detalhes = true)
           ...e,
           recebimentos: e.recebimentos.map(x => (x.id === r.id ? { ...x, mes_novo: antecipar } : x)),
         }),
-        premissa: `Hipótese de recebimento em ${antecipar}, pelo mesmo valor e sem custo de antecipação.`,
+        premissa: `Se o dinheiro chegar em ${antecipar.slice(5)}/${antecipar.slice(0, 4)}, pelo mesmo valor.`,
       })
     }
   }

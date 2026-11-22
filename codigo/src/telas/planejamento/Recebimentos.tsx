@@ -327,8 +327,7 @@ function RecebimentosCasal() {
         </button>
       </div>
       <p className="sub" style={{ marginBottom: 8 }}>
-        Receitas da família, inclusive empresas e novos negócios. Só Garantido entra no número oficial de 2029. Só o
-        dono lança e muda.
+        O que entra na família, inclusive das empresas. Só o garantido conta para 2029. Só o dono lança e muda.
       </p>
       {api.modo === 'exemplo' && (
         <p className="sub">Exemplo: receitas e valores inventados. Nenhuma alteração vai para a família real.</p>
@@ -424,10 +423,12 @@ function RecebimentosCasal() {
                   </small>
                 )}
                 <small>
-                  Fonte: anotado pelo dono ·{' '}
-                  {fontes.controle[r.id]?.atualizado_em
-                    ? `Última atualização em ${textoPrivado(fontes.controle[r.id].atualizado_em)}. Confira se o valor ainda vale.`
-                    : 'Data de atualização não informada: confira se o valor ainda vale.'}
+                  {(() => {
+                    const em = fontes.controle[r.id]?.atualizado_em
+                    return em
+                      ? `Valor conferido em ${textoPrivado(dataCurta(em.slice(0, 10)))}.`
+                      : 'Confira se o valor ainda vale.'
+                  })()}
                 </small>
                 {!!fontes.controle[r.id]?.recebidas && (
                   <small>
@@ -447,7 +448,7 @@ function RecebimentosCasal() {
                 )}
                 <small>
                   {!meses.length
-                    ? 'Nenhuma ocorrência pendente no prazo informado.'
+                    ? 'Nada para receber no prazo.'
                     : textoPrivado(
                         s.conta_em
                           ? `Entra em ${mesCurto(s.conta_em)}${mesNovo ? ` (era ${mesCurto(previsto)})` : ''}`

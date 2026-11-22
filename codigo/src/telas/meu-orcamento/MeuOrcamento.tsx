@@ -1,5 +1,6 @@
 import { textoPrivado } from '../../lib/olho'
 import './meu-orcamento.css'
+import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
@@ -189,13 +190,7 @@ export function MeuOrcamento() {
               </p>
             )}
             <p className="lbl" style={{ marginTop: 8 }}>
-              {oculto
-                ? 'Valores escondidos'
-                : n.estado === 'devendo'
-                  ? 'Este mês fica devendo'
-                  : env.regra === 'diario'
-                    ? 'Pode gastar hoje'
-                    : 'Pode gastar hoje (o que sobra no mês dividido pelos dias que faltam)'}
+              {oculto ? 'Valores escondidos' : n.estado === 'devendo' ? 'Este mês fica devendo' : 'Pode gastar hoje'}
             </p>
             <div className="numrow">
               <Din
@@ -211,10 +206,19 @@ export function MeuOrcamento() {
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
             <p className="sub">
-              Compras anotadas hoje (valor integral) <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de{' '}
-              {reais(tetoDoMes(env))}
-              {env.parcelas_mes ? `, sendo ${reais(env.parcelas_mes)} de parcelas` : ''}
+              Compras anotadas hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}
             </p>
+            <details className="salario-porque">
+              <summary>Por quê?</summary>
+              <p className="sub">
+                {!oculto && n.estado !== 'devendo' && env.regra !== 'diario'
+                  ? 'Pode gastar hoje é o que sobra no mês dividido pelos dias que faltam. '
+                  : ''}
+                Compras anotadas hoje mostra o valor inteiro da compra, mesmo parcelada. No mês entra só a parcela de
+                cada mês
+                {env.parcelas_mes ? `: ${textoPrivado(reais(env.parcelas_mes))} deste mês são parcelas` : ''}.
+              </p>
+            </details>
             {n.estado !== 'devendo' && (
               <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />
             )}
@@ -289,11 +293,23 @@ export function MeuOrcamento() {
                 env.livre < 0
                   ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
                   : dados.cof <= 0
-                    ? `Ainda sem sobra anotada. Ela aumenta nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que ${reais(dados.base)}, o valor diário de referência. Ainda pode gastar no mês: ${reais(Math.max(0, env.livre))}.`
-                    : // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o valor diário de referência mais o cofrinho dividido pelos dias que faltam
-                      `Sobra ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do valor diário de referência de ${reais(dados.base)}. Ela já está no número de hoje: dividida pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}, é por isso que hoje dá ${reais(env.hoje ?? n.valor)}.`,
+                    ? `Ainda sem sobra este mês. Pode gastar no mês: ${reais(Math.max(0, env.livre))}.`
+                    : `Já está somada no Pode gastar hoje: ${reais(env.hoje ?? n.valor)}.`,
               )}
             </p>
+            {env.livre >= 0 && (
+              <details className="salario-porque">
+                <summary>Por quê?</summary>
+                <p className="sub">
+                  {textoPrivado(
+                    dados.cof <= 0
+                      ? `A sobra cresce nos dias em que ${meu ? 'você gasta' : `${dono} gasta`} menos que o valor diário de referência de ${reais(dados.base)}.`
+                      : // E3 (conserto 5): o cofrinho e o número do dia na mesma base: o valor diário de referência mais o cofrinho dividido pelos dias que faltam
+                        `É o que sobrou ${meu ? 'do seu combinado' : `do combinado de ${dono}`} até ontem, em cima do valor diário de referência de ${reais(dados.base)}, dividido pelos ${plural(diasRestantes(hoje), 'dia que falta', 'dias que faltam')}.`,
+                  )}
+                </p>
+              </details>
+            )}
             {(() => {
               const m = metas?.[env.id]
               if (!m)
@@ -534,9 +550,7 @@ export function ProgressoMeta({
           style={{ width: '100%' }}
         />
       )}
-      <p className="sub">
-        Só soma o que você anotar. Continua nos próximos meses. Não altera saldo nem transfere dinheiro.
-      </p>
+      <p className="sub">Soma o que você anotar, mês após mês. Não mexe no saldo.</p>
       {editavel && (
         <form
           onSubmit={async e => {

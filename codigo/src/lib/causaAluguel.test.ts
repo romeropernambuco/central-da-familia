@@ -80,11 +80,13 @@ describe('o que pedir na causa', () => {
 
   it('avisa da garantia (fiador na ação) e do prazo de 3 anos para cobrar', () => {
     const k = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2026-11-22')!
-    expect(avisosDaCausa(k, CAUSA_PADRAO, '2026-11-22')[0]).toContain('qual é a garantia do contrato')
-    expect(avisosDaCausa(k, { ...CAUSA_PADRAO, garantia: 'fiador' }, '2026-11-22')[0]).toContain('Súmula 268')
+    expect(avisosDaCausa(k, CAUSA_PADRAO, '2026-11-22')[0]).toContain('Falta dizer a garantia do contrato')
+    expect(avisosDaCausa(k, { ...CAUSA_PADRAO, garantia: 'fiador' }, '2026-11-22')[0]).toContain('pôr o fiador na ação')
+    // a lei fica nas regras (aviso curto na tela; o porquê fechado)
+    expect(regrasDaCausa(k, CAUSA_PADRAO).join(' ')).toContain('Súmula 268')
     const velho = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2029-04-01')!
     expect(avisosDaCausa(velho, { ...CAUSA_PADRAO, garantia: 'nenhuma' }, '2029-04-01')).toEqual([
-      expect.stringContaining('O de 09/2026 vence em 09/2029'),
+      expect.stringContaining('o aluguel de 09/2026 só pode ser cobrado até 09/2029'),
     ])
   })
 

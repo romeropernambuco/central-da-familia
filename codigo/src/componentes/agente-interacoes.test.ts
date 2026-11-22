@@ -404,7 +404,7 @@ it.each([false, true])('imóvel novo/edição=%s valida valor inválido e entreg
     imovelSalvar: salvar,
   })
   try {
-    expect(a.container.textContent).toContain('quer cadastrar um imóvel?')
+    expect(a.container.textContent).toContain('Cadastrar imóvel')
     if (editar)
       await act(async () =>
         a.container

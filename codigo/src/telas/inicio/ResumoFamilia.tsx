@@ -4,7 +4,7 @@ import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { dataConferencia, plural } from '../../lib/formato'
-import type { CampoResumo, Dinheiro, ResumoFamilia as Resumo } from '../../lib/resumo/tipos'
+import type { CampoResumo, Dinheiro, FonteResumo, ResumoFamilia as Resumo } from '../../lib/resumo/tipos'
 import { InformarSaldo } from '../planejamento/SaldoConta'
 import { CasaDisponivelHoje } from '../../componentes/CasaDisponivelHoje'
 import { PlanoSemMargem } from '../../componentes/PlanoSemMargem'
@@ -19,6 +19,13 @@ const RitmoOrcamento = lazy(() => import('./RitmoOrcamento'))
 const dinheiro = (v: number, oculto: boolean) =>
   oculto ? PONTOS_LONGOS : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const valor = (d: Dinheiro, oculto: boolean) => dinheiro(d.unidade === 'centavos' ? d.valor / 100 : d.valor, oculto)
+/** a natureza do número na língua da família (o tipo interno não aparece na tela) */
+const NATUREZA: Record<FonteResumo['natureza'], string> = {
+  cadastrado: 'Anotado',
+  realizado: 'Já aconteceu',
+  previsto: 'Pode mudar',
+  estimado: 'Estimativa',
+}
 interface Item {
   chave: keyof Resumo
   titulo: string
@@ -117,7 +124,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
           )
         : '',
       frase: [
-        'Para viver de rendimentos em 2029, com margem de segurança · cenário oficial Garantido.',
+        'Para viver de rendimentos em 2029, com margem de segurança e só com o que é garantido.',
         plano?.confirmar?.length ? `A confirmar: ${privado(plano.confirmar.join('; '))}.` : '',
         plano?.conferenciaAntiga ? 'Há números com mais de 60 dias.' : '',
       ]
@@ -161,7 +168,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
       numero: campo.valor ? valor(campo.valor.valor, oculto) : '',
       frase: campo.valor
         ? privado(
-            `Aluguel líquido ESTIMADO: ${campo.valor.aluguel ? valor(campo.valor.aluguel, oculto) : 'não foi possível conferir'}.`,
+            `Aluguel líquido estimado: ${campo.valor.aluguel ? valor(campo.valor.aluguel, oculto) : 'não foi possível conferir'}.`,
           )
         : '',
       destino: { rota: 'guardado', secao: 'imoveis' },
@@ -175,9 +182,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
       titulo: 'Gastos e entradas do mês',
       icone: 'lancamentos',
       numero: m ? dinheiro(m.saldo, oculto) : '',
-      frase: m
-        ? privado(`Entrou ${dinheiro(m.entrou, false)} · saiu ${dinheiro(m.saiu, false)} · saldo realizado.`)
-        : '',
+      frase: m ? privado(`Entrou ${dinheiro(m.entrou, false)} e saiu ${dinheiro(m.saiu, false)} até hoje.`) : '',
       destino: { rota: 'lancamentos', secao: 'mes', periodo: hoje.slice(0, 7) },
     }
   },
@@ -263,7 +268,7 @@ export function CartaoResumo({
           {pronto && <span className="resumo-frase">{item.frase}</span>}
           {pronto && (
             <small className="resumo-meta">
-              <span className="resumo-natureza">{campo.fonte[0]?.natureza}</span>
+              <span className="resumo-natureza">{NATUREZA[campo.fonte[0]?.natureza ?? 'cadastrado']}</span>
               {campo.conferidoEm
                 ? ` · Conferido em ${oculto ? PONTOS_LONGOS : dataConferencia(campo.conferidoEm)}`
                 : item.chave === 'saldoConta'
@@ -460,7 +465,7 @@ export function ResumoApresentacao({
       </header>
       <div className="resumo-grade">{principais.map(bloco)}</div>
       <div className="resumo-complemento">{complementares.map(bloco)}</div>
-      {resumo.plano2029.estado !== 'restrito' && <p className="sub">Dívidas ainda não cadastradas nesta visão.</p>}
+      {resumo.plano2029.estado !== 'restrito' && <p className="sub">Dívidas ainda não entram neste resumo.</p>}
       <OrcamentoResumo campo={resumo.podeGastarHoje} hoje={hoje} repetir={repetirOrcamento} {...orcamento} />
     </section>
   )

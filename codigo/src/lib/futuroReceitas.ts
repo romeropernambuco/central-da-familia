@@ -288,7 +288,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       if (out[a] == null) {
         const perto = tem.reduce((x, y) => (Math.abs(y - a) < Math.abs(x - a) ? y : x))
         out[a] = out[perto]
-        confirmar.push(`${nome} de ${a} (usei a de ${perto})`)
+        confirmar.push(`${nome} de ${a} (por ora, a de ${perto})`)
       }
     return out
   }
@@ -302,12 +302,13 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
     }
 
   const teto_mes = (j.limites_mes || []).reduce((s, l) => s + (Number(l.limite_centavos) || 0), 0)
-  if (p.gasto_2029_hoje == null) confirmar.push('gasto por mês em 2029 (a conta usa o teto do mês de hoje)')
+  // textos curtos para a família: "o que falta (o que a conta usa por ora)"; RumoA2029 procura o começo 'gasto por mês em 2029'
+  if (p.gasto_2029_hoje == null) confirmar.push('gasto por mês em 2029 (por ora, o limite do mês de hoje)')
   if (depoisDaVirada && (!taxa_bruta_ano[anoHoje] || !ipca_ano[anoHoje]))
-    confirmar.push(`Selic e IPCA de ${anoHoje} (a conta usa o rendimento acima da inflação do objetivo)`)
-  if (p.piso_meses == null) confirmar.push('piso do caixa (a conta usa 6 meses de teto)')
+    confirmar.push(`Selic e IPCA de ${anoHoje} (por ora, o rendimento do objetivo)`)
+  if (p.piso_meses == null) confirmar.push('piso do caixa (por ora, 6 meses de limite)')
   if ((j.imoveis || []).some(i => i.uso !== 'mora') && !p.aliq_aluguel)
-    confirmar.push(`imposto do aluguel (a conta usa ${textoDaTaxa(PADROES_ECONOMISTA.aliq_aluguel)}%)`)
+    confirmar.push(`imposto do aluguel (por ora, ${textoDaTaxa(PADROES_ECONOMISTA.aliq_aluguel)}%)`)
   const parametros: Parametros = {
     mes_base: m0,
     virada: VIRADA,
@@ -328,7 +329,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   }
 
   const cdi = j.cdi_hoje?.pct_ano == null ? null : new Dec(String(j.cdi_hoje.pct_ano))
-  if (!cdi) confirmar.push('taxa de hoje das aplicações (sem o CDI do dia)')
+  if (!cdi) confirmar.push('taxa de hoje das aplicações (ainda não chegou)')
   const aplicacoes = (j.aplicacoes || []).map(a => ({
     id: String(a.id),
     titular: a.titular_nome ?? null,
@@ -348,7 +349,7 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
   }))
   // f_11: o banco manda a soma do dinheiro em conta corrente (saldos_conta). Sem o campo (banco antes da f_11): 0 e [confirmar]
   const saldo_caixa = j.saldo_caixa == null ? 0 : Number(j.saldo_caixa) || 0
-  if (j.saldo_caixa == null) confirmar.push('dinheiro parado na conta, fora das aplicações (a conta usa R$ 0)')
+  if (j.saldo_caixa == null) confirmar.push('dinheiro parado na conta (por ora, R$ 0)')
 
   const compromissos: FuturoEntrada['compromissos'] = []
   // Parcelas já estão no teto do envelope; como compromissos seriam descontadas duas vezes.

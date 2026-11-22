@@ -263,7 +263,7 @@ it.each(['cobre', 'não cobre', 'sobra', 'sem dados'])(
           expect(bloco.textContent).toContain('como a conta foi feita')
           expect(bloco.textContent).toContain('com margem de segurança')
         }
-        expect(bloco.textContent).toContain('cenário oficial Garantido')
+        expect(bloco.textContent).toContain('só com o que é garantido') // o cenário oficial Garantido, em palavras da família
         continue
       }
       if (caso === 'sem dados') expect(texto).toContain('Informe o gasto necessário')
@@ -372,7 +372,7 @@ it('fontes por cenário preservam certeza e não duplicam recorrência já acumu
   expect(categoria()).toContain('Receitas recorrentes na renda mensalR$0')
   expect(a.box.textContent).toContain('Fonte novo · Previsto')
   expect(a.box.textContent).toContain('Fonte incerto · Incerto')
-  expect(a.box.textContent).toContain('não somam renda permanente')
+  expect(a.box.textContent).toContain('não soma na renda de 2029')
 })
 
 it('agente real fala o mesmo Garantido do cartão, Início e Painel; cenário alternativo e olho não mudam sua base', async () => {
@@ -415,7 +415,7 @@ it('agente real fala o mesmo Garantido do cartão, Início e Painel; cenário al
       expect(frente(i)).toContain(
         (n.renda / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ''),
       )
-      expect(frente(i)).toContain('cenáriooficialGarantido')
+      expect(frente(i)).toContain('sócomoqueégarantido') // o cenário oficial Garantido, em palavras da família
       continue
     }
     expect(frente(i)).toContain(com)
@@ -482,7 +482,7 @@ it('sem fontes e com fontes corrompidas não presume recorrência nem soma renda
     expect(c.premissas.join()).toContain('este painel não a soma')
   }
   const a = await montar(createElement(RumoA2029), { config: async () => null as any })
-  expect(a.box.textContent).toContain('Sem origem e frequência informadas')
+  expect(a.box.textContent).toContain('Nenhuma receita de empresa ou negócio todo mês')
 })
 it('contrato curto, início futuro e cadastro contraditório não viram renda confirmada', () => {
   const { e, fontes } = receitas()

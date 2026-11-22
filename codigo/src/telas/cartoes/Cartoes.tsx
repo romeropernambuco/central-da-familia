@@ -94,7 +94,7 @@ export function Cartoes() {
       {cartoes.length > 0 && (
         <p className="lbl">
           <FuncIco id="cartao" size={24} />
-          Analista de Cartão: acompanha as faturas, não paga nada sozinho
+          Analista de Cartão: acompanha as faturas
         </p>
       )}
       <div className="row-btns">
@@ -205,7 +205,7 @@ export function Cartoes() {
                   ) : null}
                   <p className="sub" style={{ margin: '6px 0 14px' }}>
                     {atual.fechada
-                      ? 'Pague no app do banco. Aqui é só para acompanhar: o app não paga nada sozinho.'
+                      ? 'Pague no app do banco: aqui é só para acompanhar.'
                       : 'Ainda entra compra nesta fatura até o dia do fechamento.'}
                   </p>
                 </>
@@ -333,8 +333,7 @@ function Simulador({
   return (
     <Sheet titulo="E se eu comprar?" fechar={fechar}>
       <p className="sub">
-        Simulação: nada é gravado. Mostra como ficam as faturas e se a compra cabe
-        {dono ? ' no seu combinado do mês' : ' sem mexer na reserva (o dinheiro que a família combinou nunca gastar)'}.
+        Simulação: nada é gravado. Mostra se a compra cabe {dono ? 'no seu combinado do mês' : 'sem mexer na reserva'}.
       </p>
       <label className="campo">
         <span>Valor da compra</span>
@@ -390,7 +389,7 @@ function Simulador({
             </span>
           </p>
           <p className="sub">
-            Verificado só em {mesCurto(hoje)}. Os outros meses mostram faturas, sem avaliar se cabem no orçamento.
+            Essa conta vale só para {mesCurto(hoje)}. Os outros meses mostram as faturas, sem dizer se cabem.
           </p>
           {parc > 1 && <p className="sub parc-fatura">{textoPrivado(fraseParcelamento(valor, ps))}</p>}
           <ul className="exp">
@@ -399,7 +398,7 @@ function Simulador({
               <Din v={livre} />
             </li>
             <li>
-              <span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compara (conta no dia da compra)'}</span>
+              <span>{parc > 1 ? `Parcelas que contam neste mês` : 'Compra'}</span>
               <Din v={-noMes} menos />
             </li>
             {!dono && (

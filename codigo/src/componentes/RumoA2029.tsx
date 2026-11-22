@@ -179,7 +179,7 @@ export function RumoHero({
         <b>Rumo a 2029</b>
         <span>Gráfico e valores escondidos.</span>
         <Icone nome="abrir" />
-        <span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span>
+        <span className="sub">Tesoureiro de Receitas: confira os números antes de contar com essa renda.</span>
       </a>
     ) : (
       <section className="card rumo-hero" aria-labelledby={id}>
@@ -195,7 +195,7 @@ export function RumoHero({
           <Icone nome="contador" />
           Atualizar meus números
         </button>
-        <p className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</p>
+        <p className="sub">Tesoureiro de Receitas: confira os números antes de contar com essa renda.</p>
       </section>
     )
   const n = c?.numeros
@@ -223,7 +223,7 @@ export function RumoHero({
         {semMeta && <span className="sub rumo-sem-meta">{semMeta}</span>}
         {semMargem}
         {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
-        <span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span>
+        <span className="sub">Tesoureiro de Receitas: confira os números antes de contar com essa renda.</span>
       </a>
     )
   return (
@@ -285,12 +285,19 @@ export function RumoHero({
               Gasto necessário <Din v={c.gasto / 100} />
             </span>
           </div>
-          <p className="sub">
-            Até dez/2028 o salário de Rendas entra todo mês e a sobra vai para o guardado; de 2029 em diante, só o que
-            rende. Aplicações são estimativas; a cobertura depende das premissas abaixo.
-          </p>
           {/* a gordura em valor de hoje (22/11): a mesma régua do Guardado e da viagem */}
           {!oculto && <FraseGordura linha={c.saida.linha} ipca={ipca} />}
+          {/* regra do dono (22/11): o número e uma frase à vista; o "como" fica fechado */}
+          <details className="salario-porque">
+            <summary>Como o app chega nesse número?</summary>
+            <p className="sub">
+              Até 12/2028 entra o salário e a sobra vai para o guardado. De 2029 em diante, a família vive do que rende.
+              O rendimento é uma estimativa.
+            </p>
+            <p className="sub">
+              Garantido: está no cadastro como certo. Previsto: depende de estimativa. Incerto: só entra em Com tudo.
+            </p>
+          </details>
           <div className="rumo-fontes">
             <div>
               <Icone nome="guardado" />
@@ -308,20 +315,16 @@ export function RumoHero({
               <Icone nome="entrada" />
               <span>Receitas recorrentes na renda mensal</span>
               <Din v={c.recorrentes.filter(r => r.entra).reduce((s, r) => s + r.valor, 0) / 100} />
-              <small>Entradas até 2028 já compõem as aplicações; não somam renda permanente.</small>
+              <small>O que entra até 2028 já está nas aplicações.</small>
             </div>
             {!!c.rendaCerta && (
               <div>
                 <span>Renda certa do Objetivo</span>
                 <Din v={c.rendaCerta / 100} />
-                <small>Origem a confirmar no cadastro; já incluída pelo motor.</small>
+                <small>Já está na conta; confirme de onde vem no cadastro.</small>
               </div>
             )}
           </div>
-          <p className="sub">
-            Garantido: consta como certo no cadastro. Previsto: depende de estimativa. Incerto: só entra em Com tudo.
-            Entradas acumuladas já estão nas aplicações.
-          </p>
           {(c.saida.gatilhos ?? [])
             .filter(g => g.tipo === 'aluguel')
             .map(g => (
@@ -340,15 +343,10 @@ export function RumoHero({
               ))}
             </ul>
           ) : (
-            <p className="sub">
-              Nenhuma receita recorrente de empresa ou negócio identificada para {mesNome(c.referencia)}. Sem origem e
-              frequência informadas, nenhuma receita é presumida como recorrente.
-            </p>
+            <p className="sub">Nenhuma receita de empresa ou negócio todo mês em {mesNome(c.referencia)}.</p>
           )}
           <h3>O que mais move o ponteiro</h3>
-          <p className="sub">
-            Até três hipóteses independentes, calculadas pelo motor. Não se somam nem prometem resultado.
-          </p>
+          <p className="sub">Cada ideia é calculada sozinha: elas não se somam.</p>
           {c.alavancas.length ? (
             <ol className="rumo-alavancas">
               {c.alavancas.map(a => (
@@ -367,9 +365,7 @@ export function RumoHero({
               ))}
             </ol>
           ) : (
-            <p className="sub">
-              Não há alavanca positiva calculável com os dados atuais. Você pode conferir os números sem mudar o plano.
-            </p>
+            <p className="sub">Com os números de hoje, nenhuma mudança simples melhora 2029.</p>
           )}
           <h3>Quando cobre</h3>
           <p>
@@ -382,12 +378,10 @@ export function RumoHero({
                       ? `Cobertura projetada em ${mesNome(c.cobreEm)}.`
                       : c.referencia > '2031-12'
                         ? 'A data atual já passou da janela até dez/2031. A cobertura acima é a do mês atual.'
-                        : 'Não cobre até dez/2031 com estas premissas.',
+                        : 'Não cobre até dez/2031 com os números de hoje.',
                 )}
           </p>
-          <p className="sub">
-            Cada ponto simula começar a viver de rendimentos naquele mês; não garante os meses seguintes.
-          </p>
+          <p className="sub">Cada ponto: e se a família começasse a viver do que rende naquele mês.</p>
           {oculto ? (
             <p className="sub">Gráfico e valores escondidos.</p>
           ) : (
@@ -432,7 +426,7 @@ export function RumoHero({
           <details className="rumo-premissas">
             <summary>
               <Icone nome="folha" />
-              Premissas da conta
+              Os detalhes da conta
             </summary>
             {c.premissas.map((p, i) => (
               <p className="sub" key={i}>
@@ -448,7 +442,7 @@ export function RumoHero({
         <Icone nome="desfazer" />
         Atualizar meus números
       </button>
-      <p className="sub rumo-fala">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</p>
+      <p className="sub rumo-fala">Tesoureiro de Receitas: confira os números antes de contar com essa renda.</p>
     </section>
   )
 }

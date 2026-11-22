@@ -39,7 +39,7 @@ export function frasesLinha(s: FuturoSaida): {
       ? `Em ${mesAno(d.mes)} o caixa fica ${r$(d.fica_devendo)} abaixo do piso e ${d.devendo_ate ? `volta para cima dele em ${mesAno(d.devendo_ate)}` : 'não volta para cima dele até 12/2028'}.`
       : `Em ${mesAno(d.mes)} o caixa fica abaixo do piso: fica devendo ${r$(d.fica_devendo)} pro caixa ${d.devendo_ate ? `até ${mesAno(d.devendo_ate)}` : 'até depois de 12/2028'}.`
   if (s.patrimonio_necessario === null)
-    return { caixa, devendo, virada: 'Nesse cenário o rendimento não repõe a inflação.', ajuste: null, margem: null }
+    return { caixa, devendo, virada: 'O rendimento esperado não cobre a inflação.', ajuste: null, margem: null }
   const virada =
     s.folga >= 0
       ? (s.aluguel_liquido_2029 || 0) > 0
@@ -366,12 +366,12 @@ export function Linha2028Resumo() {
   const ult = saida.linha[saida.linha.length - 1]
   const d = saida.linha.find(x => x.fica_devendo > 0)
   const texto = d
-    ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso. Toque para ver.`
+    ? `Em ${mesAno(d.mes)} o caixa fica abaixo do piso. Toque para ver como evitar.`
     : saida.patrimonio_necessario === null
-      ? 'Nesse cenário o rendimento não repõe a inflação.'
+      ? 'O rendimento esperado não cobre a inflação.'
       : saida.folga >= 0
         ? `Chega a ${curto(ult.mes)} com ${r$(ult.saldo_final)}: rende ${r$(saida.renda_total_2029 ?? saida.renda_sustentavel)} por mês em 2029.`
-        : `Pra viver do rendimento em 2029 faltam ${r$(saida.folga)}. Toque para ver como fechar.`
+        : `Faltam ${r$(saida.folga)} para viver de rendimentos em 2029. Toque para ver como fechar.`
   return (
     <a
       className="card guard-card linha-2028-resumo"

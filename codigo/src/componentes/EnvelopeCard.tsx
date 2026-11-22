@@ -1,5 +1,6 @@
 import { textoPrivado } from '../lib/olho'
 import './dinheiro-f29.css'
+import './planilha.css'
 import { Icone } from './Icone'
 import type { Envelope } from '../api/tipos'
 import { useOlhoApp, useSessaoAtual } from '../app/contexto'
@@ -25,21 +26,32 @@ export type { EstadoEnv } from '../lib/resumo/orcamento'
 export const numeroEnvelope = (e: Envelope, dias: number) => selecionarEnvelope(e, dias, hojeRecife(), FUSO)
 export const primeiroDoMesQueVem = (hoje = hojeRecife()) => proximoMes(hoje)
 
-/** A frase do estouro, sem vermelho e sem culpa: quanto passou, de onde sai e o próximo passo. */
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** A frase do estouro, sem vermelho e sem culpa: quanto passou e com quanto o mês que vem começa (2 frases curtas). */
 export function fraseEstouro(e: Envelope, n: ReturnType<typeof numeroEnvelope>): string | null {
   if (n.estado === 'devendo' && e.regra === 'semanal')
     return `A semana passou ${reais(n.devendo)}. Na segunda começa uma semana nova.`
   if (n.estado === 'devendo') {
     const prox = primeiroDoMesQueVem(),
       lim = e.limite_base ?? e.limite_mes
-    const ultimo = hojeRecife() === fimDoMes(hojeRecife())
-    // E3 (conserto 2): a parcela que já cai no mês que vem entra na frase (antes o dia 30 dizia R$ 200 a mais que o dia 1)
+    // E3 (conserto 2): a parcela que já cai no mês que vem entra na conta (antes o dia 30 dizia R$ 200 a mais que o dia 1)
     const c = comecoDoMes(lim, n.devendo, e.parcelas_mes_que_vem || 0, mesLongo(hojeRecife()))
-    return `Passou ${reais(n.devendo)} do combinado. Sai do mês de ${mesLongo(prox)}: ele começa com ${reais(c.valor)} em ${dataCurta(prox)}${c.partes}.${ultimo ? '' : ` Até ${dataCurta(fimDoMes(hojeRecife()))}, o que não gastar diminui o que fica devendo.`}`
+    return `Passou ${reais(n.devendo)} do combinado. ${cap(mesLongo(prox))} começa com ${reais(c.valor)}.`
   }
   if (n.estado === 'dia_passou')
     return `Hoje passou ${reais(n.passouHoje)} do valor do dia.${e.amanha != null ? ` A partir de amanhã: ${reais(e.amanha)} por dia.` : ''}`
   return null
+}
+
+/** A conta por trás da frase do estouro do mês, para o "Por quê?" fechado. */
+export function porqueEstouro(e: Envelope, n: ReturnType<typeof numeroEnvelope>): string | null {
+  if (n.estado !== 'devendo' || e.regra === 'semanal') return null
+  const prox = primeiroDoMesQueVem(),
+    lim = e.limite_base ?? e.limite_mes
+  const c = comecoDoMes(lim, n.devendo, e.parcelas_mes_que_vem || 0, mesLongo(hojeRecife()))
+  const ultimo = hojeRecife() === fimDoMes(hojeRecife())
+  return `O que passou sai de ${mesLongo(prox)}: em ${dataCurta(prox)} ele começa com ${reais(lim)} menos ${c.partes.trim().slice(1, -1)}.${ultimo ? '' : ` Até ${dataCurta(fimDoMes(hojeRecife()))}, o que não gastar diminui o que fica devendo.`}`
 }
 
 export function EnvelopeCard({
@@ -98,6 +110,7 @@ export function EnvelopeCard({
         ? 'Na segunda começa uma semana nova.'
         : 'O que passar sai do mês que vem.'
       : fraseEstouro(e, n)
+  const porque = resumo ? null : porqueEstouro(e, n)
   return (
     <div className={classe} {...(doOutro ? { 'data-do-outro': textoPrivado(dono || 'família') } : {})}>
       <div className="env-h">
@@ -125,6 +138,12 @@ export function EnvelopeCard({
       )}
       {mostrarPrincipal && <p className="sub">{textoPrivado(rotulo)}</p>}
       {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
+      {porque && (
+        <details className="salario-porque">
+          <summary>Por quê?</summary>
+          <p className="sub">{textoPrivado(porque)}</p>
+        </details>
+      )}
       {!oculto && (
         <div className={'meter ' + (n.usado > 1 ? 'warn' : 'ok')} aria-hidden="true">
           <i style={{ width: pct + '%' }} />

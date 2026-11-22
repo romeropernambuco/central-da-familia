@@ -1,6 +1,7 @@
 import { textoPrivado, PONTOS } from '../lib/olho'
 import { totalImoveis, patrimonioTotal } from '../lib/resumo/imoveis'
 import '../telas/guardado/guardado.css'
+import './planilha.css'
 import { EstadoVazio } from './EstadoVazio'
 import { Botao } from './base'
 import { Icone } from './Icone'
@@ -56,8 +57,7 @@ export function seloImovel(
   if (i.uso === 'aluga' || i.aluguel > 0) {
     if (!i.tem_contrato) return { texto: 'sem contrato: não entra na conta', entra: false }
     if (!i.contrato_ate) return { texto: 'contrato sem data de fim: não entra na conta', entra: false }
-    if (entra === undefined)
-      return { texto: `contrato até ${mesAno(i.contrato_ate)}: a conta confere ao salvar`, entra: null }
+    if (entra === undefined) return { texto: `contrato até ${mesAno(i.contrato_ate)}`, entra: null }
     return entra
       ? { texto: `com contrato até ${mesAno(i.contrato_ate)}`, entra: true }
       : renova
@@ -138,7 +138,6 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         </button>
       </div>
       {/* patrimônio total: aplicado + imóveis, com o imóvel à parte */}
-      <p className="sub">Gestor do Guardado: quer cadastrar um imóvel?</p>
       <Botao type="button" variante="primario" onClick={() => setFolha('novo')}>
         <Icone nome="lancar" />
         Cadastrar imóvel
@@ -167,8 +166,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
       )}
       {lista && aluguel.lido && <ResumoAluguel imoveis={imoveis} caderno={aluguel.caderno} />}
       <p className="sub imo-frase">
-        O valor do imóvel compõe o patrimônio. O aluguel e a venda com contrato entram na projeção nas datas
-        cadastradas.
+        O valor do imóvel conta no patrimônio. Só aluguel e venda com contrato assinado entram no plano de 2029.
       </p>
       {carregando && <p role="status">Buscando imóveis…</p>}
       {falha && (
@@ -182,13 +180,11 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         </div>
       )}
       {lista === null || (!imoveis.length && (falha || carregando)) ? null : !imoveis.length ? (
-        <>
-          <EstadoVazio
-            ilustracao="SemImoveis"
-            titulo="Seu patrimônio, em um só lugar"
-            frase={'Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.'}
-          />
-        </>
+        <EstadoVazio
+          ilustracao="SemImoveis"
+          titulo="Seu patrimônio, em um só lugar"
+          frase={'Nenhum imóvel anotado. Toque em "Imóvel" para anotar casa, sala, lote ou apartamento.'}
+        />
       ) : (
         <ul className="list">
           {imoveis.map(i => {
@@ -250,10 +246,7 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         </ul>
       )}
       {taxaAplic && imoveis.some(i => i.uso !== 'mora') && (
-        <p className="sub" style={{ marginTop: 8 }}>
-          A rentabilidade é o aluguel líquido de 1 ano dividido pelo valor do imóvel, já sem custos, meses vazios e
-          imposto. O dinheiro aplicado rende {oculto ? PONTOS : pctAno(taxaAplic)} ao ano acima da inflação.
-        </p>
+        <CompararAplicado taxa={oculto ? PONTOS : pctAno(taxaAplic)} />
       )}
       {aluguelDe && (
         <FolhaAluguel
@@ -274,6 +267,24 @@ export function Imoveis({ aplicado }: { aplicado: number }) {
         />
       )}
     </section>
+  )
+}
+
+/** O que o aplicado rende, para comparar com o imóvel; a conta do rendimento do imóvel fica no "Por quê?". */
+function CompararAplicado({ taxa }: { taxa: string }) {
+  return (
+    <>
+      <p className="sub" style={{ marginTop: 8 }}>
+        Para comparar: o dinheiro aplicado rende {taxa} ao ano acima da inflação.
+      </p>
+      <details className="salario-porque">
+        <summary>Por quê?</summary>
+        <p className="sub">
+          O quanto o imóvel rende é o aluguel de 1 ano, já sem custos, meses vazios e imposto, dividido pelo valor do
+          imóvel.
+        </p>
+      </details>
+    </>
   )
 }
 

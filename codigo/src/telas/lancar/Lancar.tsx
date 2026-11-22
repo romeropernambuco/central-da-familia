@@ -4,6 +4,7 @@ import type { NovoLancamento } from '../../api/tipos'
 import { avisarQuandoOEnvioTerminar, enviarSemPrenderATela } from '../../app/envioGuardado'
 import { FICOU_ESPERANDO } from '../../api/pendentes'
 import './lancar.css'
+import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { useMembros } from '../../app/useMembros'
@@ -90,7 +91,7 @@ function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number,
   if (!e.casa && lim > 0 && conta >= Math.max(150, lim * 0.1) && e.livre >= 0) {
     const pct = Math.round((conta / lim) * 100),
       dias = Number(hojeRecife().slice(8)) <= 0 ? 0 : Math.max(1, r?.dias_restantes || 1)
-    return `${desc ? cap(desc) : 'Esse gasto'} de ${reais(conta)} é ${pct}% do seu mês de ${reais(lim)}. Ele entra 1 vez só: os ${dias === 1 ? 'dia que falta fica' : `${dias} dias que faltam ficam`} com ${reais(centavos(e.livre / dias))} por dia, em média.`
+    return `${desc ? cap(desc) : 'Esse gasto'}: ${reais(conta)}, ${pct}% do seu mês. ${dias === 1 ? 'O dia que falta fica' : `Os ${dias} dias que faltam ficam`} com ${reais(centavos(e.livre / dias))} por dia, em média.`
   }
   if (e.regra === 'diario') {
     if (e.livre < 0) return `${parte} O mês passou ${reais(-e.livre)} do combinado: sai do mês que vem.`
@@ -270,7 +271,13 @@ export function Lancar() {
   // E4: o cartão precisa do dia que fecha e do dia que vence pra parcelar (igual ao banco)
   const temDias = !!(c?.dia_fechamento && c?.dia_vencimento)
   const impactoCompra = calcularImpactoDaCompra(valor, parcelas, quando, hoje, c)
-  const { simulacao: sim, frase: fraseDaCompra, impacto: fraseImpacto, contaNoMes } = impactoCompra
+  const {
+    simulacao: sim,
+    frase: fraseDaCompra,
+    impacto: fraseImpacto,
+    porque: porqueDaCompra,
+    contaNoMes,
+  } = impactoCompra
 
   const meuLim = (() => {
     const e = resumo?.envelopes.find(x => x.id === familia?.envelopeId)
@@ -703,6 +710,12 @@ export function Lancar() {
                 <>
                   <p className="sub parc-fatura">{textoPrivado(fraseDaCompra)}</p>
                   <p className="sub parc-impacto">{textoPrivado(fraseImpacto)}</p>
+                  {porqueDaCompra && (
+                    <details className="salario-porque">
+                      <summary>Por quê?</summary>
+                      <p className="sub">{porqueDaCompra}</p>
+                    </details>
+                  )}
                 </>
               )}
             </div>
@@ -1124,7 +1137,7 @@ function AnotarCompra() {
             <p className="sub">
               {gravando
                 ? 'Enviando a compra. Aguarde a confirmação.'
-                : 'Foto neste aparelho. A compara ainda não foi confirmada.'}
+                : 'Foto neste aparelho. A compra ainda não foi confirmada.'}
             </p>
           </div>
         )}

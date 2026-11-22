@@ -475,7 +475,7 @@ it.each([1, 2, 3])(
       normalizar(principal).toLowerCase().replace(/,00/g, ''),
     )
     expect(a.bloco('plano2029').textContent).toContain('com margem de segurança')
-    expect(a.bloco('plano2029').textContent).toContain('estimado')
+    expect(a.bloco('plano2029').textContent).toContain('Estimativa') // a natureza "estimado", na língua da família
   },
 )
 
@@ -1468,7 +1468,8 @@ it('f53.10: limite do dia e valor integral da compra parcelada têm rótulos pr�
       .click(),
   )
   expect(a.bloco('podeGastarHoje').textContent).toMatch(/Hoje já saiu do limite: R\$\s*0/)
-  expect(a.origem().textContent).toMatch(/Compras anotadas hoje \(valor integral\)\s*R\$\s*1\.200/)
+  expect(a.origem().textContent).toMatch(/Compras anotadas hoje\s*R\$\s*1\.200/)
+  expect(a.origem().textContent).toContain('valor inteiro da compra, mesmo parcelada')
 })
 
 const propsF53 = (no: NoTeste) => Object.entries(no).find(([k]) => k.startsWith('__reactProps'))![1] as any

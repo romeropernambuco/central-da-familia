@@ -28,7 +28,7 @@ export function ConferenciaFaturas() {
         r.dado && (
           <>
             <Din v={r.dado.total} tam="big" />
-            <p className="sub">Próximos 30 dias · pagamento informado no banco.</p>
+            <p className="sub">Faturas que vencem nos próximos 30 dias e ainda não foram pagas.</p>
             <ul className="list lista-conferencia">
               {r.dado.lista.map(f => (
                 <li
@@ -39,10 +39,10 @@ export function ConferenciaFaturas() {
                 >
                   <p>
                     <b>{textoPrivado(f.cartao)}</b> · {f.vencimento} · <Din v={f.total} /> ·{' '}
-                    <span className="sub">{f.conferir ? 'valor a conferir' : 'valor informado'}</span>
+                    <span className="sub">{f.conferir ? 'falta o valor do banco' : 'valor do banco'}</span>
                   </p>
                   <a className="btn line sm" href="#/escritorio?f=cartao">
-                    Conferir com o Analista de Cartão
+                    Conferir a fatura
                   </a>
                 </li>
               ))}

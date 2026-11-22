@@ -55,16 +55,17 @@ it('no meio do mês, com gasto hoje, diz quanto saiu e quanto ainda pode; sem ga
 it('nos dias 1 a 3 conta como o mês passado fechou; no dia 4 a frase some', () => {
   const comMesPassado = { ...mensal, mes_anterior: { mes: '2026-11', gasto: 900, limite: 1000 } }
   const dia2 = faixa('2026-12-02', comMesPassado)
-  expect(dia2).toContain('Novembro: R$ 900 de R$ 1.000, dentro.')
+  expect(dia2).toContain('Novembro fechou dentro do combinado: R$ 900 de R$ 1.000.')
   expect(dia2).toContain('Dezembro começa com R$ 1.000')
-  expect(faixa('2026-12-04', comMesPassado)).not.toContain('Novembro:')
+  expect(faixa('2026-12-04', comMesPassado)).not.toContain('Novembro')
   const passou = faixa('2026-12-01', {
     ...comMesPassado,
     mes_anterior: { mes: '2026-11', gasto: 1150, limite: 1000 },
     falta_mes_anterior: 150,
   })
-  expect(passou).toContain('passou R$ 150')
-  expect(passou).toContain('Dezembro começa com R$ 850')
+  expect(passou).toContain('Novembro passou R$ 150 do combinado. Dezembro começa com R$ 850.')
+  // a conta fica no "Por quê?" fechado
+  expect(passou).toContain('Novembro: gastou R$ 1.150 de R$ 1.000. Dezembro: R$ 1.000 menos R$ 150 de novembro.')
 })
 
 it('nos 2 últimos dias avisa com quanto o mês que vem começa, só se houver parcela caindo nele', () => {

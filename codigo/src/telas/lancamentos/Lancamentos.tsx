@@ -155,8 +155,8 @@ function LancamentosFamilia() {
       {!lixeira && <Viagens />}
       {!lixeira && api.corrigirLancamento && (
         <p className="sub">
-          Errou o valor ou o limite? Toque no lápis para corrigir ou apagar. O que for apagado fica na lixeira.
-          {familia?.papel === 'casal' ? ' O gasto do outro aparece com o nome dele: só ele corrige.' : ''}
+          Errou? Toque no lápis para corrigir ou apagar (o apagado vai para a lixeira).
+          {familia?.papel === 'casal' ? ' O gasto do outro, com o nome dele, só ele corrige.' : ''}
         </p>
       )}
       {lixeira && (
@@ -464,7 +464,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
   return (
     <>
-      <h3>Realizado</h3>
+      <h3>Até hoje</h3>
       <div className="mes-indicadores">
         {(
           [
@@ -482,7 +482,7 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
           </div>
         ))}
       </div>
-      <h3>Previsto · ainda não recebido</h3>
+      <h3>Ainda vai entrar</h3>
       <p>
         Entradas certas pendentes: <Din v={totais.previsto} />
       </p>
@@ -492,9 +492,9 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
           Como ler este resumo
         </summary>
         <p className="sub">
-          Realizado: gastos anotados até hoje, entradas anotadas e recebimentos marcados como recebidos neste mês. Saldo
-          é o que entrou menos o que saiu; não é o saldo do banco. Previsto: recebimentos marcados como certos para este
-          mês. Incertos ficam fora. Previsto não entra no saldo realizado.
+          Até hoje: gastos anotados e entradas já recebidas neste mês. O saldo do mês é o que entrou menos o que saiu;
+          não é o saldo do banco. Ainda vai entrar: só as entradas certas deste mês, fora do saldo até chegarem. As
+          incertas ficam de fora.
         </p>
       </details>
     </>
@@ -543,7 +543,7 @@ export function ResumoDoMes() {
         </Botao>
       </div>
       {!api.recebimentos ? (
-        <p>Resumo indisponível: falta a leitura dos recebimentos.</p>
+        <p>O resumo do mês não abriu agora.</p>
       ) : erro ? (
         <p role="alert">
           Não foi possível atualizar o resumo. Os registros continuam guardados.{' '}
@@ -556,9 +556,7 @@ export function ResumoDoMes() {
       ) : (
         <>
           <FaixaDoMes totais={dado} />
-          <p className="sub">
-            Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.
-          </p>
+          <p className="sub">Conta só o que já foi anotado. Falta algo? Anote e ele entra aqui.</p>
         </>
       )}
       {mes < atual && (
@@ -599,7 +597,7 @@ export function FechamentoRegistrado({ mes }: { mes: string }) {
   return (
     <section aria-label="Fechamento registrado">
       <h3>Fechamento de {mesCurto(mes + '-01')}</h3>
-      <p className="sub">Texto salvo no diário do Contador. Não atualiza nem refaz as contas daquele mês.</p>
+      <p className="sub">Como o Contador anotou o mês quando ele fechou.</p>
       {linhas.length ? (
         linhas.map(l => (
           <div key={l.id}>
@@ -609,10 +607,7 @@ export function FechamentoRegistrado({ mes }: { mes: string }) {
           </div>
         ))
       ) : (
-        <p>
-          Não há fechamento salvo desse mês nesta consulta. Isso não significa saldo zero. Seus gastos continuam
-          disponíveis, mas não é possível fechar esse mês por esta tela.
-        </p>
+        <p>Esse mês não tem fechamento salvo. Isso não significa saldo zero: os gastos dele continuam aqui.</p>
       )}
     </section>
   )

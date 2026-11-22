@@ -7,8 +7,8 @@ export function fraseParcelamento(valor: number, simulacao: { mes: string; valor
   if (simulacao.length < 2) return ''
   const primeira = simulacao[0],
     ultima = simulacao[simulacao.length - 1]
-  const ajuste = primeira.valor !== ultima.valor ? `; a primeira parcela é ${reais(primeira.valor)}` : ''
-  return `Esta compra de ${reais(valor)} em ${simulacao.length} vezes tira ${reais(ultima.valor)} do seu orçamento a cada mês, de ${mesCurto(primeira.mes + '-01')} a ${mesCurto(ultima.mes + '-01')}${ajuste}.`
+  const ajuste = primeira.valor !== ultima.valor ? ` (a primeira é ${reais(primeira.valor)})` : ''
+  return `${reais(valor)} em ${simulacao.length} parcelas de ${reais(ultima.valor)}, de ${mesCurto(primeira.mes + '-01')} a ${mesCurto(ultima.mes + '-01')}${ajuste}.`
 }
 
 /** À vista conta na compra; parcelado conta no mês da respectiva fatura. */

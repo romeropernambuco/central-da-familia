@@ -446,8 +446,7 @@ export function Planejamento() {
               </p>
             ) : (
               <p className="sub" style={{ marginTop: 10 }}>
-                Este mês não entrou dinheiro a mais. Quando entrar, ele vai pro guardado (fora do gasto do mês) e conta
-                para 2029.
+                Este mês não entrou dinheiro a mais. Quando entrar, ele vai para o guardado.
               </p>
             ))}
           {casal && (
@@ -523,7 +522,7 @@ export function Planejamento() {
               <h2 id="pPrev">Próximos meses</h2>
             </div>
             <p className="sub" style={{ marginBottom: 8 }}>
-              Salário menos limites menos o que já está nas faturas de cartão.
+              O que sobra do salário depois dos limites e das faturas do cartão.
             </p>
             {meses.map(m => {
               // E2: a conta é da família, então entram as faturas de todos os cartões

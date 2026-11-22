@@ -264,17 +264,14 @@ function ParametrosFamilia() {
         </h2>
       </div>
       <p className="sub" style={{ marginBottom: 10 }}>
-        A partir de janeiro de 2029 a família vive do que o dinheiro guardado rende. Estes números decidem a conta.{' '}
-        {sozinho ? 'Você muda quando quiser' : 'Os 2 mudam'}; o que era antes fica no histórico.
+        Em 2029 a família passa a viver do que rende. {sozinho ? 'Você muda' : 'Os 2 mudam'} estes números quando
+        quiser.
       </p>
 
       {/* E7: o resultado é do motor (futuro()); a tela só escreve e desenha a linha até dez/2028 */}
       <details>
-        <summary>Ver plano de caixa original e renda certa do objetivo</summary>
-        <p className="sub">
-          Este plano mantém a renda certa antiga, sem identificar a origem. A cobertura sem salário está no cartão Rumo
-          a 2029.
-        </p>
+        <summary>Ver o plano antigo</summary>
+        <p className="sub">O plano antigo conta a renda certa sem dizer de onde vem. O de hoje está em Rumo a 2029.</p>
         {saida && saida.modo === 'renda' ? (
           <Renda2029 saida={saida} />
         ) : saida && ent?.entrada ? (
@@ -300,7 +297,7 @@ function ParametrosFamilia() {
         <summary>
           <span>
             <b>Os números da conta</b>
-            <small>gasto de 2029, margem, rendimento, impostos, piso, Selic e IPCA. Toque para ver ou mudar</small>
+            <small>gasto, margem, rendimento, impostos, piso, juros e inflação. Toque para ver ou mudar</small>
           </span>
         </summary>
         <div>
@@ -408,11 +405,11 @@ function ParametrosFamilia() {
         </div>
 
         <h3 className="dayh" style={{ marginTop: 12 }}>
-          Selic e IPCA de cada ano (%)
+          Juros (Selic) e inflação (IPCA) de cada ano, em %
         </h3>
         <div className="pills" role="group" aria-label="De onde vem a taxa" style={{ margin: '6px 0 8px' }}>
           <button type="button" className="pill" aria-pressed={!travado} onClick={() => editarTravado(false)}>
-            Usar o Focus
+            Usar a previsão do Banco Central
           </button>
           <button type="button" className="pill" aria-pressed={travado} onClick={() => editarTravado(true)}>
             {sozinho ? 'Travar as minhas' : 'Travar as nossas'}
@@ -420,15 +417,15 @@ function ParametrosFamilia() {
         </div>
         <p className="sub" style={{ marginBottom: 6 }}>
           {travado
-            ? `Vale o que ${sozinho ? 'você digitar' : 'vocês digitarem'}; o Focus fica ao lado só para comparar.`
-            : `Vale o Focus do Banco Central; o que ${sozinho ? 'você digitar' : 'vocês digitarem'} só entra no ano que o Focus não tiver.`}
+            ? `Vale o que ${sozinho ? 'você digitar' : 'vocês digitarem'}. A previsão fica ao lado para comparar.`
+            : `Vale a previsão do Banco Central. O que ${sozinho ? 'você digitar' : 'vocês digitarem'} só entra no ano sem previsão.`}
         </p>
         {anos.map(a => (
           <div key={a} className="linha-campo">
             <span className="n">
               {a}
               <small>
-                Focus:{' '}
+                Previsão:{' '}
                 {focus.get(a)
                   ? `Selic ${textoDaTaxa(focus.get(a)!.selic_fim)}%, IPCA ${textoDaTaxa(focus.get(a)!.ipca)}% (${dataCurta(focus.get(a)!.divulgado_em)})`
                   : 'sem número ainda'}
@@ -483,7 +480,7 @@ function ParametrosFamilia() {
           </ul>
         ) : (
           <p className="sub">
-            Ninguém mudou ainda. Valem as premissas: margem 10%, 4% acima da inflação, piso de 6 meses.
+            Ninguém mudou ainda. Valem os padrões: margem 10%, 4% acima da inflação, piso de 6 meses.
           </p>
         )}
       </details>
@@ -492,7 +489,7 @@ function ParametrosFamilia() {
           {saida.perguntas.length === 1
             ? '1 recebimento atrasado espera'
             : `${saida.perguntas.length} recebimentos atrasados esperam`}{' '}
-          a resposta do dono, em Recebimentos com data.
+          resposta em Recebimentos.
         </p>
       )}
     </section>

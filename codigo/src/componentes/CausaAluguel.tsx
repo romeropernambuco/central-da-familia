@@ -100,8 +100,7 @@ export function CausaDoAluguel({
         <FraseExpectativa e={k.expectativa} causa={causa} />
       ) : (
         <p className="sub">
-          Pergunte ao advogado quanto ele acha que consegue e quanto ele cobra do que recuperar. Anote em “Ajustar a
-          causa” para o app mostrar o que sobra para a família.
+          Pergunte ao advogado quanto ele acha que consegue e quanto cobra. Anote em “Ajustar a causa”.
         </p>
       )}
       {k.atualizar && (
@@ -109,12 +108,11 @@ export function CausaDoAluguel({
           <p>
             {causa.passado_em ? (
               <>
-                O pedido subiu <Din v={k.subiu} /> desde {dm(causa.passado_em)}, quando você passou ao advogado.
+                O pedido subiu <Din v={k.subiu} /> desde {dm(causa.passado_em)}. Mande o valor novo ao advogado.
               </>
             ) : (
-              'Você ainda não passou este pedido ao advogado.'
-            )}{' '}
-            Mande o valor atualizado para ele incluir na causa.
+              'Mande este pedido ao advogado.'
+            )}
           </p>
           <Botao variante="secundario" type="button" onClick={passei}>
             Passei ao advogado
@@ -156,13 +154,14 @@ function FraseExpectativa({
 }) {
   return (
     <p className="sub">
-      Se conseguir {causa.expectativa_pct}% do que é da família: chegam <Din v={e.bruta} />
+      Se o advogado conseguir {causa.expectativa_pct}%: sobram <Din v={e.liquida} /> para a família
       {e.advogado > 0 && (
         <>
-          , o advogado fica com <Din v={e.advogado} /> ({causa.advogado_pct}%)
+          {' '}
+          (chegam <Din v={e.bruta} />, ele fica com <Din v={e.advogado} />)
         </>
-      )}{' '}
-      e sobram <Din v={e.liquida} /> para a família. Só entra no plano quando chegar.
+      )}
+      .
     </p>
   )
 }

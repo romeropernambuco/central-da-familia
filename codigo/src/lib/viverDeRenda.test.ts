@@ -37,7 +37,7 @@ describe('quando a família viveria do que rende, sem meta escolhida', () => {
     // precisa de ~R$ 5.500 por mês a 4% real: perto de R$ 1,68 milhão; com R$ 100 mil e R$ 2 mil de sobra, leva décadas
     expect(v.mes! > '2050-01').toBe(true)
     expect(fraseViverDeRenda(v)).toMatch(
-      /^Meta ainda não escolhida\. Pelo que a família cadastrou \(gasto de R\$ 5\.000 por mês, guardando a sobra de hoje, perto de R\$ 2\.000 por mês\), daria para viver só do que rende por volta de [a-z]{3}\/20\d\d\./,
+      /^Sem meta escolhida: gastando R\$ 5\.000 por mês e guardando R\$ 2\.000, daria para viver do que rende em [a-z]{3}\/20\d\d\./,
     )
   })
 
@@ -56,7 +56,7 @@ describe('quando a família viveria do que rende, sem meta escolhida', () => {
       alugueis: 0,
     })!
     expect(v.jaCobre).toBe(true)
-    expect(fraseViverDeRenda(v)).toContain('já daria para viver só do que rende')
+    expect(fraseViverDeRenda(v)).toContain('já dá para viver do que rende')
   })
 
   it('sem sobra e sem guardado que chegue: não chega em 40 anos', () => {
@@ -67,7 +67,7 @@ describe('quando a família viveria do que rende, sem meta escolhida', () => {
       alugueis: 0,
     })!
     expect(v.mes).toBeNull()
-    expect(fraseViverDeRenda(v)).toContain('não daria para viver só do que rende nos próximos 40 anos')
+    expect(fraseViverDeRenda(v)).toContain('não daria para viver do que rende em 40 anos')
   })
 
   it('sem linha, sem gasto ou sem taxa: nada a dizer', () => {

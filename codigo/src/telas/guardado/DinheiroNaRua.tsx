@@ -11,6 +11,7 @@ import { contaDoNegocio, fraseDoPrazo, ordenarNegocios, totaisNaRua, type Negoci
 import { FolhaNegocio } from './FolhaNegocio'
 import { NovoNegocio } from './NovoNegocio'
 import './dinheiro-na-rua.css'
+import '../../componentes/planilha.css'
 
 const plural = (n: number, um: string, varios: string) => (n === 1 ? `1 ${um}` : `${n} ${varios}`)
 
@@ -74,10 +75,11 @@ export function DinheiroNaRua({ taxaAno, aplicacoes }: { taxaAno: number; aplica
           </button>
         )}
       </div>
-      <p className="sub">
-        Dinheiro que saiu da conta para um negócio e tem que voltar. Ele não entra no total guardado nem no plano de
-        2029 enquanto não volta.
-      </p>
+      <p className="sub">O que saiu para um negócio e tem que voltar.</p>
+      <details className="salario-porque">
+        <summary>Por quê?</summary>
+        <p className="sub">Enquanto não volta, esse dinheiro fica fora do total guardado e do plano de 2029.</p>
+      </details>
       {falha && (
         <p className="erro" role="alert">
           {textoPrivado(falha)}

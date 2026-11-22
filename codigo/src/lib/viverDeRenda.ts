@@ -49,12 +49,11 @@ const brl = (c: number) => 'R$ ' + Math.round(Math.abs(c) / 100).toLocaleString(
 const mesAno = (m: string) =>
   `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(m.slice(5)) - 1]}/${m.slice(0, 4)}`
 
-/** A frase para quem ainda não escolheu a meta. */
+/** A frase para quem ainda não escolheu a meta: curta (regra do dono, 22/11). */
 export function fraseViverDeRenda(v: ViverDeRenda): string {
-  const base = `Meta ainda não escolhida. Pelo que a família cadastrou (gasto de ${brl(v.gasto)} por mês`
-  if (v.jaCobre) return `${base}), o que ela tem já daria para viver só do que rende, com margem de segurança.`
-  const sobra = v.sobraMes > 0 ? `guardando a sobra de hoje, perto de ${brl(v.sobraMes)} por mês` : 'sem sobra hoje'
-  if (!v.mes)
-    return `${base}, ${sobra}), não daria para viver só do que rende nos próximos ${ANOS} anos. Escolha a meta ou aumente a sobra.`
-  return `${base}, ${sobra}), daria para viver só do que rende por volta de ${mesAno(v.mes)}. Escolha a meta para o plano usar a sua data.`
+  const base = `Sem meta escolhida: gastando ${brl(v.gasto)} por mês`
+  if (v.jaCobre) return `${base}, o que a família tem já dá para viver do que rende.`
+  const sobra = v.sobraMes > 0 ? ` e guardando ${brl(v.sobraMes)}` : ' e sem sobra hoje'
+  if (!v.mes) return `${base}${sobra}, não daria para viver do que rende em ${ANOS} anos. Aumente a sobra.`
+  return `${base}${sobra}, daria para viver do que rende em ${mesAno(v.mes)}.`
 }

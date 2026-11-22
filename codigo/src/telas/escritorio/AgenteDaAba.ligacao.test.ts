@@ -149,7 +149,7 @@ it('integração final: Início segue primeira pergunta autorizada, Painel usa f
     }
     for (const compacto of [false, true]) {
       await a.render(ctx, 'planejamento', createElement(RumoHero, { calculo: null, compacto, abrir() {} }))
-      expect(a.container.textContent).toContain('Tesoureiro de Receitas: confira as premissas')
+      expect(a.container.textContent).toContain('Tesoureiro de Receitas: confira os números')
       expect(a.container.textContent).not.toContain('Analista do Painel')
     }
     for (const perfil of ['casal', 'pessoa', 'equipe', 'dono'] as const) {

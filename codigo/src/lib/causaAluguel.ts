@@ -154,25 +154,17 @@ const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
 
 /** O que o dono tem a fazer para não perder dinheiro: a garantia do contrato e o prazo de 3 anos para cobrar. */
 export function avisosDaCausa(k: ContaDaCausa, causa: CausaAluguel, hoje: string): string[] {
+  // curtos (regra do dono: claro e curto); a lei de cada um fica em "Por que cada parte"
   const out: string[] = []
-  if (!causa.garantia)
-    out.push(
-      'Diga em "Ajustar a causa" qual é a garantia do contrato (fiador, seguro-fiança ou caução): ela muda quem paga.',
-    )
+  if (!causa.garantia) out.push('Falta dizer a garantia do contrato em "Ajustar a causa": ela muda quem paga.')
   else if (causa.garantia === 'fiador')
-    out.push(
-      'Fiador: peça ao advogado para pôr o fiador na ação junto com o inquilino. Fora do processo, ele não paga (Súmula 268 do STJ); a fiança vale até a entrega das chaves (Lei 8.245/91, art. 39).',
-    )
-  else if (causa.garantia === 'seguro')
-    out.push('Seguro-fiança: avise a seguradora já. Ele cobre aluguéis e encargos atrasados (Lei 8.245/91, art. 41).')
-  else if (causa.garantia === 'caucao')
-    out.push(
-      'Caução: o depósito do começo do contrato (até 3 aluguéis) sai do que ele deve; o resto continua no pedido.',
-    )
+    out.push('Fiador: peça ao advogado para pôr o fiador na ação. Fora dela, ele não paga.')
+  else if (causa.garantia === 'seguro') out.push('Seguro-fiança: avise a seguradora já. Ela cobre os atrasados.')
+  else if (causa.garantia === 'caucao') out.push('Caução: o depósito do começo do contrato sai do que ele deve.')
   const antigo = k.meses[0]
   if (antigo && mesMais(antigo.mes, 30) <= hoje.slice(0, 7))
     out.push(
-      `Prazo: cada aluguel prescreve 3 anos depois de vencer (Código Civil, art. 206, §3º, I). O de ${mmaa(antigo.mes)} vence em ${mmaa(mesMais(antigo.mes, 36))}: a ação precisa estar na justiça antes.`,
+      `Prazo: o aluguel de ${mmaa(antigo.mes)} só pode ser cobrado até ${mmaa(mesMais(antigo.mes, 36))}. A ação tem que entrar antes.`,
     )
   return out
 }
@@ -200,6 +192,8 @@ export function regrasDaCausa(k: ContaDaCausa, causa: CausaAluguel): string[] {
       : []),
     `Honorários de ${causa.honorarios_pct}% (${brl(k.honorarios)}): a lei do inquilinato fixa 10% quando o inquilino paga para evitar o despejo, se o contrato não disser outro valor (Lei 8.245/91, art. 62); se ele não pagar, o juiz fixa de 10% a 20% (Código de Processo Civil, art. 85). Esse dinheiro é do advogado, não da família (Estatuto da Advocacia, Lei 8.906/94, art. 23).`,
     'O que você paga ao seu advogado: em regra o inquilino não devolve, porque o STJ entende que ele só paga os honorários que o juiz fixar. Exceção: se o contrato de aluguel diz que o inquilino paga o advogado do dono na cobrança, o STJ já aceitou. Veja se o seu contrato tem essa cláusula.',
+    'Garantia: o fiador só paga se estiver no processo (Súmula 268 do STJ) e responde até a entrega das chaves (Lei 8.245/91, art. 39). O seguro-fiança cobre aluguéis e encargos atrasados (art. 41). A caução vai até 3 aluguéis (art. 38).',
+    'Prazo: cada aluguel prescreve 3 anos depois de vencer (Código Civil, art. 206, §3º, I).',
     'Fica para a saída do inquilino: danos no imóvel (compare a vistoria de entrada com a de saída; Lei 8.245/91, art. 23, III) e a multa por sair antes do prazo, se o contrato prevê.',
     'O app não é advogado: leve estes números para quem cuida do caso conferir.',
   ]

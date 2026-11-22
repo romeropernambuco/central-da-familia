@@ -6,7 +6,7 @@ import { CENARIOS_RECEITAS, useCenarioReceitas } from '../app/useCenarioReceitas
 import { textoDaTaxa } from '../lib/futuroReceitas'
 import type { CenarioReceitas, ControleReceitas, FontesReceita } from '../api/tipos'
 import { Din } from './base'
-import { mesCurto } from '../lib/formato'
+import { dataBr } from '../lib/formato'
 import { numerosRumo2029 } from '../lib/rumo2029'
 
 export function CenariosReceitas({
@@ -48,8 +48,7 @@ export function CenariosReceitas({
         ))}
       </div>
       <p className="sub">
-        Garantido é o número oficial. Com previstos inclui prováveis; Com tudo inclui também incertos. A escolha fica só
-        neste aparelho.
+        Garantido é o número oficial. Com previstos soma o provável; Com tudo, também o incerto. Vale só neste aparelho.
       </p>
       {leitura.erro && (
         <p role="alert">
@@ -92,30 +91,36 @@ export function CenariosReceitas({
       {!oculto && resultado && e && (
         <div aria-label="Detalhes do cenário selecionado">
           <p>
-            Renda sustentável das aplicações: <Din v={resultado.renda_sustentavel / 100} /> por mês. Aluguéis líquidos:{' '}
+            Do que rende: <Din v={resultado.renda_sustentavel / 100} /> por mês. Aluguéis:{' '}
             <Din v={(resultado.aluguel_liquido_2029 ?? 0) / 100} /> por mês.
           </p>
           <p>
-            {resultado.folga < 0 ? 'Falta de patrimônio' : 'Folga de patrimônio'}:{' '}
-            <Din v={Math.abs(resultado.folga) / 100} />. Quando cobre:{' '}
-            {resultado.patrimonio_necessario === null
-              ? 'não calculável com esta taxa'
-              : resultado.folga >= 0
-                ? 'na meta de janeiro de 2029'
-                : 'ainda não cobre a meta de janeiro de 2029'}
-            .
-          </p>
-          <p className="sub">
-            Premissa — fonte: cadastro da família e taxas do Objetivo; data da conta: {textoPrivado(e.hoje, oculto)}.
-            Taxa real de trabalho: {textoPrivado(textoDaTaxa(e.parametros.taxa_real_trabalho), oculto)}% ao ano; margem:{' '}
-            {textoPrivado(textoDaTaxa(e.parametros.margem), oculto)}%. Estimativa, não promessa.
+            {resultado.patrimonio_necessario === null ? (
+              'Com esta taxa não dá para calcular quanto falta.'
+            ) : resultado.folga < 0 ? (
+              <>
+                Faltam <Din v={Math.abs(resultado.folga) / 100} /> de guardado para a meta de jan/2029.
+              </>
+            ) : (
+              <>
+                O guardado já passa da meta de jan/2029 em <Din v={resultado.folga / 100} />.
+              </>
+            )}
           </p>
           <details>
-            <summary>Ver taxas usadas até 2028</summary>
+            <summary>Como a conta é feita</summary>
+            <p className="sub">
+              Rendimento de {textoPrivado(textoDaTaxa(e.parametros.taxa_real_trabalho), oculto)}% ao ano acima da
+              inflação e margem de {textoPrivado(textoDaTaxa(e.parametros.margem), oculto)}%, com os números de{' '}
+              {textoPrivado(dataBr(e.hoje), oculto)}. É estimativa, não promessa.
+            </p>
+            <p className="sub">
+              Entradas contam até 12/2028. Depois, salário e receitas ficam fora: a família vive do que rende.
+            </p>
             {Object.entries(e.parametros.taxa_bruta_ano).map(([ano, t]) => (
               <p key={ano}>
-                {ano}: taxa bruta {textoPrivado(textoDaTaxa(t), oculto)}%; inflação{' '}
-                {textoPrivado(textoDaTaxa(e.parametros.ipca_ano[Number(ano)]), oculto)}%; imposto da projeção{' '}
+                {ano}: juros {textoPrivado(textoDaTaxa(t), oculto)}%; inflação{' '}
+                {textoPrivado(textoDaTaxa(e.parametros.ipca_ano[Number(ano)]), oculto)}%; imposto{' '}
                 {textoPrivado(textoDaTaxa(e.parametros.aliq_proj), oculto)}%.
               </p>
             ))}
@@ -128,11 +133,6 @@ export function CenariosReceitas({
       {!!leitura.dado?.confirmar.length && (
         <p className="sub">A confirmar: {textoPrivado(leitura.dado.confirmar.join('; '), oculto)}.</p>
       )}
-      <p className="sub">
-        Repetições vão até {mesCurto('2031-12')} ou o fim informado. O motor conta entradas só até dezembro de 2028.
-        Receitas depois disso ficam no cadastro e não viram renda permanente na conta oficial. Salário não é tratado
-        como renda para viver a partir de 2029.
-      </p>
     </div>
   )
 }

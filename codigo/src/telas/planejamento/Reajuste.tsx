@@ -158,10 +158,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     return (
       <p className="todo warn reajuste" style={{ marginTop: 12 }}>
         <Icone desenho={CalendarClock} aria-hidden="true" />
-        <span>
-          {cap(mesLongo(hoje))} é o mês do reajuste do teto, mas falta a inflação de {anoIpca}. Digite o IPCA de{' '}
-          {anoIpca} no Objetivo de 2029, aqui embaixo.
-        </span>
+        <span>Mês do reajuste do teto: falta a inflação de {anoIpca}. Digite no Objetivo de 2029, aqui embaixo.</span>
       </p>
     )
   const teto = mostra?.teto ?? ent.entrada.parametros.teto_mes
@@ -171,7 +168,7 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
   const eu = familia.membroId || ''
   const meuVoto = sit?.votos.find(v => v.membro_id === eu)
   const adultos = (sit?.votos.length || 0) + (sit?.faltam.length || 0)
-  const fonte = mostra || daFamilia ? '' : ', do Focus: confira com o IPCA fechado do ano'
+  const fonte = mostra || daFamilia ? '' : ', previsão do Banco Central'
   const quando = mesLongo((sit?.vale_a_partir || vig) + '-01')
 
   async function aprovar() {
@@ -275,12 +272,14 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     >
       <Icone desenho={CalendarClock} aria-hidden="true" />
       <span>
-        <b>Reajuste do teto de {vig.slice(0, 4)}.</b> Pela inflação de {anoIpca} ({textoDaTaxa(ipca)}%{fonte}), o teto
-        da família passa de {reais(teto / 100)} para <b>{reais(sugerido / 100)}</b> por mês.{' '}
+        <b>
+          Teto de {vig.slice(0, 4)}: {reais(teto / 100)} → {reais(sugerido / 100)} por mês.
+        </b>{' '}
+        Inflação de {anoIpca}: {textoDaTaxa(ipca)}%{fonte}.{' '}
         {pe === 'vencido'
           ? `O prazo para aplicar acabou em ${dataCurta(sit!.aplicar_ate!)}.`
           : pe === 'aprovado'
-            ? `Aprovado e já vale. Toque para aplicar nos limites que você ajusta${sit?.aplicar_ate ? `, até ${dataCurta(sit.aplicar_ate)}` : ''}.`
+            ? `Aprovado. Aplique nos seus limites${sit?.aplicar_ate ? ` até ${dataCurta(sit.aplicar_ate)}` : ''}.`
             : pe === 'aprovado, vale no mes seguinte'
               ? `${adultos === 1 ? 'Aprovado' : 'Os 2 aprovaram'}. Vale a partir de ${quando}: ${adultos === 1 ? 'aí você aplica nos seus limites' : 'aí cada um aplica no que é seu'}.`
               : pe === 'tetos diferentes'
@@ -380,4 +379,3 @@ export function Reajuste({ envelopes, mudaLimite }: { envelopes: Envelope[]; mud
     </div>
   )
 }
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)

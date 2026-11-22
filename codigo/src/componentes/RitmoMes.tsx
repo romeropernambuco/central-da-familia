@@ -90,7 +90,7 @@ export function RitmoMes({
           )}
           {semana != null && (
             <p className="ritmo-f">
-              Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compara grande` : ''}.
+              Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compra grande` : ''}.
             </p>
           )}
         </div>
@@ -132,16 +132,16 @@ export function RitmoMes({
           {e.ate_domingo != null && (
             <span>
               <i className="q risco-q" />
-              na barra da semana, o traço é onde deveria estar hoje
+              onde deveria estar hoje
             </span>
           )}
           {dia >= 3 && lim > 0 && (
             <span>
               <i className="q g-q-pont" />
-              no gráfico do mês, o pontilhado é se continuar assim
+              se continuar assim
             </span>
           )}
-          {pontual > 0 && <span>parcelas e compras grandes ({reais(pontual)}) contam 1 vez só</span>}
+          {pontual > 0 && <span>parcelas e compras grandes contam 1 vez só ({reais(pontual)})</span>}
         </p>
       )}
     </div>

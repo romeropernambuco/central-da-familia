@@ -91,12 +91,12 @@ export function Trilha({
         </button>
         <details>
           <summary>
-            Estimativa sem margem <Icone nome="abrir" size={16} />
+            Sem a margem de segurança <Icone nome="abrir" size={16} />
           </summary>
           <div className="j-comparacao">
             <span>{comparacao.rotulo}</span>
             {mesmoValor ? (
-              <strong>Mesmo montante do resumo</strong>
+              <strong>Mesmo valor com ou sem a margem</strong>
             ) : comparacao.campo.estado === 'pronto' ? (
               <Valor campo={comparacao.campo} className="numero-secundario" />
             ) : (
