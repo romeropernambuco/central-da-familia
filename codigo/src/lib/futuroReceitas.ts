@@ -3,7 +3,7 @@
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from './futuro'
-import { salariosAteAVirada } from './futuroSalario'
+import { donosComSalario, salariosAteAVirada } from './futuroSalario'
 import { viagensNoPlano } from './viagem'
 import type {
   CenarioReceitas,
@@ -381,10 +381,9 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
       recebido: !!r.recebido_em,
       descricao: r.descricao ?? null,
     })),
-    // o salário de Rendas até a virada; quem já cadastrou o salário em Recebimentos (origem salário) não conta 2 vezes
-    ...(Object.values(fontes.fontes).some(f => f.origem === 'salario')
-      ? []
-      : salariosAteAVirada(j.config?.rendas, m0, VIRADA)),
+    // o salário de Rendas até a virada; quem já cadastrou o próprio salário em Recebimentos (origem salário) não conta
+    // 2 vezes, mas o salário do outro continua (simulação de 22/11: um salário desligava o do casal inteiro)
+    ...salariosAteAVirada(j.config?.rendas, m0, VIRADA, donosComSalario(j.recebimentos || [], fontes.fontes)),
   ]
   return {
     confirmar,

@@ -6,6 +6,7 @@ import {
   custosDaViagem,
   frasesDaViagem,
   lerViagens,
+  reservaDasViagens,
   viagensNoPlano,
   type ViagemPlanejada,
 } from './viagem'
@@ -53,15 +54,32 @@ describe('a viagem no plano', () => {
     expect(c.reduce((s, x) => s + x.cofrinho, 0)).toBeCloseTo(6000, 0)
   })
 
-  it('no motor: parcelas como compromisso (só planejando) e custos lá no mês da viagem', () => {
+  it('no motor: parcelas como compromisso e custos lá no mês da viagem, também depois de comprada', () => {
     const p = viagensNoPlano([viagem()], '2026-11')
     expect(p.compromissos).toHaveLength(12)
     expect(p.compromissos[0]).toEqual({ mes: '2027-01', valor: 100000, tipo: 'parcela' })
     expect(p.desvios).toEqual([{ mes: '2027-12', valor: 600000, origem: 'viagem:v1' }])
-    const comprada = viagensNoPlano([viagem({ situacao: 'comprada' })], '2026-11')
-    expect(comprada.compromissos).toHaveLength(0)
-    expect(comprada.desvios).toHaveLength(1)
+    // "Comprei" não tira a viagem do plano (simulação de 22/11: melhorava o plano no valor da viagem inteira)
+    expect(viagensNoPlano([viagem({ situacao: 'comprada' })], '2026-11')).toEqual(p)
     expect(viagensNoPlano([viagem({ situacao: 'feita' })], '2026-11')).toEqual({ compromissos: [], desvios: [] })
+  })
+
+  it('o cofrinho é repartido desde o mês em que a viagem foi planejada e não cresce com o tempo', () => {
+    const v = viagem({ criada: '2026-12' })
+    const dez = custosDaViagem(v, '2026-12').find(x => x.mes === '2027-06')!.cofrinho
+    const jun = custosDaViagem(v, '2027-06').find(x => x.mes === '2027-06')!.cofrinho
+    expect(jun).toBe(dez)
+    expect(jun).toBe(461.54)
+  })
+
+  it('a reserva do mês: cofrinho sempre; a parcela só enquanto não foi comprada (comprada, ela vem pelo cartão)', () => {
+    expect(reservaDasViagens([viagem({ criada: '2026-12' })], '2027-01')).toEqual({
+      parcela: 1000,
+      cofrinho: 461.54,
+      total: 1461.54,
+    })
+    expect(reservaDasViagens([viagem({ criada: '2026-12', situacao: 'comprada' })], '2027-01').parcela).toBe(0)
+    expect(reservaDasViagens([viagem({ situacao: 'feita' })], '2027-01').total).toBe(0)
   })
 
   it('cabe na sobra: a gordura fica inteira', () => {

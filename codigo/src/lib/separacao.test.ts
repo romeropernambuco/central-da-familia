@@ -1,6 +1,6 @@
 // A separação (regra do dono, 22/11/2026): salário e aluguel pagam o mês, o guardado rende o lucro, a gordura não se come.
 import { describe, expect, it } from 'vitest'
-import { fraseDaSeparacao, rendaDoMesCadastrada, separarDoMes } from './separacao'
+import { fraseDaSeparacao, gastoDoMes, rendaDoMesCadastrada, separarDoMes } from './separacao'
 
 describe('quanto dá para gastar no mês sem tocar na gordura', () => {
   it('soma o salário cadastrado; extra fica de fora e a variável conta pelo mês fraco', () => {
@@ -53,6 +53,31 @@ describe('quanto dá para gastar no mês sem tocar na gordura', () => {
     expect(separarDoMes({ entrou: 6000, previsto: 0, rendaCadastrada: 16000, lucro: 600, gasto: 9000 })!.entra).toBe(
       16000,
     )
+  })
+
+  it('a compra parcelada conta só a parcela do mês, também nos meses seguintes', () => {
+    const lanc = [
+      { data: '2026-12-05', valor: 24000, parcelas: 10 },
+      { data: '2026-12-10', valor: 300 },
+      { data: '2027-01-03', valor: 2400, parcela: 2 }, // projeção do exemplo: não conta (a compra original é a fonte)
+      { data: '2026-11-20', valor: 999, apagado_em: '2026-11-21' },
+    ]
+    expect(gastoDoMes(lanc, '2026-12', '2026-12-31')).toBe(2700)
+    expect(gastoDoMes(lanc, '2027-03', '2027-03-31')).toBe(2400)
+    expect(gastoDoMes(lanc, '2027-10', '2027-10-31')).toBe(0)
+  })
+
+  it('o que foi separado para a viagem sai do que pode gastar', () => {
+    const s = separarDoMes({
+      entrou: 0,
+      previsto: 0,
+      rendaCadastrada: 10000,
+      lucro: 500,
+      gasto: 6000,
+      reservado: 1500,
+    })!
+    expect(s.pode).toBe(9000)
+    expect(fraseDaSeparacao(s).frase).toContain('menos R$ 1.500 separados para a viagem')
   })
 
   it('sem renda e sem guardado: nada a dizer', () => {

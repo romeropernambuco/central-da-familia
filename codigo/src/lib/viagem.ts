@@ -4,6 +4,7 @@
 // A viagem é planejada com antecedência, paga no cartão em parcelas e sai da sobra do mês, nunca da gordura.
 // Valores da viagem em reais; o que vai para o motor (lib/futuro) em centavos.
 import type { FuturoEntrada, LinhaMes } from './futuro'
+import { lerGuia, type GuiaViagem } from './guiaViagem'
 
 export type SituacaoViagem = 'planejando' | 'comprada' | 'feita'
 export interface ViagemPlanejada {
@@ -22,6 +23,10 @@ export interface ViagemPlanejada {
   /** desconto se pagar à vista (%); null = não perguntou */
   desconto_vista: number | null
   situacao: SituacaoViagem
+  /** mês em que a viagem foi planejada: o cofrinho reparte os custos lá daqui até o mês da viagem (fixo, não cresce) */
+  criada?: string
+  /** o guia item por item (lib/guiaViagem.ts): de onde saem o pacote e os custos lá */
+  guia?: GuiaViagem | null
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -36,6 +41,10 @@ const mesesEntre = (de: string, ate: string) => {
     [a2, m2] = ate.split('-').map(Number)
   return (a2 - a1) * 12 + (m2 - m1)
 }
+
+/** Um mês AAAA-MM válido que não passa de `ate`; senão null. */
+const mesAte = (m: unknown, ate: string) => (typeof m === 'string' && MES.test(m) && m <= ate ? m : null)
+const pctValido = (v: unknown) => (typeof v === 'number' && v > 0 && v < 100 ? v : null)
 
 /** O que veio da configuração: só passa viagem com meses e valores certos. */
 export function lerViagens(v: unknown): ViagemPlanejada[] {
@@ -52,15 +61,14 @@ export function lerViagens(v: unknown): ViagemPlanejada[] {
         id: o.id,
         nome: typeof o.nome === 'string' && o.nome.trim() ? o.nome.trim().slice(0, 60) : 'Viagem',
         mes: o.mes,
-        compra: typeof o.compra === 'string' && MES.test(o.compra) && o.compra <= o.mes ? o.compra : o.mes,
+        compra: mesAte(o.compra, o.mes) || o.mes,
         pacote: c2(pacote),
         parcelas: Math.min(12, Math.max(1, Math.round(Number(o.parcelas) || 1))),
         custos_la: c2(custos),
-        desconto_vista:
-          typeof o.desconto_vista === 'number' && o.desconto_vista > 0 && o.desconto_vista < 100
-            ? o.desconto_vista
-            : null,
+        desconto_vista: pctValido(o.desconto_vista),
         situacao: o.situacao === 'comprada' || o.situacao === 'feita' ? o.situacao : 'planejando',
+        ...(mesAte(o.criada, o.mes) ? { criada: mesAte(o.criada, o.mes)! } : {}),
+        ...(lerGuia(o.guia) ? { guia: lerGuia(o.guia) } : {}),
       },
     ]
   })
@@ -68,7 +76,8 @@ export function lerViagens(v: unknown): ViagemPlanejada[] {
 
 /**
  * Quanto a viagem tira de cada mês (reais), de `desde` em diante: as parcelas do pacote a partir da compra e o cofrinho
- * dos custos lá (guardados em partes iguais de `desde` até o mês da viagem).
+ * dos custos lá, em partes iguais do mês em que foi planejada (sem a data: de `desde`) até o mês da viagem. A parte de
+ * cada mês fica fixa (simulação de 22/11: refazer a conta a cada mês fazia o cofrinho crescer de R$ 1.250 a R$ 7.500).
  */
 export function custosDaViagem(v: ViagemPlanejada, desde: string) {
   const out = new Map<string, { parcela: number; cofrinho: number }>()
@@ -80,31 +89,48 @@ export function custosDaViagem(v: ViagemPlanejada, desde: string) {
   }
   const p = c2(v.pacote / v.parcelas)
   for (let i = 0; i < v.parcelas; i++) soma(mesMaisV(v.compra, i), 'parcela', p)
-  const n = Math.max(1, mesesEntre(desde, v.mes) + 1)
-  if (v.mes >= desde) for (let i = 0; i < n; i++) soma(mesMaisV(desde, i), 'cofrinho', c2(v.custos_la / n))
+  const inicio = v.criada && v.criada < desde ? v.criada : desde
+  const n = Math.max(1, mesesEntre(inicio, v.mes) + 1)
+  if (v.mes >= desde) for (let i = 0; i < n; i++) soma(mesMaisV(inicio, i), 'cofrinho', c2(v.custos_la / n))
   return [...out.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([mes, x]) => ({ mes, ...x }))
 }
 
 /**
- * A viagem no plano (centavos): as parcelas como compromisso enquanto não foi comprada (comprada, elas estão no cartão);
- * os custos lá como desvio no mês da viagem enquanto não foi feita.
+ * A viagem no plano (centavos): as parcelas como compromisso e os custos lá como desvio no mês da viagem, até a família
+ * dizer "já fui". Comprada continua: o plano conta o teto dos limites, não a fatura, e sem isso "Comprei" melhorava o
+ * plano no valor da viagem inteira (simulação de 22/11).
  */
 export function viagensNoPlano(v: unknown, m0: string): Pick<FuturoEntrada, 'compromissos' | 'desvios'> {
   const compromissos: FuturoEntrada['compromissos'] = [],
     desvios: FuturoEntrada['desvios'] = []
   for (const x of lerViagens(v)) {
     if (x.situacao === 'feita') continue
-    if (x.situacao === 'planejando') {
-      const p = Math.round((x.pacote * 100) / x.parcelas)
-      for (let i = 0; i < x.parcelas; i++) {
-        const mes = mesMaisV(x.compra, i)
-        if (mes > m0) compromissos.push({ mes, valor: p, tipo: 'parcela' })
-      }
+    const p = Math.round((x.pacote * 100) / x.parcelas)
+    for (let i = 0; i < x.parcelas; i++) {
+      const mes = mesMaisV(x.compra, i)
+      if (mes > m0) compromissos.push({ mes, valor: p, tipo: 'parcela' })
     }
     if (x.custos_la > 0 && x.mes > m0)
       desvios.push({ mes: x.mes, valor: Math.round(x.custos_la * 100), origem: `viagem:${x.id}` })
   }
   return { compromissos, desvios }
+}
+
+/**
+ * O que as viagens pedem do mês (reais), para a separação do mês reservar: o cofrinho dos custos lá até a viagem e a
+ * parcela do pacote enquanto não foi comprada (comprada, a parcela já aparece no que foi gasto, pelo cartão).
+ */
+export function reservaDasViagens(v: unknown, mes: string): { parcela: number; cofrinho: number; total: number } {
+  let parcela = 0,
+    cofrinho = 0
+  for (const x of lerViagens(v)) {
+    if (x.situacao === 'feita') continue
+    const m = custosDaViagem(x, mes).find(c => c.mes === mes)
+    if (!m) continue
+    if (x.situacao === 'planejando') parcela += m.parcela
+    cofrinho += m.cofrinho
+  }
+  return { parcela: c2(parcela), cofrinho: c2(cofrinho), total: c2(parcela + cofrinho) }
 }
 
 export interface AnaliseViagem {

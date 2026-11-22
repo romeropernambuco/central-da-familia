@@ -1,7 +1,7 @@
 // A causa do aluguel (pedido do dono, 22/11/2026): o pedido se atualiza sozinho e diz a regra de cada parte.
 import { describe, expect, it } from 'vitest'
 import type { CadernoImovel } from './aluguel'
-import { CAUSA_PADRAO, contaDaCausa, lerCausa, regrasDaCausa } from './causaAluguel'
+import { avisosDaCausa, CAUSA_PADRAO, contaDaCausa, lerCausa, regrasDaCausa } from './causaAluguel'
 
 const caderno = (extra: Partial<CadernoImovel> = {}): CadernoImovel => ({
   dia_vencimento: 10,
@@ -63,9 +63,29 @@ describe('o que pedir na causa', () => {
     const k = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2026-11-22')!
     const r = regrasDaCausa(k, CAUSA_PADRAO).join(' ')
     expect(r).toContain('Lei 8.245/91, art. 62')
+    expect(r).toContain('Lei 14.905/2024')
+    expect(r).toContain('em regra o inquilino não devolve')
     expect(r).toContain('Lei 8.906/94, art. 23')
     expect(r).toContain('art. 85')
     expect(r).toContain('O app não é advogado')
+  })
+
+  it('custas adiantadas voltam para a família e não entram na base dos honorários', () => {
+    const sem = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2026-11-22')!
+    const com = contaDaCausa(caderno(), 2000, { ...CAUSA_PADRAO, custas: 500 }, '2026-11-22')!
+    expect(com.custas).toBe(500)
+    expect(com.honorarios).toBe(sem.honorarios)
+    expect(com.daFamilia).toBeCloseTo(sem.daFamilia + 500, 2)
+  })
+
+  it('avisa da garantia (fiador na ação) e do prazo de 3 anos para cobrar', () => {
+    const k = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2026-11-22')!
+    expect(avisosDaCausa(k, CAUSA_PADRAO, '2026-11-22')[0]).toContain('qual é a garantia do contrato')
+    expect(avisosDaCausa(k, { ...CAUSA_PADRAO, garantia: 'fiador' }, '2026-11-22')[0]).toContain('Súmula 268')
+    const velho = contaDaCausa(caderno(), 2000, CAUSA_PADRAO, '2029-04-01')!
+    expect(avisosDaCausa(velho, { ...CAUSA_PADRAO, garantia: 'nenhuma' }, '2029-04-01')).toEqual([
+      expect.stringContaining('O de 09/2026 vence em 09/2029'),
+    ])
   })
 
   it('o que veio do banco: número fora da faixa volta para o padrão; em branco fica null', () => {

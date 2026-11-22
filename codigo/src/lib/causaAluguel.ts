@@ -23,6 +23,17 @@ export interface CausaAluguel {
   /** o último dia em que a família passou o pedido ao advogado, e o valor daquele dia */
   passado_em: string | null
   pedido_passado: number | null
+  /** custas, notificação, oficial de justiça e perícia que a família adiantou: voltam no fim (CPC, art. 82, §2º) */
+  custas?: number
+  /** a garantia do contrato de aluguel; null = ainda não disse */
+  garantia?: Garantia | null
+}
+export type Garantia = 'fiador' | 'seguro' | 'caucao' | 'nenhuma'
+export const GARANTIAS: Record<Garantia, string> = {
+  fiador: 'Fiador',
+  seguro: 'Seguro-fiança',
+  caucao: 'Caução (depósito)',
+  nenhuma: 'Sem garantia',
 }
 
 export const CAUSA_PADRAO: CausaAluguel = {
@@ -45,6 +56,8 @@ export interface ContaDaCausa {
   juros: number
   /** honorários pedidos na causa: são do advogado (Lei 8.906/94, art. 23) */
   honorarios: number
+  /** custas que a família adiantou: voltam para ela */
+  custas: number
   /** o pedido inteiro, já sem o que voltou */
   pedido: number
   /** o que é da família no pedido: aluguéis, encargos, multa e juros, menos o que já voltou */
@@ -78,6 +91,8 @@ export function lerCausa(v: unknown): CausaAluguel | null {
     advogado_pct: pct(c.advogado_pct),
     passado_em: typeof c.passado_em === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.passado_em) ? c.passado_em : null,
     pedido_passado: typeof c.pedido_passado === 'number' && c.pedido_passado >= 0 ? c.pedido_passado : null,
+    custas: num(c.custas, 0, 1e8, 0),
+    garantia: c.garantia && c.garantia in GARANTIAS ? c.garantia : null,
   }
 }
 
@@ -103,9 +118,11 @@ export function contaDaCausa(
     meses.reduce((s, x) => s + (x.valor * causa.juros_pct * Math.max(0, dia(hoje) - dia(x.vence))) / 100 / 30, 0),
   )
   const sub = alugueis + encargos + multa + juros
+  // honorários sobre o devido (art. 62, II, d); as custas adiantadas voltam à família por fora
   const honorarios = c2((sub * causa.honorarios_pct) / 100)
-  const pedido = c2(Math.max(0, sub + honorarios - causa.recuperado))
-  const daFamilia = c2(Math.max(0, sub - causa.recuperado))
+  const custas = c2(causa.custas || 0)
+  const pedido = c2(Math.max(0, sub + custas + honorarios - causa.recuperado))
+  const daFamilia = c2(Math.max(0, sub + custas - causa.recuperado))
   const expectativa =
     causa.expectativa_pct === null
       ? null
@@ -117,7 +134,47 @@ export function contaDaCausa(
   const subiu = causa.pedido_passado === null ? pedido : c2(pedido - causa.pedido_passado)
   const atualizar =
     pedido > 0 && (causa.passado_em === null || (causa.passado_em.slice(0, 7) < hoje.slice(0, 7) && subiu > 0))
-  return { meses, alugueis, encargos, multa, juros, honorarios, pedido, daFamilia, expectativa, atualizar, subiu }
+  return {
+    meses,
+    alugueis,
+    encargos,
+    multa,
+    juros,
+    honorarios,
+    custas,
+    pedido,
+    daFamilia,
+    expectativa,
+    atualizar,
+    subiu,
+  }
+}
+
+const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
+
+/** O que o dono tem a fazer para não perder dinheiro: a garantia do contrato e o prazo de 3 anos para cobrar. */
+export function avisosDaCausa(k: ContaDaCausa, causa: CausaAluguel, hoje: string): string[] {
+  const out: string[] = []
+  if (!causa.garantia)
+    out.push(
+      'Diga em "Ajustar a causa" qual é a garantia do contrato (fiador, seguro-fiança ou caução): ela muda quem paga.',
+    )
+  else if (causa.garantia === 'fiador')
+    out.push(
+      'Fiador: peça ao advogado para pôr o fiador na ação junto com o inquilino. Fora do processo, ele não paga (Súmula 268 do STJ); a fiança vale até a entrega das chaves (Lei 8.245/91, art. 39).',
+    )
+  else if (causa.garantia === 'seguro')
+    out.push('Seguro-fiança: avise a seguradora já. Ele cobre aluguéis e encargos atrasados (Lei 8.245/91, art. 41).')
+  else if (causa.garantia === 'caucao')
+    out.push(
+      'Caução: o depósito do começo do contrato (até 3 aluguéis) sai do que ele deve; o resto continua no pedido.',
+    )
+  const antigo = k.meses[0]
+  if (antigo && mesMais(antigo.mes, 30) <= hoje.slice(0, 7))
+    out.push(
+      `Prazo: cada aluguel prescreve 3 anos depois de vencer (Código Civil, art. 206, §3º, I). O de ${mmaa(antigo.mes)} vence em ${mmaa(mesMais(antigo.mes, 36))}: a ação precisa estar na justiça antes.`,
+    )
+  return out
 }
 
 const brl = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -125,15 +182,25 @@ const brl = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDi
 /** As regras, uma por parte do pedido. Texto simples; termina mandando conferir com o advogado. */
 export function regrasDaCausa(k: ContaDaCausa, causa: CausaAluguel): string[] {
   const n = k.meses.length
+  // textos conferidos por um especialista em locação em 22/11/2026 (Lei 8.245/91, CPC, Lei 14.905/2024, STJ)
   return [
-    `Aluguéis atrasados: ${n === 1 ? '1 mês' : `${n} meses`}, ${brl(k.alugueis)}. Quem não paga deve todo aluguel que vencer até sair do imóvel (Lei do Inquilinato, Lei 8.245/91, art. 62). Cada mês que passa entra no pedido sozinho.`,
+    `Aluguéis atrasados: ${n === 1 ? '1 mês' : `${n} meses`}, ${brl(k.alugueis)}. Quem não paga deve todo aluguel e encargo que vencer até devolver as chaves (Lei 8.245/91, art. 23, I; Código de Processo Civil, art. 323). Cada mês que passa entra no pedido sozinho.`,
     ...(k.encargos > 0
-      ? [`Condomínio, IPTU e contas que eram dele: ${brl(k.encargos)} (os "acessórios da locação", art. 62).`]
+      ? [
+          `Condomínio (só as despesas comuns do dia a dia) e IPTU, se o contrato passou o IPTU para ele: ${brl(k.encargos)} (Lei 8.245/91, arts. 22, VIII e X, e 23, XII). Sem cláusula, o IPTU e as despesas extraordinárias são do dono.`,
+        ]
       : []),
-    `Multa de ${causa.multa_pct}% (${brl(k.multa)}) e juros de ${causa.juros_pct}% ao mês (${brl(k.juros)}): valem se estiverem no contrato de aluguel; confira a cláusula.`,
-    'Correção monetária pelo índice do contrato (IGP-M ou IPCA): o advogado calcula; não está nesta conta.',
-    `Honorários de ${causa.honorarios_pct}% (${brl(k.honorarios)}): a lei do inquilinato fixa 10% se o contrato não disser outro valor; na sentença o juiz fixa de 10% a 20% (Código de Processo Civil, art. 85). Esse dinheiro é do advogado, não da família (Estatuto da Advocacia, Lei 8.906/94, art. 23), salvo se o contrato com ele disser outra coisa.`,
-    'O que você paga ao seu advogado (o contrato com ele): a justiça às vezes manda o inquilino devolver (Código Civil, arts. 389 e 404), mas os tribunais divergem. Pergunte ao advogado se vale pedir.',
+    `Multa de ${causa.multa_pct}% (${brl(k.multa)}): só vale se estiver no contrato, e sobre a base que o contrato disser (em geral aluguel e encargos). Em aluguel não vale o limite de 2% do Código do Consumidor; o juiz pode reduzir multa exagerada (Código Civil, art. 413).`,
+    `Juros de mora de ${causa.juros_pct.toLocaleString('pt-BR')}% ao mês (${brl(k.juros)}), desde cada vencimento: vale a taxa do contrato (o comum é 1% ao mês). Se o contrato não fala em juros, a lei usa a taxa legal (Selic menos IPCA, divulgada todo mês pelo Banco Central; em 2026 perto de 0,8% a 1% ao mês) (Código Civil, art. 406, com a Lei 14.905/2024). Mude em "Ajustar a causa".`,
+    'Correção monetária desde cada vencimento, pelo índice do contrato (IGP-M ou IPCA); se o contrato não tiver índice, IPCA (Código Civil, art. 389). Não está nesta conta: o valor real é um pouco maior.',
+    ...(k.custas > 0
+      ? [
+          `Custas que a família adiantou (${brl(k.custas)}): voltam no fim, para a família (Lei 8.245/91, art. 62, II, d; Código de Processo Civil, art. 82, §2º).`,
+        ]
+      : []),
+    `Honorários de ${causa.honorarios_pct}% (${brl(k.honorarios)}): a lei do inquilinato fixa 10% quando o inquilino paga para evitar o despejo, se o contrato não disser outro valor (Lei 8.245/91, art. 62); se ele não pagar, o juiz fixa de 10% a 20% (Código de Processo Civil, art. 85). Esse dinheiro é do advogado, não da família (Estatuto da Advocacia, Lei 8.906/94, art. 23).`,
+    'O que você paga ao seu advogado: em regra o inquilino não devolve, porque o STJ entende que ele só paga os honorários que o juiz fixar. Exceção: se o contrato de aluguel diz que o inquilino paga o advogado do dono na cobrança, o STJ já aceitou. Veja se o seu contrato tem essa cláusula.',
+    'Fica para a saída do inquilino: danos no imóvel (compare a vistoria de entrada com a de saída; Lei 8.245/91, art. 23, III) e a multa por sair antes do prazo, se o contrato prevê.',
     'O app não é advogado: leve estes números para quem cuida do caso conferir.',
   ]
 }

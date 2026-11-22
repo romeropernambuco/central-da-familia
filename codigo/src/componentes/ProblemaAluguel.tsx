@@ -7,6 +7,7 @@ import {
   contaDoAno,
   ETAPAS,
   mesMais,
+  semReceberNoMes,
   type CadernoImovel,
   type EtapaProblema,
   type ProblemaAluguel,
@@ -16,7 +17,7 @@ import { textoPrivado } from '../lib/olho'
 import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoPrivado } from './privacidade'
-import { FolhaRecebiDivida } from './RecebiDaDivida'
+import { FolhaRecebiDivida, FolhaVoltou } from './RecebiDaDivida'
 import { CausaDoAluguel } from './CausaAluguel'
 
 type Lembrar = 'semana' | 'mes' | 'nunca'
@@ -49,12 +50,24 @@ export function ProblemaDoAluguel({
 }) {
   const [folha, setFolha] = useState(false)
   const p = c.problema
+  // "voltou a pagar" guarda o caso (a volta vira o mês de hoje): os meses sem receber e a dívida continuam no histórico
+  const encerrado = !!p && !semReceberNoMes(c, hojeRecife().slice(0, 7))
   return (
     <section aria-labelledby="alProblema" className="aluguel-problema">
       <h3 id="alProblema" className="lbl">
         Inquilino não pagou?
       </h3>
-      {p ? (
+      {p && encerrado && (
+        <div className="todo pilha problema-card" role="status">
+          <p>
+            <Icone desenho={Gavel} aria-hidden="true" /> <b>Voltou a pagar</b>
+            {p.volta ? ` em ${mesCurto(p.volta + '-01')}` : ''}. O caso fica guardado: os meses sem receber continuam
+            como dívida.
+          </p>
+          <CausaDoAluguel imovel={imovel} c={c} p={p} gravar={gravar} />
+        </div>
+      )}
+      {p && !encerrado ? (
         <ProblemaAberto imovel={imovel} c={c} p={p} gravar={gravar} mudar={() => setFolha(true)} />
       ) : (
         <>
@@ -64,11 +77,18 @@ export function ProblemaDoAluguel({
           </p>
           <Botao variante="secundario" type="button" onClick={() => setFolha(true)}>
             <Icone desenho={AlertTriangle} />
-            Não me pagou
+            {p ? 'Não me pagou de novo' : 'Não me pagou'}
           </Botao>
         </>
       )}
-      {folha && <FolhaProblema imovel={imovel} c={c} gravar={gravar} fechar={() => setFolha(false)} />}
+      {folha && (
+        <FolhaProblema
+          imovel={imovel}
+          c={encerrado ? { ...c, problema: null } : c}
+          gravar={gravar}
+          fechar={() => setFolha(false)}
+        />
+      )}
     </section>
   )
 }
@@ -150,7 +170,7 @@ function ProblemaAberto({
         <Botao variante="secundario" type="button" disabled={!texto.trim()} onClick={anotar}>
           Anotar andamento
         </Botao>
-        {p.divida > 0 && (
+        {(p.divida > 0 || (p.etapa !== 'vazio' && p.etapa !== 'reforma')) && (
           <Botao variante="fantasma" type="button" onClick={() => setRecebi(true)}>
             Recebi da dívida
           </Botao>
@@ -163,29 +183,7 @@ function ProblemaAberto({
         </Botao>
       </span>
       {recebi && <FolhaRecebiDivida imovel={imovel} c={c} p={p} gravar={gravar} fechar={() => setRecebi(false)} />}
-      {resolver && (
-        <Sheet titulo="Voltou a pagar?" fechar={() => setResolver(false)}>
-          <p className="corpo">
-            O {textoPrivado(imovel.apelido, oculto)} volta a contar no plano a partir de agora e o caderno volta a
-            avisar atraso. O andamento anotado sai junto. Os lembretes de cobrança você conclui na Secretária.
-          </p>
-          <button
-            className="btn primary full"
-            type="button"
-            onClick={async () => {
-              if (await gravar({ ...c, problema: null })) {
-                setResolver(false)
-                toast('Problema resolvido. O aluguel volta a contar.')
-              }
-            }}
-          >
-            Sim, voltou a pagar
-          </button>
-          <button className="btn ghost full" type="button" onClick={() => setResolver(false)}>
-            Ainda não
-          </button>
-        </Sheet>
-      )}
+      {resolver && <FolhaVoltou imovel={imovel} c={c} p={p} gravar={gravar} fechar={() => setResolver(false)} />}
     </div>
   )
 }

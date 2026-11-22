@@ -206,8 +206,10 @@ export function entradasDoAluguel(caderno: Caderno, mes: string, hoje: string): 
 }
 
 /**
- * "Recebi da dívida" (regra do dono, 22/11/2026): o que o advogado recuperar entra como dinheiro que chegou no mês; os
- * honorários, quando houver, são despesa do imóvel. A dívida anotada diminui e o andamento guarda o que aconteceu.
+ * "Recebi da dívida" (regra do dono, 22/11/2026): `valor` é o que o advogado recuperou do inquilino (bruto) e
+ * `honorarios` o que ficou com ele. Na conta da família entra a diferença (dinheiro que chegou no mês); os honorários
+ * ficam anotados como despesa do imóvel; a dívida e o pedido da causa descontam o bruto (simulação de 22/11: sem
+ * separar bruto e repasse, o "Entrou" mostrava 8 mil quando só 6,4 mil caíram na conta).
  */
 export function receberDaDivida(
   c: CadernoImovel,
@@ -221,9 +223,12 @@ export function receberDaDivida(
   entrada: { id: string; data: string; valor: number; de: string; destino: string }
 } | null {
   const p = c.problema
-  if (!p || !(valor > 0) || honorarios < 0) return null
+  if (!p || !(valor > 0) || honorarios < 0 || honorarios > valor) return null
   const reais = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const texto = `Recebeu ${reais(valor)} da dívida` + (honorarios > 0 ? `; honorários ${reais(honorarios)}` : '')
+  const texto =
+    `Recuperou ${reais(valor)} da dívida` +
+    (honorarios > 0 ? `; ficou com o advogado ${reais(honorarios)}; chegou ${reais(c2(valor - honorarios))}` : '')
+  const causa = p.causa && typeof p.causa === 'object' ? (p.causa as { recuperado?: unknown }) : {}
   return {
     caderno: {
       ...c,
@@ -238,18 +243,11 @@ export function receberDaDivida(
         ...p,
         divida: Math.max(0, c2(p.divida - valor)),
         andamento: [...p.andamento, { data: hoje, texto }].slice(-30),
-        // a causa desconta o que já voltou do pedido
-        ...(p.causa && typeof p.causa === 'object'
-          ? {
-              causa: {
-                ...(p.causa as object),
-                recuperado: c2((Number((p.causa as { recuperado?: unknown }).recuperado) || 0) + valor),
-              },
-            }
-          : {}),
+        // a causa desconta o que já voltou do pedido (o bruto)
+        causa: { ...causa, recuperado: c2((Number(causa.recuperado) || 0) + valor) },
       },
     },
-    entrada: { id, data: hoje, valor: c2(valor), de: 'Dívida do inquilino', destino: 'aluguel atrasado' },
+    entrada: { id, data: hoje, valor: c2(valor - honorarios), de: 'Dívida do inquilino', destino: 'aluguel atrasado' },
   }
 }
 

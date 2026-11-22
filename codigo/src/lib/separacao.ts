@@ -9,8 +9,37 @@ export function rendaDoMesCadastrada(rendas: unknown): number {
   let soma = 0
   for (const r of rendas as { valor?: unknown; tipo?: unknown; fraco?: unknown }[]) {
     if (!r || typeof r !== 'object' || r.tipo === 'extra') continue
-    const v = Number(r.tipo === 'variavel' ? r.fraco : r.valor)
+    const v = Number(r.tipo === 'variavel' ? r.fraco || r.valor : r.valor)
     if (Number.isFinite(v) && v > 0) soma += v
+  }
+  return Math.round(soma * 100) / 100
+}
+
+/**
+ * O que saiu no mês, com a compra parcelada contando só a parcela do mês (simulação de 22/11: a viagem de R$ 24 mil em
+ * 10x entrava inteira no mês da compra e dizia "passou, sai da gordura"; nos meses seguintes, as parcelas sumiam).
+ * Aproximação: a parcela cai no mês da compra e nos seguintes (a fatura pode virar um mês depois).
+ */
+export function gastoDoMes(
+  lancamentos: readonly {
+    data: string
+    valor: number
+    parcelas?: number | null
+    parcela?: unknown
+    apagado_em?: unknown
+  }[],
+  mes: string,
+  hoje: string,
+): number {
+  const idx = (m: string) => Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7))
+  let soma = 0
+  const vistos = new Set<unknown>()
+  for (const l of lancamentos) {
+    if (!l || l.parcela || l.apagado_em || typeof l.data !== 'string' || l.data > hoje || vistos.has(l)) continue
+    vistos.add(l)
+    const n = Number.isInteger(l.parcelas) && (l.parcelas as number) > 1 ? (l.parcelas as number) : 1
+    const k = idx(mes) - idx(l.data.slice(0, 7))
+    if (k >= 0 && k < n) soma += (Number(l.valor) || 0) / n
   }
   return Math.round(soma * 100) / 100
 }
@@ -21,6 +50,8 @@ export interface SeparacaoDoMes {
   entra: number
   /** o lucro da gordura no mês (o que o guardado rende, sem imposto) */
   lucro: number
+  /** separado para a viagem neste mês (sai do que pode gastar) */
+  reservado: number
   /** até quanto dá para gastar no mês sem tocar na gordura */
   pode: number
   gasto: number
@@ -44,23 +75,27 @@ export function separarDoMes(x: {
   lucro: number
   gasto: number
   extras?: number
+  /** o que o plano já prometeu neste mês e ainda não virou gasto (parcela da viagem não comprada, cofrinho) */
+  reservado?: number
 }): SeparacaoDoMes | null {
   const extras = Math.min(Math.max(0, x.extras || 0), Math.max(0, x.entrou))
   const entra = c2(extras + Math.max(x.entrou - extras + x.previsto, x.rendaCadastrada))
   const lucro = c2(Math.max(0, x.lucro))
-  const pode = c2(entra + lucro)
+  const reservado = c2(Math.max(0, x.reservado || 0))
+  const pode = c2(entra + lucro - reservado)
   if (!(pode > 0)) return null
   const gasto = c2(Math.max(0, x.gasto))
   const folga = c2(pode - gasto)
   const situacao: SituacaoDoMes = folga < 0 ? 'passou' : gasto >= pode * LIMITE ? 'limite' : 'folga'
-  return { entra, lucro, pode, gasto, folga, situacao }
+  return { entra, lucro, reservado, pode, gasto, folga, situacao }
 }
 
 const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 
 /** O que o app fala, em português simples. */
 export function fraseDaSeparacao(s: SeparacaoDoMes): { titulo: string; frase: string } {
-  const base = `Neste mês dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram (salário, aluguel e o que chegou) e ${brl(s.lucro)} que o guardado rende. Já foram ${brl(s.gasto)}.`
+  const reserva = s.reservado > 0 ? `, menos ${brl(s.reservado)} separados para a viagem` : ''
+  const base = `Neste mês dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram (salário, aluguel e o que chegou) e ${brl(s.lucro)} que o guardado rende${reserva}. Já foram ${brl(s.gasto)}.`
   if (s.situacao === 'passou')
     return {
       titulo: `Passou ${brl(s.folga)}: esse pedaço sai da gordura`,

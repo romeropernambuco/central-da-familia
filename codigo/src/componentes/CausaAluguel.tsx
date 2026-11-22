@@ -3,13 +3,24 @@ import { Scale } from 'lucide-react'
 import type { ImovelTela } from '../api/tipos'
 import { useAcoes } from '../app/contexto'
 import type { CadernoImovel, ProblemaAluguel } from '../lib/aluguel'
-import { CAUSA_PADRAO, contaDaCausa, lerCausa, regrasDaCausa, type CausaAluguel } from '../lib/causaAluguel'
+import {
+  avisosDaCausa,
+  CAUSA_PADRAO,
+  contaDaCausa,
+  GARANTIAS,
+  lerCausa,
+  regrasDaCausa,
+  type CausaAluguel,
+  type Garantia,
+} from '../lib/causaAluguel'
 import { hojeRecife, textoParaValor, valorDigitadoValido, valorParaTexto } from '../lib/formato'
 import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoDecimal } from './privacidade'
+import './planilha.css'
 
 const dm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
+const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(2, 4)}`
 
 /**
  * A causa na justiça: o que pedir hoje (cada mês sem pagar entra sozinho), a regra de cada parte, o que é da família e o
@@ -42,6 +53,7 @@ export function CausaDoAluguel({
     ...(k.encargos > 0 ? ([['Condomínio, IPTU e contas', k.encargos]] as [string, number][]) : []),
     [`Multa do contrato (${causa.multa_pct}%)`, k.multa],
     [`Juros (${causa.juros_pct}% ao mês)`, k.juros],
+    ...(k.custas > 0 ? ([['Custas que a família adiantou', k.custas]] as [string, number][]) : []),
     [`Honorários na causa (${causa.honorarios_pct}%), do advogado`, k.honorarios],
     ...(causa.recuperado > 0 ? ([['Já voltou', -causa.recuperado]] as [string, number][]) : []),
   ]
@@ -53,30 +65,39 @@ export function CausaDoAluguel({
       <p className="causa-total">
         <Din v={k.pedido} tam="mid" />
       </p>
-      <ul className="list causa-linhas">
-        {linhas.map(([nome, v]) => (
-          <li key={nome} className="li">
-            <span className="m">{nome}</span>
-            <span className="v">
-              {v < 0 ? '− ' : ''}
-              <Din v={Math.abs(v)} />
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="sub">
-        É da família: <Din v={k.daFamilia} />. Os honorários pedidos na causa ficam com o advogado.
-      </p>
+      <table className="planilha">
+        <caption>
+          {k.meses.length === 1 ? '1 mês sem pagar' : `${k.meses.length} meses sem pagar`}, de{' '}
+          {k.meses[0] ? mmaa(k.meses[0].mes) : '—'} até hoje
+        </caption>
+        <tbody>
+          {linhas.map(([nome, v]) => (
+            <tr key={nome} className={nome.startsWith('Honorários') ? 'fraco' : undefined}>
+              <td>{nome}</td>
+              <td className="num">
+                {v < 0 ? '− ' : ''}
+                <Din v={Math.abs(v)} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Pedido de hoje</td>
+            <td className="num">
+              <Din v={k.pedido} />
+            </td>
+          </tr>
+          <tr className="destaque">
+            <td>É da família (sem os honorários)</td>
+            <td className="num">
+              <Din v={k.daFamilia} />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
       {k.expectativa ? (
-        <p className="sub">
-          Se conseguir {causa.expectativa_pct}% do que é da família: chegam <Din v={k.expectativa.bruta} />
-          {k.expectativa.advogado > 0 && (
-            <>
-              , o advogado fica com <Din v={k.expectativa.advogado} /> ({causa.advogado_pct}%)
-            </>
-          )}{' '}
-          e sobram <Din v={k.expectativa.liquida} /> para a família. Só entra no plano quando chegar.
-        </p>
+        <FraseExpectativa e={k.expectativa} causa={causa} />
       ) : (
         <p className="sub">
           Pergunte ao advogado quanto ele acha que consegue e quanto ele cobra do que recuperar. Anote em “Ajustar a
@@ -84,7 +105,7 @@ export function CausaDoAluguel({
         </p>
       )}
       {k.atualizar && (
-        <div className="todo warn" role="status">
+        <div className="todo warn pilha" role="status">
           <p>
             {causa.passado_em ? (
               <>
@@ -100,6 +121,11 @@ export function CausaDoAluguel({
           </Botao>
         </div>
       )}
+      {avisosDaCausa(k, causa, hoje).map(a => (
+        <p key={a} className="todo pilha" role="note">
+          {a}
+        </p>
+      ))}
       <details className="causa-regras">
         <summary>Por que cada parte (as regras)</summary>
         <ul>
@@ -117,6 +143,27 @@ export function CausaDoAluguel({
         <FolhaCausa causa={causa} apelido={imovel.apelido} salvar={salvarCausa} fechar={() => setAjustar(false)} />
       )}
     </section>
+  )
+}
+
+/** "Se conseguir X%: chegam R$ A, o advogado fica com R$ B e sobram R$ C para a família." */
+function FraseExpectativa({
+  e,
+  causa,
+}: {
+  e: { bruta: number; advogado: number; liquida: number }
+  causa: CausaAluguel
+}) {
+  return (
+    <p className="sub">
+      Se conseguir {causa.expectativa_pct}% do que é da família: chegam <Din v={e.bruta} />
+      {e.advogado > 0 && (
+        <>
+          , o advogado fica com <Din v={e.advogado} /> ({causa.advogado_pct}%)
+        </>
+      )}{' '}
+      e sobram <Din v={e.liquida} /> para a família. Só entra no plano quando chegar.
+    </p>
   )
 }
 
@@ -146,7 +193,9 @@ function FolhaCausa({
     encargos: causa.encargos_mes ? valorParaTexto(causa.encargos_mes) : '',
     expectativa: pctTexto(causa.expectativa_pct),
     advogado: pctTexto(causa.advogado_pct),
+    custas: causa.custas ? valorParaTexto(causa.custas) : '',
   })
+  const [garantia, setGarantia] = useState<Garantia | ''>(causa.garantia || '')
   const campo = (chave: keyof typeof t, rotulo: string, ajuda: string) => (
     <label className="campo">
       <span>{rotulo}</span>
@@ -166,7 +215,8 @@ function FolhaCausa({
       advogado = lerPct(t.advogado, 100)
     if (
       [multa, juros, honorarios, expectativa, advogado].includes(undefined) ||
-      (t.encargos && !valorDigitadoValido(t.encargos))
+      (t.encargos && !valorDigitadoValido(t.encargos)) ||
+      (t.custas && !valorDigitadoValido(t.custas))
     ) {
       toast('Confira os números: use só números e 1 vírgula.')
       return
@@ -180,6 +230,8 @@ function FolhaCausa({
         encargos_mes: t.encargos ? textoParaValor(t.encargos) : 0,
         expectativa_pct: expectativa ?? null,
         advogado_pct: advogado ?? null,
+        custas: t.custas ? textoParaValor(t.custas) : 0,
+        garantia: garantia || null,
       })
     ) {
       toast('Causa ajustada.')
@@ -190,14 +242,35 @@ function FolhaCausa({
     <Sheet titulo="Ajustar a causa" subtitulo={apelido} fechar={fechar}>
       <div className="aluguel-folha">
         {campo('multa', 'Multa do contrato (%)', 'Está na cláusula de atraso do contrato. O comum é 10%.')}
-        {campo('juros', 'Juros por mês (%)', 'Do contrato. O comum é 1% ao mês.')}
+        {campo(
+          'juros',
+          'Juros por mês (%)',
+          'Do contrato (o comum é 1%). Se o contrato não fala em juros, use a taxa legal: perto de 0,8% a 1% em 2026.',
+        )}
+        <label className="campo">
+          <span>Garantia do contrato de aluguel</span>
+          <select className="inp" value={garantia} onChange={e => setGarantia(e.target.value as Garantia | '')}>
+            <option value="">Não sei ainda</option>
+            {Object.entries(GARANTIAS).map(([v, n]) => (
+              <option key={v} value={v}>
+                {n}
+              </option>
+            ))}
+          </select>
+          <small>Com fiador ou seguro-fiança, outra pessoa também responde pela dívida.</small>
+        </label>
+        <label className="campo">
+          <span>Custas que você já pagou (justiça, notificação, oficial)</span>
+          <CampoValor valor={t.custas} mudar={v => setT({ ...t, custas: v.replace(/[^\d,]/g, '') })} />
+          <small>Voltam para a família no fim do processo.</small>
+        </label>
         {campo(
           'honorarios',
           'Honorários pedidos na causa (%)',
           'A lei do inquilinato fixa 10% se o contrato não disser outro valor.',
         )}
         <label className="campo">
-          <span>Condomínio, IPTU e contas que eram dele, por mês</span>
+          <span>Condomínio e IPTU que eram dele (pelo contrato), por mês</span>
           <CampoValor valor={t.encargos} mudar={v => setT({ ...t, encargos: v.replace(/[^\d,]/g, '') })} />
           <small>O que você pagou no lugar do inquilino. Entra no pedido a cada mês.</small>
         </label>

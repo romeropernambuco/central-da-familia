@@ -79,6 +79,22 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
   o app diz se cabe na sobra sem tocar na gordura, quanto a família precisa ganhar a mais por mês se não cabe, e se à
   vista com desconto compensa mais do que parcelar deixando o dinheiro render (lib/viagem.ts, aba Desejos).
 
+## Especialistas (22/11, rodada 2)
+
+- **Direito de locação:** corrigidas 5 frases da causa (art. 23, I e CPC 323 para os aluguéis até as chaves; encargos só
+  pelo contrato; juros pela Lei 14.905/2024 com a taxa legal quando o contrato não fala; multa sem o limite de 2% do CDC;
+  o que se paga ao próprio advogado em regra não volta). Novos: garantia (fiador na ação, Súmula 268), prazo de 3 anos
+  (CC 206, §3º, I) e custas adiantadas que voltam para a família.
+- **Viagem:** guia item por item com estimativas pesquisadas (Google Flights e Hotéis para maio e julho/2027, PTAX de
+  19/11/2026), IOF de 3,5% (Decreto 12.499/2025) e spread, criança e bebê, taxa de turismo de Lisboa, seguro Schengen,
+  ETIAS, alta temporada. Itens sem fonte aparecem como "estimativa sem fonte: edite" (lib/guiaViagemPadroes.ts).
+- **Simulador de 3 famílias:** consertados nesta rodada: compra parcelada contava inteira no mês; "Comprei" tirava a
+  viagem do plano; cofrinho crescia sozinho; "Voltou a pagar" apagava o caso; o salário de um em Recebimentos tirava as
+  Rendas do casal; renda variável sem mês fraco valia zero; dívida recuperada sem separar bruto e repasse.
+- **Ainda abertos (do simulador):** lucro da gordura sem tirar a inflação (decisão do dono); cofrinho como pote de
+  verdade no Guardado; data de saída do inquilino; contas do ano, IR do aluguel, seguros e vencimentos; empresa como
+  patrimônio; ajuda ao filho; reserva de emergência separada da gordura; o plano começa no mês que vem com o saldo de hoje.
+
 ## O que este documento NÃO resolve
 
 - **Depende do dono:** o ano da meta; o pró-labore das empresas.

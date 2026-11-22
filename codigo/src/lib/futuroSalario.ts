@@ -1,13 +1,35 @@
 import type { FuturoEntrada } from './futuro'
 
+/** Quem já cadastrou o próprio salário em Recebimentos (fonte com origem "salário"): o nome do dono.
+ *  Fonte de salário sem recebimento conhecido: null (não dá para saber de quem é; nenhuma renda entra, como antes). */
+export function donosComSalario(
+  recebimentos: readonly { id: string | number; dono_nome?: string | null }[],
+  fontes: Record<string, { origem?: string } | undefined>,
+): Set<string> | null {
+  const donos = new Set<string>()
+  for (const [id, f] of Object.entries(fontes)) {
+    if (f?.origem !== 'salario') continue
+    const r = recebimentos.find(x => String(x.id) === id)
+    if (!r) return null
+    donos.add(r.dono_nome || '')
+  }
+  return donos
+}
+
 /**
  * O salário entra na conta até a virada (decisão do dono, 22/11/2026: "o salário cai sempre; o que sobra vai para a
  * poupança e aumenta a carteira; a viagem sai da sobra, não da gordura"). Cada renda de Planejamento → Rendas vira 1
  * entrada por mês, do mês que vem até o mês anterior à virada. Extra fica de fora (vai para o guardado pela regra do
- * salário); a que muda todo mês conta pelo mês fraco. De 2029 em diante a família vive de rendimento: salário não entra.
+ * salário); a que muda todo mês conta pelo mês fraco (sem o mês fraco, pelo valor). De 2029 em diante a família vive de
+ * rendimento: salário não entra. `semDonos`: quem já tem o salário em Recebimentos (null = ninguém entra).
  */
-export function salariosAteAVirada(rendas: unknown, m0: string, virada: string): FuturoEntrada['recebimentos'] {
-  if (!Array.isArray(rendas) || !/^\d{4}-(0[1-9]|1[0-2])$/.test(m0)) return []
+export function salariosAteAVirada(
+  rendas: unknown,
+  m0: string,
+  virada: string,
+  semDonos: Set<string> | null = new Set(),
+): FuturoEntrada['recebimentos'] {
+  if (!semDonos || !Array.isArray(rendas) || !/^\d{4}-(0[1-9]|1[0-2])$/.test(m0)) return []
   const prox = (m: string) => {
     const [a, mm] = m.split('-').map(Number)
     return mm === 12 ? `${a + 1}-01` : `${a}-${String(mm + 1).padStart(2, '0')}`
@@ -22,7 +44,8 @@ export function salariosAteAVirada(rendas: unknown, m0: string, virada: string):
     dono?: unknown
   }[]) {
     if (!r || typeof r !== 'object' || Array.isArray(r) || r.tipo === 'extra') continue
-    const reais = Number(r.tipo === 'variavel' ? r.fraco : r.valor)
+    if (semDonos.has(typeof r.dono === 'string' ? r.dono : '')) continue
+    const reais = Number(r.tipo === 'variavel' ? r.fraco || r.valor : r.valor)
     if (!Number.isFinite(reais) || reais <= 0) continue
     const valor = Math.round(reais * 100)
     for (let m = prox(m0); m < virada; m = prox(m))
