@@ -38,7 +38,12 @@ Situação em 22/11/2026:
 1. **Dividir o Anotar** (`telas/lancar/Lancar.tsx`, mais de 1.000 linhas) em partes menores, sem mudar nada do que a pessoa vê. Os avisos do verificador têm que cair.
 2. **Teste instável** `componentes/ux-cobertura.test.ts`: às vezes falha na verificação completa e passa sozinho. Achar a causa.
 3. **Os 3 casos pendentes do motor de 2029** (`lib/futuro/motor_f13.test.ts`) fazem o portão 2 reprovar. Decidir com o dono se entram ou saem (espera o dono).
-4. **Verificação no GitHub também roda os portões 6, 6b e 7** a cada envio.
+4. **Verificação no GitHub fica verde** (espera o dono: mexe em teste).
+   - Na 1ª rodada no GitHub (22/11/2026), tipos, regras e formatação passaram. Falharam só 2 testes de protótipo:
+     `src/propostas/j/proposta.test.ts` e `src/propostas/k/proposta.test.ts`. Eles abrem o Chrome da máquina, e lá
+     o Chrome não devolve o resultado do roteiro a tempo. No Windows do dono passam.
+   - Caminho sugerido: dar mais tempo ao Chrome nesses 2 testes, ou rodá-los só onde houver navegador configurado.
+   - Depois disso, a verificação do GitHub também roda os portões 6, 6b e 7 a cada envio.
 5. **Testes de navegador logados** contra um banco de teste (espera o dono: criar o banco de teste).
 6. **Aviso de erro** quando o app quebrar no celular de alguém (espera o dono: usa serviço externo).
 7. **Notas de versão** em português a cada publicação.
@@ -52,6 +57,10 @@ Situação em 22/11/2026:
 ## Perguntas para o dono
 
 (Anote aqui o que ficou para ele decidir, com a data. Não pare o trabalho por isso.)
+
+- 22/11/2026: aplicar no banco as migrações f_01 a f_15, já que ele ainda não tem dados da família? Destrava imóveis, desejos, recebimentos e plano.
+- 22/11/2026: publicar o conserto do "Guardar em" do Dinheiro na rua (item 1 de "Agora").
+- 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
 ## Feito
 
