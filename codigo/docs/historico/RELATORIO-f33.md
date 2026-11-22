@@ -41,4 +41,4 @@ Nenhuma alteração no motor 3D, montarCena, composicaoMini ou limites de desenh
 
 ## Entrega na worktree
 
-`git add codigo` e o commit foram tentados. Ambos bloqueados por Permission denied ao criar `C:/Users/Romero Albuquerque/Documents/GitHub/central-da-familia/.git/worktrees/f33-cartao-compacto/index.lock`. Alterações preservadas na worktree, sem commit. Nenhum processo de navegador ou servidor desta medição ficou aberto.
+`git add codigo` e o commit foram tentados. Ambos bloqueados por Permission denied ao criar `<pasta do projeto>/.git/worktrees/f33-cartao-compacto/index.lock`. Alterações preservadas na worktree, sem commit. Nenhum processo de navegador ou servidor desta medição ficou aberto.

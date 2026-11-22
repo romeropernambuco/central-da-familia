@@ -56,7 +56,7 @@ Não há mudança no motor financeiro nem em fórmulas. As limitações de capac
 
 Validações, capturas, logs e perfis temporários ficaram fora de `codigo/` e não fazem parte de `git add codigo`. Os servidores e navegadores iniciados nesta validação foram encerrados; o Chrome Headless Shell final saiu com código 0. Portas 4796 e 9366 verificadas fechadas ao final.
 
-`git add codigo` foi tentado e bloqueado por `Permission denied` ao criar `C:/Users/Romero Albuquerque/Documents/GitHub/central-da-familia/.git/worktrees/f36-ajuste-resumo/index.lock`. Portanto não foi possível criar o commit; a implementação e este relatório ficam na worktree, sem contornar a permissão do repositório principal.
+`git add codigo` foi tentado e bloqueado por `Permission denied` ao criar `<pasta do projeto>/.git/worktrees/f36-ajuste-resumo/index.lock`. Portanto não foi possível criar o commit; a implementação e este relatório ficam na worktree, sem contornar a permissão do repositório principal.
 
 A revisão automática rejeitou a exclusão recursiva dos perfis, mesmo com verificação do caminho absoluto dentro da worktree. Também rejeitou a alternativa de excluir somente os arquivos temporários, sem recursão. A única razão retornada foi **“blocked by policy”**. Não foi tentado outro mecanismo de exclusão.
 

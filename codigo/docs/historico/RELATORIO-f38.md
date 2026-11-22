@@ -42,7 +42,7 @@ As capturas usam a família de exemplo do próprio app, com o perfil Bruno. O va
 
 O TypeScript passou com `npx tsc --noEmit`. O Vitest passou em 85 arquivos, com 1.507 testes aprovados, zero falhas e os três `todo` preexistentes. A auditoria geral do olho agora também monta o escritório isométrico.
 
-PNGs de conferência em `C:\Users\ROMERO~1\AppData\Local\Temp\f38-conferencia-dBkg3Q`. O servidor e o Chromium temporários foram encerrados depois das medições.
+PNGs de conferência em `<pasta do usuário>\AppData\Local\Temp\f38-conferencia-dBkg3Q`. O servidor e o Chromium temporários foram encerrados depois das medições.
 
 Em grupos densos, as plaquinhas ainda podem se cruzar na vista geral. Os filtros aproximam cada sala e a lista mantém todas as fichas acessíveis.
 

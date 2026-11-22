@@ -32,7 +32,10 @@ const anota = (n, nome, ok, detalhe, obrigatorio = true) => {
   resultado.push({ n, nome, ok, detalhe, obrigatorio })
   console.log(`${ok ? 'PASSOU' : obrigatorio ? 'FALHOU' : 'AVISO '} portão ${n}: ${nome}. ${detalhe}`)
 }
-const rodar = (cmd, a, extra = {}) => spawnSync(cmd, a, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...extra })
+// No Windows, npx e npm são arquivos .cmd: sem o shell o spawnSync não acha o programa e devolve saída vazia.
+const rodar = (cmd, a, extra = {}) =>
+  spawnSync(cmd, a, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: process.platform === 'win32', ...extra })
+const saida = r => (r.stdout || '') + (r.stderr || '') + (r.error ? String(r.error) : '')
 
 function listar(pasta, pularPasta = null) {
   if (!existsSync(pasta)) return []
@@ -114,7 +117,7 @@ if (roda(2) || roda(3)) {
 // ---------- 4. varredura das 8 pessoas (E11) ----------
 if (roda(4)) {
   const b = rodar('npx', ['vite', 'build', '--mode', 'exemplo'])
-  if (b.status !== 0) anota(4, 'varredura das 8 pessoas', false, `o build de exemplo quebrou:\n${(b.stdout + b.stderr).slice(-1500)}`)
+  if (b.status !== 0) anota(4, 'varredura das 8 pessoas', false, `o build de exemplo quebrou:\n${saida(b).slice(-1500)}`)
   else {
     const pasta = mkdtempSync(join(tmpdir(), 'portao4-'))
     const json = join(pasta, 'varredura3.json')
@@ -135,7 +138,7 @@ if (roda(6)) {
   const PROIBIDO = /Silva|Souza|dadosTeste|Nubank|como=|\b(Ana|Bruno|Bia|Cláudia|Claudia|Carla)\b/
   rmSync(join(RAIZ, 'dist'), { recursive: true, force: true })
   const b = rodar('npx', ['vite', 'build'])
-  if (b.status !== 0) anota(6, 'build de produção sem exemplo', false, `o build de produção quebrou:\n${(b.stdout + b.stderr).slice(-1500)}`)
+  if (b.status !== 0) anota(6, 'build de produção sem exemplo', false, `o build de produção quebrou:\n${saida(b).slice(-1500)}`)
   else {
     const js = listar(join(RAIZ, 'dist', 'assets')).filter(f => f.endsWith('.js'))
     const achados = procurar(js, PROIBIDO)
@@ -154,9 +157,10 @@ if (roda(6)) {
 // O repositório é público: nome real não pode estar em código, teste, exemplo ou comentário.
 // Os nomes não ficam escritos aqui (seria vazar no próprio portão): guardo só a impressão digital (sha256, 16 letras)
 // de cada nome em minúsculas e sem acento. Pra pôr um nome novo na lista: node scripts/portoes.mjs --impressao Nome
-// Fora da busca: src/lib/futuro/casos_teste.json (do MOTOR, que vai trocar as chaves dele).
+// Fora da busca: src/lib/futuro/casos_teste.json (do MOTOR, que vai trocar as chaves dele) e verificar.log
+// (registro local da verificação, ignorado pelo Git: traz o caminho da pasta de quem rodou).
 const NOMES_REAIS = new Set(['ea796cd69664e39e', 'f3d8f6ef539025ac', 'bbe47010dd7d075f']) // 2 do casal e o sobrenome
-const FORA_DA_BUSCA = /(^|\/)(node_modules|dist|dist-[^/]+|\.git|prints)(\/|$)|\.(png|jpg|jpeg|webp|ico|woff2?)$|^src\/lib\/futuro\/casos_teste\.json$/
+const FORA_DA_BUSCA = /(^|\/)(node_modules|dist|dist-[^/]+|\.git|prints)(\/|$)|\.(png|jpg|jpeg|webp|ico|woff2?)$|^src\/lib\/futuro\/casos_teste\.json$|^verificar\.log$/
 if (roda(6)) {
   const arquivos = listar(RAIZ, /^(node_modules|\.git|dist|dist-.+|prints)$/).filter(f => !FORA_DA_BUSCA.test(relative(RAIZ, f).split(sep).join('/')))
   const achados = []
