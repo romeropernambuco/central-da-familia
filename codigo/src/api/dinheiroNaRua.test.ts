@@ -11,6 +11,8 @@ import {
 } from '../lib/dinheiroNaRua'
 import { validarEstado } from '../lib/validarEstado'
 import { hojeRecife } from '../lib/formato'
+import { novoUuid } from '../lib/seguro'
+import { guardarVolta } from '../telas/guardado/FolhaNegocio'
 
 afterEach(() => reiniciarExemplo())
 const HOJE = '2026-11-22'
@@ -168,5 +170,24 @@ describe('na família de exemplo', () => {
     const copia = JSON.parse(JSON.stringify(await apiExemplo.backupLer!(F)))
     expect(() => validarEstado(copia)).not.toThrow()
     expect(copia.config.dinheiro_na_rua).toHaveLength(3)
+  })
+})
+
+describe('o dinheiro que volta vai para o Guardado', () => {
+  it('manda ao banco a chave no formato que o banco real aceita (uuid) e com o valor e a data do movimento', async () => {
+    const chamadas: unknown[][] = []
+    const api = { guardadoMovimentar: async (...a: unknown[]) => void chamadas.push(a) }
+    const m = { id: novoUuid(), valor: 5000, data: '2026-11-22' }
+    await guardarVolta(api, 'app-1', { nome: 'Carro' }, m)
+    expect(chamadas).toEqual([['app-1', 'aporte', 5000, '2026-11-22', m.id, 'Voltou de Carro']])
+    expect(chamadas[0][4]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+  it('na família de exemplo o valor entra na aplicação e repetir a mesma volta não soma 2 vezes', async () => {
+    const antes = (await apiExemplo.guardadoHoje('fam-silva')).aplicacoes.find(a => a.id === 'g1')!.saldo
+    const m = { id: novoUuid(), valor: 700, data: hojeRecife() }
+    await guardarVolta(apiExemplo, 'g1', { nome: 'Baia' }, m)
+    await guardarVolta(apiExemplo, 'g1', { nome: 'Baia' }, m)
+    const depois = (await apiExemplo.guardadoHoje('fam-silva')).aplicacoes.find(a => a.id === 'g1')!.saldo
+    expect(Math.round((depois - antes) * 100) / 100).toBe(700)
   })
 })

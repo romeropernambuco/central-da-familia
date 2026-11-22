@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
-import type { GuardadoAplicacao } from '../../api/tipos'
+import type { Api, GuardadoAplicacao } from '../../api/tipos'
 import { useAcoes, useSessaoAtual } from '../../app/contexto'
 import { useOculto } from '../../app/useOculto'
 import { Botao, CampoValor, Din, Sheet } from '../../componentes/base'
@@ -187,6 +187,18 @@ function MovimentosDoNegocio({ n, salvar }: { n: Negocio; salvar: Salvar }) {
   )
 }
 
+/**
+ * Leva para o Guardado o dinheiro que voltou de um negócio.
+ * A chave é o próprio código do movimento: no banco real ela é um uuid (outro formato é recusado),
+ * e a mesma chave nunca grava 2 vezes se a internet cair no meio.
+ */
+export const guardarVolta = (
+  api: Pick<Api, 'guardadoMovimentar'>,
+  aplicacao: string,
+  n: Pick<Negocio, 'nome'>,
+  m: Pick<MovimentoNegocio, 'id' | 'valor' | 'data'>,
+) => api.guardadoMovimentar(aplicacao, 'aporte', m.valor, m.data, m.id, `Voltou de ${n.nome}`)
+
 /** Anota mais dinheiro posto ou dinheiro que voltou. O que volta pode ir direto para uma aplicação do Guardado. */
 function NovoMovimento({ n, aplicacoes, salvar }: { n: Negocio; aplicacoes: GuardadoAplicacao[]; salvar: Salvar }) {
   const { api, familia } = useSessaoAtual()
@@ -227,9 +239,7 @@ function NovoMovimento({ n, aplicacoes, salvar }: { n: Negocio; aplicacoes: Guar
         return
       }
       const app = tipo === 'voltou' ? minhas.find(a => a.id === destino) : undefined
-      const guardou =
-        !!app &&
-        (await tentar(() => api.guardadoMovimentar(app.id, 'aporte', v, quando, 'rua-' + m.id, `Voltou de ${n.nome}`)))
+      const guardou = !!app && (await tentar(() => guardarVolta(api, app.id, n, m)))
       if (guardou) await recarregar().catch(() => {})
       toast(
         tipo === 'pus'
