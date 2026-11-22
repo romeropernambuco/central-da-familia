@@ -1,0 +1,55 @@
+/* Colar extrato: só encaixe. As cores, os campos e as listas são os do app. */
+.colar-extrato {
+  display: grid;
+  gap: 12px;
+}
+.extrato-texto {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.extrato-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.extrato-linha {
+  display: grid;
+  gap: 8px;
+  padding-block: 12px;
+  border-top: 1px solid var(--rule);
+}
+.extrato-linha:first-child {
+  border-top: 0;
+}
+.extrato-linha .check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+.extrato-linha .check input {
+  width: 22px;
+  height: 22px;
+}
+.extrato-linha .m {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.extrato-linha select {
+  width: 100%;
+}
+.extrato-linha.salvo {
+  opacity: 0.6;
+}
+.extrato-linha .m b,
+.extrato-linha .m small {
+  display: block;
+}
+.extrato-linha .m small {
+  color: var(--muted);
+}

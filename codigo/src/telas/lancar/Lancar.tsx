@@ -13,7 +13,7 @@ import { CampoPrivado } from '../../componentes/privacidade'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { criarChaveToque, umaPorVez } from '../../lib/seguro'
 import { ErroSessao } from '../../api/erros'
-import { Delete, Camera, ArrowDownToLine, Trash2, Check } from 'lucide-react'
+import { Delete, Camera, ArrowDownToLine, Trash2, Check, ClipboardPaste } from 'lucide-react'
 import { OlhoDaAba, SeloDaAba } from '../../componentes/ControlesDaAba'
 import { useAcoes, useDadosDoDia, useFolhaLancar, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { useGuardado } from '../../app/useDados2'
@@ -40,6 +40,7 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../lib/dono'
 import { LinhaEtiqueta, useEtiquetasNoLancar } from './EtiquetaNoLancar'
+import { ColarExtrato } from './ColarExtrato'
 
 type Rascunho = {
   modo?: 'gasto' | 'entrou'
@@ -159,6 +160,7 @@ export function Lancar() {
   const equipe = familia?.papel === 'equipe'
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
+  const [extrato, setExtrato] = useState(false)
   const etq = useEtiquetasNoLancar(quando, corr)
 
   useEffect(() => {
@@ -407,6 +409,7 @@ export function Lancar() {
   // A1: a equipe da casa nunca vê R$: a folha dela pergunta o que comprou e pede a foto da nota
   if (equipe) return <AnotarCompra />
   if (cupom) return <LerCupom fechar={fecharLancar} envelopePadrao={lancarAberto?.envelope} />
+  if (extrato) return <ColarExtrato fechar={fecharLancar} />
   async function apagarEste() {
     if (!corr) return
     const ok = await tentar(() => api.apagarLancamento(corr.id))
@@ -529,15 +532,16 @@ export function Lancar() {
         <>
           {/* a equipe não vê valores, então não lê cupom (o cupom mostra preços) */}
           {!equipe && !corr && (
-            <button
-              className="btn line sm"
-              type="button"
-              style={{ justifySelf: 'start' }}
-              onClick={() => setCupom(true)}
-            >
-              <Icone desenho={Camera} />
-              Ler cupom com foto
-            </button>
+            <div className="row-btns lancar-atalhos">
+              <button className="btn line sm" type="button" onClick={() => setCupom(true)}>
+                <Icone desenho={Camera} />
+                Ler cupom com foto
+              </button>
+              <button className="btn line sm" type="button" onClick={() => setExtrato(true)}>
+                <Icone desenho={ClipboardPaste} />
+                Colar extrato
+              </button>
+            </div>
           )}
           {visor}
           {!corr && (

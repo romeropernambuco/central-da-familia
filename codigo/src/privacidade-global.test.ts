@@ -117,6 +117,7 @@ const telas = [
   'DinheiroNaRua',
   'FolhaNegocio',
   'NovoNegocio',
+  'ColarExtrato',
 ]
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
@@ -532,7 +533,9 @@ describe('regra do olho em cada tela real', () => {
                                               apagar: async () => true,
                                               fechar() {},
                                             }
-                                          : { aplicado: dinheiro }
+                                          : nome === 'ColarExtrato'
+                                            ? { fechar() {} }
+                                            : { aplicado: dinheiro }
       let alternar: () => void = () => {}
       function App() {
         const [oculto, setOculto] = useState(true)
@@ -654,6 +657,7 @@ describe('regra do olho em cada tela real', () => {
             'Reajuste',
             'TextosDeConfianca',
             'Cena3D',
+            'ColarExtrato',
           ].includes(nome)
         )
           expect(aberto, nome + ' deve exercitar dados privados').toMatch(padrao)
