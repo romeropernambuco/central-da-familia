@@ -359,7 +359,7 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     expect(c.tira_por_mes_2029).toBe(19337)
     const f = frasesDesejo(c, d(false)).linhas.map(limpa)
     expect(f).toContain('Tira R$ 193,37 por mês da renda de 2029, para sempre.')
-    expect(f).toContain('A volta é incerta: fica fora da conta, só entra se vier.')
+    expect(f).toContain('A volta não é certa: só entra na conta quando vier.')
   })
   it('cabe / ainda não cabe e quando cabe: o caixa com piso alto não comporta o desejo agora', () => {
     const e = entrada(t, 6)
@@ -378,10 +378,9 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     const c = cabeDesejo(e, des)
     const f = frasesDesejo(c, des)
     expect([
-      'Cabe. Verificado de 01/2027 até 12/2028.',
-      'Cabe, mas tira de 2029. Verificado de 01/2027 até 12/2028.',
-      'Ainda não cabe. Verificado de 01/2027 até 12/2028.',
-      'O caixa já está apertado. Verificado de 01/2027 até 12/2028.',
+      'Cabe no plano até 12/2028.',
+      'Ainda não cabe no plano até 12/2028.',
+      'Até 12/2028, o caixa já está apertado.',
     ]).toContain(f.titulo)
     if (c.situacao === 'ainda nao cabe') expect(f.linhas.join(' ')).toMatch(/abaixo do piso\./)
     // MOTOR_index (observação do cabeDesejo): em "ainda não cabe", o caixa já apertado sem o desejo também aparece
@@ -409,7 +408,7 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
         volta_certa: false,
       }),
     )
-    expect(frasesDesejo(folgado, d(true)).titulo).toBe('Cabe. Verificado de 01/2027 até 12/2028.')
+    expect(frasesDesejo(folgado, d(true)).titulo).toBe('Cabe no plano até 12/2028.')
   })
   it('F7-ANTECIPA: contrato adiantado de R$ 120.000 por R$ 100.000 custa mais do que o caixa rende', async () => {
     const a = avaliarAntecipacao(10_000_000, '2026-12', 12_000_000, '2027-12', {
@@ -434,7 +433,7 @@ describe('E8: Desejos (F7) com os números dos casos', () => {
     expect(a.impacto_renda_mensal).toBeLessThan(0)
     const linha = limpa(frasesDesejo(cabeDesejo(entrada(t), des), des, a).linhas.find(x => /^Adiantar/.test(x))!)
     expect(linha).toBe(
-      `Adiantar o contrato custa mais do que o caixa rende: perde R$ 11.194,13 até 2029 e tira R$ ${(Math.abs(a.impacto_renda_mensal!) / 100).toFixed(2).replace('.', ',')} por mês da renda de 2029.`,
+      `Adiantar não compensa: perde R$ 11.194,13 até 2029 e tira R$ ${(Math.abs(a.impacto_renda_mensal!) / 100).toFixed(2).replace('.', ',')} por mês da renda de 2029.`,
     )
     expect(linha).not.toMatch(/-R\$|R\$\s?-/)
   })

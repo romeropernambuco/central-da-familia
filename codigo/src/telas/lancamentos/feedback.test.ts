@@ -370,7 +370,8 @@ it('desejos mostra o periodo do motor no resultado real da lista', async () => {
     desejos: async () => [d],
     futuroEntradas: async () => ({ entrada }),
   } as any)
-  expect(a.box.textContent).toContain('Verificado de 11/2026 até 12/2028.')
+  // o período do motor vai no próprio título, curto (pedido do dono, 22/11): "… no plano até 12/2028" ou "Até 12/2028, …"
+  expect(a.box.textContent).toMatch(/até 12\/2028/i)
 })
 
 it.each([

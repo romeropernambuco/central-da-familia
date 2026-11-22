@@ -87,24 +87,27 @@ export function frasesDesejo(
   // modo renda (depois da virada, QA E11): sem linha até 2028; compara o dinheiro guardado de hoje com o piso
   const renda = c.modo === 'renda'
   const de = renda ? 'da renda' : 'da renda de 2029'
+  // até onde o plano conferiu, dito no próprio título (regra do dono: claro e curto, sem "Verificado de… até…")
+  const ate = periodo ? mesAno(periodo.fim) : '12/2028'
   if (c.situacao === 'cabe') {
-    titulo = 'Cabe.'
+    titulo = renda ? 'Cabe.' : `Cabe no plano até ${ate}.`
     ok = true
     linhas.push(
       renda
-        ? 'O dinheiro guardado continua acima do piso e a renda cobre o mês.'
-        : 'Nenhum mês até 12/2028 fica abaixo do piso e 2029 continua coberto.',
+        ? 'O dinheiro guardado fica acima do piso e a renda cobre o mês.'
+        : 'O caixa fica acima do piso em todos os meses.',
     )
   } else if (c.situacao === 'cabe, mas tira') {
-    titulo = renda ? 'Cabe, mas tira da renda.' : 'Cabe, mas tira de 2029.'
+    // o quanto tira vem logo depois ("Tira R$ X por mês da renda de 2029, para sempre"): o título não repete
+    titulo = renda ? 'Cabe, mas tira da renda.' : `Cabe no plano até ${ate}.`
     ok = false
     linhas.push(
       renda
-        ? 'O dinheiro guardado continua acima do piso, mas a renda passa a não cobrir o mês.'
-        : 'Nenhum mês fica abaixo do piso, mas a conta de 2029 fica mais curta.',
+        ? 'O dinheiro guardado fica acima do piso, mas a renda deixa de cobrir o mês.'
+        : 'O caixa fica acima do piso, mas sobra menos para 2029.',
     )
   } else if (c.situacao === 'ainda nao cabe') {
-    titulo = 'Ainda não cabe.'
+    titulo = renda ? 'Ainda não cabe.' : `Ainda não cabe no plano até ${ate}.`
     ok = false
     if (renda) linhas.push('Com ele, o dinheiro guardado fica abaixo do piso.')
     else {
@@ -118,7 +121,7 @@ export function frasesDesejo(
         linhas.push(`Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo)} o caixa já fica abaixo do piso.`)
     }
   } else {
-    titulo = 'O caixa já está apertado.'
+    titulo = renda ? 'O caixa já está apertado.' : `Até ${ate}, o caixa já está apertado.`
     ok = false
     linhas.push(
       renda
@@ -126,9 +129,6 @@ export function frasesDesejo(
         : `Mesmo sem este desejo, em ${mesAno(c.apertado_sem_desejo!)} o caixa fica abaixo do piso.`,
     )
   }
-  titulo += renda
-    ? ` Verificado em ${mesAno(periodo?.inicio || d.mes)}.`
-    : ` Verificado de ${mesAno(periodo?.inicio || d.mes)} até ${periodo ? mesAno(periodo.fim) : '12/2028'}.`
   const t = c.tira_por_mes_2029
   linhas.push(
     t === null
@@ -140,14 +140,14 @@ export function frasesDesejo(
           : `Não muda a ${de.slice(3)}.`,
   )
   if (d.volta_de !== 'nada' && d.volta_de !== 'contrato' && !d.volta_certa)
-    linhas.push('A volta é incerta: fica fora da conta, só entra se vier.')
+    linhas.push('A volta não é certa: só entra na conta quando vier.')
   // M3: a antecipação mostra quanto se perde (valor em 2029 e por mês, do motor), nunca com sinal
   if (antecipa) {
     const pm = antecipa.impacto_renda_mensal
     linhas.push(
       antecipa.leitura === 'antecipar custa mais do que o caixa rende'
-        ? `Adiantar o contrato custa mais do que o caixa rende: perde ${r$(antecipa.efeito_na_virada)} até 2029${pm ? ` e tira ${r$(pm)} por mês da renda de 2029` : ''}.`
-        : `Adiantar o contrato compensa: o desconto é menor do que o caixa rende${pm ? ` e soma ${r$(pm)} por mês na renda de 2029` : ''}.`,
+        ? `Adiantar não compensa: perde ${r$(antecipa.efeito_na_virada)} até 2029${pm ? ` e tira ${r$(pm)} por mês da renda de 2029` : ''}.`
+        : `Adiantar compensa: o desconto custa menos do que o dinheiro rende${pm ? ` e soma ${r$(pm)} por mês na renda de 2029` : ''}.`,
     )
   }
   return { titulo, ok, linhas, selo: seloDesejo(c.situacao) }
@@ -399,8 +399,7 @@ export function Desejos() {
             meuEnv.limite_base ?? meuEnv.limite_mes,
             novo.mes > hojeRecife().slice(0, 7),
           ),
-        )}{' '}
-        Verificado em {mesCurto(novo.mes + '-01')}.
+        )}
       </span>
     </p>
   ) : null
@@ -445,14 +444,17 @@ export function Desejos() {
             {casal
               ? saidaF?.modo === 'renda'
                 ? 'Escreva o que quer e quando. O app diz se cabe no dinheiro guardado e quanto tira da renda.'
-                : 'Escreva o que quer e quando. O app diz se cabe no caixa até 2028 e quanto tira da renda de 2029.'
+                : 'Escreva o que quer e quando. O app diz se cabe e quanto tira de 2029.'
               : 'Escreva o que quer e quanto custa. O app diz se dá para comprar com o seu.'}
           </p>
           {casal && (
-            <p className="sub">
-              Caixa é o dinheiro disponível. Piso é o mínimo de segurança cadastrado. O resultado é uma estimativa com
-              os valores e taxas do Planejamento, sem garantia de renda futura.
-            </p>
+            <details className="salario-porque">
+              <summary>O que é caixa e piso?</summary>
+              <p className="sub">
+                Caixa é o dinheiro disponível. Piso é o mínimo de segurança que vocês cadastraram. A conta é uma
+                estimativa com os números do Planejamento.
+              </p>
+            </details>
           )}
           <div className="desejo-form">
             <label className="campo">
@@ -655,10 +657,7 @@ export function Desejos() {
                               ...(r.ok
                                 ? []
                                 : r.linhas.filter(
-                                    x =>
-                                      !x.startsWith('Nenhum') &&
-                                      !x.startsWith('O dinheiro guardado continua') &&
-                                      /piso|Cabe a partir|não cabe/.test(x),
+                                    x => !/acima do piso/.test(x) && /piso|Cabe a partir|não cabe/.test(x),
                                   )),
                               ...r.linhas.filter(
                                 x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x),
@@ -679,8 +678,7 @@ export function Desejos() {
                               meuEnv.limite_base ?? meuEnv.limite_mes,
                               d.mes > hojeRecife().slice(0, 7),
                             ),
-                          )}{' '}
-                          Verificado em {mesCurto(d.mes + '-01')}.
+                          )}
                         </small>
                       )}
                       {!casal && d.meu && <MetaDoDesejo desejo={d} />}
