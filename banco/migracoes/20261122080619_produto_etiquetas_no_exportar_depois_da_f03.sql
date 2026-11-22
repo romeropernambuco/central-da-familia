@@ -1,4 +1,4 @@
--- Etiquetas de volta na cópia de segurança (22/11/2026). ESPERA O "PODE" DO DONO: ainda não aplicada.
+-- Etiquetas de volta na cópia de segurança (22/11/2026). Aplicada em 22/11/2026 com o "pode" do dono.
 -- As etiquetas (21/11) puseram 'etiquetas' e 'lancamento_etiquetas' no exportar_familia. A f_03, escrita antes delas e
 -- aplicada depois (22/11), trocou a função inteira e as 2 chaves saíram. As f_05 a f_15 acrescentaram outras chaves
 -- depois disso. Aqui só se INSERE as 2 chaves das etiquetas antes de 'config', sem reescrever a função inteira
