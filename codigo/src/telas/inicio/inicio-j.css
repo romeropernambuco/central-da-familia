@@ -53,6 +53,14 @@
 .inicio-j .j-sobre-hoje .explica-l { color: var(--destaque); min-height: 44px; padding-inline: 0; }
 @media (max-width: 899px) { .inicio-j .j-sobre-acoes { margin-inline-start: 0; } .inicio-j .j-sobre-hoje { padding: 2px 8px 6px; } }
 .inicio-j .j-saudacao { color: var(--texto); font-weight: 650; }
+/* A seta do mês: verde quando entra mais do que sai, vermelha no contrário. */
+.inicio-j .seta-mes { margin: 2px 14px 8px; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in oklch, var(--borda) 45%, transparent); background: var(--success-soft); color: var(--texto); font: 400 14px/1.45 var(--fonte-texto); }
+.inicio-j .seta-mes[data-sentido='desce'] { background: var(--error-soft); }
+.inicio-j .seta-mes p { margin: 0; }
+.inicio-j .seta-mes .sub { color: var(--texto-secundario); }
+.inicio-j .seta-mes-seta { display: inline-block; margin-inline-end: 8px; color: var(--success); font-size: 18px; line-height: 1; }
+.inicio-j .seta-mes[data-sentido='desce'] .seta-mes-seta { color: var(--error); }
+@media (max-width: 899px) { .inicio-j .seta-mes { margin-inline: 8px; } }
 .inicio-j .j-plano .linha-2028-resumo { margin-block: 12px 6px; border: 1px solid color-mix(in oklch, var(--borda) 45%, transparent); border-radius: 12px; background: var(--cartao); color: var(--texto); box-shadow: none; }
 .inicio-j .j-plano .linha-2028-resumo small { color: var(--texto-secundario); }
 .inicio-j .j-plano .linha-2028-resumo .tile { color: var(--destaque); }

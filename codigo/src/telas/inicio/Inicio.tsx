@@ -15,6 +15,7 @@ import { ResumoApresentacao } from './ResumoFamilia'
 import { UltimosLancamentos } from './UltimosLancamentos'
 import { SobreHoje } from './SobreHoje'
 import { Linha2028Resumo } from '../../componentes/Linha2028'
+import { SetaDoMes } from '../../componentes/SetaDoMes'
 import '../../componentes/painel-inicio/painel.css'
 import './inicio-j.css'
 
@@ -209,6 +210,7 @@ function InicioFamilia() {
                 ))}
             </div>
             {envelopeHoje && <SobreHoje e={envelopeHoje} placar={casal ? resumo.podeGastarHoje.valor?.placar : null} />}
+            {casal && <SetaDoMes />}
             <EscritorioInicio {...{ celular, hoje }} />
           </section>
           <section className="j-acompanhamento" aria-labelledby="j-rotinas">

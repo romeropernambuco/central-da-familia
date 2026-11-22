@@ -309,8 +309,9 @@ export function custoDoGasto(
 /** Quanto o guardado de hoje rende num mês (21 dias úteis), já sem o imposto da faixa de cada aplicação. Estimativa
  *  com o CDI de hoje: a simulação de 22/11 mostrou que quem cadastra R$ 100 mil não sabia quanto isso dá por mês. */
 export function rendeNoMesEstimado(g: Pick<GuardadoHoje, 'cdi_usado' | 'aplicacoes'>): number {
-  const dia = cdiDiaDoAno(g.cdi_usado.pct_ano)
-  if (!Number.isFinite(dia) || dia <= 0) return 0
+  // sem a taxa do dia (leitura incompleta), a estimativa é zero: nunca derruba a tela que a usa
+  const dia = cdiDiaDoAno(Number(g.cdi_usado?.pct_ano))
+  if (!Number.isFinite(dia) || dia <= 0 || !Array.isArray(g.aplicacoes)) return 0
   return centavos(
     g.aplicacoes.reduce((s, a) => s + liquido(rendeEmDias(a.saldo, dia, a.pct_cdi, 21), a.ir_faixa || 0), 0),
   )
