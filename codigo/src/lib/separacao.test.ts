@@ -1,0 +1,61 @@
+// A separação (regra do dono, 22/11/2026): salário e aluguel pagam o mês, o guardado rende o lucro, a gordura não se come.
+import { describe, expect, it } from 'vitest'
+import { fraseDaSeparacao, rendaDoMesCadastrada, separarDoMes } from './separacao'
+
+describe('quanto dá para gastar no mês sem tocar na gordura', () => {
+  it('soma o salário cadastrado; extra fica de fora e a variável conta pelo mês fraco', () => {
+    expect(
+      rendaDoMesCadastrada([
+        { valor: 5000, tipo: 'salario' },
+        { valor: 900, tipo: 'extra' },
+        { valor: 3000, fraco: 1200, tipo: 'variavel' },
+        null,
+      ]),
+    ).toBe(6200)
+    expect(rendaDoMesCadastrada('estragado')).toBe(0)
+  })
+
+  it('começo do mês: o salário ainda não caiu, mas conta; gastou pouco, ainda dá', () => {
+    const s = separarDoMes({ entrou: 0, previsto: 0, rendaCadastrada: 5000, lucro: 800, gasto: 1200 })!
+    expect(s).toMatchObject({ entra: 5000, lucro: 800, pode: 5800, folga: 4600, situacao: 'folga' })
+    const f = fraseDaSeparacao(s)
+    expect(f.titulo).toBe('Ainda dá R$ 4.600 este mês')
+    expect(f.frase).toContain('Neste mês dá para gastar até R$ 5.800 sem tocar na gordura')
+    expect(f.frase).toContain('O que sobrar engorda o guardado.')
+  })
+
+  it('com 85% ou mais do que pode: no limite (o dinheiro da empresa também sai daqui)', () => {
+    const s = separarDoMes({ entrou: 6000, previsto: 1500, rendaCadastrada: 5000, lucro: 500, gasto: 7000 })!
+    expect(s).toMatchObject({ entra: 7500, pode: 8000, folga: 1000, situacao: 'limite' })
+    expect(fraseDaSeparacao(s).titulo).toBe('No limite: faltam R$ 1.000')
+    expect(fraseDaSeparacao(s).frase).toContain('Dinheiro para a empresa também sai daqui, não da gordura.')
+  })
+
+  it('passou do que entra e do que rende: diz quanto saiu da gordura', () => {
+    const s = separarDoMes({ entrou: 5000, previsto: 0, rendaCadastrada: 5000, lucro: 800, gasto: 7300 })!
+    expect(s).toMatchObject({ folga: -1500, situacao: 'passou' })
+    expect(fraseDaSeparacao(s).titulo).toBe('Passou R$ 1.500: esse pedaço sai da gordura')
+  })
+
+  it('aluguel e dívida recuperada somam por cima do salário que ainda não caiu', () => {
+    // entrou R$ 3.000 de aluguel + R$ 3.000 da dívida; o salário de R$ 16.000 ainda não caiu
+    const s = separarDoMes({
+      entrou: 6000,
+      previsto: 0,
+      rendaCadastrada: 16000,
+      lucro: 600,
+      gasto: 9000,
+      extras: 6000,
+    })!
+    expect(s.entra).toBe(22000)
+    expect(s.pode).toBe(22600)
+    // sem dizer o que é extra, o salário esperado engole o que entrou (conta antiga, mais conservadora)
+    expect(separarDoMes({ entrou: 6000, previsto: 0, rendaCadastrada: 16000, lucro: 600, gasto: 9000 })!.entra).toBe(
+      16000,
+    )
+  })
+
+  it('sem renda e sem guardado: nada a dizer', () => {
+    expect(separarDoMes({ entrou: 0, previsto: 0, rendaCadastrada: 0, lucro: 0, gasto: 300 })).toBeNull()
+  })
+})

@@ -203,6 +203,45 @@ export function entradasDoAluguel(caderno: Caderno, mes: string, hoje: string): 
   )
 }
 
+/**
+ * "Recebi da dívida" (regra do dono, 22/11/2026): o que o advogado recuperar entra como dinheiro que chegou no mês; os
+ * honorários, quando houver, são despesa do imóvel. A dívida anotada diminui e o andamento guarda o que aconteceu.
+ */
+export function receberDaDivida(
+  c: CadernoImovel,
+  valor: number,
+  honorarios: number,
+  hoje: string,
+  id: string,
+  idHonorarios = id + '-h',
+): {
+  caderno: CadernoImovel
+  entrada: { id: string; data: string; valor: number; de: string; destino: string }
+} | null {
+  const p = c.problema
+  if (!p || !(valor > 0) || honorarios < 0) return null
+  const reais = (v: number) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const texto = `Recebeu ${reais(valor)} da dívida` + (honorarios > 0 ? `; honorários ${reais(honorarios)}` : '')
+  return {
+    caderno: {
+      ...c,
+      despesas:
+        honorarios > 0
+          ? [
+              ...c.despesas,
+              { id: idHonorarios, data: hoje, valor: c2(honorarios), descricao: 'Honorários do advogado' },
+            ]
+          : c.despesas,
+      problema: {
+        ...p,
+        divida: Math.max(0, c2(p.divida - valor)),
+        andamento: [...p.andamento, { data: hoje, texto }].slice(-30),
+      },
+    },
+    entrada: { id, data: hoje, valor: c2(valor), de: 'Dívida do inquilino', destino: 'aluguel atrasado' },
+  }
+}
+
 /** A configuração que veio do banco pode estar velha ou estragada: só passa o que tem formato de caderno. */
 export function lerCaderno(v: unknown): Caderno {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {}

@@ -16,6 +16,7 @@ import { textoPrivado } from '../lib/olho'
 import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoPrivado } from './privacidade'
+import { FolhaRecebiDivida } from './RecebiDaDivida'
 
 type Lembrar = 'semana' | 'mes' | 'nunca'
 const ORDEM: EtapaProblema[] = ['cobrando', 'acordo', 'advogado', 'despejo', 'vazio', 'reforma']
@@ -88,6 +89,7 @@ function ProblemaAberto({
   const { toast } = useAcoes()
   const [texto, setTexto] = useState('')
   const [resolver, setResolver] = useState(false)
+  const [recebi, setRecebi] = useState(false)
   const anotar = async () => {
     const t = texto.trim()
     if (!t) return
@@ -146,6 +148,11 @@ function ProblemaAberto({
         <Botao variante="secundario" type="button" disabled={!texto.trim()} onClick={anotar}>
           Anotar andamento
         </Botao>
+        {p.divida > 0 && (
+          <Botao variante="fantasma" type="button" onClick={() => setRecebi(true)}>
+            Recebi da dívida
+          </Botao>
+        )}
         <Botao variante="fantasma" type="button" onClick={mudar}>
           Mudar a providência
         </Botao>
@@ -153,6 +160,7 @@ function ProblemaAberto({
           Voltou a pagar
         </Botao>
       </span>
+      {recebi && <FolhaRecebiDivida imovel={imovel} c={c} p={p} gravar={gravar} fechar={() => setRecebi(false)} />}
       {resolver && (
         <Sheet titulo="Voltou a pagar?" fechar={() => setResolver(false)}>
           <p className="corpo">

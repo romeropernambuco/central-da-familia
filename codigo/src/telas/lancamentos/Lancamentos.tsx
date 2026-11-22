@@ -13,6 +13,7 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { useDestino } from '../../app/destinos'
 import { lerMes } from '../../lib/resumo/leituras'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
+import { SeparacaoDoMes } from '../../componentes/SeparacaoDoMes'
 import { mesCurto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
 import { useEffect, useState } from 'react'
@@ -556,6 +557,7 @@ export function ResumoDoMes() {
       ) : (
         <>
           <FaixaDoMes totais={dado} />
+          {mes === atual && <SeparacaoDoMes />}
           <p className="sub">
             Fonte: registros da família, consultados nesta abertura. Confira se há valores ainda por atualizar.
           </p>

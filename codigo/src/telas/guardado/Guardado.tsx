@@ -26,6 +26,7 @@ import { useFuturo, useGuardado } from '../../app/useDados2'
 import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
 import { Imoveis } from '../../componentes/Imoveis'
+import { SeparacaoDoMes } from '../../componentes/SeparacaoDoMes'
 import { DinheiroNaRua } from './DinheiroNaRua'
 import { aplicacaoMinha } from '../../lib/dono'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
@@ -268,6 +269,7 @@ export function Guardado() {
             gastar até isso por mês deixa o guardado inteiro.
           </p>
         )}
+        <SeparacaoDoMes />
         {meses > 0 && !oculto && (
           <p className="sub guard-meses">
             {daFamilia ? 'O guardado da família' : 'O que está no seu nome'} cobre{' '}

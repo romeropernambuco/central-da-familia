@@ -61,8 +61,18 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
 6. Dinheiro na rua: "não vai voltar" (calote) com motivo; aporte na empresa tirando do Guardado.
 7. Ano da meta escolhido pela família (tira o 2029 fixo).
 
+## Respostas do dono (22/11) e o que já foi feito
+
+- **Dívida do inquilino:** o que o advogado recuperar entra como dinheiro do mês; honorários são despesa do imóvel.
+  Feito: botão "Recebi da dívida" no caso do aluguel (lib/aluguel.ts `receberDaDivida`).
+- **Separação:** salário e aluguel pagam o mês, o guardado rende o lucro, a gordura não se come. Dinheiro posto na
+  empresa sai do salário (é gasto anotado), nunca da gordura, salvo retorno muito sólido. Feito: "dá para gastar até R$ X
+  sem tocar na gordura; ainda dá / no limite / passou" no Guardado e em Gastos e entradas (lib/separacao.ts).
+- **Família sem meta:** o sistema identifica sozinho quando daria para viver do que rende, mantendo a sobra de hoje.
+  Feito no Rumo a 2029 (lib/viverDeRenda.ts).
+- **Empresas:** pró-labore ainda não definido; a usina e o empréstimo que a empresa paga entram como recebimento mensal.
+
 ## O que este documento NÃO resolve
 
-- **Depende do dono:** o ano da meta; se a dívida recuperada do inquilino entra como
-  dinheiro que entrou (e os 10% do advogado como despesa).
+- **Depende do dono:** o ano da meta; o pró-labore das empresas.
 - **Não testado num celular de verdade:** o aviso "você tem um lembrete para hoje" (o servidor foi testado no banco).

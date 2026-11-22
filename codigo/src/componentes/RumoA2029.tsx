@@ -15,6 +15,7 @@ import { AtualizarNumeros, numerosParaConferir } from './AtualizarNumeros'
 import { Din } from './base'
 import { PlanoSemMargem } from './PlanoSemMargem'
 import { analisarGordura, fraseDaGordura } from '../lib/gordura'
+import { fraseViverDeRenda, quandoViveDeRenda } from '../lib/viverDeRenda'
 import './RumoA2029.css'
 
 const mesNome = (m: string) =>
@@ -53,6 +54,18 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
       return null
     }
   }, [entrada, fontes, fontesLidas, compacto, cenarios.resultados, cenario, ent])
+  // família sem meta (sem o gasto do objetivo): o sistema identifica sozinho quando daria para viver do que rende
+  const semMeta = useMemo(() => {
+    // sem o gasto do objetivo, o plano usa o teto do mês de hoje e pede para confirmar (futuroReceitas)
+    if (!entrada || !calculo || !ent?.confirmar.some(t => t.startsWith('gasto por mês em 2029'))) return null
+    const v = quandoViveDeRenda(calculo.saida.linha, {
+      gasto: entrada.parametros.gasto_2029_hoje,
+      taxaRealAnual: Number(entrada.parametros.taxa_real_trabalho),
+      margem: Number(entrada.parametros.margem),
+      alugueis: calculo.alugueis,
+    })
+    return v ? fraseViverDeRenda(v) : null
+  }, [entrada, calculo, ent])
   const itens = useMemo(() => (entrada ? numerosParaConferir(entrada) : []), [entrada])
   useEffect(() => {
     if (entrada)
@@ -90,6 +103,7 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
         semConferencia={semConferencia}
         mensagem={mensagem}
         erro={falhou}
+        semMeta={semMeta}
         atualizar={() => {
           atualizar()
           void recarregarConfig()
@@ -134,6 +148,7 @@ export function RumoHero({
   semConferencia = false,
   mensagem = 'Informe o gasto necessário e confira os saldos para começar.',
   erro = false,
+  semMeta = null,
   abrir,
   atualizar,
 }: {
@@ -145,6 +160,8 @@ export function RumoHero({
   semConferencia?: boolean
   mensagem?: string
   erro?: boolean
+  /** a frase de quando daria para viver do que rende, para a família que ainda não escolheu a meta */
+  semMeta?: string | null
   abrir: () => void
   atualizar?: () => void
 }) {
@@ -199,6 +216,7 @@ export function RumoHero({
         <span className="chip">Garantido</span>
         {exemplo && <span>Exemplo</span>}
         <span>{resposta || (c ? 'Informe o gasto necessário no objetivo.' : mensagem)}</span>
+        {semMeta && <span className="sub rumo-sem-meta">{semMeta}</span>}
         {semMargem}
         {!exemplo && velhos && <span className="sub">Há números com mais de 60 dias.</span>}
         <span className="sub">Tesoureiro de Receitas: confira as premissas antes de contar com essa renda.</span>
@@ -232,6 +250,7 @@ export function RumoHero({
           />
         </div>
       )}
+      {semMeta && <p className="sub rumo-sem-meta">{semMeta}</p>}
       {semMargem}
       {!c && atualizar && (
         <button className="btn line" type="button" onClick={atualizar}>
