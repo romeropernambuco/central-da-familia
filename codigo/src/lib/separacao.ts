@@ -95,7 +95,7 @@ const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR
 /** O que o app fala, em português simples. */
 export function fraseDaSeparacao(s: SeparacaoDoMes): { titulo: string; frase: string } {
   const reserva = s.reservado > 0 ? `, menos ${brl(s.reservado)} separados para a viagem` : ''
-  const base = `Neste mês dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram (salário, aluguel e o que chegou) e ${brl(s.lucro)} que o guardado rende${reserva}. Já foram ${brl(s.gasto)}.`
+  const base = `Neste mês dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram (salário, aluguel e o que chegou) e ${brl(s.lucro)} do salário da gordura${reserva}. Já foram ${brl(s.gasto)}.`
   if (s.situacao === 'passou')
     return {
       titulo: `Passou ${brl(s.folga)}: esse pedaço sai da gordura`,

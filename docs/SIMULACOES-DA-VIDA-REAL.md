@@ -95,6 +95,27 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
   verdade no Guardado; data de saída do inquilino; contas do ano, IR do aluguel, seguros e vencimentos; empresa como
   patrimônio; ajuda ao filho; reserva de emergência separada da gordura; o plano começa no mês que vem com o saldo de hoje.
 
+## O salário da gordura (22/11, especialistas e mentores)
+
+Pergunta do dono: "Do que rende, metade vira salário e metade fica guardada, encarada como a inflação. Estou errado?"
+Três agentes: planejador financeiro (números de hoje), mentor de famílias ricas (Yale, Harvard, guardrails, family
+office) e simulador (CDI e IPCA do Banco Central, jan/2000 a out/2026, janelas de 20 anos, IR de 15%).
+
+- **Hoje a metade e "o que passa da inflação" quase empatam.** Selic 13,75%, IPCA esperado 5% (Focus 13/11/2026):
+  R$ 1 milhão rende ~R$ 9.190 por mês líquidos; a inflação come ~R$ 4.070; metade = R$ 4.595; acima da inflação =
+  ~R$ 5.100. Descontar a inflação não empobrece ninguém: hoje dá até mais que a metade.
+- **A metade sozinha falha com juro baixo.** Ela só protege enquanto o CDI for ~2,4 vezes a inflação. Na história
+  (2000-2026) a metade pura deixou o guardado com 75% a 84% do valor real em 20 anos; em 2020 o salário foi R$ 806 por
+  mês por milhão. Gastar tudo deixou ~30%.
+- **Feito: a metade com piso da inflação** (lib/salarioDaGordura.ts, Guardado). Metade do que rende é o salário da
+  gordura; a metade que fica nunca é menor que a inflação do mês. Foi a única regra que nunca deixou o guardado perder
+  valor na simulação. A separação do mês ("pode gastar") usa esse salário, não o rendimento inteiro.
+- **Em aberto (decisão do dono):** os especialistas recomendam também deixar o salário da gordura fixo por 12 meses,
+  revisto uma vez por ano (Yale, Vanguard), com uma reserva de juros para os anos de Selic baixa. Referência histórica:
+  ~R$ 3.300 por mês por milhão (4% ao ano, corrigido pela inflação) foi o salário estável que não empobreceu.
+- **Corrigido:** a conta de 22/11 que dizia "R$ 1,5 milhão rende R$ 14,8 mil, mas só R$ 4,9 mil acima da inflação"
+  usava a taxa real conservadora do plano (4%). Com as taxas de hoje, acima da inflação são ~R$ 7.600.
+
 ## O que este documento NÃO resolve
 
 - **Depende do dono:** o ano da meta; o pró-labore das empresas.

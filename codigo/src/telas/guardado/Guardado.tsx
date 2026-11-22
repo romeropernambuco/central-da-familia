@@ -26,6 +26,7 @@ import { useFuturo, useGuardado } from '../../app/useDados2'
 import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
 import { Imoveis } from '../../componentes/Imoveis'
+import { SalarioDaGordura } from '../../componentes/SalarioDaGordura'
 import { SeparacaoDoMes } from '../../componentes/SeparacaoDoMes'
 import { DinheiroNaRua } from './DinheiroNaRua'
 import { aplicacaoMinha } from '../../lib/dono'
@@ -41,7 +42,6 @@ import {
   exemploVazio,
   marcoGuardado,
   pct,
-  rendeNoMesEstimado,
   rendeQuanto,
 } from '../../lib/guardado'
 
@@ -170,7 +170,6 @@ export function Guardado() {
       : 0
   const seu = daFamilia ? g.total : (g.seu_total ?? g.total)
   const meses = meuLim > 0 ? Math.floor(seu / meuLim) : 0
-  const rendeMes = rendeNoMesEstimado(g)
   // E2 (regra nova, 13/11): o casal vê tudo o que está guardado, com o nome de quem é; mexe só no seu e no do casal
   const doOutro = new Map<string, number>()
   for (const a of g.aplicacoes)
@@ -263,12 +262,7 @@ export function Guardado() {
             )}
           </p>
         )}
-        {rendeMes > 0 && !oculto && (
-          <p className="sub guard-rende-mes">
-            Com a taxa de hoje, rende perto de <b>{reais(rendeMes)} por mês</b>, já sem o imposto. É o lucro da gordura:
-            gastar até isso por mês deixa o guardado inteiro.
-          </p>
-        )}
+        <SalarioDaGordura />
         <SeparacaoDoMes />
         {meses > 0 && !oculto && (
           <p className="sub guard-meses">

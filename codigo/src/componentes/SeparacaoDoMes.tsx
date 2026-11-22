@@ -1,14 +1,13 @@
 import { useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useConfig } from '../app/useConfig'
-import { useGuardado } from '../app/useDados2'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { entradasDoAluguel, lerCaderno } from '../lib/aluguel'
 import { hojeRecife } from '../lib/formato'
-import { rendeNoMesEstimado } from '../lib/guardado'
 import { lerLancamentosMes, lerMes } from '../lib/resumo/leituras'
 import { fraseDaSeparacao, gastoDoMes, rendaDoMesCadastrada, separarDoMes } from '../lib/separacao'
 import { mesMaisV, reservaDasViagens } from '../lib/viagem'
 import { Din } from './base'
+import { useSalarioDaGordura } from './SalarioDaGordura'
 import './planilha.css'
 
 /**
@@ -19,7 +18,8 @@ export function SeparacaoDoMes() {
   const { api, familia } = useSessaoAtual()
   const { versao } = useDadosDoDia()
   const { oculto } = useOlhoApp()
-  const { g } = useGuardado()
+  // o lucro da gordura que dá para gastar é o salário da gordura: metade do que rende, guardando ao menos a inflação
+  const { s: salario } = useSalarioDaGordura()
   const [rendas] = useConfig<unknown[]>('rendas', [])
   const [entradas] = useConfig<{ data?: string; valor?: number; destino?: string }[]>('entradas', [])
   const hoje = hojeRecife(),
@@ -61,7 +61,7 @@ export function SeparacaoDoMes() {
     entrou: dado.entrou,
     previsto: dado.previsto,
     rendaCadastrada: rendaDoMesCadastrada(rendas),
-    lucro: g ? rendeNoMesEstimado(g) : 0,
+    lucro: salario?.salario ?? 0,
     gasto: ultimos ? gastoDoMes(ultimos, mes, hoje) : dado.saiu,
     extras,
     reservado: reservaDasViagens(viagens, mes).total,
