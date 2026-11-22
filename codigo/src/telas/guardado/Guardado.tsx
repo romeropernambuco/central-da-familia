@@ -264,7 +264,8 @@ export function Guardado() {
         )}
         {rendeMes > 0 && !oculto && (
           <p className="sub guard-rende-mes">
-            Com a taxa de hoje, rende perto de <b>{reais(rendeMes)} por mês</b>, já sem o imposto.
+            Com a taxa de hoje, rende perto de <b>{reais(rendeMes)} por mês</b>, já sem o imposto. É o lucro da gordura:
+            gastar até isso por mês deixa o guardado inteiro.
           </p>
         )}
         {meses > 0 && !oculto && (

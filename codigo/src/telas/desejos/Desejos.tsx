@@ -24,6 +24,7 @@ import { GraficoDesejo } from '../../componentes/Graficos'
 import type { DesejoTela, NovoDesejo, SituacaoDesejo, VoltaDe } from '../../api/tipos'
 import { centavos, hojeRecife, mesCurto, plural, reais, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
+import { folgaNoMes } from '../../lib/gordura'
 
 const VOLTA: { v: VoltaDe; nome: string; ajuda: string }[] = [
   { v: 'nada', nome: 'Não volta', ajuda: 'O dinheiro sai e pronto (viagem, presente, reforma).' },
@@ -183,13 +184,28 @@ function avaliar(entrada: FuturoEntrada, d: Desejo, semEste = false) {
             taxa_real_trabalho: p.taxa_real_trabalho,
           })
         : null
-    return frasesDesejo(c, d, antecipa, {
+    const f = frasesDesejo(c, d, antecipa, {
       inicio: entrada.hoje.slice(0, 7),
       fim: mesMais(entrada.parametros.virada, -1),
     })
+    const g = fraseGorduraDoDesejo(e, d)
+    return g ? { ...f, linhas: [...f.linhas, g] } : f
   } catch {
     return null
   }
+}
+
+/**
+ * Gordura x lucro da gordura (regra do dono, 22/11): a viagem sai da sobra do salário e do que o guardado rende, ou
+ * come o guardado de hoje? Olha o mês do desejo na linha do plano, com o desejo dentro. Depois da virada: nada a dizer.
+ */
+export function fraseGorduraDoDesejo(e: FuturoEntrada, d: Desejo): string | null {
+  const linha = futuro({ ...e, desejos: [...e.desejos, d] }).linha
+  const folga = folgaNoMes(linha, d.mes)
+  if (folga === null) return null
+  return folga >= 0
+    ? 'Sai da sobra e do que o guardado rende: o guardado de hoje fica inteiro.'
+    : `Come ${reais(-folga / 100)} do guardado de hoje (a gordura), além do que ele rende.`
 }
 
 /** Filha: sem 2029. Só "dá pra comprar com o seu": neste mês, o que sobra; num mês que vem, o limite dela daquele mês. */
@@ -648,6 +664,8 @@ export function Desejos() {
                                 x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x),
                               ),
                               ...r.linhas.filter(x => /^Adiantar/.test(x)),
+                              // gordura x lucro: sai da sobra e do que rende, ou come o guardado de hoje
+                              ...r.linhas.filter(x => /guardado de hoje/.test(x)),
                             ].join(' '),
                           )}
                         </small>

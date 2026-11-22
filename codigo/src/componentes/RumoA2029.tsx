@@ -14,6 +14,7 @@ import { acompanharConferencias, CHAVE_FONTES, useNumerosAtualizados } from '../
 import { AtualizarNumeros, numerosParaConferir } from './AtualizarNumeros'
 import { Din } from './base'
 import { PlanoSemMargem } from './PlanoSemMargem'
+import { analisarGordura, fraseDaGordura } from '../lib/gordura'
 import './RumoA2029.css'
 
 const mesNome = (m: string) =>
@@ -111,6 +112,17 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
   async function recarregarConfig() {
     await recarregar()
   }
+}
+
+/** "A gordura de hoje fica inteira até dez/2028" ou "a partir de mm/aaaa os gastos passam a comer a gordura". */
+function FraseGordura({ linha }: { linha: RumoCalculado['saida']['linha'] }) {
+  const a = analisarGordura(linha)
+  if (!a) return null
+  return (
+    <p className={a.comeEm ? 'sub rumo-gordura come' : 'sub rumo-gordura'} role="note">
+      {fraseDaGordura(a, linha[linha.length - 1].mes)}
+    </p>
+  )
 }
 
 export function RumoHero({
@@ -254,6 +266,8 @@ export function RumoHero({
             Até dez/2028 o salário de Rendas entra todo mês e a sobra vai para o guardado; de 2029 em diante, só o que
             rende. Aplicações são estimativas; a cobertura depende das premissas abaixo.
           </p>
+          {/* gordura x lucro da gordura (regra do dono, 22/11): gastar o que rende não come o guardado */}
+          {!oculto && <FraseGordura linha={c.saida.linha} />}
           <div className="rumo-fontes">
             <div>
               <Icone nome="guardado" />
