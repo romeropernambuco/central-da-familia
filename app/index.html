@@ -14,10 +14,34 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icone-180.png">
 <link rel="icon" type="image/png" href="./icone-192.png">
-  <script type="module" crossorigin src="./assets/index-CcHkyJjm.js"></script>
+<style>
+html,body { margin:0; min-height:100%; }
+.abertura { box-sizing:border-box; min-height:100svh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:16px; padding:24px; background:#F1F3EF; color:#153c30; font:16px/1.5 system-ui,sans-serif; text-align:center; }
+.abertura p { margin:0; }
+.carregando-rota { min-height:280px; }
+@media(prefers-color-scheme:dark) { .abertura { background:#100E0C; color:#e5eee8; } }
+</style>
+  <script type="module" crossorigin src="./assets/index-D4ODRiMY.js"></script>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div class="abertura" role="status" aria-live="polite"><svg width="48" height="48" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#0E7A5A"/><path d="M3 7h10L8 2zM4 8h8v5H4z" fill="white"/><path d="M7 10h2v3H7z" fill="#0E7A5A"/></svg><b>Central da Família</b><p>Abrindo a Central da Família...</p></div></div>
 <noscript><p style="padding:16px;font-family:system-ui">A Central da Família precisa de JavaScript ligado. Abra pelo Safari ou pelo Chrome.</p></noscript>
+<script>
+(function () {
+  var terminou = false;
+  function parar() { terminou = true; clearTimeout(prazo); }
+  function falhou() {
+    if (terminou) return;
+    parar();
+    var raiz = document.getElementById('root');
+    raiz.innerHTML = '<main class="abertura" role="alert"><h1>Não foi possível abrir a Central agora</h1><p>Confira a internet e tente de novo.</p><button type="button" style="min-height:48px;padding:12px 24px">Tentar de novo</button></main>';
+    raiz.querySelector('button').onclick = function () { location.reload(); };
+  }
+  var prazo = setTimeout(falhou, 15000);
+  window.addEventListener('central:aberta', parar, {once:true});
+  window.addEventListener('central:falhou', parar, {once:true});
+  window.addEventListener('error', function(e) { if(e.target && e.target.tagName === 'SCRIPT' && e.target.type === 'module') falhou(); }, true);
+})();
+</script>
 </body>
 </html>
