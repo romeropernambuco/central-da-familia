@@ -1,0 +1,1 @@
+import{e,aI as o,j as t,aJ as r}from"./partida-DYGOje6p.js";const i=Object.freeze({...o});function n({nome:a,...s}){return e.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(r,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};

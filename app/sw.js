@@ -1,6 +1,6 @@
 // Guarda a casca pública do app. Requisições de dados ao Supabase passam direto pela rede.
-const VERSAO = "f718016b41aa"
-const ARQUIVOS = ["index.html","assets/index-zjNZ3tpA.js","assets/partida-p9dpIjH8.js","assets/partida-xWAOpgoz.css","assets/figtree-latin-wght-normal-D_ZTVpCC.woff2","assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2","assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2","assets/inter-cyrillic-wght-normal-DqGufNeO.woff2","assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","assets/inter-greek-wght-normal-CkhJZR-_.woff2","assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2","assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","assets/inter-latin-wght-normal-Dx4kXJAl.woff2","assets/Inicio-OIEP8dI1.js","assets/Inicio-B4v7BE_7.css","assets/escritorio-CCwUF-Zq.css","assets/RumoA2029-CyjbCzfc.css","assets/PlanoSemMargem-ClGPaJAi.js","assets/useConfig-DQXIZ77j.js","assets/leituras-BYbHkeJM.js","assets/orcamento-BJ4X1EZC.js","assets/plano-CxlAkBet.js","assets/recebimentos-B06ubVlo.js","assets/guardado-BtNfjJw9.js","assets/imoveis-Bcxhxk42.js","assets/desejos-B71kTfVN.js","assets/Cena3D-ofWUbiPq.js","assets/dadosIsometricos-C1noAZ66.js","assets/dadosIsometricos-C3XWiEvD.css","assets/SaldoConta-CApBhrY3.js","assets/SaldoConta-eeVgm1fr.css","assets/CasaDisponivelHoje-CVSxr_Nl.js","assets/EnvelopeCard-C2Ck14-i.js","assets/Qm-DtULJTUy.js","assets/Linha2028-WNVL2gyn.js","assets/Graficos-BP6vqNRd.js","assets/porDia-JUbUJL7f.js","assets/real-3HwwLvhr.js"]
+const VERSAO = "eeba95b2e2fd"
+const ARQUIVOS = ["index.html","assets/index-wFB2XAqN.js","assets/partida-DYGOje6p.js","assets/partida-xWAOpgoz.css","assets/figtree-latin-wght-normal-D_ZTVpCC.woff2","assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2","assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2","assets/inter-cyrillic-wght-normal-DqGufNeO.woff2","assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","assets/inter-greek-wght-normal-CkhJZR-_.woff2","assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2","assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","assets/inter-latin-wght-normal-Dx4kXJAl.woff2","assets/Inicio-HlrBMRZz.js","assets/Inicio-B4v7BE_7.css","assets/escritorio-CCwUF-Zq.css","assets/RumoA2029-CyjbCzfc.css","assets/PlanoSemMargem-DAYP9DTQ.js","assets/useConfig-G83_aKBb.js","assets/leituras-KXz0EmV0.js","assets/orcamento-CMiAucKV.js","assets/plano-sNPIP8X-.js","assets/recebimentos-D7wBKNIN.js","assets/guardado-BtNfjJw9.js","assets/imoveis-HlGqR0aA.js","assets/desejos-B71kTfVN.js","assets/Cena3D-CQR9mT_Z.js","assets/dadosIsometricos-Cd5Z35Ix.js","assets/dadosIsometricos-C3XWiEvD.css","assets/SaldoConta-BvCInEPt.js","assets/SaldoConta-eeVgm1fr.css","assets/CasaDisponivelHoje-Dftw3mnH.js","assets/EnvelopeCard-BUePd9xt.js","assets/Qm-D-5aNuXp.js","assets/Linha2028-Cpl_RgVJ.js","assets/Graficos-C8NJ7Gpx.js","assets/porDia-XLiV5Kqr.js","assets/real-aONfFxiS.js"]
 const PASTA = new URL('./', self.location.href).href
 const INDEX = PASTA + 'index.html'
 const PREFIXO = 'central-' + encodeURIComponent(PASTA) + ':'
@@ -30,6 +30,34 @@ async function guardar(req, resposta) {
   try { await (await caches.open(CACHE)).put(req, resposta.clone()) }
   catch { /* quota ou cache indisponível: a resposta da rede continua válida */ }
 }
+
+// Avisos no celular: o servidor manda só o assunto (sem valor e sem nome). Tocar abre a Central.
+self.addEventListener('push', e => {
+  const d = (() => {
+    try { return (e.data && e.data.json()) || {} } catch { return {} }
+  })()
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Central da Família', {
+    body: d.texto || 'A Central tem avisos para você.',
+    icon: PASTA + 'icone-192.png',
+    badge: PASTA + 'icone-192.png',
+    tag: 'central-avisos',
+    data: { abrir: new URL(d.abrir || './', PASTA).href },
+  }))
+})
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const alvo = (e.notification.data && e.notification.data.abrir) || PASTA
+  e.waitUntil((async () => {
+    for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) {
+      if (c.url.startsWith(PASTA) && 'focus' in c) {
+        if ('navigate' in c) await c.navigate(alvo).catch(() => {})
+        return c.focus()
+      }
+    }
+    return self.clients.openWindow(alvo)
+  })())
+})
 
 self.addEventListener('fetch', e => {
   const req = e.request
