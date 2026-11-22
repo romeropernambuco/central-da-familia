@@ -1,20 +1,13 @@
 import { useState } from 'react'
 import { HandCoins, Plus } from 'lucide-react'
 import type { GuardadoAplicacao } from '../../api/tipos'
-import { useConfig } from '../../app/useConfig'
+import { useNegocios } from '../../app/useCadernos'
 import { useOculto } from '../../app/useOculto'
 import { Botao, Din } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
 import { hojeRecife, reais } from '../../lib/formato'
 import { textoPrivado } from '../../lib/olho'
-import {
-  contaDoNegocio,
-  fraseDoPrazo,
-  lerNegocios,
-  ordenarNegocios,
-  totaisNaRua,
-  type Negocio,
-} from '../../lib/dinheiroNaRua'
+import { contaDoNegocio, fraseDoPrazo, ordenarNegocios, totaisNaRua, type Negocio } from '../../lib/dinheiroNaRua'
 import { FolhaNegocio } from './FolhaNegocio'
 import { NovoNegocio } from './NovoNegocio'
 import './dinheiro-na-rua.css'
@@ -28,14 +21,12 @@ const plural = (n: number, um: string, varios: string) => (n === 1 ? `1 ${um}` :
  */
 export function DinheiroNaRua({ taxaAno, aplicacoes }: { taxaAno: number; aplicacoes: GuardadoAplicacao[] }) {
   const oculto = useOculto()
-  const [bruto, gravar, falha, lido] = useConfig<unknown>('dinheiro_na_rua', [])
+  const { negocios: lidos, salvar: salvarUm, apagar, voltaGuardar, falha, lido } = useNegocios()
   const [aberto, setAberto] = useState<string | null>(null)
   const [folha, setFolha] = useState<Negocio | 'novo' | null>(null)
   const hoje = hojeRecife()
-  const negocios = ordenarNegocios(lerNegocios(bruto))
+  const negocios = ordenarNegocios(lidos)
   const t = totaisNaRua(negocios, hoje, taxaAno)
-  const salvarUm = (n: Negocio) =>
-    gravar(negocios.some(x => x.id === n.id) ? negocios.map(x => (x.id === n.id ? n : x)) : [...negocios, n])
   const noFoco = negocios.find(n => n.id === aberto)
   const linha = (n: Negocio) => {
     const c = contaDoNegocio(n, hoje, taxaAno)
@@ -124,6 +115,7 @@ export function DinheiroNaRua({ taxaAno, aplicacoes }: { taxaAno: number; aplica
           taxaAno={taxaAno}
           aplicacoes={aplicacoes}
           salvar={salvarUm}
+          voltaGuardar={voltaGuardar}
           fechar={() => setAberto(null)}
           mudar={() => {
             setFolha(noFoco)
@@ -135,7 +127,7 @@ export function DinheiroNaRua({ taxaAno, aplicacoes }: { taxaAno: number; aplica
         <NovoNegocio
           atual={folha === 'novo' ? null : folha}
           salvar={salvarUm}
-          apagar={n => gravar(negocios.filter(x => x.id !== n.id))}
+          apagar={apagar}
           fechar={() => setFolha(null)}
         />
       )}

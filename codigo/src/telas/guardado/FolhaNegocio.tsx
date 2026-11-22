@@ -21,6 +21,7 @@ import {
 } from '../../lib/dinheiroNaRua'
 
 type Salvar = (n: Negocio) => Promise<boolean>
+type VoltaGuardar = (n: Pick<Negocio, 'id' | 'nome'>, m: MovimentoNegocio, aplicacao: string) => Promise<boolean>
 const numero = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** O negócio por dentro: quanto falta voltar, o prazo, os movimentos e a comparação com o banco. */
@@ -29,6 +30,7 @@ export function FolhaNegocio({
   taxaAno,
   aplicacoes,
   salvar,
+  voltaGuardar,
   fechar,
   mudar,
 }: {
@@ -36,6 +38,7 @@ export function FolhaNegocio({
   taxaAno: number
   aplicacoes: GuardadoAplicacao[]
   salvar: Salvar
+  voltaGuardar: VoltaGuardar
   fechar: () => void
   mudar: () => void
 }) {
@@ -72,7 +75,7 @@ export function FolhaNegocio({
         </p>
       )}
       <MovimentosDoNegocio n={n} salvar={salvar} />
-      {!n.encerrado_em && <NovoMovimento n={n} aplicacoes={aplicacoes} salvar={salvar} />}
+      {!n.encerrado_em && <NovoMovimento n={n} aplicacoes={aplicacoes} salvar={salvar} voltaGuardar={voltaGuardar} />}
       <div className="row-btns">
         {n.encerrado_em ? (
           <Botao variante="secundario" type="button" onClick={() => salvar({ ...n, encerrado_em: null })}>
@@ -194,21 +197,31 @@ function MovimentosDoNegocio({ n, salvar }: { n: Negocio; salvar: Salvar }) {
 }
 
 /**
- * Leva para o Guardado o dinheiro que voltou de um negócio.
- * A chave é o próprio código do movimento: no banco real ela é um uuid (outro formato é recusado),
- * e a mesma chave nunca grava 2 vezes se a internet cair no meio.
+ * Anota o dinheiro que voltou de um negócio e já o leva para o Guardado, numa operação só: ou os 2 entram, ou nenhum.
+ * A chave no Guardado é o próprio código do movimento (uuid), e repetir (internet caiu no meio) não soma 2 vezes.
  */
 export const guardarVolta = (
-  api: Pick<Api, 'guardadoMovimentar'>,
+  api: Pick<Api, 'negocioVoltaGuardar'>,
+  familia: string,
   aplicacao: string,
-  n: Pick<Negocio, 'nome'>,
-  m: Pick<MovimentoNegocio, 'id' | 'valor' | 'data'>,
-) => api.guardadoMovimentar(aplicacao, 'aporte', m.valor, m.data, m.id, `Voltou de ${n.nome}`)
+  n: Pick<Negocio, 'id' | 'nome'>,
+  m: MovimentoNegocio,
+) => api.negocioVoltaGuardar!(familia, n.id, { ...m, tipo: 'voltou' }, aplicacao, `Voltou de ${n.nome}`)
 
 /** Anota mais dinheiro posto ou dinheiro que voltou. O que volta pode ir direto para uma aplicação do Guardado. */
-function NovoMovimento({ n, aplicacoes, salvar }: { n: Negocio; aplicacoes: GuardadoAplicacao[]; salvar: Salvar }) {
-  const { api, familia } = useSessaoAtual()
-  const { toast, tentar, recarregar } = useAcoes()
+function NovoMovimento({
+  n,
+  aplicacoes,
+  salvar,
+  voltaGuardar,
+}: {
+  n: Negocio
+  aplicacoes: GuardadoAplicacao[]
+  salvar: Salvar
+  voltaGuardar: VoltaGuardar
+}) {
+  const { familia } = useSessaoAtual()
+  const { toast, recarregar } = useAcoes()
   const oculto = useOculto()
   const hoje = hojeRecife()
   const [tipo, setTipo] = useState<'pus' | 'voltou'>('voltou')
@@ -240,19 +253,20 @@ function NovoMovimento({ n, aplicacoes, salvar }: { n: Negocio; aplicacoes: Guar
         valor: v,
         ...(nota.trim() ? { nota: nota.trim() } : {}),
       }
-      if (!(await salvar({ ...n, movimentos: [...n.movimentos, m] }))) {
+      const app = tipo === 'voltou' ? minhas.find(a => a.id === destino) : undefined
+      // com "Guardar em", a volta e o aporte vão juntos: se um falhar, nenhum entra e nada fica pela metade
+      const ok = app ? await voltaGuardar(n, m, app.id) : await salvar({ ...n, movimentos: [...n.movimentos, m] })
+      if (!ok) {
         setGravando(false)
         return
       }
-      const app = tipo === 'voltou' ? minhas.find(a => a.id === destino) : undefined
-      const guardou = !!app && (await tentar(() => guardarVolta(api, app.id, n, m)))
-      if (guardou) await recarregar().catch(() => {})
+      if (app) await recarregar().catch(() => {})
       toast(
         tipo === 'pus'
           ? `Anotado: mais ${reais(v)} em ${n.nome}.`
-          : guardou
-            ? `Anotado: voltaram ${reais(v)} e já estão no Guardado (${app!.nome}).`
-            : `Anotado: voltaram ${reais(v)} de ${n.nome}.${app ? ' No Guardado não entrou: anote por lá.' : ''}`,
+          : app
+            ? `Anotado: voltaram ${reais(v)} e já estão no Guardado (${app.nome}).`
+            : `Anotado: voltaram ${reais(v)} de ${n.nome}.`,
       )
       setValor('')
       setNota('')

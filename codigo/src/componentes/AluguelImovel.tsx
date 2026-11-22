@@ -2,14 +2,12 @@ import { useMemo, useState } from 'react'
 import { CalendarCheck, Receipt, Trash2 } from 'lucide-react'
 import type { ImovelTela } from '../api/tipos'
 import { useAcoes } from '../app/contexto'
-import { useConfig } from '../app/useConfig'
 import { useOculto } from '../app/useOculto'
 import {
   cadernoVazio,
   contaDoAno,
   fraseDaSituacao,
   inicioDoCaderno,
-  lerCaderno,
   mesMais,
   resumoDoMes,
   situacaoDoMes,
@@ -23,14 +21,6 @@ import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoPrivado } from './privacidade'
 import './aluguel.css'
-
-/** O caderno do aluguel da família inteira: lê uma vez e grava o imóvel que mudou. */
-export function useCadernoAluguel() {
-  const [bruto, gravar, falha, lido] = useConfig<unknown>('aluguel_caderno', {})
-  const caderno = lerCaderno(bruto)
-  const salvar = (id: string, c: CadernoImovel) => gravar({ ...caderno, [id]: c } satisfies Caderno)
-  return { caderno, salvar, falha, lido }
-}
 
 /** "Aluguéis de novembro: 5 de 7 chegaram". Só aparece com imóvel alugado. */
 export function ResumoAluguel({ imoveis, caderno }: { imoveis: ImovelTela[]; caderno: Caderno }) {

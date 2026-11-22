@@ -37,7 +37,7 @@ export interface LeiturasInsights {
   mesObjetivo?: string
   controleReceitas?: ControleReceitas
   entradaObjetivo?: FuturoEntrada
-  /** configuração `dinheiro_na_rua`, como veio do banco */
+  /** Dinheiro na rua, como veio do banco (produto.negocios_da_familia) */
   negocios?: unknown
 }
 /** Adapta só leituras concluídas da API selecionada; nunca importa/cria EXEMPLO como fallback. */

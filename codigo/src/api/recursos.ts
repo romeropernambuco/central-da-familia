@@ -12,6 +12,8 @@ export function recursoDaLeitura(nome: string): string | undefined {
       faturasBanco: 'faturasBanco',
       recebimentos: 'recebimentos',
       imoveis: 'imoveis',
+      negocios: 'negocios',
+      aluguelCaderno: 'aluguel',
       desejos: 'desejos',
       cartoes: 'cartoes',
       estoque: 'estoque',
@@ -58,7 +60,11 @@ export function recursosDaMutacao(nome: string, args: unknown[]): string[] | und
       'escritorio',
       'pendencias',
     ]
-  if (/^imovel/.test(nome)) return ['imoveis', 'projecao', 'pendencias', 'escritorio']
+  if (/^imovel/.test(nome)) return ['imoveis', 'aluguel', 'projecao', 'pendencias', 'escritorio']
+  // a volta que já entra no Guardado muda o Guardado também
+  if (nome === 'negocioVoltaGuardar') return ['negocios', 'guardado', 'projecao', 'pendencias', 'escritorio']
+  if (/^negocio/.test(nome)) return ['negocios', 'pendencias', 'escritorio']
+  if (/^aluguel/.test(nome)) return ['aluguel', 'pendencias', 'escritorio']
   if (/^(cartao|criarCartao)/.test(nome)) return ['cartoes', 'faturas', 'faturasBanco', 'projecao', 'escritorio']
   if (/^desejo/.test(nome)) return ['desejos', 'escritorio', 'pendencias']
   if (/^lembrete/.test(nome)) return ['escritorio', 'pendencias']

@@ -26,7 +26,8 @@ import type { ImovelTela, NovoImovel, UsoImovel } from '../api/tipos'
 import type { ImovelSaida } from '../lib/futuro'
 import { hojeRecife, mesCurto, reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../lib/formato'
 import { mesMais } from '../lib/plano'
-import { FolhaAluguel, ResumoAluguel, SituacaoAluguel, useCadernoAluguel } from './AluguelImovel'
+import { FolhaAluguel, ResumoAluguel, SituacaoAluguel } from './AluguelImovel'
+import { useCadernoAluguel } from '../app/useCadernos'
 
 const USO: { v: UsoImovel; nome: string; ajuda: string }[] = [
   { v: 'mora', nome: 'A família mora', ajuda: 'Onde vocês moram: o valor aparece no patrimônio, mas não dá renda.' },

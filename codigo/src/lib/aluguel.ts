@@ -2,7 +2,7 @@
 // Todo mês nasce sozinho o aluguel esperado de cada imóvel alugado; a pessoa marca "chegou" e, se não chegar até o dia
 // combinado, ele aparece como atrasado (a ideia dos programas de quem administra imóveis, como o OpenProperty).
 // No mesmo caderno ficam as despesas do imóvel (IPTU, condomínio, conserto) e a conta do que ele rendeu de verdade.
-// Aqui só as contas; quem guarda é a configuração da família (chave `aluguel_caderno`), que só o casal lê e grava.
+// Aqui só as contas; quem guarda são as tabelas produto.aluguel_* (só o casal lê e grava, 1 linha por mês e imóvel).
 
 export interface RecebimentoAluguel {
   /** mês de referência do aluguel, AAAA-MM */

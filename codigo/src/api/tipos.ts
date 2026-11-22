@@ -622,9 +622,9 @@ export type ChaveConfig =
   | 'fontes_receita'
   | 'receitas_controle'
   | 'numeros_atualizados'
-  /** Dinheiro na rua: negócios em que saiu dinheiro que tem que voltar (lib/dinheiroNaRua). Só o casal. */
+  /** Só a família de exemplo guarda aqui o Dinheiro na rua; no banco real ele mora em produto.negocios (22/11/2026). */
   | 'dinheiro_na_rua'
-  /** Caderno do aluguel: recebido mês a mês e despesas de cada imóvel alugado (lib/aluguel). Só o casal. */
+  /** Só a família de exemplo guarda aqui o caderno do aluguel; no banco real ele mora em produto.aluguel_* (22/11/2026). */
   | 'aluguel_caderno'
 
 export interface PessoaNome {
@@ -821,6 +821,29 @@ export interface Api {
   imoveis?(familia: string): Promise<ImovelTela[]>
   imovelSalvar?(familia: string, id: string | null, d: NovoImovel): Promise<void>
   imovelTirar?(familia: string, id: string): Promise<void>
+  /* Dinheiro na rua (produto.negocios e negocio_movimentos). Só o casal. Cada gravação muda só o que mudou. */
+  negocios?(familia: string): Promise<unknown>
+  /** Grava os dados do negócio e os movimentos que vierem nele; apaga só os movimentos listados em `tirar`. */
+  negocioGravar?(familia: string, n: import('../lib/dinheiroNaRua').Negocio, tirar: string[]): Promise<void>
+  negocioApagar?(familia: string, id: string): Promise<void>
+  /** Anota o dinheiro que voltou e o põe na aplicação do Guardado: as 2 coisas juntas, ou nenhuma. */
+  negocioVoltaGuardar?(
+    familia: string,
+    negocio: string,
+    m: import('../lib/dinheiroNaRua').MovimentoNegocio,
+    aplicacao: string,
+    nota: string,
+  ): Promise<void>
+  /* Caderno do aluguel (produto.aluguel_imovel, aluguel_recebimentos, aluguel_despesas). Só o casal. */
+  aluguelCaderno?(familia: string): Promise<unknown>
+  /** Grava o caderno de 1 imóvel; apaga só os meses e as despesas listados. */
+  aluguelGravar?(
+    familia: string,
+    imovel: string,
+    c: import('../lib/aluguel').CadernoImovel,
+    tirarMeses: string[],
+    tirarDespesas: string[],
+  ): Promise<void>
   /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
   // ---------- Etiquetas de viagem e evento (produto.etiquetas). Só o casal cria, marca e vê os totais ----------
   etiquetas?(familia: string, incluirArquivadas?: boolean): Promise<Etiqueta[]>

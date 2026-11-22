@@ -24,7 +24,7 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
   if (familia.papel !== 'casal') return { dados, erros }
   if (rota === 'guardado') {
     dados.guardado = await ler(() => api.guardadoHoje(familia.id))
-    dados.negocios = await ler(() => api.config(familia.id, 'dinheiro_na_rua', []))
+    if (api.negocios) dados.negocios = await ler(() => api.negocios!(familia.id))
   }
   if (rota === 'planejamento' || rota === 'guardado') {
     const [rec, f] = await Promise.all([

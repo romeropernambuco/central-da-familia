@@ -1,7 +1,7 @@
 // Dinheiro na rua: dinheiro que saiu da conta para um negócio e que tem que voltar (carro para revender, baia de porcos,
 // reforma para vender, empréstimo a alguém). Não é gasto do mês nem aplicação de banco.
 // A pergunta é sempre a mesma: quanto pus, quanto já voltou, quanto falta, até quando, e se valeu mais que deixar no banco.
-// Aqui ficam só as contas. Quem guarda é a configuração da família (chave `dinheiro_na_rua`), que só o casal lê e grava.
+// Aqui ficam só as contas. Quem guarda são as tabelas produto.negocios e negocio_movimentos (só o casal lê e grava).
 
 export const TIPOS_NEGOCIO = ['veiculo', 'criacao', 'imovel', 'empresa', 'emprestimo', 'outro'] as const
 export type TipoNegocio = (typeof TIPOS_NEGOCIO)[number]

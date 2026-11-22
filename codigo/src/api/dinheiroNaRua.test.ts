@@ -163,31 +163,54 @@ describe('na família de exemplo', () => {
     expect(await apiExemplo.config(F, 'dinheiro_na_rua', [])).toEqual([])
   })
   it('o que o casal grava volta igual e a cópia de segurança continua válida', async () => {
-    const lista = lerNegocios(await apiExemplo.config(F, 'dinheiro_na_rua', []))
     const novo = negocio({ id: 'novo', nome: 'Terreno' })
-    await apiExemplo.salvarConfig(F, 'dinheiro_na_rua', [...lista, novo])
-    expect(lerNegocios(await apiExemplo.config(F, 'dinheiro_na_rua', [])).at(-1)).toEqual(novo)
+    await apiExemplo.negocioGravar!(F, novo, [])
+    // volta igual, com o dono preenchido por quem gravou (como no banco real)
+    expect(lerNegocios(await apiExemplo.negocios!(F)).at(-1)).toEqual({ ...novo, dono: 'm-ana' })
     const copia = JSON.parse(JSON.stringify(await apiExemplo.backupLer!(F)))
     expect(() => validarEstado(copia)).not.toThrow()
     expect(copia.config.dinheiro_na_rua).toHaveLength(3)
   })
+  it('2 celulares gravando juntos: o movimento que um pôs não some quando o outro grava', async () => {
+    const base = lerNegocios(await apiExemplo.negocios!(F)).find(n => n.id === 'rua-carro')!
+    const a = { id: novoUuid(), data: hojeRecife(), tipo: 'voltou' as const, valor: 100 }
+    const b = { id: novoUuid(), data: hojeRecife(), tipo: 'voltou' as const, valor: 200 }
+    // os 2 leram a mesma base; cada um acrescenta o seu
+    await apiExemplo.negocioGravar!(F, { ...base, movimentos: [...base.movimentos, a] }, [])
+    await apiExemplo.negocioGravar!(F, { ...base, movimentos: [...base.movimentos, b] }, [])
+    const depois = lerNegocios(await apiExemplo.negocios!(F)).find(n => n.id === 'rua-carro')!
+    expect(depois.movimentos.map(m => m.id)).toEqual(expect.arrayContaining([a.id, b.id]))
+    // tirar é só o que a tela tirou
+    await apiExemplo.negocioGravar!(F, { ...depois, movimentos: depois.movimentos.filter(m => m.id !== a.id) }, [a.id])
+    const fim = lerNegocios(await apiExemplo.negocios!(F)).find(n => n.id === 'rua-carro')!
+    expect(fim.movimentos.map(m => m.id)).not.toContain(a.id)
+    expect(fim.movimentos.map(m => m.id)).toContain(b.id)
+  })
+  it('a pessoa da família não lê os negócios', async () => {
+    exemploComo('filha')
+    await expect(apiExemplo.negocios!(F)).rejects.toThrow('só do casal')
+  })
 })
 
 describe('o dinheiro que volta vai para o Guardado', () => {
-  it('manda ao banco a chave no formato que o banco real aceita (uuid) e com o valor e a data do movimento', async () => {
+  it('manda a volta e o aporte numa chamada só, com a chave no formato que o banco real aceita (uuid)', async () => {
     const chamadas: unknown[][] = []
-    const api = { guardadoMovimentar: async (...a: unknown[]) => void chamadas.push(a) }
-    const m = { id: novoUuid(), valor: 5000, data: '2026-11-22' }
-    await guardarVolta(api, 'app-1', { nome: 'Carro' }, m)
-    expect(chamadas).toEqual([['app-1', 'aporte', 5000, '2026-11-22', m.id, 'Voltou de Carro']])
-    expect(chamadas[0][4]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    const api = { negocioVoltaGuardar: async (...a: unknown[]) => void chamadas.push(a) }
+    const m = { id: novoUuid(), valor: 5000, data: '2026-11-22', tipo: 'voltou' as const }
+    await guardarVolta(api, 'fam', 'app-1', { id: 'n1', nome: 'Carro' }, m)
+    expect(chamadas).toEqual([['fam', 'n1', m, 'app-1', 'Voltou de Carro']])
+    expect((chamadas[0][2] as { id: string }).id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    )
   })
-  it('na família de exemplo o valor entra na aplicação e repetir a mesma volta não soma 2 vezes', async () => {
+  it('na família de exemplo o valor entra na aplicação e no negócio, e repetir não soma 2 vezes', async () => {
     const antes = (await apiExemplo.guardadoHoje('fam-silva')).aplicacoes.find(a => a.id === 'g1')!.saldo
-    const m = { id: novoUuid(), valor: 700, data: hojeRecife() }
-    await guardarVolta(apiExemplo, 'g1', { nome: 'Baia' }, m)
-    await guardarVolta(apiExemplo, 'g1', { nome: 'Baia' }, m)
+    const m = { id: novoUuid(), valor: 700, data: hojeRecife(), tipo: 'voltou' as const }
+    await guardarVolta(apiExemplo, 'fam-silva', 'g1', { id: 'rua-baia', nome: 'Baia' }, m)
+    await guardarVolta(apiExemplo, 'fam-silva', 'g1', { id: 'rua-baia', nome: 'Baia' }, m)
     const depois = (await apiExemplo.guardadoHoje('fam-silva')).aplicacoes.find(a => a.id === 'g1')!.saldo
     expect(Math.round((depois - antes) * 100) / 100).toBe(700)
+    const baia = lerNegocios(await apiExemplo.negocios!('fam-silva')).find(n => n.id === 'rua-baia')!
+    expect(baia.movimentos.filter(x => x.id === m.id)).toHaveLength(1)
   })
 })

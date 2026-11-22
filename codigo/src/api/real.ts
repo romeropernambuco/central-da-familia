@@ -1063,6 +1063,25 @@ export const apiReal: Api = {
     if (error) erro(error)
     if (!data?.length) throw new Error('Só quem é dono desse imóvel tira ele da lista.')
   },
+  // ---------- Dinheiro na rua e caderno do aluguel (tabelas desde 22/11/2026): cada gravação muda só o que mudou ----------
+  async negocios(familia) {
+    return rpc('negocios_da_familia', { familia })
+  },
+  async negocioGravar(familia, n, tirar) {
+    await rpc('negocio_gravar', { familia, negocio: n, tirar })
+  },
+  async negocioApagar(familia, id) {
+    await rpc('negocio_apagar', { familia, negocio: id })
+  },
+  async negocioVoltaGuardar(familia, negocio, m, aplicacao) {
+    await rpc('negocio_volta_guardar', { familia, negocio, movimento: m, aplicacao })
+  },
+  async aluguelCaderno(familia) {
+    return rpc('aluguel_da_familia', { familia })
+  },
+  async aluguelGravar(familia, imovel, c, tirarMeses, tirarDespesas) {
+    await rpc('aluguel_gravar', { familia, imovel, caderno: c, tirar_meses: tirarMeses, tirar_despesas: tirarDespesas })
+  },
   async exportarFamilia(familia) {
     return rpc('exportar_familia', { familia })
   },

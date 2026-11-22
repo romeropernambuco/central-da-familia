@@ -35,6 +35,8 @@ import {
   type MundoEtiquetas,
 } from './exemploEtiquetas'
 import { novoUuid } from '../lib/seguro'
+import type { Negocio } from '../lib/dinheiroNaRua'
+import { cadernoVazio, type Caderno } from '../lib/aluguel'
 import {
   dadosTeste,
   familiaTeste,
@@ -1039,6 +1041,7 @@ const membrosExemplo = () =>
   membrosTeste()
     .filter(x => x.papel === 'casal')
     .map(x => ({ id: x.id, nome: x.nome, papel: x.papel }))
+const cadernosEx = () => db.config as { dinheiro_na_rua?: Negocio[]; aluguel_caderno?: Caderno }
 const soCasal = () => {
   if (!logado || papelLogado() !== 'casal') throw new Error('Só o casal com sessão ativa pode acessar estes dados.')
 }
@@ -2092,6 +2095,69 @@ export const apiExemplo: Api = {
       throw new Error(`Esse imóvel é de ${n}: só ${n} muda.`)
     }
     i.apagado = true
+  },
+  // ---------- Dinheiro na rua e caderno do aluguel: imita as funções do banco (grava só o que mudou) ----------
+  async negocios() {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('O dinheiro na rua é só do casal.')
+    return structuredClone(cadernosEx().dinheiro_na_rua || [])
+  },
+  async negocioGravar(_f, n, tirar) {
+    await espera(40)
+    soCasal()
+    const lista = (cadernosEx().dinheiro_na_rua ||= [])
+    const atual = lista.find(x => x.id === n.id)
+    const movs = new Map((atual?.movimentos || []).map(m => [m.id, m]))
+    for (const m of n.movimentos) movs.set(m.id, structuredClone(m))
+    for (const id of tirar) movs.delete(id)
+    const gravado: Negocio = {
+      ...structuredClone(n),
+      dono: atual ? atual.dono : (n.dono ?? membroLogado().id),
+      movimentos: [...movs.values()].sort((a, b) => a.data.localeCompare(b.data)),
+    }
+    if (atual) Object.assign(atual, gravado)
+    else lista.push(gravado)
+  },
+  async negocioApagar(_f, id) {
+    await espera(30)
+    soCasal()
+    cadernosEx().dinheiro_na_rua = (cadernosEx().dinheiro_na_rua || []).filter(x => x.id !== id)
+  },
+  async negocioVoltaGuardar(_f, negocio, m, aplicacao, nota) {
+    await espera(60)
+    soCasal()
+    minhaAplicacao(aplicacao)
+    const n = (cadernosEx().dinheiro_na_rua || []).find(x => x.id === negocio)
+    if (!n) throw new Error('Esse negócio não existe mais.')
+    if (n.movimentos.some(x => x.id === m.id)) return
+    // primeiro o Guardado: se ele recusar, a volta também não entra (as 2 juntas, como no banco real)
+    ex2.guardadoMovimentarEx(aplicacao, 'aporte', m.valor, m.data, m.id, nota)
+    n.movimentos.push({ ...structuredClone(m), tipo: 'voltou' })
+  },
+  async aluguelCaderno() {
+    await espera(30)
+    if (papelLogado() !== 'casal') throw new Error('O caderno do aluguel é só do casal.')
+    return structuredClone(cadernosEx().aluguel_caderno || {})
+  },
+  async aluguelGravar(_f, imovel, c, tirarMeses, tirarDespesas) {
+    await espera(40)
+    soCasal()
+    if (!db.imoveis.some(i => i.id === imovel && !i.apagado)) throw new Error('Esse imóvel não existe mais.')
+    const cad = (cadernosEx().aluguel_caderno ||= {})
+    const atual = cad[imovel] || cadernoVazio()
+    const rec = new Map(atual.recebimentos.map(r => [r.mes, r]))
+    for (const r of c.recebimentos) rec.set(r.mes, structuredClone(r))
+    for (const mes of tirarMeses) rec.delete(mes)
+    const desp = new Map(atual.despesas.map(d => [d.id, d]))
+    for (const d of c.despesas) desp.set(d.id, structuredClone(d))
+    for (const id of tirarDespesas) desp.delete(id)
+    const desde = c.desde || atual.desde
+    cad[imovel] = {
+      dia_vencimento: c.dia_vencimento,
+      ...(desde ? { desde } : {}),
+      recebimentos: [...rec.values()].sort((a, b) => a.mes.localeCompare(b.mes)),
+      despesas: [...desp.values()].sort((a, b) => a.data.localeCompare(b.data)),
+    }
   },
   async backupLer() {
     soCasal()
