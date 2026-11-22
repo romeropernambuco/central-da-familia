@@ -251,7 +251,8 @@ export function RumoHero({
             </span>
           </div>
           <p className="sub">
-            Projeção, sem salário nem verba. Aplicações são estimativas; a cobertura depende das premissas abaixo.
+            Até dez/2028 o salário de Rendas entra todo mês e a sobra vai para o guardado; de 2029 em diante, só o que
+            rende. Aplicações são estimativas; a cobertura depende das premissas abaixo.
           </p>
           <div className="rumo-fontes">
             <div>

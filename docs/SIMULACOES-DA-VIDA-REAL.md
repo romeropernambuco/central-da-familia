@@ -15,9 +15,12 @@ Quatro agentes seguiram famílias inventadas no tempo, lendo o código de verdad
    - o celular para de avisar o atraso desse imóvel e passa a avisar "você tem um lembrete para hoje";
    - a Secretária cria o lembrete "Cobrar Dra. Paula sobre o processo do imóvel Sala", toda semana ou todo mês;
    - dá para anotar o andamento (notificação, audiência, acordo) e marcar "voltou a pagar".
-2. **O alarme falso mais grave: a conta de 2029 não soma o salário.** Três dos quatro agentes chegaram nele sozinhos.
-   O motor tira os limites todo mês do dinheiro guardado e não põe a renda. Uma família que ganha mais do que gasta
-   aparece "abaixo do piso" em poucos meses. **Depende do dono** (pergunta 1 no fim).
+2. **Consertado (decisão do dono, 22/11): o salário entra na conta até a virada.** Antes o motor tirava os limites todo
+   mês do dinheiro guardado e não punha a renda; quem ganha mais do que gasta aparecia "abaixo do piso". Agora cada
+   renda de Planejamento → Rendas entra todo mês até dez/2028 (a que muda, pelo mês fraco; extra fica de fora) e a sobra
+   vai para o guardado. De 2029 em diante a família vive do que rende. Marina (R$ 5.000 de salário, R$ 4.500 de gasto,
+   R$ 100 mil): o alerta "em 09/2028 o caixa fica abaixo do piso" sumiu e "você está aqui" foi de 0,9% para 7,7%.
+   Família Silva: "faltam por mês" foi de R$ 16.102 para R$ 14.740.
 3. **Contas do ano (IPTU, IPVA, matrícula, seguro) não existem em lugar nenhum.** Nada avisa antes de janeiro.
 4. **Dívidas fixas (empréstimo com parcela) não têm cadastro.** O motor já sabe descontar dívida, mas ninguém manda.
 5. **Retirada de empresa que falha ou varia, e dinheiro que sai do bolso para a empresa, ficam soltos** do Guardado e
@@ -50,7 +53,7 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
 
 ## O que fazer, do que mais pega desprevenido ao que menos
 
-1. Salário até a meta na conta de 2029 (espera o dono).
+1. (feito em 22/11: salário na conta até a virada)
 2. Contas do ano: valor e "avisar N dias antes" nos lembretes que repetem todo ano, e o motor contar com elas.
 3. Dívidas e parcelas fixas: cadastro simples, ligado ao motor (que já sabe descontar).
 4. Retirada de empresa: botão "não veio este mês" e um aviso por mês vencido; "chegou menos" pergunta se o resto vem.
@@ -60,6 +63,6 @@ do combinado (pagamento parcial ou acordo) e os 10% do advogado sobre o que recu
 
 ## O que este documento NÃO resolve
 
-- **Depende do dono:** salário na conta de 2029; o ano da meta; se a dívida recuperada do inquilino entra como
+- **Depende do dono:** o ano da meta; se a dívida recuperada do inquilino entra como
   dinheiro que entrou (e os 10% do advogado como despesa).
 - **Não testado num celular de verdade:** o aviso "você tem um lembrete para hoje" (o servidor foi testado no banco).

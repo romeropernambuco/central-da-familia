@@ -16,6 +16,7 @@ import {
 } from './aluguel'
 import { aluguelNoMes } from './futuro'
 import { imovelDoBanco, type ImovelBanco } from './futuroReceitas'
+import { salariosAteAVirada } from './futuroSalario'
 import { comProblemasDoAluguel, SEM_DATA_DE_VOLTA } from './futuroAluguel'
 import { tituloDoLembrete } from '../componentes/ProblemaAluguel'
 
@@ -120,6 +121,35 @@ describe('o plano não conta com o aluguel até a volta', () => {
     ).toEqual({
       imoveis: [banco],
     })
+  })
+})
+
+describe('o salário entra na conta até a virada (decisão do dono, 22/11)', () => {
+  const rendas = [
+    { id: 'r1', nome: 'Salário', valor: 5000, tipo: 'salario', dono: 'Marina' },
+    { id: 'r2', nome: 'Bico', valor: 800, tipo: 'variavel', fraco: 300, bom: 1500 },
+    { id: 'r3', nome: 'Bônus', valor: 2000, tipo: 'extra' },
+    { id: 'r4', nome: 'Zerada', valor: 0, tipo: 'salario' },
+  ]
+  it('1 entrada por mês, do mês que vem até dez/2028; variável pelo mês fraco; extra e zero ficam de fora', () => {
+    const s = salariosAteAVirada(rendas, '2026-11', '2029-01')
+    const r1 = s.filter(x => x.id.startsWith('renda:r1@'))
+    expect(r1[0]).toMatchObject({
+      mes_previsto: '2026-12',
+      valor: 500000,
+      certo: true,
+      recebido: false,
+      dono: 'Marina',
+    })
+    expect(r1[r1.length - 1].mes_previsto).toBe('2028-12')
+    expect(r1).toHaveLength(25)
+    expect(s.filter(x => x.id.startsWith('renda:r2@'))[0].valor).toBe(30000)
+    expect(s.some(x => x.id.startsWith('renda:r3@') || x.id.startsWith('renda:r4@'))).toBe(false)
+  })
+  it('depois da virada, ou sem rendas, nada entra', () => {
+    expect(salariosAteAVirada(rendas, '2029-03', '2029-01')).toEqual([])
+    expect(salariosAteAVirada(null, '2026-11', '2029-01')).toEqual([])
+    expect(salariosAteAVirada('x', '2026-11', '2029-01')).toEqual([])
   })
 })
 

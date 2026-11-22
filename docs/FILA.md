@@ -60,8 +60,6 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 - 22/11/2026: tornar o repositório privado (item 1 de "Agora"): só o dono consegue.
 - 22/11/2026: ligar os avisos no próprio celular (Privacidade → Avisos no celular) para conferir a 1ª entrega às 19h.
-- 22/11/2026 (simulação da Marina): a conta de 2029 supõe que o salário para hoje. Para quem ganha R$ 5.000 e gasta
-  R$ 4.500, diz que o dinheiro acaba em 09/2028. O salário deve contar como entrada até o ano da meta?
 - 22/11/2026 (simulação da Marina): família que não escolheu meta vê "Plano 2029" com a meta de exemplo. Para vender,
   o card de 2029 deve esperar a família escolher o ano e o objetivo (item 3 de "Agora")?
 - O repositório fica público até a família começar a usar de verdade (decisão do dono, 22/11/2026).
@@ -105,3 +103,5 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 - 22/11/2026: "Não me pagou" no caderno do aluguel (migração 20261122111629, autoteste e 752 testes do banco ok):
   providência, volta, quem cuida, dívida e andamento; plano e Início param de contar com o aluguel até a volta;
   celular não avisa o atraso registrado e avisa lembrete do dia; Secretária lembra de cobrar o advogado.
+- 22/11/2026 (decisão do dono): o salário de Rendas entra na conta de 2029 todo mês até dez/2028; a sobra vai para o
+  guardado; de 2029 em diante só o que rende. Fim do alarme falso "caixa abaixo do piso" de quem ganha mais do que gasta.

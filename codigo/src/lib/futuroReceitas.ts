@@ -3,6 +3,7 @@
 // Aqui não tem conta de 2029: só troca de formato (centavos, mês 'AAAA-MM', taxa em texto decimal) e as premissas do
 // TIME.md quando a família ainda não disse o valor (marcadas em `confirmar`). Quem calcula é futuro(), em lib/futuro.
 import { Dec, PADROES_ECONOMISTA, folha13, type FuturoEntrada, type Imovel, type Parametros, type Taxa } from './futuro'
+import { salariosAteAVirada } from './futuroSalario'
 import type {
   CenarioReceitas,
   ControleReceitas,
@@ -177,6 +178,8 @@ export interface FuturoBanco {
   limites_mes: { envelope_id: string; limite_centavos: number }[]
   config: {
     casa_folha?: { pessoas?: { salario?: number }[] }
+    /** Planejamento → Rendas (salário de cada um); f_08 já manda */
+    rendas?: unknown
     fontes_receita?: unknown
     receitas_controle?: unknown
   } | null
@@ -361,16 +364,22 @@ export function entradaDoBanco(j: FuturoBanco): EntradaPronta {
     confirmar.push(
       'Cadastro de receitas com dados inválidos: confira as fontes e as ocorrências antes de usar a projeção.',
     )
-  const receitasBase = (j.recebimentos || []).map(r => ({
-    id: String(r.id),
-    dono: r.dono_nome || '',
-    valor: Number(r.valor_centavos) || 0,
-    mes_previsto: String(r.mes_previsto).slice(0, 7),
-    mes_novo: r.mes_novo ? String(r.mes_novo).slice(0, 7) : null,
-    certo: !!r.certo,
-    recebido: !!r.recebido_em,
-    descricao: r.descricao ?? null,
-  }))
+  const receitasBase = [
+    ...(j.recebimentos || []).map(r => ({
+      id: String(r.id),
+      dono: r.dono_nome || '',
+      valor: Number(r.valor_centavos) || 0,
+      mes_previsto: String(r.mes_previsto).slice(0, 7),
+      mes_novo: r.mes_novo ? String(r.mes_novo).slice(0, 7) : null,
+      certo: !!r.certo,
+      recebido: !!r.recebido_em,
+      descricao: r.descricao ?? null,
+    })),
+    // o salário de Rendas até a virada; quem já cadastrou o salário em Recebimentos (origem salário) não conta 2 vezes
+    ...(Object.values(fontes.fontes).some(f => f.origem === 'salario')
+      ? []
+      : salariosAteAVirada(j.config?.rendas, m0, VIRADA)),
+  ]
   return {
     confirmar,
     receitasBase,

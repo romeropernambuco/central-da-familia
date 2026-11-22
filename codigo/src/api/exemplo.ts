@@ -2013,6 +2013,8 @@ export const apiExemplo: Api = {
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
       config: {
         casa_folha: (db.config as ConfigEx).casa_folha,
+        // igual ao f_08: as rendas vão junto (o salário entra na conta até a virada)
+        rendas: db.config.rendas,
         fontes_receita: db.config.fontes_receita,
         receitas_controle: db.config.receitas_controle,
       },
