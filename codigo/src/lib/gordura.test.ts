@@ -1,4 +1,5 @@
-// Gordura x lucro da gordura (regra do dono, 22/11/2026): gastar o que o guardado rende não come o guardado.
+// Gordura x lucro da gordura (regra do dono, 22/11/2026): gastar o que o guardado rende acima da inflação não come o
+// guardado; a régua da gordura cresce com a inflação.
 import { describe, expect, it } from 'vitest'
 import { analisarGordura, folgaNoMes, fraseDaGordura } from './gordura'
 import type { LinhaMes } from './futuro'
@@ -24,8 +25,18 @@ describe('a gordura fica inteira ou é comida?', () => {
     const linha = [mes('2026-12', 10000000, 91400, 10030000), mes('2027-01', 10030000, 91600, 10060000)]
     const a = analisarGordura(linha)!
     expect(a).toMatchObject({ gordura: 10000000, lucroDoMes: 91400, comeEm: null, ganhoNoFim: 60000 })
+    expect(fraseDaGordura(a, '2027-01')).toBe('A gordura fica inteira até 01/2027, já contando a inflação.')
+  })
+  it('com a inflação, o guardado que só fica do mesmo tamanho em reais come a gordura', () => {
+    const parado = [mes('2026-12', 10000000, 91400, 10000000), mes('2027-01', 10000000, 91400, 10000000)]
+    expect(analisarGordura(parado)!.comeEm).toBeNull()
+    const a = analisarGordura(parado, { 2026: '0.05', 2027: '0.05' })!
+    expect(a.comeEm).toBe('2026-12')
+    // 5% ao ano: perto de R$ 407 por mês em R$ 100 mil
+    expect(a.menorFolga).toBeCloseTo(-81648, -1)
+    expect(folgaNoMes(parado, '2026-12', { 2027: 0.05 })).toBeCloseTo(-40741, -1)
     expect(fraseDaGordura(a, '2027-01')).toBe(
-      'A gordura de hoje (R$ 100.000) fica inteira até 01/2027: os gastos e os desejos saem da sobra e do que ela rende. No fim, o guardado chega a R$ 100.600.',
+      'Em 12/2026 os gastos começam a comer a gordura. No pior mês, R$ 816 a menos.',
     )
   })
   it('viagem maior que o lucro guardado: diz o mês e quanto come no pior mês', () => {
@@ -38,7 +49,7 @@ describe('a gordura fica inteira ou é comida?', () => {
     expect(a.comeEm).toBe('2027-01')
     expect(a.menorFolga).toBe(-200000)
     expect(fraseDaGordura(a, '2027-02')).toBe(
-      'A partir de 01/2027 os gastos e os desejos passam a comer a gordura de hoje (R$ 100.000): no pior mês (01/2027) ela fica R$ 2.000 menor.',
+      'Em 01/2027 os gastos começam a comer a gordura. No pior mês, R$ 2.000 a menos.',
     )
     expect(folgaNoMes(linha, '2026-12')).toBe(50000)
     expect(folgaNoMes(linha, '2027-01')).toBe(-200000)

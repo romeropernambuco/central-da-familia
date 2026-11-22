@@ -64,19 +64,19 @@ describe('o mês com o salário fixo', () => {
     const m = mesDoSalario(9190, 1_000_000, 0.05, r.salario_mes)
     expect(m.inflacao).toBeCloseTo(4074.12, 2)
     expect(m.cresce).toBeCloseTo(2615.88, 2)
-    const { titulo, frase } = fraseDoSalario(r, m)
-    expect(titulo).toBe('Salário da gordura: R$ 2.500 por mês, fixo até 11/2027')
-    expect(frase).toContain('a regra que os especialistas recomendam')
-    expect(frase).toContain('ainda cresce R$ 2.616')
+    const { titulo, linha, porque } = fraseDoSalario(r, m)
+    expect(titulo).toBe('Salário da gordura: R$ 2.500 por mês')
+    expect(linha).toBe('Fixo até 11/2027 · 3% ao ano do guardado (recomendado)')
+    expect(porque).toContain('sobram R$ 2.616 de reserva')
   })
 
   it('juro baixo: o salário continua e o app diz quanto o guardado perde de valor no mês', () => {
     const r = regraNova(1_000_000, 3, '2026-11', true)
     const m = mesDoSalario(3000, 1_000_000, 0.045, r.salario_mes)
     expect(m.cresce).toBeLessThan(0)
-    const { frase } = fraseDoSalario(r, m)
-    expect(frase).toContain('como a família escolheu')
-    expect(frase).toContain('o salário continua')
+    const { linha, porque } = fraseDoSalario(r, m)
+    expect(linha).toContain('(escolha da família)')
+    expect(porque).toContain('o salário continua')
   })
 
   it('inflação inválida não come nada', () => {

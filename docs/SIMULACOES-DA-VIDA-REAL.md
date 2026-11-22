@@ -122,6 +122,15 @@ office) e simulador (CDI e IPCA do Banco Central, jan/2000 a out/2026, janelas d
 - **Corrigido:** a conta de 22/11 que dizia "R$ 1,5 milhão rende R$ 14,8 mil, mas só R$ 4,9 mil acima da inflação"
   usava a taxa real conservadora do plano (4%). Com as taxas de hoje, acima da inflação são ~R$ 7.600.
 
+## Uma régua só para a gordura (22/11)
+
+- A gordura é o guardado de hoje **em valor de hoje**: a régua cresce com a inflação de cada ano do plano. O plano de
+  2029, os desejos, a viagem e o Guardado usam a mesma conta (lib/gordura.ts `reguaDaGordura`). Antes, o plano e a
+  viagem achavam que o guardado parado em reais estava "inteiro".
+- O "pode gastar" do mês conta o aluguel líquido (sem o imposto), como o plano.
+- Textos encurtados pela regra do dono ("claro para a família, sem poluir"): número + uma linha; a conta no "Por quê?".
+- Fica para depois: a frase dos desejos "Verificado de 11/2026 até 12/2028" (tem teste antigo).
+
 ## O que este documento NÃO resolve
 
 - **Depende do dono:** o ano da meta; o pró-labore das empresas.

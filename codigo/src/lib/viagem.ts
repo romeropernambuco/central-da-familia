@@ -4,6 +4,7 @@
 // A viagem é planejada com antecedência, paga no cartão em parcelas e sai da sobra do mês, nunca da gordura.
 // Valores da viagem em reais; o que vai para o motor (lib/futuro) em centavos.
 import type { FuturoEntrada, LinhaMes } from './futuro'
+import { reguaDaGordura, type IpcaPorAno } from './gordura'
 import { lerGuia, type GuiaViagem } from './guiaViagem'
 
 export type SituacaoViagem = 'planejando' | 'comprada' | 'feita'
@@ -150,24 +151,29 @@ export interface AnaliseViagem {
  * Compara a viagem com a linha do plano (centavos), mês a mês somado: a sobra de um mês guardada ajuda o seguinte; o que
  * ficar negativo seria comido da gordura. `linha` é o plano COM esta viagem dentro (quando ela está no plano);
  * `noPlano` diz isso, para devolver a viagem à sobra antes de comparar. `taxaMes` = o que o guardado rende por mês.
+ * Com `ipcaAno`, a parte do rendimento que só repõe a inflação não conta como sobra (a mesma régua do plano e do
+ * Guardado: a gordura fica inteira em valor de hoje).
  */
 export function analisarViagem(
   v: ViagemPlanejada,
   linha: readonly LinhaMes[],
   taxaMes: number,
   noPlano: boolean,
+  ipcaAno?: IpcaPorAno,
 ): AnaliseViagem | null {
   if (!linha.length) return null
   const desde = linha[0].mes
   const custos = custosDaViagem(v, desde)
   if (!custos.length) return null
   const doPlano = new Map(noPlano ? viagemNoPlanoPorMes(v, mesMaisV(desde, -1)) : [])
+  const regua = reguaDaGordura(linha, ipcaAno)
   let acc = 0,
     precisa = 0
   const fim = custos[custos.length - 1].mes
   for (let k = 0; k < linha.length && linha[k].mes <= fim; k++) {
     const l = linha[k]
-    const sobra = (l.saldo_final - l.saldo_inicial) / 100 + (doPlano.get(l.mes) || 0)
+    const inflacao = (regua[k] - (k ? regua[k - 1] : linha[0].saldo_inicial)) / 100
+    const sobra = (l.saldo_final - l.saldo_inicial) / 100 + (doPlano.get(l.mes) || 0) - inflacao
     const c = custos.find(x => x.mes === l.mes)
     acc += sobra - (c ? c.parcela + c.cofrinho : 0)
     if (acc < 0) precisa = Math.max(precisa, -acc / (k + 1))
@@ -206,22 +212,19 @@ function viagemNoPlanoPorMes(v: ViagemPlanejada, m0: string): [string, number][]
 const brl = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
 
-/** O que o app fala da viagem. */
+/** O que o app fala da viagem: curto, uma ideia por frase (o mês a mês está no cronograma). */
 export function frasesDaViagem(v: ViagemPlanejada, a: AnaliseViagem): string[] {
   const out = [
-    `Custa ${brl(a.total)}: ${brl(v.pacote)} de passagem e hospedagem${v.parcelas > 1 ? ` em ${v.parcelas}x de ${brl(v.pacote / v.parcelas)}` : ''} e ${brl(v.custos_la)} para gastar lá. O mês mais pesado é ${mmaa(a.maiorMes.mes)}: ${brl(a.maiorMes.valor)}.`,
-    v.custos_la > 0
-      ? `Cofrinho dos custos lá: guarde a parte de cada mês até ${mmaa(v.mes)}, para não pagar a viagem com a gordura.`
-      : '',
     a.cabe
-      ? 'Cabe na sobra do mês e no que o guardado rende: a gordura fica inteira.'
-      : `Para não tocar na gordura, a família precisa de ${brl(a.aMaisPorMes)} a mais por mês até ${mmaa(a.ate)}: renda extra ou corte nos limites. Ganhar isso a mais é o que faz o orçamento crescer.`,
+      ? 'Cabe na sobra: a gordura fica inteira.'
+      : `Para não tocar na gordura, faltam ${brl(a.aMaisPorMes)} a mais por mês até ${mmaa(a.ate)}.`,
+    `Custa ${brl(a.total)}: ${brl(v.pacote)} de passagem e hospedagem${v.parcelas > 1 ? ` (${v.parcelas}x de ${brl(v.pacote / v.parcelas)})` : ''} e ${brl(v.custos_la)} para gastar lá.`,
   ]
   if (a.vista)
     out.push(
       a.vista.compensa === 'vista'
-        ? `À vista compensa: o desconto de ${brl(a.vista.desconto)} é maior do que os ${brl(a.vista.rendeParcelando)} que o dinheiro renderia parcelando. Só pague à vista com a sobra, não com a gordura.`
-        : `Parcelar sem juros compensa: o dinheiro rende ${brl(a.vista.rendeParcelando)} enquanto as parcelas caem, mais do que o desconto de ${brl(a.vista.desconto)}.`,
+        ? `À vista compensa: o desconto (${brl(a.vista.desconto)}) é maior que o rendimento parcelando (${brl(a.vista.rendeParcelando)}).`
+        : `Parcelar compensa: o dinheiro rende ${brl(a.vista.rendeParcelando)}, mais que o desconto (${brl(a.vista.desconto)}).`,
     )
-  return out.filter(Boolean)
+  return out
 }

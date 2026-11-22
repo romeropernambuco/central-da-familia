@@ -19,7 +19,7 @@ export function SeparacaoDoMes() {
   const { versao } = useDadosDoDia()
   const { oculto } = useOlhoApp()
   // o lucro da gordura que dá para gastar é o salário da gordura: um percentual do guardado, fixo por 12 meses
-  const { regra: salario } = useSalarioDaGordura()
+  const { regra: salario, aliqAluguel } = useSalarioDaGordura()
   const [rendas] = useConfig<unknown[]>('rendas', [])
   const [entradas] = useConfig<{ data?: string; valor?: number; destino?: string }[]>('entradas', [])
   const hoje = hojeRecife(),
@@ -52,12 +52,14 @@ export function SeparacaoDoMes() {
   )
   if (!permitido || oculto || !dado) return null
   // o que entrou e não é salário (aluguel, dívida recuperada, dinheiro avulso) soma por cima do salário esperado
+  const aluguel = entradasDoAluguel(lerCaderno(caderno), mes, hoje).reduce((s, e) => s + e.valor, 0)
   const extras =
     (Array.isArray(entradas) ? entradas : [])
       .filter(e => e && e.destino !== 'renda' && e.data?.slice(0, 7) === mes && e.data.slice(0, 10) <= hoje)
-      .reduce((s, e) => s + (Number(e.valor) || 0), 0) +
-    entradasDoAluguel(lerCaderno(caderno), mes, hoje).reduce((s, e) => s + e.valor, 0)
+      .reduce((s, e) => s + (Number(e.valor) || 0), 0) + aluguel
   const s = separarDoMes({
+    // o aluguel conta líquido, como no plano: o imposto dele sai deste dinheiro
+    imposto: aluguel * aliqAluguel,
     entrou: dado.entrou,
     previsto: dado.previsto,
     rendaCadastrada: rendaDoMesCadastrada(rendas),

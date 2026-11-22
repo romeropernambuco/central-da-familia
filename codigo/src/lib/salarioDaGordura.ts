@@ -126,18 +126,19 @@ const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR
 const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
 export const pctTexto = (p: number) => p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
-/** O que o app fala no Guardado, em português simples. */
-export function fraseDoSalario(r: RegraSalario, m: MesDoSalario): { titulo: string; frase: string } {
-  const titulo = `Salário da gordura: ${brl(r.salario_mes)} por mês, fixo até ${mmaa(proximaRevisao(r))}`
-  const origem = r.escolhido
-    ? `${pctTexto(r.pct)}% ao ano do guardado, como a família escolheu.`
-    : `${pctTexto(r.pct)}% ao ano do guardado, a regra que os especialistas recomendam.`
-  const rende = `Este mês o guardado rende perto de ${brl(m.rende)}, já sem o imposto, e a inflação come ${brl(m.inflacao)} do valor dele.`
-  const fim =
+/**
+ * O que o app fala no Guardado (regra do dono: claro para a família e curto): o número, uma linha com até quando e de
+ * onde ele vem, e o "por quê" para quem abrir.
+ */
+export function fraseDoSalario(r: RegraSalario, m: MesDoSalario): { titulo: string; linha: string; porque: string } {
+  const titulo = `Salário da gordura: ${brl(r.salario_mes)} por mês`
+  const linha = `Fixo até ${mmaa(proximaRevisao(r))} · ${pctTexto(r.pct)}% ao ano do guardado (${r.escolhido ? 'escolha da família' : 'recomendado'})`
+  const base = 'É o que dá para gastar do guardado sem ele perder valor.'
+  const porque =
     m.cresce >= 0
-      ? `Tirando o salário e a inflação, ele ainda cresce ${brl(m.cresce)}: é a reserva para quando os juros caírem.`
-      : `Com os juros de hoje, o rendimento não cobre o salário e a inflação: o salário continua (a reserva dos anos bons existe para isso), e o guardado perde ${brl(m.cresce)} de valor neste mês.`
-  return { titulo, frase: `${origem} ${rende} ${fim}` }
+      ? `${base} Este mês ele rende ${brl(m.rende)}, a inflação come ${brl(m.inflacao)} e sobram ${brl(m.cresce)} de reserva para quando os juros caírem.`
+      : `${base} Este mês ele rende ${brl(m.rende)}, menos que o salário e a inflação juntos: o salário continua e o guardado perde ${brl(m.cresce)} de valor.`
+  return { titulo, linha, porque }
 }
 
 /** A frase do impacto de um percentual, pela história de 2000 a 2026. */

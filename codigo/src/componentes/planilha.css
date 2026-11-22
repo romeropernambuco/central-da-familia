@@ -183,9 +183,25 @@
   padding-inline: 4px;
   font-size: 14px;
 }
-.viagem-guia summary {
+.viagem-guia summary,
+.salario-porque summary {
   cursor: pointer;
   font-weight: 600;
+}
+.salario-gordura {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+.salario-gordura p {
+  margin: 0;
+}
+.salario-porque summary {
+  font-size: 13px;
+}
+.salario-porque[open] {
+  display: grid;
+  gap: 6px;
 }
 @media (max-width: 420px) {
   .tres-numeros {

@@ -197,16 +197,15 @@ function avaliar(entrada: FuturoEntrada, d: Desejo, semEste = false) {
 }
 
 /**
- * Gordura x lucro da gordura (regra do dono, 22/11): a viagem sai da sobra do salário e do que o guardado rende, ou
- * come o guardado de hoje? Olha o mês do desejo na linha do plano, com o desejo dentro. Depois da virada: nada a dizer.
+ * Gordura x lucro da gordura (regra do dono, 22/11): o desejo sai da sobra ou come a gordura? Olha o mês do desejo na
+ * linha do plano, com o desejo dentro, e a gordura em valor de hoje (a mesma régua do Guardado e da viagem). Depois da
+ * virada: nada a dizer. As duas frases dizem "gordura": a tela as escolhe por essa palavra.
  */
 export function fraseGorduraDoDesejo(e: FuturoEntrada, d: Desejo): string | null {
   const linha = futuro({ ...e, desejos: [...e.desejos, d] }).linha
-  const folga = folgaNoMes(linha, d.mes)
+  const folga = folgaNoMes(linha, d.mes, e.parametros.ipca_ano)
   if (folga === null) return null
-  return folga >= 0
-    ? 'Sai da sobra e do que o guardado rende: o guardado de hoje fica inteiro.'
-    : `Come ${reais(-folga / 100)} do guardado de hoje (a gordura), além do que ele rende.`
+  return folga >= 0 ? 'Sai da sobra: a gordura fica inteira.' : `Come ${reais(-folga / 100)} da gordura.`
 }
 
 /** Filha: sem 2029. Só "dá pra comprar com o seu": neste mês, o que sobra; num mês que vem, o limite dela daquele mês. */
@@ -665,8 +664,8 @@ export function Desejos() {
                                 x => /por mês (da|na) renda|muda a renda|não repõe/.test(x) && !/^Adiantar/.test(x),
                               ),
                               ...r.linhas.filter(x => /^Adiantar/.test(x)),
-                              // gordura x lucro: sai da sobra e do que rende, ou come o guardado de hoje
-                              ...r.linhas.filter(x => /guardado de hoje/.test(x)),
+                              // gordura x lucro: sai da sobra ou come a gordura
+                              ...r.linhas.filter(x => /gordura/.test(x)),
                             ].join(' '),
                           )}
                         </small>

@@ -14,7 +14,7 @@ import { acompanharConferencias, CHAVE_FONTES, useNumerosAtualizados } from '../
 import { AtualizarNumeros, numerosParaConferir } from './AtualizarNumeros'
 import { Din } from './base'
 import { PlanoSemMargem } from './PlanoSemMargem'
-import { analisarGordura, fraseDaGordura } from '../lib/gordura'
+import { analisarGordura, fraseDaGordura, type IpcaPorAno } from '../lib/gordura'
 import { fraseViverDeRenda, quandoViveDeRenda } from '../lib/viverDeRenda'
 import './RumoA2029.css'
 
@@ -104,6 +104,7 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
         mensagem={mensagem}
         erro={falhou}
         semMeta={semMeta}
+        ipca={entrada?.parametros.ipca_ano}
         atualizar={() => {
           atualizar()
           void recarregarConfig()
@@ -128,9 +129,9 @@ function RumoDaFamilia({ compacto, oficial }: { compacto: boolean; oficial: bool
   }
 }
 
-/** "A gordura de hoje fica inteira até dez/2028" ou "a partir de mm/aaaa os gastos passam a comer a gordura". */
-function FraseGordura({ linha }: { linha: RumoCalculado['saida']['linha'] }) {
-  const a = analisarGordura(linha)
+/** "A gordura fica inteira até 12/2028, já contando a inflação" ou "em mm/aaaa os gastos começam a comer a gordura". */
+function FraseGordura({ linha, ipca }: { linha: RumoCalculado['saida']['linha']; ipca?: IpcaPorAno }) {
+  const a = analisarGordura(linha, ipca)
   if (!a) return null
   return (
     <p className={a.comeEm ? 'sub rumo-gordura come' : 'sub rumo-gordura'} role="note">
@@ -149,6 +150,7 @@ export function RumoHero({
   mensagem = 'Informe o gasto necessário e confira os saldos para começar.',
   erro = false,
   semMeta = null,
+  ipca,
   abrir,
   atualizar,
 }: {
@@ -162,6 +164,8 @@ export function RumoHero({
   erro?: boolean
   /** a frase de quando daria para viver do que rende, para a família que ainda não escolheu a meta */
   semMeta?: string | null
+  /** a inflação de cada ano do plano: a gordura é medida em valor de hoje */
+  ipca?: IpcaPorAno
   abrir: () => void
   atualizar?: () => void
 }) {
@@ -285,8 +289,8 @@ export function RumoHero({
             Até dez/2028 o salário de Rendas entra todo mês e a sobra vai para o guardado; de 2029 em diante, só o que
             rende. Aplicações são estimativas; a cobertura depende das premissas abaixo.
           </p>
-          {/* gordura x lucro da gordura (regra do dono, 22/11): gastar o que rende não come o guardado */}
-          {!oculto && <FraseGordura linha={c.saida.linha} />}
+          {/* a gordura em valor de hoje (22/11): a mesma régua do Guardado e da viagem */}
+          {!oculto && <FraseGordura linha={c.saida.linha} ipca={ipca} />}
           <div className="rumo-fontes">
             <div>
               <Icone nome="guardado" />

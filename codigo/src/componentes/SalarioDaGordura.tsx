@@ -4,6 +4,7 @@ import { useConfig } from '../app/useConfig'
 import { useGuardado } from '../app/useDados2'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { hojeRecife } from '../lib/formato'
+import { PADROES_ECONOMISTA } from '../lib/futuro'
 import { rendeNoMesEstimado } from '../lib/guardado'
 import { totaisGuardado } from '../lib/resumo/guardado'
 import {
@@ -27,6 +28,8 @@ interface Salario {
   doFocus: boolean
   salvar: (r: RegraSalario) => Promise<boolean>
   lido: boolean
+  /** o imposto do aluguel (o mesmo do plano), para o "pode gastar" contar o aluguel líquido */
+  aliqAluguel: number
 }
 
 /** O salário da gordura de hoje: a regra gravada (ou a recomendada), o mês com o rendimento e a inflação do Focus. */
@@ -42,7 +45,9 @@ export function useSalarioDaGordura(): Salario {
   const deHoje = g && lido ? regraDeHoje(lerRegra(cfg), guardado, hoje.slice(0, 7)) : null
   const regra = deHoje?.regra ?? null
   const mes = g && regra ? mesDoSalario(rendeNoMesEstimado(g), guardado, ipca, regra.salario_mes) : null
-  return { regra, mes, gravar: !!deHoje?.gravar, guardado, doFocus, salvar, lido }
+  const aliq = Number(dado?.parametros?.aliq_aluguel ?? PADROES_ECONOMISTA.aliq_aluguel)
+  const aliqAluguel = Number.isFinite(aliq) && aliq >= 0 && aliq < 1 ? aliq : 0
+  return { regra, mes, gravar: !!deHoje?.gravar, guardado, doFocus, salvar, lido, aliqAluguel }
 }
 
 /**
@@ -64,18 +69,25 @@ export function SalarioDaGordura() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [casal, gravar, regra?.desde, regra?.pct])
   if (!s.regra || !s.mes || oculto) return null
-  const { titulo, frase } = fraseDoSalario(s.regra, s.mes)
+  const { titulo, linha, porque } = fraseDoSalario(s.regra, s.mes)
   return (
     <section className="salario-gordura" aria-label="Salário da gordura">
-      <p className="sub guard-rende-mes">
-        <b>{titulo}.</b> {frase}
-        {s.doFocus ? '' : ' (Inflação estimada em 5% ao ano: o Focus do Banco Central ainda não chegou.)'}
+      <p className="salario-titulo">
+        <b>{titulo}</b>
       </p>
-      {casal && (
-        <button type="button" className="explica-l" onClick={() => setMudar(true)}>
-          Mudar o percentual e ver o impacto
-        </button>
-      )}
+      <p className="sub">{linha}</p>
+      <details className="salario-porque">
+        <summary>Por quê?</summary>
+        <p className="sub">
+          {porque}
+          {s.doFocus ? '' : ' Inflação estimada em 5% ao ano (a previsão do Banco Central ainda não chegou).'}
+        </p>
+        {casal && (
+          <button type="button" className="explica-l" onClick={() => setMudar(true)}>
+            Mudar o percentual e ver o impacto
+          </button>
+        )}
+      </details>
       {mudar && (
         <FolhaSalarioGordura regra={s.regra} guardado={s.guardado} salvar={s.salvar} fechar={() => setMudar(false)} />
       )}

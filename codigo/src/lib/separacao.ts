@@ -77,9 +77,12 @@ export function separarDoMes(x: {
   extras?: number
   /** o que o plano já prometeu neste mês e ainda não virou gasto (parcela da viagem não comprada, cofrinho) */
   reservado?: number
+  /** o imposto do aluguel que entrou (o aluguel conta líquido, como no plano) */
+  imposto?: number
 }): SeparacaoDoMes | null {
   const extras = Math.min(Math.max(0, x.extras || 0), Math.max(0, x.entrou))
-  const entra = c2(extras + Math.max(x.entrou - extras + x.previsto, x.rendaCadastrada))
+  const imposto = Math.min(Math.max(0, x.imposto || 0), extras)
+  const entra = c2(extras - imposto + Math.max(x.entrou - extras + x.previsto, x.rendaCadastrada))
   const lucro = c2(Math.max(0, x.lucro))
   const reservado = c2(Math.max(0, x.reservado || 0))
   const pode = c2(entra + lucro - reservado)
@@ -92,22 +95,16 @@ export function separarDoMes(x: {
 
 const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 
-/** O que o app fala, em português simples. */
+/** O que o app fala (regra do dono: claro e curto; os três números já estão na tela). */
 export function fraseDaSeparacao(s: SeparacaoDoMes): { titulo: string; frase: string } {
   const reserva = s.reservado > 0 ? `, menos ${brl(s.reservado)} separados para a viagem` : ''
-  const base = `Neste mês dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram (salário, aluguel e o que chegou) e ${brl(s.lucro)} do salário da gordura${reserva}. Já foram ${brl(s.gasto)}.`
+  const base = `Dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram e ${brl(s.lucro)} do salário da gordura${reserva}.`
   if (s.situacao === 'passou')
-    return {
-      titulo: `Passou ${brl(s.folga)}: esse pedaço sai da gordura`,
-      frase: `${base} O que passou come o guardado de hoje. Segure os gastos até o mês virar.`,
-    }
+    return { titulo: `Passou ${brl(s.folga)}: esse pedaço sai da gordura`, frase: `${base} Segure até o mês virar.` }
   if (s.situacao === 'limite')
     return {
       titulo: `No limite: faltam ${brl(s.folga)}`,
-      frase: `${base} Daqui para a frente, só o essencial. Dinheiro para a empresa também sai daqui, não da gordura.`,
+      frase: `${base} Daqui para a frente, só o essencial. Dinheiro para a empresa também sai daqui.`,
     }
-  return {
-    titulo: `Ainda dá ${brl(s.folga)} este mês`,
-    frase: `${base} O que sobrar engorda o guardado.`,
-  }
+  return { titulo: `Ainda dá ${brl(s.folga)} este mês`, frase: `${base} O que sobrar engorda o guardado.` }
 }

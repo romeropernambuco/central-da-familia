@@ -20,7 +20,7 @@ describe('quanto dá para gastar no mês sem tocar na gordura', () => {
     expect(s).toMatchObject({ entra: 5000, lucro: 800, pode: 5800, folga: 4600, situacao: 'folga' })
     const f = fraseDaSeparacao(s)
     expect(f.titulo).toBe('Ainda dá R$ 4.600 este mês')
-    expect(f.frase).toContain('Neste mês dá para gastar até R$ 5.800 sem tocar na gordura')
+    expect(f.frase).toContain('Dá para gastar até R$ 5.800 sem tocar na gordura')
     expect(f.frase).toContain('O que sobrar engorda o guardado.')
   })
 
@@ -28,7 +28,21 @@ describe('quanto dá para gastar no mês sem tocar na gordura', () => {
     const s = separarDoMes({ entrou: 6000, previsto: 1500, rendaCadastrada: 5000, lucro: 500, gasto: 7000 })!
     expect(s).toMatchObject({ entra: 7500, pode: 8000, folga: 1000, situacao: 'limite' })
     expect(fraseDaSeparacao(s).titulo).toBe('No limite: faltam R$ 1.000')
-    expect(fraseDaSeparacao(s).frase).toContain('Dinheiro para a empresa também sai daqui, não da gordura.')
+    expect(fraseDaSeparacao(s).frase).toContain('Dinheiro para a empresa também sai daqui.')
+  })
+
+  it('o aluguel conta líquido, como no plano: o imposto dele sai do que entra', () => {
+    const s = separarDoMes({
+      entrou: 3000,
+      previsto: 0,
+      rendaCadastrada: 5000,
+      lucro: 0,
+      gasto: 0,
+      extras: 3000,
+      imposto: 825,
+    })!
+    // R$ 5.000 de salário + R$ 3.000 de aluguel − R$ 825 de imposto (27,5%)
+    expect(s.entra).toBe(7175)
   })
 
   it('passou do que entra e do que rende: diz quanto saiu da gordura', () => {

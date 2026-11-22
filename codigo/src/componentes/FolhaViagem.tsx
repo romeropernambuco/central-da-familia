@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAcoes } from '../app/contexto'
 import type { futuro } from '../lib/futuro'
 import { hojeRecife, mesCurto, textoParaValor, valorDigitadoValido } from '../lib/formato'
+import type { IpcaPorAno } from '../lib/gordura'
 import { guiaPadrao, somarGuia, type GuiaViagem } from '../lib/guiaViagem'
 import { novoUuid } from '../lib/seguro'
 import { analisarViagem, frasesDaViagem, mesMaisV, type ViagemPlanejada } from '../lib/viagem'
@@ -30,11 +31,13 @@ const guiaInicial = () =>
 export function FolhaViagem({
   linha,
   taxaMes,
+  ipca,
   fechar,
   salvar,
 }: {
   linha: ReturnType<typeof futuro>['linha']
   taxaMes: number
+  ipca?: IpcaPorAno
   fechar: () => void
   salvar: (v: ViagemPlanejada) => Promise<boolean>
 }) {
@@ -64,7 +67,7 @@ export function FolhaViagem({
           ...(guia ? { guia } : {}),
         }
       : null
-  const a = v ? analisarViagem(v, linha, taxaMes, false) : null
+  const a = v ? analisarViagem(v, linha, taxaMes, false, ipca) : null
   const ok = async () => {
     if (!v) {
       toast('Diga quanto custa a viagem: monte o guia ou ponha os totais.')

@@ -5,6 +5,7 @@ import { useConfig } from '../app/useConfig'
 import { useFuturo, useGuardado } from '../app/useDados2'
 import { futuro } from '../lib/futuro'
 import { hojeRecife, mesCurto } from '../lib/formato'
+import type { IpcaPorAno } from '../lib/gordura'
 import { rendeNoMesEstimado } from '../lib/guardado'
 import { textoPrivado } from '../lib/olho'
 import { analisarViagem, custosDaViagem, frasesDaViagem, lerViagens, type ViagemPlanejada } from '../lib/viagem'
@@ -38,6 +39,8 @@ export function ViagensPlanejadas() {
     }
   }, [ent])
   const taxaMes = g && g.total > 0 ? rendeNoMesEstimado(g) / g.total : 0.008
+  // a mesma régua da gordura do plano e do Guardado: a parte que só repõe a inflação não é sobra
+  const ipca = ent?.entrada?.parametros.ipca_ano
   if (familia?.papel !== 'casal') return null
   const gravar = async (lista: ViagemPlanejada[], msg: string) => {
     if (await salvar(lista)) {
@@ -63,14 +66,11 @@ export function ViagensPlanejadas() {
       <h2 id="vgTit" className="lbl">
         <Icone desenho={Plane} aria-hidden="true" /> Viagens planejadas
       </h2>
-      <p className="sub">
-        Monte a viagem item por item: avião, hospedagem, comida, passeios. O app soma tudo, diz se cabe na sobra sem
-        tocar na gordura e, se não cabe, quanto a família precisa ganhar a mais por mês.
-      </p>
+      <p className="sub">Monte a viagem item por item. O app diz se ela cabe na sobra sem tocar na gordura.</p>
       {viagens
         .filter(v => v.situacao !== 'feita')
         .map(v => (
-          <CartaoViagem key={v.id} v={v} linha={linha} taxaMes={taxaMes} oculto={oculto} mudar={mudar} />
+          <CartaoViagem key={v.id} v={v} linha={linha} taxaMes={taxaMes} ipca={ipca} oculto={oculto} mudar={mudar} />
         ))}
       <Botao variante="secundario" type="button" onClick={() => setNova(true)}>
         Planejar uma viagem
@@ -79,6 +79,7 @@ export function ViagensPlanejadas() {
         <FolhaViagem
           linha={linha}
           taxaMes={taxaMes}
+          ipca={ipca}
           fechar={() => setNova(false)}
           salvar={v => gravar([...viagens, v], 'Viagem no plano. As parcelas e os custos lá já contam.')}
         />
@@ -91,16 +92,18 @@ function CartaoViagem({
   v,
   linha,
   taxaMes,
+  ipca,
   oculto,
   mudar,
 }: {
   v: ViagemPlanejada
   linha: ReturnType<typeof futuro>['linha']
   taxaMes: number
+  ipca?: IpcaPorAno
   oculto: boolean
   mudar: (id: string, s: ViagemPlanejada['situacao'] | 'apagar') => void
 }) {
-  const a = v.situacao === 'planejando' ? analisarViagem(v, linha, taxaMes, true) : null
+  const a = v.situacao === 'planejando' ? analisarViagem(v, linha, taxaMes, true, ipca) : null
   const mesHoje = hojeRecife().slice(0, 7)
   return (
     <article className="viagem" aria-label={`Viagem ${v.nome}`}>
