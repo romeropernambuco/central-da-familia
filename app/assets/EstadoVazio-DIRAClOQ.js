@@ -1,0 +1,1 @@
+import{e,aN as o,j as t,aO as r}from"./partida-DZlDMPyd.js";const i=Object.freeze({...o});function n({nome:a,...s}){return e.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(r,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
