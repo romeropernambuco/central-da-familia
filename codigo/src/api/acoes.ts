@@ -57,6 +57,9 @@ export const ACOES_QUE_GRAVAM = [
   'desejoMudar',
   'imovelSalvar',
   'imovelTirar',
+  'etiquetaSalvar',
+  'etiquetar',
+  'lancamentoMoeda',
   'apagarFamilia',
 ] as const satisfies readonly Acao[]
 
@@ -91,6 +94,10 @@ export const ACOES_QUE_SO_LEEM = [
   'reajusteSituacao',
   'desejos',
   'imoveis',
+  'etiquetas',
+  'etiquetasDoLancamento',
+  'etiquetaResumo',
+  'etiquetaSimular',
   'exportarMeu',
 ] as const satisfies readonly Acao[]
 

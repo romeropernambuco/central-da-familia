@@ -62,6 +62,8 @@ export function recursosDaMutacao(nome: string, args: unknown[]): string[] | und
   if (/^(cartao|criarCartao)/.test(nome)) return ['cartoes', 'faturas', 'faturasBanco', 'projecao', 'escritorio']
   if (/^desejo/.test(nome)) return ['desejos', 'escritorio', 'pendencias']
   if (/^lembrete/.test(nome)) return ['escritorio', 'pendencias']
+  // etiqueta não muda limite nem saldo: só a lista de gastos e os totais da viagem
+  if (/^(etiqueta|lancamentoMoeda$)/.test(nome)) return ['lancamentos']
   // Respostas do Escritório, restauração e mudanças de premissas podem afetar mais de uma área.
   return undefined
 }

@@ -110,9 +110,25 @@ const telas = [
   'CartaoGuardado',
   'PrecisaDeVoce',
   'Cena3D',
+  'Viagens',
+  'Viagem',
+  'NovaEtiqueta',
+  'LinhaEtiqueta',
 ]
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
+/** Etiqueta de viagem com nome privado: a viagem aberta, a folha de mudar e a linha do Anotar passam pela mesma regra do olho. */
+const etiquetaPrivada = {
+  id: 'etq-europa',
+  nome: segredo,
+  inicio: '2026-11-10',
+  fim: '2026-11-19',
+  moeda: 'EUR',
+  pessoas: 3,
+  arquivada: false,
+  total: dinheiro,
+  lancamentos: 2,
+}
 const rotasAgentes = [
   'inicio',
   'lancamentos',
@@ -458,7 +474,29 @@ describe('regra do olho em cada tela real', () => {
                               }
                             : nome === 'NumerosAba'
                               ? { id: 'analista', fechar() {} }
-                              : { aplicado: dinheiro }
+                              : nome === 'Viagem'
+                                ? { etiqueta: etiquetaPrivada, fechar() {}, mudar() {} }
+                                : nome === 'NovaEtiqueta'
+                                  ? { atual: etiquetaPrivada, fechar() {}, salvou() {} }
+                                  : nome === 'LinhaEtiqueta'
+                                    ? {
+                                        valor: dinheiro,
+                                        e: {
+                                          casal: true,
+                                          todas: [etiquetaPrivada],
+                                          ids: [etiquetaPrivada.id],
+                                          escolhidas: [etiquetaPrivada],
+                                          moeda: 'EUR',
+                                          txtFora: '9876,54',
+                                          setTxtFora() {},
+                                          valorFora: dinheiro,
+                                          alternar() {},
+                                          semEtiqueta() {},
+                                          mexeu: false,
+                                          aplicar: async () => '',
+                                        },
+                                      }
+                                    : { aplicado: dinheiro }
       let alternar: () => void = () => {}
       function App() {
         const [oculto, setOculto] = useState(true)

@@ -1,4 +1,5 @@
 // O que o app espera do banco. Os nomes seguem CONTRATO.md (schema `produto`).
+import type { ContaEtiqueta, ContaSimulacao } from '../lib/etiquetas'
 
 export type Papel = 'casal' | 'pessoa' | 'equipe'
 
@@ -112,6 +113,41 @@ export interface Lancamento {
   pago_por?: string | null
   /** E2: quem olha pode corrigir e apagar (lançou e o limite é dele ou da Casa). Sem o campo: a tela decide pelo limite. */
   meu?: boolean
+  /** Gasto em moeda de fora: `valor` continua em reais; aqui fica o valor na moeda da viagem. */
+  moeda_original?: string | null
+  valor_original?: number | null
+  cambio?: number | null
+}
+
+/** Etiqueta de viagem, evento ou projeto: diz POR QUE foi o gasto (o envelope diz O QUE foi). */
+export interface Etiqueta {
+  id: string
+  nome: string
+  /** Com início e fim, todo gasto do período já nasce com a etiqueta. */
+  inicio: string | null
+  fim: string | null
+  /** BRL ou a moeda da viagem (EUR, USD...). */
+  moeda: string
+  /** Quantas pessoas foram; null = quem é da família. */
+  pessoas: number | null
+  arquivada: boolean
+  /** Só o casal recebe o total; a pessoa da família recebe null (vê só o nome). */
+  total: number | null
+  lancamentos: number
+}
+export interface NovaEtiqueta {
+  nome: string
+  inicio: string | null
+  fim: string | null
+  moeda: string
+  pessoas: number | null
+  arquivada?: boolean
+}
+export interface EtiquetaResumo extends ContaEtiqueta {
+  etiqueta: Omit<Etiqueta, 'total' | 'lancamentos'>
+}
+export interface EtiquetaSimulacao extends ContaSimulacao {
+  aviso: string
 }
 
 /** Pessoa da família e como está o convite dela. */
@@ -782,6 +818,18 @@ export interface Api {
   imovelSalvar?(familia: string, id: string | null, d: NovoImovel): Promise<void>
   imovelTirar?(familia: string, id: string): Promise<void>
   /** E2 (conserto 1): só o que é de quem pede (a filha baixa só o dela). Banco: produto.exportar_meu. */
+  // ---------- Etiquetas de viagem e evento (produto.etiquetas). Só o casal cria, marca e vê os totais ----------
+  etiquetas?(familia: string, incluirArquivadas?: boolean): Promise<Etiqueta[]>
+  /** Cria (sem `id`) ou muda (com `id`). Devolve em quantos gastos já anotados a etiqueta entrou. */
+  etiquetaSalvar?(familia: string, e: NovaEtiqueta, id?: string): Promise<{ etiqueta: Etiqueta; aplicada_em: number }>
+  /** Coloca (`true`) ou tira (`false`) a etiqueta de um gasto. Tirada à mão, ela não volta sozinha. */
+  etiquetar?(lancamento: string, etiqueta: string, ligar: boolean): Promise<void>
+  /** As etiquetas que estão no gasto agora (ids). */
+  etiquetasDoLancamento?(lancamento: string): Promise<string[]>
+  /** Guarda o valor na moeda de fora; `null` tira. O câmbio sai do valor em reais do próprio gasto. */
+  lancamentoMoeda?(lancamento: string, valorOriginal: number | null, moeda?: string): Promise<void>
+  etiquetaResumo?(etiqueta: string): Promise<EtiquetaResumo>
+  etiquetaSimular?(etiqueta: string, dias: number, pessoas?: number | null): Promise<EtiquetaSimulacao>
   exportarMeu?(familia: string): Promise<unknown>
   apagarFamilia(familia: string, confirmacao: string): Promise<void>
 }

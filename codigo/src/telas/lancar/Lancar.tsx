@@ -39,6 +39,7 @@ import { LerCupom } from '../../componentes/LerCupom'
 import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../lib/dono'
+import { LinhaEtiqueta, useEtiquetasNoLancar } from './EtiquetaNoLancar'
 
 type Rascunho = {
   modo?: 'gasto' | 'entrou'
@@ -72,6 +73,9 @@ function lerRascunho(chave: string): Rascunho | null {
   return null
 }
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+/** O gasto salvou, mas a etiqueta ou a moeda de fora não: a pessoa fica sabendo e onde acertar. */
+const avisoDaEtiqueta = (faltou: string) =>
+  faltou ? ` A etiqueta não foi acertada (${faltou}) Acerte pelo lápis em Gastos e entradas.` : ''
 
 /** O que fica pra ela depois do gasto, numa frase (R9: sem segundos, sem "custou de rendimento"). */
 function fraseDepois(r: ResumoHoje | undefined, envelope: string, valor: number, nome: string, desc?: string): string {
@@ -155,6 +159,7 @@ export function Lancar() {
   const equipe = familia?.papel === 'equipe'
   const casal = familia?.papel === 'casal'
   const [cupom, setCupom] = useState(false)
+  const etq = useEtiquetasNoLancar(quando, corr)
 
   useEffect(() => {
     if (!chaveRascunho || concluido.current) return
@@ -321,7 +326,10 @@ export function Lancar() {
         limparRascunho()
         toque.gravou()
         fecharLancar()
-        toast('Sem internet agora. O gasto ficou guardado neste aparelho e vai ser enviado quando a rede voltar.')
+        toast(
+          'Sem internet agora. O gasto ficou guardado neste aparelho e vai ser enviado quando a rede voltar.' +
+            (etq.mexeu ? ' A etiqueta que você mudou fica para depois: marque pelo lápis em Gastos e entradas.' : ''),
+        )
         void avisarQuandoOEnvioTerminar(envio, gasto, { toast, recarregar })
         return
       }
@@ -336,14 +344,16 @@ export function Lancar() {
         return
       }
       ;(window as unknown as { __ultimoTempoLancar?: number }).__ultimoTempoLancar = s
+      // o gasto já está salvo; a etiqueta e a moeda de fora vão em seguida e não desfazem o gasto se falharem
+      const faltou = await etq.aplicar(r.lancamento.id)
       fecharLancar()
       await recarregar()
       toast(
-        equipe
+        (equipe
           ? `Compra anotada em ${nome}.`
           : cartao
             ? impactoCompra.confirmacao
-            : fraseDepois(r.resumo, envelope, valor, nome, desc.trim()),
+            : fraseDepois(r.resumo, envelope, valor, nome, desc.trim())) + avisoDaEtiqueta(faltou),
         async () => {
           await api.apagarLancamento(r.lancamento.id)
           await recarregar()
@@ -381,9 +391,10 @@ export function Lancar() {
         cartao,
         parcelas: cartao ? parcelas : 1,
       })
+      const faltou = await etq.aplicar(corr.id)
       fecharLancar()
       await recarregar()
-      toast(`Corrigido: ${reais(valor)} em ${nome}.`, async () => {
+      toast(`Corrigido: ${reais(valor)} em ${nome}.` + avisoDaEtiqueta(faltou), async () => {
         await api.corrigirLancamento!(corr.id, antes)
         await recarregar()
       })
@@ -556,6 +567,7 @@ export function Lancar() {
               </button>
             ))}
           </div>
+          <LinhaEtiqueta e={etq} valor={valor} />
           {!equipe && cartoes.length > 0 && (
             <div className="atrow">
               <span className="atl">Pagou</span>

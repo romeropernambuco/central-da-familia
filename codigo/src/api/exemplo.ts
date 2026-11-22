@@ -27,6 +27,13 @@ import * as ex2 from './exemplo2'
 import { entradaDoBanco, imovelInvalido, type FuturoBanco } from '../lib/futuroReceitas'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
 import type { CadastroNome, ConfigEx, EntradaEx } from './exemploConfig'
+import {
+  aoLancarEx,
+  etiquetasDeExemplo,
+  moedaDoGastoEx,
+  reiniciarEtiquetasEx,
+  type MundoEtiquetas,
+} from './exemploEtiquetas'
 import { novoUuid } from '../lib/seguro'
 import {
   dadosTeste,
@@ -993,6 +1000,14 @@ function meuCartao(id: string | undefined, titular?: string | null) {
     throw new Error('Cada um cadastra só o próprio cartão (ou um da família, sem dono).')
 }
 
+const mundoEtiquetas: MundoEtiquetas = {
+  papel: () => papelLogado(),
+  eu: () => (logado === 'carla' ? 'carla' : membroLogado().id),
+  gastos: () => vivos(),
+  nomeEnvelope: id => db.envs.find(e => e.id === id)?.nome || 'Sem limite',
+  pessoasDaFamilia: () => membrosTeste().length,
+}
+
 export const apiExemplo: Api = {
   modo: 'exemplo',
   async sessao(): Promise<Sessao | null> {
@@ -1135,6 +1150,7 @@ export const apiExemplo: Api = {
     }
     db.lanc.push(l)
     porChave.set(nv.chave, l)
+    aoLancarEx(l)
     if (nv.segundos != null) tempos.push(nv.segundos)
     return { lancamento: semValorPraEquipe(l), resumo: resumoDeQuemEsta() }
   },
@@ -1143,7 +1159,13 @@ export const apiExemplo: Api = {
     // lanc_ver (E2): o casal lê os lançamentos da família toda; `meu` diz em qual dá pra mexer
     const meus = db.lanc
       .filter(l => podeVer(l.envelope_id))
-      .map(l => semValorPraEquipe({ ...l, meu: logado !== 'carla' && lancMeu(l) }))
+      .map(l =>
+        semValorPraEquipe({
+          ...l,
+          ...(logado === 'carla' ? {} : moedaDoGastoEx(l.id)),
+          meu: logado !== 'carla' && lancMeu(l),
+        }),
+      )
     const doMes = meus.filter(l => l.data.startsWith(mes))
     // E4: cada parcela aparece no mês da fatura dela (a 1ª também), no dia 1, só pra ler
     const parc: Lancamento[] = []
@@ -2121,6 +2143,7 @@ export const apiExemplo: Api = {
     }
   },
   // filha (e quem quiser só o seu): o próprio limite e os próprios lançamentos (igual a produto.exportar_meu)
+  ...etiquetasDeExemplo(mundoEtiquetas),
   async exportarMeu() {
     const eu = membroLogado()
     const env = db.envs.find(e => e.id === eu.envelope)
@@ -2150,6 +2173,7 @@ export function reiniciarExemplo() {
   convitesAssessores.set(CONVITE_EXEMPLO, 'Carla')
   usarFamiliaTeste('silva')
   ex2.reiniciarExemplo2()
+  reiniciarEtiquetasEx()
   db = criarDados()
   logado = 'ana'
   familiaNova = null

@@ -1,0 +1,72 @@
+/* Viagens e eventos: só encaixe. As cores, os cartões e as listas são os do app. */
+.viagens .list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.viagens .list > li > .li {
+  width: 100%;
+  text-align: left;
+}
+.viagens .list > li > button.li {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.viagens .list > li > button.li:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.duas-datas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.duas-datas .inp {
+  width: 100%;
+  min-width: 0;
+}
+.viagem-total .guard-3 {
+  margin-bottom: 12px;
+}
+.viagem-total dd {
+  font-variant-numeric: tabular-nums;
+}
+.viagem-dias summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.viagem-dias summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.viagem-simulador {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--raised);
+  display: grid;
+  gap: 12px;
+}
+.viagem-simulador h3 {
+  font-size: 18px;
+  line-height: 26px;
+}
+.etiqueta-lancar {
+  display: grid;
+  gap: 8px;
+}
+.etiqueta-lancar .campo {
+  margin: 0;
+}
+.viagens-valor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

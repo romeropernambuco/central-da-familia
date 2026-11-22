@@ -55,6 +55,7 @@ import {
 } from './normaliza'
 type RespostaCrua = Awaited<ReturnType<RpcCru>>
 import { cru, lista, type Cru } from './cru'
+import { etiquetasDoBanco } from './etiquetasBanco'
 import { registrarContrato } from '../lib/resumo/contrato'
 
 const criarCliente = (url: string, chave: string) =>
@@ -1065,6 +1066,16 @@ export const apiReal: Api = {
   async exportarFamilia(familia) {
     return rpc('exportar_familia', { familia })
   },
+  // ---------- Etiquetas de viagem e evento: a escrita vai pelas funções do banco; aqui só a leitura de quais estão no gasto ----------
+  ...etiquetasDoBanco(rpc, async lancamento => {
+    const { data, error } = await sb()
+      .from('lancamento_etiquetas')
+      .select('etiqueta_id')
+      .eq('lancamento_id', lancamento)
+      .eq('ativa', true)
+    if (error) erro(error)
+    return data
+  }),
   async exportarMeu(familia) {
     return rpc('exportar_meu', { familia })
   },

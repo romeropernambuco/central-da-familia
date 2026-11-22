@@ -5,6 +5,7 @@ import { totaisDoMes } from '../../lib/resumo/movimentacao'
 export { totaisDoMes } from '../../lib/resumo/movimentacao'
 import { proximasPorCartao } from '../../lib/resumo/faturas'
 import './lancamentos.css'
+import { Viagens } from './Viagens'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
 import { Icone } from '../../componentes/Icone'
@@ -151,6 +152,7 @@ function LancamentosFamilia() {
         </div>
       </div>
       {!lixeira && casal && <ResumoDoMes />}
+      {!lixeira && <Viagens />}
       {!lixeira && api.corrigirLancamento && (
         <p className="sub">
           Errou o valor ou o limite? Toque no lápis para corrigir ou apagar. O que for apagado fica na lixeira.

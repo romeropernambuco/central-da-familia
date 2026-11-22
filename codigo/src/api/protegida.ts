@@ -120,7 +120,7 @@ export function protegerApi(api: Api): Api {
           let inverso: (() => Promise<void>) | undefined
           const [familia, id, dados] = args
           const soId =
-            /^(apagarLancamento|restaurarLancamento|corrigirLancamento|guardadoMovimentar|guardadoEncerrar|guardadoDesfazer)$/.test(
+            /^(apagarLancamento|restaurarLancamento|corrigirLancamento|guardadoMovimentar|guardadoEncerrar|guardadoDesfazer|etiquetar|lancamentoMoeda)$/.test(
               prop,
             )
           const fid = soId ? familiaDoId(api, familia) : typeof familia === 'string' ? familia : familia?.familia
