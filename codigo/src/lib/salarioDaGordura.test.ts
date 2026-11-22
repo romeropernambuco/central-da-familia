@@ -1,42 +1,96 @@
-// O salário da gordura (regra do dono, 22/11/2026): metade do que rende é salário, metade fica, e a parte que fica nunca
-// é menor que a inflação do mês.
+// O salário da gordura (22/11/2026): um percentual do guardado, fixo por 12 meses, revisto uma vez por ano; o recomendado
+// é o único que, com os juros de 2000 a 2026, nunca deixou o guardado valendo menos em 20 anos.
 import { describe, expect, it } from 'vitest'
 import {
+  fraseDoImpacto,
   fraseDoSalario,
+  IMPACTO_HISTORICO,
   inflacaoDoMes,
   ipcaDosProximos12Meses,
   IPCA_PADRAO,
-  salarioDaGordura,
+  lerRegra,
+  mesDoSalario,
+  mesMais,
+  PCT_RECOMENDADO,
+  proximaRevisao,
+  regraDeHoje,
+  regraNova,
 } from './salarioDaGordura'
 
-describe('salário da gordura', () => {
-  it('juros de hoje (R$ 1 milhão rende R$ 9.190, IPCA 5%): metade cobre a inflação e o guardado ainda cresce', () => {
-    const s = salarioDaGordura(9190, 1_000_000, 0.05)!
-    expect(s.inflacao).toBeCloseTo(4074.12, 2)
-    expect(s).toMatchObject({ salario: 4595, guarda: 4595, metadeCobre: true })
-    expect(s.cresce).toBeCloseTo(520.88, 2)
-    expect(fraseDoSalario(s)).toContain('A outra metade, R$ 4.595, é o salário da gordura')
+describe('a regra do salário', () => {
+  it('sem regra gravada: a recomendada (3% ao ano), a gravar', () => {
+    const h = regraDeHoje(null, 1_000_000, '2026-11')!
+    expect(h.gravar).toBe(true)
+    expect(h.regra).toMatchObject({ pct: PCT_RECOMENDADO, desde: '2026-11', salario_mes: 2500, escolhido: false })
+    expect(proximaRevisao(h.regra)).toBe('2027-11')
   })
 
-  it('juro baixo (Selic 6%, IPCA 4,5%): a metade não cobre; fica a inflação e o salário cai', () => {
-    const s = salarioDaGordura(4080, 1_000_000, 0.045)!
-    expect(s.metadeCobre).toBe(false)
-    expect(s.guarda).toBe(s.inflacao)
-    expect(s.salario).toBeCloseTo(4080 - s.inflacao, 2)
-    expect(s.cresce).toBe(0)
-    expect(fraseDoSalario(s)).toContain('metade do rendimento não cobre a inflação')
+  it('fica fixo por 12 meses mesmo com o guardado mudando', () => {
+    const r = regraNova(1_000_000, 3, '2026-11', false)
+    const h = regraDeHoje(r, 1_300_000, '2027-10')!
+    expect(h).toEqual({ regra: r, gravar: false })
   })
 
-  it('rende menos que a inflação (2021): não há salário; tudo fica guardado', () => {
-    const s = salarioDaGordura(3000, 1_000_000, 0.1)!
-    expect(s).toMatchObject({ salario: 0, guarda: 3000, cresce: 0, metadeCobre: false })
-    expect(fraseDoSalario(s)).toContain('não sobra salário da gordura')
+  it('na revisão do ano: o mesmo percentual sobre o guardado de hoje, mantendo a escolha da família', () => {
+    const r = regraNova(1_000_000, 4, '2026-11', true)
+    const h = regraDeHoje(r, 1_200_000, '2027-11')!
+    expect(h.gravar).toBe(true)
+    expect(h.regra).toMatchObject({ pct: 4, desde: '2027-11', salario_mes: 4000, base: 1_200_000, escolhido: true })
   })
 
-  it('sem rendimento ou sem guardado: nada a dividir', () => {
-    expect(salarioDaGordura(0, 1000, 0.05)).toBeNull()
-    expect(salarioDaGordura(100, 0, 0.05)).toBeNull()
+  it('config estragada ou percentual fora da tabela: recalcula pela recomendação', () => {
+    expect(lerRegra({ pct: 7, desde: '2026-11', salario_mes: 1, base: 1 })).toBeNull()
+    expect(lerRegra({ pct: 3, desde: '2026-13', salario_mes: 1, base: 1 })).toBeNull()
+    expect(lerRegra('x')).toBeNull()
+    expect(lerRegra({ pct: 3.5, desde: '2026-11', salario_mes: 2916.67, base: 1e6, escolhido: true })).toMatchObject({
+      pct: 3.5,
+      escolhido: true,
+    })
+  })
+
+  it('sem guardado e sem regra: nada', () => {
+    expect(regraDeHoje(null, 0, '2026-11')).toBeNull()
+  })
+
+  it('mesMais vira o ano', () => {
+    expect(mesMais('2026-11', 12)).toBe('2027-11')
+    expect(mesMais('2026-12', 1)).toBe('2027-01')
+  })
+})
+
+describe('o mês com o salário fixo', () => {
+  it('juros de hoje (R$ 1 milhão rende R$ 9.190, IPCA 5%): sobra reserva depois do salário e da inflação', () => {
+    const r = regraNova(1_000_000, 3, '2026-11', false)
+    const m = mesDoSalario(9190, 1_000_000, 0.05, r.salario_mes)
+    expect(m.inflacao).toBeCloseTo(4074.12, 2)
+    expect(m.cresce).toBeCloseTo(2615.88, 2)
+    const { titulo, frase } = fraseDoSalario(r, m)
+    expect(titulo).toBe('Salário da gordura: R$ 2.500 por mês, fixo até 11/2027')
+    expect(frase).toContain('a regra que os especialistas recomendam')
+    expect(frase).toContain('ainda cresce R$ 2.616')
+  })
+
+  it('juro baixo: o salário continua e o app diz quanto o guardado perde de valor no mês', () => {
+    const r = regraNova(1_000_000, 3, '2026-11', true)
+    const m = mesDoSalario(3000, 1_000_000, 0.045, r.salario_mes)
+    expect(m.cresce).toBeLessThan(0)
+    const { frase } = fraseDoSalario(r, m)
+    expect(frase).toContain('como a família escolheu')
+    expect(frase).toContain('o salário continua')
+  })
+
+  it('inflação inválida não come nada', () => {
     expect(inflacaoDoMes(1000, Number.NaN)).toBe(0)
+  })
+})
+
+describe('o impacto de cada percentual', () => {
+  it('a tabela vai de 3% a 6% e o recomendado nunca deixou o guardado valer menos em 20 anos', () => {
+    expect(IMPACTO_HISTORICO.map(i => i.pct)).toEqual([3, 3.5, 4, 4.5, 5, 5.5, 6])
+    const rec = IMPACTO_HISTORICO.find(i => i.pct === PCT_RECOMENDADO)!
+    expect(fraseDoImpacto(rec, 2_000_000)).toContain('o salário começa em R$ 5.000 por mês')
+    expect(fraseDoImpacto(rec, 2_000_000)).toContain('nunca ficou valendo menos que hoje')
+    expect(fraseDoImpacto(IMPACTO_HISTORICO[4], 1_000_000)).toContain('no pior caso, valendo 67,1%')
   })
 })
 

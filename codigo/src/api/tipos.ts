@@ -628,6 +628,8 @@ export type ChaveConfig =
   | 'aluguel_caderno'
   /** Viagens planejadas: pacote parcelado, custos lá, mês da viagem (lib/viagem.ts, 22/11/2026). */
   | 'viagens'
+  /** O salário da gordura: % ao ano do guardado, fixo por 12 meses (lib/salarioDaGordura.ts, 22/11/2026). */
+  | 'salario_gordura'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'

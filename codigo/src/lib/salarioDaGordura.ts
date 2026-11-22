@@ -1,29 +1,87 @@
-// O salário da gordura (regra do dono, 22/11/2026, conferida por três especialistas): do que o guardado rende no mês,
-// metade é salário e metade fica guardada, "encarada como a quantia da inflação". A metade guardada nunca é menor que a
-// inflação do mês: com juro baixo (2019-2021), metade não cobria a inflação e o guardado perdia valor sem ninguém ver.
-// Simulação com CDI e IPCA de 2000 a 2026 (Banco Central): gastar o rendimento todo deixa ~30% do guardado em 20 anos; a
-// metade pura deixa 75% a 84%; a metade com esse piso foi a única regra que nunca deixou o guardado perder valor.
+// O salário da gordura (22/11/2026). O dono não tinha regra e pediu a do mentor e do planejador: "deixe lá com base na
+// recomendação; se o cara quiser mudar, ele muda; e embaixo mostre o impacto". A regra recomendada (fundações como Yale e
+// Harvard e family offices, com o percentual ajustado pela simulação com CDI e IPCA de 2000 a 2026):
+// - o salário do ano é um percentual do guardado, pago em 12 meses iguais e fixo por 12 meses (não pula com a Selic);
+// - uma vez por ano ele é revisto pelo guardado de hoje (sobe quando o guardado cresce; a simulação mostrou que o limite
+//   de 10% por revisão não muda nada com renda fixa e só atrapalharia quando a família guarda ou tira muito de uma vez);
+// - o que o guardado rende a mais que o salário fica nele: cobre a inflação e é a reserva para os anos de juro baixo.
 // Tudo em reais.
+import { IMPACTO_HISTORICO, PCT_RECOMENDADO, type ImpactoHistorico } from './salarioDaGorduraImpacto'
+
+export { IMPACTO_HISTORICO, PCT_RECOMENDADO, type ImpactoHistorico }
 
 /** IPCA esperado quando o Focus não chegou: Focus de 13/11/2026 para 2027 (5,00%). */
 export const IPCA_PADRAO = 0.05
+/** Os percentuais que a família pode escolher (os que a simulação mediu). */
+export const PERCENTUAIS = IMPACTO_HISTORICO.map(i => i.pct)
 
-export interface SalarioDaGordura {
-  /** o que o guardado rende no mês, já sem o imposto */
-  rende: number
-  /** quanto a inflação do mês come do valor do guardado */
-  inflacao: number
-  /** pode ser gasto sem empobrecer */
-  salario: number
-  /** fica no guardado (a metade, ou a inflação inteira quando a metade não cobre) */
-  guarda: number
-  /** guarda − inflação: quanto o guardado cresce de verdade no mês (0 quando só empata) */
-  cresce: number
-  /** a metade guardada cobre a inflação */
-  metadeCobre: boolean
+/** Guardado na config 'salario_gordura'. */
+export interface RegraSalario {
+  /** % ao ano do guardado */
+  pct: number
+  /** 'AAAA-MM' do mês em que o salário foi calculado; vale 12 meses */
+  desde: string
+  /** o salário de cada mês até a revisão */
+  salario_mes: number
+  /** o guardado usado na conta */
+  base: number
+  /** true = a família escolheu o percentual; false = é o recomendado */
+  escolhido: boolean
 }
 
 const c2 = (v: number) => Math.round(v * 100) / 100
+const MES = /^\d{4}-(0[1-9]|1[0-2])$/
+
+/** 'AAAA-MM' + n meses. */
+export function mesMais(m: string, n: number): string {
+  const i = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1 + n
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`
+}
+
+/** Lê a config; qualquer coisa estragada vira null (o app recalcula pela recomendação). */
+export function lerRegra(v: unknown): RegraSalario | null {
+  if (!v || typeof v !== 'object') return null
+  const r = v as Record<string, unknown>
+  const pct = Number(r.pct),
+    salario_mes = Number(r.salario_mes),
+    base = Number(r.base)
+  if (!PERCENTUAIS.includes(pct) || typeof r.desde !== 'string' || !MES.test(r.desde)) return null
+  if (!(salario_mes >= 0) || !(base >= 0)) return null
+  return { pct, desde: r.desde, salario_mes, base, escolhido: r.escolhido === true }
+}
+
+/** O salário de um mês para um guardado e um percentual ao ano. */
+export function salarioPelo(guardado: number, pct: number): number {
+  return guardado > 0 ? c2((guardado * pct) / 100 / 12) : 0
+}
+
+/** Uma regra nova, calculada hoje (a primeira vez, na revisão do ano, ou quando a família muda o percentual). */
+export function regraNova(guardado: number, pct: number, mesHoje: string, escolhido: boolean): RegraSalario {
+  return { pct, desde: mesHoje, salario_mes: salarioPelo(guardado, pct), base: c2(guardado), escolhido }
+}
+
+/** O mês da próxima revisão. */
+export const proximaRevisao = (r: RegraSalario) => mesMais(r.desde, 12)
+
+/** A revisão do ano: o mesmo percentual, sobre o guardado de hoje. */
+export function revisar(r: RegraSalario, guardado: number, mesHoje: string): RegraSalario {
+  return regraNova(guardado, r.pct, mesHoje, r.escolhido)
+}
+
+/**
+ * A regra que vale hoje e se ela precisa ser gravada: sem regra, a recomendada; com 12 meses passados, a revisada.
+ * Sem guardado: null.
+ */
+export function regraDeHoje(
+  guardada: RegraSalario | null,
+  guardado: number,
+  mesHoje: string,
+): { regra: RegraSalario; gravar: boolean } | null {
+  if (!(guardado > 0)) return guardada ? { regra: guardada, gravar: false } : null
+  if (!guardada) return { regra: regraNova(guardado, PCT_RECOMENDADO, mesHoje, false), gravar: true }
+  if (mesHoje >= proximaRevisao(guardada)) return { regra: revisar(guardada, guardado, mesHoje), gravar: true }
+  return { regra: guardada, gravar: false }
+}
 
 /** Quanto a inflação de um ano come de um valor em um mês. */
 export function inflacaoDoMes(valor: number, ipcaAnual: number): number {
@@ -31,21 +89,20 @@ export function inflacaoDoMes(valor: number, ipcaAnual: number): number {
   return c2(valor * (Math.pow(1 + ipcaAnual, 1 / 12) - 1))
 }
 
-/** A divisão do mês. Sem rendimento ou sem guardado: null. */
-export function salarioDaGordura(rende: number, guardado: number, ipcaAnual: number): SalarioDaGordura | null {
-  if (!(rende > 0) || !(guardado > 0)) return null
+export interface MesDoSalario {
+  /** o que o guardado rende no mês, já sem o imposto */
+  rende: number
+  /** quanto a inflação do mês come do valor do guardado */
+  inflacao: number
+  salario: number
+  /** rende − salário − inflação: positivo = o guardado cresce de verdade; negativo = perde valor neste mês */
+  cresce: number
+}
+
+/** O mês de hoje com o salário fixo. */
+export function mesDoSalario(rende: number, guardado: number, ipcaAnual: number, salario: number): MesDoSalario {
   const inflacao = inflacaoDoMes(guardado, ipcaAnual)
-  const metade = c2(rende / 2)
-  const guarda = c2(Math.min(rende, Math.max(metade, inflacao)))
-  const salario = c2(rende - guarda)
-  return {
-    rende: c2(rende),
-    inflacao,
-    salario,
-    guarda,
-    cresce: c2(Math.max(0, guarda - inflacao)),
-    metadeCobre: metade >= inflacao,
-  }
+  return { rende: c2(rende), inflacao, salario: c2(salario), cresce: c2(rende - salario - inflacao) }
 }
 
 /**
@@ -66,13 +123,28 @@ export function ipcaDosProximos12Meses(
 }
 
 const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+const mmaa = (m: string) => `${m.slice(5, 7)}/${m.slice(0, 4)}`
+export const pctTexto = (p: number) => p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
 /** O que o app fala no Guardado, em português simples. */
-export function fraseDoSalario(s: SalarioDaGordura): string {
-  const rende = `Com a taxa de hoje, o guardado rende perto de ${brl(s.rende)} por mês, já sem o imposto. A inflação come ${brl(s.inflacao)} do valor dele por mês.`
-  if (s.salario <= 0)
-    return `${rende} Hoje ele rende menos que a inflação: não sobra salário da gordura. Gastar o rendimento faz o guardado perder valor.`
-  if (!s.metadeCobre)
-    return `${rende} Com os juros de hoje, metade do rendimento não cobre a inflação: ficam guardados ${brl(s.guarda)} para o guardado não perder valor, e o salário da gordura cai para ${brl(s.salario)}.`
-  return `${rende} Pela regra da família, metade (${brl(s.guarda)}) fica guardada: cobre a inflação e ainda faz o guardado crescer ${brl(s.cresce)}. A outra metade, ${brl(s.salario)}, é o salário da gordura: dá para gastar sem empobrecer.`
+export function fraseDoSalario(r: RegraSalario, m: MesDoSalario): { titulo: string; frase: string } {
+  const titulo = `Salário da gordura: ${brl(r.salario_mes)} por mês, fixo até ${mmaa(proximaRevisao(r))}`
+  const origem = r.escolhido
+    ? `${pctTexto(r.pct)}% ao ano do guardado, como a família escolheu.`
+    : `${pctTexto(r.pct)}% ao ano do guardado, a regra que os especialistas recomendam.`
+  const rende = `Este mês o guardado rende perto de ${brl(m.rende)}, já sem o imposto, e a inflação come ${brl(m.inflacao)} do valor dele.`
+  const fim =
+    m.cresce >= 0
+      ? `Tirando o salário e a inflação, ele ainda cresce ${brl(m.cresce)}: é a reserva para quando os juros caírem.`
+      : `Com os juros de hoje, o rendimento não cobre o salário e a inflação: o salário continua (a reserva dos anos bons existe para isso), e o guardado perde ${brl(m.cresce)} de valor neste mês.`
+  return { titulo, frase: `${origem} ${rende} ${fim}` }
+}
+
+/** A frase do impacto de um percentual, pela história de 2000 a 2026. */
+export function fraseDoImpacto(i: ImpactoHistorico, guardado: number): string {
+  const pior =
+    i.pior20 >= 99.5
+      ? 'nunca ficou valendo menos que hoje'
+      : `ficou, no pior caso, valendo ${pctTexto(i.pior20)}% do que vale hoje (no meio dos casos, ${pctTexto(i.meio20)}%)`
+  return `Com ${pctTexto(i.pct)}% ao ano, o salário começa em ${brl(salarioPelo(guardado, i.pct))} por mês. Com os juros e a inflação de verdade de 2000 a 2026, depois de 20 anos o guardado ${pior}.`
 }

@@ -110,9 +110,15 @@ office) e simulador (CDI e IPCA do Banco Central, jan/2000 a out/2026, janelas d
 - **Feito: a metade com piso da inflação** (lib/salarioDaGordura.ts, Guardado). Metade do que rende é o salário da
   gordura; a metade que fica nunca é menor que a inflação do mês. Foi a única regra que nunca deixou o guardado perder
   valor na simulação. A separação do mês ("pode gastar") usa esse salário, não o rendimento inteiro.
-- **Em aberto (decisão do dono):** os especialistas recomendam também deixar o salário da gordura fixo por 12 meses,
-  revisto uma vez por ano (Yale, Vanguard), com uma reserva de juros para os anos de Selic baixa. Referência histórica:
-  ~R$ 3.300 por mês por milhão (4% ao ano, corrigido pela inflação) foi o salário estável que não empobreceu.
+- **Decisão do dono (22/11, depois):** "eu não tenho regra; deixe a recomendação do mentor e do planejador; se o cara
+  quiser mudar, ele muda; embaixo mostre o impacto". Feito e substitui a metade: o salário da gordura é um percentual do
+  guardado por ano, fixo por 12 meses e revisto uma vez por ano pelo guardado daquele dia. O recomendado é **3% ao ano**,
+  o único que, com CDI e IPCA de 2000 a 2026, nunca deixou o guardado valendo menos em 20 anos (pior caso 99,9%; R$ 2.500
+  por mês por milhão no início). A família escolhe de 3% a 6% e vê, para cada um, o salário de hoje e o pior caso em 20
+  anos (6% ao ano: 54,8%). O limite de "no máximo 10% por revisão" do mentor foi testado e não mudou nada; ficou de fora.
+- **Imóveis:** o salário da gordura sai só do dinheiro aplicado. O imóvel paga a família pelo aluguel, que já entra no
+  "pode gastar" do mês; o valor do imóvel acompanha a inflação sozinho, por isso o aluguel líquido não precisa guardar a
+  parte da inflação. Em aberto: separar uma reserva de manutenção e vacância do aluguel.
 - **Corrigido:** a conta de 22/11 que dizia "R$ 1,5 milhão rende R$ 14,8 mil, mas só R$ 4,9 mil acima da inflação"
   usava a taxa real conservadora do plano (4%). Com as taxas de hoje, acima da inflação são ~R$ 7.600.
 

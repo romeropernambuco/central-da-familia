@@ -18,8 +18,8 @@ export function SeparacaoDoMes() {
   const { api, familia } = useSessaoAtual()
   const { versao } = useDadosDoDia()
   const { oculto } = useOlhoApp()
-  // o lucro da gordura que dá para gastar é o salário da gordura: metade do que rende, guardando ao menos a inflação
-  const { s: salario } = useSalarioDaGordura()
+  // o lucro da gordura que dá para gastar é o salário da gordura: um percentual do guardado, fixo por 12 meses
+  const { regra: salario } = useSalarioDaGordura()
   const [rendas] = useConfig<unknown[]>('rendas', [])
   const [entradas] = useConfig<{ data?: string; valor?: number; destino?: string }[]>('entradas', [])
   const hoje = hojeRecife(),
@@ -61,7 +61,7 @@ export function SeparacaoDoMes() {
     entrou: dado.entrou,
     previsto: dado.previsto,
     rendaCadastrada: rendaDoMesCadastrada(rendas),
-    lucro: salario?.salario ?? 0,
+    lucro: salario?.salario_mes ?? 0,
     gasto: ultimos ? gastoDoMes(ultimos, mes, hoje) : dado.saiu,
     extras,
     reservado: reservaDasViagens(viagens, mes).total,

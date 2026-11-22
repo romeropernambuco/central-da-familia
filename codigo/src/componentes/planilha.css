@@ -56,6 +56,39 @@
   color: var(--accent-ink);
   font-weight: 700;
 }
+.impacto-salario td.ok {
+  color: var(--accent-ink);
+}
+.impacto-salario td.warn {
+  color: var(--warn-ink);
+}
+.impacto-salario td.erro {
+  color: var(--error);
+}
+.impacto-salario tr.destaque td {
+  background: var(--accent-soft);
+}
+.impacto-salario label {
+  white-space: nowrap;
+}
+.impacto-salario .recomendado {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  padding-left: 22px;
+}
+.impacto-salario th,
+.impacto-salario td {
+  padding-inline: 6px;
+}
+.impacto-salario th:last-child {
+  white-space: normal;
+  min-width: 84px;
+}
+.folha-salario-gordura {
+  display: grid;
+  gap: 12px;
+}
 .planilha-rolagem {
   overflow-x: auto;
   max-width: 100%;
