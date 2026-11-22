@@ -7,14 +7,20 @@
 // na conta (regra do salário); (e) Família Souza: Cláudia, mãe solo com renda que muda (?como=autonoma).
 import { somaDias } from '../lib/formato'
 
-export type FamiliaTeste = 'silva' | 'souza'
+export type FamiliaTeste = 'silva' | 'souza' | 'lima'
 let qual: FamiliaTeste = 'silva'
+/** Família nova (?como=nova): o nome é o que a pessoa escrever no primeiro uso. */
+let nomeLima = 'Família Lima'
 /** Só pro teste: qual família de exemplo está aberta. */
 export const usarFamiliaTeste = (f: FamiliaTeste) => {
   qual = f
 }
 export const familiaTeste = () => qual
-export const nomeFamiliaTeste = () => (qual === 'souza' ? 'Família Souza' : 'Família Silva')
+export const nomearFamiliaNova = (nome: string) => {
+  nomeLima = nome
+}
+export const nomeFamiliaTeste = () =>
+  qual === 'souza' ? 'Família Souza' : qual === 'lima' ? nomeLima : 'Família Silva'
 /** Compatível com o código antigo (Família Silva). */
 export const FAMILIA_TESTE = 'Família Silva'
 /** O mês que os testadores usam. A partir do mês seguinte o exemplo traz este mês inteiro (dia 1 lembra do mês anterior). */
@@ -67,12 +73,17 @@ const MEMBROS_SILVA: MembroTeste[] = [
 const MEMBROS_SOUZA: MembroTeste[] = [
   { id: 'm-claudia', nome: 'Cláudia', papel: 'casal', envelope: 'env-claudia', email: 'claudia@exemplo.com' },
 ]
-const nomesIniciais = [...MEMBROS_SILVA, ...MEMBROS_SOUZA].map(m => [m, m.nome] as const)
+// família nova: 1 adulto, com o limite "Pessoa 1" que o banco cria (produto.criar_familia)
+const MEMBROS_LIMA: MembroTeste[] = [
+  { id: 'm-marina', nome: 'Marina', papel: 'casal', envelope: 'env-p1', email: 'marina@exemplo.com' },
+]
+const nomesIniciais = [...MEMBROS_SILVA, ...MEMBROS_SOUZA, ...MEMBROS_LIMA].map(m => [m, m.nome] as const)
 export function restaurarNomesTeste() {
   for (const [m, nome] of nomesIniciais) m.nome = nome
+  nomeLima = 'Família Lima'
 }
 /** Quem é da família de exemplo aberta. */
-export const membrosTeste = () => (qual === 'souza' ? MEMBROS_SOUZA : MEMBROS_SILVA)
+export const membrosTeste = () => (qual === 'souza' ? MEMBROS_SOUZA : qual === 'lima' ? MEMBROS_LIMA : MEMBROS_SILVA)
 /** Compatível com o código antigo. */
 export const MEMBROS_TESTE = MEMBROS_SILVA
 
@@ -109,7 +120,24 @@ const DESC_C = [
 const ultimoDia = (a: number, m: number) => new Date(Date.UTC(a, m, 0)).getUTCDate()
 
 export function dadosTeste(hoje: string) {
-  return qual === 'souza' ? souza(hoje) : silva(hoje)
+  return qual === 'souza' ? souza(hoje) : qual === 'lima' ? lima() : silva(hoje)
+}
+
+/** Família nova (?como=nova): vazia, com os 4 limites que o banco cria em produto.criar_familia. */
+function lima() {
+  const envs: EnvTeste[] = [
+    { id: 'env-p1', nome: 'Pessoa 1', regra: 'mensal', limite_mes: 0, colchao: 0, casa: false },
+    { id: 'env-p2', nome: 'Pessoa 2', regra: 'diario', limite_mes: 0, colchao: 0, casa: false },
+    { id: 'env-feira', nome: 'Feira semanal', regra: 'semanal', limite_mes: 0, colchao: 0, casa: true },
+    { id: 'env-casa', nome: 'Casa mensal', regra: 'mensal', limite_mes: 0, colchao: 0, casa: true },
+  ]
+  return {
+    envs,
+    lanc: [] as LancTeste[],
+    apps: [] as AppTeste[],
+    rendas: [] as { id: string; nome: string; valor: number; tipo: string; dono: string }[],
+    entradas: [] as { id: string; data: string; valor: number; de: string; destino: string; dono: string }[],
+  }
 }
 
 function silva(hoje: string) {

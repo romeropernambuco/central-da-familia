@@ -95,6 +95,8 @@ export function App() {
       history.replaceState(null, '', location.pathname + location.search + '#/inicio')
       setHash('#/inicio')
       if (!a || familia.papel === 'equipe') return
+      // o atalho do ícone do app (#/lancar sem nada) abre o Anotar limpo; só o iPhone manda valor, loja ou cartão
+      if (a.valor === undefined && !a.loja && !a.cartao && !a.erro) return abrirLancar({})
       abrirLancar({ valor: a.valor, descricao: a.loja, atalho: { cartao: a.cartao, erro: a.erro } })
     }
     ver()

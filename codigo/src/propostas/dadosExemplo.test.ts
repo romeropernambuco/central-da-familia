@@ -12,6 +12,7 @@ import { totaisGuardado } from '../lib/resumo/guardado'
 import { totalImoveis } from '../lib/resumo/imoveis'
 import { lerRecebimentos } from '../lib/resumo/leituras'
 import { totaisDoMes } from '../lib/resumo/movimentacao'
+import { entradasDoAluguel, lerCaderno } from '../lib/aluguel'
 import {
   destaqueOrcamento,
   disponivelHojeCasa,
@@ -79,6 +80,7 @@ describe('dados do laboratório', () => {
       desejos,
       avisos,
       pres,
+      caderno,
     ] = await Promise.all([
       api.resumoHoje(id),
       api.lancamentos(id, mes),
@@ -95,6 +97,7 @@ describe('dados do laboratório', () => {
       api.desejos!(id),
       api.avisosCasa(id),
       api.config<Record<string, string[]>>(id, 'casa_presenca', {}),
+      api.aluguelCaderno!(id),
     ])
     const s = destaqueOrcamento(resumo, familia.envelopeId, hoje, FUSO)
     const envs = envelopesVisiveis(resumo.envelopes, familia)
@@ -106,7 +109,9 @@ describe('dados do laboratório', () => {
     const e = entradaDoCenario(futuroEntradas, 'garantido')!
     const p = numerosRumo2029(futuro(e), e)
     const c = situacaoCasa(escritorio, feiras, estoque, segundaDaSemana(hoje))
-    const { previsto: _previsto, ...mov } = totaisDoMes(mes, hoje, lanc, r.lista, entradas)
+    // o aluguel que chegou no mês também entrou (simulação da Marina, 22/11)
+    const entrouNoMes = [...entradas, ...entradasDoAluguel(lerCaderno(caderno), mes, hoje)]
+    const { previsto: _previsto, ...mov } = totaisDoMes(mes, hoje, lanc, r.lista, entrouNoMes)
     const datas = Array.from({ length: Number(hoje.slice(-2)) }, (_, i) => somaDias(mes + '-01', i))
     const serie = datas.flatMap(data => {
       const gastos = lanc.filter(x => x.data === data)

@@ -16,6 +16,7 @@ import { conferenciasDoPlano, numerosRumo2029 } from './plano2029'
 import { saldoDasContas } from './saldos'
 import { camposAusentes } from './contrato'
 import { lerCompartilhado } from '../invalidacao'
+import { entradasDoAluguel, lerCaderno } from '../aluguel'
 export function lerLancamentosMes(api: Api, id: string, mes: string) {
   return lerCompartilhado(api, id, 'lancamentos', ['inicio-mes', mes], () => api.lancamentos(id, mes))
 }
@@ -107,11 +108,18 @@ export async function lerOrcamento(api: Api, f: FamiliaMinha, hoje: string) {
   }
 }
 export async function lerMes(api: Api, id: string, hoje: string, mes = hoje.slice(0, 7)) {
-  const [gastos, receitas, entradas] = await Promise.all([
+  const [gastos, receitas, anotadas, caderno] = await Promise.all([
     lerLancamentosMes(api, id, mes),
     lerRecebimentos(api, id),
     api.config<{ data: string; valor: number }[]>(id, 'entradas', []),
+    // o aluguel que chegou (caderno do aluguel) também é dinheiro que entrou no mês; sem o caderno, segue sem ele
+    Promise.resolve()
+      .then(() => (typeof api.aluguelCaderno === 'function' ? api.aluguelCaderno(id) : null))
+      .catch(() => null),
   ])
+  const entradas = Array.isArray(anotadas)
+    ? [...anotadas, ...entradasDoAluguel(lerCaderno(caderno), mes, hoje)]
+    : anotadas
   if (
     !Array.isArray(gastos) ||
     !Array.isArray(receitas.lista) ||

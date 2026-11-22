@@ -12,7 +12,11 @@ import { Marca } from '../../componentes/Marca'
 import { Din } from '../../componentes/base'
 import type { Envelope } from '../../api/tipos'
 import { AcaoConvite } from '../../componentes/AcaoConvite'
+import { destaqueOrcamento } from '../../lib/resumo/orcamento'
+import { desfazer } from '../../api/desfazer'
 import {
+  FUSO,
+  hojeRecife,
   emailValido,
   linkWhatsApp,
   mensagemConvite,
@@ -49,6 +53,9 @@ export function PrimeiroUso() {
     setOcupado(true)
     try {
       await f()
+      // no primeiro uso não há o que desfazer: criar a família e pôr os limites são passos do cadastro, não edições
+      // (a simulação de 22/11 mostrava "Salvo · Desfazer" logo depois de criar a família)
+      desfazer.dispensar()
     } catch (e) {
       setErro((e as Error).message)
     } finally {
@@ -62,7 +69,16 @@ export function PrimeiroUso() {
         throw new Error('Escreva o nome da família e o seu nome.')
       const id = fid || (await api.criarFamilia(nomeFam.trim(), nome.trim()))
       setFid(id)
-      const r = await api.resumoHoje(id)
+      let r = await api.resumoHoje(id)
+      // o banco cria o limite de quem chega como "Pessoa 1": aqui ele ganha o nome da pessoa (o "Pessoa 2" fica livre
+      // para o 2º adulto, que o banco liga pelo convite)
+      const generico = r.envelopes
+        .filter(e => !e.casa && /^Pessoa \d+$/.test(e.nome))
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }))[0]
+      if (!fid && generico) {
+        await api.salvarEnvelope(id, generico.id, { nome: nome.trim().slice(0, 60) })
+        r = await api.resumoHoje(id)
+      }
       setEnvs(r.envelopes)
       setLim(
         Object.fromEntries(
@@ -84,7 +100,8 @@ export function PrimeiroUso() {
       const casa = envs.find(e => e.casa && e.regra === 'mensal') || envs[envs.length - 1]
       if (casa) await api.salvarEnvelope(fid, casa.id, { colchao: textoParaValor(colchao) })
       const r = await api.resumoHoje(fid)
-      setHoje(r.pode_gastar_hoje)
+      // o mesmo número do "Limite de hoje" do Início: o limite da própria pessoa (antes mostrava o total da família)
+      setHoje(destaqueOrcamento(r, r.envelopes.find(e => !e.casa)?.id, hojeRecife(), FUSO).valor)
       setPasso(3)
     })
   const fim = async () => {

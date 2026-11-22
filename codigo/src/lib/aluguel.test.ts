@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   cadernoVazio,
   contaDoAno,
+  entradasDoAluguel,
   fraseDaSituacao,
   inicioDoCaderno,
   lerCaderno,
@@ -19,15 +20,19 @@ describe('o aluguel de cada mês', () => {
     const c = caderno({ dia_vencimento: 10, recebimentos: [{ mes: '2026-10', data: '2026-10-08', valor: 3000 }] })
     expect(situacaoDoMes(c, '2026-10', HOJE)).toEqual({ tipo: 'recebido', data: '2026-10-08', valor: 3000 })
     expect(situacaoDoMes(c, '2026-11', HOJE)).toEqual({ tipo: 'atrasado', dias: 12, vence: '2026-11-10' })
-    expect(situacaoDoMes(caderno({ dia_vencimento: 25 }), '2026-11', HOJE)).toEqual({
+    expect(situacaoDoMes(caderno({ dia_vencimento: 25, desde: '2026-11' }), '2026-11', HOJE)).toEqual({
       tipo: 'a_vencer',
       dias: 3,
       vence: '2026-11-25',
     })
     expect(fraseDaSituacao(situacaoDoMes(c, '2026-10', HOJE))).toBe('chegou em 08/10')
     expect(fraseDaSituacao(situacaoDoMes(c, '2026-11', HOJE))).toBe('atrasado há 12 dias')
-    expect(fraseDaSituacao(situacaoDoMes(caderno({ dia_vencimento: 22 }), '2026-11', HOJE))).toBe('vence hoje')
-    expect(fraseDaSituacao(situacaoDoMes(caderno({ dia_vencimento: 23 }), '2026-11', HOJE))).toBe('vence dia 23/11')
+    expect(fraseDaSituacao(situacaoDoMes(caderno({ dia_vencimento: 22, desde: '2026-11' }), '2026-11', HOJE))).toBe(
+      'vence hoje',
+    )
+    expect(fraseDaSituacao(situacaoDoMes(caderno({ dia_vencimento: 23, desde: '2026-11' }), '2026-11', HOJE))).toBe(
+      'vence dia 23/11',
+    )
   })
   it('vencimento no dia 31 de um mês curto cai no último dia', () => {
     expect(vencimento('2027-02', 31)).toBe('2027-02-28')
@@ -73,7 +78,15 @@ describe('o ano do imóvel', () => {
     expect(inicioDoCaderno(novo, '2026-11')).toBe('2026-11')
     expect(situacaoDoMes(novo, '2026-10', HOJE)).toEqual({ tipo: 'antes', vence: '2026-10-05' })
     expect(fraseDaSituacao(situacaoDoMes(novo, '2026-10', HOJE))).toBe('antes do caderno')
-    expect(contaDoAno(novo, 100000, HOJE)).toMatchObject({ esperados: 1, atrasados: ['2026-11'] })
+    // caderno nunca aberto: o mês de hoje fica "a confirmar", nem esperado nem atrasado (simulação de 22/11)
+    expect(situacaoDoMes(novo, '2026-11', HOJE)).toEqual({ tipo: 'confirmar', vence: '2026-11-05' })
+    expect(fraseDaSituacao(situacaoDoMes(novo, '2026-11', HOJE))).toBe('já chegou? marque no caderno')
+    expect(contaDoAno(novo, 100000, HOJE)).toMatchObject({ esperados: 0, atrasados: [] })
+    // depois que a família abre o caderno (o app grava o mês de começo), o atraso volta a valer
+    expect(contaDoAno({ ...novo, desde: '2026-11' }, 100000, HOJE)).toMatchObject({
+      esperados: 1,
+      atrasados: ['2026-11'],
+    })
     // anotar um mês antigo puxa o começo do caderno para trás
     const comAntigo = caderno({ dia_vencimento: 5, recebimentos: [{ mes: '2026-08', data: '2026-08-05', valor: 1 }] })
     expect(inicioDoCaderno(comAntigo, '2026-11')).toBe('2026-08')
@@ -85,8 +98,9 @@ describe('os aluguéis do mês, todos os imóveis', () => {
   it('quantos chegaram, quantos atrasaram e quanto falta', () => {
     const cad = {
       a: caderno({ recebimentos: [{ mes: '2026-11', data: '2026-11-05', valor: 3000 }] }),
-      b: caderno({ dia_vencimento: 10 }),
+      b: caderno({ dia_vencimento: 10, desde: '2026-11' }),
     }
+    // c nunca abriu o caderno: falta chegar, mas não conta como atrasado
     expect(
       resumoDoMes(
         [
@@ -100,7 +114,7 @@ describe('os aluguéis do mês, todos os imóveis', () => {
     ).toEqual({
       alugados: 3,
       recebidos: 1,
-      atrasados: 2,
+      atrasados: 1,
       recebido: 3000,
       falta: 5000,
     })
@@ -122,6 +136,24 @@ describe('os aluguéis do mês, todos os imóveis', () => {
       a: { dia_vencimento: 10, recebimentos: [{ mes: '2026-11', data: '2026-11-01', valor: 5 }], despesas: [] },
     })
   })
+})
+
+it('o aluguel que chegou no mês entra como dinheiro que entrou (pela data em que chegou, até hoje)', () => {
+  const cad = {
+    a: caderno({
+      recebimentos: [
+        { mes: '2026-11', data: '2026-11-05', valor: 2500 },
+        { mes: '2026-10', data: '2026-11-02', valor: 2500 },
+        { mes: '2026-09', data: '2026-10-03', valor: 2500 },
+      ],
+    }),
+    b: caderno({ recebimentos: [{ mes: '2026-11', data: '2026-11-25', valor: 900 }] }),
+  }
+  expect(entradasDoAluguel(cad, '2026-11', HOJE)).toEqual([
+    { data: '2026-11-05', valor: 2500 },
+    { data: '2026-11-02', valor: 2500 },
+  ])
+  expect(entradasDoAluguel({}, '2026-11', HOJE)).toEqual([])
 })
 
 it('o mesmo mês marcado em 2 celulares conta 1 vez só', () => {

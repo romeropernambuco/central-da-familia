@@ -333,6 +333,28 @@ it('propriedade: 2000 snapshots determinísticos, incompletos/corrompidos, nunca
   }
 })
 
+describe('Aluguel atrasado: o Ajudante dos Imóveis pergunta (simulação de 22/11)', () => {
+  const aluguel = (dias: number, mes = '2026-12') =>
+    base({ alugueis: [{ id: 'im1', nome: 'NomeSentinelaPrivado', mes, dias }] })
+  const um = (s: SnapshotInsights, a = agora) => candidatosInsights(s, a).find(i => i.tipo === 'aluguel_atrasado')
+  it('pergunta 1 vez por imóvel e mês, na aba Guardado, com o nome do imóvel como trecho privado', () => {
+    const i = um(aluguel(5))!
+    expect(i.funcionario).toBe('imoveis')
+    expect(i.rota).toBe('guardado')
+    expect(i.pergunta).toBe('Um aluguel passou do dia combinado e ainda não chegou. Ele já entrou?')
+    expect(i.contexto).toBe('Imóvel: NomeSentinelaPrivado. Atrasado há 5 dias.')
+    expect(i.trechosPrivados).toEqual(['NomeSentinelaPrivado'])
+    expect(i.chave).not.toBe(um(aluguel(5, '2027-01'))!.chave)
+    expect(i.chave).toBe(um(aluguel(9))!.chave)
+  })
+  it('sem atraso, para quem não é o casal, à noite ou com dado estragado, não pergunta', () => {
+    expect(tem(aluguel(0), 'aluguel_atrasado')).toBe(false)
+    expect(tem({ ...aluguel(3), papel: 'pessoa' }, 'aluguel_atrasado')).toBe(false)
+    expect(um(aluguel(3), '2026-12-30T23:00:00-03:00')).toBeUndefined()
+    expect(tem(base({ alugueis: [null, { id: 'x' }, 7] as any }), 'aluguel_atrasado')).toBe(false)
+  })
+})
+
 describe('Dinheiro na rua: o Guardado avisa o prazo', () => {
   const negocio = (prazo: string, naRua = 3000000) =>
     base({ negocios: [{ id: 'n1', nome: 'NomeSentinelaPrivado', prazo, naRua }] })

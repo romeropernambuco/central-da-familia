@@ -6,6 +6,7 @@ import type {
   FaturaBanco,
   Feira,
   GuardadoHoje,
+  ImovelTela,
   Lancamento,
   RecebimentoTela,
   ResumoHoje,
@@ -15,6 +16,7 @@ import { reais, simularCompra } from '../formato'
 import { numerosRumo2029 } from '../rumo2029'
 import { cartaoMeu } from '../dono'
 import { lerNegocios } from '../dinheiroNaRua'
+import { cadernoVazio, lerCaderno, situacaoDoMes } from '../aluguel'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { FaturaInsight, SnapshotInsights } from './tipos'
 
@@ -39,6 +41,19 @@ export interface LeiturasInsights {
   entradaObjetivo?: FuturoEntrada
   /** Dinheiro na rua, como veio do banco (produto.negocios_da_familia) */
   negocios?: unknown
+  /** Imóveis e o caderno do aluguel (produto.aluguel_da_familia), para o aluguel que passou do dia */
+  imoveis?: ImovelTela[]
+  aluguel?: unknown
+}
+
+/** Aluguéis deste mês que passaram do dia combinado sem chegar (a mesma regra do caderno e da lista de imóveis). */
+function alugueisAtrasados(imoveis: ImovelTela[], cru: unknown, dia: string) {
+  const caderno = lerCaderno(cru)
+  return imoveis.flatMap(i => {
+    if (i.uso !== 'aluga') return []
+    const s = situacaoDoMes(caderno[i.id] || cadernoVazio(), dia.slice(0, 7), dia)
+    return s.tipo === 'atrasado' ? [{ id: i.id, nome: i.apelido, mes: dia.slice(0, 7), dias: s.dias }] : []
+  })
 }
 /** Adapta só leituras concluídas da API selecionada; nunca importa/cria EXEMPLO como fallback. */
 export function montarSnapshot(
@@ -120,6 +135,7 @@ export function montarSnapshot(
         const naRua = emCentavos(soma('pus') - soma('voltou'))
         return naRua !== null && naRua > 0 ? [{ id: n.id, nome: n.nome, prazo: n.prazo, naRua }] : []
       })
+    if (d.imoveis && d.aluguel !== undefined) s.alugueis = alugueisAtrasados(d.imoveis, d.aluguel, t.dia)
     // Necessário é de patrimônio FINANCEIRO: imóveis já contribuíram pelo aluguel no motor existente.
     const f = d.futuro
     s.contratos = f?.gatilhos

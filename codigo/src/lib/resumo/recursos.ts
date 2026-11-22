@@ -14,6 +14,7 @@ export const recursosResumo: Record<keyof ResumoFamilia, string[]> = {
     'config:entradas',
     'config:fontes_receita',
     'config:receitas_controle',
+    'aluguel',
   ],
   desejos: ['desejos'],
   pendencias: ['escritorio'],

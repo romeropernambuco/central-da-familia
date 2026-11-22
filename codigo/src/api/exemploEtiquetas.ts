@@ -31,28 +31,31 @@ let moedas = new Map<string, { moeda: string; valor: number; cambio: number }>()
 let n = 0
 let semeado = false
 
-export function reiniciarEtiquetasEx() {
+/** `vazia`: a família nova (?como=nova) começa sem etiqueta nenhuma. */
+export function reiniciarEtiquetasEx(vazia = false) {
   const hoje = hojeRecife()
-  etiquetas = [
-    {
-      id: 'etq-europa',
-      nome: 'Europa (exemplo)',
-      inicio: somaDias(hoje, -6),
-      fim: somaDias(hoje, 3),
-      moeda: 'EUR',
-      pessoas: null,
-      arquivada: false,
-    },
-    {
-      id: 'etq-festa',
-      nome: 'Festa de 15 anos',
-      inicio: null,
-      fim: null,
-      moeda: 'BRL',
-      pessoas: null,
-      arquivada: false,
-    },
-  ]
+  etiquetas = vazia
+    ? []
+    : [
+        {
+          id: 'etq-europa',
+          nome: 'Europa (exemplo)',
+          inicio: somaDias(hoje, -6),
+          fim: somaDias(hoje, 3),
+          moeda: 'EUR',
+          pessoas: null,
+          arquivada: false,
+        },
+        {
+          id: 'etq-festa',
+          nome: 'Festa de 15 anos',
+          inicio: null,
+          fim: null,
+          moeda: 'BRL',
+          pessoas: null,
+          arquivada: false,
+        },
+      ]
   ligacoes = new Map()
   moedas = new Map()
   n = 0

@@ -6,12 +6,15 @@ import { diasEntre, mesAnterior } from '../formato'
 import { tempoRecife } from './tempo'
 import { emCentavos, type LeiturasInsights } from './snapshot'
 
-/** O Guardado e o Dinheiro na rua (o banco de exemplo antigo pode não ter os negócios). */
+/** O Guardado, o Dinheiro na rua e o caderno do aluguel (o banco de exemplo antigo pode não ter os negócios). */
 async function lerGuardado(api: Api, familia: string, ler: <T>(fn: () => Promise<T>) => Promise<T | undefined>) {
-  return {
-    guardado: await ler(() => api.guardadoHoje(familia)),
-    negocios: api.negocios ? await ler(() => api.negocios!(familia)) : undefined,
-  }
+  const [guardado, negocios, imoveis, aluguel] = await Promise.all([
+    ler(() => api.guardadoHoje(familia)),
+    api.negocios ? ler(() => api.negocios!(familia)) : undefined,
+    api.imoveis ? ler(() => api.imoveis!(familia)) : undefined,
+    api.aluguelCaderno ? ler(() => api.aluguelCaderno!(familia)) : undefined,
+  ])
+  return { guardado, negocios, imoveis, aluguel }
 }
 
 /** Mesmos endpoints já usados nas telas. Falha fica ausente, nunca recebe dados fictícios.

@@ -1,16 +1,18 @@
 // SÓ PRO TESTE (carregado só nos builds de exemplo e demo, pelo main.tsx): abre o app como uma pessoa da família de exemplo e num dia escolhido.
-//   ?como=ana | bruno | filha | equipe | autonoma     (sem nada: ana; autonoma = Cláudia, Família Souza)
+//   ?como=ana | bruno | filha | equipe | autonoma | nova
+//   (sem nada: ana; autonoma = Cláudia, Família Souza; nova = Marina, família vazia que passa pelo primeiro uso)
 //   ?dia=2026-11-18                              (sem nada: hoje de verdade)
 //   ?hora=20                                     (sem nada: a hora de agora)
 // O main.tsx carrega este arquivo antes do resto do app: o relógio muda antes de qualquer conta do exemplo.
 
-export type Pessoa = 'ana' | 'bruno' | 'filha' | 'equipe' | 'autonoma'
+export type Pessoa = 'ana' | 'bruno' | 'filha' | 'equipe' | 'autonoma' | 'nova'
 
 const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams()
 
 export const pessoaDoTeste: Pessoa =
-  (['ana', 'bruno', 'filha', 'equipe', 'autonoma'] as const).find(p => p === (q.get('como') || '').toLowerCase()) ||
-  'ana'
+  (['ana', 'bruno', 'filha', 'equipe', 'autonoma', 'nova'] as const).find(
+    p => p === (q.get('como') || '').toLowerCase(),
+  ) || 'ana'
 
 const dia = q.get('dia') || ''
 const hora = q.get('hora') || ''

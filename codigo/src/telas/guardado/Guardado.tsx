@@ -40,6 +40,7 @@ import {
   exemploVazio,
   marcoGuardado,
   pct,
+  rendeNoMesEstimado,
   rendeQuanto,
 } from '../../lib/guardado'
 
@@ -158,9 +159,17 @@ export function Guardado() {
   const temFolga = barras.some(b => !b.util)
   // G9: a reserva contada em meses do combinado de quem olha
   const meuEnv = resumo?.envelopes.find(e => e.id === familia.envelopeId && !e.casa)
-  const meuLim = meuEnv ? (meuEnv.limite_base ?? meuEnv.limite_mes) : 0
-  const seu = g.seu_total ?? g.total
+  // o casal conta o guardado da família contra o combinado da família inteira (pessoa, casa e feira); antes contava
+  // só o limite pessoal e dizia "83 meses" para quem gasta R$ 4.500 por mês (simulação de 22/11)
+  const daFamilia = familia.papel === 'casal'
+  const meuLim = daFamilia
+    ? (resumo?.envelopes || []).reduce((s, e) => s + (e.limite_base ?? e.limite_mes), 0)
+    : meuEnv
+      ? (meuEnv.limite_base ?? meuEnv.limite_mes)
+      : 0
+  const seu = daFamilia ? g.total : (g.seu_total ?? g.total)
   const meses = meuLim > 0 ? Math.floor(seu / meuLim) : 0
+  const rendeMes = rendeNoMesEstimado(g)
   // E2 (regra nova, 13/11): o casal vê tudo o que está guardado, com o nome de quem é; mexe só no seu e no do casal
   const doOutro = new Map<string, number>()
   for (const a of g.aplicacoes)
@@ -253,10 +262,17 @@ export function Guardado() {
             )}
           </p>
         )}
+        {rendeMes > 0 && !oculto && (
+          <p className="sub guard-rende-mes">
+            Com a taxa de hoje, rende perto de <b>{reais(rendeMes)} por mês</b>, já sem o imposto.
+          </p>
+        )}
         {meses > 0 && !oculto && (
           <p className="sub guard-meses">
-            O que está no seu nome cobre <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b> do seu combinado de{' '}
-            {reais(meuLim)}.
+            {daFamilia ? 'O guardado da família' : 'O que está no seu nome'} cobre{' '}
+            <b>{meses === 1 ? '1 mês' : `${meses} meses`}</b>{' '}
+            {daFamilia ? 'do combinado da família' : 'do seu combinado'} de {reais(meuLim)}
+            {daFamilia ? ' por mês' : ''}.
           </p>
         )}
         <button type="button" className="explica-l" onClick={abrirConta}>

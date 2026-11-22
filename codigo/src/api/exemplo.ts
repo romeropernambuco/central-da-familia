@@ -41,6 +41,7 @@ import {
   dadosTeste,
   familiaTeste,
   membrosTeste,
+  nomearFamiliaNova,
   restaurarNomesTeste,
   nomeFamiliaTeste,
   usarFamiliaTeste,
@@ -89,6 +90,12 @@ if (pessoaDoTeste === 'autonoma') {
   usarFamiliaTeste('souza')
   ex2.reiniciarExemplo2()
 }
+// ?como=nova abre a Marina sem família nenhuma: passa pelo primeiro uso e começa do zero (simulação de quem chega agora)
+if (pessoaDoTeste === 'nova') {
+  usarFamiliaTeste('lima')
+  ex2.reiniciarExemplo2()
+  reiniciarEtiquetasEx(true)
+}
 /** Convite de exemplo da equipe: o link do exemplo é #/equipe?c=<este id> e o código é 2468. */
 export { CONVITE_EXEMPLO }
 const espera = (ms = 60) => new Promise(r => setTimeout(r, ms))
@@ -102,220 +109,228 @@ function criarDados() {
   const t = dadosTeste(hoje)
   const envs: EnvBase[] = t.envs.map(e => ({ ...e }))
   const cartoes: Cartao[] =
-    familiaTeste() === 'souza'
+    familiaTeste() === 'lima'
+      ? []
+      : familiaTeste() === 'souza'
+        ? [
+            {
+              id: 'car-nu',
+              nome: 'Nubank',
+              dia_fechamento: 3,
+              dia_vencimento: 10,
+              banco: 'Nubank',
+              titular: 'Cláudia',
+              titular_id: 'm-claudia',
+              limite: 3000,
+              taxa_valor: 0,
+              taxa_periodo: 'mes',
+              taxa_mes: null,
+              taxa_isenta_acima: null,
+              final4: '7788',
+              ativo: true,
+            },
+          ]
+        : [
+            {
+              id: 'car-nu',
+              nome: 'Nubank',
+              dia_fechamento: 3,
+              dia_vencimento: 10,
+              banco: 'Nubank',
+              titular: 'Ana',
+              titular_id: 'm-ana',
+              limite: 8000,
+              taxa_valor: 480,
+              taxa_periodo: 'ano',
+              taxa_mes: (m % 12) + 1,
+              taxa_isenta_acima: null,
+              final4: '4321',
+              ativo: true,
+            },
+            {
+              id: 'car-itau',
+              nome: 'Itaú',
+              dia_fechamento: 25,
+              dia_vencimento: 5,
+              banco: 'Itaú',
+              titular: 'Bruno',
+              titular_id: 'm-bruno',
+              limite: 5000,
+              taxa_valor: 0,
+              taxa_periodo: 'mes',
+              taxa_mes: null,
+              taxa_isenta_acima: null,
+              final4: null,
+              ativo: true,
+            },
+          ]
+  const lanc: Lancamento[] = t.lanc as Lancamento[]
+
+  // a família nova (lima) entra em todo lugar onde a Souza começa vazia
+  const vazia = familiaTeste() === 'lima'
+  const souza = familiaTeste() === 'souza' || vazia
+  const config: Record<string, unknown> = vazia
+    ? { rendas: [], metas: [], entradas: [] }
+    : souza
+      ? {
+          casa_prestadores: [],
+          casa_gas: { trocas: [somaDias(hoje, -50), somaDias(hoje, -12)] },
+          casa_folha: { pessoas: [], daePaga: {} },
+          casa_lista: [
+            { id: 'i1', nome: 'Leite', ok: false },
+            { id: 'i2', nome: 'Pão', ok: true },
+          ],
+          casa_presenca: {},
+          rendas: t.rendas,
+          metas: [],
+          entradas: t.entradas,
+        }
+      : {
+          fontes_receita: {
+            rc1: { origem: 'empresa', rotulo: 'Consultoria (exemplo)', certeza: 'garantido', recorrencia: 'unica' },
+            rc2: { origem: 'negocio_novo', rotulo: 'Projeto novo (exemplo)', certeza: 'incerto', recorrencia: 'unica' },
+          },
+          entradas: t.entradas,
+          casa_prestadores: [
+            { id: 'p1', nome: 'Seu Zé', servico: 'Jardineiro', dia: 6, valor: 150, ultimaVez: somaDias(hoje, -12) },
+            {
+              id: 'p2',
+              nome: 'Marcos',
+              servico: 'Piscineiro',
+              dia: new Date(hoje + 'T12:00:00Z').getUTCDay(),
+              valor: 120,
+              ultimaVez: somaDias(hoje, -6),
+            },
+          ],
+          casa_gas: { trocas: [somaDias(hoje, -64), somaDias(hoje, -33), somaDias(hoje, -2)] },
+          casa_folha: {
+            pessoas: [
+              { id: 'f1', nome: 'Carla', funcao: 'Cozinha', salario: 1800, celular: '81900000001' },
+              { id: 'f2', nome: 'Davi Nogueira', funcao: 'Transporte', salario: 0, celular: '81900000002' },
+            ],
+            daePaga: {},
+          },
+          casa_lista: [
+            { id: 'i1', nome: 'Arroz 5 kg', ok: false },
+            { id: 'i2', nome: 'Feijão', ok: true },
+            { id: 'i3', nome: 'Ovos (2 dúzias)', ok: false },
+            { id: 'i4', nome: 'Banana', ok: false },
+            { id: 'i5', nome: 'Detergente', ok: true },
+          ],
+          casa_presenca: { [hoje]: ['Carla'] },
+          rendas: t.rendas,
+          metas: [
+            { id: 'm1', nome: 'Viagem de julho', valor: 6000, guardado: 1800 },
+            { id: 'm2', nome: 'Material escolar', valor: 1200, guardado: 900 },
+          ],
+          // Caderno do aluguel (exemplo, número inventado): a sala chegou em dia; o apartamento atrasou este mês
+          aluguel_caderno: {
+            im1: {
+              dia_vencimento: 5,
+              recebimentos: [0, 1, 2, 3, 4, 5].map(i => ({
+                mes: mesMais(hoje.slice(0, 7), -i),
+                data: mesMais(hoje.slice(0, 7), -i) + '-04',
+                valor: 3000,
+              })),
+              despesas: [{ id: 'dx1', data: somaDias(hoje, -40), valor: 1200, descricao: 'IPTU (exemplo)' }],
+            },
+            im2: {
+              dia_vencimento: 10,
+              recebimentos: [1, 2, 3].map(i => ({
+                mes: mesMais(hoje.slice(0, 7), -i),
+                data: mesMais(hoje.slice(0, 7), -i) + '-09',
+                valor: 4000,
+              })),
+              despesas: [
+                { id: 'dx2', data: somaDias(hoje, -15), valor: 650, descricao: 'Conserto do chuveiro (exemplo)' },
+              ],
+            },
+          },
+          // Dinheiro na rua (exemplo, número inventado): 1 negócio no prazo e 1 que já devolveu uma parte
+          dinheiro_na_rua: [
+            {
+              id: 'rua-carro',
+              nome: 'Carro para revender (exemplo)',
+              tipo: 'veiculo',
+              com_quem: 'Sócio',
+              minha_parte: 50,
+              combinado: 'Metade de cada um, lucro meio a meio',
+              prazo: somaDias(hoje, 70),
+              volta_prevista: 34000,
+              dono: 'm-ana',
+              movimentos: [
+                { id: 'rua-c1', data: somaDias(hoje, -20), tipo: 'pus', valor: 30000, nota: 'Primeiro dinheiro' },
+              ],
+              encerrado_em: null,
+              criado_em: somaDias(hoje, -20) + 'T12:00:00-03:00',
+            },
+            {
+              id: 'rua-baia',
+              nome: 'Baia de porcos (exemplo)',
+              tipo: 'criacao',
+              com_quem: 'Dono do terreno',
+              minha_parte: 50,
+              combinado: 'Ele entra com o terreno, eu com a baia',
+              prazo: somaDias(hoje, 10),
+              volta_prevista: 2600,
+              dono: 'm-ana',
+              movimentos: [
+                { id: 'rua-b1', data: somaDias(hoje, -90), tipo: 'pus', valor: 2000, nota: 'Construção da baia' },
+                { id: 'rua-b2', data: somaDias(hoje, -12), tipo: 'voltou', valor: 700, nota: 'Primeira venda' },
+              ],
+              encerrado_em: null,
+              criado_em: somaDias(hoje, -90) + 'T12:00:00-03:00',
+            },
+          ],
+        }
+  const ajustes: { mes: string; de: string; para: string; valor: number; id: string }[] = []
+  const convites: ConviteFamilia[] = vazia
+    ? []
+    : souza
       ? [
           {
-            id: 'car-nu',
-            nome: 'Nubank',
-            dia_fechamento: 3,
-            dia_vencimento: 10,
-            banco: 'Nubank',
-            titular: 'Cláudia',
-            titular_id: 'm-claudia',
-            limite: 3000,
-            taxa_valor: 0,
-            taxa_periodo: 'mes',
-            taxa_mes: null,
-            taxa_isenta_acima: null,
-            final4: '7788',
-            ativo: true,
+            id: 'cv1',
+            nome: 'Cláudia',
+            email: 'claudia@exemplo.com',
+            papel: 'casal',
+            situacao: 'entrou',
+            entrou_em: '2026-11-01',
           },
         ]
       : [
           {
-            id: 'car-nu',
-            nome: 'Nubank',
-            dia_fechamento: 3,
-            dia_vencimento: 10,
-            banco: 'Nubank',
-            titular: 'Ana',
-            titular_id: 'm-ana',
-            limite: 8000,
-            taxa_valor: 480,
-            taxa_periodo: 'ano',
-            taxa_mes: (m % 12) + 1,
-            taxa_isenta_acima: null,
-            final4: '4321',
-            ativo: true,
+            id: 'cv1',
+            nome: 'Bruno',
+            email: 'bruno@exemplo.com',
+            papel: 'casal',
+            situacao: 'entrou',
+            entrou_em: '2026-11-01',
           },
           {
-            id: 'car-itau',
-            nome: 'Itaú',
-            dia_fechamento: 25,
-            dia_vencimento: 5,
-            banco: 'Itaú',
-            titular: 'Bruno',
-            titular_id: 'm-bruno',
-            limite: 5000,
-            taxa_valor: 0,
-            taxa_periodo: 'mes',
-            taxa_mes: null,
-            taxa_isenta_acima: null,
-            final4: null,
-            ativo: true,
+            id: 'cv2',
+            nome: 'Ana',
+            email: 'ana@exemplo.com',
+            papel: 'casal',
+            situacao: 'entrou',
+            entrou_em: '2026-11-02',
+          },
+          {
+            id: 'cv3',
+            nome: 'Bia',
+            email: 'bia@exemplo.com',
+            papel: 'pessoa',
+            situacao: 'entrou',
+            entrou_em: '2026-11-03',
+          },
+          {
+            id: 'cv4',
+            nome: 'Vó Lúcia',
+            email: 'lucia@exemplo.com',
+            papel: 'pessoa',
+            situacao: 'esperando',
+            enviado_em: somaDias(hoje, -2),
           },
         ]
-  const lanc: Lancamento[] = t.lanc as Lancamento[]
-
-  const souza = familiaTeste() === 'souza'
-  const config: Record<string, unknown> = souza
-    ? {
-        casa_prestadores: [],
-        casa_gas: { trocas: [somaDias(hoje, -50), somaDias(hoje, -12)] },
-        casa_folha: { pessoas: [], daePaga: {} },
-        casa_lista: [
-          { id: 'i1', nome: 'Leite', ok: false },
-          { id: 'i2', nome: 'Pão', ok: true },
-        ],
-        casa_presenca: {},
-        rendas: t.rendas,
-        metas: [],
-        entradas: t.entradas,
-      }
-    : {
-        fontes_receita: {
-          rc1: { origem: 'empresa', rotulo: 'Consultoria (exemplo)', certeza: 'garantido', recorrencia: 'unica' },
-          rc2: { origem: 'negocio_novo', rotulo: 'Projeto novo (exemplo)', certeza: 'incerto', recorrencia: 'unica' },
-        },
-        entradas: t.entradas,
-        casa_prestadores: [
-          { id: 'p1', nome: 'Seu Zé', servico: 'Jardineiro', dia: 6, valor: 150, ultimaVez: somaDias(hoje, -12) },
-          {
-            id: 'p2',
-            nome: 'Marcos',
-            servico: 'Piscineiro',
-            dia: new Date(hoje + 'T12:00:00Z').getUTCDay(),
-            valor: 120,
-            ultimaVez: somaDias(hoje, -6),
-          },
-        ],
-        casa_gas: { trocas: [somaDias(hoje, -64), somaDias(hoje, -33), somaDias(hoje, -2)] },
-        casa_folha: {
-          pessoas: [
-            { id: 'f1', nome: 'Carla', funcao: 'Cozinha', salario: 1800, celular: '81900000001' },
-            { id: 'f2', nome: 'Davi Nogueira', funcao: 'Transporte', salario: 0, celular: '81900000002' },
-          ],
-          daePaga: {},
-        },
-        casa_lista: [
-          { id: 'i1', nome: 'Arroz 5 kg', ok: false },
-          { id: 'i2', nome: 'Feijão', ok: true },
-          { id: 'i3', nome: 'Ovos (2 dúzias)', ok: false },
-          { id: 'i4', nome: 'Banana', ok: false },
-          { id: 'i5', nome: 'Detergente', ok: true },
-        ],
-        casa_presenca: { [hoje]: ['Carla'] },
-        rendas: t.rendas,
-        metas: [
-          { id: 'm1', nome: 'Viagem de julho', valor: 6000, guardado: 1800 },
-          { id: 'm2', nome: 'Material escolar', valor: 1200, guardado: 900 },
-        ],
-        // Caderno do aluguel (exemplo, número inventado): a sala chegou em dia; o apartamento atrasou este mês
-        aluguel_caderno: {
-          im1: {
-            dia_vencimento: 5,
-            recebimentos: [0, 1, 2, 3, 4, 5].map(i => ({
-              mes: mesMais(hoje.slice(0, 7), -i),
-              data: mesMais(hoje.slice(0, 7), -i) + '-04',
-              valor: 3000,
-            })),
-            despesas: [{ id: 'dx1', data: somaDias(hoje, -40), valor: 1200, descricao: 'IPTU (exemplo)' }],
-          },
-          im2: {
-            dia_vencimento: 10,
-            recebimentos: [1, 2, 3].map(i => ({
-              mes: mesMais(hoje.slice(0, 7), -i),
-              data: mesMais(hoje.slice(0, 7), -i) + '-09',
-              valor: 4000,
-            })),
-            despesas: [
-              { id: 'dx2', data: somaDias(hoje, -15), valor: 650, descricao: 'Conserto do chuveiro (exemplo)' },
-            ],
-          },
-        },
-        // Dinheiro na rua (exemplo, número inventado): 1 negócio no prazo e 1 que já devolveu uma parte
-        dinheiro_na_rua: [
-          {
-            id: 'rua-carro',
-            nome: 'Carro para revender (exemplo)',
-            tipo: 'veiculo',
-            com_quem: 'Sócio',
-            minha_parte: 50,
-            combinado: 'Metade de cada um, lucro meio a meio',
-            prazo: somaDias(hoje, 70),
-            volta_prevista: 34000,
-            dono: 'm-ana',
-            movimentos: [
-              { id: 'rua-c1', data: somaDias(hoje, -20), tipo: 'pus', valor: 30000, nota: 'Primeiro dinheiro' },
-            ],
-            encerrado_em: null,
-            criado_em: somaDias(hoje, -20) + 'T12:00:00-03:00',
-          },
-          {
-            id: 'rua-baia',
-            nome: 'Baia de porcos (exemplo)',
-            tipo: 'criacao',
-            com_quem: 'Dono do terreno',
-            minha_parte: 50,
-            combinado: 'Ele entra com o terreno, eu com a baia',
-            prazo: somaDias(hoje, 10),
-            volta_prevista: 2600,
-            dono: 'm-ana',
-            movimentos: [
-              { id: 'rua-b1', data: somaDias(hoje, -90), tipo: 'pus', valor: 2000, nota: 'Construção da baia' },
-              { id: 'rua-b2', data: somaDias(hoje, -12), tipo: 'voltou', valor: 700, nota: 'Primeira venda' },
-            ],
-            encerrado_em: null,
-            criado_em: somaDias(hoje, -90) + 'T12:00:00-03:00',
-          },
-        ],
-      }
-  const ajustes: { mes: string; de: string; para: string; valor: number; id: string }[] = []
-  const convites: ConviteFamilia[] = souza
-    ? [
-        {
-          id: 'cv1',
-          nome: 'Cláudia',
-          email: 'claudia@exemplo.com',
-          papel: 'casal',
-          situacao: 'entrou',
-          entrou_em: '2026-11-01',
-        },
-      ]
-    : [
-        {
-          id: 'cv1',
-          nome: 'Bruno',
-          email: 'bruno@exemplo.com',
-          papel: 'casal',
-          situacao: 'entrou',
-          entrou_em: '2026-11-01',
-        },
-        {
-          id: 'cv2',
-          nome: 'Ana',
-          email: 'ana@exemplo.com',
-          papel: 'casal',
-          situacao: 'entrou',
-          entrou_em: '2026-11-02',
-        },
-        {
-          id: 'cv3',
-          nome: 'Bia',
-          email: 'bia@exemplo.com',
-          papel: 'pessoa',
-          situacao: 'entrou',
-          entrou_em: '2026-11-03',
-        },
-        {
-          id: 'cv4',
-          nome: 'Vó Lúcia',
-          email: 'lucia@exemplo.com',
-          papel: 'pessoa',
-          situacao: 'esperando',
-          enviado_em: somaDias(hoje, -2),
-        },
-      ]
   // compras anotadas pela equipe sem valor (o casal confere pela foto) e coberturas de imprevisto (só no exemplo)
   const comprasEquipe: {
     id: string
@@ -608,9 +623,15 @@ function situacaoReajusteEx(mes: string) {
   }
   return { ...s, voto_aberto }
 }
-type Logado = 'ana' | 'bruno' | 'filha' | 'carla' | 'claudia'
+type Logado = 'ana' | 'bruno' | 'filha' | 'carla' | 'claudia' | 'marina'
 const logadoInicial = (): Logado =>
-  pessoaDoTeste === 'equipe' ? 'carla' : pessoaDoTeste === 'autonoma' ? 'claudia' : pessoaDoTeste
+  pessoaDoTeste === 'equipe'
+    ? 'carla'
+    : pessoaDoTeste === 'autonoma'
+      ? 'claudia'
+      : pessoaDoTeste === 'nova'
+        ? 'marina'
+        : pessoaDoTeste
 let logado: Logado | null = logadoInicial()
 /** Quem está logado no exemplo, com papel e limite próprio. */
 const membroLogado = () => {
@@ -619,7 +640,15 @@ const membroLogado = () => {
     ms.find(
       x =>
         x.id ===
-        (logado === 'bruno' ? 'm-bruno' : logado === 'filha' ? 'm-bia' : logado === 'claudia' ? 'm-claudia' : 'm-ana'),
+        (logado === 'bruno'
+          ? 'm-bruno'
+          : logado === 'filha'
+            ? 'm-bia'
+            : logado === 'claudia'
+              ? 'm-claudia'
+              : logado === 'marina'
+                ? 'm-marina'
+                : 'm-ana'),
     ) || ms[0]
   )
 }
@@ -1092,6 +1121,25 @@ export const apiExemplo: Api = {
         ],
       }
     const eu = membroLogado()
+    // família nova: sem família até passar pelo primeiro uso (como no banco real)
+    if (familiaTeste() === 'lima')
+      return {
+        userId: 'u-' + eu.id,
+        email: eu.email,
+        dono: false,
+        familias: familiaNova
+          ? [
+              {
+                id: FAM,
+                nome: familiaNova.nome,
+                papel: 'casal',
+                membroNome: familiaNova.pessoa,
+                envelopeId: eu.envelope,
+                membroId: eu.id,
+              },
+            ]
+          : [],
+      }
     const fams = [
       {
         id: FAM,
@@ -1138,6 +1186,12 @@ export const apiExemplo: Api = {
   async criarFamilia(nome, nomePessoa) {
     await espera()
     familiaNova = { id: FAM, nome, pessoa: nomePessoa }
+    if (familiaTeste() === 'lima') {
+      // igual ao banco: a pessoa vira membro do casal e fica com o limite "Pessoa 1"
+      nomearFamiliaNova(nome)
+      membrosTeste()[0].nome = nomePessoa
+      return FAM
+    }
     db.envs[0].nome = nomePessoa
     return FAM
   },

@@ -39,7 +39,7 @@ import {
   segundaDaSemana,
   somaDias,
 } from '../lib/formato'
-import { dadosTeste } from './dadosTeste'
+import { dadosTeste, familiaTeste } from './dadosTeste'
 import type { ConfigEx, EntradaEx } from './exemploConfig'
 import {
   CDI_DIA_PADRAO,
@@ -124,6 +124,23 @@ function criar(): Estado {
     ['Sabão em pó', 'Limpeza'],
     ['Detergente', 'Limpeza'],
   ].map(([nome, categoria], i) => ({ id: 'it' + (i + 1), nome, categoria, ativo: true }))
+  // família nova (?como=nova): sem lembrete, diário, feira nem contagem; só o catálogo de itens
+  if (familiaTeste() === 'lima')
+    return {
+      n: 0,
+      chaves: new Set(),
+      desde: {},
+      semFeira: {},
+      pedidoEquipe: {},
+      decididos: {},
+      apps: [],
+      lembretes: [],
+      diario: [],
+      fatBanco: [],
+      feiras: [],
+      itens,
+      contagens: [],
+    }
   return {
     n: 0,
     chaves: new Set(),

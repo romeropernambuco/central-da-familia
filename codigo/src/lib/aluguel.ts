@@ -56,13 +56,20 @@ export type SituacaoAluguel =
   | { tipo: 'atrasado'; dias: number; vence: string }
   | { tipo: 'a_vencer'; dias: number; vence: string }
   | { tipo: 'antes'; vence: string }
+  | { tipo: 'confirmar'; vence: string }
 
-/** O aluguel de um mês: chegou, está atrasado (passou do dia combinado), ainda vai vencer ou é de antes do caderno. */
+/** O caderno nunca foi aberto: sem mês de começo e sem nenhum aluguel anotado (o dia do vencimento ainda é o padrão). */
+export const cadernoNovo = (c: CadernoImovel) => !c.desde && c.recebimentos.length === 0
+
+/** O aluguel de um mês: chegou, está atrasado (passou do dia combinado), ainda vai vencer ou é de antes do caderno.
+ *  Imóvel recém-cadastrado, com o caderno nunca aberto: o mês de hoje fica "a confirmar", nunca "atrasado" (o dia de
+ *  vencimento ainda não foi dito pela família; a simulação de 22/11 acusava "atrasado há 12 dias" 1 minuto depois). */
 export function situacaoDoMes(c: CadernoImovel, mes: string, hoje: string): SituacaoAluguel {
   const r = c.recebimentos.find(x => x.mes === mes)
   if (r) return { tipo: 'recebido', data: r.data, valor: r.valor }
   const vence = vencimento(mes, c.dia_vencimento)
   if (mes < inicioDoCaderno(c, hoje.slice(0, 7))) return { tipo: 'antes', vence }
+  if (cadernoNovo(c) && mes === hoje.slice(0, 7)) return { tipo: 'confirmar', vence }
   const dias = Math.round(dia(hoje) - dia(vence))
   return dias > 0 ? { tipo: 'atrasado', dias, vence } : { tipo: 'a_vencer', dias: -dias, vence }
 }
@@ -73,6 +80,7 @@ export function fraseDaSituacao(s: SituacaoAluguel) {
   if (s.tipo === 'recebido') return `chegou em ${dm(s.data)}`
   if (s.tipo === 'atrasado') return `atrasado há ${s.dias === 1 ? '1 dia' : `${s.dias} dias`}`
   if (s.tipo === 'antes') return 'antes do caderno'
+  if (s.tipo === 'confirmar') return 'já chegou? marque no caderno'
   return s.dias === 0 ? 'vence hoje' : `vence dia ${dm(s.vence)}`
 }
 
@@ -95,7 +103,7 @@ export function contaDoAno(c: CadernoImovel, valorImovel: number, hoje: string):
   const meses = Array.from({ length: 12 }, (_, i) => mesMais(de, i))
   const vencidos = meses.filter(m => {
     const s = situacaoDoMes(c, m, hoje).tipo
-    return s !== 'antes' && (m < mesHoje || s !== 'a_vencer')
+    return s !== 'antes' && s !== 'confirmar' && (m < mesHoje || s !== 'a_vencer')
   })
   const recebidos = c.recebimentos.filter(r => r.mes >= de && r.mes <= mesHoje)
   const despesas = c.despesas.filter(d => d.data.slice(0, 7) >= de && d.data <= hoje)
@@ -137,6 +145,16 @@ export function resumoDoMes(imoveis: { id: string; aluguel: number }[], caderno:
     }
   }
   return r
+}
+
+/** Os aluguéis que chegaram no mês (pela data em que chegaram, até hoje): entram no "Entrou" do mês, no Início e em
+ *  Gastos. Antes ficavam só no caderno (simulação de 22/11: aluguel marcado e o mês dizia "entrou R$ 0"). */
+export function entradasDoAluguel(caderno: Caderno, mes: string, hoje: string): { data: string; valor: number }[] {
+  return Object.values(caderno).flatMap(c =>
+    c.recebimentos
+      .filter(r => r.data.slice(0, 7) === mes && r.data.slice(0, 10) <= hoje)
+      .map(r => ({ data: r.data, valor: r.valor })),
+  )
 }
 
 /** A configuração que veio do banco pode estar velha ou estragada: só passa o que tem formato de caderno. */

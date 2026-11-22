@@ -35,6 +35,8 @@ export interface SnapshotInsights {
   contratos?: readonly { id: string; nome: string; motivo: string; mes: string | null }[]
   /** Dinheiro na rua ainda aberto e com valor fora: prazo AAAA-MM-DD e o que falta voltar, em centavos. */
   negocios?: readonly { id: string; nome: string; prazo: string; naRua: number }[]
+  /** Aluguel do mês que passou do dia combinado sem chegar (caderno do aluguel): mês AAAA-MM e dias de atraso. */
+  alugueis?: readonly { id: string; nome: string; mes: string; dias: number }[]
   objetivo?: {
     mes: string
     projetado: number | null
@@ -54,6 +56,7 @@ export type TipoInsight =
   | 'objetivo'
   | 'contrato_imovel'
   | 'negocio_prazo'
+  | 'aluguel_atrasado'
 export type AcaoInsight =
   | { tipo: 'informar_pagamento'; cartaoId: string; mes: string }
   | {

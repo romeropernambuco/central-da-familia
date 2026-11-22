@@ -70,6 +70,8 @@ async function montar(el: ReactElement, api: Partial<Api> = {}, extra: Partial<C
       membros: async () => [],
       config: async (_f: string, _k: string, p: unknown) => p,
       escritorioHoje: async () => ({ funcionarios: [], entregue: [], trabalhando: [], precisa_de_voce: [] }),
+      // o resumo do mês também lê o caderno do aluguel (o que chegou entra no "Entrou"): aqui, sem aluguel
+      aluguelCaderno: async () => ({}),
       ...api,
     },
     familia: { id: 'a', papel: 'casal', nome: 'Teste' },

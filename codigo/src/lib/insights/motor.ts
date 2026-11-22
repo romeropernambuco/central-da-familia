@@ -21,6 +21,7 @@ const ordem: TipoInsight[] = [
   'parcelas',
   'aplicacao',
   'negocio_prazo',
+  'aluguel_atrasado',
   'fatura_divergente',
   'reserva',
   'recebimento',
@@ -231,6 +232,23 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
           [n.nome],
           n.prazo,
         )
+    }
+    // Aluguel que passou do dia combinado (caderno do aluguel): o Ajudante dos Imóveis pergunta 1 vez por mês e imóvel
+    for (const a of lista(s.alugueis)) {
+      if (!a || !id(a.id) || typeof a.nome !== 'string' || !mesValido(a.mes) || !inteiro(a.dias) || a.dias < 1) continue
+      add(
+        'aluguel_atrasado',
+        'guardado',
+        'imoveis',
+        ['aluguel_atrasado', a.id, a.mes],
+        'Um aluguel passou do dia combinado e ainda não chegou. Ele já entrou?',
+        { tipo: 'atalho', destino: '#/guardado' },
+        [op('abrir', 'Abrir o caderno do aluguel')],
+        `Imóvel: ${a.nome}. Atrasado há ${a.dias === 1 ? '1 dia' : `${a.dias} dias`}.`,
+        [a.nome],
+        undefined,
+        1,
+      )
     }
     for (const c of lista(s.contratos)) {
       if (

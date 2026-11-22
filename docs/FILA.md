@@ -18,6 +18,11 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 3. **Meta com ano escolhido pela família** e primeiro uso que pergunta a renda antes dos limites (livre; o dono segue em 2029).
 4. **Colar extrato sem internet**: acompanhar a recusa do banco como o Anotar já faz (livre).
 5. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
+6. **Salário que caiu na conta vira "entrou"** no Início (hoje só o aluguel e os recebimentos com data entram).
+   Saiu da simulação da Marina (`docs/SIMULACAO-MARINA.md`).
+7. **Aluguel contado 2 vezes**: travar a receita de origem "Aluguel" quando o imóvel já tem aluguel cadastrado.
+8. **Ajudante dos Imóveis na sala do Escritório**: hoje o aviso de aluguel atrasado aparece no cartão da aba Guardado;
+   o estado dele na sala vem da função do banco que monta o Escritório e ainda diz "ainda sem dado".
 
 ## 2. Em seguida
 
@@ -43,9 +48,8 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 ## 4. Do dono (não é programação)
 
-1. Ligar o botão "apagar a família" (função `apagar_familia`, do pacote `revisao/sql/RODAR_NO_SUPABASE.sql`, bloco 2).
-3. Decidir a regra das parcelas futuras em 2029.
-4. Decidir se apaga `src/propostas/motor/` e `app/mascara.ts`.
+1. Decidir a regra das parcelas futuras em 2029.
+2. Decidir se apaga `app/mascara.ts` (o motor 3D de `src/propostas/motor/` fica: todo 3D do painel é importante).
 
 ## Perguntas para o dono
 
@@ -53,8 +57,12 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 - 22/11/2026: tornar o repositório privado (item 1 de "Agora"): só o dono consegue.
 - 22/11/2026: ligar os avisos no próprio celular (Privacidade → Avisos no celular) para conferir a 1ª entrega às 19h.
+- 22/11/2026 (simulação da Marina): a conta de 2029 supõe que o salário para hoje. Para quem ganha R$ 5.000 e gasta
+  R$ 4.500, diz que o dinheiro acaba em 09/2028. O salário deve contar como entrada até o ano da meta?
+- 22/11/2026 (simulação da Marina): família que não escolheu meta vê "Plano 2029" com a meta de exemplo. Para vender,
+  o card de 2029 deve esperar a família escolher o ano e o objetivo (item 3 de "Agora")?
+- O repositório fica público até a família começar a usar de verdade (decisão do dono, 22/11/2026).
 
-- 22/11/2026: aplicar a correção das etiquetas na cópia de segurança (item 1 de "Do dono").
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
 ## Feito
@@ -79,3 +87,7 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 - 22/11/2026: avisos no celular: função do servidor avisos-celular, todo dia às 19h, sem valor e sem nome; cifra
   conferida com o exemplo oficial da RFC 8291. Atalhos no ícone do app (Anotar, Gastos, Guardado).
 - 22/11/2026: protótipos sem 3D (A a I e K) apagados; J, L, M e o motor 3D ficam (marcação arquivo-propostas-2026-11-22).
+- 22/11/2026: simulação de uma pessoa do zero (`?como=nova`, `docs/SIMULACAO-MARINA.md`) e 9 consertos: nome da
+  pessoa no limite, mesmo "hoje" no primeiro uso e no Início, sem "Desfazer" no cadastro, imóvel novo "a confirmar",
+  aluguel que chegou entra no mês, Ajudante dos Imóveis avisa atraso, Guardado diz quanto rende por mês e conta os
+  meses pelo combinado da família, atalho do ícone abre o Anotar limpo.
