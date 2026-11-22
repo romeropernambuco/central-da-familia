@@ -87,8 +87,8 @@ function mudancas(a: ParametrosObjetivo | null, d: ParametrosObjetivo): string {
               ? `${x} meses`
               : `${textoDaTaxa(String(x))}%`
   for (const k of Object.keys(ROTULO)) {
-    const x = (a as any)[k],
-      y = (d as any)[k]
+    const x = (a as unknown as Record<string, Record<string, unknown> | undefined>)[k],
+      y = (d as unknown as Record<string, Record<string, unknown> | undefined>)[k]
     if (k === 'taxa_bruta_ano' || k === 'ipca_ano') {
       for (const ano of new Set([...Object.keys(x || {}), ...Object.keys(y || {})]))
         if (x?.[ano] !== y?.[ano]) out.push(`${ROTULO[k]} de ${ano} ${v(k, x?.[ano])} para ${v(k, y?.[ano])}`)

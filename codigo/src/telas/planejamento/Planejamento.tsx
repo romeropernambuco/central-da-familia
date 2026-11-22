@@ -51,9 +51,10 @@ interface Meta {
 }
 const novoId = () => novoUuid().slice(0, 8)
 /** config_familia guarda lista (app novo) ou objeto por id (importado do app antigo: {r1:{fonte, valor}}). */
-function lista(v: unknown): any[] {
-  if (Array.isArray(v)) return v
-  if (v && typeof v === 'object') return Object.entries(v as Record<string, any>).map(([id, x]) => ({ id, ...x }))
+function lista(v: unknown): Record<string, unknown>[] {
+  if (Array.isArray(v)) return v as Record<string, unknown>[]
+  if (v && typeof v === 'object')
+    return Object.entries(v as Record<string, Record<string, unknown>>).map(([id, x]) => ({ id, ...x }))
   return []
 }
 
@@ -71,7 +72,7 @@ export function Planejamento() {
   const [rendasCfg, salvarRendas, , rendasLidas] = useConfig<unknown>('rendas', [])
   const [metasCfg, salvarMetas, , metasLidas] = useConfig<unknown>('metas', [])
   const todasRendas: Renda[] = lista(rendasCfg).map(x => ({
-    id: x.id,
+    id: x.id as string,
     nome: String(x.nome ?? x.fonte ?? 'Renda'),
     valor: Number(x.valor) || 0,
     tipo: x.tipo === 'extra' ? 'extra' : x.tipo === 'variavel' ? 'variavel' : 'salario',
@@ -90,7 +91,7 @@ export function Planejamento() {
   } | null>(null)
   const [entradas] = useConfig<{ data: string; valor: number; destino: string }[]>('entradas', [])
   const metas: Meta[] = lista(metasCfg).map(x => ({
-    id: x.id,
+    id: x.id as string,
     nome: String(x.nome ?? 'Meta'),
     valor: Number(x.valor) || 0,
     guardado: Number(x.guardado) || 0,

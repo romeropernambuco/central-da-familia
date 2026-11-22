@@ -335,7 +335,7 @@ export function Lancar() {
         await recarregar().catch(() => {})
         return
       }
-      ;(window as any).__ultimoTempoLancar = s
+      ;(window as unknown as { __ultimoTempoLancar?: number }).__ultimoTempoLancar = s
       fecharLancar()
       await recarregar()
       toast(

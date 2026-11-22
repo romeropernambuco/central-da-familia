@@ -26,13 +26,13 @@ if (/^\d{4}-\d{2}-\d{2}$/.test(dia) && typeof globalThis.Date === 'function') {
   const alvo = Real.parse(`${dia}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00-03:00`)
   const desvio = alvo - agora.getTime()
   class Relogio extends Real {
-    constructor(...a: any[]) {
+    constructor(...a: unknown[]) {
       if (a.length === 0) super(Real.now() + desvio)
-      else super(...(a as [any]))
+      else super(...(a as [number]))
     }
     static now() {
       return Real.now() + desvio
     }
   }
-  ;(globalThis as any).Date = Relogio
+  globalThis.Date = Relogio as unknown as DateConstructor
 }

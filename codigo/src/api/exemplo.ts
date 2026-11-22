@@ -26,6 +26,7 @@ import { validarNome, podeEditarNome } from '../lib/nomePessoa'
 import * as ex2 from './exemplo2'
 import { entradaDoBanco, imovelInvalido, type FuturoBanco } from '../lib/futuroReceitas'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
+import type { CadastroNome, ConfigEx, EntradaEx } from './exemploConfig'
 import { novoUuid } from '../lib/seguro'
 import {
   dadosTeste,
@@ -852,7 +853,7 @@ const DIAS_SEM = 7
 /** Imita produto.casa_da_equipe: copia só os campos sem dinheiro (sem valor, salário ou preço). */
 function casaSemDinheiro(): CasaDaEquipe {
   const hoje = hojeRecife()
-  const cfg = db.config as Record<string, any>
+  const cfg = db.config as ConfigEx
   const casaIds = new Set(db.envs.filter(e => e.casa).map(e => e.id))
   const dow = new Date(hoje + 'T12:00:00').getDay()
   const g = previsaoGas(cfg.casa_gas?.trocas || [])
@@ -860,7 +861,7 @@ function casaSemDinheiro(): CasaDaEquipe {
   return {
     hoje,
     eu,
-    lista: (cfg.casa_lista || []).map((i: any) => ({ id: i.id, nome: i.nome, ok: !!i.ok })),
+    lista: (cfg.casa_lista || []).map(i => ({ id: i.id, nome: i.nome, ok: !!i.ok })),
     // compra sem nome vira "Feira semanal de quarta 18/11" (nome do limite + dia), e entram as compras que a equipe anotou sem valor
     comprado: [
       ...db.comprasEquipe
@@ -878,7 +879,7 @@ function casaSemDinheiro(): CasaDaEquipe {
     ]
       .sort((a, b) => b.k.localeCompare(a.k))
       .map(({ data, nome }) => ({ data, nome })),
-    prestadores: (cfg.casa_prestadores || []).map((p: any) => ({
+    prestadores: (cfg.casa_prestadores || []).map(p => ({
       id: p.id,
       nome: p.nome,
       servico: p.servico,
@@ -930,14 +931,14 @@ const mundo: ex2.Mundo = {
   cartoes: () => cartoesMeus(),
   todosCartoes: () => db.cartoes,
   entradasNaConta: () =>
-    ((db.config.entradas as any[]) || []).filter(
+    ((db.config.entradas as EntradaEx[]) || []).filter(
       x => x.destino === 'na conta' && (!x.dono || x.dono === membroLogado().nome),
     ),
   guardarEntrada: (id: string) => {
-    const x = ((db.config.entradas as any[]) || []).find(y => y.id === id)
+    const x = ((db.config.entradas as EntradaEx[]) || []).find(y => y.id === id)
     if (x) x.destino = 'reserva'
   },
-  config: () => db.config as Record<string, any>,
+  config: () => db.config as ConfigEx,
   // o último dia anotado de quem olha: gasto nos limites que ele vê ou "não gastei" marcado (R9)
   // E2: só o que ele escreve (o seu e a Casa): o gasto do outro, que ele agora lê, não conta como "anotou hoje"
   ultimoGasto: () =>
@@ -1272,7 +1273,7 @@ export const apiExemplo: Api = {
     await espera(40)
     const hoje = hojeRecife()
     const eu = logado === 'carla' ? assessorNome : membroLogado().nome
-    const cfg = db.config as Record<string, any>
+    const cfg = db.config as ConfigEx
     if (tipo === 'comprei' || tipo === 'acabou') {
       const lista: { id: string; nome: string; ok: boolean }[] = cfg.casa_lista || []
       const nome = (dados.nome || '').trim()
@@ -1282,7 +1283,7 @@ export const apiExemplo: Api = {
       else throw new Error('Esse item não está mais na lista.')
       cfg.casa_lista = lista
     } else if (tipo === 'prestador_veio') {
-      const p = (cfg.casa_prestadores || []).find((x: any) => x.id === dados.id)
+      const p = (cfg.casa_prestadores || []).find(x => x.id === dados.id)
       if (!p) throw new Error('Esse serviço não está mais cadastrado.')
       p.ultimaVez = hoje
     } else if (tipo === 'troquei_gas') {
@@ -1357,7 +1358,7 @@ export const apiExemplo: Api = {
         if (m.tipo === 'aporte' && m.nota && m.data.startsWith(mes))
           itens.push({ de: m.nota, valor: m.valor, destino: 'reserva' })
     // o que já foi guardado aparece pelo movimento da aplicação (não conta 2 vezes)
-    for (const x of (db.config.entradas as any[]) || [])
+    for (const x of (db.config.entradas as EntradaEx[]) || [])
       if (x.destino !== 'reserva' && x.data?.startsWith(mes) && (familia || !x.dono || x.dono === eu.nome))
         itens.push({ de: x.de, valor: x.valor, destino: x.destino === 'reserva' ? 'reserva' : x.destino })
     const entrou = centavos(itens.filter(i => i.destino !== 'renda').reduce((t, i) => t + i.valor, 0))
@@ -1507,9 +1508,10 @@ export const apiExemplo: Api = {
       h.quem = n
     } else {
       const chave = p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas'
-      const cfg = db.config[chave] as any
-      const lista = p.tipo === 'assessor' ? cfg?.pessoas : cfg
-      const r = lista?.find((x: any) => x.id === p.id)
+      const cfg = db.config[chave]
+      const lista = (p.tipo === 'assessor' ? (cfg as { pessoas?: CadastroNome[] } | undefined)?.pessoas : cfg) as
+        CadastroNome[] | undefined
+      const r = lista?.find(x => x.id === p.id)
       if (!r) throw new Error('Cadastro não encontrado.')
       anterior = p.tipo === 'renda' ? r.dono : r.nome
       if (p.tipo === 'renda') r.dono = n
@@ -1808,7 +1810,7 @@ export const apiExemplo: Api = {
         })),
       limites_mes: db.envs.map(e => ({ envelope_id: e.id, limite_centavos: Math.round(limiteNoMes(e, m0) * 100) })),
       config: {
-        casa_folha: db.config.casa_folha as any,
+        casa_folha: (db.config as ConfigEx).casa_folha,
         fontes_receita: db.config.fontes_receita,
         receitas_controle: db.config.receitas_controle,
       },
@@ -2021,7 +2023,7 @@ export const apiExemplo: Api = {
         receitas: db.recebimentos,
         desejos: db.desejos,
         pessoas: membrosTeste(),
-        assessores: (db.config.casa_folha as any)?.pessoas || [],
+        assessores: (db.config as ConfigEx).casa_folha?.pessoas || [],
         parametros: db.objetivo,
         config: db.config,
         estado: db,
@@ -2048,7 +2050,7 @@ export const apiExemplo: Api = {
     )
       throw new Error('Cópia de exemplo incompleta ou de outra família.')
     for (const k of Object.keys(db))
-      if (!(k in d.estado) || typeof d.estado[k] !== typeof (db as any)[k])
+      if (!(k in d.estado) || typeof d.estado[k] !== typeof (db as unknown as Record<string, unknown>)[k])
         throw new Error('Estado de exemplo inválido.')
     for (const [k, campo] of [
       ['lancamentos', 'lanc'],
@@ -2063,11 +2065,13 @@ export const apiExemplo: Api = {
     if (JSON.stringify(d.aplicacoes) !== JSON.stringify(d.estado2.apps)) throw new Error('Aplicações inconsistentes.')
     if (
       !Array.isArray(d.pessoas) ||
-      !d.pessoas.every((p: any) => p && typeof p.id === 'string' && typeof p.nome === 'string') ||
+      !d.pessoas.every(
+        (p: { id?: unknown; nome?: unknown } | null) => p && typeof p.id === 'string' && typeof p.nome === 'string',
+      ) ||
       !Array.isArray(d.nomesAvulsos) ||
       !Array.isArray(d.convitesAssessores) ||
       !d.convitesAssessores.every(
-        (p: any) => Array.isArray(p) && p.length === 2 && p.every((x: any) => typeof x === 'string'),
+        (p: unknown) => Array.isArray(p) && p.length === 2 && (p as unknown[]).every(x => typeof x === 'string'),
       ) ||
       typeof d.assessorNome !== 'string'
     )
@@ -2089,7 +2093,7 @@ export const apiExemplo: Api = {
         db.lanc.find(x => x.id === l.id)!,
       )
     for (const m of membrosTeste()) {
-      const salvo = d.pessoas.find((p: any) => p.id === m.id)
+      const salvo = d.pessoas.find((p: { id: string; nome: string }) => p.id === m.id)
       if (salvo) m.nome = salvo.nome
     }
     nomesAvulsos.splice(0, nomesAvulsos.length, ...d.nomesAvulsos)

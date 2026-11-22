@@ -165,7 +165,7 @@ export function Cena3D({
               setLeve(a => (degrau > 0 ? (a && a.degrau === degrau ? a : { fps, degrau }) : null)),
           })
           cena.current = c
-          ;(window as any).__escritorio = c.medir
+          ;(window as unknown as { __escritorio?: unknown }).__escritorio = c.medir
           setModo('3d')
         } catch (e) {
           console.warn('Cena 3D não abriu:', e)
@@ -189,7 +189,7 @@ export function Cena3D({
       obs.disconnect()
       cena.current?.destruir()
       cena.current = null
-      delete (window as any).__escritorio
+      delete (window as unknown as { __escritorio?: unknown }).__escritorio
     }
   }, [ids])
 

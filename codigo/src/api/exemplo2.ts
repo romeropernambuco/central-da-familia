@@ -40,6 +40,7 @@ import {
   somaDias,
 } from '../lib/formato'
 import { dadosTeste } from './dadosTeste'
+import type { ConfigEx, EntradaEx } from './exemploConfig'
 import {
   CDI_DIA_PADRAO,
   calcularGuardado,
@@ -57,7 +58,7 @@ export interface Mundo {
   resumo(): ResumoHoje
   faturas(): Fatura[]
   cartoes(): Cartao[]
-  config(): Record<string, any>
+  config(): ConfigEx
   /** data do último gasto anotado (AAAA-MM-DD) ou null */
   ultimoGasto(): string | null
   /** id do membro logado (null = equipe) */
@@ -72,7 +73,7 @@ export interface Mundo {
   /** todos os cartões da família (cadastro); `cartoes()` é só o de quem olha */
   todosCartoes?(): Cartao[]
   /** E4: dinheiro que entrou a mais e ainda está na conta */
-  entradasNaConta?(): { id: string; data: string; valor: number; de: string }[]
+  entradasNaConta?(): EntradaEx[]
   guardarEntrada?(id: string): void
 }
 
@@ -243,19 +244,18 @@ export function reiniciarExemplo2() {
 /** R3: o que está no nome de `eu` e o do casal. E2 (regra nova, 13/11): com `lerTudo` (a tela do casal), todas, com o nome do titular.
  * Sem `eu` (contas internas), vê tudo. */
 export function guardadoHojeEx(eu?: string | null, lerTudo = false): GuardadoHoje {
-  const meus =
-    eu === undefined || lerTudo ? e.apps : e.apps.filter(a => !(a as any).titular || (a as any).titular === eu)
+  const meus = eu === undefined || lerTudo ? e.apps : e.apps.filter(a => !a.titular || a.titular === eu)
   const g = calcularGuardado(meus, hojeRecife(), CDI)
   const nome = (id: string | null | undefined) => membrosTeste().find(m => m.id === id)?.nome ?? null
   for (const ap of g.aplicacoes) {
-    const t = (meus.find(a => a.id === ap.id) as any)?.titular ?? null
+    const t = meus.find(a => a.id === ap.id)?.titular ?? null
     ap.titular = t
     ap.titular_nome = nome(t)
   }
   g.seu_total = centavos(g.aplicacoes.filter(a => a.titular && a.titular === eu).reduce((s, a) => s + a.saldo, 0))
   if (eu)
     g.saldo_30_seu = calcularGuardado(
-      e.apps.filter(a => (a as any).titular === eu),
+      e.apps.filter(a => a.titular === eu),
       hojeRecife(),
       CDI,
     ).saldo_30
@@ -264,7 +264,7 @@ export function guardadoHojeEx(eu?: string | null, lerTudo = false): GuardadoHoj
 }
 /** De quem é a aplicação (id do membro); null = do casal. */
 export function titularDaAplicacaoEx(id: string): string | null {
-  return ((e.apps.find(x => x.id === id) as any)?.titular as string | null) ?? null
+  return e.apps.find(x => x.id === id)?.titular ?? null
 }
 export function guardadoCriarEx(a: NovaAplicacao) {
   if (!a.nome.trim()) throw new Error('Falta dizer onde o dinheiro está guardado.')
@@ -299,16 +299,16 @@ export function guardadoMovimentarEx(
     if (valor > saldo + 0.005) throw new Error(`Só tem ${reais(saldo)} guardados aí. Tire um valor até esse.`)
   }
   e.chaves.add(chave)
-  a.movimentos.push({ data, tipo, valor: centavos(valor), chave, ...(nota ? { nota } : {}) } as any)
+  a.movimentos.push({ data, tipo, valor: centavos(valor), chave, ...(nota ? { nota } : {}) })
 }
 /** Movimentos de 1 aplicação (pra a regra do salário: o que entrou a mais e foi guardado). */
 export function movimentosEx(aplicacao: string): { data: string; tipo: string; valor: number; nota?: string }[] {
-  return (e.apps.find(x => x.id === aplicacao)?.movimentos || []).map(m => ({ ...(m as any) }))
+  return (e.apps.find(x => x.id === aplicacao)?.movimentos || []).map(m => ({ ...m }))
 }
 /** guardado_desfazer: tira o movimento gravado com essa chave (R12). */
 export function guardadoDesfazerEx(aplicacao: string, chave: string) {
   const a = e.apps.find(x => x.id === aplicacao)
-  const i = a ? a.movimentos.findIndex(m => (m as any).chave === chave) : -1
+  const i = a ? a.movimentos.findIndex(m => m.chave === chave) : -1
   if (!a || i < 0) throw new Error('Esse movimento já foi desfeito.')
   a.movimentos.splice(i, 1)
 }
@@ -510,7 +510,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
   }
 
   /* Comprador: prestador (véspera e no dia) e gás */
-  for (const p of (cfg.casa_prestadores || []) as any[]) {
+  for (const p of cfg.casa_prestadores || []) {
     if (m.papel?.() === 'pessoa') continue
     if ((hd + 1) % 7 === p.dia && !eq)
       P({
@@ -1265,11 +1265,11 @@ export function escritorioResponderEx(
     })
   }
   if (tipo === 'dae' && opcao === 'paguei_guia') {
-    const f = cfg.casa_folha
+    const f = cfg.casa_folha!
     f.daePaga = { ...(f.daePaga || {}), [hoje.slice(0, 7)]: true }
   }
   if (tipo === 'prestador_veio' && opcao === 'veio') {
-    const pr = (cfg.casa_prestadores || []).find((x: any) => x.id === ref)
+    const pr = (cfg.casa_prestadores || []).find(x => x.id === ref)
     if (pr) pr.ultimaVez = hoje
   }
   if (tipo === 'gas' && opcao === 'troquei') {
@@ -1305,7 +1305,7 @@ export function escritorioResponderEx(
       aviso = `${rs(x.valor)} foram pro guardado (${app.nome}). Regra do salário cumprida.`
     }
     if (x && opcao === 'gasto_combinado') {
-      ;(x as any).destino = 'gasto combinado'
+      x.destino = 'gasto combinado'
       aviso = `Anotado: os ${rs(x.valor)} são para um gasto combinado.`
     }
   }

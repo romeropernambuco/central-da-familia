@@ -1,8 +1,14 @@
 import type { PessoaNome } from '../api/tipos'
+import type { CadastroNome } from '../api/exemploConfig'
 import { useAcoes, useSessaoAtual } from './contexto'
 import { invalidarNomes } from './useMembros'
 import { podeEditarNome, validarNome } from '../lib/nomePessoa'
 import { lojaEscritorio } from './escritorioCompartilhado'
+
+type Colecao = { pessoas?: CadastroNome[] } | CadastroNome[] | null
+/** Assessores ficam dentro da folha (`pessoas`); prestadores e rendas são a própria lista. */
+const cadastros = (c: Colecao, assessor: boolean) =>
+  assessor ? (c as { pessoas?: CadastroNome[] } | null)?.pessoas : (c as CadastroNome[] | null)
 
 /** A configuração já pode ser alterada pelo casal; identidade de login exige capacidade própria. */
 export function useEdicaoNome(p: PessoaNome) {
@@ -13,27 +19,28 @@ export function useEdicaoNome(p: PessoaNome) {
   const salvar = async (nome: string, funcao: string) => {
     if (!permitido || !familia) throw new Error('Peça a quem administra a família para informar o nome')
     const ms = familia.papel === 'casal' ? await api.membros(familia.id) : []
-    const colecao =
+    const listaNomes: { id: string; nome: string; dono?: string }[] =
       p.tipo === 'membro'
         ? ms
-        : await api.config<any>(
-            familia.id,
-            p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas',
-            null,
-          )
-    const listaNomes = p.tipo === 'membro' ? ms : p.tipo === 'assessor' ? colecao?.pessoas || [] : colecao || []
+        : cadastros(
+            await api.config<Colecao>(
+              familia.id,
+              p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas',
+              null,
+            ),
+            p.tipo === 'assessor',
+          ) || []
     const n = validarNome(
       nome,
-      listaNomes.map((x: any) => ({ id: x.id, nome: p.tipo === 'renda' ? x.dono : x.nome })),
+      listaNomes.map(x => ({ id: x.id, nome: (p.tipo === 'renda' ? x.dono : x.nome) as string })),
       p.id,
     )
     if (api.salvarNomePessoa) await api.salvarNomePessoa(familia.id, p, n, funcao.trim())
     else {
       const chave = p.tipo === 'assessor' ? 'casa_folha' : p.tipo === 'prestador' ? 'casa_prestadores' : 'rendas'
       // Relê antes de escrever; preserva todos os campos, inclusive os não exibidos nesta folha.
-      const cfg = await api.config<any>(familia.id, chave, null)
-      const lista: { id: string; nome: string; dono?: string; funcao?: string }[] =
-        p.tipo === 'assessor' ? cfg?.pessoas : cfg
+      const cfg = await api.config<Colecao>(familia.id, chave, null)
+      const lista = cadastros(cfg, p.tipo === 'assessor')
       if (!lista?.some(x => x.id === p.id)) throw new Error('Cadastro não encontrado. Atualize a lista.')
       const novas = lista.map(x =>
         x.id !== p.id
@@ -42,7 +49,7 @@ export function useEdicaoNome(p: PessoaNome) {
             ? { ...x, dono: n }
             : { ...x, nome: n, ...(p.tipo === 'assessor' ? { funcao: funcao.trim() } : {}) },
       )
-      await api.salvarConfig(familia.id, chave, p.tipo === 'assessor' ? { ...cfg, pessoas: novas } : novas)
+      await api.salvarConfig(familia.id, chave, p.tipo === 'assessor' ? { ...(cfg as object), pessoas: novas } : novas)
     }
     invalidarNomes()
     nomesMudaram?.()

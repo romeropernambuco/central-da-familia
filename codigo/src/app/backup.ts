@@ -20,12 +20,12 @@ export const colecoes = [
   'assessores',
 ] as const
 export async function gerarCopia(api: Api, familia: string): Promise<Copia> {
-  const exportado = api.backupLer ? null : ((await api.exportarFamilia(familia)) as any)
+  const exportado = api.backupLer ? null : ((await api.exportarFamilia(familia)) as Record<string, unknown>)
   const dados = api.backupLer
     ? await api.backupLer(familia)
     : {
         ...exportado,
-        lancamentos: exportado.lancamentos,
+        lancamentos: exportado!.lancamentos,
         cartoes: await api.cartoes(familia),
         aplicacoes: (await api.guardadoHoje(familia)).aplicacoes,
         imoveis: await exigir(api.imoveis, 'imóveis')(familia),
@@ -101,10 +101,10 @@ export function validarCopia(texto: string): Copia {
   return c
 }
 export function previaCopia(antes: Copia, depois: Copia) {
-  const entradas = (v: any): Map<string, unknown> =>
+  const entradas = (v: unknown): Map<string, unknown> =>
     new Map(
       Array.isArray(v)
-        ? v.map((x, i) => [String(x?.id ?? i), x])
+        ? (v as ({ id?: unknown } | null)[]).map((x, i) => [String(x?.id ?? i), x] as [string, unknown])
         : v && typeof v === 'object'
           ? Object.entries(v)
           : v === undefined

@@ -194,7 +194,8 @@ export const VARIANTES: Record<SalaEquipe, IdentidadeSala> = {
 export const nomesDaSala = (sala: SalaEquipe) => [
   ...new Set([...comuns, VARIANTES[sala].tapete, VARIANTES[sala].mesa, ...VARIANTES[sala].extras]),
 ]
-export const bytesDaSala = (sala: SalaEquipe) => nomesDaSala(sala).reduce((n, k) => n + (inventario as any)[k].bytes, 0)
+export const bytesDaSala = (sala: SalaEquipe) =>
+  nomesDaSala(sala).reduce((n, k) => n + (inventario as Record<string, { bytes: number }>)[k].bytes, 0)
 
 export interface OrcamentoMini {
   desenhos: number
