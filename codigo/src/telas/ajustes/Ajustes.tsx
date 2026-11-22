@@ -3,7 +3,7 @@ import './ajustes.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Icone } from '../../componentes/Icone'
 import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
-import { useMembros } from '../../app/useMembros'
+import { useAdultos, useMembros } from '../../app/useMembros'
 import { ControleFuncionarios } from '../escritorio/AgenteDaAba'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useState } from 'react'
@@ -33,12 +33,8 @@ import { AcaoConvite } from '../../componentes/AcaoConvite'
 /** Família e ajustes: convites, aparência, privacidade, painel e sair. */
 export function Ajustes() {
   const { api, familia, sessao } = useSessaoAtual()
-  const { sair, toast, tentar } = useAcoes()
+  const { sair } = useAcoes()
   const { versao } = useDadosDoDia()
-  const { oculto } = useOlhoApp()
-  // o convite é gravado ANTES de abrir o WhatsApp: se o banco recusar (e-mail repetido, sem internet), o motivo aparece na hora
-  const [convidado, setConvidado] = useState<{ nome: string; email: string } | null>(null)
-  const [convidando, setConvidando] = useState(false)
   const [tema, setTema] = useState<string>(() => {
     try {
       return localStorage.getItem('tema') || 'auto'
@@ -46,10 +42,7 @@ export function Ajustes() {
       return 'auto'
     }
   })
-  const [nome2, setNome2] = useState('')
-  const [email2, setEmail2] = useState('')
   const [n, setN] = useState(0)
-  const link = location.origin + location.pathname
   const casal = familia?.papel === 'casal'
   // C20: com o casal completo, o convite é pra alguém da família (papel pessoa), e o título muda
   const {
@@ -62,8 +55,6 @@ export function Ajustes() {
     familia && casal && api.convites ? () => api.convites!(familia.id) : null,
     [api, n, versao],
   )
-  const casalCompleto = (lista || []).filter(c => c.papel === 'casal' && c.situacao !== 'cancelado').length >= 2
-  const papelConvite = casalCompleto ? 'pessoa' : 'casal'
   const mudaTema = (t: string) => {
     setTema(t)
     try {
@@ -93,91 +84,7 @@ export function Ajustes() {
               Quem convida e cuida da família é o casal. Aqui você muda a aparência e vê a privacidade.
             </p>
           )}
-          {casal && (
-            <>
-              {/* E3 (conserto 10): o campo ganha o rótulo "Nome" (antes só tinha a dica dentro do campo, que some ao digitar) */}
-              <p className="lbl">{casalCompleto ? 'Convidar alguém da família' : 'Convidar a 2ª pessoa do casal'}</p>
-              <label className="campo" style={{ marginTop: 8 }}>
-                <span>Nome</span>
-                <CampoPrivado
-                  className="inp"
-                  placeholder="Ex.: Helena"
-                  value={nome2}
-                  onChange={e => setNome2(e.target.value)}
-                />
-              </label>
-              <label className="campo" style={{ marginTop: 10 }}>
-                <span>E-mail de quem você está convidando</span>
-                <CampoPrivado
-                  className="inp"
-                  type="email"
-                  inputMode="email"
-                  placeholder="pessoa@email.com"
-                  value={email2}
-                  onChange={e => setEmail2(e.target.value)}
-                />
-                <small>
-                  {convidado && convidado.email === email2.trim().toLowerCase()
-                    ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.'
-                    : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}
-                </small>
-              </label>
-              <div className="row-btns" style={{ marginTop: 10 }}>
-                {convidado && convidado.email === email2.trim().toLowerCase() ? (
-                  <AcaoConvite
-                    classe="btn primary"
-                    oculto={oculto}
-                    url={() =>
-                      linkWhatsApp(
-                        mensagemConvite('pessoa', {
-                          familia: familia?.nome || '',
-                          quem: convidado.nome,
-                          link,
-                          email: convidado.email,
-                        }),
-                      )
-                    }
-                  >
-                    <Icone desenho={MessageCircle} />
-                    Abrir o WhatsApp com o convite
-                  </AcaoConvite>
-                ) : (
-                  <button
-                    className="btn primary"
-                    type="button"
-                    disabled={convidando}
-                    onClick={async () => {
-                      if (!nome2.trim() || !emailValido(email2)) {
-                        toast('Escreva o nome e o e-mail de quem você está convidando.')
-                        return
-                      }
-                      if (!familia) return
-                      setConvidando(true)
-                      const ok = await tentar(() => api.convidar(familia.id, papelConvite, nome2.trim(), email2))
-                      setConvidando(false)
-                      if (ok) {
-                        setConvidado({ nome: nome2.trim(), email: email2.trim().toLowerCase() })
-                        setN(x => x + 1)
-                        toast('Convite guardado. Agora mande a mensagem.')
-                      }
-                    }}
-                  >
-                    <Icone desenho={UserPlus} />
-                    Convidar
-                  </button>
-                )}
-                <a
-                  className="btn line"
-                  target="_blank"
-                  rel="noreferrer"
-                  href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }), true)}
-                >
-                  <Icone desenho={MessageCircle} />
-                  Chamar família amiga
-                </a>
-              </div>
-            </>
-          )}
+          {casal && <ConvidarAlguem aoConvidar={() => setN(x => x + 1)} />}
         </section>
         {casal && <MembrosDaFamilia />}
         {api.convites && familia && casal && (
@@ -295,6 +202,122 @@ export function Ajustes() {
   )
 }
 
+/**
+ * Convidar alguém: quem convida escolhe se é um adulto que divide a gestão (vê tudo) ou alguém da casa que vê só o dele.
+ * Simulação de 22/11 (casal e filha): no app real a lista de convites não existia, o casal nunca ficava "completo" e
+ * todo convite saía como adulto do casal, inclusive o da filha. Agora a escolha é de quem convida, com o padrão pelo
+ * número de adultos que a família já tem.
+ */
+function ConvidarAlguem({ aoConvidar }: { aoConvidar: () => void }) {
+  const { api, familia } = useSessaoAtual()
+  const { toast, tentar } = useAcoes()
+  const { oculto } = useOlhoApp()
+  const adultos = useAdultos()
+  // o convite é gravado ANTES de abrir o WhatsApp: se o banco recusar (e-mail repetido, sem internet), o motivo aparece na hora
+  const [convidado, setConvidado] = useState<{ nome: string; email: string } | null>(null)
+  const [convidando, setConvidando] = useState(false)
+  const [nome2, setNome2] = useState('')
+  const [email2, setEmail2] = useState('')
+  const [escolha, setEscolha] = useState<'casal' | 'pessoa' | null>(null)
+  const papel = escolha ?? ((adultos ?? 1) >= 2 ? 'pessoa' : 'casal')
+  const link = location.origin + location.pathname
+  const jaConvidado = !!convidado && convidado.email === email2.trim().toLowerCase()
+  const convidar = async () => {
+    if (!nome2.trim() || !emailValido(email2)) {
+      toast('Escreva o nome e o e-mail de quem você está convidando.')
+      return
+    }
+    if (!familia) return
+    setConvidando(true)
+    const ok = await tentar(() => api.convidar(familia.id, papel, nome2.trim(), email2))
+    setConvidando(false)
+    if (ok) {
+      setConvidado({ nome: nome2.trim(), email: email2.trim().toLowerCase() })
+      aoConvidar()
+      toast('Convite guardado. Agora mande a mensagem.')
+    }
+  }
+  return (
+    <>
+      <p className="lbl">Convidar alguém da família</p>
+      <div className="seg compacta" role="group" aria-label="Quem é a pessoa" style={{ marginTop: 8 }}>
+        <button type="button" aria-pressed={papel === 'casal'} onClick={() => setEscolha('casal')}>
+          Adulto que divide a gestão
+        </button>
+        <button type="button" aria-pressed={papel === 'pessoa'} onClick={() => setEscolha('pessoa')}>
+          Filho ou outra pessoa da casa
+        </button>
+      </div>
+      <p className="sub" style={{ marginTop: 6 }}>
+        {papel === 'casal'
+          ? 'Vê e cuida de tudo: limites, cartões, guardado e imóveis da família.'
+          : 'Vê só o limite e os gastos dela. O resto da família fica de fora.'}
+      </p>
+      {/* E3 (conserto 10): o campo ganha o rótulo "Nome" (antes só tinha a dica dentro do campo, que some ao digitar) */}
+      <label className="campo" style={{ marginTop: 8 }}>
+        <span>Nome</span>
+        <CampoPrivado
+          className="inp"
+          placeholder="Ex.: Helena"
+          value={nome2}
+          onChange={e => setNome2(e.target.value)}
+        />
+      </label>
+      <label className="campo" style={{ marginTop: 10 }}>
+        <span>E-mail de quem você está convidando</span>
+        <CampoPrivado
+          className="inp"
+          type="email"
+          inputMode="email"
+          placeholder="pessoa@email.com"
+          value={email2}
+          onChange={e => setEmail2(e.target.value)}
+        />
+        <small>
+          {jaConvidado
+            ? 'Convite guardado. A mensagem não leva nenhum valor em dinheiro: só o link e o e-mail.'
+            : 'A pessoa entra com esse e-mail, digita o código de 6 números que chega nele e já cai na família.'}
+        </small>
+      </label>
+      <div className="row-btns" style={{ marginTop: 10 }}>
+        {jaConvidado ? (
+          <AcaoConvite
+            classe="btn primary"
+            oculto={oculto}
+            url={() =>
+              linkWhatsApp(
+                mensagemConvite('pessoa', {
+                  familia: familia?.nome || '',
+                  quem: convidado!.nome,
+                  link,
+                  email: convidado!.email,
+                }),
+              )
+            }
+          >
+            <Icone desenho={MessageCircle} />
+            Abrir o WhatsApp com o convite
+          </AcaoConvite>
+        ) : (
+          <button className="btn primary" type="button" disabled={convidando} onClick={convidar}>
+            <Icone desenho={UserPlus} />
+            Convidar
+          </button>
+        )}
+        <a
+          className="btn line"
+          target="_blank"
+          rel="noreferrer"
+          href={linkWhatsApp(mensagemConvite('amiga', { familia: '', quem: '', link }), true)}
+        >
+          <Icone desenho={MessageCircle} />
+          Chamar família amiga
+        </a>
+      </div>
+    </>
+  )
+}
+
 function MembrosDaFamilia() {
   const membros = useMembros()
   return (
@@ -321,7 +344,7 @@ function MembrosDaFamilia() {
               </span>
               <span className="m">
                 <NomeDaPessoa editar pessoa={{ tipo: 'membro', id: m.id, nome: m.nome }} />
-                <small>Pessoa da família</small>
+                <small>{m.papel === 'pessoa' ? 'Pessoa da família: vê só o dela' : 'Casal: vê tudo'}</small>
               </span>
             </li>
           ))}
@@ -332,6 +355,22 @@ function MembrosDaFamilia() {
 }
 
 /** R4 + C20: quem está na família e como está cada convite. Reenviar avisa; cancelar pede confirmação. */
+/** Quem já entrou. A pessoa da família (filha) chega com limite zero: o casal combina em Planejamento (simulação 22/11). */
+function JaEntrou({ c }: { c: ConviteFamilia }) {
+  return (
+    <>
+      <span className="chip ok" style={{ marginTop: 6 }}>
+        entrou{c.entrou_em ? ` em ${dataCurta(c.entrou_em)}` : ''}
+      </span>
+      {c.papel === 'pessoa' && (
+        <a className="lnk" href="#/planejamento" style={{ display: 'block', marginTop: 6 }}>
+          Combinar quanto {textoPrivado(c.nome)} pode gastar por mês
+        </a>
+      )}
+    </>
+  )
+}
+
 function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () => void }) {
   const { api, familia } = useSessaoAtual()
   const { tentar, toast } = useAcoes()
@@ -366,14 +405,13 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
                 {textoPrivado(c.email || 'sem e-mail')} · {c.papel === 'casal' ? 'casal' : 'pessoa da família'}
               </small>
               {c.situacao === 'entrou' ? (
-                <span className="chip ok" style={{ marginTop: 6 }}>
-                  entrou{c.entrou_em ? ` em ${dataCurta(c.entrou_em)}` : ''}
-                </span>
+                <JaEntrou c={c} />
               ) : (
                 <span className="chip warn" style={{ marginTop: 6, whiteSpace: 'normal', height: 'auto' }}>
                   esperando entrar
+                  {/* o convite do banco real não vence: o prazo só existe onde dá para reenviar (exemplo) */}
                   {c.enviado_em
-                    ? ` desde ${dataCurta(c.enviado_em)}, vale até ${dataCurta(somaDias(c.enviado_em, 14))}`
+                    ? ` desde ${dataCurta(c.enviado_em)}${api.reenviarConvite ? `, vale até ${dataCurta(somaDias(c.enviado_em, 14))}` : ''}`
                     : ''}
                 </span>
               )}
@@ -397,7 +435,9 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
                         await api.reenviarConvite?.(familia.id, c.id)
                         setN(x => x + 1)
                         toast(
-                          `Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`,
+                          api.reenviarConvite
+                            ? `Convite de ${c.nome} reenviado: vale mais 14 dias. Mande a mensagem de novo no WhatsApp que abriu.`
+                            : `Mande a mensagem de novo para ${c.nome} no WhatsApp que abriu.`,
                         )
                       })
                     }}
@@ -405,10 +445,12 @@ function QuemEsta({ lista, mudou }: { lista: ConviteFamilia[] | null; mudou: () 
                     <Icone nome="email" />
                     Reenviar
                   </AcaoConvite>
-                  <button className="btn sm ghost" type="button" onClick={() => setCancelar(c)}>
-                    <Icone nome="fechar" />
-                    Cancelar convite
-                  </button>
+                  {api.cancelarConvite && (
+                    <button className="btn sm ghost" type="button" onClick={() => setCancelar(c)}>
+                      <Icone nome="fechar" />
+                      Cancelar convite
+                    </button>
+                  )}
                 </span>
               )}
             </span>

@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { rendeNoMesEstimado } from './guardado'
 import { montarSnapshot } from './insights/snapshot'
 import { lerAtalho } from './atalho'
+import { limiteSemNome } from '../app/useNomeNoLimite'
+import { ultimosOQueFoi } from '../componentes/UltimosOQueFoi'
 import type { FamiliaMinha, GuardadoAplicacao, ImovelTela } from '../api/tipos'
 
 const casal: FamiliaMinha = {
@@ -74,6 +76,35 @@ describe('Escritório: o aluguel que passou do dia chega ao Ajudante dos Imóvei
   })
   it('sem a leitura do caderno, não inventa atraso', () => {
     expect(montarSnapshot(casal, 'exemplo', { imoveis: [apto()] }, agora).alugueis).toBeUndefined()
+  })
+})
+
+describe('Família de 3 (casal e filha) e Anotar mais rápido', () => {
+  it('limite "Pessoa N" é o que o banco cria para os adultos; o resto tem nome', () => {
+    expect(limiteSemNome('Pessoa 1')).toBe(true)
+    expect(limiteSemNome('Pessoa 2')).toBe(true)
+    expect(limiteSemNome('Caio')).toBe(false)
+    expect(limiteSemNome('Limite de Lia')).toBe(false)
+    expect(limiteSemNome('Pessoa 2 extra')).toBe(false)
+  })
+  it('últimos "O que foi?": do mais novo, sem repetir (acento e caixa), sem apagado nem vazio, até 6', () => {
+    const l = (descricao: string | null, criado_em: string, apagado_em: string | null = null) => ({
+      descricao,
+      criado_em,
+      apagado_em,
+    })
+    expect(
+      ultimosOQueFoi([
+        l('Padaria', '2026-11-01T10:00'),
+        l('Farmácia', '2026-11-03T10:00'),
+        l('farmacia', '2026-11-02T10:00'),
+        l('Uber', '2026-11-04T10:00', '2026-11-05'),
+        l('', '2026-11-05T10:00'),
+        l(null, '2026-11-06T10:00'),
+        l('Café', '2026-11-07T10:00'),
+      ]),
+    ).toEqual(['Café', 'Farmácia', 'Padaria'])
+    expect(ultimosOQueFoi(Array.from({ length: 9 }, (_, i) => l('G' + i, `2026-11-0${i + 1}`))).length).toBe(6)
   })
 })
 

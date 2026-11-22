@@ -41,6 +41,7 @@ import {
   dadosTeste,
   familiaTeste,
   membrosTeste,
+  adicionarMembroNovo,
   nomearFamiliaNova,
   restaurarNomesTeste,
   nomeFamiliaTeste,
@@ -633,6 +634,44 @@ const logadoInicial = (): Logado =>
         ? 'marina'
         : pessoaDoTeste
 let logado: Logado | null = logadoInicial()
+/** Família nova: quem da família está logado (quem criou, ou quem entrou pelo convite com o próprio e-mail). */
+let limaEu = 'm-marina'
+/** Família nova, igual a produto.entrar_por_convite: quem foi convidado entra com o e-mail do convite e o banco liga o
+ *  limite (o 2º adulto pega o "Pessoa N" livre; a filha ganha "Limite de <nome>"). */
+function entrarNaFamiliaNova(email: string) {
+  const e = email.trim().toLowerCase()
+  const m = membrosTeste().find(x => x.email === e)
+  if (!m) {
+    if (familiaNova) throw new Error('Esse e-mail não tem convite nesta família. No exemplo, use o e-mail do convite.')
+    membrosTeste()[0].email = e
+    limaEu = membrosTeste()[0].id
+    return
+  }
+  const convite = db.convites.find(c => c.email === e && c.situacao === 'esperando')
+  if (convite) {
+    if (!m.envelope) {
+      const livre =
+        m.papel === 'casal'
+          ? db.envs.find(
+              en => !en.casa && /^Pessoa \d+$/.test(en.nome) && !membrosTeste().some(x => x.envelope === en.id),
+            )
+          : undefined
+      const env = livre || {
+        id: 'env-' + m.id,
+        nome: `Limite de ${m.nome}`.slice(0, 60),
+        regra: 'mensal' as const,
+        limite_mes: 0,
+        colchao: 0,
+        casa: false,
+      }
+      if (!livre) db.envs.push(env)
+      m.envelope = env.id
+    }
+    convite.situacao = 'entrou'
+    convite.entrou_em = hojeRecife()
+  }
+  limaEu = m.id
+}
 /** Quem está logado no exemplo, com papel e limite próprio. */
 const membroLogado = () => {
   const ms = membrosTeste()
@@ -647,7 +686,7 @@ const membroLogado = () => {
             : logado === 'claudia'
               ? 'm-claudia'
               : logado === 'marina'
-                ? 'm-marina'
+                ? limaEu
                 : 'm-ana'),
     ) || ms[0]
   )
@@ -672,7 +711,9 @@ function vivos() {
 function visiveis(): EnvBase[] {
   if (logado === 'carla') return db.envs.filter(e => e.casa)
   const eu = membroLogado()
-  if (familiaNova) return db.envs.filter(e => e.casa || e.id === eu.envelope || e.id === db.envs[0].id)
+  // a família nova segue a regra do banco (o casal lê todos, inclusive o "Pessoa 2" ainda sem dono)
+  if (familiaNova && familiaTeste() !== 'lima')
+    return db.envs.filter(e => e.casa || e.id === eu.envelope || e.id === db.envs[0].id)
   return db.envs.filter(e => eu.papel === 'casal' || e.id === eu.envelope)
 }
 const podeVer = (envelope: string) => visiveis().some(e => e.id === envelope)
@@ -681,7 +722,7 @@ const podeVer = (envelope: string) => visiveis().some(e => e.id === envelope)
 function escrita(): EnvBase[] {
   if (logado === 'carla') return db.envs.filter(e => e.casa)
   const eu = membroLogado()
-  if (familiaNova) return visiveis()
+  if (familiaNova && familiaTeste() !== 'lima') return visiveis()
   return db.envs.filter(e => e.id === eu.envelope || (eu.papel === 'casal' && (e.casa || !donoDoEnv(e.id))))
 }
 const podeEscrever = (envelope: string) => escrita().some(e => e.id === envelope)
@@ -1016,7 +1057,11 @@ const semValorPraEquipe = (l: Lancamento): Lancamento => (logado === 'carla' ? {
 const mundo: ex2.Mundo = {
   equipe: () => logado === 'carla',
   papel: () => papelLogado(),
-  quem: () => (logado === 'carla' ? assessorNome : (familiaNova?.pessoa || membroLogado().nome).split(' ')[0]),
+  // família nova: fala com quem está logado (o Caio não é chamado de Marina), como o banco faz com p_nome
+  quem: () =>
+    logado === 'carla'
+      ? assessorNome
+      : ((familiaTeste() !== 'lima' && familiaNova?.pessoa) || membroLogado().nome).split(' ')[0],
   // E2: os funcionários perguntam e mexem, então falam só do que é de quem olha (o seu e a Casa), nunca do limite do outro
   resumo: () => {
     const r = calcularResumo()
@@ -1132,8 +1177,8 @@ export const apiExemplo: Api = {
               {
                 id: FAM,
                 nome: familiaNova.nome,
-                papel: 'casal',
-                membroNome: familiaNova.pessoa,
+                papel: eu.papel,
+                membroNome: eu.nome,
                 envelopeId: eu.envelope,
                 membroId: eu.id,
               },
@@ -1165,9 +1210,10 @@ export const apiExemplo: Api = {
     await espera()
     if (!email.includes('@')) throw new Error('E-mail inválido')
   },
-  async confirmarCodigo(_email, codigo) {
+  async confirmarCodigo(email, codigo) {
     await espera()
     if (codigo !== '123456') throw new Error('Código não confere. No exemplo, use 123456.')
+    if (familiaTeste() === 'lima') entrarNaFamiliaNova(email)
     logado = logadoInicial() === 'carla' ? 'ana' : logadoInicial()
   },
   async entrarEquipe(convite, codigo) {
@@ -1180,7 +1226,8 @@ export const apiExemplo: Api = {
   },
   async sair() {
     logado = null
-    familiaNova = null
+    // família nova: sair não apaga a família (o próximo pode entrar com o e-mail do convite)
+    if (familiaTeste() !== 'lima') familiaNova = null
   },
 
   async criarFamilia(nome, nomePessoa) {
@@ -1231,6 +1278,22 @@ export const apiExemplo: Api = {
       situacao: 'esperando',
       enviado_em: hojeRecife(),
     })
+    // família nova: como produto.convidar, a pessoa vira membro na hora, sem limite ligado até entrar
+    if (familiaTeste() === 'lima' && email && (papel === 'casal' || papel === 'pessoa'))
+      adicionarMembroNovo({
+        id:
+          'm-' +
+          db.convites.length +
+          '-' +
+          nome
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z]/g, ''),
+        nome: nome.trim(),
+        papel,
+        envelope: '',
+        email: email.trim().toLowerCase(),
+      })
     return { ok: true, convite: 'email' }
   },
 

@@ -4,6 +4,7 @@ import './abas.css'
 import '@fontsource-variable/inter'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
+import { useNomeNoLimite } from './useNomeNoLimite'
 import { Acolhimento } from '../componentes/Acolhimento'
 import { AgenteDaAba, AjudaDaAba } from '../telas/escritorio/AgenteDaAba'
 import { lazy, Suspense, useEffect, useState, useRef } from 'react'
@@ -65,6 +66,7 @@ export function App() {
   const { lancarAberto } = useFolhaLancar()
   const tituloRef = useRef<HTMLHeadingElement>(null)
   const destino = useDestino()
+  useNomeNoLimite()
   useEffect(() => {
     if (!familia || !destino.secao || rotaPermitida(destino.rota, familia.papel) !== destino.rota) return
     return focarDestino(destino)

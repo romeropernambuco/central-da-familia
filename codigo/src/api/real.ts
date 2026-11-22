@@ -576,6 +576,28 @@ export const apiReal: Api = {
       ...(m.papel ? { papel: m.papel as Papel } : {}),
     }))
   },
+  // "Quem está na família": quem foi convidado por e-mail (produto.convidar grava o membro na hora, sem login) e se já
+  // entrou. Sem esta leitura a tela achava que o casal nunca estava completo (simulação de 22/11).
+  async convites(familia) {
+    const { data, error } = await sb()
+      .from('membros')
+      .select('id, nome, email, papel, user_id, criado_em')
+      .eq('familia_id', familia)
+      .eq('ativo', true)
+      .in('papel', ['casal', 'pessoa'])
+      .not('email', 'is', null)
+      .order('criado_em')
+    if (error) erro(error)
+    return lista(data).map(m => ({
+      id: String(m.id),
+      membroId: String(m.id),
+      nome: String(m.nome ?? ''),
+      email: m.email ? String(m.email) : null,
+      papel: m.papel as Papel,
+      situacao: m.user_id ? ('entrou' as const) : ('esperando' as const),
+      enviado_em: m.criado_em ? String(m.criado_em).slice(0, 10) : null,
+    }))
+  },
   async cartaoSalvar(familia, c) {
     // com `cartao` o banco troca TODOS os campos: a ficha sempre manda o cadastro inteiro. `titular` é o id do membro da família.
     await rpc('cartao_salvar', {

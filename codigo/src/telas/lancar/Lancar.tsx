@@ -40,6 +40,7 @@ import { Impacto2029 } from '../../componentes/Impacto2029'
 import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../lib/dono'
 import { LinhaEtiqueta, useEtiquetasNoLancar } from './EtiquetaNoLancar'
+import { UltimosOQueFoi } from '../../componentes/UltimosOQueFoi'
 import { ColarExtrato } from './ColarExtrato'
 
 type Rascunho = {
@@ -162,6 +163,10 @@ export function Lancar() {
   const [cupom, setCupom] = useState(false)
   const [extrato, setExtrato] = useState(false)
   const etq = useEtiquetasNoLancar(quando, corr)
+  // detalhes recolhidos (data, cartão, parcelas, quem pagou): abre com 1 toque ou sozinho quando algo já mudou
+  const [verDetalhes, setVerDetalhes] = useState(false)
+  const detalhesAbertos =
+    verDetalhes || !!corr || !!lancarAberto?.atalho || quando !== hoje || !!cartao || !!pagoPor || parcelas > 1
 
   useEffect(() => {
     if (!chaveRascunho || concluido.current) return
@@ -463,6 +468,8 @@ export function Lancar() {
           />
         </label>
       )}
+      {/* Anotar mais rápido: os últimos "O que foi?" do mês viram 1 toque */}
+      {modo === 'gasto' && !corr && <UltimosOQueFoi lista={recentes} atual={desc} escolher={setDesc} />}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
           <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>
@@ -472,6 +479,51 @@ export function Lancar() {
       </div>
     </>
   )
+  /** 1 botão de destino ("Salvar em ..."), com o "depois fica" de cada limite. */
+  const botaoDestino = (e: (typeof ordem)[number]) => {
+    // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
+    const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
+    // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
+    const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
+    const onde =
+      e.regra === 'diario'
+        ? ['hoje', 'do dia']
+        : e.regra === 'semanal'
+          ? ['na semana', 'da semana']
+          : ['no mês', 'do mês']
+    const conta = contaNoMes
+    const depois = centavos(agora - conta)
+    const linha = !n
+      ? ''
+      : valor > 0 && !corr && sim.length > 1 && !conta
+        ? `${reais(agora)} ${n.rotulo}, não muda`
+        : valor > 0 && !corr
+          ? depois >= 0
+            ? `depois fica ${reais(depois)} ${onde[0]}`
+            : `passa ${reais(-depois)} ${onde[1]}`
+          : n.estado === 'devendo'
+            ? e.regra === 'semanal'
+              ? `passou ${reais(n.devendo)} nesta semana`
+              : `fica devendo ${reais(n.devendo)}`
+            : `${reais(agora)} ${n.rotulo}`
+    return (
+      <button
+        key={e.id}
+        type="button"
+        className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')}
+        disabled={valor <= 0 || salvando}
+        onClick={() => salvar(e.id, e.nome)}
+        aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}
+      >
+        <Icone nome="salvo" />
+        <b>Salvar em {textoPrivado(e.nome)}</b>
+        <Icone nome="abrir" className="destino-seta" />
+        <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
+      </button>
+    )
+  }
+  // Anotar mais rápido: o 1º destino (o seu limite) fica preso no rodapé da folha, sempre à vista
+  const fixo = ordem[0]
   const datas =
     quando !== hoje && quando !== somaDias(hoje, -1) ? [quando, somaDias(hoje, -1), hoje] : [hoje, somaDias(hoje, -1)]
   return (
@@ -544,63 +596,85 @@ export function Lancar() {
             </div>
           )}
           {visor}
-          {!corr && (
-            <label className="campo">
-              <span>Quem pagou? (opcional)</span>
-              <select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}>
-                <option value="">Não informado</option>
-                {(casal
-                  ? membrosPagamento.lista
-                  : familia?.membroId
-                    ? [{ id: familia.membroId, nome: familia.membroNome }]
-                    : []
-                ).map(m => (
-                  <option key={m.id} value={m.id}>
-                    {textoPrivado(m.nome)}
-                  </option>
-                ))}
-              </select>
-              <small>Quem anota não é necessariamente quem paga.</small>
-            </label>
+          {/* Anotar mais rápido: quem pagou, quando, cartão e parcelas ficam numa linha que abre com 1 toque.
+              Abre sozinha quando algo já mudou (ontem, cartão, parcelado, quem pagou, correção ou Atalho do iPhone). */}
+          {!detalhesAbertos && (
+            <button type="button" className="lanc-detalhes" onClick={() => setVerDetalhes(true)}>
+              <span>
+                {quando === hoje ? 'Hoje' : quando === somaDias(hoje, -1) ? 'Ontem' : dataCurta(quando)}
+                {c ? ` · ${textoPrivado(c.nome)}` : cartoes.length ? ' · Pix ou dinheiro' : ''}
+              </span>
+              <span className="lnk">Mudar data, cartão ou quem pagou</span>
+            </button>
           )}
-          <div className="atrow">
-            <span className="atl">Quando</span>
-            {datas.map(d => (
-              <button key={d} type="button" className="pill" aria-pressed={quando === d} onClick={() => setQuando(d)}>
-                {d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}
-              </button>
-            ))}
-          </div>
-          <LinhaEtiqueta e={etq} valor={valor} />
-          {!equipe && cartoes.length > 0 && (
-            <div className="atrow">
-              <span className="atl">Pagou</span>
-              <button
-                type="button"
-                className="pill"
-                aria-pressed={cartao === null}
-                onClick={() => {
-                  setCartao(null)
-                  setParcelas(1)
-                }}
-              >
-                <Icone nome="orcamento" />
-                Pix ou dinheiro
-              </button>
-              {cartoes.map(x => (
+          {/* a gaveta dos detalhes: fica na página (nada some de vez) e só aparece quando aberta */}
+          <div className="lanc-detalhes-corpo" hidden={!detalhesAbertos}>
+            {!corr && (
+              <label className="campo">
+                <span>Quem pagou? (opcional)</span>
+                <select className="inp" value={pagoPor} onChange={e => setPagoPor(e.target.value)}>
+                  <option value="">Não informado</option>
+                  {(casal
+                    ? membrosPagamento.lista
+                    : familia?.membroId
+                      ? [{ id: familia.membroId, nome: familia.membroNome }]
+                      : []
+                  ).map(m => (
+                    <option key={m.id} value={m.id}>
+                      {textoPrivado(m.nome)}
+                    </option>
+                  ))}
+                </select>
+                <small>Quem anota não é necessariamente quem paga.</small>
+              </label>
+            )}
+            {
+              <div className="atrow">
+                <span className="atl">Quando</span>
+                {datas.map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    className="pill"
+                    aria-pressed={quando === d}
+                    onClick={() => setQuando(d)}
+                  >
+                    {d === hoje ? 'Hoje' : d === somaDias(hoje, -1) ? 'Ontem' : dataCurta(d)}
+                  </button>
+                ))}
+              </div>
+            }
+            {!equipe && cartoes.length > 0 && (
+              <div className="atrow">
+                <span className="atl">Pagou</span>
                 <button
-                  key={x.id}
                   type="button"
                   className="pill"
-                  aria-pressed={cartao === x.id}
-                  onClick={() => setCartao(x.id)}
+                  aria-pressed={cartao === null}
+                  onClick={() => {
+                    setCartao(null)
+                    setParcelas(1)
+                  }}
                 >
-                  <Icone nome="cartao" />
-                  {textoPrivado(x.nome)}
+                  <Icone nome="orcamento" />
+                  Pix ou dinheiro
                 </button>
-              ))}
-            </div>
-          )}
+                {cartoes.map(x => (
+                  <button
+                    key={x.id}
+                    type="button"
+                    className="pill"
+                    aria-pressed={cartao === x.id}
+                    onClick={() => setCartao(x.id)}
+                  >
+                    <Icone nome="cartao" />
+                    {textoPrivado(x.nome)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <LinhaEtiqueta e={etq} valor={valor} />
           {c && (
             <div className="parcelas">
               <span className="atl">Em quantas vezes</span>
@@ -645,50 +719,9 @@ export function Lancar() {
                 ? 'Toque no seu nome para salvar'
                 : 'Digite o valor e toque no seu nome para salvar'}
           </p>
-          <div className="envbtns lancar-destinos-f29">
-            {ordem.map(e => {
-              // equipe da casa não vê valor de dinheiro do envelope (decisão do dono)
-              const n = resumo && !equipe ? numeroEnvelope(e, resumo.dias_restantes) : null
-              // "depois fica" no jeito de cada limite: o dia (por dia), a semana ou o mês
-              const agora = !n ? 0 : e.regra === 'diario' ? (e.hoje ?? n.valor) : n.valor
-              const onde =
-                e.regra === 'diario'
-                  ? ['hoje', 'do dia']
-                  : e.regra === 'semanal'
-                    ? ['na semana', 'da semana']
-                    : ['no mês', 'do mês']
-              const conta = contaNoMes
-              const depois = centavos(agora - conta)
-              const linha = !n
-                ? ''
-                : valor > 0 && !corr && sim.length > 1 && !conta
-                  ? `${reais(agora)} ${n.rotulo}, não muda`
-                  : valor > 0 && !corr
-                    ? depois >= 0
-                      ? `depois fica ${reais(depois)} ${onde[0]}`
-                      : `passa ${reais(-depois)} ${onde[1]}`
-                    : n.estado === 'devendo'
-                      ? e.regra === 'semanal'
-                        ? `passou ${reais(n.devendo)} nesta semana`
-                        : `fica devendo ${reais(n.devendo)}`
-                      : `${reais(agora)} ${n.rotulo}`
-              return (
-                <button
-                  key={e.id}
-                  type="button"
-                  className={'envbtn' + (e.id === familia?.envelopeId ? ' meu' : '')}
-                  disabled={valor <= 0 || salvando}
-                  onClick={() => salvar(e.id, e.nome)}
-                  aria-label={`${corr ? 'Salvar correção' : 'Salvar'} em ${textoPrivado(e.nome)}`}
-                >
-                  <Icone nome="salvo" />
-                  <b>Salvar em {textoPrivado(e.nome)}</b>
-                  <Icone nome="abrir" className="destino-seta" />
-                  <small className={valor > 0 && depois < 0 ? 'passa' : ''}>{linha}</small>
-                </button>
-              )
-            })}
-          </div>
+          {/* o seu limite vem primeiro (G8) e fica preso no rodapé até a lista aparecer */}
+          {fixo && <div className="lancar-salvar-fixo">{botaoDestino(fixo)}</div>}
+          <div className="envbtns lancar-destinos-f29">{ordem.slice(1).map(botaoDestino)}</div>
           {confirmar && (
             <div className="todo warn confirmar-valor" role="alert">
               <span>

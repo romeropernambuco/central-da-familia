@@ -44,6 +44,56 @@
   align-items: center;
   gap: 8px;
 }
+/* Anotar mais rápido (22/11): o seu limite fica preso no rodapé da folha, sempre à vista */
+.lancar-salvar-fixo {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  box-shadow: 0 -10px 16px -12px rgba(0, 0, 0, 0.35);
+}
+.lancar-salvar-fixo .envbtn {
+  min-height: 64px;
+  position: relative;
+  padding: 14px 44px 14px 16px;
+  text-align: start;
+}
+.lancar-salvar-fixo .envbtn b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lancar-salvar-fixo .destino-seta {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.lanc-detalhes-corpo:not([hidden]) {
+  display: grid;
+  gap: 12px;
+}
+.lanc-recentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+}
+.lanc-detalhes {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: start;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 .lancar-destinos-f29 .destino-seta {
   position: absolute;
   right: 16px;

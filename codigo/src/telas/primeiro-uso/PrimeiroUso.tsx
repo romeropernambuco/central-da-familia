@@ -14,6 +14,8 @@ import type { Envelope } from '../../api/tipos'
 import { AcaoConvite } from '../../componentes/AcaoConvite'
 import { destaqueOrcamento } from '../../lib/resumo/orcamento'
 import { desfazer } from '../../api/desfazer'
+import { novoUuid } from '../../lib/seguro'
+import { limiteSemNome } from '../../app/useNomeNoLimite'
 import {
   FUSO,
   hojeRecife,
@@ -26,6 +28,28 @@ import {
 } from '../../lib/formato'
 
 const linkApp = () => location.origin + location.pathname
+
+/** Os limites cabem na renda? A conta aparece enquanto a pessoa digita (só com a renda preenchida). */
+function CabeNaRenda({ renda, limites, oculto }: { renda: string; limites: string[]; oculto: boolean }) {
+  const r = valorDigitadoValido(renda || '') ? textoParaValor(renda) : 0
+  if (r <= 0 || oculto) return null
+  const soma = limites.reduce((s, l) => s + (valorDigitadoValido(l || '') ? textoParaValor(l) : 0), 0)
+  const sobra = Math.round((r - soma) * 100) / 100
+  return (
+    <p className={sobra < 0 ? 'erro' : 'sub'} role="status">
+      Os limites somam <Din v={soma} />.{' '}
+      {sobra >= 0 ? (
+        <>
+          Sobram <Din v={sobra} /> da sua renda por mês.
+        </>
+      ) : (
+        <>
+          Passam <Din v={-sobra} /> da sua renda: baixe um limite ou conte a renda de quem você vai convidar.
+        </>
+      )}
+    </p>
+  )
+}
 
 /** Primeiro uso em 5 minutos: família, limites, 2ª pessoa e família amiga. */
 export function PrimeiroUso() {
@@ -41,6 +65,9 @@ export function PrimeiroUso() {
   const [envs, setEnvs] = useState<Envelope[]>([])
   const [lim, setLim] = useState<Record<string, string>>({})
   const [colchao, setColchao] = useState('1000')
+  // a renda vem antes dos limites: com ela, a pessoa vê na hora se os limites cabem (fila "Agora", item 3)
+  const [renda, setRenda] = useState('')
+  const [meuEnv, setMeuEnv] = useState<string | null>(null)
   const [segunda, setSegunda] = useState('')
   const [email2, setEmail2] = useState('')
   const [convidado, setConvidado] = useState(false)
@@ -79,6 +106,8 @@ export function PrimeiroUso() {
         await api.salvarEnvelope(id, generico.id, { nome: nome.trim().slice(0, 60) })
         r = await api.resumoHoje(id)
       }
+      // o limite de quem está cadastrando: o que acabou de ganhar o nome dela (nunca o "Pessoa 2", que vem antes de "Zeca")
+      if (generico) setMeuEnv(generico.id)
       setEnvs(r.envelopes)
       setLim(
         Object.fromEntries(
@@ -94,14 +123,21 @@ export function PrimeiroUso() {
     faz(async () => {
       if (!fid) return
       const ruim = envs.find(e => (lim[e.id] || '') !== '' && !valorDigitadoValido(lim[e.id]))
-      if (ruim || !valorDigitadoValido(colchao || '0'))
-        throw new Error(`Confira o valor de ${ruim ? ruim.nome : 'Reserva'}: use só números e 1 vírgula, tipo 1500,00.`)
+      if (ruim || !valorDigitadoValido(colchao || '0') || !valorDigitadoValido(renda || '0'))
+        throw new Error(
+          `Confira o valor de ${ruim ? ruim.nome : renda && !valorDigitadoValido(renda) ? 'Sua renda' : 'Reserva'}: use só números e 1 vírgula, tipo 1500,00.`,
+        )
       for (const e of envs) await api.definirLimite(fid, e.id, textoParaValor(lim[e.id] || '0'))
       const casa = envs.find(e => e.casa && e.regra === 'mensal') || envs[envs.length - 1]
       if (casa) await api.salvarEnvelope(fid, casa.id, { colchao: textoParaValor(colchao) })
+      // a renda entra em Planejamento → Rendas, no mesmo formato de lá (salário, com o nome de quem cadastrou)
+      if (textoParaValor(renda || '0') > 0)
+        await api.salvarConfig(fid, 'rendas', [
+          { id: novoUuid(), nome: 'Salário', valor: textoParaValor(renda), tipo: 'salario', dono: nome.trim() },
+        ])
       const r = await api.resumoHoje(fid)
       // o mesmo número do "Limite de hoje" do Início: o limite da própria pessoa (antes mostrava o total da família)
-      setHoje(destaqueOrcamento(r, r.envelopes.find(e => !e.casa)?.id, hojeRecife(), FUSO).valor)
+      setHoje(destaqueOrcamento(r, meuEnv ?? r.envelopes.find(e => !e.casa)?.id, hojeRecife(), FUSO).valor)
       setPasso(3)
     })
   const fim = async () => {
@@ -218,20 +254,28 @@ export function PrimeiroUso() {
             passo2()
           }}
         >
-          <h2>Quanto cada um pode gastar no mês?</h2>
+          <h2>Quanto entra e quanto cada um pode gastar?</h2>
+          <label className="campo">
+            <span>Sua renda do mês</span>
+            <CampoValor valor={renda} mudar={v => setRenda(v.replace(/[^\d,]/g, ''))} />
+            <small>Salário ou o que entra todo mês. Quem você convidar põe a dele depois. Pode deixar em branco.</small>
+          </label>
           <p className="sub">
             Defina quanto cada pessoa e a casa podem gastar por mês. Pode mudar depois em Planejamento.
           </p>
           {envs.map(e => (
             <label className="campo" key={e.id}>
-              <span>{textoPrivado(e.nome)}</span>
+              {/* o "Pessoa 2" do banco é o limite de quem for convidado para dividir a gestão (simulação de 22/11) */}
+              <span>{limiteSemNome(e.nome) ? 'Outro adulto da casa' : textoPrivado(e.nome)}</span>
               <CampoValor valor={lim[e.id] || ''} mudar={v => setLim({ ...lim, [e.id]: v.replace(/[^\d,]/g, '') })} />
               <small>
-                {e.regra === 'diario'
-                  ? 'Vira um valor por dia.'
-                  : e.regra === 'semanal'
-                    ? 'Vira um teto por semana.'
-                    : 'Vale pro mês inteiro.'}
+                {limiteSemNome(e.nome)
+                  ? 'De quem você convidar para dividir a gestão. Ganha o nome da pessoa quando ela entrar. Mora só? Deixe em branco.'
+                  : e.regra === 'diario'
+                    ? 'Vira um valor por dia.'
+                    : e.regra === 'semanal'
+                      ? 'Vira um teto por semana.'
+                      : 'Vale pro mês inteiro.'}
               </small>
             </label>
           ))}
@@ -240,6 +284,7 @@ export function PrimeiroUso() {
             <CampoValor valor={colchao} mudar={v => setColchao(v.replace(/[^\d,]/g, ''))} />
             <small>Dinheiro que nunca entra no "pode gastar". A conta da casa nunca desce dele.</small>
           </label>
+          <CabeNaRenda renda={renda} limites={envs.map(e => lim[e.id] || '')} oculto={oculto} />
           {erro && (
             <p className="erro" role="alert">
               {textoPrivado(erro)}
@@ -323,7 +368,7 @@ export function PrimeiroUso() {
             </p>
           )}
           <button className="btn ghost full" type="button" onClick={() => setPasso(4)}>
-            Convido depois
+            {convidado ? 'Continuar' : 'Convido depois'}
             <Icone desenho={ArrowRight} />
           </button>
         </div>
@@ -336,10 +381,10 @@ export function PrimeiroUso() {
             titulo="Tudo pronto."
             frase="Agora é só tocar no botão verde e anotar cada gasto: valor e 1 toque."
           />
-          <h2>Próximos passos para 2029</h2>
+          <h2>Próximos passos</h2>
           <p>
-            Em Guardado, cadastre suas aplicações e imóveis. Em Planejamento, registre receitas extras e confira o Plano
-            2029.
+            Em Guardado, cadastre suas aplicações e imóveis: o app mostra quanto rendem por mês. Em Planejamento,
+            confira as rendas e os limites quando quiser.
           </p>
           <button className="btn primary full" type="button" onClick={fim}>
             Começar pelo Início

@@ -32,6 +32,11 @@ function medida<U extends 'reais' | 'centavos' | 'percentual' | 'quantidade'>(
     : { ...meta, estado: 'indisponivel' as const, valor: null }
 }
 
+/** Quem entrou pelo convite (a filha) chega com limite zero até o casal combinar: o R$ 0 vem explicado (simulação de 22/11). */
+function legendaSemLimite(env: { limite_mes: number; limite_base?: number } | null | undefined) {
+  return env && (env.limite_base ?? env.limite_mes) === 0 ? { legenda: 'Limite do mês ainda não combinado' } : {}
+}
+
 function referencias(r: ResumoFamilia, oculto: boolean) {
   const { podeGastarHoje: orcamento, plano2029: plano, aplicacoes, faturas, imoveis } = r
   const aluguel = imoveis.valor?.aluguel
@@ -62,6 +67,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
         icone: 'orcamento',
         destino: destinoOrcamento,
         campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'),
+        ...legendaSemLimite(orcamento.valor?.envelope),
         tamanho: 'principal',
       },
       {

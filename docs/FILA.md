@@ -14,8 +14,9 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 1. **Tornar o repositório privado no GitHub** (só o dono: este navegador não tem a conta dele).
    GitHub → o repositório → Settings → Danger Zone → Change visibility → Private. Depois, conferir que a Vercel publica.
-2. **Anotar mais rápido**: salvar sempre à vista, últimos "O que foi?" como toque, detalhes recolhidos (livre).
-3. **Meta com ano escolhido pela família** e primeiro uso que pergunta a renda antes dos limites (livre; o dono segue em 2029).
+2. (feito em 22/11: Anotar mais rápido, ver "Feito")
+3. **Meta com ano escolhido pela família** (livre; o dono segue em 2029). A parte "primeiro uso pergunta a renda antes dos
+   limites" foi feita em 22/11.
 4. **Colar extrato sem internet**: acompanhar a recusa do banco como o Anotar já faz (livre).
 5. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
 6. **Salário que caiu na conta vira "entrou"** no Início (hoje só o aluguel e os recebimentos com data entram).
@@ -62,6 +63,10 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 - 22/11/2026 (simulação da Marina): família que não escolheu meta vê "Plano 2029" com a meta de exemplo. Para vender,
   o card de 2029 deve esperar a família escolher o ano e o objetivo (item 3 de "Agora")?
 - O repositório fica público até a família começar a usar de verdade (decisão do dono, 22/11/2026).
+- 22/11/2026: testes antigos com a expectativa mudada para acompanhar consertos (regra 6 do CLAUDE.md pede o "pode"):
+  aluguel.test (imóvel com caderno nunca aberto fica "a confirmar"), dadosExemplo.test e feedback.test (o aluguel que
+  chegou entra no "Entrou" do mês), donos.test (novo aviso do Ajudante dos Imóveis), pessoas-f25.test (o fim do primeiro
+  uso diz "Próximos passos", sem "para 2029"). Nenhum foi apagado nem pulado.
 
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
@@ -91,3 +96,7 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
   pessoa no limite, mesmo "hoje" no primeiro uso e no Início, sem "Desfazer" no cadastro, imóvel novo "a confirmar",
   aluguel que chegou entra no mês, Ajudante dos Imóveis avisa atraso, Guardado diz quanto rende por mês e conta os
   meses pelo combinado da família, atalho do ícone abre o Anotar limpo.
+- 22/11/2026: simulação com casal e filha (docs/SIMULACAO-MARINA.md, 2ª rodada). Consertado: convite real sempre saía como
+  adulto do casal (filha via tudo); quem convida escolhe adulto ou filho; lista "Quem está na família" no app real; limite
+  "Pessoa 2" ganha o nome; filha com limite zero explicado. Anotar mais rápido (salvar preso no rodapé, últimos "O que
+  foi?" em 1 toque, detalhes numa gaveta) e primeiro uso com a renda antes dos limites. Teto de avisos caiu para 194.

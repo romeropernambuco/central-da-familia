@@ -5,7 +5,7 @@ import type { Api } from '../api/tipos'
 
 const ouvintes = new Set<() => void>()
 let geracao = 0
-const cache = new WeakMap<Api, Map<string, Promise<{ id: string; user_id?: string; nome: string }[]>>>()
+const cache = new WeakMap<Api, Map<string, Promise<{ id: string; user_id?: string; nome: string; papel?: string }[]>>>()
 function lerMembros(api: Api, fid: string, versao: number) {
   let entradas = cache.get(api)
   if (!entradas) {
@@ -28,7 +28,7 @@ export function invalidarNomes() {
 export function useMembros() {
   const { api, familia } = useSessaoAtual()
   const { versao } = useDadosDoDia()
-  const [ms, setMs] = useState<{ id: string; user_id?: string; nome: string }[]>([])
+  const [ms, setMs] = useState<{ id: string; user_id?: string; nome: string; papel?: string }[]>([])
   const pode = familia?.papel === 'casal'
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState(false),

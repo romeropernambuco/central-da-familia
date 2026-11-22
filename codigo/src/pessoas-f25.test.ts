@@ -338,6 +338,8 @@ it('primeiro uso fala de gestão e prioriza objetivo 2029 antes de indicação',
   expect(a.box.textContent).not.toContain('com meus filhos')
   await a.click('Vou cuidar da gestão por enquanto')
   const t = a.box.textContent
-  expect(t).toContain('Próximos passos para 2029')
+  // 22/11: o título não fala mais de 2029 (a família nova ainda não escolheu meta); os próximos passos seguem antes da indicação
+  expect(t).toContain('Próximos passos')
+  expect(t).not.toContain('Próximos passos para 2029')
   expect(t.indexOf('aplicações e imóveis')).toBeLessThan(t.indexOf('indique a amigos'))
 })

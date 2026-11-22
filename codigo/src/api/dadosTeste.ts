@@ -81,6 +81,11 @@ const nomesIniciais = [...MEMBROS_SILVA, ...MEMBROS_SOUZA, ...MEMBROS_LIMA].map(
 export function restaurarNomesTeste() {
   for (const [m, nome] of nomesIniciais) m.nome = nome
   nomeLima = 'Família Lima'
+  MEMBROS_LIMA.splice(1)
+}
+/** Família nova: quem foi convidado vira membro na hora (como em produto.convidar), ainda sem limite ligado. */
+export function adicionarMembroNovo(m: MembroTeste) {
+  MEMBROS_LIMA.push(m)
 }
 /** Quem é da família de exemplo aberta. */
 export const membrosTeste = () => (qual === 'souza' ? MEMBROS_SOUZA : qual === 'lima' ? MEMBROS_LIMA : MEMBROS_SILVA)
