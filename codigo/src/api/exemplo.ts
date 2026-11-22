@@ -208,6 +208,42 @@ function criarDados() {
           { id: 'm1', nome: 'Viagem de julho', valor: 6000, guardado: 1800 },
           { id: 'm2', nome: 'Material escolar', valor: 1200, guardado: 900 },
         ],
+        // Dinheiro na rua (exemplo, número inventado): 1 negócio no prazo e 1 que já devolveu uma parte
+        dinheiro_na_rua: [
+          {
+            id: 'rua-carro',
+            nome: 'Carro para revender (exemplo)',
+            tipo: 'veiculo',
+            com_quem: 'Sócio',
+            minha_parte: 50,
+            combinado: 'Metade de cada um, lucro meio a meio',
+            prazo: somaDias(hoje, 70),
+            volta_prevista: 34000,
+            dono: 'm-ana',
+            movimentos: [
+              { id: 'rua-c1', data: somaDias(hoje, -20), tipo: 'pus', valor: 30000, nota: 'Primeiro dinheiro' },
+            ],
+            encerrado_em: null,
+            criado_em: somaDias(hoje, -20) + 'T12:00:00-03:00',
+          },
+          {
+            id: 'rua-baia',
+            nome: 'Baia de porcos (exemplo)',
+            tipo: 'criacao',
+            com_quem: 'Dono do terreno',
+            minha_parte: 50,
+            combinado: 'Ele entra com o terreno, eu com a baia',
+            prazo: somaDias(hoje, 10),
+            volta_prevista: 2600,
+            dono: 'm-ana',
+            movimentos: [
+              { id: 'rua-b1', data: somaDias(hoje, -90), tipo: 'pus', valor: 2000, nota: 'Construção da baia' },
+              { id: 'rua-b2', data: somaDias(hoje, -12), tipo: 'voltou', valor: 700, nota: 'Primeira venda' },
+            ],
+            encerrado_em: null,
+            criado_em: somaDias(hoje, -90) + 'T12:00:00-03:00',
+          },
+        ],
       }
   const ajustes: { mes: string; de: string; para: string; valor: number; id: string }[] = []
   const convites: ConviteFamilia[] = souza

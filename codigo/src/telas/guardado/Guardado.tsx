@@ -26,6 +26,7 @@ import { useFuturo, useGuardado } from '../../app/useDados2'
 import { TODOS_OS_BANCOS, type FuturoSaida } from '../../lib/futuro'
 import { useAdultos } from '../../app/useMembros'
 import { Imoveis } from '../../componentes/Imoveis'
+import { DinheiroNaRua } from './DinheiroNaRua'
 import { aplicacaoMinha } from '../../lib/dono'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import type { Api, GuardadoAplicacao, GuardadoHoje, TipoAplicacao } from '../../api/tipos'
@@ -147,6 +148,7 @@ export function Guardado() {
         <div data-secao="aplicacoes">
           <GuardadoVazio g={g} comecar={() => setFolha({ tipo: 'nova' })} />
         </div>
+        <DinheiroNaRua taxaAno={g.cdi_usado.pct_ano} aplicacoes={g.aplicacoes} />
         <Imoveis aplicado={0} />
         {folha?.tipo === 'nova' && <NovaAplicacao fechar={() => setFolha(null)} />}
       </>
@@ -425,6 +427,7 @@ export function Guardado() {
             </ul>
           </section>
           {/* RODADA_PATRIMONIO: imóveis dentro do Guardado (só o casal; o bloco some pra filha e equipe) */}
+          <DinheiroNaRua taxaAno={g.cdi_usado.pct_ano} aplicacoes={g.aplicacoes} />
           <Imoveis aplicado={g.total} />
           {saida && saida.avisos_fgc.length > 0 && <AvisoFGC avisos={saida.avisos_fgc} />}
           <p className="sub guard-taxa">

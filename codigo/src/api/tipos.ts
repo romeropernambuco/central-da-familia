@@ -622,6 +622,8 @@ export type ChaveConfig =
   | 'fontes_receita'
   | 'receitas_controle'
   | 'numeros_atualizados'
+  /** Dinheiro na rua: negócios em que saiu dinheiro que tem que voltar (lib/dinheiroNaRua). Só o casal. */
+  | 'dinheiro_na_rua'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'

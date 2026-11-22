@@ -114,6 +114,9 @@ const telas = [
   'Viagem',
   'NovaEtiqueta',
   'LinhaEtiqueta',
+  'DinheiroNaRua',
+  'FolhaNegocio',
+  'NovoNegocio',
 ]
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54
@@ -128,6 +131,21 @@ const etiquetaPrivada = {
   arquivada: false,
   total: dinheiro,
   lancamentos: 2,
+}
+/** Negócio com nome, sócio, combinado e valores privados: a lista, a folha e o cadastro seguem a regra do olho. */
+const negocioPrivado = {
+  id: 'rua-privado',
+  nome: segredo,
+  tipo: 'veiculo',
+  com_quem: segredo,
+  minha_parte: 50,
+  combinado: segredo,
+  prazo: '2027-01-31',
+  volta_prevista: dinheiro,
+  dono: 'm-ana',
+  movimentos: [{ id: 'mv', data: '2026-11-01', tipo: 'pus', valor: dinheiro, nota: segredo }],
+  encerrado_em: null,
+  criado_em: '2026-11-01T12:00:00-03:00',
 }
 const rotasAgentes = [
   'inicio',
@@ -496,7 +514,25 @@ describe('regra do olho em cada tela real', () => {
                                           aplicar: async () => '',
                                         },
                                       }
-                                    : { aplicado: dinheiro }
+                                    : nome === 'DinheiroNaRua'
+                                      ? { taxaAno: 13.65, aplicacoes: [] }
+                                      : nome === 'FolhaNegocio'
+                                        ? {
+                                            n: negocioPrivado,
+                                            taxaAno: 13.65,
+                                            aplicacoes: [],
+                                            salvar: async () => true,
+                                            fechar() {},
+                                            mudar() {},
+                                          }
+                                        : nome === 'NovoNegocio'
+                                          ? {
+                                              atual: negocioPrivado,
+                                              salvar: async () => true,
+                                              apagar: async () => true,
+                                              fechar() {},
+                                            }
+                                          : { aplicado: dinheiro }
       let alternar: () => void = () => {}
       function App() {
         const [oculto, setOculto] = useState(true)
@@ -630,7 +666,7 @@ describe('regra do olho em cada tela real', () => {
         vi.unstubAllGlobals()
       }
     }
-  }, 60000)
+  }, 120000)
 })
 
 it('clipboard fechado usa versão segura e bloqueia sem ela; aberto devolve original', async () => {
