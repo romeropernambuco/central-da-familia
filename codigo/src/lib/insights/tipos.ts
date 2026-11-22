@@ -33,6 +33,8 @@ export interface SnapshotInsights {
   aplicacoes?: readonly { id: string; nome: string; vencimento: string | null; ativa: boolean }[]
   feiras?: readonly { id: string; semana: string; data: string; temNota: boolean; justificativa: string | null }[]
   contratos?: readonly { id: string; nome: string; motivo: string; mes: string | null }[]
+  /** Dinheiro na rua ainda aberto e com valor fora: prazo AAAA-MM-DD e o que falta voltar, em centavos. */
+  negocios?: readonly { id: string; nome: string; prazo: string; naRua: number }[]
   objetivo?: {
     mes: string
     projetado: number | null
@@ -51,6 +53,7 @@ export type TipoInsight =
   | 'feira_nota'
   | 'objetivo'
   | 'contrato_imovel'
+  | 'negocio_prazo'
 export type AcaoInsight =
   | { tipo: 'informar_pagamento'; cartaoId: string; mes: string }
   | {

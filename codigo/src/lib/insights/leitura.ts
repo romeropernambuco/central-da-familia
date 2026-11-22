@@ -22,7 +22,10 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
   if (rota === 'casa' && (familia.papel === 'casal' || familia.papel === 'equipe'))
     dados.feiras = await ler(() => api.feiras(familia.id))
   if (familia.papel !== 'casal') return { dados, erros }
-  if (rota === 'guardado') dados.guardado = await ler(() => api.guardadoHoje(familia.id))
+  if (rota === 'guardado') {
+    dados.guardado = await ler(() => api.guardadoHoje(familia.id))
+    dados.negocios = await ler(() => api.config(familia.id, 'dinheiro_na_rua', []))
+  }
   if (rota === 'planejamento' || rota === 'guardado') {
     const [rec, f] = await Promise.all([
       rota === 'planejamento' && api.recebimentos ? ler(() => api.recebimentos!(familia.id)) : undefined,

@@ -14,6 +14,7 @@ import type { FuturoEntrada, FuturoSaida } from '../futuro'
 import { reais, simularCompra } from '../formato'
 import { numerosRumo2029 } from '../rumo2029'
 import { cartaoMeu } from '../dono'
+import { lerNegocios } from '../dinheiroNaRua'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { FaturaInsight, SnapshotInsights } from './tipos'
 
@@ -36,6 +37,8 @@ export interface LeiturasInsights {
   mesObjetivo?: string
   controleReceitas?: ControleReceitas
   entradaObjetivo?: FuturoEntrada
+  /** configuração `dinheiro_na_rua`, como veio do banco */
+  negocios?: unknown
 }
 /** Adapta só leituras concluídas da API selecionada; nunca importa/cria EXEMPLO como fallback. */
 export function montarSnapshot(
@@ -109,6 +112,14 @@ export function montarSnapshot(
     }))
     // guardadoHoje devolve apenas aplicações ativas: encerradas não constam nessa leitura.
     s.aplicacoes = d.guardado?.aplicacoes.map(a => ({ id: a.id, nome: a.nome, vencimento: a.vence_em, ativa: true }))
+    if (d.negocios !== undefined)
+      s.negocios = lerNegocios(d.negocios).flatMap(n => {
+        if (n.encerrado_em) return []
+        const soma = (tipo: 'pus' | 'voltou') =>
+          n.movimentos.filter(m => m && m.tipo === tipo).reduce((v, m) => v + (Number(m.valor) || 0), 0)
+        const naRua = emCentavos(soma('pus') - soma('voltou'))
+        return naRua !== null && naRua > 0 ? [{ id: n.id, nome: n.nome, prazo: n.prazo, naRua }] : []
+      })
     // Necessário é de patrimônio FINANCEIRO: imóveis já contribuíram pelo aluguel no motor existente.
     const f = d.futuro
     s.contratos = f?.gatilhos

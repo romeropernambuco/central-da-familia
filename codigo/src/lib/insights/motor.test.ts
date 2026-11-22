@@ -332,3 +332,41 @@ it('propriedade: 2000 snapshots determinísticos, incompletos/corrompidos, nunca
     expect(JSON.stringify(s)).toBe(antes)
   }
 })
+
+describe('Dinheiro na rua: o Guardado avisa o prazo', () => {
+  const negocio = (prazo: string, naRua = 3000000) =>
+    base({ negocios: [{ id: 'n1', nome: 'NomeSentinelaPrivado', prazo, naRua }] })
+  const um = (s: SnapshotInsights, a = agora) => candidatosInsights(s, a).find(i => i.tipo === 'negocio_prazo')
+  it.each([
+    ['15 dias antes', '2027-01-14', true],
+    ['16 dias antes', '2027-01-15', false],
+    ['no dia', '2026-12-30', true],
+    ['atrasado', '2026-12-01', true],
+  ] as const)('%s', (_caso, prazo, esperado) => {
+    expect(tem(negocio(prazo), 'negocio_prazo')).toBe(esperado)
+  })
+  it('no dia vale como "vence hoje", com chave própria; atrasado não atravessa a noite', () => {
+    const hoje = um(negocio('2026-12-30'))!
+    const antes = um(negocio('2026-12-30'), '2026-12-20T12:00:00-03:00')!
+    expect(hoje.prioridade).toBe(0)
+    expect(hoje.pergunta).toBe('Hoje é o prazo de um dinheiro na rua. Ele voltou?')
+    expect(antes.prioridade).toBe(1)
+    expect(antes.chave).not.toBe(hoje.chave)
+    expect(um(negocio('2026-12-01'))!.prioridade).toBe(1)
+    expect(um(negocio('2026-12-01'), '2026-12-30T23:00:00-03:00')).toBeUndefined()
+    expect(um(negocio('2026-12-30'), '2026-12-30T23:00:00-03:00')).toBeDefined()
+  })
+  it('sem dinheiro fora, para quem não é o casal ou com dado estragado, não avisa', () => {
+    expect(tem(negocio('2026-12-30', 0), 'negocio_prazo')).toBe(false)
+    expect(tem({ ...negocio('2026-12-30'), papel: 'pessoa' }, 'negocio_prazo')).toBe(false)
+    expect(tem(base({ negocios: [null, { id: 'x' }, 7] as any }), 'negocio_prazo')).toBe(false)
+  })
+  it('o nome do negócio fica como trecho privado, e quem fala é o Guardado', () => {
+    const i = um(negocio('2027-01-02'))!
+    expect(i.funcionario).toBe('guardado')
+    expect(i.rota).toBe('guardado')
+    expect(i.trechosPrivados).toEqual(['NomeSentinelaPrivado'])
+    expect(i.contexto).toBe('Negócio: NomeSentinelaPrivado. Prazo: 02/01/2027.')
+    expect(i.opcoes.map(o => o.id)).toEqual(['abrir', 'depois', 'resolvido'])
+  })
+})

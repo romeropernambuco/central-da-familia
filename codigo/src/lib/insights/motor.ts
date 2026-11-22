@@ -1,6 +1,7 @@
 import { donoDoInsight } from './donos'
 import type { OpcaoPergunta } from '../../api/tipos'
 import { diasEntre } from '../formato'
+import { AVISO_PRAZO_DIAS } from '../dinheiroNaRua'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { AcaoInsight, Insight, MemoriaInsights, SnapshotInsights, TipoInsight } from './tipos'
 
@@ -19,6 +20,7 @@ const ordem: TipoInsight[] = [
   'fatura_vencendo',
   'parcelas',
   'aplicacao',
+  'negocio_prazo',
   'fatura_divergente',
   'reserva',
   'recebimento',
@@ -50,9 +52,10 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
     contexto = '',
     privados: string[] = [],
     vence?: string,
+    fixa?: 0 | 1 | 2,
   ) => {
     const dias = vence && diaValido(vence) ? diasEntre(t.dia, vence) : null
-    const prioridade = dias === 0 ? 0 : dias !== null && dias > 0 ? 1 : 2
+    const prioridade = fixa ?? (dias === 0 ? 0 : dias !== null && dias > 0 ? 1 : 2)
     // Só eventos que de fato vencem hoje atravessam o silêncio; divergência não herda vencimento.
     if ((t.hora >= 22 || t.hora < 7) && prioridade !== 0) return
     const k = chave(...assunto)
@@ -189,6 +192,44 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
           typeof a.nome === 'string' ? `Aplicação: ${a.nome}.` : '',
           typeof a.nome === 'string' ? [a.nome] : [],
           a.vencimento,
+        )
+    }
+    // Dinheiro na rua: 15 dias antes, no dia do prazo (chave própria, volta mesmo se já respondeu antes) e depois dele.
+    for (const n of lista(s.negocios)) {
+      if (!n || !id(n.id) || typeof n.nome !== 'string' || !diaValido(n.prazo) || !inteiro(n.naRua) || n.naRua <= 0)
+        continue
+      const dias = diasEntre(t.dia, n.prazo)
+      if (dias > AVISO_PRAZO_DIAS) continue
+      const contexto = `Negócio: ${n.nome}. Prazo: ${n.prazo.slice(8, 10)}/${n.prazo.slice(5, 7)}/${n.prazo.slice(0, 4)}.`
+      const abrir = [op('abrir', 'Ver o negócio')]
+      if (dias < 0)
+        add(
+          'negocio_prazo',
+          'guardado',
+          'guardado',
+          ['negocio_prazo', n.id, n.prazo, 'atrasado', t.dia.slice(0, 7)],
+          'Um dinheiro na rua passou do prazo. Vamos cobrar ou combinar outra data?',
+          { tipo: 'atalho', destino: '#/guardado' },
+          abrir,
+          contexto,
+          [n.nome],
+          undefined,
+          1,
+        )
+      else
+        add(
+          'negocio_prazo',
+          'guardado',
+          'guardado',
+          ['negocio_prazo', n.id, n.prazo, dias === 0 ? 'hoje' : 'antes'],
+          dias === 0
+            ? 'Hoje é o prazo de um dinheiro na rua. Ele voltou?'
+            : 'Um dinheiro na rua vence em breve. Já combinou a volta?',
+          { tipo: 'atalho', destino: '#/guardado' },
+          abrir,
+          contexto,
+          [n.nome],
+          n.prazo,
         )
     }
     for (const c of lista(s.contratos)) {

@@ -13,6 +13,7 @@ export const DONOS_INSIGHTS = {
   feira_nota: 'fiscal',
   objetivo: 'tesoureiro',
   contrato_imovel: 'imoveis',
+  negocio_prazo: 'guardado',
 } as const satisfies Record<TipoInsight, string>
 /** Perguntas do banco preservam o funcionário autorizado pelo endpoint. */
 export function donoDoInsight(i: Pick<PerguntaEsc, 'funcionario'> & { tipo?: TipoInsight }): string {

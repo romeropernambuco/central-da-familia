@@ -73,6 +73,7 @@ it('tabela pura define os oito donos e o novo contrato; banco preserva seus oito
     feira_nota: 'fiscal',
     objetivo: 'tesoureiro',
     contrato_imovel: 'imoveis',
+    negocio_prazo: 'guardado',
   })
   for (const [tipo, dono] of Object.entries(DONOS_INSIGHTS))
     expect(donoDoInsight({ funcionario: 'errado', tipo: tipo as keyof typeof DONOS_INSIGHTS })).toBe(dono)

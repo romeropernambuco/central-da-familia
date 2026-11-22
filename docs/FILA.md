@@ -10,8 +10,7 @@ Situação em 22/11/2026:
 
 ## 1. Agora
 
-1. **Escritório avisa o prazo do Dinheiro na rua**: 15 dias antes e no dia em que vence.
-2. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
+1. **Dinheiro na rua no patrimônio**: aparece numa linha à parte ("na rua"), fora do plano de 2029 até voltar.
 
 ## 2. Em seguida
 
@@ -59,3 +58,5 @@ Situação em 22/11/2026:
 - 22/11/2026: Caderno do aluguel em cada imóvel alugado: "chegou" mês a mês, atrasado pelo dia combinado,
   despesas do imóvel e o que sobrou no ano em % do valor. Resumo do mês no topo dos Imóveis.
   Guarda na configuração da família (`aluguel_caderno`), sem mudar o banco.
+- 22/11/2026: o Gestor do Guardado avisa o prazo do Dinheiro na rua: 15 dias antes, no dia (aviso próprio, volta mesmo
+  se já respondeu antes) e depois que passou. Só com dinheiro ainda fora; respeita o silêncio das 22h às 7h.
