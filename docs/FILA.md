@@ -23,7 +23,7 @@ Situação em 22/11/2026:
    - Gastos do imóvel (IPTU, condomínio, obra) no mesmo caderno.
    - Quanto rende por ano sobre o valor do imóvel, ao lado do que o banco pagaria.
    - Pronto quando: na família de exemplo, 7 imóveis mostram recebido, atrasado e rendimento; contas com teste; prints.
-   - Precisa da tabela de imóveis no banco (migração f_15, ainda em rascunho).
+   - A tabela de imóveis já está no banco (f_15, aplicada em 22/11/2026).
 
 ## 2. Em seguida
 
@@ -50,18 +50,21 @@ Situação em 22/11/2026:
 
 ## 4. Do dono (não é programação)
 
-1. Rodar as migrações `produto_f_01` a `produto_f_15` (desejos, imóveis, recebimentos, plano, saldos). Como o banco ainda não tem dados da família, é o melhor momento.
-2. Decidir a regra das parcelas futuras em 2029.
-3. Decidir se apaga `src/propostas/motor/` e `app/mascara.ts`.
+1. Aplicar a correção que devolve as etiquetas à cópia de segurança:
+   `banco/migracoes/20261122120000_produto_etiquetas_no_exportar_depois_da_f03.sql` (pronta; espera o "pode").
+2. Ligar o botão "apagar a família" (função `apagar_familia`, do pacote `revisao/sql/RODAR_NO_SUPABASE.sql`, bloco 2).
+3. Decidir a regra das parcelas futuras em 2029.
+4. Decidir se apaga `src/propostas/motor/` e `app/mascara.ts`.
 
 ## Perguntas para o dono
 
 (Anote aqui o que ficou para ele decidir, com a data. Não pare o trabalho por isso.)
 
-- 22/11/2026: aplicar no banco as migrações f_01 a f_15, já que ele ainda não tem dados da família? Destrava imóveis, desejos, recebimentos e plano.
+- 22/11/2026: aplicar a correção das etiquetas na cópia de segurança (item 1 de "Do dono").
 - 22/11/2026: publicar o conserto do "Guardar em" do Dinheiro na rua (item 1 de "Agora").
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
 
 ## Feito
 
+- 22/11/2026: migrações f_01 a f_15 aplicadas no banco, em ordem. 758 testes do banco, 0 falhas. Dados não mudaram.
 - 22/11/2026: etiquetas de viagem; Dinheiro na rua; tipos frouxos de 343 para 195 avisos; portões rodam no Windows.
