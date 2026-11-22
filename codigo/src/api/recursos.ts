@@ -64,7 +64,8 @@ export function recursosDaMutacao(nome: string, args: unknown[]): string[] | und
   // a volta que já entra no Guardado muda o Guardado também
   if (nome === 'negocioVoltaGuardar') return ['negocios', 'guardado', 'projecao', 'pendencias', 'escritorio']
   if (/^negocio/.test(nome)) return ['negocios', 'pendencias', 'escritorio']
-  if (/^aluguel/.test(nome)) return ['aluguel', 'pendencias', 'escritorio']
+  // o problema do aluguel ("não me pagou") muda a conta do plano: a projeção relê
+  if (/^aluguel/.test(nome)) return ['aluguel', 'projecao', 'pendencias', 'escritorio']
   if (/^(cartao|criarCartao)/.test(nome)) return ['cartoes', 'faturas', 'faturasBanco', 'projecao', 'escritorio']
   if (/^desejo/.test(nome)) return ['desejos', 'escritorio', 'pendencias']
   if (/^lembrete/.test(nome)) return ['escritorio', 'pendencias']

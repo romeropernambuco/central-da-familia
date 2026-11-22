@@ -21,6 +21,7 @@ import { Botao, CampoValor, Din, Sheet } from './base'
 import { Icone } from './Icone'
 import { CampoPrivado } from './privacidade'
 import './aluguel.css'
+import { ProblemaDoAluguel } from './ProblemaAluguel'
 
 /** "Aluguéis de novembro: 5 de 7 chegaram". Só aparece com imóvel alugado. */
 export function ResumoAluguel({ imoveis, caderno }: { imoveis: ImovelTela[]; caderno: Caderno }) {
@@ -108,6 +109,7 @@ export function FolhaAluguel({
               : ''}
           </p>
         </section>
+        <ProblemaDoAluguel imovel={imovel} c={c} gravar={gravar} />
         <MesesDoAluguel imovel={imovel} c={c} meses={meses} gravar={gravar} />
         <DespesasDoImovel c={c} gravar={gravar} />
         <DiaDoVencimento c={c} gravar={gravar} />

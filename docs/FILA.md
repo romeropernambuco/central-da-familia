@@ -22,6 +22,8 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 6. **Salário que caiu na conta vira "entrou"** no Início (hoje só o aluguel e os recebimentos com data entram).
    Saiu da simulação da Marina (`docs/SIMULACAO-MARINA.md`).
 7. **Aluguel contado 2 vezes**: travar a receita de origem "Aluguel" quando o imóvel já tem aluguel cadastrado.
+9. **Simulações da vida real** (`docs/SIMULACOES-DA-VIDA-REAL.md`): contas do ano com aviso antes, dívidas e parcelas
+   fixas, retirada de empresa que falha, fôlego em meses, calote no dinheiro na rua (ordem e detalhes lá).
 8. **Ajudante dos Imóveis na sala do Escritório**: hoje o aviso de aluguel atrasado aparece no cartão da aba Guardado;
    o estado dele na sala vem da função do banco que monta o Escritório e ainda diz "ainda sem dado".
 
@@ -100,3 +102,6 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
   adulto do casal (filha via tudo); quem convida escolhe adulto ou filho; lista "Quem está na família" no app real; limite
   "Pessoa 2" ganha o nome; filha com limite zero explicado. Anotar mais rápido (salvar preso no rodapé, últimos "O que
   foi?" em 1 toque, detalhes numa gaveta) e primeiro uso com a renda antes dos limites. Teto de avisos caiu para 194.
+- 22/11/2026: "Não me pagou" no caderno do aluguel (migração 20261122111629, autoteste e 752 testes do banco ok):
+  providência, volta, quem cuida, dívida e andamento; plano e Início param de contar com o aluguel até a volta;
+  celular não avisa o atraso registrado e avisa lembrete do dia; Secretária lembra de cobrar o advogado.

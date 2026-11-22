@@ -148,6 +148,8 @@ export interface Imovel {
   venda_valor: Centavos | null
   venda_mes: Mes | null
   venda_contrato: boolean
+  /** "Não me pagou" (caderno do aluguel): o aluguel só volta a contar A PARTIR deste mês. Ausente = sem problema. */
+  sem_aluguel_ate?: Mes | null
 }
 export interface ImovelSaida {
   id: string

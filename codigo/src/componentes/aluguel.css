@@ -19,6 +19,26 @@
 .aluguel-situacao.recebido {
   color: var(--accent-ink);
 }
+/* "Não me pagou" (22/11): o mês com problema registrado é sabido, não é susto */
+.aluguel-situacao.sem_receber,
+.aluguel-mes.sem_receber small {
+  color: var(--warn-ink);
+}
+.aluguel-problema {
+  display: grid;
+  gap: 10px;
+}
+.problema-card {
+  display: grid;
+  gap: 8px;
+}
+.problema-andamento .li {
+  padding: 6px 0;
+}
+.problema-andamento .m {
+  display: grid;
+  gap: 2px;
+}
 .aluguel-folha {
   display: grid;
   gap: 16px;

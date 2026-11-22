@@ -24,8 +24,47 @@ export interface CadernoImovel {
   despesas: DespesaImovel[]
   /** mês em que o caderno começou (AAAA-MM): antes dele nada conta como atrasado */
   desde?: string
+  /** o inquilino parou de pagar (ou o imóvel ficou vazio): o que a família está fazendo e até quando fica sem receber */
+  problema?: ProblemaAluguel | null
 }
 export type Caderno = Record<string, CadernoImovel>
+
+/**
+ * "Não me pagou": quando o aluguel para de chegar, a família diz a providência e até quando acha que fica sem receber.
+ * A partir daí o app não acusa atraso todo mês, não conta com esse aluguel até a volta e lembra de cobrar o advogado.
+ * (Ideia do dono, 22/11/2026: "o pior é ser pego desprevenido; não dá para construir algo no sistema durante o problema".)
+ */
+export type EtapaProblema = 'cobrando' | 'acordo' | 'advogado' | 'despejo' | 'vazio' | 'reforma'
+export const ETAPAS: Record<EtapaProblema, { nome: string; frase: string }> = {
+  cobrando: { nome: 'Cobrando o inquilino', frase: 'cobrando o inquilino' },
+  acordo: { nome: 'Acordo de pagamento', frase: 'em acordo de pagamento' },
+  advogado: { nome: 'Com o advogado', frase: 'com o advogado' },
+  despejo: { nome: 'Despejo na justiça', frase: 'despejo na justiça' },
+  vazio: { nome: 'Imóvel vazio', frase: 'imóvel vazio' },
+  reforma: { nome: 'Em reforma', frase: 'em reforma' },
+}
+export interface AndamentoProblema {
+  data: string
+  texto: string
+}
+export interface ProblemaAluguel {
+  etapa: EtapaProblema
+  /** 1º mês sem receber (AAAA-MM) */
+  desde: string
+  /** mês em que a família acha que volta a receber (AAAA-MM); null = não sabe ainda */
+  volta: string | null
+  /** quem cuida do caso (advogado, imobiliária): nome e contato, até 80 letras */
+  advogado: string | null
+  /** quanto o inquilino ficou devendo (a receber, talvez nunca volte) */
+  divida: number
+  /** o que aconteceu: notificação, audiência, acordo (até 30 anotações) */
+  andamento: AndamentoProblema[]
+}
+/** O mês está dentro do problema: do 1º mês sem receber até o mês anterior à volta (sem volta: até resolver). */
+export const semReceberNoMes = (c: CadernoImovel, mes: string) =>
+  !!c.problema && mes >= c.problema.desde && (!c.problema.volta || mes < c.problema.volta)
+/** O imóvel está com problema agora (no mês de hoje). */
+export const comProblema = (c: CadernoImovel | undefined, mesHoje: string) => !!c && semReceberNoMes(c, mesHoje)
 
 export const DIA_PADRAO = 10
 export const cadernoVazio = (): CadernoImovel => ({ dia_vencimento: DIA_PADRAO, recebimentos: [], despesas: [] })
@@ -57,6 +96,7 @@ export type SituacaoAluguel =
   | { tipo: 'a_vencer'; dias: number; vence: string }
   | { tipo: 'antes'; vence: string }
   | { tipo: 'confirmar'; vence: string }
+  | { tipo: 'sem_receber'; vence: string; etapa: EtapaProblema; volta: string | null }
 
 /** O caderno nunca foi aberto: sem mês de começo e sem nenhum aluguel anotado (o dia do vencimento ainda é o padrão). */
 export const cadernoNovo = (c: CadernoImovel) => !c.desde && c.recebimentos.length === 0
@@ -69,6 +109,9 @@ export function situacaoDoMes(c: CadernoImovel, mes: string, hoje: string): Situ
   if (r) return { tipo: 'recebido', data: r.data, valor: r.valor }
   const vence = vencimento(mes, c.dia_vencimento)
   if (mes < inicioDoCaderno(c, hoje.slice(0, 7))) return { tipo: 'antes', vence }
+  // com problema registrado (calote, despejo, vazio): não é "atrasado" de novo a cada mês, é "sem receber" até a volta
+  if (c.problema && semReceberNoMes(c, mes))
+    return { tipo: 'sem_receber', vence, etapa: c.problema.etapa, volta: c.problema.volta }
   if (cadernoNovo(c) && mes === hoje.slice(0, 7)) return { tipo: 'confirmar', vence }
   const dias = Math.round(dia(hoje) - dia(vence))
   return dias > 0 ? { tipo: 'atrasado', dias, vence } : { tipo: 'a_vencer', dias: -dias, vence }
@@ -81,6 +124,8 @@ export function fraseDaSituacao(s: SituacaoAluguel) {
   if (s.tipo === 'atrasado') return `atrasado há ${s.dias === 1 ? '1 dia' : `${s.dias} dias`}`
   if (s.tipo === 'antes') return 'antes do caderno'
   if (s.tipo === 'confirmar') return 'já chegou? marque no caderno'
+  if (s.tipo === 'sem_receber')
+    return `sem receber: ${ETAPAS[s.etapa].frase}${s.volta ? `, volta em ${s.volta.slice(5, 7)}/${s.volta.slice(2, 4)}` : ''}`
   return s.dias === 0 ? 'vence hoje' : `vence dia ${dm(s.vence)}`
 }
 
@@ -127,7 +172,8 @@ export interface ResumoDoMes {
   atrasados: number
   /** o que chegou este mês */
   recebido: number
-  /** o que ainda falta chegar este mês (aluguel combinado dos que não chegaram) */
+  /** o que ainda falta chegar este mês (aluguel combinado dos que não chegaram; sem o imóvel com problema registrado,
+   *  que já se sabe que não vem) */
   falta: number
 }
 /** Os aluguéis do mês de hoje, somando todos os imóveis alugados. */
@@ -139,7 +185,7 @@ export function resumoDoMes(imoveis: { id: string; aluguel: number }[], caderno:
     if (s.tipo === 'recebido') {
       r.recebidos++
       r.recebido = c2(r.recebido + s.valor)
-    } else {
+    } else if (s.tipo !== 'sem_receber') {
       if (s.tipo === 'atrasado') r.atrasados++
       r.falta = c2(r.falta + i.aluguel)
     }
@@ -179,7 +225,36 @@ export function lerCaderno(v: unknown): Caderno {
         ? c.despesas.filter(d => d && typeof d.id === 'string' && typeof d.valor === 'number')
         : [],
       ...(typeof c.desde === 'string' && /^\d{4}-\d{2}$/.test(c.desde) ? { desde: c.desde } : {}),
+      ...(lerProblema(c.problema) ? { problema: lerProblema(c.problema) } : {}),
     }
   }
   return out
+}
+
+const MES = /^\d{4}-(0[1-9]|1[0-2])$/
+/** O problema que veio do banco: só passa o que tem formato certo (etapa conhecida e meses AAAA-MM). */
+export function lerProblema(v: unknown): ProblemaAluguel | null {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null
+  const p = v as Partial<ProblemaAluguel>
+  if (!p.etapa || !(p.etapa in ETAPAS) || typeof p.desde !== 'string' || !MES.test(p.desde)) return null
+  return {
+    etapa: p.etapa,
+    desde: p.desde,
+    volta: typeof p.volta === 'string' && MES.test(p.volta) && p.volta > p.desde ? p.volta : null,
+    advogado: typeof p.advogado === 'string' && p.advogado.trim() ? p.advogado.trim().slice(0, 80) : null,
+    divida: typeof p.divida === 'number' && p.divida > 0 ? c2(p.divida) : 0,
+    andamento: Array.isArray(p.andamento)
+      ? p.andamento
+          .filter(a => a && typeof a.data === 'string' && typeof a.texto === 'string' && a.texto.trim())
+          .map(a => ({ data: a.data.slice(0, 10), texto: a.texto.trim().slice(0, 200) }))
+          .slice(-30)
+      : [],
+  }
+}
+
+/** Quantos meses de aluguel a família deixa de receber entre `de` e `ate` (inclusive) por causa do problema. */
+export function mesesSemReceber(c: CadernoImovel, de: string, ate: string) {
+  let n = 0
+  for (let m = de; m <= ate; m = mesMais(m, 1)) if (semReceberNoMes(c, m)) n++
+  return n
 }

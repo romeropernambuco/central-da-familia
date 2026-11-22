@@ -25,6 +25,7 @@ import type {
 import { validarNome, podeEditarNome } from '../lib/nomePessoa'
 import * as ex2 from './exemplo2'
 import { entradaDoBanco, imovelInvalido, type FuturoBanco } from '../lib/futuroReceitas'
+import { comProblemasDoAluguel } from '../lib/futuroAluguel'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
 import type { CadastroNome, ConfigEx, EntradaEx } from './exemploConfig'
 import {
@@ -2064,7 +2065,10 @@ export const apiExemplo: Api = {
           venda_contrato: i.venda_contrato,
         })),
     }
-    return entradaDoBanco(j)
+    // "não me pagou": igual ao modo real, o plano não conta com o aluguel do imóvel com problema até a volta
+    const cad = cadernosEx().aluguel_caderno || {}
+    const problemas = Object.fromEntries(Object.entries(cad).map(([id, c]) => [id, c.problema]))
+    return entradaDoBanco(comProblemasDoAluguel(j, problemas, m0))
   },
   // ---------- E7 (F8): o reajuste do teto, com as mesmas regras da f_12 ----------
   async reajusteSituacao(_f, mes) {
@@ -2269,9 +2273,12 @@ export const apiExemplo: Api = {
     for (const d of c.despesas) desp.set(d.id, structuredClone(d))
     for (const id of tirarDespesas) desp.delete(id)
     const desde = c.desde || atual.desde
+    // igual ao banco: sem a chave "problema" fica o que estava; com null o problema foi resolvido
+    const problema = 'problema' in c ? (c.problema ?? null) : (atual.problema ?? null)
     cad[imovel] = {
       dia_vencimento: c.dia_vencimento,
       ...(desde ? { desde } : {}),
+      ...(problema ? { problema: structuredClone(problema) } : {}),
       recebimentos: [...rec.values()].sort((a, b) => a.mes.localeCompare(b.mes)),
       despesas: [...desp.values()].sort((a, b) => a.data.localeCompare(b.data)),
     }

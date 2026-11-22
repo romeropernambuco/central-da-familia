@@ -26,6 +26,8 @@ import {
   imovelInvalido,
   type FuturoBanco,
 } from '../lib/futuroReceitas'
+import { lerCaderno } from '../lib/aluguel'
+import { comProblemasDoAluguel } from '../lib/futuroAluguel'
 import {
   normalizaCartao,
   normalizaContagem,
@@ -931,12 +933,21 @@ export const apiReal: Api = {
   },
 
   async futuroEntradas(familia) {
-    const [j, fontes_receita, receitas_controle] = await Promise.all([
+    const [j, fontes_receita, receitas_controle, caderno] = await Promise.all([
       rpc<FuturoBanco>('futuro_entradas', { familia }),
       this.config(familia, 'fontes_receita', {}),
       this.config(familia, 'receitas_controle', {}),
+      // "não me pagou": o plano não conta com o aluguel do imóvel com problema até a volta (sem o caderno, segue sem)
+      rpc('aluguel_da_familia', { familia }).catch(() => null),
     ])
-    return entradaDoBanco({ ...j, config: { ...j.config, fontes_receita, receitas_controle } })
+    const problemas = Object.fromEntries(Object.entries(lerCaderno(caderno)).map(([id, c]) => [id, c.problema]))
+    return entradaDoBanco(
+      comProblemasDoAluguel(
+        { ...j, config: { ...j.config, fontes_receita, receitas_controle } },
+        problemas,
+        hojeRecife().slice(0, 7),
+      ),
+    )
   },
   // ---------- E8: desejos (produto.desejos, f_06). A tranca do banco: o casal lê todos, a pessoa só os dela; só o dono muda ----------
   async desejos(familia) {

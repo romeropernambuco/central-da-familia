@@ -37,6 +37,8 @@ function vendidoAte(im: Imovel, m: Mes): boolean {
 export function aluguelNoMes(im: Imovel, m: Mes): boolean {
   if (im.uso === 'mora' || !im.tem_contrato || im.contrato_ate === null) return false
   if (compararMes(m, im.contrato_ate) > 0) return false
+  // inquilino não pagou (calote, despejo, vazio): não conta antes do mês em que a família acha que volta a receber
+  if (im.sem_aluguel_ate && compararMes(m, im.sem_aluguel_ate) < 0) return false
   if (im.venda_contrato && im.venda_mes !== null && compararMes(m, im.venda_mes) > 0) return false
   return true
 }

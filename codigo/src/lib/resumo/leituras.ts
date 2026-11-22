@@ -71,7 +71,16 @@ export async function lerImoveis(api: Api, id: string) {
   let aluguel: number | null = null
   try {
     const p = await api.futuroEntradas?.(id)
-    if (p?.entrada) aluguel = futuro(p.entrada).imoveis?.reduce((s, i) => s + i.aluguel_liquido_mes, 0) ?? null
+    // "não me pagou": imóvel sem receber até um mês futuro não entra no aluguel estimado de agora
+    const mesHoje = hojeRecife().slice(0, 7)
+    const parados = new Set(
+      (p?.entrada?.imoveis || []).filter(i => i.sem_aluguel_ate && i.sem_aluguel_ate > mesHoje).map(i => i.id),
+    )
+    if (p?.entrada)
+      aluguel =
+        futuro(p.entrada)
+          .imoveis?.filter(i => !parados.has(i.id))
+          .reduce((s, i) => s + i.aluguel_liquido_mes, 0) ?? null
   } catch {
     /* explicitamente indisponível */
   }

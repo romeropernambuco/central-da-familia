@@ -221,6 +221,8 @@ export interface ImovelBanco {
   venda_valor?: number | string | null
   venda_mes: string | null
   venda_contrato: boolean
+  /** posto pelo app a partir do caderno do aluguel ("não me pagou"): o aluguel volta a contar a partir deste mês */
+  sem_aluguel_ate?: string | null
 }
 
 /** O imóvel do banco no formato do motor (centavos, mês 'AAAA-MM'). */
@@ -244,6 +246,7 @@ export function imovelDoBanco(i: ImovelBanco): Imovel {
     venda_valor: venda == null ? null : Number(venda) || null,
     venda_mes: i.venda_mes ? String(i.venda_mes).slice(0, 7) : null,
     venda_contrato: !!i.venda_contrato,
+    ...(i.sem_aluguel_ate && /^\d{4}-\d{2}$/.test(i.sem_aluguel_ate) ? { sem_aluguel_ate: i.sem_aluguel_ate } : {}),
   }
 }
 
