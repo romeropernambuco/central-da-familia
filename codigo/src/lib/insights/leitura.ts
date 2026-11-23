@@ -17,6 +17,19 @@ async function lerGuardado(api: Api, familia: string, ler: <T>(fn: () => Promise
   return { guardado, negocios, imoveis, aluguel }
 }
 
+/**
+ * As contas do ano (IPTU, IPVA...): o Contador lembra no Planejamento. Leitura auxiliar: se falhar, o lembrete só não
+ * aparece (fica ausente) e a aba não vira "não foi possível conferir" por causa dela.
+ */
+async function contasDoAnoDaAba(api: Api, familia: string, rota: Rota): Promise<Pick<LeiturasInsights, 'contasAno'>> {
+  if (rota !== 'planejamento') return {}
+  try {
+    return { contasAno: await api.config<unknown>(familia, 'contas_ano', []) }
+  } catch {
+    return {}
+  }
+}
+
 /** Mesmos endpoints já usados nas telas. Falha fica ausente, nunca recebe dados fictícios.
  * Leituras são restritas à aba e ao papel antes de qualquer chamada. */
 export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Rota, agora: unknown) {
@@ -38,6 +51,7 @@ export async function lerDadosInsights(api: Api, familia: FamiliaMinha, rota: Ro
     const [rec, f] = await Promise.all([
       rota === 'planejamento' && api.recebimentos ? ler(() => api.recebimentos!(familia.id)) : undefined,
       api.futuroEntradas ? ler(() => api.futuroEntradas!(familia.id)) : undefined,
+      contasDoAnoDaAba(api, familia.id, rota).then(c => Object.assign(dados, c)),
     ])
     if (rec) {
       const controle = await ler(() => api.config(familia.id, 'receitas_controle', {}))

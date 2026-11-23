@@ -18,6 +18,7 @@ import { cartaoMeu } from '../dono'
 import { lerNegocios } from '../dinheiroNaRua'
 import { cadernoVazio, lerCaderno, situacaoDoMes } from '../aluguel'
 import { CAUSA_PADRAO, contaDaCausa, lerCausa } from '../causaAluguel'
+import { contasParaLembrar, lerContasDoAno } from '../contasDoAno'
 import { diaValido, mesValido, tempoRecife } from './tempo'
 import type { FaturaInsight, SnapshotInsights } from './tipos'
 
@@ -45,6 +46,8 @@ export interface LeiturasInsights {
   /** Imóveis e o caderno do aluguel (produto.aluguel_da_familia), para o aluguel que passou do dia */
   imoveis?: ImovelTela[]
   aluguel?: unknown
+  /** As contas do ano, como estão na config 'contas_ano' */
+  contasAno?: unknown
 }
 
 /** Aluguéis deste mês que passaram do dia combinado sem chegar (a mesma regra do caderno e da lista de imóveis). */
@@ -154,6 +157,11 @@ export function montarSnapshot(
       s.alugueis = alugueisAtrasados(d.imoveis, d.aluguel, t.dia)
       s.causas = causasParaAtualizar(d.imoveis, d.aluguel, t.dia)
     }
+    if (d.contasAno !== undefined)
+      s.contasAno = contasParaLembrar(lerContasDoAno(d.contasAno), t.dia).flatMap(p => {
+        const valor = emCentavos(p.conta.valor)
+        return valor ? [{ id: p.conta.id, nome: p.conta.nome, vence: p.vence, valor }] : []
+      })
     // Necessário é de patrimônio FINANCEIRO: imóveis já contribuíram pelo aluguel no motor existente.
     const f = d.futuro
     s.contratos = f?.gatilhos

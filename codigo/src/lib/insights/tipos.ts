@@ -39,6 +39,8 @@ export interface SnapshotInsights {
   alugueis?: readonly { id: string; nome: string; mes: string; dias: number }[]
   /** Causa do aluguel cujo pedido subiu desde que a família passou ao advogado (centavos; mês AAAA-MM). */
   causas?: readonly { id: string; nome: string; mes: string; pedido: number; nunca: boolean }[]
+  /** Contas do ano (IPTU, IPVA...) de 30 dias antes a 30 dias depois do vencimento, sem marcar como paga (centavos). */
+  contasAno?: readonly { id: string; nome: string; vence: string; valor: number }[]
   objetivo?: {
     mes: string
     projetado: number | null
@@ -59,6 +61,7 @@ export type TipoInsight =
   | 'contrato_imovel'
   | 'negocio_prazo'
   | 'aluguel_atrasado'
+  | 'conta_do_ano'
 export type AcaoInsight =
   | { tipo: 'informar_pagamento'; cartaoId: string; mes: string }
   | {

@@ -15,6 +15,7 @@ import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../lib/dono'
 import { Recebimentos } from './Recebimentos'
+import { ContasDoAno } from '../../componentes/ContasDoAno'
 import { gravarLimites, type MudancaLimite } from './limites'
 import { desfazer } from '../../api/desfazer'
 import { Parametros } from './Parametros'
@@ -478,6 +479,9 @@ export function Planejamento() {
 
         {/* E5: recebimentos com data, dentro do Planejamento (sem tela nova) */}
         <Recebimentos />
+
+        {/* contas que vêm uma vez por ano (IPTU, IPVA...): o app diz quanto separar e o Contador lembra */}
+        <ContasDoAno />
 
         <section className="card" aria-labelledby="pMet">
           <div className="card-h">

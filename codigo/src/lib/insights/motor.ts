@@ -22,6 +22,7 @@ const ordem: TipoInsight[] = [
   'aplicacao',
   'negocio_prazo',
   'aluguel_atrasado',
+  'conta_do_ano',
   'fatura_divergente',
   'reserva',
   'recebimento',
@@ -270,6 +271,31 @@ export function candidatosInsights(s: SnapshotInsights, agora: unknown): Insight
         [a.nome],
         undefined,
         1,
+      )
+    }
+    // Contas do ano (IPTU, IPVA...): o Contador lembra de 30 dias antes até a família marcar que pagou
+    for (const c of lista(s.contasAno)) {
+      if (!c || !id(c.id) || typeof c.nome !== 'string' || !diaValido(c.vence) || !inteiro(c.valor) || c.valor <= 0)
+        continue
+      const dias = diasEntre(t.dia, c.vence)
+      const valor =
+        'R$ ' + (c.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      add(
+        'conta_do_ano',
+        'planejamento',
+        'contador',
+        ['conta_do_ano', c.id, c.vence],
+        dias < 0
+          ? 'Uma conta do ano já venceu. Ela foi paga?'
+          : dias === 0
+            ? 'Hoje vence uma conta do ano. Já pagou?'
+            : 'Uma conta do ano vence em breve. O dinheiro já está separado?',
+        { tipo: 'atalho', destino: '#/planejamento' },
+        [op('abrir', 'Ver as contas do ano')],
+        `${c.nome}: ${valor}, vence em ${c.vence.slice(8, 10)}/${c.vence.slice(5, 7)}/${c.vence.slice(0, 4)}.`,
+        [c.nome],
+        dias >= 0 ? c.vence : undefined,
+        dias < 0 ? 1 : undefined,
       )
     }
     for (const c of lista(s.contratos)) {

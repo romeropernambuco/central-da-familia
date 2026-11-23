@@ -630,6 +630,8 @@ export type ChaveConfig =
   | 'viagens'
   /** O salário da gordura: % ao ano do guardado, fixo por 12 meses (lib/salarioDaGordura.ts, 22/11/2026). */
   | 'salario_gordura'
+  /** Contas do ano (IPTU, IPVA, matrícula...): valor, mês e dia; o Contador lembra (lib/contasDoAno.ts, 22/11/2026). */
+  | 'contas_ano'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'

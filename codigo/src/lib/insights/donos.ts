@@ -15,6 +15,8 @@ export const DONOS_INSIGHTS = {
   contrato_imovel: 'imoveis',
   negocio_prazo: 'guardado',
   aluguel_atrasado: 'imoveis',
+  // as contas do ano são impostos e taxas: quem cuida é o Contador (pedido do dono, 22/11/2026)
+  conta_do_ano: 'contador',
 } as const satisfies Record<TipoInsight, string>
 /** Perguntas do banco preservam o funcionário autorizado pelo endpoint. */
 export function donoDoInsight(i: Pick<PerguntaEsc, 'funcionario'> & { tipo?: TipoInsight }): string {
