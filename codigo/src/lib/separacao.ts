@@ -52,6 +52,10 @@ export interface SeparacaoDoMes {
   lucro: number
   /** separado para a viagem neste mês (sai do que pode gastar) */
   reservado: number
+  /** separado neste mês para as contas do ano (IPTU, IPVA...): sai do que pode gastar */
+  contasAno: number
+  /** o que já estava separado e pagou uma conta do ano neste mês: volta, porque o pagamento já é gasto do mês */
+  pagoComSeparado: number
   /** até quanto dá para gastar no mês sem tocar na gordura */
   pode: number
   gasto: number
@@ -79,25 +83,39 @@ export function separarDoMes(x: {
   reservado?: number
   /** o imposto do aluguel que entrou (o aluguel conta líquido, como no plano) */
   imposto?: number
+  /** separado neste mês para as contas do ano */
+  contasAno?: number
+  /** o que estava separado e pagou uma conta do ano neste mês */
+  pagoComSeparado?: number
 }): SeparacaoDoMes | null {
   const extras = Math.min(Math.max(0, x.extras || 0), Math.max(0, x.entrou))
   const imposto = Math.min(Math.max(0, x.imposto || 0), extras)
   const entra = c2(extras - imposto + Math.max(x.entrou - extras + x.previsto, x.rendaCadastrada))
   const lucro = c2(Math.max(0, x.lucro))
   const reservado = c2(Math.max(0, x.reservado || 0))
-  const pode = c2(entra + lucro - reservado)
+  const contasAno = c2(Math.max(0, x.contasAno || 0))
+  const pagoComSeparado = c2(Math.max(0, x.pagoComSeparado || 0))
+  const pode = c2(entra + lucro - reservado - contasAno + pagoComSeparado)
   if (!(pode > 0)) return null
   const gasto = c2(Math.max(0, x.gasto))
   const folga = c2(pode - gasto)
   const situacao: SituacaoDoMes = folga < 0 ? 'passou' : gasto >= pode * LIMITE ? 'limite' : 'folga'
-  return { entra, lucro, reservado, pode, gasto, folga, situacao }
+  return { entra, lucro, reservado, contasAno, pagoComSeparado, pode, gasto, folga, situacao }
 }
 
 const brl = (v: number) => 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
 
 /** O que o app fala (regra do dono: claro e curto; os três números já estão na tela). */
 export function fraseDaSeparacao(s: SeparacaoDoMes): { titulo: string; frase: string } {
-  const reserva = s.reservado > 0 ? `, menos ${brl(s.reservado)} separados para a viagem` : ''
+  const viagem = s.reservado > 0 ? `, menos ${brl(s.reservado)} separados para a viagem` : ''
+  const contas =
+    s.contasAno > 0
+      ? viagem
+        ? ` e ${brl(s.contasAno)} para as contas do ano`
+        : `, menos ${brl(s.contasAno)} separados para as contas do ano`
+      : ''
+  const pago = s.pagoComSeparado > 0 ? `, mais ${brl(s.pagoComSeparado)} já separados que pagaram contas do ano` : ''
+  const reserva = viagem + contas + pago
   const base = `Dá para gastar até ${brl(s.pode)} sem tocar na gordura: ${brl(s.entra)} que entram e ${brl(s.lucro)} do salário da gordura${reserva}.`
   if (s.situacao === 'passou')
     return { titulo: `Passou ${brl(s.folga)}: esse pedaço sai da gordura`, frase: `${base} Segure até o mês virar.` }

@@ -2,6 +2,7 @@ import { useDadosDoDia, useSessaoAtual } from '../app/contexto'
 import { useConfig } from '../app/useConfig'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { entradasDoAluguel, lerCaderno } from '../lib/aluguel'
+import { lerContasDoAno, resumoDasContas, type ResumoContas } from '../lib/contasDoAno'
 import { hojeRecife } from '../lib/formato'
 import { lerLancamentosMes, lerMes } from '../lib/resumo/leituras'
 import { gastoDoMes, rendaDoMesCadastrada, separarDoMes, type SeparacaoDoMes } from '../lib/separacao'
@@ -13,7 +14,12 @@ import { useSalarioDaGordura } from './SalarioDaGordura'
  * gordura") e a seta do Início (entra mais do que sai?) usam esta conta, para os números nunca brigarem.
  * Só o casal (gastos da família inteira); sem permissão ou sem dados, devolve nulo.
  */
-export function useSeparacao(): { agora: SeparacaoDoMes | null; antes: SeparacaoDoMes | null } | null {
+export function useSeparacao(): {
+  agora: SeparacaoDoMes | null
+  antes: SeparacaoDoMes | null
+  /** as contas do ano neste mês (o que separar e o que já foi pago com o separado) */
+  contas: ResumoContas
+} | null {
   const { api, familia } = useSessaoAtual()
   const { versao } = useDadosDoDia()
   // o lucro da gordura que dá para gastar é o salário da gordura: um percentual do guardado, fixo por 12 meses
@@ -21,6 +27,8 @@ export function useSeparacao(): { agora: SeparacaoDoMes | null; antes: Separacao
   const [rendas] = useConfig<unknown[]>('rendas', [])
   const [entradas] = useConfig<{ data?: string; valor?: number; destino?: string }[]>('entradas', [])
   const [viagens] = useConfig<unknown[]>('viagens', [])
+  // IPTU, IPVA...: o que é separado no mês para elas sai do que dá para gastar (pedido do dono, 23/11)
+  const [contasCru] = useConfig<unknown[]>('contas_ano', [])
   const hoje = hojeRecife(),
     mes = hoje.slice(0, 7),
     mesAnt = mesMaisV(mes, -1)
@@ -59,6 +67,7 @@ export function useSeparacao(): { agora: SeparacaoDoMes | null; antes: Separacao
   )
   if (!permitido) return null
   const rendaCadastrada = rendaDoMesCadastrada(rendas)
+  const contas = resumoDasContas(lerContasDoAno(contasCru), hoje)
   const doMes = (
     m: string,
     d: { entrou: number; previsto: number; saiu: number } | null | undefined,
@@ -82,7 +91,10 @@ export function useSeparacao(): { agora: SeparacaoDoMes | null; antes: Separacao
       gasto: ultimos ? gastoDoMes(ultimos, m, hoje) : d.saiu,
       extras,
       reservado: reservaDasViagens(viagens, m).total,
+      // as contas do ano contam só no mês de hoje (o mês passado serve à seta, que não usa o "pode gastar")
+      contasAno: passado ? 0 : contas.porMes,
+      pagoComSeparado: passado ? 0 : contas.pagoComSeparado,
     })
   }
-  return { agora: doMes(mes, dado, false), antes: doMes(mesAnt, dadoAnt, true) }
+  return { agora: doMes(mes, dado, false), antes: doMes(mesAnt, dadoAnt, true), contas }
 }

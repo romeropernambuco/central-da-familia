@@ -52,7 +52,13 @@ export function ContasDoAno() {
         <>
           <p>
             <b>
-              Separe <Din v={r.porMes} /> por mês para pagar as contas do ano em dia.
+              {r.porMes > 0 ? (
+                <>
+                  Separe <Din v={r.porMes} /> por mês para pagar as contas do ano em dia.
+                </>
+              ) : (
+                f.titulo
+              )}
             </b>
           </p>
           <details className="salario-porque">
@@ -74,7 +80,9 @@ export function ContasDoAno() {
                       onClick={() =>
                         mudar(
                           contas.map(c =>
-                            c.id === p.conta.id ? { ...c, pagas: [...c.pagas, p.vence.slice(0, 4)] } : c,
+                            c.id === p.conta.id
+                              ? { ...c, pagas: [...c.pagas, p.vence.slice(0, 4)], pagoEm: hojeRecife() }
+                              : c,
                           ),
                         )
                       }
@@ -139,6 +147,7 @@ function FolhaConta({
       dia,
       parcelas: t.parcelas,
       pagas: [],
+      desde: hojeRecife().slice(0, 7),
     }
     if (await salvar(c)) fechar()
   }

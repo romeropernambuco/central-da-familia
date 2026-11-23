@@ -1,4 +1,5 @@
 import { useOlhoApp } from '../app/contexto'
+import { porqueDasContasNoMes } from '../lib/contasDoAno'
 import { fraseDaSeparacao } from '../lib/separacao'
 import { Din } from './base'
 import { useSeparacao } from './useSeparacao'
@@ -10,9 +11,11 @@ import './planilha.css'
  */
 export function SeparacaoDoMes() {
   const { oculto } = useOlhoApp()
-  const s = useSeparacao()?.agora
+  const sep = useSeparacao()
+  const s = sep?.agora
   if (oculto || !s) return null
   const { titulo, frase } = fraseDaSeparacao(s)
+  const porqueContas = sep && porqueDasContasNoMes(sep.contas)
   // verde com folga, âmbar no limite, vermelho quando passou (o pedaço que passou sai da gordura)
   const cor = s.situacao === 'folga' ? 'ok' : s.situacao === 'limite' ? 'warn' : 'erro'
   const pct = Math.min(100, Math.round((s.gasto / s.pode) * 100))
@@ -49,6 +52,12 @@ export function SeparacaoDoMes() {
       <p className="sub">
         <b>{titulo}.</b> {frase}
       </p>
+      {porqueContas && (
+        <details className="salario-porque">
+          <summary>Por quê?</summary>
+          <p className="sub">{porqueContas}</p>
+        </details>
+      )}
     </section>
   )
 }

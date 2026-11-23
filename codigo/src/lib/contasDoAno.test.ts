@@ -4,6 +4,7 @@ import {
   fraseDasContas,
   lerContasDoAno,
   linhaDaConta,
+  porqueDasContasNoMes,
   proximaDaConta,
   resumoDasContas,
   vencimentoNoAno,
@@ -45,18 +46,36 @@ describe('contas do ano: a família preenche, o app calcula', () => {
     expect(p).toMatchObject({ vence: '2027-02-10', meses: 3, porMes: 1000 })
   })
 
-  it('vence este mês: o valor inteiro agora', () => {
+  it('vence este mês: não separa mais (ela é paga no mês, com o separado ou como gasto)', () => {
     expect(proximaDaConta(conta({ mes: 11, dia: 30 }), '2026-11-22')).toMatchObject({
       vence: '2026-11-30',
-      meses: 1,
-      porMes: 3000,
+      porMes: 0,
       dias: 8,
     })
   })
 
-  it('paga este ano: passa para o ano que vem', () => {
-    const p = proximaDaConta(conta({ mes: 11, dia: 30, pagas: ['2026'] }), '2026-11-22')
-    expect(p).toMatchObject({ vence: '2027-11-30', meses: 12, porMes: 250 })
+  it('a mesma quantia todo mês do ciclo, sem separar mais do que a conta', () => {
+    const c = conta({ desde: '2026-11' }) // IPTU de R$ 3.000 em 10/02
+    const mes = (d: string) => proximaDaConta(c, d).porMes
+    expect([mes('2026-11-22'), mes('2026-12-05'), mes('2027-01-30'), mes('2027-02-05')]).toEqual([1000, 1000, 1000, 0])
+  })
+
+  it('paga este ano: passa para o ano que vem e volta a separar no mês seguinte, em 11 meses', () => {
+    const p = proximaDaConta(conta({ mes: 11, dia: 30, pagas: ['2026'], desde: '2026-01' }), '2026-11-22')
+    expect(p).toMatchObject({ vence: '2027-11-30', porMes: 0 })
+    const dez = proximaDaConta(conta({ mes: 11, dia: 30, pagas: ['2026'], desde: '2026-01' }), '2026-12-01')
+    expect(dez).toMatchObject({ meses: 11, porMes: 272.73 })
+  })
+
+  it('"Já paguei" no mês: o que foi separado paga a conta (volta para o que dá para gastar)', () => {
+    const iptu = conta({ mes: 12, dia: 15, desde: '2026-09', pagas: ['2026'], pagoEm: '2026-12-15' })
+    // set, out, nov: R$ 1.000 por mês; pago em dezembro com os R$ 3.000 juntados
+    expect(proximaDaConta(iptu, '2026-12-20')).toMatchObject({ pagoComSeparado: 3000, porMes: 0 })
+    expect(proximaDaConta(iptu, '2027-01-03')).toMatchObject({ pagoComSeparado: 0, porMes: 272.73 })
+    // pôs a conta e pagou no mesmo mês: nada estava separado; o pagamento é gasto do mês
+    expect(proximaDaConta({ ...iptu, desde: '2026-12' }, '2026-12-20').pagoComSeparado).toBe(0)
+    // pagou adiantado, em novembro, quando só tinha juntado set e out
+    expect(proximaDaConta({ ...iptu, pagoEm: '2026-11-25' }, '2026-11-25').pagoComSeparado).toBe(2000)
   })
 
   it('venceu há pouco sem marcar como paga: continua nela (o Contador pergunta); depois de 30 dias, ano que vem', () => {
@@ -64,9 +83,9 @@ describe('contas do ano: a família preenche, o app calcula', () => {
     expect(proximaDaConta(conta({ mes: 10, dia: 1 }), '2026-11-22').vence).toBe('2027-10-01')
   })
 
-  it('parcelada: separa 1/12 do ano por mês', () => {
+  it('parcelada: não separa (cada parcela é gasto do mês em que é paga)', () => {
     const p = proximaDaConta(conta({ parcelas: 10 }), '2026-11-22')
-    expect(p).toMatchObject({ meses: 12, porMes: 250 })
+    expect(p).toMatchObject({ porMes: 0, pagoComSeparado: 0 })
     expect(linhaDaConta(p)).toBe('R$ 3.000 em 10 parcelas de R$ 300 · vence em 10/02/2027')
   })
 
@@ -82,6 +101,24 @@ describe('contas do ano: a família preenche, o app calcula', () => {
     expect(f.titulo).toBe('Separe R$ 2.200 por mês para pagar as contas do ano em dia.')
     expect(f.titulo + f.porque).not.toMatch(/CDI|IPCA|Focus|motor|premissa|provisão/)
     expect(fraseDasContas(resumoDasContas([], '2026-11-22'))).toBeNull()
+    expect(fraseDasContas(resumoDasContas([conta({ parcelas: 10 })], '2026-11-22'))!.titulo).toBe(
+      'Este mês não precisa separar nada para as contas do ano.',
+    )
+  })
+
+  it('o "Por quê?" do que dá para gastar diz conta por conta', () => {
+    const r = resumoDasContas(
+      [
+        conta({ desde: '2026-11' }),
+        conta({ id: 'c2', nome: 'IPVA', mes: 11, dia: 5, desde: '2026-08', pagas: ['2026'], pagoEm: '2026-11-05' }),
+      ],
+      '2026-11-22',
+    )
+    expect(porqueDasContasNoMes(r)).toBe(
+      'Contas do ano. IPTU: R$ 1.000 separados este mês (vence em 10/02/2027). ' +
+        'IPVA: foi paga com R$ 3.000 que já estavam separados.',
+    )
+    expect(porqueDasContasNoMes(resumoDasContas([], '2026-11-22'))).toBeNull()
   })
 
   it('o Contador lembra de 30 dias antes até 30 dias depois, enquanto não estiver paga', () => {
