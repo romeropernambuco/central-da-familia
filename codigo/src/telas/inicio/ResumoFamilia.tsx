@@ -21,7 +21,7 @@ const dinheiro = (v: number, oculto: boolean) =>
 const valor = (d: Dinheiro, oculto: boolean) => dinheiro(d.unidade === 'centavos' ? d.valor / 100 : d.valor, oculto)
 /** a natureza do número na língua da família (o tipo interno não aparece na tela) */
 const NATUREZA: Record<FonteResumo['natureza'], string> = {
-  cadastrado: 'Anotado',
+  cadastrado: '', // o normal não ganha selo: só ficam "Já aconteceu", "Pode mudar" e "Estimativa"
   realizado: 'Já aconteceu',
   previsto: 'Pode mudar',
   estimado: 'Estimativa',
@@ -125,7 +125,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
         : '',
       frase: [
         'Para viver de rendimentos em 2029, com margem de segurança e só com o que é garantido.',
-        plano?.confirmar?.length ? `A confirmar: ${privado(plano.confirmar.join('; '))}.` : '',
+        plano?.confirmar?.length ? `A confirmar: ${privado(plano.confirmar.join(';\n'))}.` : '',
         plano?.conferenciaAntiga ? 'Há números com mais de 60 dias.' : '',
       ]
         .filter(Boolean)
@@ -168,7 +168,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
       numero: campo.valor ? valor(campo.valor.valor, oculto) : '',
       frase: campo.valor
         ? privado(
-            `Aluguel líquido estimado: ${campo.valor.aluguel ? valor(campo.valor.aluguel, oculto) : 'não foi possível conferir'}.`,
+            `Aluguel do mês, sem imposto: ${campo.valor.aluguel ? valor(campo.valor.aluguel, oculto) : 'não foi possível conferir'}.`,
           )
         : '',
       destino: { rota: 'guardado', secao: 'imoveis' },
@@ -221,6 +221,16 @@ export function itensResumo(r: Resumo, hoje: string, oculto: boolean): Item[] {
   const [orcamento, saldo, ...outros] = principais
   return [saldo, orcamento, ...outros, ...complementares].map(chave => montarItem(chave, r[chave], hoje, oculto))
 }
+/** A linha pequena do cartão: o selo da natureza (só quando há o que dizer) e a conferência. */
+function legendaDoCartao(campo: CampoResumo<unknown>, chave: keyof Resumo, oculto?: boolean) {
+  const natureza = NATUREZA[campo.fonte[0]?.natureza ?? 'cadastrado']
+  const conferencia = campo.conferidoEm
+    ? `Conferido em ${oculto ? PONTOS_LONGOS : dataConferencia(campo.conferidoEm)}`
+    : chave === 'saldoConta'
+      ? 'Sem conferência registrada'
+      : ''
+  return { natureza, conferencia }
+}
 export function CartaoResumo({
   item,
   campo,
@@ -242,6 +252,9 @@ export function CartaoResumo({
   if (campo.estado === 'restrito') return null
   const pronto = campo.estado === 'pronto',
     erro = campo.estado === 'erro'
+  const { natureza, conferencia } = pronto
+    ? legendaDoCartao(campo, item.chave, oculto)
+    : { natureza: '', conferencia: '' }
   return (
     <article className="resumo-item" data-bloco={item.chave} data-estado={campo.estado}>
       <a href={enderecoDestino(item.destino)} className="resumo-link">
@@ -266,14 +279,11 @@ export function CartaoResumo({
             </strong>
           )}
           {pronto && <span className="resumo-frase">{item.frase}</span>}
-          {pronto && (
+          {pronto && (natureza || conferencia) && (
             <small className="resumo-meta">
-              <span className="resumo-natureza">{NATUREZA[campo.fonte[0]?.natureza ?? 'cadastrado']}</span>
-              {campo.conferidoEm
-                ? ` · Conferido em ${oculto ? PONTOS_LONGOS : dataConferencia(campo.conferidoEm)}`
-                : item.chave === 'saldoConta'
-                  ? ' · Sem conferência registrada'
-                  : ''}
+              {natureza && <span className="resumo-natureza">{natureza}</span>}
+              {natureza && conferencia ? ' · ' : ''}
+              {conferencia}
             </small>
           )}
         </span>

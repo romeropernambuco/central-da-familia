@@ -168,7 +168,7 @@ export function EnvelopeCard({
               ? 'Da família: só para ver.'
               : e.dono_papel === 'pessoa'
                 ? `Só ${dono} lança aqui. O limite é combinado com os pais.`
-                : `Limite de ${dono}: só ${dono} lança e mexe aqui.`,
+                : `Só ${dono} lança aqui.`,
           )}
         </p>
       )}

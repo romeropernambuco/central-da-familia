@@ -198,8 +198,8 @@ export function App() {
         {api.modo === 'exemplo' && r === 'inicio' && (
           <p className="exemplo-faixa">
             <Icone desenho={FlaskConical} aria-hidden="true" />
-            Exemplo: você está vendo como {textoPrivado(familia.membroNome, oculto)}, no dia {dataCurta(hojeRecife())}.
-            Pode mexer à vontade: nada é gravado de verdade.
+            Exemplo: você vê como {textoPrivado(familia.membroNome, oculto)}, em {dataCurta(hojeRecife())}. Mexa à
+            vontade, nada fica salvo.
           </p>
         )}
         {semRede && api.modo !== 'exemplo' && !erro && (

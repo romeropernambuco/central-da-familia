@@ -47,12 +47,13 @@
   .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip .numero-principal { font-size: clamp(21px, 7.25vw, 34px); }
   .j-inicio.inicio-j[data-dispositivo="celular"] .j-chip:is(:first-child, :nth-child(2)) { grid-column: span 6; }
 }
-.inicio-j .j-sobre-hoje { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px; padding: 4px 14px 8px; color: var(--texto-secundario); font: 400 14px/1.45 var(--fonte-texto); }
+/* "Bom dia": saudação em cima, frases embaixo e os links de explicação juntos, na mesma linha e à esquerda */
+.inicio-j .j-sobre-hoje { display: grid; justify-items: start; gap: 4px; padding: 8px 14px 6px; color: var(--texto-secundario); font: 400 14px/1.5 var(--fonte-texto); }
 .inicio-j .j-sobre-hoje p { margin: 0; max-inline-size: 70ch; }
-.inicio-j .j-sobre-acoes { display: flex; flex-wrap: wrap; gap: 0 14px; margin-inline-start: auto; }
+.inicio-j .j-sobre-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
 .inicio-j .j-sobre-hoje .explica-l { color: var(--destaque); min-height: 44px; padding-inline: 0; }
-@media (max-width: 899px) { .inicio-j .j-sobre-acoes { margin-inline-start: 0; } .inicio-j .j-sobre-hoje { padding: 2px 8px 6px; } }
-.inicio-j .j-saudacao { color: var(--texto); font-weight: 650; }
+@media (max-width: 899px) { .inicio-j .j-sobre-hoje { padding: 6px 8px 4px; } }
+.inicio-j .j-saudacao { color: var(--texto); font: 600 16px/1.3 var(--fonte-texto); }
 /* A seta do mês: verde quando entra mais do que sai, vermelha no contrário. */
 .inicio-j .seta-mes { margin: 2px 14px 8px; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in oklch, var(--borda) 45%, transparent); background: var(--success-soft); color: var(--texto); font: 400 14px/1.45 var(--fonte-texto); }
 .inicio-j .seta-mes[data-sentido='desce'] { background: var(--error-soft); }

@@ -64,7 +64,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
     chips: [
       {
         chave: 'podeGastarHoje',
-        titulo: orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Limite de hoje',
+        titulo: orcamento.valor?.devendo && !oculto ? 'Devendo no mês' : 'Pode gastar hoje',
         icone: 'orcamento',
         destino: destinoOrcamento,
         campo: medida(orcamento, orcamento.valor?.valor.valor, 'reais'),
@@ -90,7 +90,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       },
       {
         chave: 'faturas',
-        titulo: 'Faturas previstas',
+        titulo: 'Faturas a pagar',
         icone: 'cartoes',
         destino: destinoFaturas,
         campo: medida(faturas, faturas.valor?.total, 'reais'),
@@ -109,7 +109,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       {
         chave: 'podeGastarHoje',
         titulo: 'Meu orçamento',
-        legenda: 'Livre no mês',
+        legenda: 'Resta no mês',
         destino: destinoOrcamento,
         campo: medida(orcamento, orcamento.valor?.envelope?.livre, 'reais'),
         Figura: SemGastos,
@@ -117,7 +117,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       {
         chave: 'aplicacoes',
         titulo: 'Aplicações',
-        legenda: 'Rendimento líquido de hoje',
+        legenda: 'Rendeu hoje',
         destino: destinoAplicacoes,
         campo: medida(aplicacoes, aplicacoes.valor?.hoje, 'reais'),
         Figura: SemAplicacoes,
@@ -125,7 +125,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       {
         chave: 'faturas',
         titulo: 'Faturas',
-        legenda: 'Faturas a vencer ou conferir',
+        legenda: 'Para pagar ou conferir',
         destino: destinoFaturas,
         campo: medida(faturas, faturas.valor?.lista.length, 'quantidade'),
         Figura: SemCartoes,
@@ -133,7 +133,7 @@ function referencias(r: ResumoFamilia, oculto: boolean) {
       {
         chave: 'imoveis',
         titulo: 'Imóveis',
-        legenda: 'Aluguel líquido estimado',
+        legenda: 'Aluguel do mês, sem imposto',
         destino: { rota: 'guardado', secao: 'imoveis' },
         campo: medida(imoveis, aluguel?.valor, aluguel?.unidade ?? 'reais'),
         Figura: SemImoveis,
@@ -225,7 +225,7 @@ function InicioFamilia() {
                       <p>{legenda}</p>
                       <Leitura estado={resumo[chave].estado} campo={campo} tamanho="secundario" />
                       <a href={enderecoDestino(destino)} aria-label={`Abrir ${titulo}`}>
-                        Ver área <Icone nome="abrir" size={16} />
+                        Abrir <Icone nome="abrir" size={16} />
                       </a>
                     </div>
                     <div className="j-arte" aria-hidden="true">
