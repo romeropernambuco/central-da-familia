@@ -324,7 +324,8 @@ it('Início J usa a cena original do escritório; sem WebGL fica a maquete em de
     expect(a.ler('data-modo', 'lista')).toBeDefined()
     expect(a.el.buscar(n => !!n.getAttribute('data-posto'))).toHaveLength(19)
     expect(a.el.textContent).not.toContain('A cena 3D não abriu neste aparelho')
-    expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
+    expect(a.el.textContent).toContain('precisa de você')
+    expect(a.el.textContent).not.toContain('vem pra frente da sala e acena')
   } finally {
     await a.fechar()
   }
@@ -368,7 +369,7 @@ it('sentinela da leitura chega à fila, ao selo e à manchete da cena original, 
     expect(a.ler('data-posto', 'contador').getAttribute('data-estado')).toBe('trabalhando')
     expect(a.ler('data-posto', 'contador').textContent).toBe('Contador')
     expect(a.ler('data-posto', 'cartao').getAttribute('data-estado')).toBe('entregue')
-    expect(a.el.textContent).toContain('precisa de você (vem pra frente da sala e acena)')
+    expect(a.el.textContent).toContain('precisa de você')
     // a aba Escritório não monta mais a cena isométrica resumida
     await a.atualizar({ ...fonte(), trabalhando: [], precisa_de_voce: [pergunta('novo', 'guardado', 651.83)] })
     expect(a.ler('data-posto', 'guardado').textContent).toContain('651,83')

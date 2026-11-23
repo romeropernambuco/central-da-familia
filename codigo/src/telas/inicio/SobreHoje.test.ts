@@ -44,12 +44,12 @@ function faixa(dia: string, e: Envelope, extra: { placar?: ReturnType<typeof pro
 
 it('no meio do mês, com gasto hoje, diz quanto saiu e quanto ainda pode; sem gasto, não diz nada disso', () => {
   expect(faixa('2026-11-15', { ...mensal, gasto_hoje: 50, hoje: 120 })).toContain(
-    'Hoje já saiu R$ 50. Ainda pode hoje R$ 120.',
+    'Hoje já saiu R$ 50. Ainda pode gastar R$ 120.',
   )
   const semGasto = faixa('2026-11-15', mensal)
   expect(semGasto).not.toContain('Hoje já saiu')
   expect(semGasto).not.toContain('começa com')
-  expect(semGasto).toContain('De onde veio esse número?')
+  expect(semGasto).toContain('Por quê?')
 })
 
 it('nos dias 1 a 3 conta como o mês passado fechou; no dia 4 a frase some', () => {
@@ -81,7 +81,7 @@ it('nos 2 últimos dias avisa com quanto o mês que vem começa, só se houver p
 it('em mês devendo mostra a frase do estouro e não promete "ainda pode hoje"', () => {
   const devendo = faixa('2026-11-15', { ...mensal, gasto_mes: 1200, livre: -200, gasto_hoje: 80 })
   expect(devendo).toContain('Passou R$ 200 do combinado.')
-  expect(devendo).not.toContain('Ainda pode hoje')
+  expect(devendo).not.toContain('Ainda pode gastar')
 })
 
 it('o casal: quem vai passar aparece pelo nome; se ninguém passa, mostra a sobra dos dois', () => {
@@ -94,10 +94,10 @@ it('o casal: quem vai passar aparece pelo nome; se ninguém passa, mostra a sobr
     { nome: 'Bruno', fecha: 800, limite: 1000, eu: false },
   ])
   expect(faixa('2026-11-15', mensal, { placar: passa })).toContain(
-    'Ana (você) vai passar R$ 300. O que passa sai de dezembro.',
+    'Nesse ritmo, você vai passar R$ 300. Isso sai de dezembro.',
   )
   expect(faixa('2026-11-15', mensal, { placar: sobra })).toContain('juntos, sobram R$ 300 no fim do mês.')
-  expect(faixa('2026-11-15', mensal)).not.toContain('O casal')
+  expect(faixa('2026-11-15', mensal)).not.toContain('Nesse ritmo')
 })
 
 it('com o olho fechado não aparece valor nem nome, e a frase com valor continua legível', () => {
@@ -106,7 +106,7 @@ it('com o olho fechado não aparece valor nem nome, e a frase com valor continua
     { nome: 'Bruno', fecha: 800, limite: 1000, eu: false },
   ])
   const fechado = faixa('2026-11-15', { ...mensal, gasto_hoje: 50, hoje: 120 }, { placar: passa, oculto: true })
-  expect(fechado).toContain('Hoje já saiu R$ •••. Ainda pode hoje R$ •••.')
+  expect(fechado).toContain('Hoje já saiu R$ •••. Ainda pode gastar R$ •••.')
   expect(fechado).not.toMatch(/\d{2,}/)
   expect(fechado).not.toContain('Ana')
   expect(fechado).not.toContain('Bruno')

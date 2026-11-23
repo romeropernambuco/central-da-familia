@@ -40,8 +40,8 @@ export function fraseDaSeta(
 ): { titulo: string; comparacao: string | null; porque: string } {
   const titulo =
     a.sentido === 'sobe'
-      ? `A família este mês: entra mais do que sai, sobram ${brl(a.diferenca)} (${a.pct}%).`
-      : `A família este mês: sai mais do que entra, ${brl(a.diferenca)} a mais (${a.pct}%).`
+      ? `Previsto para o mês: entra mais do que sai, sobram ${brl(a.diferenca)} (${a.pct}%).`
+      : `Previsto para o mês: sai mais do que entra, ${brl(a.diferenca)} a mais (${a.pct}%).`
   // sem "melhor/pior": o mês de hoje ainda não acabou, a comparação com um mês fechado enganaria
   const comparacao = antes ? `Mês passado: ${resumo(antes)}.` : null
   const porque =

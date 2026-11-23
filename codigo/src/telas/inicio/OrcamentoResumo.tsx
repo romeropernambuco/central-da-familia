@@ -3,8 +3,6 @@ import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { Din } from '../../componentes/base'
 import { EnvelopeCard } from '../../componentes/EnvelopeCard'
 import { Icone } from '../../componentes/Icone'
-import { mesLongo } from '../../lib/formato'
-import { primeiroDoMesQueVem } from '../../lib/resumo/orcamento'
 import type { ResumoFamilia } from '../../lib/resumo/tipos'
 
 const desktop = '(min-width: 800px)'
@@ -37,7 +35,6 @@ export function useOrcamentoAberto() {
 
 export const OrcamentoResumo = memo(function OrcamentoResumo({
   campo,
-  hoje,
   repetir,
   aberto,
   alternar,
@@ -57,7 +54,6 @@ export const OrcamentoResumo = memo(function OrcamentoResumo({
   const meu = p?.envelope
   const outros = p?.envelopes.filter(e => e.id !== meu?.id) ?? []
   const placar = familia.papel === 'casal' ? p?.placar : null
-  const proximoMes = mesLongo(primeiroDoMesQueVem(hoje))
   return (
     <section className="resumo-item resumo-orcamento" aria-labelledby={`${id}-titulo`}>
       <h3 id={`${id}-titulo`}>
@@ -97,14 +93,13 @@ export const OrcamentoResumo = memo(function OrcamentoResumo({
             {p?.placarIndisponivel && <p className="sub">Placar do casal indisponível.</p>}
             {placar && (
               <section className={`placar${oculto ? '' : placar.passam.length ? ' warn' : ' ok'}`}>
-                <h4>O casal, se continuar assim</h4>
+                <h4>Fim do mês, nesse ritmo</h4>
                 {oculto ? (
                   <p>Valores escondidos</p>
                 ) : (
                   <>
-                    {placar.passam.length ? (
-                      <p>O que passa sai de {proximoMes}.</p>
-                    ) : (
+                    {/* quem passa: a frase de cima do Início já diz que isso sai do mês que vem */}
+                    {!placar.passam.length && (
                       <p>
                         Juntos, sobram <Din v={placar.sobra} /> no fim do mês.
                       </p>

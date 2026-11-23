@@ -589,7 +589,7 @@ describe('Escritório: a resposta fica guardada com o funcionário certo', () =>
     expect((await fila()).some(p => /ligar pro contador/.test(p.pergunta))).toBe(false)
     avanca('2026-11-13', 10)
     const p = (await fila()).find(x => /ligar pro contador/.test(x.pergunta))!
-    expect(p.pergunta).toBe('Ana, quer conferir ligar pro contador?')
+    expect(p.pergunta).toBe('Ana, já fez isto: ligar pro contador?')
     await apiExemplo.escritorioResponder(F, p.id, 'feito')
     const l = (await apiExemplo.lembretes(F)).find(x => x.titulo === 'Ligar pro contador')!
     expect(l.quando.slice(0, 10)).toBe('2026-12-13')

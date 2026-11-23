@@ -204,7 +204,6 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
                 <li key={s}>
                   <IcoEstado e={s} />
                   {ROTULO_ESTADO[s]}
-                  {s === 'precisa_de_voce' ? ' (vem pra frente da sala e acena)' : ''}
                 </li>
               ))}
             </ul>

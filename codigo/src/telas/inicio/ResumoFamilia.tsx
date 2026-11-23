@@ -24,7 +24,7 @@ const NATUREZA: Record<FonteResumo['natureza'], string> = {
   cadastrado: '', // o normal não ganha selo: só ficam "Já aconteceu", "Pode mudar" e "Estimativa"
   realizado: 'Já aconteceu',
   previsto: 'Pode mudar',
-  estimado: 'Estimativa',
+  estimado: 'Aproximado',
 }
 interface Item {
   chave: keyof Resumo
@@ -179,10 +179,15 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
     const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'movimentacaoMes',
-      titulo: 'Gastos e entradas do mês',
+      titulo: 'O que já entrou e saiu no mês',
       icone: 'lancamentos',
       numero: m ? dinheiro(m.saldo, oculto) : '',
-      frase: m ? privado(`Entrou ${dinheiro(m.entrou, false)} e saiu ${dinheiro(m.saiu, false)} até hoje.`) : '',
+      frase: m
+        ? privado(
+            `Entrou ${dinheiro(m.entrou, false)} e saiu ${dinheiro(m.saiu, false)} até hoje.` +
+              (m.previsto > 0 ? ` Ainda vão entrar ${dinheiro(m.previsto, false)}.` : ''),
+          )
+        : '',
       destino: { rota: 'lancamentos', secao: 'mes', periodo: hoje.slice(0, 7) },
     }
   },

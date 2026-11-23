@@ -618,7 +618,7 @@ function todasAsPerguntas(m: Mundo, agora: Date): PerguntaEsc[] {
           importa: 'Conferência dos registros',
           sugiro: 'Você pode conferir pelos botões abaixo.',
         }
-        f.vi = `Quer conferir ${t}?`
+        f.vi = `Já fez isto: ${t}?`
         return [f, f, f]
       },
       opcoes: [

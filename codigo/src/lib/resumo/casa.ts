@@ -37,7 +37,7 @@ export function rotulosCasa(c: ReturnType<typeof situacaoCasa>) {
         ? 'Feira em dia'
         : c.feira
           ? 'Feira ainda sem confirmação · cobrança pendente'
-          : 'Feira: verificação ainda não iniciada',
+          : 'Feira ainda não conferida',
     estoque:
       c.estadoEstoque === 'confirmada'
         ? 'Estoque conferido'
@@ -45,6 +45,6 @@ export function rotulosCasa(c: ReturnType<typeof situacaoCasa>) {
           ? 'Estoque sem cadastro'
           : c.cobrarEstoque
             ? 'Estoque: contagem pendente'
-            : 'Estoque: verificação ainda não iniciada',
+            : 'Estoque ainda não conferido',
   }
 }

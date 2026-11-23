@@ -475,7 +475,7 @@ it.each([1, 2, 3])(
       normalizar(principal).toLowerCase().replace(/,00/g, ''),
     )
     expect(a.bloco('plano2029').textContent).toContain('com margem de segurança')
-    expect(a.bloco('plano2029').textContent).toContain('Estimativa') // a natureza "estimado", na língua da família
+    expect(a.bloco('plano2029').textContent).toContain('Aproximado') // a natureza "estimado", na língua da família
   },
 )
 
@@ -639,7 +639,7 @@ it('f37: placar em Início traz as mesmas projeções dos dois orçamentos', asy
   const r = m.resumo()
   const a = await montar(m, createElement(MeuOrcamento), 'casal', 1024)
   const placar = a.box.buscar(x => x.tagName === 'SECTION' && x.getAttribute('class') === 'placar ok')[0]
-  expect(placar.textContent).toContain('O casal, se continuar assim')
+  expect(placar.textContent).toContain('Fim do mês, nesse ritmo')
   for (const p of r.placar_casal!) {
     expect(
       placar
@@ -736,13 +736,13 @@ it('f37: Plano expande o valor sem margem da aba Planejamento e preserva o princ
 it('f37: o casal vê os cartões, a pessoa só o próprio e o Assessor não consulta o Início', async () => {
   const casal = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
   expect(envelope(casal.box, 'env-compacto')).toHaveLength(2)
-  expect(casal.box.textContent).toContain('O casal, se continuar assim')
+  expect(casal.box.textContent).toContain('Fim do mês, nesse ritmo')
   const pessoa = await montar(mundoComEnvelopes(), undefined, 'pessoa', 1024)
   expect(envelope(pessoa.box, 'env-destaque')).toHaveLength(1)
   expect(envelope(pessoa.box, 'env-compacto')).toHaveLength(0)
   await expandir(pessoa.bloco('podeGastarHoje'))
   expect(pessoa.box.textContent).not.toMatch(
-    /Outro titular|Feira de teste|O casal, se continuar assim|Casa · disponível hoje/,
+    /Outro titular|Feira de teste|Fim do mês, nesse ritmo|Casa · disponível hoje/,
   )
   const assessor = await montar(mundoComEnvelopes(), undefined, 'equipe', 1024)
   expect(assessor.box.textContent).toBe('')
@@ -759,7 +759,7 @@ it('f37: olho fechado remove valores e geometria dos envelopes e do placar', asy
   const a = await montar(mundoComEnvelopes(), undefined, 'casal', 1024)
   await expandir(a.bloco('podeGastarHoje'))
   await expandir(a.bloco('plano2029'))
-  expect(a.box.textContent).toContain('O casal, se continuar assim')
+  expect(a.box.textContent).toContain('Fim do mês, nesse ritmo')
   expect(a.box.buscar(x => x.getAttribute('class')?.startsWith('meter ') ?? false)).toHaveLength(3)
   await a.ocultar()
   const orcamento = a.box.buscar(x => x.getAttribute('class') === 'resumo-item resumo-orcamento')[0]
@@ -1427,8 +1427,8 @@ it('f53.7: segunda antes das 18h sem registro não confirma feira nem estoque', 
     invalidarDados(m.api, m.familia.id)
     await a.render()
   })
-  expect(a.bloco('casa').textContent).toContain('Feira: verificação ainda não iniciada')
-  expect(a.origem().textContent).toContain('Estoque: verificação ainda não iniciada')
+  expect(a.bloco('casa').textContent).toContain('Feira ainda não conferida')
+  expect(a.origem().textContent).toContain('Estoque ainda não conferido')
   expect(a.bloco('casa').textContent).not.toContain('Estoque conferido')
   vi.mocked(m.interna.escritorioHoje).mockResolvedValue(m.e() as any)
   await act(async () => {
@@ -1684,7 +1684,7 @@ it('f59: mantém os avisos da f53 e recompõe só Faturas ao tentar de novo', as
   expect(blocoOrcamento.textContent).toContain('Este mês fica devendo')
   await act(async () => blocoOrcamento.buscar(x => x.getAttribute('class') === 'resumo-expandir')[0].click())
   expect(blocoOrcamento.textContent).toMatch(/Hoje já saiu do limite: R\$\s*0/)
-  expect(a.bloco('casa').textContent).toContain('Feira: verificação ainda não iniciada')
+  expect(a.bloco('casa').textContent).toContain('Feira ainda não conferida')
   expect(a.bloco('casa').textContent).toContain('Estoque sem cadastro')
   const plano = a.bloco('plano2029')
   expect(plano.textContent).toContain('A confirmar: Confirme a taxa.')

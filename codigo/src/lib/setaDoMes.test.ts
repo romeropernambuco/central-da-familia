@@ -5,13 +5,13 @@ describe('seta do mês: entra mais do que sai, ou o contrário, e quanto por cen
   it('sobe quando entra mais do que sai; a % é a sobra sobre o que entra', () => {
     const a = setaDoMes({ entra: 9000, lucro: 1000, gasto: 6500 })!
     expect(a).toMatchObject({ sentido: 'sobe', entra: 10000, sai: 6500, diferenca: 3500, pct: 35 })
-    expect(fraseDaSeta(a).titulo).toBe('A família este mês: entra mais do que sai, sobram R$ 3.500 (35%).')
+    expect(fraseDaSeta(a).titulo).toBe('Previsto para o mês: entra mais do que sai, sobram R$ 3.500 (35%).')
   })
 
   it('desce quando sai mais do que entra; a % é o que saiu a mais sobre o que entra', () => {
     const a = setaDoMes({ entra: 9000, lucro: 1000, gasto: 11200 })!
     expect(a).toMatchObject({ sentido: 'desce', diferenca: -1200, pct: 12 })
-    expect(fraseDaSeta(a).titulo).toBe('A família este mês: sai mais do que entra, R$ 1.200 a mais (12%).')
+    expect(fraseDaSeta(a).titulo).toBe('Previsto para o mês: sai mais do que entra, R$ 1.200 a mais (12%).')
   })
 
   it('empate conta como sobe (não saiu mais do que entrou)', () => {

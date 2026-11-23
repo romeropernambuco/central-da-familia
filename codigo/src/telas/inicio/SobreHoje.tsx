@@ -10,7 +10,8 @@ import {
 } from '../../componentes/EnvelopeCard'
 import '../../componentes/planilha.css'
 import { Fragment } from 'react'
-import { Qm } from '../../componentes/Qm'
+import { Icone } from '../../componentes/Icone'
+import { HelpCircle } from 'lucide-react'
 import { fimDoMes, hojeRecife, mesLongo, reais, saudacao, somaDias } from '../../lib/formato'
 import type { projecaoCasal } from '../../lib/resumo/orcamento'
 
@@ -38,7 +39,7 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
   if (!devendo && (e.gasto_hoje || 0) > 0)
     frases.push({
       chave: 'saiu',
-      texto: `Hoje já saiu ${reais(e.gasto_hoje || 0)}. Ainda pode hoje ${reais(e.hoje ?? n.valor)}.`,
+      texto: `Hoje já saiu ${reais(e.gasto_hoje || 0)}. Ainda pode gastar ${reais(e.hoje ?? n.valor)}.`,
     })
   // dias 1 a 3: como o mês passado fechou e com quanto este começa
   const ant = e.mes_anterior
@@ -75,8 +76,8 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
       chave: 'casal',
       texto: textoPrivado(
         passam.length
-          ? `O casal, se continuar assim: ${passam.map(p => `${p.nome}${p.eu ? ' (você)' : ''} ${p.excessoAtual === null ? 'vai passar' : 'passou'} ${reais(p.excessoAtual ?? p.excessoPrevisto)}`).join(' e ')}. O que passa sai de ${mesLongo(primeiroDoMesQueVem())}.`
-          : `O casal, se continuar assim: juntos, sobram ${reais(placar.sobra)} no fim do mês.`,
+          ? `Nesse ritmo, ${passam.map(p => `${p.eu ? 'você' : p.nome} ${p.excessoAtual === null ? 'vai passar' : 'passou'} ${reais(p.excessoAtual ?? p.excessoPrevisto)}`).join(' e ')}. Isso sai de ${mesLongo(primeiroDoMesQueVem())}.`
+          : `Nesse ritmo, juntos, sobram ${reais(placar.sobra)} no fim do mês.`,
       ),
     })
   }
@@ -100,30 +101,33 @@ export function SobreHoje({ e: escolhido, placar }: { e?: Envelope; placar?: Ret
         </Fragment>
       ))}
       <div className="j-sobre-acoes">
-        <Qm
-          texto
-          titulo={devendo ? 'Seu mês' : 'Hoje você pode gastar'}
-          linhas={n.linhas}
-          nota={`A mesma conta do banco da família.${e.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`}
-        />
-        {mudou && (
-          <button
-            type="button"
-            className="explica-l"
-            onClick={() =>
-              explicar({
-                cabeca: 'Por que mudou?',
-                titulo: textoPrivado(mudou.motivo),
-                linhas: [
-                  { linha: 'Ontem o dia tinha', valor: mudou.ontem },
-                  { linha: 'Hoje o dia tem', valor: e.valor_dia_inteiro ?? e.hoje ?? 0 },
-                ],
-              })
-            }
-          >
-            Por que mudou?
-          </button>
-        )}
+        {/* um link só: a conta do número de hoje e, quando o dia mudou, o motivo, juntos */}
+        <button
+          type="button"
+          className="explica-l"
+          onClick={() =>
+            explicar({
+              titulo: devendo ? 'Seu mês' : 'Hoje você pode gastar',
+              linhas: [
+                ...n.linhas,
+                ...(mudou
+                  ? [
+                      { linha: 'Ontem o dia tinha', valor: mudou.ontem },
+                      { linha: 'Hoje o dia tem', valor: e.valor_dia_inteiro ?? e.hoje ?? 0 },
+                    ]
+                  : []),
+              ],
+              nota: [
+                mudou && textoPrivado(mudou.motivo),
+                `A mesma conta do banco da família.${e.regra === 'diario' ? ' Sábado, domingo e feriado valem 1,5 dia.' : ''} Muda a cada gasto lançado.`,
+              ]
+                .filter(Boolean)
+                .join(' '),
+            })
+          }
+        >
+          <Icone desenho={HelpCircle} aria-hidden="true" /> Por quê?
+        </button>
       </div>
     </div>
   )
