@@ -1,1 +1,0 @@
-import{b as o,aB as r,j as t,aC as e}from"./partida-wGSAAPLK.js";const i=Object.freeze({...r});function n({nome:a,...s}){return o.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(e,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
