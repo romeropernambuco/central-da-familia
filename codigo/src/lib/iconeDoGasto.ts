@@ -3,6 +3,9 @@
 // Sem acerto nenhum, devolve null e a tela usa o ícone de sempre.
 import {
   BookOpen,
+  Briefcase,
+  PawPrint,
+  Tv,
   Bus,
   Car,
   Coffee,
@@ -24,11 +27,12 @@ const sem = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCas
 
 /** A ordem importa: a primeira palavra que bate vence ("café da escola" é café, "conta de luz" é luz). */
 const REGRAS: [RegExp, LucideIcon, string][] = [
-  [/\b(cafe|padaria|lanche|sorvete|pizza|pastel)\b/, Coffee, 'Lanche e café'],
-  [/\b(restaurante|almoco|jantar|ifood|churrasco|hamburguer)\b/, Utensils, 'Restaurante'],
-  [/\b(mercad\w*|feira|hortifruti|supermercado|acougue|atacado|sacolao)\b/, ShoppingCart, 'Mercado'],
-  [/\b(farmacia|remedio\w*|consulta|exame|dentista|medico)\b/, Pill, 'Saúde'],
-  [/\b(combustivel|gasolina|etanol|posto)\b/, Fuel, 'Combustível'],
+  [/\b(cafe|padaria|lanche|lanchonete|sorvete|pizza|pastel|tapioca|acai)\b/, Coffee, 'Lanche e café'],
+  [/\b(restaurante|almoco|jantar|ifood|churrasco|hamburguer|delivery)\b/, Utensils, 'Restaurante'],
+  [/\b(mercad\w*|feira|hortifruti|supermercado|acougue|atacado|atacadao|sacolao)\b/, ShoppingCart, 'Mercado'],
+  [/\b(farmacia|remedio\w*|consulta|exame|dentista|medico|academia|plano de saude)\b/, Pill, 'Saúde'],
+  // 24/11: "gás do carro" é combustível, não o gás de cozinha (vem antes da regra do gás)
+  [/\b(combustivel|gasolina|etanol|alcool|diesel|posto|gnv|gas do carro)\b/, Fuel, 'Combustível'],
   [/\b(onibus|metro|passagem|trem)\b/, Bus, 'Ônibus e metrô'],
   [/\b(uber|taxi|99|estacionamento|pedagio|oficina)\b/, Car, 'Carro e corrida'],
   [/\b(luz|energia)\b/, Zap, 'Luz'],
@@ -39,6 +43,9 @@ const REGRAS: [RegExp, LucideIcon, string][] = [
   [/\b(livro\w*|escola|curso|material escolar|faculdade|mensalidade)\b/, BookOpen, 'Escola e livros'],
   [/\b(salao|barbeiro|cabelo|manicure|unha\w*)\b/, Scissors, 'Beleza'],
   [/\b(roupa\w*|tenis|sapato\w*|mochila|camisa|calca)\b/, Shirt, 'Roupas'],
+  [/\b(netflix|spotify|streaming|assinatura\w*|disney|globoplay|prime video)\b/, Tv, 'Assinaturas'],
+  [/\b(pet|petshop|racao|veterinari\w*|banho e tosa)\b/, PawPrint, 'Bichos'],
+  [/\b(trabalho|papelaria|escritorio)\b/, Briefcase, 'Trabalho'],
 ]
 
 export type GrupoDoGasto = { nome: string; icone: LucideIcon | null }

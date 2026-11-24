@@ -1,4 +1,4 @@
-import { ArrowRight, ChartPie, Receipt } from 'lucide-react'
+import { ArrowRight, ChartPie, ChevronDown, Receipt } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Lancamento } from '../api/tipos'
 import { grupoDoGasto, iconeDoGasto } from '../lib/iconeDoGasto'
@@ -16,13 +16,24 @@ export function comprasDoMes(lanc: Lancamento[], envelopeId: string, mes: string
 }
 
 /** Soma por tipo (os 4 maiores e o resto em "Outros"). Sem tela: dá para testar sozinho. */
-export function somaPorTipo(compras: Lancamento[], envelopeNome: string, maximo = 4) {
-  const mapa = new Map<string, { nome: string; icone: LucideIcon | null; valor: number; n: number }>()
+export type TipoDoMes = {
+  nome: string
+  icone: LucideIcon | null
+  valor: number
+  n: number
+  compras: Lancamento[]
+  /** Só em "Outros": os tipos menores que ficaram juntos ali (24/11: para a pessoa ver o que tem dentro). */
+  juntos: string[]
+}
+
+export function somaPorTipo(compras: Lancamento[], envelopeNome: string, maximo = 4): TipoDoMes[] {
+  const mapa = new Map<string, TipoDoMes>()
   for (const l of compras) {
     const g = grupoDoGasto(l.descricao, envelopeNome)
-    const atual = mapa.get(g.nome) || { ...g, valor: 0, n: 0 }
+    const atual = mapa.get(g.nome) || { ...g, valor: 0, n: 0, compras: [], juntos: [] }
     atual.valor = centavos(atual.valor + l.valor)
     atual.n++
+    atual.compras.push(l)
     mapa.set(g.nome, atual)
   }
   const todos = [...mapa.values()].sort((a, b) => b.valor - a.valor)
@@ -34,8 +45,17 @@ export function somaPorTipo(compras: Lancamento[], envelopeNome: string, maximo 
       icone: null,
       valor: centavos(outrosJuntos.reduce((s, g) => s + g.valor, 0)),
       n: outrosJuntos.reduce((s, g) => s + g.n, 0),
+      compras: outrosJuntos.flatMap(g => g.compras).sort((x, y) => y.data.localeCompare(x.data)),
+      juntos: outrosJuntos.map(g => g.nome).filter(nome => nome !== 'Outros'),
     })
   return topo
+}
+
+/** "Saúde, Beleza e mais 1": o que ficou junto em Outros, curto. */
+export function fraseDosJuntos(juntos: string[]): string {
+  if (!juntos.length) return ''
+  if (juntos.length <= 2) return juntos.join(' e ')
+  return `${juntos.slice(0, 2).join(', ')} e mais ${juntos.length - 2}`
 }
 
 /** Onde foi o dinheiro (24/11/2026): as compras do mês somadas por tipo, com barra. Com olho fechado, só os nomes. */
@@ -74,24 +94,72 @@ export function OndeFoiODinheiro({
       </p>
       <ul className="onde-lista">
         {grupos.map(g => (
-          <li key={g.nome}>
-            <span className="tile">{g.icone ? <Icone desenho={g.icone} /> : <Icone nome="gasto" />}</span>
-            <span className="onde-m">
-              <span className="onde-linha">
-                <b>{g.nome}</b>
-                <Din v={g.valor} />
-              </span>
-              {!oculto && (
-                <span className="onde-barra" aria-hidden="true">
-                  <i style={{ width: Math.max(3, (g.valor / (maior.valor || 1)) * 100) + '%' }} />
+          <li key={g.nome} className={g.nome === 'Outros' ? 'onde-outros' : undefined}>
+            <details className="onde-item">
+              <summary>
+                <span className="tile">{g.icone ? <Icone desenho={g.icone} /> : <Icone nome="gasto" />}</span>
+                <span className="onde-m">
+                  <span className="onde-linha">
+                    <b>{g.nome}</b>
+                    <Din v={g.valor} />
+                  </span>
+                  {!oculto && (
+                    <span className="onde-barra" aria-hidden="true">
+                      <i style={{ width: Math.max(3, (g.valor / (maior.valor || 1)) * 100) + '%' }} />
+                    </span>
+                  )}
+                  <small>
+                    {plural(g.n, 'compra', 'compras')}
+                    {g.juntos.length ? ` · ${fraseDosJuntos(g.juntos)}` : ''}
+                  </small>
                 </span>
-              )}
-              <small>{plural(g.n, 'compra', 'compras')}</small>
-            </span>
+                <ChevronDown className="onde-seta" aria-hidden="true" />
+              </summary>
+              <ComprasDoTipo compras={g.compras} envelopeNome={envelopeNome} comIcone={g.nome === 'Outros'} />
+            </details>
           </li>
         ))}
       </ul>
+      <p className="leg onde-dica">Toque num tipo para ver as compras.</p>
     </section>
+  )
+}
+
+/** As compras de um tipo, abertas embaixo dele (24/11). Até 6; o resto fica em Gastos e entradas. */
+function ComprasDoTipo({
+  compras,
+  envelopeNome,
+  comIcone,
+}: {
+  compras: Lancamento[]
+  envelopeNome: string
+  comIcone: boolean
+}) {
+  const mostra = compras.slice(0, 6)
+  return (
+    <div className="onde-abre">
+      <ul>
+        {mostra.map(l => {
+          const icone = comIcone ? iconeDoGasto(l.descricao, envelopeNome) : null
+          return (
+            <li key={l.id}>
+              {comIcone && (icone ? <Icone desenho={icone} aria-hidden="true" /> : <Icone nome="gasto" />)}
+              <span className="onde-abre-nome">
+                {textoPrivado(l.descricao || 'Sem nome')}
+                <small>{dataCurta(l.data)}</small>
+              </span>
+              <Din v={l.valor} />
+            </li>
+          )
+        })}
+      </ul>
+      {compras.length > mostra.length && (
+        <a className="compras-todas" href="#/lancamentos">
+          {`Mais ${plural(compras.length - mostra.length, 'compra', 'compras')} em Gastos e entradas`}
+          <ArrowRight aria-hidden="true" />
+        </a>
+      )}
+    </div>
   )
 }
 
