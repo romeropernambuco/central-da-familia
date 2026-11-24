@@ -18,6 +18,8 @@ import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
+import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
+import { ComprasDoMes } from '../../componentes/ComprasDoMes'
 import {
   AnelConquistas,
   Medalha,
@@ -312,6 +314,7 @@ export function MeuOrcamento() {
                     : `Já está somada no Pode gastar hoje: ${reais(env.hoje ?? n.valor)}.`,
               )}
             </p>
+            <MesEmBolinhas hoje={hoje} porDia={dados.porDia} base={dados.base} anotados={dados.anot} oculto={oculto} />
             {env.livre >= 0 && (
               <details className="salario-porque">
                 <summary>Por quê?</summary>
@@ -373,6 +376,7 @@ export function MeuOrcamento() {
         </div>
 
         <div className="col">
+          <ComprasDoMes lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} />
           <section className="card" id="oMais" aria-labelledby="oMaisT" style={{ scrollMarginTop: 72 }}>
             <div className="card-h">
               <h2 id="oMaisT">

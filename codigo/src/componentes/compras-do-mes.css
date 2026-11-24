@@ -1,0 +1,30 @@
+/* Ultimas compras do orcamento (24/11/2026) */
+.compras-conta {
+  font: 700 14px/1 var(--font-num);
+  color: var(--muted, #6b6b66);
+}
+.compras-lista .tile {
+  color: var(--accent-ink);
+  background: color-mix(in oklch, var(--accent) 12%, var(--surface, #fff));
+}
+.compras-lista .v {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.compras-todas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  min-block-size: 44px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.compras-todas svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+.compras-todas:hover {
+  text-decoration: underline;
+}

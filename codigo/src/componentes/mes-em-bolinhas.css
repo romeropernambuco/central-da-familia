@@ -1,0 +1,108 @@
+/* O mes em bolinhas (24/11/2026): cada dia uma bolinha, verde dentro, ambar passou, tracejada sem anotar */
+.bolinhas {
+  margin-block: 14px 4px;
+  padding: 14px;
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--accent) 6%, var(--surface, #fff));
+}
+.bolinhas-titulo {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.bolinhas-titulo b {
+  font: 700 17px/1.2 var(--font-num);
+}
+.bolinhas-grade {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  justify-items: center;
+}
+.bolinhas-sem {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #6b6b66);
+}
+.bolinha {
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 600 12px/1 var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.bolinha.dentro {
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+}
+.bolinha.passou {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--warn-ink) 55%, transparent);
+}
+.bolinha.sem {
+  color: var(--muted, #6b6b66);
+  box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.bolinha.sem span {
+  opacity: 0.8;
+}
+.bolinha.hoje {
+  color: var(--accent-ink);
+  box-shadow: inset 0 0 0 2.5px var(--accent);
+  font-weight: 800;
+}
+.bolinha.futuro {
+  color: color-mix(in oklch, var(--muted, #6b6b66) 55%, transparent);
+}
+.bolinhas-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted, #6b6b66);
+}
+.bolinhas-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bolinhas-legenda span::before {
+  content: '';
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+}
+.bolinhas-legenda .dentro::before {
+  background: var(--accent);
+}
+.bolinhas-legenda .passou::before {
+  background: var(--warn-soft);
+  box-shadow: inset 0 0 0 2px var(--warn-ink);
+}
+.bolinhas-legenda .sem::before {
+  box-shadow: inset 0 0 0 1.5px var(--muted, #6b6b66);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bolinha:not(.futuro) {
+    animation: bolinha-entra 0.35s ease-out both;
+    animation-delay: calc(var(--i, 0) * 12ms);
+  }
+}
+@keyframes bolinha-entra {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+@media (max-width: 360px) {
+  .bolinha {
+    inline-size: 28px;
+    block-size: 28px;
+  }
+}
