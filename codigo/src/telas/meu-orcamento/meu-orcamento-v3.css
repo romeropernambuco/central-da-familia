@@ -19,13 +19,13 @@
 .orc-v3 .orc-em { display: none; }
 
 /* ---------- Camada 2: cartões e textos ---------- */
-/* cada cartão com o rosto de quem cuida dele */
+/* cada cartão com o retrato do boneco da sala que cuida dele (renderizado do próprio boneco 3D) */
 .orc-v3 .card-h h2 { display: flex; align-items: center; gap: 12px; font-size: 20px; letter-spacing: -.02em; }
 .orc-v3 .card-h h2 > * { display: none; }
-.orc-v3 .card-h h2::before { content: ""; flex: none; inline-size: 46px; block-size: 46px; border-radius: 50%; background-color: var(--palco); background-image: var(--rosto); background-repeat: no-repeat; background-size: var(--rosto-zoom, 300%); background-position: var(--rosto-pos, 50% 5%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lilas) 60%, var(--border)); }
-.orc-v3 #oRitmo { --rosto: url(/orcamento-3d/agente-analista.webp); --rosto-pos: 24% 6%; }
-.orc-v3 #oCofrinho { --rosto: url(/orcamento-3d/agente-tesoureira.webp); --rosto-pos: 66% 3%; }
-.orc-v3 :is(#oOnde, #oRepete, #oCompras) { --rosto: url(/orcamento-3d/agente-comprador.webp); --rosto-pos: 52% 3%; }
+.orc-v3 .card-h h2::before { content: ""; flex: none; inline-size: 46px; block-size: 46px; border-radius: 50%; background-color: var(--palco); background-image: var(--rosto); background-repeat: no-repeat; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lilas) 60%, var(--border)); }
+.orc-v3 #oRitmo { --rosto: url(/orcamento-3d/retrato-analista.webp); }
+.orc-v3 #oCofrinho { --rosto: url(/orcamento-3d/retrato-tesoureira.webp); }
+.orc-v3 :is(#oOnde, #oRepete, #oCompras) { --rosto: url(/orcamento-3d/retrato-comprador.webp); }
 
 /* o cartão principal: número no centro, palco logo abaixo */
 .orc-v3 #oHoje { display: flex; flex-direction: column; overflow: hidden; padding: 22px 18px 18px; }
@@ -62,7 +62,7 @@
 
 /* o recado do mês vem do analista */
 .orc-v3 .ritmo-aviso .assistente { display: none; }
-.orc-v3 .ritmo-aviso::before { content: ""; flex: none; inline-size: 48px; block-size: 48px; border-radius: 50%; background: var(--surface) url(/orcamento-3d/agente-analista.webp) 24% 6% / 300% no-repeat; }
+.orc-v3 .ritmo-aviso::before { content: ""; flex: none; inline-size: 48px; block-size: 48px; border-radius: 50%; background: var(--palco) url(/orcamento-3d/retrato-analista.webp) center / cover no-repeat; }
 
 /* ---------- Camada 4: movimento (só para quem não pediu menos movimento) ---------- */
 @media (prefers-reduced-motion: no-preference) {
