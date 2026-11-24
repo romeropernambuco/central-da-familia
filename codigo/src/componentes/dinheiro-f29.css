@@ -17,3 +17,18 @@
 .ritmo-b.warn .ritmo-ico{background:color-mix(in srgb,var(--warn,#b45309) 16%,transparent);color:var(--warn,#92400e)}
 .ritmo-b{padding:16px;border:1px solid var(--border);border-radius:var(--r-card)}
 @media(prefers-reduced-motion:reduce){.env .meter i{transition:none}}
+
+/* Rodada de design (24/11/2026): o bloco "Se continuar assim" deixa de ser uma pilha de textos pequenos */
+.ritmo-b { display: grid; gap: 12px; padding: 18px; }
+.ritmo-t .ritmo-num { flex-basis: 100%; text-align: start; font: 800 34px/1.05 var(--font-num); letter-spacing: -.04em; }
+.ritmo-t .ritmo-num em { font: 600 16px/1.3 var(--fonte-aba); font-style: normal; letter-spacing: 0; color: var(--muted); margin-inline-start: .35em; }
+.ritmo-b.warn .ritmo-t .ritmo-num { color: var(--warn, #92400e); }
+.ritmo-b .ritmo-f { margin: 0; }
+.ritmo-aviso { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; font: 600 15px/1.4 var(--fonte-aba); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-ink); }
+.ritmo-b.warn .ritmo-aviso { background: color-mix(in srgb, var(--warn, #b45309) 14%, transparent); color: var(--warn, #92400e); }
+.ritmo-aviso svg { flex: none; inline-size: 20px; block-size: 20px; margin-top: 1px; }
+.ritmo-leg { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
+.ritmo-leg > span { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 6%, transparent); font: 500 13.5px/1.3 var(--fonte-aba); color: var(--ink-2); }
+.ritmo-leg > .ritmo-nota { flex-basis: 100%; border-radius: 12px; background: none; padding: 4px 2px; color: var(--muted); align-items: flex-start; }
+.ritmo-nota svg { flex: none; inline-size: 16px; block-size: 16px; margin-top: 2px; }
+.ritmo-b .graf-area + *, .ritmo-b .graf ~ .sub { font-size: 13px; color: var(--muted); }

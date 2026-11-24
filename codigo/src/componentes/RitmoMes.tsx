@@ -6,7 +6,7 @@ import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, soma
 import { GraficoMes } from './Graficos'
 import { pesoDia, projecao } from '../lib/plano'
 import { Icone } from './Icone'
-import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
+import { CalendarDays, CircleCheck, Info, TrendingDown, TrendingUp, TriangleAlert } from 'lucide-react'
 
 /**
  * R7+G3: a semana e o fim do mês. Rodada 2: vale também pro limite do mês (BRUNO ideia 3); parcela e compra grande
@@ -86,7 +86,7 @@ export function RitmoMes({
               </i>
               {rotuloSemana}
             </span>
-            <b>{reais(e.ate_domingo)}</b>
+            <b className="ritmo-num">{reais(e.ate_domingo)}</b>
           </p>
           {totalSemana != null && totalSemana > 0 && (
             <Barra
@@ -112,9 +112,9 @@ export function RitmoMes({
               {dia >= 3 ? 'Se continuar assim' : 'No mês'}
             </span>
             {(exibirFecha || exibirLimite) && (
-              <b>
+              <b className="ritmo-num">
                 {exibirFecha ? reais(fecha) : ''}
-                {exibirLimite ? `${exibirFecha ? ' de ' : 'Combinado '}${reais(lim)}` : ''}
+                {exibirLimite && <em>{`${exibirFecha ? ' de ' : 'Combinado '}${reais(lim)}`}</em>}
               </b>
             )}
           </p>
@@ -126,16 +126,19 @@ export function RitmoMes({
             hoje={hoje}
             dias={diasNoMes(hoje)}
             porDia={porDia}
-            semRotulosDeValores={!!valoresJaVisiveis}
+            semRotulosDeValores={!!valoresJaVisiveis || (exibirFecha && exibirLimite)}
           />
-          <p className="ritmo-f">
-            {dia < 3
-              ? valoresJaVisiveis?.gasto === e.gasto_mes
-                ? ''
-                : `Já saíram ${reais(e.gasto_mes)}.`
-              : p.dentro
-                ? `${quemFecha} o mês dentro do combinado.`
-                : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Para voltar ao limite, gaste só o valor de cada dia.`}
+          <p className={'ritmo-f' + (dia >= 3 ? ' ritmo-aviso' : '')}>
+            {dia >= 3 && (p.dentro ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />)}
+            <span>
+              {dia < 3
+                ? valoresJaVisiveis?.gasto === e.gasto_mes
+                  ? ''
+                  : `Já saíram ${reais(e.gasto_mes)}.`
+                : p.dentro
+                  ? `${quemFecha} o mês dentro do combinado.`
+                  : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Para voltar ao limite, gaste só o valor de cada dia.`}
+            </span>
           </p>
         </div>
       )}
@@ -153,7 +156,12 @@ export function RitmoMes({
               se continuar assim
             </span>
           )}
-          {pontual > 0 && <span>Parcelas e compras grandes entram uma vez só: {reais(pontual)}.</span>}
+          {pontual > 0 && (
+            <span className="ritmo-nota">
+              <Info aria-hidden="true" />
+              Parcelas e compras grandes entram uma vez só: {reais(pontual)}.
+            </span>
+          )}
         </p>
       )}
     </div>
