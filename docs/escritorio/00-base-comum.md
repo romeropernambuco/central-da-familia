@@ -58,7 +58,7 @@ Palavras só do painel do dono do produto: modelo, custo de IA, banco, escala.
 
 | id | Nome | Setor | Horário (fuso de Recife) |
 |---|---|---|---|
-| `contador` | Contador da Casa | Os orçamentos | dia 1, 7h12 |
+| `contador` | Contador da Casa | Os orçamentos | 1º dia útil do mês, 7h12 (em novembro/2026: segunda, 02/11) |
 | `cartao` | Analista de Cartão | Cartões e parcelas | dia seguinte ao fechamento de cada cartão, 8h17 |
 | `vencimentos` | Agenda de Vencimentos | Contas com data | quarta, 10h19 |
 | `comprador` | Comprador | Feira | segunda, 20h23 |
@@ -81,7 +81,7 @@ Palavras só do painel do dono do produto: modelo, custo de IA, banco, escala.
 | Atrasado | calculado | horário previsto + 30 min passou, ou conferência aberta há mais de 30 min |
 | Resumido | `resumido = true` | teto de custo atingido; é um selo sobre "Entregue" |
 
-"Atrasado" e "Resumido" não são valores novos de status. São calculados.
+"Atrasado" e "Resumido" não são valores novos de status. São calculados. São 7 situações ao todo; onde a ficha resumida lista 6, vale esta tabela.
 
 ---
 
@@ -93,15 +93,19 @@ Todos os cadernos usam estes números nos testes. Não invente outros. Se precis
 
 | Pessoa | Papel | Observação |
 |---|---|---|
-| Carlos Silva | `casal` | limite do mês R$ 5.000 |
-| Marina Silva | `casal` | limite do mês R$ 3.500 |
+| Carlos Silva | `casal` | limite do mês R$ 4.000 |
+| Marina Silva | `casal` | limite do mês R$ 3.000 |
 | Bia Silva, 12 anos | `membro` | mesada, não vê os pais |
+| Léo Silva, 8 anos | `membro` | sem acesso ao app |
 | Dona Lúcia | `equipe_casa` | cozinheira, nunca vê valor |
+| Seu Jorge | `equipe_casa` | jardineiro, 1 vez por semana, nunca vê valor |
+
+A família tem 2 filhos e 2 pessoas na equipe, como manda a Tarefa 3. Os ajudantes trabalham pra família Silva desde 07/09/2026.
 
 | Dinheiro do mês (novembro) | Valor |
 |---|---|
 | Limite da casa (Carlos + Marina + Casa) | R$ 12.000 |
-| Limite da Casa (feira e despensa) | R$ 3.500 |
+| Limite da Casa (feira e despensa) | R$ 5.000 |
 | Gasto até 24/11 | R$ 8.240 (69% do limite, com 80% do mês passado) |
 | Sobra aparente | R$ 3.760 |
 | Contas com data até 30/11 (Agenda) | R$ 1.940 |
@@ -109,13 +113,16 @@ Todos os cadernos usam estes números nos testes. Não invente outros. Se precis
 | **Livre de verdade** | **R$ 920** (3.760 − 1.940 − 900) |
 | Guardado em outubro | R$ 600 |
 
+Regra do livre: livre = limite − gasto − contas com data ainda não pagas − parte da folha a guardar − parte da fatura ainda não lançada como gasto. Na família Silva toda compra no cartão já está lançada como gasto, então a parte da fatura a tirar em novembro é R$ 0 e o livre fecha em R$ 920. Nunca descontar a mesma compra 2 vezes.
+
 | Reserva | Valor |
 |---|---|
 | Colchão escolhido pela família | R$ 27.000 |
 | Gasto semanal de base | R$ 3.000 |
 | Semanas de contas pagas hoje | 9 |
-| Mês mais apertado dos próximos 3 | janeiro, 6 semanas |
+| Mês mais apertado dos próximos 3 | janeiro, 6 semanas: (27.000 − 6.000 − 1.780) ÷ 3.000 = 6,4, arredondado pra baixo |
 | Contas de janeiro (IPTU, IPVA, material escolar, seguro) | R$ 6.000 |
+| Férias da Dona Lúcia que ainda faltam guardar | R$ 1.780 (2.400 − 620) |
 
 | Cartões | Fecha | Vence | Fatura aberta |
 |---|---|---|---|
@@ -138,8 +145,11 @@ Parcelas já contratadas que caem em março/2027: 3, somando R$ 1.400.
 |---|---|
 | Teto por família | R$ 2,49 |
 | Gasto até 24/11 | R$ 0,44 |
-| Contador | R$ 0,38 |
-| Os outros 7 somados | R$ 0,06 |
+| Contador da Casa (leve + forte no fechamento do mês) | R$ 0,17 |
+| Analista de Cartão (leve + forte no fechamento do cartão) | R$ 0,21 |
+| Os outros 6 somados, todos no leve | R$ 0,06 |
+| Conferências previstas em novembro | 26 |
+| Parte da Tarefa 12 (leitura de cupom e fatura) nos R$ 0,44 | R$ 0,00 no exemplo |
 
 ---
 
