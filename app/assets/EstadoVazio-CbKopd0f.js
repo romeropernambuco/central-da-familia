@@ -1,0 +1,1 @@
+import{r,aA as o,j as t,aB as e}from"./partida-DT71skdE.js";const i=Object.freeze({...o});function n({nome:a,...s}){return r.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(e,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
