@@ -143,6 +143,7 @@ export function normalizaLancamento(bruto: unknown): Lancamento {
       apagado_em: (l.apagado_em ?? null) as string | null,
       criado_em: String(l.criado_em || ''),
       ...(Number(l.parcelas) > 1 ? { parcelas: Number(l.parcelas) } : {}),
+      ...(l.tipo ? { tipo: String(l.tipo) } : {}),
       ...(l.moeda_original
         ? { moeda_original: String(l.moeda_original), valor_original: num(l.valor_original), cambio: num(l.cambio) }
         : {}),

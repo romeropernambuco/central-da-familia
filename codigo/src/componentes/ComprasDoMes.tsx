@@ -1,9 +1,9 @@
-import { ArrowRight, ChartPie, ChevronDown, Receipt } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, ChartPie, ChevronDown, Minus, Receipt } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Lancamento } from '../api/tipos'
 import { grupoDoGasto, iconeDoGasto } from '../lib/iconeDoGasto'
 import { textoPrivado } from '../lib/olho'
-import { centavos, dataCurta, plural } from '../lib/formato'
+import { centavos, dataCurta, mesAnterior, mesLongo, plural, reais } from '../lib/formato'
 import { Din } from './base'
 import { Icone } from './Icone'
 import './compras-do-mes.css'
@@ -29,7 +29,7 @@ export type TipoDoMes = {
 export function somaPorTipo(compras: Lancamento[], envelopeNome: string, maximo = 4): TipoDoMes[] {
   const mapa = new Map<string, TipoDoMes>()
   for (const l of compras) {
-    const g = grupoDoGasto(l.descricao, envelopeNome)
+    const g = grupoDoGasto(l.descricao, envelopeNome, l.tipo)
     const atual = mapa.get(g.nome) || { ...g, valor: 0, n: 0, compras: [], juntos: [] }
     atual.valor = centavos(atual.valor + l.valor)
     atual.n++
@@ -51,6 +51,37 @@ export function somaPorTipo(compras: Lancamento[], envelopeNome: string, maximo 
   return topo
 }
 
+/**
+ * Quanto foi em cada tipo no mês passado, do dia 1 até o mesmo dia de hoje (24/11: comparar o mesmo pedaço do mês,
+ * senão o mês passado inteiro sempre "ganha"). Sem compra no mês passado: null (a tela não compara).
+ */
+export function somaDoMesPassado(
+  lanc: Lancamento[],
+  envelopeId: string,
+  envelopeNome: string,
+  mesAntes: string,
+  ateDia: number,
+): Record<string, number> | null {
+  const compras = comprasDoMes(lanc, envelopeId, mesAntes).filter(l => Number(l.data.slice(8, 10)) <= ateDia)
+  if (!compras.length) return null
+  const soma: Record<string, number> = {}
+  for (const l of compras) {
+    const nome = grupoDoGasto(l.descricao, envelopeNome, l.tipo).nome
+    soma[nome] = centavos((soma[nome] || 0) + l.valor)
+  }
+  return soma
+}
+
+/** O tipo de agora comparado com o mês passado: "R$ 120 a mais que em outubro". Outros soma os tipos que juntou. */
+export function fraseDoMesPassado(g: TipoDoMes, antes: Record<string, number>, nomeMes: string): string {
+  const nomes = g.nome === 'Outros' ? [...g.juntos, 'Outros'] : [g.nome]
+  const valorAntes = centavos(nomes.reduce((s, n) => s + (antes[n] || 0), 0))
+  if (!valorAntes) return `Em ${nomeMes} não teve`
+  const dif = centavos(g.valor - valorAntes)
+  if (Math.abs(dif) < 1) return `Igual a ${nomeMes}`
+  return `${reais(Math.abs(dif))} a ${dif > 0 ? 'mais' : 'menos'} que em ${nomeMes}`
+}
+
 /** "Saúde, Beleza e mais 1": o que ficou junto em Outros, curto. */
 export function fraseDosJuntos(juntos: string[]): string {
   if (!juntos.length) return ''
@@ -65,18 +96,28 @@ export function OndeFoiODinheiro({
   envelopeNome,
   mes,
   oculto,
+  lancAntes,
+  ateDia,
 }: {
   lanc: Lancamento[]
   envelopeId: string
   envelopeNome: string
   mes: string
   oculto: boolean
+  /** 24/11: as compras do mês passado (sem elas, ou com o olho fechado, não compara) */
+  lancAntes?: Lancamento[] | null
+  /** o dia de hoje: o mês passado é comparado do dia 1 até este dia */
+  ateDia?: number
 }) {
   const compras = comprasDoMes(lanc, envelopeId, mes)
   if (!compras.length) return null
   const grupos = somaPorTipo(compras, envelopeNome)
   const total = centavos(grupos.reduce((s, g) => s + g.valor, 0))
   const maior = grupos[0]
+  const mesAntes = mesAnterior(mes),
+    nomeMes = mesLongo(mesAntes)
+  const antes =
+    !oculto && lancAntes && ateDia ? somaDoMesPassado(lancAntes, envelopeId, envelopeNome, mesAntes, ateDia) : null
   return (
     <section className="card" id="oOnde" aria-labelledby="oOndeT" style={{ scrollMarginTop: 72 }}>
       <div className="card-h">
@@ -112,6 +153,7 @@ export function OndeFoiODinheiro({
                     {plural(g.n, 'compra', 'compras')}
                     {g.juntos.length ? ` · ${fraseDosJuntos(g.juntos)}` : ''}
                   </small>
+                  {antes && <CompMesPassado frase={fraseDoMesPassado(g, antes, nomeMes)} />}
                 </span>
                 <ChevronDown className="onde-seta" aria-hidden="true" />
               </summary>
@@ -120,8 +162,24 @@ export function OndeFoiODinheiro({
           </li>
         ))}
       </ul>
-      <p className="leg onde-dica">Toque num tipo para ver as compras.</p>
+      <p className="leg onde-dica">
+        Toque num tipo para ver as compras.
+        {antes ? ` A comparação é com ${nomeMes}, do dia 1 ao dia ${ateDia}.` : ''}
+      </p>
     </section>
+  )
+}
+
+/** A linha do mês passado embaixo de cada tipo: seta para cima (gastou mais) ou para baixo (gastou menos). */
+function CompMesPassado({ frase }: { frase: string }) {
+  const sobe = frase.includes(' a mais '),
+    desce = frase.includes(' a menos ')
+  const Seta = sobe ? ArrowUp : desce ? ArrowDown : Minus
+  return (
+    <small className={'onde-comp' + (sobe ? ' sobe' : desce ? ' desce' : '')}>
+      <Seta aria-hidden="true" />
+      {textoPrivado(frase)}
+    </small>
   )
 }
 
@@ -140,7 +198,7 @@ function ComprasDoTipo({
     <div className="onde-abre">
       <ul>
         {mostra.map(l => {
-          const icone = comIcone ? iconeDoGasto(l.descricao, envelopeNome) : null
+          const icone = comIcone ? iconeDoGasto(l.descricao, envelopeNome, l.tipo) : null
           return (
             <li key={l.id}>
               {comIcone && (icone ? <Icone desenho={icone} aria-hidden="true" /> : <Icone nome="gasto" />)}
@@ -191,7 +249,7 @@ export function ComprasDoMes({
       ) : (
         <ul className="list compras-lista">
           {ultimas.map(l => {
-            const icone = iconeDoGasto(l.descricao, envelopeNome)
+            const icone = iconeDoGasto(l.descricao, envelopeNome, l.tipo)
             return (
               <li key={l.id} className="li">
                 <span className="tile">{icone ? <Icone desenho={icone} /> : <Icone nome="gasto" />}</span>

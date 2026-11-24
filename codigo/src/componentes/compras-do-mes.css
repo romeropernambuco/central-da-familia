@@ -112,6 +112,25 @@
   margin-top: 4px;
   font-size: 14px;
 }
+/* 24/11: comparação com o mês passado, no mesmo pedaço do mês */
+.onde-comp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted, #6b6b66);
+}
+.onde-comp svg {
+  inline-size: 14px;
+  block-size: 14px;
+  flex: none;
+}
+.onde-comp.sobe {
+  color: var(--warn-ink, #8a5a00);
+}
+.onde-comp.desce {
+  color: var(--accent-ink);
+}
 .onde-dica {
   margin: 12px 0 0;
   color: var(--muted, #6b6b66);

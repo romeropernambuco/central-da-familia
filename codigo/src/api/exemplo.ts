@@ -1390,6 +1390,16 @@ export const apiExemplo: Api = {
     if (campos.parcelas != null)
       l.parcelas = l.cartao_id && campos.parcelas > 1 ? Math.min(12, campos.parcelas) : undefined
   },
+  async lancamentoTipo(id, tipo) {
+    await espera(40)
+    const l = db.lanc.find(x => x.id === id)
+    if (!l) throw new Error('Esse lançamento não existe mais. Feche e abra a tela de novo.')
+    // igual à regra lanc_mudar do banco: só quem lançou, no limite em que escreve
+    if (logado === 'carla' || !lancMeu(l)) throw new Error('Só quem lançou muda o tipo desse gasto.')
+    const t = tipo?.trim() || null
+    if (t && t.length > 40) throw new Error('Tipo muito comprido.')
+    l.tipo = t
+  },
   async cobrirComCasa(_f, envelope, valor) {
     await espera(60)
     // E2 (premissa 6): só o dono do gasto aperta "Cobrir com a Casa"

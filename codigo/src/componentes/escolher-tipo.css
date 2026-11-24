@@ -1,0 +1,58 @@
+/* Tipo do gasto na hora de anotar (24/11/2026) */
+.tipo-gasto {
+  margin-block: 4px 8px;
+}
+.tipo-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  min-block-size: 44px;
+}
+.tipo-atual {
+  flex: 1;
+  min-inline-size: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tipo-atual svg {
+  flex: none;
+  inline-size: 18px;
+  block-size: 18px;
+  color: var(--accent-ink);
+}
+.tipo-atual small,
+.tipo-vazio {
+  color: var(--muted, #6b6b66);
+  font-size: 13px;
+}
+.tipo-trocar {
+  flex: none;
+  min-block-size: 44px;
+  padding-inline: 4px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.tipo-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.tipo-opcoes .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tipo-opcoes .pill svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+.tipo-opcoes .tipo-pelo-nome {
+  border-style: dashed;
+}

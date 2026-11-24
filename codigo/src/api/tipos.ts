@@ -111,6 +111,8 @@ export interface Lancamento {
   autor?: string
   /** Membro que pagou, somente quando informado. */
   pago_por?: string | null
+  /** Tipo escolhido por quem anotou (24/11: "Mercado", "Saúde"...). Sem ele, o app adivinha pelo nome. */
+  tipo?: string | null
   /** E2: quem olha pode corrigir e apagar (lançou e o limite é dele ou da Casa). Sem o campo: a tela decide pelo limite. */
   meu?: boolean
   /** Gasto em moeda de fora: `valor` continua em reais; aqui fica o valor na moeda da viagem. */
@@ -869,6 +871,8 @@ export interface Api {
   etiquetasDoLancamento?(lancamento: string): Promise<string[]>
   /** Guarda o valor na moeda de fora; `null` tira. O câmbio sai do valor em reais do próprio gasto. */
   lancamentoMoeda?(lancamento: string, valorOriginal: number | null, moeda?: string): Promise<void>
+  /** 24/11: o tipo do gasto escolhido por quem lançou (null volta a adivinhar pelo nome). */
+  lancamentoTipo?(lancamento: string, tipo: string | null): Promise<void>
   etiquetaResumo?(etiqueta: string): Promise<EtiquetaResumo>
   etiquetaSimular?(etiqueta: string, dias: number, pessoas?: number | null): Promise<EtiquetaSimulacao>
   exportarMeu?(familia: string): Promise<unknown>

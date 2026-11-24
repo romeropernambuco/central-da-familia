@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import type { Lancamento } from '../api/tipos'
-import { comprasDoMes, fraseDosJuntos, somaPorTipo } from './ComprasDoMes'
+import { reais } from '../lib/formato'
+import { comprasDoMes, fraseDoMesPassado, fraseDosJuntos, somaDoMesPassado, somaPorTipo } from './ComprasDoMes'
 
 const l = (id: string, descricao: string, valor: number, data = '2026-11-10', extra: Partial<Lancamento> = {}) =>
   ({
@@ -44,6 +45,34 @@ it('onde foi o dinheiro: além de 4 tipos, o resto vira Outros e Outros fica no 
   const grupos = somaPorTipo(compras, 'Ana')
   expect(grupos.map(g => g.nome)).toEqual(['Lanche e café', 'Mercado', 'Saúde', 'Combustível', 'Outros'])
   expect(grupos.at(-1)!.valor).toBe(191)
+})
+
+it('o tipo escolhido ao anotar vence o nome', () => {
+  const grupos = somaPorTipo([l('1', 'Coisa qualquer', 40, '2026-11-10', { tipo: 'Saúde' }), l('2', 'Café', 10)], 'Ana')
+  expect(grupos.map(g => [g.nome, g.valor])).toEqual([
+    ['Saúde', 40],
+    ['Lanche e café', 10],
+  ])
+})
+
+it('mês passado: compara só até o mesmo dia, e Outros soma os tipos que juntou', () => {
+  const antes = [
+    l('a', 'Café', 30, '2026-10-05'),
+    l('b', 'Café', 500, '2026-10-28'), // depois do dia 24: não entra
+    l('c', 'Salão', 50, '2026-10-10'),
+  ]
+  const soma = somaDoMesPassado(antes, 'e1', 'Ana', '2026-10', 24)!
+  expect(soma).toEqual({ 'Lanche e café': 30, Beleza: 50 })
+  expect(somaDoMesPassado(antes, 'outro', 'Ana', '2026-10', 24)).toBeNull()
+  const base = { icone: null, n: 1, compras: [], juntos: [] as string[] }
+  expect(fraseDoMesPassado({ ...base, nome: 'Lanche e café', valor: 50 }, soma, 'outubro')).toBe(
+    `${reais(20)} a mais que em outubro`,
+  )
+  expect(fraseDoMesPassado({ ...base, nome: 'Mercado', valor: 50 }, soma, 'outubro')).toBe('Em outubro não teve')
+  expect(fraseDoMesPassado({ ...base, nome: 'Outros', valor: 20, juntos: ['Beleza'] }, soma, 'outubro')).toBe(
+    `${reais(30)} a menos que em outubro`,
+  )
+  expect(fraseDoMesPassado({ ...base, nome: 'Lanche e café', valor: 30 }, soma, 'outubro')).toBe('Igual a outubro')
 })
 
 it('Outros diz o que tem dentro e guarda as compras de cada tipo', () => {

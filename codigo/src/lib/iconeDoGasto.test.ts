@@ -1,6 +1,6 @@
 import { Coffee, Fuel, Gift, House, Pill, Shirt, ShoppingCart, Utensils, Zap } from 'lucide-react'
 import { expect, it } from 'vitest'
-import { grupoDoGasto, iconeDoGasto } from './iconeDoGasto'
+import { grupoDoGasto, iconeDoGasto, TIPOS_DO_GASTO } from './iconeDoGasto'
 
 it('o ícone sai de palavras da descrição, sem acento e sem caixa alta', () => {
   expect(iconeDoGasto('Café')).toBe(Coffee)
@@ -20,6 +20,14 @@ it('gás do carro é combustível, e os tipos novos (24/11) têm nome', () => {
   expect(grupoDoGasto('Netflix').nome).toBe('Assinaturas')
   expect(grupoDoGasto('Ração do cachorro').nome).toBe('Bichos')
   expect(grupoDoGasto('Material de trabalho').nome).toBe('Trabalho')
+})
+
+it('o tipo escolhido ao anotar vence o nome; tipo desconhecido volta a adivinhar', () => {
+  expect(grupoDoGasto('Café', null, 'Mercado').nome).toBe('Mercado')
+  expect(grupoDoGasto('Café', null, 'Outros')).toEqual({ nome: 'Outros', icone: null })
+  expect(grupoDoGasto('Café', null, 'Tipo que não existe').nome).toBe('Lanche e café')
+  expect(TIPOS_DO_GASTO.at(-1)!.nome).toBe('Outros')
+  expect(new Set(TIPOS_DO_GASTO.map(t => t.nome)).size).toBe(TIPOS_DO_GASTO.length)
 })
 
 it('palavra dentro de outra não conta, e sem acerto vem o limite da casa ou nada', () => {

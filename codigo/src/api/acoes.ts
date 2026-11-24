@@ -64,6 +64,7 @@ export const ACOES_QUE_GRAVAM = [
   'etiquetaSalvar',
   'etiquetar',
   'lancamentoMoeda',
+  'lancamentoTipo',
   'apagarFamilia',
 ] as const satisfies readonly Acao[]
 

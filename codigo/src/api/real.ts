@@ -315,6 +315,16 @@ export const apiReal: Api = {
       repetirPagador,
     }
   },
+  async lancamentoTipo(lancamento, tipo) {
+    // 24/11: coluna da migração produto_tipo_do_gasto; o banco só deixa quem lançou mudar (regra lanc_mudar)
+    const { error } = await sb()
+      .from('lancamentos')
+      .update({ tipo: tipo?.trim() || null })
+      .eq('id', lancamento)
+      .select('id')
+      .single()
+    if (error) erro(error)
+  },
   async lancamentos(familia, mes) {
     // recorte por mês (antes vinham 500 linhas de todos os meses a cada lançamento); mês cheio vem em páginas de 1.000
     const [a, m] = mes.split('-').map(Number)

@@ -42,6 +42,7 @@ import { acharCartao } from '../../lib/atalho'
 import { aplicacaoMinha, cartaoMeu, escreveNo } from '../../lib/dono'
 import { LinhaEtiqueta, useEtiquetasNoLancar } from './EtiquetaNoLancar'
 import { UltimosOQueFoi } from '../../componentes/UltimosOQueFoi'
+import { EscolherTipo } from '../../componentes/EscolherTipo'
 import { ColarExtrato } from './ColarExtrato'
 
 type Rascunho = {
@@ -156,6 +157,8 @@ export function Lancar() {
   const [parcelas, setParcelas] = useState(corr?.parcelas || rascunho?.parcelas || 1)
   const [cartoes, setCartoes] = useState<Cartao[]>([])
   const [desc, setDesc] = useState(corr ? corr.descricao || '' : lancarAberto?.descricao || rascunho?.desc || '')
+  // 24/11: tipo escolhido (vazio = o app adivinha pelo nome)
+  const [tipo, setTipo] = useState(corr?.tipo || '')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [pagadorPendente, setPagadorPendente] = useState<null | (() => Promise<void>)>(null)
@@ -342,7 +345,8 @@ export function Lancar() {
         fecharLancar()
         toast(
           'Sem internet agora. O gasto ficou guardado neste aparelho e vai ser enviado quando a rede voltar.' +
-            (etq.mexeu ? ' A etiqueta que você mudou fica para depois: marque pelo lápis em Gastos e entradas.' : ''),
+            (etq.mexeu ? ' A etiqueta que você mudou fica para depois: marque pelo lápis em Gastos e entradas.' : '') +
+            (tipo ? ' O tipo fica para depois: troque pelo lápis em Gastos e entradas.' : ''),
         )
         void avisarQuandoOEnvioTerminar(envio, gasto, { toast, recarregar })
         return
@@ -360,6 +364,7 @@ export function Lancar() {
       ;(window as unknown as { __ultimoTempoLancar?: number }).__ultimoTempoLancar = s
       // o gasto já está salvo; a etiqueta e a moeda de fora vão em seguida e não desfazem o gasto se falharem
       const faltou = await etq.aplicar(r.lancamento.id)
+      const faltouTipo = await gravarTipo(r.lancamento.id, tipo)
       fecharLancar()
       await recarregar()
       toast(
@@ -367,7 +372,9 @@ export function Lancar() {
           ? `Compra anotada em ${nome}.`
           : cartao
             ? impactoCompra.confirmacao
-            : fraseDepois(r.resumo, envelope, valor, nome, desc.trim())) + avisoDaEtiqueta(faltou),
+            : fraseDepois(r.resumo, envelope, valor, nome, desc.trim())) +
+          avisoDaEtiqueta(faltou) +
+          faltouTipo,
         async () => {
           await api.apagarLancamento(r.lancamento.id)
           await recarregar()
@@ -382,6 +389,16 @@ export function Lancar() {
         return
       }
       setErro((e as Error).message)
+    }
+  }
+  /** 24/11: grava o tipo escolhido depois do gasto. Se falhar, o gasto continua salvo e o app adivinha pelo nome. */
+  async function gravarTipo(id: string, t: string): Promise<string> {
+    if (!api.lancamentoTipo || (!t && !corr)) return ''
+    try {
+      await api.lancamentoTipo(id, t || null)
+      return ''
+    } catch {
+      return ' O tipo não foi gravado: troque pelo lápis em Gastos e entradas.'
     }
   }
   async function corrigir(envelope: string, nome: string) {
@@ -406,10 +423,13 @@ export function Lancar() {
         parcelas: cartao ? parcelas : 1,
       })
       const faltou = await etq.aplicar(corr.id)
+      const tipoAntes = corr.tipo || ''
+      const faltouTipo = tipo !== tipoAntes ? await gravarTipo(corr.id, tipo) : ''
       fecharLancar()
       await recarregar()
-      toast(`Corrigido: ${reais(valor)} em ${nome}.` + avisoDaEtiqueta(faltou), async () => {
+      toast(`Corrigido: ${reais(valor)} em ${nome}.` + avisoDaEtiqueta(faltou) + faltouTipo, async () => {
         await api.corrigirLancamento!(corr.id, antes)
+        if (tipo !== tipoAntes) await api.lancamentoTipo?.(corr.id, tipoAntes || null)
         await recarregar()
       })
     } catch (e) {
@@ -477,6 +497,8 @@ export function Lancar() {
       )}
       {/* Anotar mais rápido: os últimos "O que foi?" do mês viram 1 toque */}
       {modo === 'gasto' && !corr && <UltimosOQueFoi lista={recentes} atual={desc} escolher={setDesc} />}
+      {/* 24/11: o tipo do gasto (Mercado, Saúde...): o app adivinha pelo nome e a pessoa troca com 1 toque */}
+      {modo === 'gasto' && <EscolherTipo descricao={desc} tipo={tipo} mudar={setTipo} />}
       <div className="keys" role="group" aria-label="Teclado">
         {teclas.map(t => (
           <button key={t} type="button" onClick={() => digitar(t)} aria-label={t === 'apagar' ? 'Apagar' : t}>

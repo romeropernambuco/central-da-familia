@@ -50,8 +50,21 @@ const REGRAS: [RegExp, LucideIcon, string][] = [
 
 export type GrupoDoGasto = { nome: string; icone: LucideIcon | null }
 
-/** O tipo do gasto (nome e ícone) para somar "onde foi o dinheiro". Sem acerto: "Outros". */
-export function grupoDoGasto(descricao: string | undefined | null, limite?: string | null): GrupoDoGasto {
+/** Os tipos que a pessoa pode escolher ao anotar (24/11), na ordem da lista, e "Outros" no fim. */
+export const TIPOS_DO_GASTO: GrupoDoGasto[] = [
+  ...REGRAS.map(([, icone, nome]) => ({ nome, icone })),
+  { nome: 'Outros', icone: null },
+]
+
+/** O tipo do gasto (nome e ícone) para somar "onde foi o dinheiro".
+ *  1º o tipo que a pessoa escolheu ao anotar; sem ele, o app adivinha pelo nome; sem acerto: "Outros". */
+export function grupoDoGasto(
+  descricao: string | undefined | null,
+  limite?: string | null,
+  escolhido?: string | null,
+): GrupoDoGasto {
+  const certo = escolhido ? TIPOS_DO_GASTO.find(t => t.nome === escolhido) : undefined
+  if (certo) return certo
   const texto = sem(descricao || '')
   for (const [regra, icone, nome] of REGRAS) if (regra.test(texto)) return { nome, icone }
   // sem palavra conhecida: o limite da casa diz o suficiente (a feira é compra de mercado)
@@ -60,6 +73,10 @@ export function grupoDoGasto(descricao: string | undefined | null, limite?: stri
   return { nome: 'Outros', icone: null }
 }
 
-export function iconeDoGasto(descricao: string | undefined | null, limite?: string | null): LucideIcon | null {
-  return grupoDoGasto(descricao, limite).icone
+export function iconeDoGasto(
+  descricao: string | undefined | null,
+  limite?: string | null,
+  escolhido?: string | null,
+): LucideIcon | null {
+  return grupoDoGasto(descricao, limite, escolhido).icone
 }

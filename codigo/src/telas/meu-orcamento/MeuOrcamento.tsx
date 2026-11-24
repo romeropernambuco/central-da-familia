@@ -40,6 +40,7 @@ import {
   diasNoMes,
   diasRestantes,
   hojeRecife,
+  mesAnterior,
   plural,
   reais,
   somaDias,
@@ -61,6 +62,15 @@ export function MeuOrcamento() {
     [api, versao],
   )
   const lanc = useMemo(() => leitura.dado || [], [leitura.dado])
+  // 24/11: o mês passado, só para comparar os tipos em "Onde foi seu dinheiro". Só lê depois que este mês abriu;
+  // se falhar, a tela segue sem comparar.
+  const mesAntes = mesAnterior(hojeRecife().slice(0, 7))
+  const esteMesAbriu = !!leitura.dado
+  const leituraAntes = useLeituraRemota(
+    (familia?.id || '') + ':antes',
+    familia && esteMesAbriu ? () => api.lancamentos(familia.id, mesAntes) : null,
+    [api, versao, mesAntes, esteMesAbriu],
+  )
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
   const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
@@ -376,7 +386,15 @@ export function MeuOrcamento() {
         </div>
 
         <div className="col">
-          <OndeFoiODinheiro lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} oculto={oculto} />
+          <OndeFoiODinheiro
+            lanc={lanc}
+            envelopeId={env.id}
+            envelopeNome={env.nome}
+            mes={mes}
+            oculto={oculto}
+            lancAntes={leituraAntes.dado}
+            ateDia={Number(hoje.slice(8, 10))}
+          />
           <ComprasDoMes lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} />
           <section className="card" id="oMais" aria-labelledby="oMaisT" style={{ scrollMarginTop: 72 }}>
             <div className="card-h">

@@ -210,7 +210,7 @@ function LancamentosFamilia() {
                     // E2: o casal lê o gasto do outro com o nome dele, sem lápis nem lixeira
                     const mexe = mexeNoLancamento(l, envDe(l.envelope_id), familia),
                       dono = rotuloDono(envDe(l.envelope_id), familia)
-                    const icone = iconeDoGasto(l.descricao, nomeEnv(l.envelope_id))
+                    const icone = iconeDoGasto(l.descricao, nomeEnv(l.envelope_id), l.tipo)
                     const partes = partesDaLinha(l, dono, nomeEnv(l.envelope_id), nomeDe(l.autor), nomeDe, nomeCartao)
                     return (
                       <li
