@@ -1,5 +1,7 @@
 # 11-F · Escritório em 3D · Caderno de construção
 
+> **ADIADO por decisão do dono em 24/11/2026.** O 3D fica pra depois. Nenhuma fase deste caderno começa sem nova ordem do dono. A cena em pixel segue como a única cena. Só a parte 6 (contrato da função `escritorio_estado`) continua valendo agora, porque a tela da ficha 11-E usa essa função.
+
 Leia antes: `docs/escritorio/00-base-comum.md` (vale sobre este caderno) e a parte 8 de `docs/tarefa-11-escritorio-ajustes-finais.md`. Neste caderno, coordenadas e ângulos de código usam ponto decimal (ex.: `-1.4`); texto corrido usa vírgula.
 
 ## 1. Objetivo e o que não é (modo opcional; o pixel continua padrão e plano B)

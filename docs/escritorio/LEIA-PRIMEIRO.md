@@ -14,7 +14,7 @@
    do banco        e a tranca      a escala        curto           3 fases
 
   ORDEM:  D (contas) -> C -> D (pendência e tom) -> B -> D (fechamento)
-          -> E -> B (placar) -> F fase 1 -> piloto -> F fases 2 e 3
+          -> E -> B (placar) -> piloto.   O 3D (11-F) está ADIADO pelo dono.
           A tela da 11-E (passos 1 a 15) pode andar ao lado, com dados de exemplo.
 ```
 
@@ -46,7 +46,7 @@
 | `11-C-confianca-no-numero-e-na-ia.md` | Número com carimbo, IA que falha, nunca 2 vezes, privacidade, pendência | 14 | 26 | agente de banco e segurança; advogado |
 | `11-B-custo-saude-novidades.md` | Custo e teto de IA, escala, saúde, novidades, placar | 15 | 26 | agente de banco e IA; dono (painel) |
 | `11-E-tela-e-interacao.md` | Tela curta, cartão em 3 níveis, 7 situações, 6 fluxos | 18 | 30 | agente de telas; dono (prints) |
-| `11-F-escritorio-em-3d.md` | Modo 3D opcional, em 3 fases | 29 (18 + 6 + 5) | 28 | agente de telas 3D; dono (iPhone) |
+| `11-F-escritorio-em-3d.md` | **ADIADO pelo dono em 24/11.** Modo 3D em 3 fases. Agora vale só a parte 6 (contrato de `escritorio_estado`) | 29, nenhum agora | 28, nenhum agora | agente de telas, só a parte 6 |
 | **Soma** | | **91** | **146** | |
 
 ## 3. Ordem de construção (tabela passo a passo, com o que cada passo precisa de pronto antes, citando caderno e nº do passo, e as Tarefas das Diretrizes de que depende)
@@ -67,8 +67,8 @@ A ordem do resumo antigo punha a 11-D inteira antes da 11-C. Não funciona: a 11
 | 10 | 11-C, passos 13 e 14 | Faixa "Sem internet" e rodada final da 11-C | etapa 8 (11-E passo 13) | nenhuma |
 | 11 | 11-B, passos 14 e 15 | Placar e conferência final da 11-B | etapa 9 | 14 |
 | 12 | 11-E, itens 10 e 11 da ficha | Domingo do casal e aviso que abre na pendência | etapa 9 | 20 |
-| 13 | 11-F, passos 1.1 a 1.18 | Modo 3D, fase 1 | etapa 9 aprovada no iPhone do dono; pergunta da câmera (parte 7) | nenhuma |
-| 14 | 11-F, passos 2.1 a 2.6 e 3.1 a 3.5; item 12 da 11-E; cópia sem internet da 11-C | Ao vivo, linha do tempo, lugares úteis, perguntar sobre o relatório | fase anterior aprovada; depois do piloto | 12 e 20 |
+| 13 | 11-F, passos 1.1 a 1.18 | Modo 3D, fase 1. **ADIADO: não entra agora** | nova ordem do dono; tela aprovada no iPhone dele | nenhuma |
+| 14 | 11-F, passos 2.1 a 2.6 e 3.1 a 3.5 (ADIADOS junto com a fase 1); item 12 da 11-E; cópia sem internet da 11-C | Ao vivo, linha do tempo, lugares úteis, perguntar sobre o relatório | fase anterior aprovada; depois do piloto | 12 e 20 |
 
 Regras da ordem:
 
@@ -131,8 +131,8 @@ Use 1 agente por caderno, cada um numa conversa nova e num ramo próprio. Cada a
 | A | 11-D | o agente B (ele usa as contas) |
 | B | 11-C | o agente C (ele usa a tranca e o carimbo) |
 | C | 11-B | o agente D (ele usa saúde, novidades e a frase do resumido) |
-| D | 11-E | o agente E (ele usa a função de situação) |
-| E | 11-F | o agente D (ele é dono do sinal do cartão) |
+| D | 11-E | o agente B (ele usa a função de situação em `escritorio_tela`) |
+| E | 11-F | ADIADO: não abrir este agente agora |
 
 Passo a passo:
 
@@ -148,8 +148,8 @@ Passo a passo:
 10. Volte ao agente A: "faça a 3ª etapa, itens 11, 13 e 14". Confira o Fechamento de novembro: R$ 360, R$ 290 a mais, 9 semanas.
 11. O agente D pode ter começado antes, com o arquivo de exemplo (passos 1 a 15 da 11-E). Cole a ordem de serviço da seção 14 do caderno 11-E. Agora libere os passos 16 a 18. Confira no seu iPhone: a 1ª pendência aparece sem rolar; "Resolvi" e "Desfazer"; "Agora não".
 12. Volte ao agente B (passos 12 a 14 da 11-C) e ao agente C (passos 14 e 15 da 11-B, com a Tarefa 14 pronta).
-13. Só com a tela aprovada no seu iPhone: abra o agente E e cole a 1ª ordem de serviço da seção 14 do caderno 11-F (fase 1). Ele para depois do passo 1.8 pra você aprovar a câmera pelo print.
-14. Fases 2 e 3 do 3D, item 12 da 11-E e a cópia sem internet: só depois do piloto.
+13. O 3D está adiado por decisão sua. Não abra o agente E. Quando quiser retomar, dê a ordem e cole a 1ª ordem de serviço da seção 14 do caderno 11-F (fase 1).
+14. Item 12 da 11-E e a cópia sem internet: só depois do piloto. Fases 2 e 3 do 3D: adiadas junto com a fase 1.
 
 O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPhone e no Windows; arquivos e tabelas tocados; 0 aviso de segurança; como voltar à versão anterior em 1 clique.
 
@@ -169,8 +169,8 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 
 | # | Pergunta | Recomendação | Caderno |
 |---|---|---|---|
-| 1 | Câmera do 3D. Opção A: de frente e vista de cima, como o pixel. Opção B: na diagonal, como o 3D de hoje, com etiqueta sem a palavra no celular | Opção A. Na diagonal a etiqueta com palavra não cabe em 390 px. Aprovar pelo print do passo 1.8 | 11-F |
-| 2 | 3D como modo opcional ou no lugar do pixel? | Modo opcional. O pixel continua padrão e plano B | 11-F |
+| 1 | (Adiada com o 3D) Câmera do 3D. Opção A: de frente e vista de cima, como o pixel. Opção B: na diagonal, como o 3D de hoje, com etiqueta sem a palavra no celular | Opção A. Na diagonal a etiqueta com palavra não cabe em 390 px. Aprovar pelo print do passo 1.8 | 11-F |
+| 2 | 3D: quando entra? | **Decidido pelo dono em 24/11: fica pra depois.** Quando voltar, a proposta é entrar como modo opcional e virar padrão depois de passar no iPhone dele | 11-F |
 | 3 | Ajudante atrasado e com pendência: qual sinal aparece? | "Atrasado" primeiro, como a 11-E manda. Alternativa: primeiro o que depende da casa | 11-E, 11-F |
 | 4 | Insight forte toda semana ou só no mês? | Só no mês | 11-B |
 | 5 | Piso pra achado virar pendência | R$ 50 por mês, calibrar no piloto | 11-D |
@@ -193,7 +193,7 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 | 22 | Anel de "Conferindo agora": 4 voltas e para? | Sim | 11-E |
 | 23 | Chave "Só o que depende de mim": lembra no aparelho e mostra pendência de quem? | No aparelho; do dono logado e as sem dono | 11-E |
 | 24 | Pendência "Pra informar" abre o cartão sozinha? Dá pra adiar 2 vezes? | Não nos 2 | 11-E |
-| 25 | Texto do botão do 3D; o que o quadro de metas abre; vagas na frente; reunião de segunda | "Ver em pixel"; o resumo do topo; 3 e 6; de 6h00 até abrir o resumo ou 12h00 | 11-F |
+| 25 | (Adiada com o 3D) Texto do botão do 3D; o que o quadro de metas abre; vagas na frente; reunião de segunda | "Ver em pixel"; o resumo do topo; 3 e 6; de 6h00 até abrir o resumo ou 12h00 | 11-F |
 | 26 | Gerente que encaminha pedido entra no piloto? Ligar já as 10 conferências da nossa família? | Não nos 2 | resumo |
 
 ## 8. O que ainda não foi medido ou confirmado (preço de modelo, iPhone de verdade, advogado, contador)

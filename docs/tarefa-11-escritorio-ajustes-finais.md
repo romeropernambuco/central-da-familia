@@ -353,6 +353,8 @@ teclado; passou no teste dos 5 minutos.
 
 ## 8. Ficha 11-F · Escritório em 3D
 
+> **ADIADO por decisão do dono em 24/11/2026.** O 3D fica pra depois. A ficha continua guardada aqui pra quando ele mandar retomar.
+
 **Veredito:** o Escritório 3D que já existe é uma base boa e leve. Aproveita o motor inteiro e refaz só o elenco (hoje 9 bonecos, o produto tem 8), os estados e a origem dos dados (hoje é relógio simulado, não o banco).
 
 | Situação | O que o boneco e a mesa fazem | Palavra (a da base comum, igual à do cartão) |
@@ -518,8 +520,8 @@ Regra recomendada: forte só no Fechamento do mês (Contador) e no fechamento do
 | 6 | 11-E | Tela curta, cartão em 3 níveis, 7 situações, função única de situação | passo 5 |
 | 7 | 11-B item G | Placar | Tarefa 14 e passo 6 |
 | 8 | 11-E itens 10 e 11 | Domingo do casal e aviso que abre na pendência | Tarefa 20 |
-| 9 | 11-F fase 1 | Modo 3D | passo 6 aprovado no iPhone do dono |
-| 10 | 11-E item 12, 11-F fases 2 e 3, cópia sem internet da 11-C | Perguntar sobre o relatório, ao vivo, lugares úteis | depois do piloto |
+| 9 | 11-F fase 1 | Modo 3D. **ADIADO pelo dono em 24/11** | nova ordem do dono |
+| 10 | 11-E item 12, 11-F fases 2 e 3 (adiadas), cópia sem internet da 11-C | Perguntar sobre o relatório, ao vivo, lugares úteis | depois do piloto |
 
 A 11-D foi dividida em 3 partes porque ela e a 11-C dependem uma da outra: as contas nascem antes do carimbo, e a pendência nasce depois dele. A escala só é ligada sozinha depois do passo 4. A tabela passo a passo, com o número do passo de cada caderno, está em `docs/escritorio/LEIA-PRIMEIRO.md`, parte 3.
 
@@ -547,10 +549,10 @@ A 11-D foi dividida em 3 partes porque ela e a 11-C dependem uma da outra: as co
 | 2 | Teto de custo de IA por família | R$ 2,49 por mês, somando Escritório e Tarefa 12 |
 | 3 | Insight forte toda semana ou só no mês? | Só no mês |
 | 4 | Piso pra insight virar pendência | R$ 50 por mês, calibrar no piloto |
-| 5 | 3D como modo opcional ou no lugar do pixel? | Modo opcional. O pixel continua padrão e plano B |
+| 5 | 3D: quando entra? | **Decidido em 24/11: fica pra depois.** A cena em pixel segue como a única cena |
 | 6 | Gerente que encaminha pedido entra no piloto? | Não. Só se 2 famílias pedirem |
 | 7 | Ligar já as 10 conferências da nossa família no painel de hoje? | Não. Ligar cada uma só quando tiver dado real |
-| 8 | Câmera do 3D: de frente e vista de cima (como o pixel) ou na diagonal (como o 3D de hoje)? | De frente e vista de cima. Na diagonal as etiquetas com a palavra da situação não cabem no celular |
+| 8 | (Adiada com o 3D) Câmera do 3D: de frente e vista de cima (como o pixel) ou na diagonal (como o 3D de hoje)? | De frente e vista de cima. Na diagonal as etiquetas com a palavra da situação não cabem no celular |
 | 9 | O 1º dia útil do Contador olha feriado? | Sim. A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)|
 
 ---
