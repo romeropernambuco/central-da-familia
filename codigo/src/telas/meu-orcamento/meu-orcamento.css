@@ -69,11 +69,11 @@
 
 /* 6. Cartão "hoje": um número só de cartaz (o do dia). Semana e previsão um degrau abaixo, sem caixa dentro de caixa */
 .orcamento-f29 #oHoje.aba-destaque { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
-.orcamento-f29 #oHoje .ritmo-b { border: 0; background: var(--raised); padding: 16px; }
-.orcamento-f29 #oHoje .ritmo-b.warn { background: color-mix(in oklch, var(--warn, #b45309) 9%, var(--surface)); }
-.orcamento-f29 #oHoje .ritmo-b.ok { background: var(--accent-soft); }
-.orcamento-f29 #oHoje .ritmo-t .ritmo-num { font: 700 28px/1.1 var(--font-num); letter-spacing: -.03em; }
-.orcamento-f29 #oHoje .ritmo-b .ritmo-meter { background: var(--surface); }
+.orcamento-f29 #oRitmo .ritmo-b { border: 0; background: var(--raised); padding: 16px; }
+.orcamento-f29 #oRitmo .ritmo-b.warn { background: color-mix(in oklch, var(--warn, #b45309) 9%, var(--surface)); }
+.orcamento-f29 #oRitmo .ritmo-b.ok { background: var(--accent-soft); }
+.orcamento-f29 #oRitmo .ritmo-t .ritmo-num { font: 700 28px/1.1 var(--font-num); letter-spacing: -.03em; }
+.orcamento-f29 #oRitmo .ritmo-b .ritmo-meter { background: var(--surface); }
 
 /* 7. Aba do topo marcada onde a pessoa está; as outras legíveis também no escuro */
 .orcamento-f29 .segbar .seg.compacta button { color: var(--ink-2); }
@@ -102,7 +102,7 @@
 .orcamento-f29 .orc-resumo { margin-block-end: 4px; }
 
 /* 13. Recado do assistente: sem caixa dentro de caixa, separado por uma linha */
-.orcamento-f29 #oHoje .ritmo-b .ritmo-aviso { margin-block-start: 14px; padding: 14px 0 0; border-radius: 0; background: transparent; border-block-start: 1px solid color-mix(in srgb, currentColor 22%, transparent); }
+.orcamento-f29 #oRitmo .ritmo-b .ritmo-aviso { margin-block-start: 14px; padding: 14px 0 0; border-radius: 0; background: transparent; border-block-start: 1px solid color-mix(in srgb, currentColor 22%, transparent); }
 
 /* 14. Anotar e Dá para comprar: lado a lado, do mesmo tamanho */
 .orcamento-f29 #oHoje > .row-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -121,3 +121,40 @@
 
 /* 10. Mês em bolinhas: o dia de hoje com contorno, fácil de achar */
 .orcamento-f29 .bolinha.hoje { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Acabamento de 24/11 (noite): cartões mais curtos, um assunto por cartão, botões com mais presença */
+/* 17. Cabeçalhos dos cartões iguais em todos: mesmo tamanho, mesmo respiro */
+.orcamento-f29 .card-h { margin-block-end: 12px; }
+.orcamento-f29 .card-h h2 { font-size: 20px; letter-spacing: -.02em; }
+
+/* 18. Resumo do hoje: uma faixa só, dividida ao meio, em vez de duas caixas */
+.orcamento-f29 .orc-stats { gap: 0; border-radius: 16px; background: var(--raised); overflow: hidden; }
+.orcamento-f29 .orc-stat { background: transparent; border-radius: 0; padding: 14px 16px; }
+.orcamento-f29 .orc-stat + .orc-stat { border-inline-start: 1px solid var(--border); }
+
+/* 19. Botões do hoje: mais altos e com peso; o principal com sombra leve só no claro */
+.orcamento-f29 #oHoje > .row-btns { margin-block-start: 18px !important; gap: 10px; }
+.orcamento-f29 #oHoje > .row-btns > * { min-block-size: 52px; font-size: 16px; font-weight: 700; }
+.orcamento-f29 #oHoje > .row-btns > :first-child { box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
+.orcamento-f29 #oHoje > .row-btns > :last-child { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--border); }
+@media (prefers-color-scheme: dark) {
+  .orcamento-f29 #oHoje > .row-btns > :first-child { box-shadow: none; }
+}
+
+/* 20. Semana e mês: a semana sem caixa (é leitura), o fim do mês com o fundo do recado (verde ou âmbar) */
+.orcamento-f29 #oRitmo .ritmo { display: grid; gap: 16px; }
+.orcamento-f29 #oRitmo .ritmo-b:not(.ok):not(.warn) { background: transparent; padding: 0 0 16px; border-radius: 0; border-block-end: 1px solid var(--border); }
+.orcamento-f29 #oRitmo .ritmo-b { margin: 0; border-radius: 16px; }
+.orcamento-f29 #oRitmo .ritmo-b:not(.ok):not(.warn) .ritmo-meter { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+.orcamento-f29 #oRitmo .ritmo-b:not(.ok):not(.warn) .ritmo-ico { display: none; }
+
+/* 21. Sobra anotada: o pote ao lado do número, o cabeçalho limpo */
+.orcamento-f29 #oCofrinho .numrow { display: flex; align-items: flex-end; gap: 8px; }
+.orcamento-f29 #oCofrinho .numrow .pote { margin-inline-start: auto; }
+
+/* 22. "Quero juntar pra…": atalho tracejado da largura do cartão, com cara de "adicionar" */
+.orcamento-f29 .orc-meta-add { display: flex; inline-size: 100%; min-block-size: 52px; justify-content: flex-start; gap: 10px; padding-inline: 16px; border-radius: 14px; background: transparent; box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, var(--border)); color: var(--accent-ink); font-size: 15px; font-weight: 700; }
+.orcamento-f29 .orc-meta-add:hover { background: var(--accent-soft); }
+
+/* 23. Listas da direita com o mesmo ritmo das compras que se repetem */
+.orcamento-f29 .compras-lista .li { padding-block: 12px; }

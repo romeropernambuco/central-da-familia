@@ -12,7 +12,7 @@ import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
-import { CalendarCheck, PiggyBank, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
+import { CalendarCheck, CalendarRange, PiggyBank, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
 import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
@@ -248,9 +248,6 @@ export function MeuOrcamento() {
                 {env.parcelas_mes ? `: ${textoPrivado(reais(env.parcelas_mes))} deste mês são parcelas` : ''}.
               </p>
             </details>
-            {n.estado !== 'devendo' && (
-              <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />
-            )}
             {perguntarOntem && (
               <div className="todo ontem" style={{ marginTop: 12 }}>
                 <Icone desenho={CalendarCheck} aria-hidden="true" />
@@ -296,13 +293,25 @@ export function MeuOrcamento() {
             )}
           </section>
 
+          {/* 24/11: semana e fim do mês num cartão próprio; o "hoje" fica curto: número, resumo e botões */}
+          {n.estado !== 'devendo' && (env.ate_domingo != null || Number(hoje.slice(8, 10)) >= 2) && (
+            <section className="card" id="oRitmo" aria-labelledby="oRitmoT" style={{ scrollMarginTop: 72 }}>
+              <div className="card-h">
+                <h2 id="oRitmoT">
+                  <Icone desenho={CalendarRange} aria-hidden="true" />
+                  Semana e mês
+                </h2>
+              </div>
+              <RitmoMes e={env} quem={meu ? undefined : dono} porDia={porDiaDe(lanc, env.id, hoje)} />
+            </section>
+          )}
+
           <section className="card" id="oCofrinho" aria-labelledby="oCofT" style={{ scrollMarginTop: 72 }}>
             <div className="card-h">
               <h2 id="oCofT">
                 <Icone desenho={PiggyBank} aria-hidden="true" />
                 Sobra anotada
               </h2>
-              <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
             </div>
             <div className={'numrow' + ((env.livre < 0 ? 0 : dados.cof) <= 0 ? ' cof-zero' : '')}>
               <Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
@@ -317,6 +326,7 @@ export function MeuOrcamento() {
                 ]}
                 nota="O que sobra do valor diário de referência entra na sobra anotada e volta dividido pelos dias que faltam. Gastar acima do valor reduz essa sobra. Dia sem anotação não conta. Hoje só entra amanhã. Isso não significa que você guardou dinheiro."
               />
+              <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
             </div>
             <p className="sub">
               {textoPrivado(
@@ -347,7 +357,7 @@ export function MeuOrcamento() {
                 return meu ? (
                   <Botao
                     variante="secundario"
-                    className="sm"
+                    className="sm orc-meta-add"
                     type="button"
                     style={{ marginTop: 10 }}
                     onClick={() => setMetaAberta(true)}
