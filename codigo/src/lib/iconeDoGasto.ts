@@ -23,29 +23,36 @@ import type { LucideIcon } from 'lucide-react'
 const sem = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 /** A ordem importa: a primeira palavra que bate vence ("café da escola" é café, "conta de luz" é luz). */
-const REGRAS: [RegExp, LucideIcon][] = [
-  [/\b(cafe|padaria|lanche|sorvete|pizza|pastel)\b/, Coffee],
-  [/\b(restaurante|almoco|jantar|ifood|churrasco|hamburguer)\b/, Utensils],
-  [/\b(mercad\w*|feira|hortifruti|supermercado|acougue|atacado|sacolao)\b/, ShoppingCart],
-  [/\b(farmacia|remedio\w*|consulta|exame|dentista|medico)\b/, Pill],
-  [/\b(combustivel|gasolina|etanol|posto)\b/, Fuel],
-  [/\b(onibus|metro|passagem|trem)\b/, Bus],
-  [/\b(uber|taxi|99|estacionamento|pedagio|oficina)\b/, Car],
-  [/\b(luz|energia)\b/, Zap],
-  [/\b(agua|esgoto)\b/, Droplets],
-  [/\b(gas)\b/, Flame],
-  [/\b(aluguel|condominio|internet|iptu|reforma)\b/, House],
-  [/\b(presente|aniversario|festa)\b/, Gift],
-  [/\b(livro\w*|escola|curso|material escolar|faculdade|mensalidade)\b/, BookOpen],
-  [/\b(salao|barbeiro|cabelo|manicure|unha\w*)\b/, Scissors],
-  [/\b(roupa\w*|tenis|sapato\w*|mochila|camisa|calca)\b/, Shirt],
+const REGRAS: [RegExp, LucideIcon, string][] = [
+  [/\b(cafe|padaria|lanche|sorvete|pizza|pastel)\b/, Coffee, 'Lanche e café'],
+  [/\b(restaurante|almoco|jantar|ifood|churrasco|hamburguer)\b/, Utensils, 'Restaurante'],
+  [/\b(mercad\w*|feira|hortifruti|supermercado|acougue|atacado|sacolao)\b/, ShoppingCart, 'Mercado'],
+  [/\b(farmacia|remedio\w*|consulta|exame|dentista|medico)\b/, Pill, 'Saúde'],
+  [/\b(combustivel|gasolina|etanol|posto)\b/, Fuel, 'Combustível'],
+  [/\b(onibus|metro|passagem|trem)\b/, Bus, 'Ônibus e metrô'],
+  [/\b(uber|taxi|99|estacionamento|pedagio|oficina)\b/, Car, 'Carro e corrida'],
+  [/\b(luz|energia)\b/, Zap, 'Luz'],
+  [/\b(agua|esgoto)\b/, Droplets, 'Água'],
+  [/\b(gas)\b/, Flame, 'Gás'],
+  [/\b(aluguel|condominio|internet|iptu|reforma)\b/, House, 'Casa'],
+  [/\b(presente|aniversario|festa)\b/, Gift, 'Presentes e festas'],
+  [/\b(livro\w*|escola|curso|material escolar|faculdade|mensalidade)\b/, BookOpen, 'Escola e livros'],
+  [/\b(salao|barbeiro|cabelo|manicure|unha\w*)\b/, Scissors, 'Beleza'],
+  [/\b(roupa\w*|tenis|sapato\w*|mochila|camisa|calca)\b/, Shirt, 'Roupas'],
 ]
 
-export function iconeDoGasto(descricao: string | undefined | null, limite?: string | null): LucideIcon | null {
+export type GrupoDoGasto = { nome: string; icone: LucideIcon | null }
+
+/** O tipo do gasto (nome e ícone) para somar "onde foi o dinheiro". Sem acerto: "Outros". */
+export function grupoDoGasto(descricao: string | undefined | null, limite?: string | null): GrupoDoGasto {
   const texto = sem(descricao || '')
-  for (const [regra, icone] of REGRAS) if (regra.test(texto)) return icone
+  for (const [regra, icone, nome] of REGRAS) if (regra.test(texto)) return { nome, icone }
   // sem palavra conhecida: o limite da casa diz o suficiente (a feira é compra de mercado)
-  if (/feira/.test(sem(limite || ''))) return ShoppingCart
-  if (/casa/.test(sem(limite || ''))) return House
-  return null
+  if (/feira/.test(sem(limite || ''))) return { nome: 'Mercado', icone: ShoppingCart }
+  if (/casa/.test(sem(limite || ''))) return { nome: 'Casa', icone: House }
+  return { nome: 'Outros', icone: null }
+}
+
+export function iconeDoGasto(descricao: string | undefined | null, limite?: string | null): LucideIcon | null {
+  return grupoDoGasto(descricao, limite).icone
 }

@@ -46,6 +46,20 @@ function Barra({ feito, marca, rotulo }: { feito: number; marca: number; rotulo:
   )
 }
 
+/** 24/11: a legenda mora dentro do bloco que ela explica, não solta embaixo. */
+function LegendaDentro({ itens }: { itens: [string, string][] }) {
+  return (
+    <p className="leg ritmo-leg-in" aria-hidden="true">
+      {itens.map(([q, texto]) => (
+        <span key={q}>
+          <i className={'q ' + q} />
+          {texto}
+        </span>
+      ))}
+    </p>
+  )
+}
+
 export type ValoresDoRitmo = { gasto: number; limite: number; fecha?: number; excesso?: number }
 
 export function RitmoMes({
@@ -96,6 +110,8 @@ export function RitmoMes({
               rotulo={`Semana: já foram ${reais(semana || 0)} de ${reais(totalSemana)}. O traço é onde deveria estar hoje.`}
             />
           )}
+          {/* 24/11: a legenda mora dentro do bloco que ela explica, não solta embaixo */}
+          {totalSemana != null && totalSemana > 0 && <LegendaDentro itens={[['risco-q', 'onde deveria estar hoje']]} />}
           {semana != null && (
             <p className="ritmo-f">
               Já foram {reais(semana)} nesta semana{ps > 0 ? `, mais ${reais(ps)} de parcela ou compra grande` : ''}.
@@ -129,6 +145,14 @@ export function RitmoMes({
             porDia={porDia}
             semRotulosDeValores={!!valoresJaVisiveis || (exibirFecha && exibirLimite)}
           />
+          {dia >= 3 && (
+            <LegendaDentro
+              itens={[
+                ['g-q-linha', 'já gasto'],
+                ['g-q-pont', 'se continuar assim'],
+              ]}
+            />
+          )}
           <p className={'ritmo-f' + (dia >= 3 ? ' ritmo-aviso' : '')}>
             {dia >= 3 && <AssistenteFala humor={p.dentro ? 'contente' : 'alerta'} />}
             <span>
@@ -143,26 +167,12 @@ export function RitmoMes({
           </p>
         </div>
       )}
-      {(e.ate_domingo != null || (dia >= 2 && lim > 0)) && (
+      {pontual > 0 && (e.ate_domingo != null || (dia >= 2 && lim > 0)) && (
         <p className="leg ritmo-leg">
-          {e.ate_domingo != null && (
-            <span>
-              <i className="q risco-q" />
-              onde deveria estar hoje
-            </span>
-          )}
-          {dia >= 3 && lim > 0 && (
-            <span>
-              <i className="q g-q-pont" />
-              se continuar assim
-            </span>
-          )}
-          {pontual > 0 && (
-            <span className="ritmo-nota">
-              <Info aria-hidden="true" />
-              Parcelas e compras grandes entram uma vez só: {reais(pontual)}.
-            </span>
-          )}
+          <span className="ritmo-nota">
+            <Info aria-hidden="true" />
+            Parcelas e compras grandes entram uma vez só: {reais(pontual)}.
+          </span>
         </p>
       )}
     </div>

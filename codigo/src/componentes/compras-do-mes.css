@@ -28,3 +28,84 @@
 .compras-todas:hover {
   text-decoration: underline;
 }
+
+/* Onde foi seu dinheiro (24/11/2026): um tipo por linha, barra do tamanho do gasto */
+.onde-frase {
+  margin-block: 0 12px;
+}
+.onde-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.onde-lista li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.onde-lista .tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 12px;
+  color: var(--accent-ink);
+  background: color-mix(in oklch, var(--accent) 12%, var(--surface, #fff));
+}
+.onde-lista .tile svg {
+  inline-size: 20px;
+  block-size: 20px;
+}
+.onde-m {
+  flex: 1;
+  min-inline-size: 0;
+  display: grid;
+  gap: 5px;
+}
+.onde-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.onde-linha b {
+  font-weight: 600;
+}
+.onde-linha .din {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.onde-m small {
+  color: var(--muted, #6b6b66);
+  font-size: 13px;
+}
+.onde-barra {
+  display: block;
+  block-size: 8px;
+  border-radius: 99px;
+  background: color-mix(in oklch, var(--ink, #222) 7%, transparent);
+  overflow: hidden;
+}
+.onde-barra i {
+  display: block;
+  block-size: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.onde-lista li:first-child .onde-barra i {
+  background: var(--accent-ink, var(--accent));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .onde-barra i {
+    animation: onde-enche 0.7s ease-out both;
+    transform-origin: left;
+  }
+}
+@keyframes onde-enche {
+  from {
+    transform: scaleX(0);
+  }
+}

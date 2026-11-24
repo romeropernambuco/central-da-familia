@@ -19,7 +19,7 @@ import { Qm } from '../../componentes/Qm'
 import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
 import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
-import { ComprasDoMes } from '../../componentes/ComprasDoMes'
+import { ComprasDoMes, OndeFoiODinheiro } from '../../componentes/ComprasDoMes'
 import {
   AnelConquistas,
   Medalha,
@@ -376,6 +376,7 @@ export function MeuOrcamento() {
         </div>
 
         <div className="col">
+          <OndeFoiODinheiro lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} oculto={oculto} />
           <ComprasDoMes lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} />
           <section className="card" id="oMais" aria-labelledby="oMaisT" style={{ scrollMarginTop: 72 }}>
             <div className="card-h">
