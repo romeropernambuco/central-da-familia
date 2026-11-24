@@ -20,13 +20,8 @@ import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
 import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
 import { ComprasDoMes, OndeFoiODinheiro } from '../../componentes/ComprasDoMes'
-import {
-  AnelConquistas,
-  Medalha,
-  NumeroQueSobe,
-  PoteDaSobra,
-  type NivelMedalha,
-} from '../../componentes/VidaDoOrcamento'
+import { AnelConquistas, Medalha, NumeroQueSobe, PoteDaSobra } from '../../componentes/VidaDoOrcamento'
+import { conquistasDoMes, iniciaisDistintas } from './conquistas'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { CobrirEstouro } from '../../componentes/CobrirEstouro'
 import { valorPrincipalEnvelope } from '../../lib/resumo/orcamento'
@@ -154,18 +149,19 @@ export function MeuOrcamento() {
       block: 'start',
     })
   const frase = fraseEstouro(env, n)
-  const conquistas = [
-    { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0, nivel: 'bronze' as NivelMedalha },
-    { nome: '7 dias dentro do valor do dia', ok: dentro >= 7, nivel: 'ouro' as NivelMedalha },
-    { nome: 'Sobra anotada passou de R$ 100', ok: dados.cof >= 100, nivel: 'ouro' as NivelMedalha },
-    { nome: '3 dias seguidos anotados', ok: ult3.length === 3 && branco === 0, nivel: 'prata' as NivelMedalha },
-  ]
+  const conquistas = conquistasDoMes({
+    temGasto: Object.keys(dados.porDia).length > 0,
+    dentro,
+    sobra: dados.cof,
+    seguidos: ult3.length - branco,
+  })
+  const iniciais = iniciaisDistintas(pessoais.map(e => e.nome))
 
   return (
     <div className="view orcamento-f29" data-secao="orcamento">
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
-          {pessoais.map(e => (
+          {pessoais.map((e, i) => (
             <button
               key={e.id}
               type="button"
@@ -173,7 +169,7 @@ export function MeuOrcamento() {
               aria-pressed={e.id === env.id}
               onClick={() => setEnvId(e.id)}
             >
-              <Rosto envelope={e.id} nome={e.nome} tam={30} />
+              <Rosto envelope={e.id} nome={e.nome} tam={30} inicial={iniciais[i]} />
               <span className="pill-nome">
                 {textoPrivado(e.nome)}
                 {escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}
@@ -424,7 +420,7 @@ export function MeuOrcamento() {
                   <Medalha nivel={c.nivel} ok={c.ok} />
                   <span className="m">
                     <b>{textoPrivado(c.nome)}</b>
-                    <small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small>
+                    <small>{c.ok ? 'Conseguiu' : textoPrivado(c.falta)}</small>
                   </span>
                   {c.ok ? <CircleCheck className="orc-ok" aria-hidden="true" /> : <span />}
                 </li>

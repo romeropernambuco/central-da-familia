@@ -99,5 +99,8 @@
 .orcamento-f29 .orc-stat-t small,
 .orcamento-f29 .compras-lista small { font-size: 14px; }
 
+/* 11. Bruno e Bia: "Br" e "Bi" no círculo, sem caixa alta */
+.orcamento-f29 > .pills .rosto-inicial { text-transform: none; letter-spacing: 0; }
+
 /* 10. Mês em bolinhas: o dia de hoje com contorno, fácil de achar */
 .orcamento-f29 .bolinha.hoje { outline: 2px solid var(--ink); outline-offset: 2px; }

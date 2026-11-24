@@ -3,7 +3,12 @@ import type { LucideIcon } from 'lucide-react'
 import type { Lancamento } from '../api/tipos'
 import { grupoDoGasto, iconeDoGasto } from '../lib/iconeDoGasto'
 import { textoPrivado } from '../lib/olho'
-import { centavos, dataCurta, mesAnterior, mesLongo, plural, reais } from '../lib/formato'
+import { centavos, dataCurta, hojeRecife, mesAnterior, mesLongo, plural, reais, somaDias } from '../lib/formato'
+
+/** "hoje", "ontem" ou o dia curto (para a lista de últimas compras). */
+export function diaDaCompra(data: string, hoje: string, ontem: string): string {
+  return data === hoje ? 'hoje' : data === ontem ? 'ontem' : dataCurta(data)
+}
 import { Din } from './base'
 import { Icone } from './Icone'
 import './compras-do-mes.css'
@@ -235,6 +240,9 @@ export function ComprasDoMes({
 }) {
   const compras = comprasDoMes(lanc, envelopeId, mes)
   const ultimas = compras.slice(0, 5)
+  // 24/11: "hoje" e "ontem" no lugar da data, que é o que a família fala
+  const hoje = hojeRecife()
+  const ontem = somaDias(hoje, -1)
   return (
     <section className="card" id="oCompras" aria-labelledby="oComprasT" style={{ scrollMarginTop: 72 }}>
       <div className="card-h">
@@ -256,7 +264,7 @@ export function ComprasDoMes({
                 <span className="m">
                   <b>{textoPrivado(l.descricao || 'Sem nome')}</b>
                   <small>
-                    {dataCurta(l.data)}
+                    {diaDaCompra(l.data, hoje, ontem)}
                     {(l.parcelas || 1) > 1 ? ` · em ${l.parcelas}x` : ''}
                   </small>
                 </span>

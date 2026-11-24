@@ -14,18 +14,21 @@ export function Rosto({
   nome,
   tam = 40,
   podeTrocar = false,
+  inicial: inicialDada,
 }: {
   envelope: string
   nome: string
   tam?: number
   podeTrocar?: boolean
+  /** 24/11: quando duas pessoas começam com a mesma letra (Bruno e Bia), quem chama passa "Br" e "Bi" */
+  inicial?: string
 }) {
   const { oculto } = useOlhoApp()
   const { fotos, trocar } = useFotos()
   const { toast } = useAcoes()
   const [ocupado, ocupar] = useState(false)
   const url = oculto ? undefined : fotos[envelope]
-  const inicial = oculto ? '' : (nome || '?').trim().charAt(0).toUpperCase()
+  const inicial = oculto ? '' : inicialDada || (nome || '?').trim().charAt(0).toUpperCase()
   const estilo = { '--rosto': `${tam}px` } as CSSProperties
   const miolo = url ? (
     <img src={url} alt="" draggable={false} />
