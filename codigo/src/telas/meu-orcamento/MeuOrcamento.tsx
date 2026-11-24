@@ -1,5 +1,6 @@
 import { textoPrivado } from '../../lib/olho'
 import './meu-orcamento.css'
+import './meu-orcamento-nova.css'
 import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -45,7 +46,7 @@ import {
 } from '../../lib/formato'
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e compras. Abre no limite de quem olha (R2). */
-export function MeuOrcamento() {
+export function MeuOrcamento({ nova = false }: { nova?: boolean } = {}) {
   const { api, familia } = useSessaoAtual()
   const { recarregar, abrirLancar, toast } = useAcoes()
   const { resumo, erroResumo, versao } = useDadosDoDia()
@@ -149,9 +150,20 @@ export function MeuOrcamento() {
     })
   const frase = fraseEstouro(env, n)
   const iniciais = iniciaisDistintas(pessoais.map(e => e.nome))
+  // 24/11 (versão nova, para comparar): o recado do mês no balão do assistente 3D
+  const prev = projecao(env.gasto_mes, env.limite_base ?? env.limite_mes, hoje, env.pontual_mes || 0)
+  const recado =
+    Number(hoje.slice(8, 10)) < 3 || oculto
+      ? null
+      : prev.dentro
+        ? 'Neste ritmo, o mês fecha dentro do combinado.'
+        : `Passa ${reais(prev.passa)} no fim do mês se continuar assim.`
 
   return (
-    <div className="view orcamento-f29" data-secao="orcamento">
+    <div className={'view orcamento-f29' + (nova ? ' orc-nova' : '')} data-secao="orcamento">
+      <a className="orc-versao" href={nova ? '#/orcamento' : '#/orcamento?nova'}>
+        {nova ? 'Voltar para a versão atual' : 'Ver a versão nova (para comparar)'}
+      </a>
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
           {pessoais.map((e, i) => (
@@ -282,13 +294,21 @@ export function MeuOrcamento() {
               <div className="row-btns" style={{ marginTop: 14 }}>
                 <Botao variante="primario" type="button" onClick={() => abrirLancar({ envelope: env.id })}>
                   <Icone desenho={Plus} />
-                  Anotar em {textoPrivado(env.nome)}
+                  <span>
+                    Anotar<span className="orc-em"> em {textoPrivado(env.nome)}</span>
+                  </span>
                 </Botao>
                 {/* FILHA ideia 2: "Dá pra comprar?" sem cartão e sem fatura */}
                 <Botao variante="secundario" type="button" onClick={() => setDpc(true)}>
                   <Icone desenho={ShoppingBag} />
                   Dá para comprar?
                 </Botao>
+              </div>
+            )}
+            {nova && (
+              <div className="orc-3d" aria-hidden="true">
+                <img src="/orcamento-3d/mesa.webp" alt="" width={520} height={513} />
+                {recado && <p className="orc-balao">{recado}</p>}
               </div>
             )}
           </section>
@@ -326,7 +346,11 @@ export function MeuOrcamento() {
                 ]}
                 nota="O que sobra do valor diário de referência entra na sobra anotada e volta dividido pelos dias que faltam. Gastar acima do valor reduz essa sobra. Dia sem anotação não conta. Hoje só entra amanhã. Isso não significa que você guardou dinheiro."
               />
-              <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
+              {nova ? (
+                <img className="orc-pote3d" src="/orcamento-3d/pote.webp" alt="" width={260} height={254} />
+              ) : (
+                <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
+              )}
             </div>
             <p className="sub">
               {textoPrivado(

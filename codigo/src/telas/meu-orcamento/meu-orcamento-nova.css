@@ -1,0 +1,68 @@
+/*
+ * Meu orçamento, versão nova (24/11/2026), feita a partir da imagem aprovada pelo dono:
+ * imagem → desenho de blocos → código, camada por camada. Só vale dentro de .orc-nova;
+ * a versão atual não muda. O assistente 3D e o pote são imagens (public/orcamento-3d), não CSS.
+ */
+
+/* Link para trocar de versão (aparece nas duas) */
+.orc-versao { display: inline-flex; align-items: center; min-block-size: 32px; margin-block-end: 6px; font: 600 14px/1.2 var(--fonte-aba); color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Camada 1: fundo e grade ---------- */
+.orc-nova .segbar { display: none; }
+.orc-nova .card { border-radius: 22px; box-shadow: inset 0 0 0 1px var(--border); }
+.orc-nova .card-h h2 { font-size: 20px; letter-spacing: -.02em; }
+.orc-nova .card-h h2 > * { display: none; }
+.orc-nova > .pills .pill { border-radius: 999px; min-block-size: 50px; padding-inline: 6px 16px; }
+.orc-nova .orc-em { display: none; }
+
+/* ---------- Camada 2: cartão principal ---------- */
+.orc-nova #oHoje { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 28px; padding: 22px 20px; }
+.orc-nova #oHoje > * { flex: 1 1 100%; min-inline-size: 0; }
+.orc-nova #oHoje .orc-cabeca { display: none; }
+.orc-nova #oHoje .orc-rotulo { margin-block-start: 0 !important; padding-inline-end: 120px; font-size: 17px; font-weight: 600; color: var(--ink-2); }
+.orc-nova #oHoje .orc-rotulo svg { display: none; }
+.orc-nova #oHoje .numrow { margin-block: 2px 18px; padding-inline-end: 120px; }
+.orc-nova #oHoje .numrow .din { font-size: clamp(44px, 12.5vw, 66px); }
+.orc-nova .orc-stats { border-radius: 16px; }
+.orc-nova #oHoje details.salario-porque { margin-block-start: 4px; }
+.orc-nova #oHoje > .row-btns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) !important; margin-block-start: 14px !important; }
+.orc-nova #oHoje > .row-btns > * { border-radius: 999px; padding-inline: 12px; font-size: 15px; }
+.orc-nova #oHoje > .row-btns > :last-child svg { display: none; }
+
+/* ---------- Camada 3: imagens ---------- */
+.orc-3d { position: absolute; inset-block-start: 10px; inset-inline-end: 6px; inline-size: 128px; flex: none !important; pointer-events: none; }
+.orc-3d img { display: block; inline-size: 100%; block-size: auto; filter: drop-shadow(0 14px 18px rgb(20 30 10 / .14)); }
+.orc-balao { display: none; }
+.orc-nova #oCofrinho .numrow { align-items: center; }
+.orc-pote3d { inline-size: 64px; block-size: auto; margin-inline-start: auto; filter: drop-shadow(0 8px 10px rgb(20 30 10 / .12)); }
+/* o recado do mês com o rosto do assistente */
+.orc-nova .ritmo-aviso .assistente { display: none; }
+.orc-nova .ritmo-aviso::before { content: ""; flex: none; inline-size: 48px; block-size: 48px; border-radius: 50%; background: url(/orcamento-3d/rosto.webp) center 20% / cover no-repeat, var(--surface); box-shadow: 0 0 0 2px var(--surface); }
+
+/* ---------- Camada 4: detalhes ---------- */
+.orc-nova #oRitmo .ritmo-b.warn { border-radius: 18px; }
+.orc-nova .repete-vezes i { inline-size: 8px; block-size: 8px; }
+@media (min-width: 441px) {
+  .orc-nova #oHoje > .row-btns > :last-child svg { display: inline-block; }
+}
+
+/* ---------- Computador: faixa principal da largura toda e 4 cartões lado a lado ---------- */
+@media (min-width: 1100px) {
+  .orc-nova .orc-em { display: inline; }
+  /* 3 colunas: com 4, os nomes quebravam em duas linhas numa tela de 1440 */
+  .orc-nova .tela-larga { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 16px !important; align-items: start; }
+  .orc-nova .tela-larga > .col { display: contents; }
+  .orc-nova .tela-larga .card { margin: 0 !important; }
+  .orc-nova #oHoje { grid-column: 1 / -1; min-block-size: 280px; padding: 30px 400px 30px 32px; align-items: center; }
+  .orc-nova #oHoje .orc-rotulo { padding-inline-end: 0; color: var(--accent-ink); }
+  .orc-nova #oHoje .numrow { flex: 0 0 auto; padding-inline-end: 0; margin-block-end: 0; }
+  .orc-nova #oHoje .orc-resumo { flex: 1 1 320px; max-inline-size: 480px; margin: 0; }
+  .orc-nova #oHoje > .row-btns { grid-template-columns: repeat(2, max-content) !important; }
+  .orc-nova #oHoje > .row-btns > * { padding-inline: 22px; }
+  .orc-3d { inset-block-start: auto; inset-block-end: -8px; inset-inline-end: 36px; inline-size: 300px; }
+  .orc-balao { display: block; position: absolute; inset-block-start: -2px; inset-inline-end: -26px; max-inline-size: 170px; margin: 0; padding: 10px 14px; border-radius: 18px 18px 18px 4px; background: var(--accent-soft); color: var(--accent-ink); font: 600 14px/1.35 var(--fonte-aba); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .orc-nova #oCompras { grid-column: span 2; }
+  .orc-nova #oHoje { padding-block-start: 44px; }
+  .orc-nova #oCofrinho .numrow { flex-wrap: wrap; }
+  .orc-pote3d { inline-size: 84px; }
+}
