@@ -998,7 +998,7 @@ function contadorDoMes(r: ReturnType<Mundo['resumo']>, sobra: number): EntregaEs
     if (p.passam.length)
       return {
         funcionario: 'contador',
-        resumo: `Conferi o mês: se continuar assim, ${p.passam.map(x => `${x.nome} passa ${rs(x.excessoPrevisto)}`).join(' e ')} do combinado. Isso sai do mês que vem.`,
+        resumo: `No ritmo de hoje, ${p.passam.map(x => `${x.nome} passa ${rs(x.excessoPrevisto)} do limite`).join(' e ')}. Esse valor sai do mês que vem.`,
         numero: p.excessoTotal,
       }
     return {

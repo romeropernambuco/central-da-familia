@@ -41,7 +41,7 @@ import { Carregando } from '../componentes/Carregando'
 import { GRUPOS, menuDoPapel } from '../componentes/menu'
 
 const TITULO: Record<string, [string, string]> = {
-  lancamentos: ['gastos e entradas que vocês anotaram', 'Gastos e entradas'],
+  lancamentos: ['o que vocês anotaram neste mês', 'Gastos e entradas'],
   orcamento: ['hoje, semana e fim do mês', 'Meu orçamento'],
   guardado: ['quanto rendeu hoje', 'Guardado'],
   casa: ['feira, prestadores, gás e folha', 'Casa'],

@@ -8,7 +8,7 @@ export const MAX_ETIQUETAS = 3
 
 /** "10/11 a 30/11", ou "sem datas" pra etiqueta que só entra à mão. */
 export const periodoDaEtiqueta = (e: { inicio: string | null; fim: string | null }) =>
-  e.inicio && e.fim ? `${dataCurta(e.inicio)} a ${dataCurta(e.fim)}` : 'sem datas: entra à mão'
+  e.inicio && e.fim ? `${dataCurta(e.inicio)} a ${dataCurta(e.fim)}` : 'sem datas, você escolhe os gastos'
 
 export interface PeriodoEtiqueta {
   id: string

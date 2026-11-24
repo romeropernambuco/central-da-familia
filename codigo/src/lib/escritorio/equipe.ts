@@ -59,7 +59,7 @@ export const EQUIPE: MembroEquipe[] = [
     mesa: -2,
     icone: 'calculator',
     doBanco: true,
-    papel: 'Confere se o mês fecha dentro do que a família combinou.',
+    papel: 'Confere se o mês fecha no limite.',
     dado: 'Gastos e entradas e limites do mês.',
     faz: [
       'Confiro todo dia se o mês fecha dentro do que a família combinou.',

@@ -65,7 +65,7 @@ export function Viagens() {
       </div>
       <p className="sub">
         {casal
-          ? 'A etiqueta junta os gastos de uma viagem ou de um evento. O gasto continua contando no limite dele.'
+          ? 'Junta os gastos de uma viagem ou evento. Cada gasto continua no limite de quem gastou.'
           : 'Etiquetas que o casal criou. Os totais ficam com o casal.'}
       </p>
       {lista === null && <p className="sub">Buscando as etiquetas…</p>}

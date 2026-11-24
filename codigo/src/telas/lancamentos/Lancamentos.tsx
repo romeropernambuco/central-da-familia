@@ -15,8 +15,9 @@ import { lerMes } from '../../lib/resumo/leituras'
 import { useLeituraRemota } from '../../app/useLeituraRemota'
 import { mesCurto } from '../../lib/formato'
 import { mesMais } from '../../lib/plano'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Trash2, Undo2, CreditCard, History, Pencil } from 'lucide-react'
+import { iconeDoGasto } from '../../lib/iconeDoGasto'
 import { useAcoes, useDadosDoDia, useSessaoAtual } from '../../app/contexto'
 import { useMembros } from '../../app/useMembros'
 import { cartaoMeu, donoDo, mexeNoLancamento, rotuloDono } from '../../lib/dono'
@@ -155,8 +156,8 @@ function LancamentosFamilia() {
       {!lixeira && <Viagens />}
       {!lixeira && api.corrigirLancamento && (
         <p className="sub">
-          Errou? Toque no lápis para corrigir ou apagar (o apagado vai para a lixeira).
-          {familia?.papel === 'casal' ? ' O gasto do outro, com o nome dele, só ele corrige.' : ''}
+          Errou? Toque no lápis para corrigir ou apagar. O que for apagado vai para a Lixeira.
+          {familia?.papel === 'casal' ? ' Gasto de outra pessoa, só ela corrige.' : ''}
         </p>
       )}
       {lixeira && (
@@ -209,6 +210,8 @@ function LancamentosFamilia() {
                     // E2: o casal lê o gasto do outro com o nome dele, sem lápis nem lixeira
                     const mexe = mexeNoLancamento(l, envDe(l.envelope_id), familia),
                       dono = rotuloDono(envDe(l.envelope_id), familia)
+                    const icone = iconeDoGasto(l.descricao, nomeEnv(l.envelope_id))
+                    const partes = partesDaLinha(l, dono, nomeEnv(l.envelope_id), nomeDe(l.autor), nomeDe, nomeCartao)
                     return (
                       <li
                         key={l.id}
@@ -221,48 +224,19 @@ function LancamentosFamilia() {
                             }
                           : {})}
                       >
-                        <span className="tile">
-                          <Icone nome="gasto" />
-                        </span>
+                        <span className="tile">{icone ? <Icone desenho={icone} /> : <Icone nome="gasto" />}</span>
                         <span className="m">
                           <b>{textoPrivado(l.descricao || 'Sem nome')}</b>
-                          <small>
-                            {textoPrivado(
-                              dono
-                                ? dono.endsWith(nomeEnv(l.envelope_id))
-                                  ? cap(dono)
-                                  : `${nomeEnv(l.envelope_id)} ${dono}`
-                                : nomeEnv(l.envelope_id),
-                            )}{' '}
-                            · Anotado por{' '}
-                            <NomeDaPessoa
-                              autoria
-                              pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: nomeDe(l.autor) }}
-                            />
-                            {l.pago_por && (
-                              <>
-                                {' '}
-                                · Pago por{' '}
-                                <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.pago_por, nome: nomeDe(l.pago_por) }} />
-                              </>
-                            )}
-                            {nomeCartao(l.cartao_id) ? (
-                              <>
-                                {' '}
-                                · <Icone
-                                  desenho={CreditCard}
-                                  style={{ verticalAlign: '-2px' }}
-                                  aria-hidden="true"
-                                />{' '}
-                                {textoPrivado(nomeCartao(l.cartao_id))}
-                              </>
-                            ) : null}
-                            {l.parcela
-                              ? ` · parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})`
-                              : (l.parcelas || 1) > 1
-                                ? ` · ${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}`
-                                : ''}
-                          </small>
+                          {partes.length > 0 && (
+                            <small>
+                              {partes.map((p, i) => (
+                                <Fragment key={i}>
+                                  {i > 0 && ' · '}
+                                  {p}
+                                </Fragment>
+                              ))}
+                            </small>
+                          )}
                         </span>
                         <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Din v={l.valor} />
@@ -310,7 +284,7 @@ function LancamentosFamilia() {
           {carregou && maisMeses && (
             <div className="mais-meses">
               <p className="sub">
-                Aparecendo:{' '}
+                Mostrando{' '}
                 {meses.length === 1
                   ? mesLongo(meses[0] + '-01')
                   : `de ${mesLongo(meses[meses.length - 1] + '-01')} a ${mesLongo(meses[0] + '-01')}`}
@@ -326,7 +300,7 @@ function LancamentosFamilia() {
                 }}
               >
                 <Icone desenho={History} />
-                {buscandoMes ? 'Buscando…' : `Ver meses anteriores (${mesLongo(proximo + '-01')})`}
+                {buscandoMes ? 'Buscando…' : `Ver ${mesLongo(proximo + '-01')}`}
               </Botao>
             </div>
           )}
@@ -379,9 +353,7 @@ function TotaisDoMes({
             Este mês, por limite
           </h2>
         </div>
-        <p className="sub">
-          Quanto já saiu de cada limite em {mesLongo(hoje.slice(0, 7) + '-01')}, do que foi combinado.
-        </p>
+        <p className="sub">Quanto cada limite já gastou em {mesLongo(hoje.slice(0, 7) + '-01')}.</p>
         <ul className="list">
           {envelopes.map(e => (
             <li
@@ -396,7 +368,7 @@ function TotaisDoMes({
                 <b>{textoPrivado(e.nome)}</b>
                 <small>
                   {textoPrivado(rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : '')}de{' '}
-                  <Din v={e.limite_mes} /> combinados
+                  <Din v={e.limite_mes} />
                 </small>
               </span>
               <span className="v">
@@ -410,7 +382,7 @@ function TotaisDoMes({
         <div className="card-h">
           <h2 id="ltCart">
             <Icone nome="cartoes" />
-            Próxima fatura de cada cartão
+            Faturas a pagar
           </h2>
         </div>
         {!proxPorCartao.length ? (
@@ -445,7 +417,7 @@ function TotaisDoMes({
                         ·{' '}
                       </>
                     )}
-                    vence {dataCurta(f.vencimento)}
+                    vence em {dataCurta(f.vencimento)}
                   </small>
                 </span>
                 <span className="v">
@@ -461,6 +433,46 @@ function TotaisDoMes({
 }
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
+/**
+ * A linha pequena de cada gasto, uma informação por pedaço: de quem é o limite (some quando é o da própria pessoa),
+ * "anotado por" só quando quem anotou não é o dono, quem pagou, o cartão e a parcela.
+ */
+function partesDaLinha(
+  l: Lancamento,
+  dono: string | null | undefined,
+  limite: string,
+  autor: string | null | undefined,
+  nomeDe: (id: string | null) => string | null | undefined,
+  nomeCartao: (id: string | null) => string | null | undefined,
+): React.ReactNode[] {
+  const partes: React.ReactNode[] = []
+  const doAutor = !!autor && autor === limite && !dono
+  if (!doAutor) partes.push(textoPrivado(dono ? (dono.endsWith(limite) ? cap(dono) : `${limite} ${dono}`) : limite))
+  const mesmoAutor = !!autor && (autor === limite || (dono ?? '').endsWith(autor))
+  if (!mesmoAutor)
+    partes.push(
+      <>
+        anotado por <NomeDaPessoa autoria pessoa={{ tipo: 'membro', id: l.autor || `autor:${l.id}`, nome: autor }} />
+      </>,
+    )
+  if (l.pago_por)
+    partes.push(
+      <>
+        pago por <NomeDaPessoa pessoa={{ tipo: 'membro', id: l.pago_por, nome: nomeDe(l.pago_por) }} />
+      </>,
+    )
+  const cartao = nomeCartao(l.cartao_id)
+  if (cartao)
+    partes.push(
+      <>
+        <Icone desenho={CreditCard} style={{ verticalAlign: '-2px' }} aria-hidden="true" /> {textoPrivado(cartao)}
+      </>,
+    )
+  if (l.parcela) partes.push(`parcela ${l.parcela.n} de ${l.parcela.de} (compra de ${dataCurta(l.parcela.compra)})`)
+  else if ((l.parcelas || 1) > 1) partes.push(`${l.parcelas}x de ${reais(centavos(l.valor / l.parcelas!))}`)
+  return partes
+}
+
 export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> }) {
   return (
     <>
@@ -470,12 +482,12 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
           [
             ['Entrou', totais.entrou],
             ['Saiu', totais.saiu],
-            ['Saldo do mês', totais.saldo],
+            [totais.saldo < 0 ? 'Saiu a mais do que entrou' : 'Sobrou até hoje', Math.abs(totais.saldo)],
           ] as const
-        ).map(([nome, valor]) => (
-          <div key={nome} className={nome === 'Saldo do mês' ? 'indicador-principal aba-destaque' : undefined}>
+        ).map(([nome, valor], i) => (
+          <div key={nome} className={i === 2 ? 'indicador-principal aba-destaque' : undefined}>
             <p>
-              <Icone nome={nome === 'Entrou' ? 'entrada' : nome === 'Saiu' ? 'gasto' : 'orcamento'} />
+              <Icone nome={i === 0 ? 'entrada' : i === 1 ? 'gasto' : 'orcamento'} />
               {nome}
             </p>
             <Din v={valor} tam="mid" />
@@ -484,17 +496,16 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
       </div>
       <h3>Ainda vai entrar</h3>
       <p>
-        Entradas certas pendentes: <Din v={totais.previsto} />
+        Só as entradas certas: <Din v={totais.previsto} />
       </p>
       <details className="mes-como">
         <summary>
           <Icone nome="ajuda" />
-          Como ler este resumo
+          Por quê?
         </summary>
         <p className="sub">
-          Até hoje: gastos anotados e entradas já recebidas neste mês. O saldo do mês é o que entrou menos o que saiu;
-          não é o saldo do banco. Ainda vai entrar: só as entradas certas deste mês, fora do saldo até chegarem. As
-          incertas ficam de fora.
+          Soma o que você anotou e o que já entrou neste mês, até hoje. Não é o saldo do banco. O que ainda vai entrar
+          conta só quando é certo, e só aparece aqui até chegar.
         </p>
       </details>
     </>

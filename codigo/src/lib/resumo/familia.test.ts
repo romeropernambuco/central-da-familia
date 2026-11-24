@@ -1368,7 +1368,7 @@ it('f53.2: confirmar a recorrência de novembro transfere R$ 500 nas três super
   const ficha = () => a.origem().buscar(x => x.getAttribute('aria-label') === 'Resumo da aba')[0].textContent
   expect(ficha()).toContain('Entradas certas pendentesR$500')
   expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 0, previsto: 500 })
-  expect(a.origem().textContent).toContain('Entradas certas pendentes: R$500')
+  expect(a.origem().textContent).toContain('Só as entradas certas: R$500')
   expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({
     nome: 'Entradas certas pendentes',
     valor: 500,
@@ -1381,7 +1381,7 @@ it('f53.2: confirmar a recorrência de novembro transfere R$ 500 nas três super
   expect(a.r.movimentacaoMes.valor).toMatchObject({ entrou: 500, previsto: 0 })
   expect(a.bloco('movimentacaoMes').textContent).toMatch(/Entrou R\$\s*500/)
   expect(a.origem().textContent).toContain('EntrouR$500')
-  expect(a.origem().textContent).toContain('Entradas certas pendentes: R$0')
+  expect(a.origem().textContent).toContain('Só as entradas certas: R$0')
   expect(ficha()).toContain('Entrou no mêsR$500')
   expect(await numerosDaAba(m.api, m.familia, 'lancamentos')).toContainEqual({ nome: 'Entrou no mês', valor: 500 })
 })
