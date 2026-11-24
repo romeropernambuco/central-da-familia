@@ -1,9 +1,7 @@
 # 11-E · Tela e interação · Caderno de construção
-
 Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a base comum, vale a base comum. Todos os números são da família Silva (exemplo), na data de referência: terça, 24/11/2026, 9h00, fuso de Recife, com Marina Silva logada.
 
 ## 1. Objetivo e o que não é
-
 **Objetivo.** Deixar a tela do Escritório curta e legível em 2 segundos, sem tirar nada dela:
 
 | Medida | Hoje (prévia a 390 px) | Meta |
@@ -27,7 +25,6 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
 **O que não é.** Não é layout novo, não é o modo 3D (ficha 11-F), não cria conta nem regra de dinheiro (ficha 11-D), não cria tabela (o banco é das fichas 11-B, 11-C e da Tarefa 11). Os itens 10 e 11 da ficha entram na Tarefa 20 e o item 12 fica pra depois do piloto. Aqui só fica pronto o lado da tela do item 11 (fluxo 8.5).
 
 ## 2. Antes de começar
-
 1. Confirme que os passos 1 a 3 da ordem de construção (fichas 11-D, 11-C e 11-B) estão prontos. Sem eles, use dados fixos da família Silva num arquivo de exemplo e não ligue nada ao banco.
 2. O repositório hoje tem só `index.html`, `parcelas/` e `docs/`. A pasta do app em React nasce na Tarefa 6. Este caderno assume `src/telas/escritorio/`. Se a Tarefa 6 escolheu outro caminho, use o caminho real e mantenha os nomes dos arquivos.
 3. Abra a prévia (`escritorio-previa.html`, sem `doctype`; embrulhe em `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>...</body></html>`) e tire print em 390 e 1280, tema claro e escuro. São os prints de "antes".
@@ -37,7 +34,6 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
 7. Vocabulário de tela: ajudante, conferência, relatório, pendência. Nunca "agente", "turno", "IA", "modelo", "tokens" na tela da família.
 
 ## 3. Passos de construção
-
 Cada passo é pequeno e termina com um teste. Não pule a ordem.
 
 | # | O que fazer | Onde | Pronto quando | Como testar |
@@ -62,7 +58,6 @@ Cada passo é pequeno e termina com um teste. Não pule a ordem.
 | 18 | Passar a lista da parte 10 e os 28 testes; tirar os 8 prints | pasta de entrega | tudo marcado | parte 11 |
 
 ## 4. Tokens
-
 **Tokens reais da prévia** (bloco `:root`; o escuro vale em `prefers-color-scheme: dark` e em `:root[data-theme="dark"]`). Contraste calculado pela fórmula da WCAG 2.1.
 
 | Token | Claro | Escuro | Uso | Contraste (claro / escuro) |
@@ -113,9 +108,7 @@ Cada passo é pequeno e termina com um teste. Não pule a ordem.
 **Tirar da prévia:** o selo azulado de "Perguntando" (#E4E8F1 com #3E4A63, e o par escuro #2A3042 com #C3CADB) e o ponto roxo da fila. São uma 2ª cor de destaque. "Perguntando" passa a usar ícone verde e palavra em `--text`.
 
 ## 5. Mapa da tela
-
 **Celular, 390 px.** 1 coluna, margem lateral `--sp-3`. A linha tracejada marca o fim da 1ª tela útil (620 px medidos no navegador, deixando 224 px pra barra de abas e áreas do iPhone).
-
 ```
    0 +--------------------------------------+
      | CABECALHO                      80 px |  título + 3 atalhos de 44 px
@@ -168,7 +161,6 @@ Cada passo é pequeno e termina com um teste. Não pule a ordem.
 Conta dos cartões no celular: Analista de Cartão aberto com a pergunta (444) + Comprador aberto (532) + Folha fechado com botão (196) + 5 fechados sem botão (5 x 144 = 720) + 7 espaços de 12 (84) = 1.976.
 
 **Computador, 1280 px.** Largura útil de 1.148 px, como na prévia. Mesma ordem.
-
 ```
 +------------------------------------------------------------+
 | CABECALHO: título à esquerda, 3 atalhos à direita   42 px   |
@@ -190,15 +182,12 @@ Conta dos cartões no celular: Analista de Cartão aberto com a pergunta (444) +
 | > Dias de cada ajudante | saúde | aviso                     |
 +------------------------------------------------------------+
 ```
-
 Pontos de quebra (os da prévia): até 620 px, 1 coluna; 621 a 899, 2 colunas; 900 a 1.199, 3 colunas; a partir de 1.200, 4 colunas (novo, ver pergunta 13.3). Com `align-items:start`, o cartão aberto cresce sozinho e os vizinhos ficam fechados.
 
 **O que aparece na 1ª tela de 390x844, sem rolar:** título, 3 atalhos, o número "3 coisas esperando você", a linha de novidades, a faixa de 3 valores, o título "Depende de você" e a 1ª pendência inteira, com "Resolvi" e "Agora não".
 
 ## 6. Componentes
-
 Todos em `src/telas/escritorio/componentes/`. Tipos comuns em `tipos.ts`:
-
 ```ts
 type AjudanteId = 'contador'|'cartao'|'vencimentos'|'comprador'|'auditor'|'presenca'|'folha'|'colchao';
 type Situacao = 'trabalhando'|'entregue'|'precisa_de_voce'|'sem_dados'|'aguardando';
@@ -224,9 +213,7 @@ interface Ajudante {
 ```
 
 ### 6.1 CartaoAjudante
-
 **Pra que serve.** Mostra 1 ajudante em 3 níveis: o que dá pra ler em 2 segundos, o relatório, e os detalhes.
-
 ```ts
 interface CartaoAjudanteProps {
   ajudante: Ajudante;
@@ -239,9 +226,7 @@ interface CartaoAjudanteProps {
   aoPedir(id: AjudanteId, texto: string): Promise<void>;   // pedido escrito, até 200 letras
 }
 ```
-
 **Nível 1** (fechado: 144 px; com botão: 196 px; até 25 palavras).
-
 ```
 +----------------------------------------------+   espaço interno: --sp-2 em cima e embaixo,
 | [48x48]  Comprador                        v  |   --sp-3 dos lados
@@ -254,9 +239,7 @@ interface CartaoAjudanteProps {
 | [            Resolver agora                ] |   só com pendência: --hue, 44 px, largura inteira
 +----------------------------------------------+
 ```
-
 **Nível 2** (1 toque no cartão; abre no lugar, empurrando o que vem abaixo).
-
 ```
 | ------------------------------------------- |   linha --rule
 | 5 itens subiram R$ 140 por mês              |   frase-título, --fs-body, peso 500
@@ -270,9 +253,7 @@ interface CartaoAjudanteProps {
 | [      Resolvi      ] [    Agora não    ]   |   o único verde do cartão agora é este
 | Ver detalhes  v                             |   botão de texto, 44 px
 ```
-
 **Nível 3** ("Ver detalhes"; abre no lugar, dentro do nível 2).
-
 ```
 | O que faz por você: compara o preço de cada nota da feira.
 | Fonte: 4 notas de feira, de 02/11 a 23/11.
@@ -280,7 +261,6 @@ interface CartaoAjudanteProps {
 | [ > Rodar agora ]                           |   botão neutro (--raised), ícone play
 | Pedir algo a este ajudante  [campo, 200 letras] [Enviar]
 ```
-
 **Estados.** Fechado; aberto no nível 2; aberto no nível 3; com pendência; perguntando (o nível 2 é o `CampoPergunta`, sem relatório); só número ("Hoje veio só o número. O comentário volta na próxima conferência."); resumido ("Este mês o relatório vem resumido. O completo volta em 01/12."); com lançamento depois ("Entrou lançamento depois desta conta" e "Refazer a conta"); relatório novo (ponto de 8 px em `--hue` ao lado do nome, mais a frase "Novo desde a sua última visita." no nível 2); sem internet (botões apagados com "precisa de internet").
 
 **Regra do verde.** O cartão tem no máximo 1 botão verde visível. Fechado com pendência: "Resolver agora" (ou "Responder", se a pendência tem pergunta), que abre o nível 2 e leva o foco ao bloco da pendência. Aberto: o botão do nível 1 some e o verde passa a ser "Resolvi" ou "Responder" no bloco da pendência.
@@ -307,22 +287,17 @@ interface CartaoAjudanteProps {
 Seta: `trending-up` (acima), `trending-down` (abaixo), `minus` (igual). A frase sempre traz o sentido em palavra ou número; a seta nunca informa sozinha.
 
 ### 6.2 SinalDeSituacao
-
 **Pra que serve.** Diz a situação do ajudante com forma e palavra. Nunca só cor.
-
 ```ts
 interface SinalDeSituacaoProps {
   situacao: Situacao; atrasadoDesde?: string; resumidoAte?: string;
   animar: boolean;                       // false no 1º desenho da página pra "Entregue"
 }
 ```
-
 **Estados.** Os 7 da parte 7. "Atrasado" vence qualquer outra situação. "Resumido" aparece como 2º item, depois de "Entregue", separado por `--sp-1`. Máximo de 2 sinais por cartão. **Medidas:** ícone de 16 px + `--sp-0` + palavra em `--fs-ui-sm`; altura de 20 px; sem fundo, menos "Atrasado" (pílula `--ambar-suave`, `--r-pill`, 4 px por 8 px). **Ao tocar:** nada, não é alvo separado; o toque é do cartão. **Teclado:** sem parada de Tab. **Leitor de tela:** a palavra entra no `aria-label` do cartão; o ícone é escondido.
 
 ### 6.3 LinhaPendencia
-
 **Pra que serve.** 1 linha da fila "Depende de você", com quem resolve, até quando e os 2 caminhos de saída.
-
 ```ts
 interface LinhaPendenciaProps {
   pendencia: Pendencia; nomeDoAjudante: string; semInternet: boolean;
@@ -330,115 +305,87 @@ interface LinhaPendenciaProps {
   aoAdiar(p: Pendencia): void; aoAbrirCartao(id: AjudanteId): void;
 }
 ```
-
 **Estados.** Normal; vencida (2ª linha: "era até 17/11 · cobrada em 20/11", em `--ambar-tinta`); já adiada 1 vez (sem "Agora não"); gravando (botão com `aria-busy`, texto "Gravando"); erro (frase abaixo dos botões); sem internet. **Medidas, celular:** 138 px: `--sp-2`, título em `--fs-body` com até 2 linhas, linha de dados em `--fs-ui-sm` `--muted`, `--sp-1`, fileira de botões de 44 px (verde ocupa o espaço que sobra, "Agora não" com 112 px), `--sp-2`. **Computador:** 64 px, grade `1fr auto 176px`. **Ao tocar:** no texto, rola até o cartão do ajudante e abre o nível 2; "Resolvi" segue o fluxo 8.1; "Responder" rola até o cartão e põe o foco no 1º campo; "Agora não" segue o fluxo 8.2. **Teclado:** 3 paradas de Tab por linha, nesta ordem: texto, botão verde, "Agora não". **Leitor de tela:** a fila é `<ul>`, cada linha é `<li>`. Texto: "Trocar a marca do café ou manter a de sempre? Comprador, Marina, até 26/11." Botões: "Resolvi: trocar a marca do café" e "Agora não: trocar a marca do café" (o complemento fica em texto escondido da vista).
 
 ### 6.4 BarraDesfazer
-
 **Pra que serve.** Deixa voltar atrás por 6 s depois de "Resolvi" ou "Agora não", sem janela de confirmação.
-
 ```ts
 interface BarraDesfazerProps {
   mensagem: string; duracaoMs?: number;                 // padrão 6000
   aoDesfazer(): Promise<void>; aoTerminar(): void;
 }
 ```
-
 **Estados.** Visível; pausada (enquanto tem foco ou ponteiro em cima, o relógio para); desfazendo; erro ao desfazer. Só existe 1 barra por vez: uma ação nova encerra a anterior na hora. **Medidas:** fixa no pé, acima da barra de abas, margem `--sp-2`, altura de 56 px, fundo `--text`, texto `--surface` em `--fs-ui-sm` (18,88 no claro e 16,73 no escuro), canto `--r-md`, largura máxima de 480 px. "Desfazer" é botão de texto sublinhado, mesma cor, alvo de 44x44. **Movimento:** entra subindo 8 px com opacidade em 200 ms; sem contagem regressiva animada. **Teclado:** ao aparecer, o foco vai pro botão "Desfazer"; ao sumir, o foco vai pra pendência seguinte ou pro título "Depende de você". **Leitor de tela:** `role="status"`; lê "Resolvido. Desfazer, botão."
 
 ### 6.5 BotaoAgoraNao
-
 **Pra que serve.** Tira a pendência da fila por 7 dias, sem culpa.
-
 ```ts
 interface BotaoAgoraNaoProps { pendencia: Pendencia; desligado: boolean; aoAdiar(p: Pendencia): void; }
 ```
-
 **Estados.** Normal; ausente quando `jaAdiada` é true (a pendência volta 1 vez só); desligado sem internet. **Medidas:** botão de contorno (`--borda-controle`, 1 px), fundo `--surface`, texto `--text` em `--fs-ui-sm`, 44 px de altura, `--r-pill`. Nunca verde. **Ao tocar:** fluxo 8.2. **Teclado:** Enter ou Espaço. **Leitor de tela:** "Agora não: trocar a marca do café. Volta em 01/12."
 
 ### 6.6 Ajudou
-
 **Pra que serve.** Colhe se o relatório serviu. 1 resposta por pessoa por relatório, que pode trocar.
-
 ```ts
 interface AjudouProps {
   relatorioId: string; resposta?: 'ajudou'|'nao_ajudou'; desligado: boolean;
   aoAvaliar(relatorioId: string, r: 'ajudou'|'nao_ajudou'): Promise<void>;
 }
 ```
-
 **Estados.** Sem resposta; "Ajudou" marcado; "Não ajudou" marcado; gravando; erro. **Medidas:** pergunta "Este relatório ajudou?" em `--fs-ui-sm` `--muted`; 2 botões de contorno de 44 px, ícones `thumbs-up` e `thumbs-down`; o marcado ganha fundo `--raised`, peso 600 e ícone `check` no lugar do polegar. Nunca verde. **Ao tocar:** fluxo 8.4. **Teclado:** 2 paradas de Tab. **Leitor de tela:** grupo com nome "Este relatório ajudou?"; cada botão tem `aria-pressed`. Depois de gravar, região de aviso lê "Anotado."
 
 ### 6.7 ChaveSoOQueDependeDeMim
-
 **Pra que serve.** Esconde os cartões sem pendência pra quem só quer resolver.
-
 ```ts
 interface ChaveSoOQueDependeDeMimProps { ligada: boolean; total: number; aoTrocar(ligada: boolean): void; }
 ```
-
 **Estados.** Desligada; ligada ("Mostrando 2 de 8 ajudantes"); ligada e vazia ("Nada depende de você agora." e botão "Mostrar os 8 ajudantes"). **Medidas:** fileira de 44 px; trilho de 44x24 com contorno `--borda-controle`; pino de 20 px; ligada: trilho `--hue`, pino `--on-hue` e ícone `check` de 12 px dentro do pino (a posição do pino e o check dizem o estado sem cor). **Ao tocar:** fluxo 8.6. **Teclado:** Espaço troca. **Leitor de tela:** `<button role="switch" aria-checked>`; lê "Só o que depende de mim, ligado, chave"; a contagem vai numa região de aviso.
 
 ### 6.8 FaixaResumo
-
 **Pra que serve.** Junta Limite, Guardado e Próxima conferência em 1 faixa de 3 valores, na posição em que os 3 blocos estão hoje.
-
 ```ts
 interface ValorDaFaixa { icone: 'wallet'|'piggy-bank'|'clock'; rotulo: string; valor: string; legenda: string; aoTocar?(): void; }
 interface FaixaResumoProps { valores: [ValorDaFaixa, ValorDaFaixa, ValorDaFaixa]; }
 ```
-
 Silva: "Limite do mês · R$ 12.000 · novembro"; "Guardado · R$ 600 · em outubro"; "Próxima conferência · Agenda · amanhã, 10h19". **Estados.** Normal; sem valor ("ainda sem dado"). **Medidas, celular:** 3 colunas iguais separadas por `--rule`, 88 px: rótulo em `--fs-legal` `--muted` (até 2 linhas), valor em `--fs-body` peso 600, legenda em `--fs-legal` `--muted`. **Computador:** valor em `--fs-lead`. **Ao tocar:** cada célula é 1 botão (como na prévia) que leva à tela de origem do número. **Teclado:** 3 paradas. **Leitor de tela:** `<dl>` com 3 pares; "Limite do mês: R$ 12.000, novembro".
 
 ### 6.9 LinhaNovidades
-
 ```ts
 interface LinhaNovidadesProps { quantidade: number; aoTocar(): void; }
 ```
-
 **Pra que serve.** Conta os relatórios novos desde a última visita daquela pessoa. **Estados.** Com 1 ("1 relatório novo desde a sua última visita."); com 2 ou mais; com 0 o componente não desenha nada. **Medidas:** 44 px de altura, ponto de 8 px em `--hue`, texto `--text` sublinhado em `--fs-ui-sm`. **Ao tocar:** rola até o 1º cartão com relatório novo e põe o foco nele. **Teclado:** 1 parada. **Leitor de tela:** "3 relatórios novos desde a sua última visita. Ir pro primeiro, link." A tela conta primeiro e só depois chama `escritorio_marcar_visto()`.
 
 ### 6.10 LinhaSaude
-
 ```ts
 interface LinhaSaudeProps { atrasadas: number; ultimaEm: string; semInternet: boolean; aoRodarAgora(): Promise<void>; }
 ```
-
 **Pra que serve.** 1 linha no rodapé dizendo se as conferências estão em dia. **Estados.** Em dia: ícone `circle-check` + "Tudo funcionando. Última conferência: hoje, 7h41." Atrasada: ícone `clock-alert` + "2 conferências atrasadas. Última: 07/11." + botão "Rodar agora". **Medidas:** 44 px, `--fs-ui-sm`, `--muted` em dia e `--ambar-tinta` atrasada. **Ao tocar:** só o botão; 2 toques abrem a mesma conferência (regra da 11-C). **Leitor de tela:** `role="status"`.
 
 ### 6.11 CampoPergunta
-
 **Pra que serve.** Quando falta 1 dado, a pessoa responde no próprio cartão do ajudante, sem sair da tela.
-
 ```ts
 interface CampoPerguntaProps {
   pergunta: string; campos: CampoDef[]; permiteOutro?: string;   // ex.: "Adicionar outro cartão"
   desligado: boolean; aoResponder(valores: Record<string,string>[]): Promise<void>;
 }
 ```
-
 **Estados.** Vazio; preenchendo; erro de campo (frase abaixo do campo, ligada por `aria-describedby`); gravando; gravado; erro de rede. **Medidas:** pergunta em `--fs-body` peso 500; cada campo com rótulo visível em `--fs-ui-sm` acima, caixa de 44 px, contorno `--borda-controle`, canto `--r-sm`, texto de 16 px (evita o zoom do iPhone); campo de dia com `inputmode="numeric"`; botão verde "Responder" de 44 px, largura inteira; abaixo, "Com a resposta, a conferência começa na hora." **Ao tocar:** fluxo 8.3. **Teclado:** Tab segue a ordem dos campos; Enter no último envia. **Leitor de tela:** `<form>` com nome igual à pergunta; erro lido na hora (`role="alert"`). Texto digitado vai ao servidor como dado, cortado em 200 letras.
 
 ### 6.12 ListaPorAjudante (painel do dono, celular)
-
 ```ts
 interface LinhaDeCusto { nome: string; custo: string; conferencias: number; modelo: string; }
 interface ListaPorAjudanteProps { linhas: LinhaDeCusto[]; total: { custo: string; conferencias: number }; }
 ```
-
 **Pra que serve.** No celular, a tabela "Por ajudante" (hoje com rolagem lateral e coluna cortada) vira lista de 2 linhas. No computador continua tabela. **Medidas:** cada item com 64 px; linha 1: nome à esquerda (`--fs-body`) e custo à direita (peso 600, `tabular-nums`); linha 2: "4 conferências · leve + forte no relatório do mês" em `--fs-ui-sm` `--muted`; divisória `--rule`; rodapé "Total · R$ 0,44 · 26 conferências". **Estados.** Com dado; "menos de R$ 0,01"; sem conferência ("0 conferências"). **Ao tocar:** nada, não é botão. **Teclado:** sem parada. **Leitor de tela:** `<ul>`; "Contador da Casa, R$ 0,38, 4 conferências, modelo leve mais forte no relatório do mês". Só aqui valem as palavras "custo" e "modelo".
 
 ### 6.13 FaixaSemInternet e 6.14 DescricaoDaCena
-
 ```ts
 interface FaixaSemInternetProps { copiaDe: string; }        // "hoje, 8h13"
 interface DescricaoDaCenaProps { ajudantes: Pick<Ajudante,'nome'|'situacao'|'atrasadoDesde'>[]; }
 ```
-
 `FaixaSemInternet`: faixa no topo, 44 px, fundo `--raised`, ícone `wifi-off`, texto "Sem internet. Você vê os números de hoje, 8h13."; `role="status"`. `DescricaoDaCena`: a cena (`canvas`) ganha `role="img"` e `aria-describedby` apontando pra um parágrafo escondido da vista: "Escritório com 8 ajudantes. 1 precisa de você: Comprador. 1 perguntando: Analista de Cartão. 1 conferindo agora: Agenda de Vencimentos. 5 entregaram." O botão "Abrir o escritório" continua com 44 px.
 
 ## 7. Situações e movimento
-
 | Situação (palavra exata) | Banco | Ícone Lucide | Cor do ícone / da palavra | Movimento | Ao tocar | Com "reduzir movimento" |
 |---|---|---|---|---|---|---|
 | Conferindo agora | `trabalhando` | `loader-circle` (anel aberto) | `--text` / `--text` | gira 1 volta em 1.200 ms, linear, 4 voltas (4.800 ms) e para | abre o nível 2 com o último relatório | anel parado |
@@ -466,11 +413,9 @@ Regra de CSS: toda animação fica dentro de `@media (prefers-reduced-motion: no
 O teste T-E09 aplica `filter: grayscale(1)` e confere as 7.
 
 ## 8. Fluxos passo a passo
-
 Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `role="alert"`, nunca em janela por cima. Regra geral sem internet (ficha 11-C): aparece a `FaixaSemInternet`; "Resolvi", "Responder", "Agora não", "Rodar agora", "Ajudou" e "Enviar" ficam com `aria-disabled="true"` e a legenda "precisa de internet"; nada fica na fila pra enviar depois.
 
 ### 8.1 "Resolvi" com "Desfazer" de 6 s
-
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
 | 1 | toca "Resolvi" na linha "Trocar a marca do café..." | botão vira "Gravando" | chama a função de resolver pendência (nome a definir na Tarefa 11) com a pessoa logada e a hora do servidor |
@@ -482,7 +427,6 @@ Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `r
 | Sem internet | | botão apagado, "precisa de internet" | nada |
 
 ### 8.2 "Agora não" por 7 dias
-
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
 | 1 | toca "Agora não" | botão vira "Gravando" | função de adiar pendência (a definir na Tarefa 11; a ficha diz "junto da pendência, só via função"), com volta em 7 dias |
@@ -494,7 +438,6 @@ Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `r
 No placar, conta como adiada, não vencida (número 3 do placar, ficha 11-B).
 
 ### 8.3 Responder pergunta no cartão
-
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
 | 1 | toca "Responder" na fila ou no cartão do Analista de Cartão | rola até o cartão (já aberto) e põe o foco em "Nome do cartão" | nada |
@@ -506,7 +449,6 @@ No placar, conta como adiada, não vencida (número 3 do placar, ficha 11-B).
 | Sem internet | | "Responder" apagado; os campos aceitam digitação, mas nada é enviado nem guardado | nada |
 
 ### 8.4 "Ajudou / Não ajudou"
-
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
 | 1 | abre o cartão do Comprador e toca "Ajudou" | o botão fica marcado; região de aviso diz "Anotado." | função de avaliar relatório (a definir na Tarefa 11): 1 linha por pessoa por relatório |
@@ -517,7 +459,6 @@ No placar, conta como adiada, não vencida (número 3 do placar, ficha 11-B).
 Entra no número 6 do placar. No piloto, a resposta não muda o texto do ajudante.
 
 ### 8.5 Abrir a partir do aviso do celular
-
 O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz R$ nem nome de empregado e abre o endereço `/escritorio?pendencia=<id>`.
 
 | Passo | Situação | A tela mostra | Grava |
@@ -531,7 +472,6 @@ O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz
 | Sem internet | | a última cópia com a faixa; o cartão abre, botões apagados | nada |
 
 ### 8.6 Chave "Só o que depende de mim"
-
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
 | 1 | liga a chave (Marina) | ficam os cartões com pendência aberta, não adiada, cujo dono é a pessoa logada ou que não tem dono: Analista de Cartão e Comprador. Some o grupo "Reserva". Região de aviso: "Mostrando 2 de 8 ajudantes." | a escolha, no aparelho: `localStorage`, chave `escritorio.soMeu.<id da pessoa>` (sem função do banco; ver pergunta 13.5) |
@@ -542,7 +482,6 @@ O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz
 A chave não mexe na fila "Depende de você" nem no número do resumo. Com Carlos logado ficam Analista de Cartão e Folha da Casa.
 
 ## 9. Textos de tela
-
 | Chave | Texto exato | Onde aparece |
 |---|---|---|
 | `resumo.numero` | {n} coisas esperando você | resumo (com 1: "1 coisa esperando você") |
@@ -583,7 +522,6 @@ A chave não mexe na fila "Depende de você" nem no número do resumo. Com Carlo
 Nenhum texto usa ponto de exclamação, "de novo" em notícia ruim, nem nome de pessoa em notícia ruim (regra de tom da 11-D).
 
 ## 10. Acesso e leitura fácil
-
 - [ ] Todo alvo de toque tem no mínimo 44x44 px (`--alvo-min`), com 8 px entre alvos vizinhos.
 - [ ] Nenhum texto abaixo de 12 px. Texto de campo com 16 px.
 - [ ] Todo texto com contraste de 4,5 pra 1 ou mais nos 2 temas. `--faint` não aparece em texto.
@@ -604,7 +542,6 @@ Nenhum texto usa ponto de exclamação, "de novo" em notícia ruim, nem nome de 
 - [ ] `lang="pt-BR"` na página. Datas em dd/mm, horas como 7h12, valores como R$ 1.180.
 
 ## 11. Casos de teste
-
 Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, salvo quando o teste disser outra coisa.
 
 | # | Teste | Medida exata esperada |
@@ -641,7 +578,6 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 | T-E30 | 5 minutos | 3 pessoas que nunca viram a tela resolvem 1 pendência, adiam outra e dizem quanto a casa tem livre, sem ajuda, em até 5 minutos, 3 de 3 |
 
 ## 12. O que não fazer
-
 1. Cara de IA: ícone de faísca; a palavra "IA" em título; frase sem número; 3 selos no mesmo cartão; texto aparecendo letra por letra; brilho, esqueleto piscando ou carregamento falso; negrito em toda linha.
 2. Mais de 1 botão verde por cartão. "Agora não", "Ajudou", "Não ajudou", "Rodar agora" e "Ver detalhes" nunca são verdes.
 3. Degradê, efeito vidro, sombra forte, emoji no lugar de ícone, cartão com faixa colorida na lateral.
@@ -658,7 +594,6 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 14. Criar uma 2ª cor de destaque (o azulado de "Perguntando" e o ponto roxo da prévia saem).
 
 ## 13. Perguntas em aberto pro dono
-
 | # | Pergunta | Recomendação |
 |---|---|---|
 | 1 | No cartão do Contador, o número grande é o livre (R$ 920, ficha 11-D e base comum) ou o gasto (R$ 8.240 de R$ 12.000, exemplo do item 8 da ficha 11-E e da prévia)? | O livre, R$ 920. O gasto vira a linha de comparação. |
@@ -673,7 +608,6 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 | 10 | A barra de abas do app tem que altura? | Este caderno reservou 224 px da 1ª tela pra ela e pras áreas do iPhone. Se passar disso, encurtar o cabeçalho. |
 
 ## 14. Ordem de serviço pronta pra colar
-
 ```
 PAPEL
 Você é engenheiro de telas (React + Vite + TypeScript). Vai construir a ficha
@@ -734,7 +668,6 @@ ENTREGUE
 ```
 
 ## Dados que acrescentei
-
 Nada abaixo muda as somas da base comum.
 
 | Dado | Valor | De onde vem |
