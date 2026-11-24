@@ -4,6 +4,7 @@ import './meu-orcamento-nova.css'
 import './meu-orcamento-v3.css'
 import { EquipeDoOrcamento } from '../../componentes/EquipeDoOrcamento'
 import { estacoesDoOrcamento } from './estacoes'
+import { abrirSalaDoOrcamento } from './palcoVivo'
 import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -338,7 +339,7 @@ export function MeuOrcamento({ versao: desenho = 'atual' }: { versao?: 'atual' |
                 </Botao>
               </div>
             )}
-            {v3 && <EquipeDoOrcamento estacoes={estacoes} />}
+            {v3 && <EquipeDoOrcamento estacoes={estacoes} cena={abrirSalaDoOrcamento} />}
             {nova && (
               <div className="orc-3d" aria-hidden="true">
                 <img src="/orcamento-3d/mesa.webp" alt="" width={520} height={513} />

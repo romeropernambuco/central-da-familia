@@ -49,7 +49,7 @@ export function pose(ch: any, alvo: any, dt: number) {
 }
 
 /** Andando pelo caminho (mesa, corredor, frente da sala): avança, vira o corpo e balança braços e pernas. */
-function andar(ch: any, dt: number, ph: number) {
+export function andar(ch: any, dt: number, ph: number) {
   const b = ch.b
   const pt = ch.path[0],
     dx = pt.x - b.r.position.x,
@@ -94,7 +94,7 @@ function andar(ch: any, dt: number, ph: number) {
 }
 
 /** De pé na frente da sala, virado para a pessoa e acenando. */
-function acenar(ch: any, dt: number, a: number, ph: number) {
+export function acenar(ch: any, dt: number, a: number, ph: number) {
   const b = ch.b
   const da2 = Math.PI / 4 - b.r.rotation.y
   b.r.rotation.y += da2 * Math.min(1, dt * 8)
@@ -118,7 +118,7 @@ function acenar(ch: any, dt: number, a: number, ph: number) {
 }
 
 /** Sentado à mesa: comemorando, digitando, recostado (entregue) ou esperando. */
-function sentar(ch: any, st: EstadoCena, dt: number, a: number, ph: number) {
+export function sentar(ch: any, st: EstadoCena, dt: number, a: number, ph: number) {
   const b = ch.b
   const da3 = 0 - b.r.rotation.y
   b.r.rotation.y += da3 * Math.min(1, dt * 8)

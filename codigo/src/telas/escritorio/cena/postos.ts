@@ -20,7 +20,7 @@ interface Lugar {
 }
 
 /** Mesa, notebook, cadeira e o objeto de mesa que diz o que o funcionário faz. Devolve a pilha de papel e a tela. */
-function montarMesa({ T, guardar, pecas }: Lugar, o: OpcoesCena, e: FuncCena, xs: number, g: any) {
+export function montarMesa({ T, guardar, pecas }: Lugar, o: OpcoesCena, e: FuncCena, xs: number, g: any) {
   const { mancha, cx, fecha, grupo } = pecas
   const { MADEIRA, MADEIRA_E, CADEIRA, PAPEL } = CORES
   /* mesa, notebook, cadeira */

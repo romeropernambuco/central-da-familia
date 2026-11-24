@@ -102,12 +102,147 @@
   .orc-agente { padding-block-end: 18px; }
   .orc-agente img { max-inline-size: 200px; }
   .orc-palco-chao { margin-block-start: 22px; }
-  .orc-v3 #oRitmo { grid-column: span 4; }
-  .orc-v3 #oRitmo .ritmo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
-  .orc-v3 #oRitmo .ritmo > :not(.ritmo-b) { grid-column: 1 / -1; }
-  .orc-v3 #oRitmo .ritmo-b:not(.ok):not(.warn) { padding: 6px 0 0; border-block-end: 0; }
-  .orc-v3 #oCofrinho { grid-column: span 2; }
+  /* a grade segue o conteúdo: semana e mês ao lado da sobra, meio a meio, com a mesma altura */
+  .orc-v3 .tela-larga { align-items: stretch; }
+  .orc-v3 #oRitmo, .orc-v3 #oCofrinho { grid-column: span 3; }
+  .orc-v3 :is(#oRitmo, #oCofrinho, #oOnde, #oRepete, #oCompras) { display: flex; flex-direction: column; }
+  .orc-v3 #oRitmo .ritmo { flex: 1; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 24px; }
+  .orc-v3 #oRitmo .ritmo-leg { margin-block-start: auto; }
+  .orc-v3 #oCofrinho details.salario-porque { margin-block-start: auto; }
+  .orc-v3 #oOnde .onde-dica { margin-block-start: auto; padding-block-start: 16px; }
+  .orc-v3 #oCompras .compras-todas { margin-block-start: auto; align-self: flex-start; }
   .orc-v3 :is(#oOnde, #oRepete, #oCompras) { grid-column: span 2; }
   .orc-v3 .tela-larga:not(:has(#oRepete)) #oCompras { grid-column: span 4; }
   .orc-pote3d { inline-size: 84px; }
+}
+
+/* ============================================================================================
+ * Produção gráfica (24/11, revisão do diretor de arte): um sistema só, em vez de cada bloco resolvido sozinho.
+ * Números em 4 degraus (72-80 / 32 / 20 / 16). Espaços na grade de 4/8. Raios: 24 cartão, 16 dentro,
+ * 12 ícone, pílula no botão. Só linha de 1 px, nenhuma sombra. Verde só para ação e "dentro"; âmbar uma vez.
+ * ========================================================================================== */
+
+/* escala dos números */
+.orc-v3 #oHoje .numrow .din { font-size: clamp(56px, 15vw, 72px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.orc-v3 #oHoje .numrow .din .cur,
+.orc-v3 #oHoje .numrow .din .cents { font-size: .44em; font-weight: 700; letter-spacing: -.01em; }
+.orc-v3 #oHoje .numrow .din .cur { margin-right: .2em; color: var(--muted); }
+.orc-v3 #oRitmo .ritmo-t .ritmo-num { font: 700 32px/1.1 var(--font-num); letter-spacing: -.03em; }
+.orc-v3 #oRitmo .ritmo-t .ritmo-num em { font: 500 16px/1.3 var(--fonte-aba); letter-spacing: 0; }
+.orc-v3 #oCofrinho .numrow .din,
+.orc-v3 #oCofrinho .numrow.cof-zero .din { font-size: 32px; font-weight: 700; letter-spacing: -.03em; }
+.orc-v3 #oCofrinho .numrow .din .cur { font-size: 16px; }
+.orc-v3 .orc-stat-t b { font: 700 20px/1.2 var(--font-num); }
+.orc-v3 .li .v .din, .orc-v3 .onde-linha .din { font-weight: 600; }
+.orc-v3 #oHoje .orc-rotulo, .orc-v3 .ritmo-rot { font: 600 15px/1.3 var(--fonte-aba); color: var(--ink-2); }
+
+/* cartão do dia: tudo no mesmo eixo, à esquerda; resumo sem caixa e sem ícone em bolinha */
+.orc-v3 #oHoje .orc-rotulo, .orc-v3 #oHoje .numrow { justify-content: flex-start; }
+.orc-v3 .orc-stats { background: none; border-radius: 0; border-block: 1px solid var(--rule); }
+.orc-v3 .orc-stat { padding: 12px 16px 12px 0; }
+.orc-v3 .orc-stat + .orc-stat { padding-inline: 16px 0; }
+.orc-v3 .orc-stat-ico { display: none; }
+.orc-v3 .orc-stat-t small { display: flex; align-items: flex-end; min-block-size: 2.5em; }
+
+/* um botão cheio por cartão; sem sombra colorida */
+.orc-palco-ir { background: var(--surface); color: var(--accent-ink); box-shadow: inset 0 0 0 1.5px var(--border); }
+.orc-palco-ir:hover { background: var(--accent-soft); }
+.orc-v3 #oHoje > .row-btns > :first-child { box-shadow: none; }
+.orc-v3 #oHoje > .row-btns { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; margin-block-start: 16px !important; gap: 8px; }
+
+/* calendário: sem caixa, um sinal por estado, um anel no hoje */
+.orc-v3 .bolinhas { margin-block: 16px 4px; padding: 16px 0 0; border-radius: 0; background: none; border-block-start: 1px solid var(--rule); }
+.orc-v3 .bolinhas-titulo { margin-block-end: 12px; font-size: 14px; text-wrap: balance; }
+.orc-v3 .bolinhas-titulo b { font: 700 16px/1.3 var(--font-num); }
+.orc-v3 .bolinhas-grade { gap: 8px 4px; }
+.orc-v3 .bolinhas-sem { font-size: 14px; font-weight: 600; }
+.orc-v3 .bolinha { font-size: 14px; letter-spacing: -.02em; box-sizing: border-box; }
+.orc-v3 .bolinha.passou { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--warn-ink) 35%, transparent); }
+.orc-v3 .bolinha.sem { box-shadow: none; border: 1.5px dashed var(--control); }
+.orc-v3 .bolinha.hoje { box-shadow: none; outline: 2px solid var(--ink); outline-offset: 2px; }
+.orc-v3 .bolinhas-legenda { font-size: 14px; }
+.orc-v3 .bolinhas-legenda .passou::before { box-shadow: inset 0 0 0 1px var(--warn-ink); }
+.orc-v3 .bolinhas-legenda .sem::before { box-shadow: none; border: 1.5px dashed var(--muted); box-sizing: border-box; }
+
+/* âmbar uma vez só: no número; o resto do aviso em tinta neutra */
+.orc-v3 #oRitmo .ritmo-b.warn { background: color-mix(in oklch, var(--warn) 6%, var(--surface)); }
+.orc-v3 #oRitmo .ritmo-b.warn .ritmo-rot { color: var(--ink-2); }
+.orc-v3 #oRitmo .ritmo-b.warn .ritmo-aviso { color: var(--ink); font-weight: 500; }
+.orc-v3 #oRitmo .ritmo-b .ritmo-ico { inline-size: 20px; block-size: 20px; background: none; }
+
+/* verde só para ação: ícones das listas neutros */
+.orc-v3 :is(.onde-lista, .repete-lista, .compras-lista) .tile { inline-size: 40px; block-size: 40px; border-radius: 12px; background: var(--raised); color: var(--ink-2); }
+
+/* um sistema de raio e de borda */
+.orc-palco-balao { border-radius: 16px; gap: 8px; padding: 12px 12px 12px 16px; }
+.orc-palco-balao p { text-wrap: balance; }
+.orc-v3 .orc-meta-add { border: 0; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--border); background: var(--surface); }
+.orc-v3 .orc-meta-add:hover { background: var(--accent-soft); }
+
+/* espaços na grade de 4/8 */
+.orc-v3 #oHoje { padding: 24px 20px 20px; }
+.orc-palco { margin: 20px -20px -20px; padding: 16px 12px 4px; box-shadow: inset 0 1px 0 var(--border); }
+.orc-v3 .card-h { margin-block-end: 16px; }
+.orc-v3 { --palco: color-mix(in srgb, var(--lilas) 14%, var(--surface)); }
+
+/* cabeçalho: o título manda, o rosto acompanha */
+.orc-v3 .card-h h2 { gap: 8px; font-size: 20px; line-height: 1.2; }
+.orc-v3 .card-h h2::before { inline-size: 36px; block-size: 36px; }
+.orc-v3 .ritmo-aviso::before { inline-size: 40px; block-size: 40px; }
+.orc-v3 .compras-conta { font: 500 14px/1 var(--fonte-aba); color: var(--muted); }
+
+/* apoio nunca abaixo de 14 px */
+.orc-v3 .pill-nome .pill-dono,
+.orc-v3 .orc-stat-t b em,
+.orc-v3 .onde-m small, .orc-v3 .onde-comp, .orc-v3 .onde-abre-nome small,
+.orc-v3 .ritmo-leg-in, .orc-v3 .ritmo-leg > span { font-size: 14px; }
+
+/* listas irmãs com a mesma linha: divisória recuada até o texto */
+.orc-v3 .list > li + li { border-top: 0; position: relative; }
+.orc-v3 .list > li + li::before,
+.orc-v3 .onde-lista > li + li::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 52px 0; block-size: 1px; background: var(--rule); }
+.orc-v3 .onde-lista { gap: 0; }
+.orc-v3 .onde-lista > li { position: relative; padding-block: 12px; }
+.orc-v3 .repete-lista .m { display: grid; grid-template-columns: minmax(0, auto) auto; justify-content: start; align-items: center; column-gap: 8px; }
+.orc-v3 .repete-lista .m small { grid-column: 1 / -1; }
+.orc-v3 .repete-vezes { margin: 0; flex-wrap: nowrap; }
+.orc-v3 .repete-vezes i { inline-size: 6px; block-size: 6px; }
+
+/* barras com uma espessura só */
+.orc-v3 .orc-stat .orc-mes-barra,
+.orc-v3 #oRitmo .ritmo-b .ritmo-meter,
+.orc-v3 .onde-barra { block-size: 6px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.orc-v3 .ritmo-meter .risco { top: -5px; width: 2px; height: 16px; }
+
+/* gráfico: o gasto manda, a referência fica leve */
+.orc-v3 .graf-mes .g-teto { stroke: var(--control); stroke-width: 1; stroke-dasharray: 3 4; }
+.orc-v3 .graf-mes .g-cheia { stroke-width: 3; }
+.orc-v3 .graf-leitura { margin-block-start: 8px; }
+.orc-v3 .graf-leitura .graf-leg { gap: 4px 16px; }
+
+@media (min-width: 1100px) {
+  .orc-v3 #oHoje .numrow .din { font-size: 80px; }
+  .orc-v3 .orc-stat-t small { min-block-size: 0; }
+  .orc-v3 #oHoje > .row-btns { grid-template-columns: repeat(2, max-content) !important; }
+  .orc-v3 .bolinha { inline-size: 36px; block-size: 36px; }
+  .orc-v3 .tela-larga { gap: 24px !important; }
+  .orc-v3 .tela-larga .card { padding: 24px; }
+  .orc-v3 #oHoje { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 32px; padding: 32px 0 32px 32px; }
+  .orc-palco { margin: -32px 0; padding: 24px 24px 0; box-shadow: inset 1px 0 0 var(--border); }
+}
+
+/* modo escuro: o palco não vira placa cinza e os dias "dentro" não pesam como botão (os 2 gatilhos do app) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .orc-v3 { --palco: color-mix(in srgb, var(--lilas) 9%, var(--surface)); }
+  :root:not([data-theme="light"]) .orc-v3 .bolinha.dentro { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); color: var(--accent-ink); }
+  :root:not([data-theme="light"]) .orc-v3 .bolinhas-legenda .dentro::before { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+}
+:root[data-theme="dark"] .orc-v3 { --palco: color-mix(in srgb, var(--lilas) 9%, var(--surface)); }
+:root[data-theme="dark"] .orc-v3 .bolinha.dentro { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); color: var(--accent-ink); }
+:root[data-theme="dark"] .orc-v3 .bolinhas-legenda .dentro::before { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+/* com a sala 3D o palco ficou mais alto: a coluna do número fica centrada na altura do cartão */
+@media (min-width: 1100px) {
+  .orc-v3 #oHoje { grid-template-rows: 1fr repeat(10, auto) 1fr; }
+  .orc-v3 #oHoje::before { content: ""; grid-column: 1; grid-row: 1; order: 0; }
+  .orc-palco { grid-row: 1 / -1; }
 }
