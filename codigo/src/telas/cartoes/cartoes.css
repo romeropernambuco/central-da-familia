@@ -10,3 +10,8 @@
 .cartoes-visual .row-btns{gap:8px;flex-wrap:wrap}
 .bar i.neutra{background:var(--muted)!important;transition:none}
 @media(max-width:480px){.cartoes-visual .row-btns>.btn{width:100%}.cartoes-visual .fat{grid-template-columns:64px minmax(24px,1fr) auto}}
+
+/* Rodada de design (24/11/2026): cada linha de apoio ganha um ícone pequeno, no tom do app */
+.cartao-linha { display: flex; align-items: center; gap: 8px; }
+.cartao-linha > svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--accent-ink); }
+h3.cartao-linha { font-size: 16px; }

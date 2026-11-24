@@ -10,6 +10,10 @@
 .graf{min-width:0;max-width:100%}
 .graf-area{min-width:0;max-width:100%;overflow:hidden;border-radius:var(--r-card)}
 .ritmo-t{gap:12px;flex-wrap:wrap}
-.ritmo-t b{font-variant-numeric:tabular-nums}
+.ritmo-t b{font-variant-numeric:tabular-nums;font-family:var(--font-num);font-size:20px;font-weight:700;letter-spacing:-.02em}
+.ritmo-rot{display:inline-flex;align-items:center;gap:10px;font-weight:650}
+.ritmo-ico{display:inline-grid;place-items:center;flex:none;inline-size:32px;block-size:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-style:normal}
+.ritmo-ico svg{inline-size:17px;block-size:17px}
+.ritmo-b.warn .ritmo-ico{background:color-mix(in srgb,var(--warn,#b45309) 16%,transparent);color:var(--warn,#92400e)}
 .ritmo-b{padding:16px;border:1px solid var(--border);border-radius:var(--r-card)}
 @media(prefers-reduced-motion:reduce){.env .meter i{transition:none}}

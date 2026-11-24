@@ -76,7 +76,8 @@
   --r-lg: 12px;
   --r-md: 8px;
   --r-sm: 6px;
-  --fonte-aba: 'Inter Variable', system-ui, sans-serif;
+  /* texto: Figtree (redonda, calorosa); títulos e números: Bricolage Grotesque (com personalidade). Fim do "Inter de bloco de notas". */
+  --fonte-aba: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-num: 'Bricolage Grotesque', system-ui, sans-serif;
   --numero-principal: 34px;
   --espaco-aba: 16px;
@@ -135,7 +136,9 @@
 
 .aba-conteudo, .aba-conteudo > .view { min-width: 0; }
 .central-app .aba-conteudo > .view { gap: var(--espaco-aba); }
-.central-app :is(.aba-conteudo, .sheet, .agente-aba) :is(h2, h3) { font-family: var(--font-num); }
+.central-app :is(.aba-conteudo, .sheet, .agente-aba) :is(h2, h3) { font-family: var(--font-num); font-weight: 700; letter-spacing: -.02em; }
+.central-app .aba-conteudo .din { font-family: var(--font-num); font-weight: 700; letter-spacing: -.02em; }
+.central-app .aba-conteudo .sub { font-size: 15px; }
 .central-app .aba-conteudo .card,
 .central-app :is(.agente-aba, .sheet-body > .card) {
   padding: var(--espaco-aba);

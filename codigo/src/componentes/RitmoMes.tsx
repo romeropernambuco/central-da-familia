@@ -5,6 +5,8 @@ import type { Envelope } from '../api/tipos'
 import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, somaDias } from '../lib/formato'
 import { GraficoMes } from './Graficos'
 import { pesoDia, projecao } from '../lib/plano'
+import { Icone } from './Icone'
+import { CalendarDays, TrendingDown, TrendingUp } from 'lucide-react'
 
 /**
  * R7+G3: a semana e o fim do mês. Rodada 2: vale também pro limite do mês (BRUNO ideia 3); parcela e compra grande
@@ -78,7 +80,12 @@ export function RitmoMes({
       {e.ate_domingo != null && (
         <div className="ritmo-b">
           <p className="ritmo-t">
-            <span>{rotuloSemana}</span>
+            <span className="ritmo-rot">
+              <i className="ritmo-ico" aria-hidden="true">
+                <Icone desenho={CalendarDays} />
+              </i>
+              {rotuloSemana}
+            </span>
             <b>{reais(e.ate_domingo)}</b>
           </p>
           {totalSemana != null && totalSemana > 0 && (
@@ -98,7 +105,12 @@ export function RitmoMes({
       {dia >= 2 && lim > 0 && (
         <div className={'ritmo-b ' + (dia >= 3 ? (p.dentro ? 'ok' : 'warn') : '')}>
           <p className="ritmo-t">
-            <span>{dia >= 3 ? 'Se continuar assim' : 'No mês'}</span>
+            <span className="ritmo-rot">
+              <i className="ritmo-ico" aria-hidden="true">
+                <Icone desenho={dia >= 3 && !p.dentro ? TrendingUp : dia >= 3 ? TrendingDown : CalendarDays} />
+              </i>
+              {dia >= 3 ? 'Se continuar assim' : 'No mês'}
+            </span>
             {(exibirFecha || exibirLimite) && (
               <b>
                 {exibirFecha ? reais(fecha) : ''}

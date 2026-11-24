@@ -11,7 +11,17 @@ import { NomeDaPessoa } from '../../componentes/NomeDaPessoa'
 import { CampoValor, CampoPrivado } from '../../componentes/privacidade'
 import { compromissoNesteMes, fraseParcelamento, mesesDaSimulacao } from './simulacao'
 import { useEffect, useState } from 'react'
-import { CreditCard, Plus, ShoppingBag, CircleCheck, TriangleAlert } from 'lucide-react'
+import {
+  CalendarDays,
+  CalendarRange,
+  CreditCard,
+  House,
+  Landmark,
+  Plus,
+  ShoppingBag,
+  CircleCheck,
+  TriangleAlert,
+} from 'lucide-react'
 import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { Din, Sheet } from '../../componentes/base'
 import { FuncIco } from '../../componentes/Pergunta'
@@ -154,7 +164,8 @@ export function Cartoes() {
                     </small>
                   )}
                 </h2>
-                <span className="sub">
+                <span className="sub cartao-linha">
+                  <CalendarDays aria-hidden="true" />
                   {c.dia_fechamento && c.dia_vencimento
                     ? `Fecha dia ${c.dia_fechamento} · Vence dia ${c.dia_vencimento}`
                     : 'Falta o dia que fecha ou o que vence'}
@@ -199,23 +210,30 @@ export function Cartoes() {
                   {/* quem pagou (CASAL): a parte da Casa que está na fatura de quem pagou */}
                   {!oculto && atual.da_casa ? (
                     <p className="todo ok" style={{ margin: '6px 0 0' }}>
-                      <span>
-                        Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>.{' '}
-                        {textoPrivado(
-                          meu
-                            ? 'Foi você quem pagou pela Casa.'
-                            : `Foi ${c.titular || 'quem é dono do cartão'} quem pagou pela Casa.`,
-                        )}
+                      <span className="cartao-linha">
+                        <House aria-hidden="true" />
+                        <span>
+                          Da Casa nesta fatura: <b>{reais(atual.da_casa)}</b>.{' '}
+                          {textoPrivado(
+                            meu
+                              ? 'Foi você quem pagou pela Casa.'
+                              : `Foi ${c.titular || 'quem é dono do cartão'} quem pagou pela Casa.`,
+                          )}
+                        </span>
                       </span>
                     </p>
                   ) : null}
-                  <p className="sub" style={{ margin: '6px 0 14px' }}>
+                  <p className="sub cartao-linha" style={{ margin: '6px 0 14px' }}>
+                    {atual.fechada ? <Landmark aria-hidden="true" /> : <ShoppingBag aria-hidden="true" />}
                     {avisoDaFatura(atual.fechada, c.dia_fechamento)}
                   </p>
                 </>
               )}
               {fs.length ? (
-                <h3 className="dayh">Próximas {fs.length} faturas</h3>
+                <h3 className="dayh cartao-linha">
+                  <CalendarRange aria-hidden="true" />
+                  Próximas {fs.length} faturas
+                </h3>
               ) : (
                 <p className="sub">Nenhuma fatura neste cartão ainda.</p>
               )}

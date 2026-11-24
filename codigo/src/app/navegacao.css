@@ -2,7 +2,7 @@
   --nav-verde: var(--accent);
   --nav-selecao: var(--accent-soft);
   --nav-sobre-verde: var(--on-accent);
-  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-family: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 #main > .top h1, .central-rail .brand b { font-family: var(--font-num); }
 .central-rail.rail { gap: 10px; padding: 16px 14px; }
