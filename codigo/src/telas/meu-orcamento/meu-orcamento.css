@@ -95,5 +95,29 @@
 /* 11. Bruno e Bia: "Br" e "Bi" no círculo, sem caixa alta */
 .orcamento-f29 > .pills .rosto-inicial { text-transform: none; letter-spacing: 0; }
 
+/* 12. Barra do mês dentro do cartão "No mês": fica claro de que número ela é */
+.orcamento-f29 .orc-stat { align-items: flex-start; }
+.orcamento-f29 .orc-stat-t { flex: 1; }
+.orcamento-f29 .orc-stat .orc-mes-barra { display: block; inline-size: 100%; block-size: 6px; margin-block-start: 8px; background: color-mix(in srgb, var(--ink) 12%, transparent); }
+.orcamento-f29 .orc-resumo { margin-block-end: 4px; }
+
+/* 13. Recado do assistente: sem caixa dentro de caixa, separado por uma linha */
+.orcamento-f29 #oHoje .ritmo-b .ritmo-aviso { margin-block-start: 14px; padding: 14px 0 0; border-radius: 0; background: transparent; border-block-start: 1px solid color-mix(in srgb, currentColor 22%, transparent); }
+
+/* 14. Anotar e Dá para comprar: lado a lado, do mesmo tamanho */
+.orcamento-f29 #oHoje > .row-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.orcamento-f29 #oHoje > .row-btns > * { justify-content: center; text-align: center; }
+@media (max-width: 480px) {
+  .orcamento-f29 #oHoje > .row-btns { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 15. Contagem do mês em bolinhas sem palavra solta na linha de baixo */
+.orcamento-f29 .bolinhas-titulo { text-wrap: pretty; }
+
+/* 16. Compras que se repetem: uma bolinha por vez que a compra voltou */
+.orcamento-f29 .repete-vezes { display: flex; flex-wrap: wrap; gap: 3px; margin-block: 6px 4px; }
+.orcamento-f29 .repete-vezes i { inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--accent); }
+.orcamento-f29 .repete-lista .li { padding-block: 12px; }
+
 /* 10. Mês em bolinhas: o dia de hoje com contorno, fácil de achar */
 .orcamento-f29 .bolinha.hoje { outline: 2px solid var(--ink); outline-offset: 2px; }

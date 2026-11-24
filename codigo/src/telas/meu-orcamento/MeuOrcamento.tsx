@@ -20,6 +20,7 @@ import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
 import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
 import { ComprasDoMes, OndeFoiODinheiro } from '../../componentes/ComprasDoMes'
+import { GastosQueSeRepetem } from '../../componentes/GastosQueSeRepetem'
 import { NumeroQueSobe, PoteDaSobra } from '../../componentes/VidaDoOrcamento'
 import { iniciaisDistintas } from './iniciais'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
@@ -397,6 +398,7 @@ export function MeuOrcamento() {
             lancAntes={leituraAntes.dado}
             ateDia={Number(hoje.slice(8, 10))}
           />
+          <GastosQueSeRepetem lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} oculto={oculto} />
           <ComprasDoMes lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} />
         </div>
       </div>

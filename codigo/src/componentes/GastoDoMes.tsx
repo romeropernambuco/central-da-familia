@@ -43,21 +43,22 @@ export function GastoDoMes({
             <b>
               {textoPrivado(reais(mes))} <em>de {textoPrivado(reais(teto))}</em>
             </b>
+            {/* 24/11: a barra mora dentro do "No mês", para ficar claro de que número ela é */}
+            {!oculto && teto > 0 && (
+              <span
+                className="orc-mes-barra"
+                role="img"
+                aria-label={`Já saiu ${Math.round(pct * 100)}% do que foi combinado para o mês`}
+              >
+                <i
+                  className={mes > teto || emRisco ? 'acima' : ''}
+                  style={{ width: Math.max(mes > 0 ? 2 : 0, pct * 100) + '%' }}
+                />
+              </span>
+            )}
           </span>
         </div>
       </div>
-      {!oculto && teto > 0 && (
-        <div
-          className="orc-mes-barra"
-          role="img"
-          aria-label={`Já saiu ${Math.round(pct * 100)}% do que foi combinado para o mês`}
-        >
-          <i
-            className={mes > teto || emRisco ? 'acima' : ''}
-            style={{ width: Math.max(mes > 0 ? 2 : 0, pct * 100) + '%' }}
-          />
-        </div>
-      )}
     </div>
   )
 }
