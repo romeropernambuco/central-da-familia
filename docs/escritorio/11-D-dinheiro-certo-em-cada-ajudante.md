@@ -18,8 +18,7 @@ Leia antes: `docs/escritorio/00-base-comum.md`, a parte 6 de `docs/tarefa-11-esc
 - Não refaz a previsão mês a mês nem a caixa de 30, 60 e 90 dias (Tarefa 19), nem a soma das parcelas (Tarefa 8), nem as regras de conta (Tarefa 4). Só lê.
 - Não deixa a IA fazer conta. A IA escreve só o destaque e a ação, com os números que o banco gravou (11-C).
 - Não paga, não envia, não aplica, não move dinheiro. O ajudante sugere.
-- Não traz a conta de 2029 nem a aba Desejos: são da Central de uma família só, fora do produto.
-- Não indica investimento, empréstimo, parcelamento de fatura, nem afirma regra de lei.
+- Não traz a conta de 2029 nem a aba Desejos (são da Central de uma família só, fora do produto). Não indica investimento, empréstimo, parcelamento de fatura, nem afirma regra de lei.
 
 ## 2. Antes de começar
 | # | Precisa existir | De onde vem | Se faltar |
@@ -67,7 +66,6 @@ Siga na ordem. Nomes de função são proposta: se a Tarefa 4 ou a 11-C já usam
 ## 4. A previsão única
 ### 4.1 O que é
 É 1 função do banco, só de leitura, que junta o que as Tarefas 4, 8 e 19 já calculam e devolve as linhas abaixo. Os 5 ajudantes do dinheiro tiram dela todo valor que mostram. Nenhum deles soma lançamento, conta, fatura ou folha por conta própria.
-
 ### 4.2 Linhas do mês corrente (família Silva, 24/11, 9h00)
 | # | Linha (`chave`) | O que é | Quem é o dono do valor | Valor |
 |---|---|---|---|---|
@@ -80,7 +78,6 @@ Siga na ordem. Nomes de função são proposta: se a Tarefa 4 ou a 11-C já usam
 | 7 | `livre_de_verdade` | linha 3 menos linhas 4, 5 e 6 | conta | **R$ 920** |
 
 Linhas de apoio, lidas pelo Guardião e pelo Fechamento: `reserva_hoje` (R$ 27.000), `reserva_combinada` (o colchão escolhido, R$ 27.000), `gasto_semanal_base` (R$ 3.000), `guardado_mes_anterior` (R$ 600).
-
 ### 4.3 Linhas dos próximos 3 meses (Tarefa 19 calcula, a 11-D só lê)
 | Mês | Contas com data | Faturas | Folha a guardar | Falta no mês | Reserva projetada | Semanas |
 |---|---|---|---|---|---|---|
@@ -89,7 +86,6 @@ Linhas de apoio, lidas pelo Guardião e pelo Fechamento: `reserva_hoje` (R$ 27.0
 | fevereiro | R$ 2.700 | R$ 1.040 (só parcelas já contratadas) | R$ 0 | R$ 0 | R$ 19.220 | 6 |
 
 "Falta no mês" é o que o mês pede e ainda não tem dinheiro separado: em janeiro, R$ 6.000 das contas do ano + R$ 1.780 das férias (R$ 2.400 menos R$ 620 guardados) = R$ 7.780. A projeção só conta dinheiro já guardado: sugestão ainda não aceita não entra. Por isso "folha a guardar" de dezembro (R$ 890) é o plano do mês, e a falta de janeiro ainda traz os R$ 1.780 inteiros. As 2 leituras erram pro lado seguro.
-
 ### 4.4 A fórmula do "livre de verdade" e as 3 regras contra contar 2 vezes
 ```
 livre_de_verdade = limite_da_casa - gasto_ate_hoje - contas_com_data - faturas_a_vencer - folha_a_guardar
@@ -102,7 +98,6 @@ passo a passo    : 12.000 - 8.240 = 3.760 ; 3.760 - 1.940 = 1.820 ; 1.820 - 0 = 
 3. **Dinheiro guardado pra folha muda de linha no mesmo ato.** Guardar os R$ 900 do 13º tira R$ 900 da linha 6 e põe R$ 900 na linha 2. O livre continua R$ 920.
 
 Livre negativo não vira zero: o Contador mostra "Faltam R$ X" (ficha 5.1). A conta do banco entrega também `total_com_data` (R$ 2.840 = 1.940 + 0 + 900), porque a IA não soma. `faturas_a_vencer` só entra na lista `numeros` enviada à IA quando é maior que 0.
-
 ### 4.5 Quem lê o quê, e a regra do teste noturno
 | Assunto partilhado | Chave | Quem mostra | Valor na família Silva |
 |---|---|---|---|
@@ -130,7 +125,6 @@ Livre negativo não vira zero: o Contador mostra "Faltam R$ X" (ficha 5.1). A co
 - **Texto.** Título, número, legenda, comparação e fonte saem do banco, por molde. A IA escreve só "O que chamou atenção" (destaque) e "O que fazer" (ação), até 20 palavras cada, só com números gravados. IA falhou: sai o número e a frase da 11-C.
 - **Fonte.** Toda ficha termina com a fonte e "Conta feita em dd/mm, HhMM".
 - **Exemplos.** O exemplo que usa a base comum sem mudança está marcado "base". O outro muda 1 dado, marcado "cenário".
-
 ### 5.1 Contador da Casa (`contador`)
 - **Responde:** quanto a casa ainda pode gastar até o fim do mês, já tirando o que tem data.
 - **Número principal:** `livre_de_verdade` da previsão única (seção 4.4). Sai de: limite, lançamentos, contas com data, faturas, folha. Unidade: R$. Se for negativo: "Faltam R$ X". No Fechamento, o número principal vira "o que ficou do limite" (seção 6).
@@ -139,7 +133,6 @@ Livre negativo não vira zero: o Contador mostra "Faltam R$ X" (ficha 5.1). A co
 - **Achado:** (a) livre negativo: R$ por mês = o que falta; (b) fora do Fechamento, envelope que passou do limite dele: R$ por mês = o que passou; (c) no Fechamento: ver seção 6. Sem achado: frase padrão.
 - **Nunca diz:** quem gastou; "estourou"; "sobra" como nome do guardado; onde aplicar; que dá pra parcelar ou pedir emprestado.
 - **Dados mínimos:** limite do mês, 1 lançamento no mês. Sem contas com data, sem cartão ou sem folha, a linha entra como R$ 0 e a legenda diz qual linha está vazia.
-
 ```
 A) NORMAL, base · "Rodar agora" em 24/11, 9h00 · Entregue
 Título: Livre até 30/11
@@ -159,7 +152,6 @@ O que fazer: Uma saída: levar os R$ 240 pro mês seguinte. Dezembro começa com
 Fonte: Previsão do banco (Lançamentos, Agenda de Vencimentos, Folha da Casa). Conta feita em 24/11, 9h00.
 ```
 Contas do B: 12.000 - 9.400 = 2.600; 2.600 - 2.840 = falta 240; 9.400 ÷ 12.000 = 78%; 9.600 - 9.400 = 200; 12.000 - 240 = 11.760. O exemplo mostra por que o % sozinho engana: o ritmo está bom e mesmo assim falta.
-
 ### 5.2 Analista de Cartão (`cartao`)
 - **Responde:** a próxima fatura cabe no mês em que vence, ou quanto falta.
 - **Número principal:** valor da próxima fatura (a de vencimento mais próximo ainda não paga). Passo a passo: (1) pegar a fatura e o mês do vencimento; (2) livre do mês do vencimento depois das faturas = limite do mês - contas com data do mês - folha a guardar do mês - todas as faturas que vencem no mês; (3) se der 0 ou mais: número "R$ <fatura>" e a palavra "Cabe"; se der negativo: número "Faltam R$ X". Família Silva: fatura do cartão azul R$ 2.150, vence em 05/12; 12.000 - 2.700 - 890 - 3.470 = R$ 4.940. Cabe. Fatura ainda aberta entra com o valor "até agora". Fatura futura entra só com as parcelas já contratadas.
@@ -168,7 +160,6 @@ Contas do B: 12.000 - 9.400 = 2.600; 2.600 - 2.840 = falta 240; 9.400 ÷ 12.000 
 - **Achado:** (a) falta pra fatura: R$ por mês = a falta; (b) mês com parcelas acima do mês anterior: R$ por mês = a diferença (março: 1.400 - 1.040 = R$ 360); (c) total digitado da fatura diferente da soma dos lançamentos: R$ = a diferença, "Pra informar". O valor "R$ 200" da ação vem do parâmetro `parcela_nova_teto` (estimativa, pergunta 6).
 - **Nunca diz:** parcelar a fatura, pagar o mínimo, pedir empréstimo, aumentar o limite do cartão, trocar de cartão ou de banco; juros, multa ou taxa (não tem a tabela); o nome de quem fez a compra em notícia ruim.
 - **Dados mínimos:** 1 cartão com dia de fechamento e de vencimento; lançamentos no cartão; limite do mês do vencimento.
-
 ```
 A) NORMAL, base · quinta 26/11, 8h17 (dia seguinte ao fechamento do azul) · Precisa de você (Pra decidir)
 Título: A fatura do cartão azul cabe em dezembro
@@ -188,7 +179,6 @@ O que fazer: Uma saída: cobrir os R$ 310 com o guardado de outubro, que fica em
 Fonte: Cartões e parcelas (fatura fechada em 25/11) e Previsão do banco. Conta feita em 26/11, 8h17.
 ```
 Contas do B: 2.150 + 5.250 = 7.400; 12.000 - 2.700 - 890 - 7.400 - 1.320 = falta 310; 7.400 - 310 = 7.090; 7.400 - 1.980 = 5.420; 600 - 310 = 290.
-
 ### 5.3 Agenda de Vencimentos (`vencimentos`)
 - **Responde:** quanto vence nos próximos 10 dias e o que vem pesado em 30, 60 e 90 dias, pra casa nunca saber na véspera.
 - **Número principal:** soma do que vence de hoje (incluído) até hoje + 9 dias, em 3 partes lidas da previsão: contas com data sem "paga", faturas e pagamentos da folha com data. Família Silva, 24/11 a 03/12: escola 25/11 R$ 980 + energia 27/11 R$ 460 + internet e celular 28/11 R$ 240 + água 30/11 R$ 260 + condomínio 02/12 R$ 760 = R$ 2.700; faturas R$ 0; folha R$ 0. Total R$ 2.700, dos quais R$ 1.940 até 30/11 (o mesmo valor do Contador). A contagem ("5 contas") vai na legenda.
@@ -198,7 +188,6 @@ Contas do B: 2.150 + 5.250 = 7.400; 12.000 - 2.700 - 890 - 7.400 - 1.320 = falta
 - **Achado:** mês, dentro dos 90 dias, com contas que só vêm 1 vez no ano. R$ por mês = soma dessas contas ÷ meses inteiros até lá, contando o mês da conta. Janeiro: R$ 6.000 ÷ 2 (dezembro e janeiro) = R$ 3.000 por mês. Chave `vencimentos:mes_pesado:2027-01`.
 - **Nunca diz:** multa, juros ou "vai cortar"; "você esqueceu"; que pagou ou vai pagar (só a família paga); pra atrasar uma conta e pagar outra.
 - **Dados mínimos:** 1 conta com nome, dia e valor.
-
 ```
 A) NORMAL, base · "Rodar agora" em 24/11, 9h00 · Precisa de você (Pra decidir)
 Título: R$ 2.700 vencem até 03/12
@@ -218,7 +207,6 @@ O que fazer: O valor já estava separado em novembro. Uma saída: pagar hoje ou 
 Fonte: Contas com data, Cartões e parcelas. Conta feita em 02/12, 10h19.
 ```
 Contas do B: condomínio 760 + fatura do azul 2.150 = 2.910; janela de 25/11 (25/11 a 04/12) = 2.700; 2.910 - 2.700 = 210.
-
 ### 5.4 Comprador (`comprador`)
 - **Responde:** quanto custa hoje a mesma cesta de sempre.
 - **Número principal:** preço da cesta de referência (mesmos itens e mesmas quantidades), com o último preço de cada item na memória de preços. Cesta de referência = itens que apareceram em 3 das últimas 4 compras, na quantidade do meio. Unidade: R$. Família Silva: R$ 1.180. A cesta é um termômetro de preço, não o gasto da semana (ver pergunta 3).
@@ -227,7 +215,6 @@ Contas do B: condomínio 760 + fatura do azul 2.150 = 2.910; janela de 25/11 (25
 - **Achado:** itens que subiram e ficaram: preço acima da memória (valor do meio das 4 compras anteriores) em 2 compras seguidas. R$ por mês = soma de (alta do preço × quantidade comprada nas últimas 4 compras). Família Silva: café R$ 44 + azeite R$ 36 + queijo R$ 28 + sabão em pó R$ 20 + arroz R$ 12 = R$ 140 por mês. Troca sugerida: só marca que a própria família já comprou nas últimas 12 semanas, mesmo item e tamanho, com preço menor. Café devolve R$ 50 e azeite R$ 40: R$ 90 por mês.
 - **Nunca diz:** nome de loja ou marca que a família nunca comprou; "promoção imperdível"; que alguém comprou errado; pra cortar item da cesta sem pedir.
 - **Dados mínimos:** 2 notas de compra conferidas por gente (Tarefa 10) com pelo menos 5 itens repetidos.
-
 ```
 A) NORMAL, base · segunda 23/11, 20h23 · Precisa de você (Pra decidir)
 Título: A mesma cesta custa R$ 1.180
@@ -247,7 +234,6 @@ O que fazer: Uma saída: trocar 3 marcas devolve R$ 180 por mês.
 Fonte: Notas da feira e memória de preços. Conta feita em 23/11, 20h23.
 ```
 Contas do B: 1.320 - 1.085 = 235; Casa: 3.500 - 2.910 = 590.
-
 ### 5.5 Auditor de Estoque (`auditor`)
 - **Responde:** quanto saiu da despensa acima do normal e ficou sem explicação.
 - **Número principal:** passo a passo, pros 15 itens principais: (1) consumo da semana = contagem anterior + entradas - contagem de hoje (Tarefa 4); (2) normal = valor do meio do consumo nas 4 semanas anteriores; (3) acima do normal = o que passou, em quantidade × preço da memória; (4) desconto das visitas = nº de visitas da semana (da Presença) × custo da despensa por pessoa por dia das últimas 4 semanas; (5) sem explicação = soma do passo 3 menos o passo 4, nunca menos que 0. Família Silva: 3 kg de carne a mais = R$ 120; 4 visitas no sábado × R$ 35 = R$ 140; sem explicação: R$ 0.
@@ -256,7 +242,6 @@ Contas do B: 1.320 - 1.085 = 235; Casa: 3.500 - 2.910 = 590.
 - **Achado:** R$ por mês = soma do "sem explicação" das últimas 4 semanas. Tudo explicado: o destaque diz o que foi e que está explicado; ação: "Nada a fazer esta semana."
 - **Nunca diz:** nome de pessoa da equipe; "sumiu", "desviou", "furto", "desperdício"; sugestão de trancar despensa, descontar ou punir. Estrago só se registra.
 - **Dados mínimos:** 2 contagens de segunda seguidas e as notas de entrada entre elas; presença e visitas da semana (sem isso, não desconta e pergunta "Teve visita nesta semana?").
-
 ```
 A) NORMAL, base · terça 24/11, 7h41 · Entregue
 Título: Nada sem explicação nesta semana
@@ -275,7 +260,6 @@ O que chamou atenção: Saíram 3 kg de carne a mais: R$ 120. A Casa ainda tem R
 O que fazer: Uma saída: dizer se teve visita ou estrago, ou pedir a recontagem de segunda.
 Fonte: Contagem de segunda, notas da feira e presença. Conta feita em 24/11, 7h41.
 ```
-
 ### 5.6 Controlador de Presença (`presenca`)
 - **Responde:** quanto a despensa custa por pessoa por dia, contando quem estava na casa.
 - **Número principal:** consumo da semana em R$ ÷ presenças da semana. 1 presença = 1 pessoa em 1 dia (família, equipe presente e visitas). Família Silva, 16/11 a 22/11: família 3 × 7 = 21, equipe 5, visitas 4; total 30 presenças; R$ 1.140 ÷ 30 = R$ 38. A contagem de presenças vai na legenda.
@@ -284,7 +268,6 @@ Fonte: Contagem de segunda, notas da feira e presença. Conta feita em 24/11, 7h
 - **Achado:** (a) custo de visita: valor do meio do custo a mais nos dias com visita das últimas 12 semanas (R$ 45) × dias com visita por mês (6 dias em 12 semanas = 2 por mês) = R$ 90 por mês; (b) número acima da média de 4 semanas por 2 conferências seguidas: R$ por mês = diferença × presenças das últimas 4 semanas. Na 1ª semana de alta não há achado (b).
 - **Nunca diz:** que alguém come demais; nome de pessoa da equipe ou de visita; falta, atraso ou desconto de salário (o número mede a despensa, não a pessoa); custo "por funcionário" em tom de cobrança.
 - **Dados mínimos:** presença diária da semana e consumo da semana (Tarefa 10).
-
 ```
 A) NORMAL, base · segunda 23/11, 8h13 · Precisa de você (Pra decidir)
 Título: A despensa custou R$ 38 por pessoa por dia
@@ -304,7 +287,6 @@ O que fazer: Uma saída: ver com o Comprador os 5 itens que subiram R$ 140 por m
 Fonte: Presença, cozinha e contagem de segunda. Conta feita em 23/11, 8h13.
 ```
 Contas do B: 1.066 ÷ 26 = 41; 41 - 35 = 6; 6 × 120 presenças em 4 semanas = 720.
-
 ### 5.7 Folha da Casa (`folha`)
 - **Responde:** quanto falta guardar pro próximo pagamento da equipe que tem data.
 - **Número principal:** dos pagamentos com data que não são o salário do mês (13º, férias e o que a tabela do contador trouxer), pegar o de data mais próxima que ainda tem falta. Falta = valor do pagamento - o que já está guardado pra ele. Família Silva em 24/11: 13º de R$ 1.800, R$ 900 guardados, falta R$ 900 (é a linha 6 da previsão). Valor, data e percentual de cada pagamento vêm da tabela conferida por contador ou do que a família lançou. O ajudante nunca calcula encargo por conta própria.
@@ -313,7 +295,6 @@ Contas do B: 1.066 ÷ 26 = 41; 41 - 35 = 6; 6 × 120 presenças em 4 semanas = 7
 - **Achado:** pagamento com falta. R$ por conferência = falta ÷ conferências do dia 3 que ainda acontecem antes da data. Férias: (2.400 - 620) ÷ 2 (03/12 e 03/01) = R$ 890. Como a conferência é mensal, é também o R$ por mês.
 - **Nunca diz:** que algo "é lei", "é obrigatório" ou "o prazo legal é"; percentual ou data fora da tabela; desconto de salário; nome de pessoa da equipe em aviso no celular; opinião sobre demitir, registrar ou acordo.
 - **Dados mínimos:** 1 pessoa na equipe com salário e 1 pagamento com valor e data.
-
 ```
 A) NORMAL, base · "Rodar agora" em 24/11, 9h00 · Precisa de você (Pra decidir)
 Título: Faltam R$ 900 pro 13º
@@ -333,7 +314,6 @@ O que fazer: Uma saída: separar os R$ 900 hoje, antes do dia a dia.
 Fonte: Folha da casa e tabela conferida pelo contador. Conta feita em 03/12, 9h37.
 ```
 Contas do B: folha de dezembro = 890 + 900 = 1.790; 12.000 - 2.700 - 1.790 - 3.470 = 4.040.
-
 ### 5.8 Guardião do Colchão (`colchao`)
 - **Responde:** por quantas semanas a reserva paga as contas da casa, hoje e no mês mais apertado dos próximos 3.
 - **Número principal:** semanas = `reserva_hoje` ÷ `gasto_semanal_base`, arredondado pra baixo. É o único número principal que não é R$ (a tabela da ficha manda assim); o R$ vai na legenda. Família Silva: 27.000 ÷ 3.000 = 9 semanas. Menos de 1: "menos de 1 semana". O guardado não entra na reserva.
@@ -358,7 +338,6 @@ Contas do B: folha de dezembro = 890 + 900 = 1.790; 12.000 - 2.700 - 1.790 - 3.4
 - **Achado:** mês abaixo da reserva. R$ por mês = falta ÷ meses até lá, contando o mês: 7.780 ÷ 2 = R$ 3.890 (igual a R$ 3.000 da Agenda + R$ 890 da Folha).
 - **Nunca diz:** onde aplicar a reserva, quanto ela rende, banco, corretora ou produto; "use a reserva", "pegue um empréstimo"; "vai faltar dinheiro" sem valor e mês; quem causou a queda.
 - **Dados mínimos:** reserva de hoje, reserva combinada, 4 semanas de lançamentos.
-
 ```
 A) NORMAL, cenário: contas de janeiro e férias já com dinheiro separado · sexta 27/11, 17h47 · Entregue
 Título: A reserva paga 9 semanas de contas
@@ -393,7 +372,6 @@ Fonte: Reserva, Previsão do banco, Agenda de Vencimentos, Folha da Casa. Conta 
 **Exemplo completo: Fechamento de novembro, família Silva, terça 01/12/2026, 7h12**
 
 Como novembro fechou (dados acrescentados): gasto até 24/11 R$ 8.240 + contas com data pagas R$ 1.940 + 13º guardado R$ 900 + dia a dia de 24/11 a 30/11 R$ 560 = R$ 11.640 usados. Ficou: 12.000 - 11.640 = R$ 360 (os R$ 920 livres menos os R$ 560). Outubro tinha ficado com R$ 210. Feira e despensa: R$ 3.420 em novembro contra R$ 3.130 em outubro. Marina recebeu R$ 5.100: R$ 300 acima do mês mais fraco, que vão pro guardado.
-
 ```
 Situação: Precisa de você (Pra decidir) · sinal: Abaixo da reserva em janeiro
 Título: Fechamento de novembro
@@ -417,7 +395,6 @@ Versão de notícia ruim (cenário: novembro usou R$ 12.240): Número 1 vira "O 
 3. **1 saída.** Uma só, possível com o que a família já tem, começando por "Uma saída:". Se não há saída segura, a frase é "Vale ver juntos no Domingo do casal."
 
 Regras de escrita: o sujeito é a casa, o mês, a conta, a fatura ou a reserva, nunca a pessoa. Sem ponto de exclamação. Sem "de novo", "outra vez", "mais uma vez", "infelizmente", "cuidado", "atenção!". Sem adjetivo de culpa ("exagerado", "descontrolado"). Sem pergunta que cobra ("por que gastou?"). Valor sempre com R$ e, quando houver, com data.
-
 ### 7.2 8 pares "não escrever / escrever"
 | # | Não escrever | Escrever |
 |---|---|---|
@@ -429,7 +406,6 @@ Regras de escrita: o sujeito é a casa, o mês, a conta, a fatura ou a reserva, 
 | 6 | "O 13º tem de ser pago até tal dia, é lei." | "O 13º tem data em 18/12 na tabela conferida pelo contador." |
 | 7 | "Cuidado! Sua reserva está acabando!" | "A reserva paga 9 semanas hoje. Em janeiro, 6." |
 | 8 | "Você esqueceu de pagar a energia." | "A energia, de R$ 460, tinha data em 27/11 e segue sem pagamento marcado." |
-
 ### 7.3 O que nenhum ajudante pode dizer
 1. Indicar aplicação, produto, banco ou corretora; prometer ou estimar rendimento.
 2. Sugerir empréstimo, cheque especial, parcelar fatura ou pagar o mínimo.
@@ -443,11 +419,8 @@ Regras de escrita: o sujeito é a casa, o mês, a conta, a fatura ou a reserva, 
 10. As palavras de bastidor: IA, modelo, turno, agente, robô, banco de dados, custo de IA.
 
 **Como o servidor garante:** a instrução de cada ajudante traz as regras 7.1 e 7.3. Depois da IA, o conferidor da 11-C ganha 1 checagem a mais, a lista de termos proibidos (ex.: "parcel" junto de "fatura", "mínimo", "empréstimo", "rende", "CDB", "corretora", "é lei", "obrigatório", "descont", "!", "de novo", e os nomes das pessoas da família quando a situação é notícia ruim). Bateu em 1 termo: texto descartado, 1 nova tentativa, depois só o número (motivo `texto_descartado`). A lista fica em 1 tabela de configuração, não espalhada no código.
-
 ### 7.4 O aviso da tela
-Texto (passa pelo advogado da Tarefa 15 antes de ir pro ar): "Os ajudantes fazem contas com o que você lançou. Não é recomendação de investimento nem orientação trabalhista. Antes de decidir, confirme com seu contador ou advogado."
-Onde: 1 linha no rodapé do Escritório, sempre visível com a página aberta, e no "Ver detalhes" (nível 3) de cada cartão. Texto de 12 px ou mais, contraste de 4,5 pra 1, sem botão de fechar.
-
+Texto (passa pelo advogado da Tarefa 15 antes de ir pro ar): "Os ajudantes fazem contas com o que você lançou. Não é recomendação de investimento nem orientação trabalhista. Antes de decidir, confirme com seu contador ou advogado." Onde: 1 linha no rodapé do Escritório, sempre visível com a página aberta, e no "Ver detalhes" (nível 3) de cada cartão. Texto de 12 px ou mais, contraste de 4,5 pra 1, sem botão de fechar.
 ### 7.5 O que confirmar com advogado ou contador
 - **Advogado (Tarefa 15):** o texto do aviso; se a frase "Uma saída: ..." pode ser lida como recomendação; guardar presença, visitas e consumo ligados à equipe da casa; mostrar o nome de pessoa da equipe no relatório do casal.
 - **Contador:** a tabela da folha inteira (datas de 13º e férias, percentuais, encargos, dia de guia); como tratar férias dentro do custo de 12 meses; se "pagamentos da folha com data" pode entrar na visão de 30, 60 e 90 dias sem induzir a erro.
@@ -501,23 +474,19 @@ Conferência final da 11-D (critério da ficha): em todos os relatórios gerados
 1. **A pendência nasce do banco.** Mesmo com a IA fora do ar, a conta abre a pendência com o texto de molde. A IA só melhora a frase.
 2. **Piso em R$ 50,00 ou mais.** A ficha diz "acima de R$ 50" e fala em "piso". Ficou "R$ 50,00 ou mais". É estimativa: fica em parâmetro por família, com padrão 50.
 3. **Fatura na conta do livre.** Entra só a parte que ainda não pesou no mês (seção 4.4, regra 2). Em novembro da família Silva é R$ 0, e por isso a base comum fecha sem citar fatura.
-4. **O número do Guardião é em semanas.** É a exceção que a própria tabela da ficha define. O R$ fica na legenda.
-5. **Semanas arredondam pra baixo.** 6,4 vira 6. Na dúvida, o ajudante mostra menos folga, nunca mais.
-6. **Guardado não entra na reserva.** Regra de 13/11: reserva é o que nunca se gasta; guardado é o que entrou a mais. O guardado pode aparecer como saída ("cobrir com o guardado de outubro").
-7. **A projeção só conta dinheiro já guardado.** Sugestão do ajudante que a família ainda não aceitou não melhora a projeção.
-8. **1 achado por conferência.** O de maior R$ por mês. Os outros ficam no "Ver detalhes".
-9. **Mesma pendência não nasce 2 vezes.** Vale a chave da 11-C. Com "Agora não" (11-E), o ajudante não cobra por 7 dias.
-10. **Mês que vira no meio da janela.** A janela de 10 dias da Agenda atravessa o mês; a linha 4 da previsão não: ela para no último dia do mês. Por isso a Agenda mostra os 2 valores (R$ 2.700 e R$ 1.940).
-11. **Fatura aberta.** Entra com o valor "até agora" e a legenda diz isso. Fatura futura: só parcelas já contratadas.
-12. **Compra no dia do fechamento** cai na fatura seguinte (Tarefa 4). O Analista roda no dia seguinte ao fechamento, quando a fatura já não muda.
-13. **Casa com 1 adulto.** Os textos não usam "casal" nem "vocês" fora do botão "Vimos juntos", que vira "Vi o fechamento".
-14. **Casa sem equipe.** A Folha fica "Entregue" com "A casa não tem equipe cadastrada", sem número e sem IA. A parte d da base é R$ 0.
-15. **Menos de 13 semanas de dado.** A base usa só a média de 4 semanas e a legenda diz "base com 4 semanas de dado".
-16. **Visita sem número de pessoas.** Conta como 1 pessoa e a Presença pergunta quantas eram.
-17. **Dado de exemplo.** Relatório da família de exemplo leva a marca de exemplo e não conta no teto de IA (11-B).
-18. **Quem lê.** O casal lê os 8 relatórios, sabendo de quem é cada coisa (decisão 1 da Tarefa 11). `membro` e `equipe_casa` leem 0 linha (11-C).
-19. **Ajudante nunca corrige dado.** Diferença entre fatura digitada e lançamentos vira aviso, não ajuste.
-20. **Relatório resumido** (teto de IA, 11-B): saem número, comparação e pendência; destaque e ação podem faltar.
+4. **O número do Guardião é em semanas**, arredondadas pra baixo (6,4 vira 6). É a exceção que a própria tabela da ficha define; o R$ fica na legenda. Na dúvida, o ajudante mostra menos folga, nunca mais.
+5. **Guardado não entra na reserva.** Regra de 13/11: reserva é o que nunca se gasta; guardado é o que entrou a mais. O guardado pode aparecer como saída ("cobrir com o guardado de outubro").
+6. **A projeção só conta dinheiro já guardado.** Sugestão do ajudante que a família ainda não aceitou não melhora a projeção.
+7. **1 achado por conferência.** O de maior R$ por mês. Os outros ficam no "Ver detalhes".
+8. **Mesma pendência não nasce 2 vezes.** Vale a chave da 11-C. Com "Agora não" (11-E), o ajudante não cobra por 7 dias.
+9. **Mês que vira no meio da janela.** A janela de 10 dias da Agenda atravessa o mês; a linha 4 da previsão não: ela para no último dia do mês. Por isso a Agenda mostra os 2 valores (R$ 2.700 e R$ 1.940).
+10. **Fatura aberta.** Entra com o valor "até agora" e a legenda diz isso. Fatura futura: só parcelas já contratadas. **Compra no dia do fechamento** cai na fatura seguinte (Tarefa 4). O Analista roda no dia seguinte ao fechamento, quando a fatura já não muda.
+11. **Casa com 1 adulto.** Os textos não usam "casal" nem "vocês", e o botão "Vimos juntos" vira "Vi o fechamento". **Casa sem equipe.** A Folha fica "Entregue" com "A casa não tem equipe cadastrada", sem número e sem IA. A parte d da base é R$ 0.
+12. **Menos de 13 semanas de dado.** A base usa só a média de 4 semanas e a legenda diz "base com 4 semanas de dado". **Visita sem número de pessoas.** Conta como 1 pessoa e a Presença pergunta quantas eram.
+13. **Dado de exemplo.** Relatório da família de exemplo leva a marca de exemplo e não conta no teto de IA (11-B).
+14. **Quem lê.** O casal lê os 8 relatórios, sabendo de quem é cada coisa (decisão 1 da Tarefa 11). `membro` e `equipe_casa` leem 0 linha (11-C).
+15. **Ajudante nunca corrige dado.** Diferença entre fatura digitada e lançamentos vira aviso, não ajuste.
+16. **Relatório resumido** (teto de IA, 11-B): saem número, comparação e pendência; destaque e ação podem faltar.
 
 ## 10. Perguntas em aberto pro dono (com recomendação)
 | # | Pergunta | Recomendação |
@@ -538,8 +507,7 @@ Conferência final da 11-D (critério da ficha): em todos os relatórios gerados
 ## 11. Ordem de serviço pronta pra colar
 ```
 TAREFA: 11-D Escritório: o dinheiro certo em cada ajudante
-PAPEL: você é o engenheiro de agentes de IA da Central da Família, com o
-economista revisando as contas. O dono é leigo e lê no celular.
+PAPEL: você é o engenheiro de agentes de IA da Central da Família, com o economista revisando as contas. O dono é leigo e lê no celular.
 
 LEIA ANTES, INTEIROS E NESTA ORDEM:
 1. CLAUDE.md
