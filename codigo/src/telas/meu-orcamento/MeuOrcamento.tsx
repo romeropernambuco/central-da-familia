@@ -293,7 +293,7 @@ export function MeuOrcamento() {
                 env.livre < 0
                   ? 'Vazio este mês: o mês passou do combinado. Em 1º de cada mês ele começa de novo.'
                   : dados.cof <= 0
-                    ? `Ainda sem sobra este mês. Pode gastar no mês: ${reais(Math.max(0, env.livre))}.`
+                    ? `Ainda não sobrou nada este mês. Dá para gastar mais ${reais(Math.max(0, env.livre))} até o fim do mês.`
                     : `Já está somada no Pode gastar hoje: ${reais(env.hoje ?? n.valor)}.`,
               )}
             </p>

@@ -33,6 +33,12 @@ const MESES = 6
 // Até 12 parcelas, começando até dois meses após a compra (inclui o mês atual).
 const MESES_SIMULACAO = 14
 
+/** A frase embaixo do total da fatura: fechada, só acompanhar; aberta, até quando aceita compra. */
+function avisoDaFatura(fechada: boolean, diaFechamento: number | null | undefined): string {
+  if (fechada) return 'Pague no app do banco: aqui é só para acompanhar.'
+  return diaFechamento ? `Aceita compras até o dia ${diaFechamento}, quando fecha.` : 'Aceita compras até o fechamento.'
+}
+
 /** Cartões: faturas dos próximos 6 meses e "E se eu comprar?" ligado ao colchão. */
 export function Cartoes() {
   const { api, familia } = useSessaoAtual()
@@ -204,9 +210,7 @@ export function Cartoes() {
                     </p>
                   ) : null}
                   <p className="sub" style={{ margin: '6px 0 14px' }}>
-                    {atual.fechada
-                      ? 'Pague no app do banco: aqui é só para acompanhar.'
-                      : 'Ainda entra compra nesta fatura até o dia do fechamento.'}
+                    {avisoDaFatura(atual.fechada, c.dia_fechamento)}
                   </p>
                 </>
               )}
@@ -238,11 +242,11 @@ export function Cartoes() {
                 <p className="leg" style={{ marginTop: 8 }}>
                   <span>
                     <i className="q" style={{ background: 'var(--ink-2)' }} />
-                    fechada (é pagar)
+                    fechada, a pagar
                   </span>
                   <span>
                     <i className="q" style={{ background: 'var(--accent)' }} />
-                    aberta (ainda entra compra)
+                    aberta, ainda recebe compras
                   </span>
                 </p>
               )}

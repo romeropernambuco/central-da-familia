@@ -3,7 +3,7 @@ import { rotulosCasa } from '../lib/resumo/casa'
 import { useDadosDoDia, useOlhoApp, useSessaoAtual } from '../app/contexto'
 import { useLeituraRemota } from '../app/useLeituraRemota'
 import { lerCasa, lerFaturas } from '../lib/resumo/leituras'
-import { hojeRecife, plural } from '../lib/formato'
+import { dataCurta, hojeRecife, plural } from '../lib/formato'
 import { CabecalhoCartao, Din, Botao } from './base'
 export function ConferenciaFaturas() {
   const { api, familia } = useSessaoAtual()
@@ -17,7 +17,7 @@ export function ConferenciaFaturas() {
   if (familia?.papel !== 'casal') return null
   return (
     <section className="card aba-destaque" data-secao="fatura">
-      <CabecalhoCartao titulo="Faturas a vencer/conferir" icone="cartoes" />
+      <CabecalhoCartao titulo="Faturas a pagar" icone="cartoes" />
       {r.carregando ? (
         <p className="sub">Conferindo...</p>
       ) : r.erro ? (
@@ -28,7 +28,7 @@ export function ConferenciaFaturas() {
         r.dado && (
           <>
             <Din v={r.dado.total} tam="big" />
-            <p className="sub">Faturas que vencem nos próximos 30 dias e ainda não foram pagas.</p>
+            <p className="sub">Vencem nos próximos 30 dias e ainda não foram pagas.</p>
             <ul className="list lista-conferencia">
               {r.dado.lista.map(f => (
                 <li
@@ -38,8 +38,8 @@ export function ConferenciaFaturas() {
                   data-periodo={f.mes}
                 >
                   <p>
-                    <b>{textoPrivado(f.cartao)}</b> · {f.vencimento} · <Din v={f.total} /> ·{' '}
-                    <span className="sub">{f.conferir ? 'falta o valor do banco' : 'valor do banco'}</span>
+                    <b>{textoPrivado(f.cartao)}</b> · vence {dataCurta(f.vencimento)} · <Din v={f.total} /> ·{' '}
+                    <span className="sub">{f.conferir ? 'falta conferir com o banco' : 'já conferida'}</span>
                   </p>
                   <a className="btn line sm" href="#/escritorio?f=cartao">
                     Conferir a fatura

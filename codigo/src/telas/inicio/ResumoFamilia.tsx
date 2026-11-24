@@ -61,7 +61,7 @@ const cartoes: { [K in keyof Resumo]: (campo: Resumo[K], hoje: string, oculto: b
     const privado = (t: string) => (oculto ? PONTOS_LONGOS : t)
     return {
       chave: 'faturas',
-      titulo: 'Faturas a vencer/conferir',
+      titulo: 'Faturas a pagar',
       icone: 'cartoes',
       numero: f ? dinheiro(f.total, oculto) : '',
       frase: f

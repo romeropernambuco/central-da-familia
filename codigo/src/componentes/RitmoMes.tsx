@@ -123,7 +123,7 @@ export function RitmoMes({
                 : `Já saíram ${reais(e.gasto_mes)}.`
               : p.dentro
                 ? `${quemFecha} o mês dentro do combinado.`
-                : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Siga o valor de cada dia.`}
+                : `Passa${valoresJaVisiveis?.excesso === p.passa ? '' : ' ' + reais(p.passa)} no fim do mês. Para voltar ao limite, gaste só o valor de cada dia.`}
           </p>
         </div>
       )}
@@ -141,7 +141,7 @@ export function RitmoMes({
               se continuar assim
             </span>
           )}
-          {pontual > 0 && <span>parcelas e compras grandes contam 1 vez só ({reais(pontual)})</span>}
+          {pontual > 0 && <span>Parcelas e compras grandes entram uma vez só: {reais(pontual)}.</span>}
         </p>
       )}
     </div>
