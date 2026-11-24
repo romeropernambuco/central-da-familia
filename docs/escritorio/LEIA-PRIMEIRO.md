@@ -158,8 +158,8 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 | # | Decisão | Recomendação | Trava |
 |---|---|---|---|
 | 1 | Aprovar as regras de dinheiro da 11-D (seções 4, 5 e 6), em especial: "a fatura cabe" contra o livre do mês do vencimento | Aprovar. É a mesma conta do Contador, então os 2 nunca divergem | 11-D passo 1 |
-| 2 | O 1º dia útil do Contador olha feriado? A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)| Olhar feriado. Corrigir a base pra terça, 03/11 | 11-D passo 12; 11-B passo 7 |
-| 3 | Qual é o retrato da família Silva em 24/11? Pela regra da 11-D, quase todo ajudante teria pendência aberta. A tela da 11-E e a cena da 11-F mostram só 3 coisas esperando, com o Analista de Cartão "Perguntando" | A semeadura segue a 11-D e a base comum. O retrato da 11-E vale só como cenário de tela (arquivo de exemplo), supondo que o casal já resolveu as outras pendências | 11-D passo 2; 11-E passo 3 |
+| 2 | O 1º dia útil do Contador olha feriado? | Sim. Já está assim na base comum: em novembro/2026 ele roda na terça, 03/11, porque 02/11 é feriado. Só confirmar | 11-D passo 12; 11-B passo 7 |
+| 3 | O retrato da família Silva em 24/11 é o da parte 6.1 da base comum (3 coisas esperando: 1 pra decidir e 2 pra informar)? | Sim. A semeadura dos testes segue esse retrato. Falta só confirmar se pendência de informar aberta deixa a Folha "Entregue" ou muda a situação | 11-D passo 2; 11-E passo 3 |
 | 4 | Um do casal lê o relatório com o gasto do outro? | Sim, sabendo de quem é cada coisa (regra de 13/11) | 11-C passo 5 |
 | 5 | A pendência ganha tabela própria, e "Agora não", "Ajudou" e "Responder" ficam no banco pela 11-C? | Sim. Não tinham dono em nenhum caderno; sem isso não há tranca nem placar | 11-C passos 2 e 9 |
 | 6 | Teto de IA de R$ 2,49 por família por mês, somando Escritório e Tarefa 12; forte só pro Contador e pro Analista de Cartão | Sim nos 2 | 11-B passos 3 e 4 |
