@@ -1,0 +1,1 @@
+import{p}from"./partida-CKOxhAGQ.js";function c(r,e,o){const t={};for(const a of r)!a.apagado_em&&a.envelope_id===e&&a.data.startsWith(o.slice(0,7))&&a.data<=o&&!a.parcela&&!((a.parcelas||1)>1)&&(t[a.data]=p((t[a.data]||0)+a.valor));return t}export{c as p};
