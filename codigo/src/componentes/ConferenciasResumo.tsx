@@ -5,6 +5,9 @@ import { useLeituraRemota } from '../app/useLeituraRemota'
 import { lerCasa, lerFaturas } from '../lib/resumo/leituras'
 import { dataCurta, hojeRecife, plural } from '../lib/formato'
 import { CabecalhoCartao, Din, Botao } from './base'
+import './conferencias.css'
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 export function ConferenciaFaturas() {
   const { api, familia } = useSessaoAtual()
   const { versao } = useDadosDoDia()
@@ -37,10 +40,18 @@ export function ConferenciaFaturas() {
                   data-entidade={f.cartao_id}
                   data-periodo={f.mes}
                 >
-                  <p>
-                    <b>{textoPrivado(f.cartao)}</b> · vence {dataCurta(f.vencimento)} · <Din v={f.total} /> ·{' '}
-                    <span className="sub">{f.conferir ? 'falta conferir com o banco' : 'já conferida'}</span>
+                  <span className="fat-data" aria-hidden="true">
+                    <b>{Number(f.vencimento.slice(8, 10))}</b>
+                    <small>{MESES_CURTOS[Number(f.vencimento.slice(5, 7)) - 1]}</small>
+                  </span>
+                  <p className="fat-corpo">
+                    <b>{textoPrivado(f.cartao)}</b>
+                    <span className="sub">
+                      <span className="fat-sr">vence {dataCurta(f.vencimento)} · </span>
+                      {f.conferir ? 'falta conferir com o banco' : 'já conferida'}
+                    </span>
                   </p>
+                  <Din v={f.total} />
                   <a className="btn line sm" href="#/escritorio?f=cartao">
                     Conferir a fatura
                   </a>

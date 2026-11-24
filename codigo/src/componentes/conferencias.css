@@ -1,0 +1,11 @@
+﻿/* "Faturas a pagar": cada fatura com a data em formato de calendário (rodada de design de 24/11/2026) */
+.central-app .aba-conteudo .lista-conferencia > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding-block: 14px; }
+.central-app .aba-conteudo .lista-conferencia .btn { grid-column: 1 / -1; margin: 6px 0 0; justify-content: center; }
+.fat-data { display: grid; place-items: center; align-content: center; inline-size: 52px; block-size: 56px; border-radius: 12px; background: var(--surface, #fff); border: 1px solid var(--border); }
+.fat-data b { font: 800 22px/1 var(--font-num); letter-spacing: -.03em; color: var(--ink); }
+.fat-data small { font: 700 11px/1.2 var(--fonte-aba); text-transform: uppercase; letter-spacing: .06em; color: var(--accent-ink); }
+.fat-corpo { display: grid; gap: 2px; margin: 0; min-width: 0; }
+.fat-corpo b { font: 700 17px/1.2 var(--font-num); letter-spacing: -.015em; }
+.fat-corpo .sub { font-size: 13.5px; line-height: 1.35; }
+.lista-conferencia > li > .din { font-size: 18px; }
+.fat-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

@@ -12,10 +12,11 @@ import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
-import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target } from 'lucide-react'
+import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
 import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
+import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { CobrirEstouro } from '../../componentes/CobrirEstouro'
 import { valorPrincipalEnvelope } from '../../lib/resumo/orcamento'
@@ -181,7 +182,9 @@ export function MeuOrcamento() {
             style={{ scrollMarginTop: 72 }}
             {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}
           >
-            <h2 id="oHojeT">{textoPrivado(env.nome)}, hoje</h2>
+            <h2 id="oHojeT" className="orc-titulo" data-inicial={oculto ? '•' : textoPrivado(env.nome).charAt(0)}>
+              {textoPrivado(env.nome)}, hoje
+            </h2>
             {!meu && (
               <p className="sub dono-linha">
                 Orçamento de{' '}
@@ -189,7 +192,8 @@ export function MeuOrcamento() {
                 é só para ver. Quem lança e mexe é {textoPrivado(dono)}.
               </p>
             )}
-            <p className="lbl" style={{ marginTop: 8 }}>
+            <p className="lbl orc-rotulo" style={{ marginTop: 8 }}>
+              <Wallet aria-hidden="true" />
               {oculto ? 'Valores escondidos' : n.estado === 'devendo' ? 'Este mês fica devendo' : 'Pode gastar hoje'}
             </p>
             <div className="numrow">
@@ -205,9 +209,7 @@ export function MeuOrcamento() {
             </div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
-            <p className="sub">
-              Compras anotadas hoje <b>{reais(gastoHoje)}</b> · no mês {reais(env.gasto_mes)} de {reais(tetoDoMes(env))}
-            </p>
+            <GastoDoMes hoje={gastoHoje} mes={env.gasto_mes} teto={tetoDoMes(env)} oculto={oculto} />
             <details className="salario-porque">
               <summary>Por quê?</summary>
               <p className="sub">
@@ -364,21 +366,19 @@ export function MeuOrcamento() {
                 <Icone desenho={Trophy} aria-hidden="true" />
                 Conquistas
               </h2>
+              <span className="orc-conta">
+                {conquistas.filter(c => c.ok).length} de {conquistas.length}
+              </span>
             </div>
             <ul className="list">
               {conquistas.map(c => (
-                <li key={c.nome} className="li">
-                  <span
-                    className="tile"
-                    style={c.ok ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : {}}
-                  >
-                    {c.ok ? <Icone desenho={Trophy} /> : <Icone desenho={Lock} />}
-                  </span>
+                <li key={c.nome} className="li" data-ok={c.ok}>
+                  <span className="tile">{c.ok ? <Icone desenho={Trophy} /> : <Icone desenho={Lock} />}</span>
                   <span className="m">
                     <b>{textoPrivado(c.nome)}</b>
                     <small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small>
                   </span>
-                  <span />
+                  {c.ok ? <CircleCheck className="orc-ok" aria-hidden="true" /> : <span />}
                 </li>
               ))}
             </ul>

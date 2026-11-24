@@ -15,3 +15,10 @@
 .cartao-linha { display: flex; align-items: center; gap: 8px; }
 .cartao-linha > svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--accent-ink); }
 h3.cartao-linha { font-size: 16px; }
+
+/* números de cartaz também em Cartões */
+.cartoes-visual .numrow .din { font-size: clamp(44px, 13vw, 56px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.cartoes-visual .numrow .din .cur { font-size: .36em; margin-right: .18em; }
+.cartoes-visual .aba-destaque > .din { font-size: clamp(48px, 14vw, 60px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.cartoes-visual .aba-destaque > .din .cur { font-size: .36em; margin-right: .18em; }
+.cartoes-visual .card-h h2 { font-size: 22px; }
