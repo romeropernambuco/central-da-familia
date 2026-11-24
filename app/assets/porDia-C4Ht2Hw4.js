@@ -1,1 +1,0 @@
-import{c as s}from"./partida-BtYGYQUu.js";function p(r,e,o){const t={};for(const a of r)!a.apagado_em&&a.envelope_id===e&&a.data.startsWith(o.slice(0,7))&&a.data<=o&&!a.parcela&&!((a.parcelas||1)>1)&&(t[a.data]=s((t[a.data]||0)+a.valor));return t}export{p};

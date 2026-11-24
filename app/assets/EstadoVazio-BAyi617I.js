@@ -1,0 +1,1 @@
+import{f as o,aF as r,j as t,aG as e}from"./partida-mQUjcJfC.js";const i=Object.freeze({...r});function n({nome:a,...s}){return o.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(e,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
