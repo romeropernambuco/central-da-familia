@@ -12,11 +12,18 @@ import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
-import { CalendarCheck, PiggyBank, Trophy, Lock, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
+import { CalendarCheck, PiggyBank, Trophy, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
 import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { GastoDoMes } from '../../componentes/GastoDoMes'
+import {
+  AnelConquistas,
+  Medalha,
+  NumeroQueSobe,
+  PoteDaSobra,
+  type NivelMedalha,
+} from '../../componentes/VidaDoOrcamento'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { CobrirEstouro } from '../../componentes/CobrirEstouro'
 import { valorPrincipalEnvelope } from '../../lib/resumo/orcamento'
@@ -132,10 +139,10 @@ export function MeuOrcamento() {
     })
   const frase = fraseEstouro(env, n)
   const conquistas = [
-    { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0 },
-    { nome: '7 dias dentro do valor do dia', ok: dentro >= 7 },
-    { nome: 'Sobra anotada passou de R$ 100', ok: dados.cof >= 100 },
-    { nome: '3 dias seguidos anotados', ok: ult3.length === 3 && branco === 0 },
+    { nome: '1º gasto anotado', ok: Object.keys(dados.porDia).length > 0, nivel: 'bronze' as NivelMedalha },
+    { nome: '7 dias dentro do valor do dia', ok: dentro >= 7, nivel: 'ouro' as NivelMedalha },
+    { nome: 'Sobra anotada passou de R$ 100', ok: dados.cof >= 100, nivel: 'ouro' as NivelMedalha },
+    { nome: '3 dias seguidos anotados', ok: ult3.length === 3 && branco === 0, nivel: 'prata' as NivelMedalha },
   ]
 
   return (
@@ -197,7 +204,7 @@ export function MeuOrcamento() {
               {oculto ? 'Valores escondidos' : n.estado === 'devendo' ? 'Este mês fica devendo' : 'Pode gastar hoje'}
             </p>
             <div className="numrow">
-              <Din
+              <NumeroQueSobe
                 v={valorPrincipalEnvelope(env, n)}
                 className={!oculto && n.estado === 'devendo' ? 'din-warn' : undefined}
                 tam="big"
@@ -275,6 +282,7 @@ export function MeuOrcamento() {
                 <Icone desenho={PiggyBank} aria-hidden="true" />
                 Sobra anotada
               </h2>
+              <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
             </div>
             <div className="numrow">
               <Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
@@ -366,14 +374,12 @@ export function MeuOrcamento() {
                 <Icone desenho={Trophy} aria-hidden="true" />
                 Conquistas
               </h2>
-              <span className="orc-conta">
-                {conquistas.filter(c => c.ok).length} de {conquistas.length}
-              </span>
+              <AnelConquistas feitas={conquistas.filter(c => c.ok).length} total={conquistas.length} />
             </div>
             <ul className="list">
               {conquistas.map(c => (
                 <li key={c.nome} className="li" data-ok={c.ok}>
-                  <span className="tile">{c.ok ? <Icone desenho={Trophy} /> : <Icone desenho={Lock} />}</span>
+                  <Medalha nivel={c.nivel} ok={c.ok} />
                   <span className="m">
                     <b>{textoPrivado(c.nome)}</b>
                     <small>{c.ok ? 'Conseguiu' : 'Ainda não'}</small>

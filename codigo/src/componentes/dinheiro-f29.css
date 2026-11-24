@@ -32,3 +32,6 @@
 .ritmo-leg > .ritmo-nota { flex-basis: 100%; border-radius: 12px; background: none; padding: 4px 2px; color: var(--muted); align-items: flex-start; }
 .ritmo-nota svg { flex: none; inline-size: 16px; block-size: 16px; margin-top: 2px; }
 .ritmo-b .graf-area + *, .ritmo-b .graf ~ .sub { font-size: 13px; color: var(--muted); }
+
+.ritmo-aviso { align-items: center; }
+.ritmo-aviso .assistente { inline-size: 44px; block-size: 44px; }

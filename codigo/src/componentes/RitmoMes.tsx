@@ -6,7 +6,8 @@ import { centavos, diasNoMes, fimDoMes, hojeRecife, reais, segundaDaSemana, soma
 import { GraficoMes } from './Graficos'
 import { pesoDia, projecao } from '../lib/plano'
 import { Icone } from './Icone'
-import { CalendarDays, CircleCheck, Info, TrendingDown, TrendingUp, TriangleAlert } from 'lucide-react'
+import { CalendarDays, Info, TrendingDown, TrendingUp } from 'lucide-react'
+import { AssistenteFala } from './VidaDoOrcamento'
 
 /**
  * R7+G3: a semana e o fim do mês. Rodada 2: vale também pro limite do mês (BRUNO ideia 3); parcela e compra grande
@@ -129,7 +130,7 @@ export function RitmoMes({
             semRotulosDeValores={!!valoresJaVisiveis || (exibirFecha && exibirLimite)}
           />
           <p className={'ritmo-f' + (dia >= 3 ? ' ritmo-aviso' : '')}>
-            {dia >= 3 && (p.dentro ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />)}
+            {dia >= 3 && <AssistenteFala humor={p.dentro ? 'contente' : 'alerta'} />}
             <span>
               {dia < 3
                 ? valoresJaVisiveis?.gasto === e.gasto_mes
