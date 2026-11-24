@@ -1,42 +1,222 @@
 /* Regras locais dos cartões financeiros compartilhados. */
-.env .env-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.env .env-h>b{flex:1;min-width:0;overflow-wrap:anywhere}
-.env .numrow{margin-block:16px 4px;font-variant-numeric:tabular-nums}
-.env .sub{line-height:1.6}
-.env .btn{min-height:44px;white-space:normal;text-align:start}
-.env .btn:focus-visible,.graf-area:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
-.env .btn:hover{background:var(--raised)}
-.env .btn:active{box-shadow:inset 0 0 0 2px var(--accent)}
-.graf{min-width:0;max-width:100%}
-.graf-area{min-width:0;max-width:100%;overflow:hidden;border-radius:var(--r-card)}
-.ritmo-t{gap:12px;flex-wrap:wrap}
-.ritmo-t b{font-variant-numeric:tabular-nums;font-family:var(--font-num);font-size:20px;font-weight:700;letter-spacing:-.02em}
-.ritmo-rot{display:inline-flex;align-items:center;gap:10px;font-weight:650}
-.ritmo-ico{display:inline-grid;place-items:center;flex:none;inline-size:32px;block-size:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-style:normal}
-.ritmo-ico svg{inline-size:17px;block-size:17px}
-.ritmo-b.warn .ritmo-ico{background:color-mix(in srgb,var(--warn,#b45309) 16%,transparent);color:var(--warn,#92400e)}
-.ritmo-b{padding:16px;border:1px solid var(--border);border-radius:var(--r-card)}
-@media(prefers-reduced-motion:reduce){.env .meter i{transition:none}}
+.env .env-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.env .env-h > b {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.env .numrow {
+  margin-block: 16px 4px;
+  font-variant-numeric: tabular-nums;
+}
+.env .sub {
+  line-height: 1.6;
+}
+.env .btn {
+  min-height: 44px;
+  white-space: normal;
+  text-align: start;
+}
+.env .btn:focus-visible,
+.graf-area:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.env .btn:hover {
+  background: var(--raised);
+}
+.env .btn:active {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.graf {
+  min-width: 0;
+  max-width: 100%;
+}
+.graf-area {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--r-card);
+}
+.ritmo-t {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ritmo-t b {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-num);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.ritmo-rot {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+}
+.ritmo-ico {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-style: normal;
+}
+.ritmo-ico svg {
+  inline-size: 17px;
+  block-size: 17px;
+}
+.ritmo-b.warn .ritmo-ico {
+  background: color-mix(in srgb, var(--warn, #b45309) 16%, transparent);
+  color: var(--warn, #92400e);
+}
+.ritmo-b {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+}
+@media (prefers-reduced-motion: reduce) {
+  .env .meter i {
+    transition: none;
+  }
+}
 
 /* Rodada de design (24/11/2026): o bloco "Se continuar assim" deixa de ser uma pilha de textos pequenos */
-.ritmo-b { display: grid; gap: 12px; padding: 18px; }
-.ritmo-t .ritmo-num { flex-basis: 100%; text-align: start; font: 800 34px/1.05 var(--font-num); letter-spacing: -.04em; }
-.ritmo-t .ritmo-num em { font: 600 16px/1.3 var(--fonte-aba); font-style: normal; letter-spacing: 0; color: var(--muted); margin-inline-start: .35em; }
-.ritmo-b.warn .ritmo-t .ritmo-num { color: var(--warn, #92400e); }
-.ritmo-b .ritmo-f { margin: 0; }
-.ritmo-aviso { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; font: 600 15px/1.4 var(--fonte-aba); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-ink); }
-.ritmo-b.warn .ritmo-aviso { background: color-mix(in srgb, var(--warn, #b45309) 14%, transparent); color: var(--warn, #92400e); }
-.ritmo-aviso svg { flex: none; inline-size: 20px; block-size: 20px; margin-top: 1px; }
-.ritmo-leg { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
-.ritmo-leg > span { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 6%, transparent); font: 500 13.5px/1.3 var(--fonte-aba); color: var(--ink-2); }
-.ritmo-leg > .ritmo-nota { flex-basis: 100%; border-radius: 12px; background: none; padding: 4px 2px; color: var(--muted); align-items: flex-start; }
+.ritmo-b {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+.ritmo-t .ritmo-num {
+  flex-basis: 100%;
+  text-align: start;
+  font: 800 34px/1.05 var(--font-num);
+  letter-spacing: -0.04em;
+}
+.ritmo-t .ritmo-num em {
+  font: 600 16px/1.3 var(--fonte-aba);
+  font-style: normal;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-inline-start: 0.35em;
+}
+.ritmo-b.warn .ritmo-t .ritmo-num {
+  color: var(--warn, #92400e);
+}
+.ritmo-b .ritmo-f {
+  margin: 0;
+}
+.ritmo-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font: 600 15px/1.4 var(--fonte-aba);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-ink);
+}
+.ritmo-b.warn .ritmo-aviso {
+  background: color-mix(in srgb, var(--warn, #b45309) 14%, transparent);
+  color: var(--warn, #92400e);
+}
+.ritmo-aviso svg {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-top: 1px;
+}
+.ritmo-leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+.ritmo-leg > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font: 500 13.5px/1.3 var(--fonte-aba);
+  color: var(--ink-2);
+}
+.ritmo-leg > .ritmo-nota {
+  flex-basis: 100%;
+  border-radius: 12px;
+  background: none;
+  padding: 4px 2px;
+  color: var(--muted);
+  align-items: flex-start;
+}
 /* 24/11: legenda dentro do bloco, discreta, logo abaixo do desenho que ela explica */
-.ritmo-leg-in { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; font: 500 13px/1.3 var(--fonte-aba); color: var(--muted); }
-.ritmo-leg-in > span { display: inline-flex; align-items: center; gap: 8px; }
-.ritmo-b.warn .leg .q.g-q-pont { border-top-color: var(--warn); }
-.leg .q.g-q-linha { width: 14px; height: 0; border-top: 3px solid var(--accent); background: none; border-radius: 2px; }
-.ritmo-nota svg { flex: none; inline-size: 16px; block-size: 16px; margin-top: 2px; }
-.ritmo-b .graf-area + *, .ritmo-b .graf ~ .sub { font-size: 13px; color: var(--muted); }
+.ritmo-leg-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  font: 500 13px/1.3 var(--fonte-aba);
+  color: var(--muted);
+}
+.ritmo-leg-in > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ritmo-b.warn .leg .q.g-q-pont {
+  border-top-color: var(--warn);
+}
+/* 24/11: legenda do gráfico do mês na linha de leitura, junto com a dica de tocar (menos textos soltos) */
+.graf-leitura .graf-leg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  font: 500 14px/1.35 var(--fonte-aba);
+  color: var(--ink-2);
+}
+.graf-leitura .graf-leg > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ritmo-b.warn .graf-leg .q.g-q-pont {
+  border-top-color: var(--warn);
+}
+.leg .q.g-q-linha {
+  width: 14px;
+  height: 0;
+  border-top: 3px solid var(--accent);
+  background: none;
+  border-radius: 2px;
+}
+.ritmo-nota svg {
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-top: 2px;
+}
+.ritmo-b .graf-area + *,
+.ritmo-b .graf ~ .sub {
+  font-size: 13px;
+  color: var(--muted);
+}
 
-.ritmo-aviso { align-items: center; }
-.ritmo-aviso .assistente { inline-size: 44px; block-size: 44px; }
+.ritmo-aviso {
+  align-items: center;
+}
+.ritmo-aviso .assistente {
+  inline-size: 44px;
+  block-size: 44px;
+}

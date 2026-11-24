@@ -133,6 +133,21 @@ export function acumuladoDoMes(
   return out
 }
 
+/** A legenda do gráfico do mês, na linha de leitura (some quando o dedo aponta um dia). */
+const LEGENDA_DO_MES = (
+  <span className="leg graf-leg">
+    <span>
+      <i className="q g-q-linha" />
+      já gasto
+    </span>
+    <span>
+      <i className="q g-q-pont" />
+      se continuar assim
+    </span>
+    <span className="graf-dica">toque para ver cada dia</span>
+  </span>
+)
+
 export function GraficoMes({
   gasto,
   limite,
@@ -141,6 +156,7 @@ export function GraficoMes({
   dias,
   porDia,
   semRotulosDeValores,
+  legenda = false,
 }: {
   gasto: number
   limite: number
@@ -149,6 +165,9 @@ export function GraficoMes({
   dias: number
   porDia?: Record<string, number> | null
   semRotulosDeValores?: boolean
+  /** 24/11 (gráfico mais limpo, com OK do dono): a legenda mora na linha de leitura, junto com a dica de tocar,
+   *  e o eixo fica só com "hoje" (sem o 1 e o último dia). Menos textos miúdos, mesma informação. */
+  legenda?: boolean
 }) {
   const dia = Math.min(dias, Number(hoje.slice(8)))
   const mes = hoje.slice(0, 7)
@@ -168,7 +187,11 @@ export function GraficoMes({
       }
       leitura={i =>
         i == null ? (
-          <span className="graf-dica">Toque na linha para ver cada dia</span>
+          legenda ? (
+            LEGENDA_DO_MES
+          ) : (
+            <span className="graf-dica">Toque na linha para ver cada dia</span>
+          )
         ) : i + 1 <= dia ? (
           <span>
             Dia {i + 1}: já saíram <b>{reais(naProjecao(i + 1))}</b>
@@ -216,9 +239,11 @@ export function GraficoMes({
             )}
             {ativo != null && <line x1={x(ativo + 1)} x2={x(ativo + 1)} y1={6} y2={h - 22} className="g-mira" />}
             {ativo != null && <circle cx={x(ativo + 1)} cy={y(naProjecao(ativo + 1))} r={4} className="g-ponto" />}
-            <text x={x(1)} y={h - 4} className="g-eixo">
-              1
-            </text>
+            {!legenda && (
+              <text x={x(1)} y={h - 4} className="g-eixo">
+                1
+              </text>
+            )}
             <text
               x={xh}
               y={h - 4}
@@ -227,9 +252,11 @@ export function GraficoMes({
             >
               {dia > 2 && dia < dias - 2 ? 'hoje' : ''}
             </text>
-            <text x={xf} y={h - 4} textAnchor="end" className="g-eixo">
-              {dias}
-            </text>
+            {!legenda && (
+              <text x={xf} y={h - 4} textAnchor="end" className="g-eixo">
+                {dias}
+              </text>
+            )}
           </>
         )
       }}

@@ -144,15 +144,8 @@ export function RitmoMes({
             dias={diasNoMes(hoje)}
             porDia={porDia}
             semRotulosDeValores={!!valoresJaVisiveis || (exibirFecha && exibirLimite)}
+            legenda={dia >= 3}
           />
-          {dia >= 3 && (
-            <LegendaDentro
-              itens={[
-                ['g-q-linha', 'já gasto'],
-                ['g-q-pont', 'se continuar assim'],
-              ]}
-            />
-          )}
           <p className={'ritmo-f' + (dia >= 3 ? ' ritmo-aviso' : '')}>
             {dia >= 3 && <AssistenteFala humor={p.dentro ? 'contente' : 'alerta'} />}
             <span>
