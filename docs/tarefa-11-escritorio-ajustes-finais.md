@@ -136,7 +136,7 @@ F. Time com data. 1 frase no topo de "Dias de cada ajudante": "Seus 8
    por 7 dias ("Mudou em 24/11: o Comprador passou pra terça, 20h23."),
    sem aviso no celular. Nome de pessoa vem do cadastro, nunca do código.
 G. Placar do Escritório. Na Tarefa 14, abaixo dos 4 números, 1 linha
-   recolhida, só pro dono do produto: "Escritório: 5 de 6 no verde." Abre
+   recolhida, só pro dono do produto: "Escritório: 3 de 4 no verde, 2 sem meta ainda." Abre
    os 6 números com farol e 1 linha do que cada um mede. A segunda-feira
    continua com 4 números. Os números 4 e 6 ficam sem meta até 4 semanas
    de piloto. Os números 3 e 4 medem o ajudante, nunca a pessoa.
