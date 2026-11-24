@@ -4,8 +4,6 @@
  * a versão atual não muda. O assistente 3D e o pote são imagens (public/orcamento-3d), não CSS.
  */
 
-/* Link para trocar de versão (aparece nas duas) */
-.orc-versao { display: inline-flex; align-items: center; min-block-size: 32px; margin-block-end: 6px; font: 600 14px/1.2 var(--fonte-aba); color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Camada 1: fundo e grade ---------- */
 .orc-nova .segbar { display: none; }

@@ -136,7 +136,14 @@ export function App() {
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const { lateral, inferior, mais: extras } = menuDoPapel(familia.papel, !!sessao.dono)
   // 24/11: a versão nova do Meu orçamento abre ao lado da atual, para comparar (#/orcamento?nova)
-  const orcNova = r === 'orcamento' && /\?(?:.*&)?nova(?:&|$)/.test(hash)
+  const orcVersao: 'atual' | 'nova' | 'v3' =
+    r !== 'orcamento'
+      ? 'atual'
+      : /\?(?:.*&)?v3(?:&|$)/.test(hash)
+        ? 'v3'
+        : /\?(?:.*&)?nova(?:&|$)/.test(hash)
+          ? 'nova'
+          : 'atual'
   const Classico = r === 'inicio' && api.modo === 'exemplo' && sessao.dono && hashClassico(hash) ? InicioClassico : null
   const [subt, titulo] =
     r === 'inicio'
@@ -215,12 +222,12 @@ export function App() {
           </p>
         )}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
-        {r !== 'inicio' && r !== 'escritorio' && !orcNova && <AgenteDaAba key={r} rota={r} />}
+        {r !== 'inicio' && r !== 'escritorio' && orcVersao === 'atual' && <AgenteDaAba key={r} rota={r} />}
         <div className={r === 'inicio' ? undefined : 'aba-conteudo'}>
           <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />}>
             {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
             {r === 'lancamentos' && <Lancamentos />}
-            {r === 'orcamento' && <MeuOrcamento nova={orcNova} />}
+            {r === 'orcamento' && <MeuOrcamento versao={orcVersao} />}
             {r === 'casa' && <Casa />}
             {r === 'guardado' && <Guardado />}
             {r === 'cartoes' && <Cartoes />}

@@ -1,6 +1,9 @@
 import { textoPrivado } from '../../lib/olho'
 import './meu-orcamento.css'
 import './meu-orcamento-nova.css'
+import './meu-orcamento-v3.css'
+import { EquipeDoOrcamento } from '../../componentes/EquipeDoOrcamento'
+import { estacoesDoOrcamento } from './estacoes'
 import '../../componentes/planilha.css'
 import { EstadoVazio } from '../../componentes/EstadoVazio'
 import { Botao } from '../../componentes/base'
@@ -20,8 +23,8 @@ import { Qm } from '../../componentes/Qm'
 import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
 import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
-import { ComprasDoMes, OndeFoiODinheiro } from '../../componentes/ComprasDoMes'
-import { GastosQueSeRepetem } from '../../componentes/GastosQueSeRepetem'
+import { ComprasDoMes, OndeFoiODinheiro, comprasDoMes } from '../../componentes/ComprasDoMes'
+import { GastosQueSeRepetem, gastosQueSeRepetem } from '../../componentes/GastosQueSeRepetem'
 import { NumeroQueSobe, PoteDaSobra } from '../../componentes/VidaDoOrcamento'
 import { iniciaisDistintas } from './iniciais'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
@@ -46,7 +49,9 @@ import {
 } from '../../lib/formato'
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e compras. Abre no limite de quem olha (R2). */
-export function MeuOrcamento({ nova = false }: { nova?: boolean } = {}) {
+export function MeuOrcamento({ versao: desenho = 'atual' }: { versao?: 'atual' | 'nova' | 'v3' } = {}) {
+  const nova = desenho === 'nova',
+    v3 = desenho === 'v3'
   const { api, familia } = useSessaoAtual()
   const { recarregar, abrirLancar, toast } = useAcoes()
   const { resumo, erroResumo, versao } = useDadosDoDia()
@@ -159,11 +164,39 @@ export function MeuOrcamento({ nova = false }: { nova?: boolean } = {}) {
         ? 'Neste ritmo, o mês fecha dentro do combinado.'
         : `Passa ${reais(prev.passa)} no fim do mês se continuar assim.`
 
+  // 24/11 (3ª versão): os agentes 3D do palco e o que cada um fala agora
+  const repetidas = v3 ? gastosQueSeRepetem(comprasDoMes(lanc, env.id, mes)) : []
+  const estacoes = v3
+    ? estacoesDoOrcamento({
+        oculto,
+        meu,
+        gastoHoje,
+        dia: Number(hoje.slice(8, 10)),
+        dentro: prev.dentro,
+        passa: prev.passa,
+        sobra: env.livre < 0 ? null : dados.cof,
+        comprasNoMes: comprasDoMes(lanc, env.id, mes).length,
+        repetidas: repetidas.length,
+        somaRepetidas: centavos(repetidas.reduce((s, g) => s + g.total, 0)),
+        anotar: () => abrirLancar({ envelope: env.id }),
+        irPara: ir,
+      })
+    : []
+
   return (
-    <div className={'view orcamento-f29' + (nova ? ' orc-nova' : '')} data-secao="orcamento">
-      <a className="orc-versao" href={nova ? '#/orcamento' : '#/orcamento?nova'}>
-        {nova ? 'Voltar para a versão atual' : 'Ver a versão nova (para comparar)'}
-      </a>
+    <div className={'view orcamento-f29' + (nova ? ' orc-nova' : v3 ? ' orc-v3' : '')} data-secao="orcamento">
+      <nav className="orc-versoes" aria-label="Versões desta aba, para comparar">
+        <span>Comparar:</span>
+        <a href="#/orcamento" aria-current={desenho === 'atual' || undefined}>
+          Antiga
+        </a>
+        <a href="#/orcamento?nova" aria-current={nova || undefined}>
+          Nova
+        </a>
+        <a href="#/orcamento?v3" aria-current={v3 || undefined}>
+          Terceira
+        </a>
+      </nav>
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
           {pessoais.map((e, i) => (
@@ -305,6 +338,7 @@ export function MeuOrcamento({ nova = false }: { nova?: boolean } = {}) {
                 </Botao>
               </div>
             )}
+            {v3 && <EquipeDoOrcamento estacoes={estacoes} />}
             {nova && (
               <div className="orc-3d" aria-hidden="true">
                 <img src="/orcamento-3d/mesa.webp" alt="" width={520} height={513} />
@@ -346,7 +380,7 @@ export function MeuOrcamento({ nova = false }: { nova?: boolean } = {}) {
                 ]}
                 nota="O que sobra do valor diário de referência entra na sobra anotada e volta dividido pelos dias que faltam. Gastar acima do valor reduz essa sobra. Dia sem anotação não conta. Hoje só entra amanhã. Isso não significa que você guardou dinheiro."
               />
-              {nova ? (
+              {nova || v3 ? (
                 <img className="orc-pote3d" src="/orcamento-3d/pote.webp" alt="" width={260} height={254} />
               ) : (
                 <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
