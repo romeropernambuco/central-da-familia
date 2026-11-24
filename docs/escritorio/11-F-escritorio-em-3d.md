@@ -63,7 +63,7 @@ Pastas sugeridas. Se a Tarefa 6 ou a ficha 11-E deixaram outra estrutura, siga a
 | # | O que fazer | Onde | Pronto quando | Como testar |
 |---|---|---|---|---|
 | 1.1 | Tirar print da tela de hoje em 390x844 e 1280x800, tema claro e escuro, com a cena pixel aberta e fechada | `testes/prints/antes/` | 8 prints salvos | conferir os 8 arquivos |
-| 1.2 | Garantir a função única de estado (parte 6). Se a 11-E já criou, só conferir os campos | banco e `estado.ts` | cena pixel e cartões leem `lerEstadoEscritorio()`; busca por outra fonte de situação dá 0 | T-F02 |
+| 1.2 | Conferir a função única de estado (parte 6). Quem constrói é a 11-E, no passo 16 dela, por este contrato; aqui só se conferem os campos. Se ela não existir, pare e avise | banco e `estado.ts` | cena pixel e cartões leem `lerEstadoEscritorio()`; busca por outra fonte de situação dá 0 | T-F02 |
 | 1.3 | Gravar os 2 conjuntos de teste: família Silva em 24/11 e "todas as situações" | `testes/dados/` | 2 arquivos JSON iguais à parte 6 | abrir com `?dados=silva-todas` em rascunho |
 | 1.4 | Botão "Ver em 3D" dentro da caixa da cena, canto de cima à direita, sem empurrar nada | `Cena.tsx` | botão de 44 px de toque; no celular só aparece com a cena aberta | T-F01 |
 | 1.5 | Carregar o pedaço 3D só ao ligar: `import('./cena3d')` dentro do clique; a three.js entra só nesse pedaço | `Cena.tsx` | com 3D desligado, 0 pedido de rede do pedaço 3D | T-F03 |
@@ -235,7 +235,7 @@ Quantidade: 2 luzes, nunca mais. Material: `MeshLambertMaterial` com cor por vé
 3. Posição: centrada sobre a cabeça, 4 px acima (`y do quadril + 1.12`). Boneco na frente: etiqueta 4 px **abaixo dos pés**, pra não cobrir as mesas de trás. Cadeira vazia: ancorada no encosto da cadeira.
 4. Trava de 4 px nas bordas da caixa. Atualiza posição só nos quadros desenhados, com `transform: translate()`.
 5. A palavra vem do campo `palavra` da função de estado, sem reescrever. O complemento ("desde 23/11", "até 01/12") vai só no `aria-label` e no cartão.
-6. Ícone por situação: parte 5.
+6. Ícone por situação: parte 5. São os mesmos nomes de ícone do sinal do cartão (11-E, parte 7).
 
 ## 5. Situações em 3D (as 7 da base comum: pose, objeto na mesa, movimento com duração, palavra exata; como fica com "reduzir movimento"; prova de que se distingue em preto e branco)
 
@@ -244,11 +244,11 @@ Quantidade: 2 luzes, nunca mais. Material: `MeshLambertMaterial` com cor por vé
 | # | Palavra exata | Valor | Pose | Objeto na mesa | Movimento e duração | Ícone |
 |---|---|---|---|---|---|---|
 | 1 | Conferindo agora | `trabalhando` | sentado, tronco 0.10 pra frente, 2 braços no teclado (-0.9), cabeça 0.16 pra baixo | tampa do notebook acesa | braços alternam +-0.05 em ciclo de 480 ms, contínuo, a 30 quadros por segundo | `loader-circle` |
-| 2 | Entregue | `entregue` | sentado, encostado (tronco -0.12), braços no colo (-0.25) | pilha de 3 folhas, 0,30 x 0,09 x 0,22, tampa apagada | pilha cresce de 0 a 1 em 200 ms, 1 vez; depois parado | `check` |
+| 2 | Entregue | `entregue` | sentado, encostado (tronco -0.12), braços no colo (-0.25) | pilha de 3 folhas, 0,30 x 0,09 x 0,22, tampa apagada | pilha cresce de 0 a 1 em 200 ms, 1 vez; depois parado | `circle-check` |
 | 3 | Precisa de você | `precisa_de_voce` | de pé na frente, virado pra câmera, braço direito erguido (2.55), cabeça -0.08 | pilha de 3 folhas e cadeira vazia | anda a 2,5 m por segundo (até 3,1 s); ao chegar, a mão dá 1 aceno de +-0.45 em 600 ms; depois parado | `circle-alert` |
 | 4 | Perguntando | `sem_dados` | sentado, cabeça 0.20 de lado, braço direito à frente (-1.2) | balão branco 0,50 x 0,40 com "?" em 5 caixas escuras, acima e à direita da cabeça; tampa apagada | balão surge e pulsa de 1 a 1,15 a 1 em 600 ms, 1 vez; depois parado | `message-circle-question` |
 | 5 | Aguardando | `aguardando` | sentado, reto, mãos no colo | ampulheta de 0,22 de altura (base, topo e 2 bojos); tampa apagada | parado | `hourglass` |
-| 6 | Atrasado | `atrasado` | boneco escondido; cadeira puxada 0,30 pra trás e girada 0.5 | despertador de 0,20 com 2 sinos; tampa apagada | parado | `clock` |
+| 6 | Atrasado | `atrasado` | boneco escondido; cadeira puxada 0,30 pra trás e girada 0.5 | despertador de 0,20 com 2 sinos; tampa apagada | parado | `clock-alert` |
 | 7 | Resumido | `resumido` | igual a "Entregue" | 1 folha só (0,03 de altura), girada 0.4, com clipe escuro `#33373D` | folha surge em 200 ms, 1 vez; depois parado | `file-minus` |
 
 Regras:
@@ -262,22 +262,22 @@ Regras:
 | Situação | Tem boneco na cadeira? | Silhueta | Objeto (forma) | Ícone (forma) |
 |---|---|---|---|---|
 | Conferindo agora | sim | curvado, 2 braços à frente | retângulo claro em pé | anel aberto |
-| Entregue | sim | encostado | bloco baixo e largo | visto |
+| Entregue | sim | encostado | bloco baixo e largo | círculo com visto |
 | Precisa de você | não, está de pé na frente | 1 braço pra cima | bloco baixo e largo | círculo com exclamação |
 | Perguntando | sim | 1 braço à frente | balão com "?" ao lado da cabeça | balão com "?" |
 | Aguardando | sim | reto | 2 bojos empilhados | ampulheta |
-| Atrasado | não, ninguém | cadeira torta | cubo com 2 sinos | relógio |
+| Atrasado | não, ninguém | cadeira torta | cubo com 2 sinos | relógio com exclamação |
 | Resumido | sim | encostado | 1 folha torta com clipe | folha com traço |
 
 O par mais parecido é "Entregue" e "Resumido" (mesma pose): separa pela altura da pilha (0,09 contra 0,03), pelo clipe e pela palavra. Teste: T-F08.
 
 ## 6. Contrato de dados (a função única de estado que cena pixel, cena 3D e cartões leem: nome sugerido, o JSON exato de saída com exemplo dos 8 ajudantes da família Silva; como a fase 2 recebe mudança ao vivo; o que fazer se a leitura falhar)
 
-**Nome sugerido.** No banco: `escritorio_estado()`, função calculada na hora, sem tabela nova, que descobre a família e o papel pelo login (não recebe `familia_id` de fora). No app: `lerEstadoEscritorio()` e o gancho `useEstadoEscritorio()` em `estado.ts`. Se a 11-B ou a 11-E já criaram essa função com outro nome, use a delas e não crie uma 2ª: só confira os campos abaixo.
+**Nome e dono.** No banco: `escritorio_estado()`, função calculada na hora, sem tabela nova, que descobre a família e o papel pelo login (não recebe `familia_id` de fora) e recusa `membro` e `equipe_casa` com "sem acesso" (regra da 11-C). No app: `lerEstadoEscritorio()` e o gancho `useEstadoEscritorio()` em `estado.ts`. Este caderno é dono do contrato (os campos abaixo). Quem constrói a função é a 11-E, no passo 16 dela, porque os cartões precisam dela antes do 3D. A `escritorio_tela()` da 11-C usa a saída desta função pra situação. Não crie uma 2ª.
 
 **Regras.**
 1. Cena pixel, cena 3D e cartões recebem o mesmo objeto, lido 1 vez por tela. Nenhum dos 3 calcula situação.
-2. `situacao` já vem resolvida, 1 por ajudante, nesta prioridade: `precisa_de_voce`, `sem_dados`, `atrasado`, `trabalhando`, `aguardando`, `resumido`, `entregue`. "Atrasado" e "Resumido" são calculados no banco, como manda a base comum.
+2. `situacao` já vem resolvida, 1 por ajudante, nesta prioridade: `atrasado`, `precisa_de_voce`, `sem_dados`, `trabalhando`, `aguardando`, `resumido`, `entregue`. "Atrasado" vem primeiro porque a 11-E, dona do sinal do cartão, manda que ele vença qualquer outra (pergunta 5 da parte 13). "Atrasado" e "Resumido" são calculados no banco, como manda a base comum.
 3. O JSON da cena não leva nenhum valor em R$ e nenhum texto de relatório.
 4. Datas com fuso de Recife (`-03:00`). `palavra` e `complemento` já vêm prontos pra tela.
 
@@ -288,14 +288,14 @@ O par mais parecido é "Entregue" e "Resumido" (mesma pose): separa pela altura 
   "versao": 1, "gerado_em": "2026-11-24T09:00:00-03:00", "fuso": "America/Recife",
   "resumo": { "precisam": 1, "perguntando": 1, "conferindo": 1, "entregaram": 5, "atrasados": 0 },
   "ajudantes": [
-    {"id":"contador","ordem":1,"nome":"Contador da Casa","apelido":"Contador","setor":"Os orçamentos","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-01T07:14:00-03:00","proxima":"2026-12-01T07:12:00-03:00","pendencias":0,"cartao":"m_contador"},
+    {"id":"contador","ordem":1,"nome":"Contador da Casa","apelido":"Contador","setor":"Os orçamentos","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-02T07:14:00-03:00","proxima":"2026-12-01T07:12:00-03:00","pendencias":0,"cartao":"m_contador"},
     {"id":"cartao","ordem":2,"nome":"Analista de Cartão","apelido":"Cartão","setor":"Cartões e parcelas","ativo":true,"situacao":"sem_dados","palavra":"Perguntando","complemento":null,"icone":"message-circle-question","status":"sem_dados","resumido":false,"atrasado":false,"desde":"2026-11-11T08:17:00-03:00","proxima":"2026-11-26T08:17:00-03:00","pendencias":1,"cartao":"m_cartao"},
     {"id":"vencimentos","ordem":3,"nome":"Agenda de Vencimentos","apelido":"Agenda","setor":"Contas com data","ativo":true,"situacao":"trabalhando","palavra":"Conferindo agora","complemento":null,"icone":"loader-circle","status":"trabalhando","resumido":false,"atrasado":false,"desde":"2026-11-24T08:58:00-03:00","proxima":"2026-11-25T10:19:00-03:00","pendencias":0,"cartao":"m_vencimentos"},
     {"id":"comprador","ordem":4,"nome":"Comprador","apelido":"Comprador","setor":"Feira","ativo":true,"situacao":"precisa_de_voce","palavra":"Precisa de você","complemento":null,"icone":"circle-alert","status":"precisa_de_voce","resumido":false,"atrasado":false,"desde":"2026-11-23T20:25:00-03:00","proxima":"2026-11-30T20:23:00-03:00","pendencias":1,"cartao":"m_comprador"},
-    {"id":"auditor","ordem":5,"nome":"Auditor de Estoque","apelido":"Auditor","setor":"Despensa e cozinha","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-24T07:43:00-03:00","proxima":"2026-12-01T07:41:00-03:00","pendencias":0,"cartao":"m_auditor"},
-    {"id":"presenca","ordem":6,"nome":"Controlador de Presença","apelido":"Presença","setor":"Equipe da casa","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-23T08:14:00-03:00","proxima":"2026-11-30T08:13:00-03:00","pendencias":0,"cartao":"m_presenca"},
-    {"id":"folha","ordem":7,"nome":"Folha da Casa","apelido":"Folha","setor":"Empregados da casa","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-03T09:38:00-03:00","proxima":"2026-12-03T09:37:00-03:00","pendencias":0,"cartao":"m_folha"},
-    {"id":"colchao","ordem":8,"nome":"Guardião do Colchão","apelido":"Guardião","setor":"Reserva","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-20T17:48:00-03:00","proxima":"2026-11-27T17:47:00-03:00","pendencias":0,"cartao":"m_colchao"}
+    {"id":"auditor","ordem":5,"nome":"Auditor de Estoque","apelido":"Auditor","setor":"Despensa e cozinha","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-24T07:43:00-03:00","proxima":"2026-12-01T07:41:00-03:00","pendencias":0,"cartao":"m_auditor"},
+    {"id":"presenca","ordem":6,"nome":"Controlador de Presença","apelido":"Presença","setor":"Equipe da casa","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-23T08:14:00-03:00","proxima":"2026-11-30T08:13:00-03:00","pendencias":0,"cartao":"m_presenca"},
+    {"id":"folha","ordem":7,"nome":"Folha da Casa","apelido":"Folha","setor":"Empregados da casa","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-03T09:38:00-03:00","proxima":"2026-12-03T09:37:00-03:00","pendencias":1,"cartao":"m_folha"},
+    {"id":"colchao","ordem":8,"nome":"Guardião do Colchão","apelido":"Guardião","setor":"Reserva","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-20T17:48:00-03:00","proxima":"2026-11-27T17:47:00-03:00","pendencias":0,"cartao":"m_colchao"}
   ]
 }
 ```
@@ -305,7 +305,7 @@ O par mais parecido é "Entregue" e "Resumido" (mesma pose): separa pela altura 
 | `situacao` | 1 dos 7 valores da parte 5 | pixel, 3D, cartão | única fonte de pose e de ícone |
 | `palavra` | texto | etiqueta 3D, plaquinha pixel, sinal do cartão | igual nos 3, letra por letra |
 | `complemento` | texto ou `null` | cartão e `aria-label` | "desde 23/11", "até 01/12" |
-| `status`, `resumido`, `atrasado` | valor do banco e 2 marcas | conferência e teste | não usar pra desenhar |
+| `status`, `resumido`, `atrasado` | valor do banco e 2 marcas | conferência, teste e cartão | a cena não usa pra desenhar. O cartão da 11-E usa só `resumido`, pra mostrar o 2º sinal "Resumido até 01/12" quando a situação principal é outra |
 | `desde` | data e hora | fase 2 | quando entrou na situação atual |
 | `proxima` | data e hora | cartão | próximo horário da escala |
 | `pendencias` | número | cartão | quantas pendências abertas |
@@ -475,14 +475,14 @@ Sempre na família Silva, no endereço de rascunho. "Print" quer dizer 390x844 e
 | T-F25 | Lugares (fase 3) | toque e Enter no quadro de metas e na mesa de reunião abrem a tela da tabela da parte 10: 4 de 4 |
 | T-F26 | Reunião de segunda (fase 3) | com a data de teste numa segunda às 9h00 e resumo não aberto: só os "Entregue" estão na mesa; abrir o resumo manda todos de volta |
 | T-F27 | Entregar documento (fase 3) | botão e arquivo solto sobre a mesa do Comprador abrem a mesma tela da Tarefa 12, com o tipo cupom; cancelar não grava nada no banco (0 linha nova) |
-| T-F28 | Papel `equipe_casa` | logado como Dona Lúcia: a cena e o JSON não têm nenhum "R$" nem número de dinheiro |
+| T-F28 | Papéis e dinheiro | logado como Dona Lúcia (`equipe_casa`) e como Bia (`membro`): `escritorio_estado()` responde "sem acesso", 0 linha, e a cena não monta. Logada como Marina (`casal`): a cena e o JSON não têm nenhum "R$" nem número de dinheiro |
 
 ## 12. Casos de borda e decisões já tomadas
 
 **Decisões já tomadas (não reabrir sem ordem do dono):**
 1. 3D é modo opcional; o pixel é padrão e plano B (decisão 5 do dono). Depois de perder o contexto, o 3D não volta sozinho.
 2. As palavras das situações são as da base comum, iguais às do cartão. São 7 situações, incluindo "Aguardando", que a tabela da ficha 11-F não trazia.
-3. Câmera de frente e de cima, fixa, nas 2 larguras; 2 plantas, como o pixel. Luz fixa por tema, sem luz por hora do dia.
+3. Câmera de frente e de cima, fixa, nas 2 larguras (escolha deste caderno; espera o "sim" do dono na pergunta 1 da parte 13); 2 plantas, como o pixel. Luz fixa por tema, sem luz por hora do dia.
 4. Etiqueta de 2 linhas com a palavra sempre visível; nada de etiqueta só com ícone.
 5. Bonecos e objetos em código; three.js fixada em `0.160.0`.
 6. O aviso do banco é só campainha; o dado sempre vem da função de estado.
@@ -499,17 +499,17 @@ Sempre na família Silva, no endereço de rascunho. "Print" quer dizer 390x844 e
 | Situação muda enquanto o boneco anda | termina o trecho atual e segue pro destino novo; nunca atravessa mesa |
 | App volta do fundo no iPhone depois de muito tempo | se o contexto caiu: pixel. Se não: reler o estado e desenhar 1 quadro |
 | Modo de pouca bateria do iPhone (o aparelho limita a 30 quadros) | não é queda: 30 está acima de 24. Os tetos seguem valendo |
-| Papel `membro` ou `equipe_casa` | a cena mostra o que a função de estado devolver pra esse papel; a cena não decide acesso |
+| Papel `membro` ou `equipe_casa` | a função de estado recusa esses papéis (11-C) e a tela do Escritório nem abre pra eles; a cena não decide acesso |
 
 ## 13. Perguntas em aberto pro dono (com recomendação) e o que não foi medido
 
 | # | Pergunta | Recomendação |
 |---|---|---|
-| 1 | A câmera do 3D novo fica de frente e de cima (como o pixel), e não na diagonal do 3D que o dono já viu. Aprova pelo print? | Sim. Na diagonal as etiquetas com palavra não cabem em 390 px: 29 px entre vizinhos pra etiqueta de até 106 px |
+| 1 | A câmera do 3D novo. Opção A: de frente e vista de cima, como o pixel (é o que este caderno especifica). Opção B: na diagonal, como o 3D que o dono já viu; nesse caso, no celular, a etiqueta fica só com ícone e apelido e a palavra da situação sai da cena | Opção A. Na diagonal as etiquetas com palavra não cabem em 390 px (29 px entre vizinhos pra etiqueta de até 106 px), e tirar a palavra quebra a regra "situação = pose + objeto + palavra". Aprovar pelo print do passo 1.8, antes do passo 1.9 |
 | 2 | Texto do botão com o 3D ligado | "Ver em pixel". Desligado: "Ver em 3D" |
 | 3 | O quadro de metas abre o quê? | O resumo do topo do Escritório. Alternativa: Planejamento, bloco de metas |
 | 4 | Vagas na frente: 3 no celular e 6 no computador bastam? | Sim. Mais que isso ao mesmo tempo é raro e a regra de sobra já cobre |
-| 5 | Prioridade quando 1 ajudante tem 2 situações (ex.: atrasado e com pendência antiga) | Primeiro o que depende da casa: "Precisa de você", "Perguntando", depois "Atrasado". Confirmar com a ficha 11-E, que é dona do sinal do cartão |
+| 5 | Prioridade quando 1 ajudante tem 2 situações (ex.: atrasado e com pendência antiga) | Ficou como a 11-E manda, porque ela é dona do sinal do cartão: "Atrasado" primeiro, depois "Precisa de você" e "Perguntando". A pendência continua na fila "Depende de você". Alternativa, se o dono preferir: primeiro o que depende da casa. Trocar é mudar 1 linha da função de estado |
 | 6 | Reunião de segunda: de 6h00 até abrir o resumo ou 12h00 | Sim. Sem resumo da semana pronto, não há reunião |
 
 **O que não foi medido:**
@@ -526,13 +526,17 @@ Sempre na família Silva, no endereço de rascunho. "Print" quer dizer 390x844 e
 ORDEM DE SERVIÇO: 11-F fase 1, modo 3D do Escritório
 PAPEL: engenheiro de telas com experiência em 3D na web (three.js) e em iPhone.
 ENTRA: só depois da 11-E aprovada no iPhone do dono.
-LEIA ANTES, NESTA ORDEM: docs/escritorio/00-base-comum.md; este caderno
-inteiro (docs/escritorio/11-F-escritorio-em-3d.md); o Escritório 3D atual (só
+LEIA ANTES, NESTA ORDEM: docs/escritorio/00-base-comum.md;
+docs/escritorio/LEIA-PRIMEIRO.md, partes 3, 4 e 6; este caderno inteiro
+(docs/escritorio/11-F-escritorio-em-3d.md); as partes 6 e 7 de
+docs/escritorio/11-E-tela-e-interacao.md (o cartão e o sinal de situação que
+a cena acompanha); o Escritório 3D atual (só
 a técnica; não copie nome nem valor dele); a cena pixel da tela Escritório,
 aberta em 390x844 e 1280x800.
 FAÇA, NESTA ORDEM: passos 1.1 a 1.18 da parte 3. Um passo por vez; só avance
 com o "pronto quando" do passo cumprido. Use a família Silva e os 2 conjuntos
-de teste da parte 6. Trabalhe no endereço de rascunho.
+de teste da parte 6. Trabalhe no endereço de rascunho. Depois do passo 1.8,
+pare e mostre ao dono o print da câmera (pergunta 1 da parte 13).
 NÃO FAÇA:
 - Mudar a cena pixel, a ordem dos blocos, os cartões ou o tamanho da caixa.
 - Calcular situação no app: ela vem pronta da função de estado.
@@ -552,7 +556,7 @@ histórico de mudanças; como voltar pra versão anterior em 1 clique.
 ORDEM DE SERVIÇO: 11-F fase 2, ao vivo e linha do tempo
 PAPEL: engenheiro de telas com experiência em 3D na web e em Supabase.
 ENTRA: só com a fase 1 aprovada no iPhone do dono e depois do piloto.
-LEIA ANTES: 00-base-comum.md; partes 6 e 9 deste caderno; o código da fase 1;
+LEIA ANTES: docs/escritorio/00-base-comum.md; partes 6 e 9 deste caderno; o código da fase 1;
 as regras de acesso das tabelas escritorio_turnos e escritorio_escala.
 FAÇA, NESTA ORDEM: passos 2.1 a 2.6 da parte 3.
 NÃO FAÇA:
@@ -574,7 +578,7 @@ ORDEM DE SERVIÇO: 11-F fase 3, lugares úteis
 PAPEL: engenheiro de telas com experiência em 3D na web.
 ENTRA: só com a fase 2 aprovada no iPhone do dono, e com o resumo da semana
 (11-E item 10) e a tela de envio da Tarefa 12 já no ar.
-LEIA ANTES: 00-base-comum.md; partes 8 e 10 deste caderno; a tela de envio
+LEIA ANTES: docs/escritorio/00-base-comum.md; partes 8 e 10 deste caderno; a tela de envio
 da Tarefa 12; a tela do resumo da semana.
 FAÇA, NESTA ORDEM: passos 3.1 a 3.5 da parte 3. Antes do 3.1, confirme com o
 dono a pergunta 3 da parte 13.
@@ -592,7 +596,7 @@ novo; lista dos arquivos tocados; 1 linha no histórico de mudanças.
 ## Dados que acrescentei
 
 Nada aqui muda soma em dinheiro: este caderno não usa nenhum valor em R$.
-1. **Situação de cada ajudante da família Silva em 24/11, 9h00.** A base comum não traz. Copiei da prévia aprovada: Contador, Auditor, Presença, Folha e Guardião em "Entregue"; Cartão em "Perguntando"; Agenda em "Conferindo agora"; Comprador em "Precisa de você".
+1. **Situação de cada ajudante da família Silva em 24/11, 9h00.** Agora está na parte 6.1 da base comum. É o mesmo retrato da 11-E (ver lá "O que o retrato da tela supõe"). Copiei da prévia aprovada: Contador, Auditor, Presença, Folha e Guardião em "Entregue"; Cartão em "Perguntando"; Agenda em "Conferindo agora"; Comprador em "Precisa de você".
 2. **Horas de `desde`.** Criadas a partir do horário da escala mais 1 ou 2 minutos (ex.: Auditor entregou às 7h43, 2 minutos depois das 7h41). A Agenda está conferindo desde 8h58, por "Rodar agora", já que o horário dela é quarta.
 3. **2º conjunto de teste, "todas as situações".** Criado pra exercitar as 7 de uma vez: Presença atrasada desde 23/11, Folha resumida até 01/12, Comprador aguardando a 1ª nota da feira, Auditor precisando de você.
 4. **Da prévia aprovada, sem inventar:** apelidos das etiquetas, `id` dos cartões (`m_` + id), cores, cortes de cabelo e objetos de mesa (tabela `P` e rótulos dos retratos da cena pixel).

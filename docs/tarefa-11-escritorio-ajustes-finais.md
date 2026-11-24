@@ -1,6 +1,8 @@
 # Tarefa 11 · Módulo Escritório · Ajustes finais
 
-Data: 24/11/2026 · Dono: Romero · Versão 3, depois da banca de 7 especialistas
+Data: 24/11/2026 · Dono: o dono do produto · Versão 4, depois da banca de 7 especialistas e da conferência entre os 5 cadernos
+
+**Cadernos de construção:** pasta `docs/escritorio/`. Comece por `docs/escritorio/LEIA-PRIMEIRO.md`. Onde este resumo e um caderno disserem coisas diferentes, vale o caderno; acima dos 2, a base comum; acima de tudo, as Diretrizes.
 
 **Onde entregar:** documento "Central da Família · Diretrizes do CEO", logo abaixo da ficha "TAREFA: 11 Módulo Escritório".
 Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidido.
@@ -16,7 +18,7 @@ Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidid
                       ajudante  curto     3 fases
 ```
 
-**A essência que nenhuma ficha pode quebrar:** 8 ajudantes com nome, função fixa e horário; fila "Depende de você"; fonte em cada número; família separada de empresa; o ajudante sugere, nunca envia, paga ou aplica; personagens na cena; 1 cor de destaque.
+**A essência que nenhuma ficha pode quebrar:** 8 ajudantes com nome, função fixa e horário; fila "Depende de você"; fonte em cada número; família separada de empresa; o ajudante sugere, nunca envia, paga ou aplica; conta é do banco, a IA só escreve o destaque e a ação; personagens na cena; 1 cor de destaque.
 
 ---
 
@@ -46,7 +48,7 @@ Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidid
 | Banco novo do produto (Tarefa 2) | ainda não existe |
 | Altura da prévia no celular | 9.624 px (11 telas) |
 | Cartão de ajudante na prévia | 70 a 121 palavras cada |
-| Escritório 3D que já existe | 186 KB compactado, 0,9 s pra aparecer, 0 erro, 11 bonecos com relógio simulado |
+| Escritório 3D que já existe | 186 KB compactado, 0,9 s pra aparecer, 0 erro, 9 bonecos com relógio simulado |
 
 ---
 
@@ -105,8 +107,8 @@ C. Teto. 1 linha por família por mês em ia_gasto_mes (gasto, reservado,
    família e por ajudante, com 1 frase de projeção ("no ritmo atual fecha
    em R$ X"). Abaixo de 1 centavo: "menos de R$ 0,01".
 D. Saúde. Na tela da família, 1 linha no rodapé com 2 formas: "Tudo
-   funcionando. Última conferência: hoje, 8h13." ou "2 conferências
-   atrasadas. Última: 07/11." com "Rodar agora". Atrasada = horário
+   funcionando. Última conferência: hoje, 7h41." ou "2 conferências
+   atrasadas. Última: 24/11." com "Rodar agora". Atrasada = horário
    previsto + 30 min já passou, ou conferência aberta sem fim há mais de
    30 min. 1 único agendamento, a cada 10 min, abre as vencidas. A escala
    sai do código e vira tabela por família (escritorio_escala).
@@ -115,10 +117,10 @@ E. Novidades. 1 linha abaixo de "coisas esperando você": "3 relatórios
    aquela pessoa pode ver. Grava só a função escritorio_marcar_visto(),
    com a pessoa logada e a hora do servidor. A tela conta ANTES de marcar.
 F. Time com data. 1 frase no topo de "Dias de cada ajudante": "Seus 8
-   ajudantes trabalham desde 07/11." Mudança vira 1 linha no mesmo bloco
+   ajudantes trabalham desde 07/09." Mudança vira 1 linha no mesmo bloco
    por 7 dias, sem aviso no celular. Nome de pessoa vem do cadastro.
 G. Placar do Escritório. Na Tarefa 14, abaixo dos 4 números, 1 linha
-   recolhida, só pro dono do produto: "Escritório: 3 de 4 no verde, 2 sem
+   recolhida, só pro dono do produto: "Escritório: 3 de 4 no verde, 4 sem
    meta ainda." O que está fora do verde sobe pro topo. A segunda-feira
    continua com 4 números. Os números 3 e 4 medem o ajudante, nunca a
    pessoa. Tabela completa na parte 10.
@@ -145,14 +147,15 @@ família A não vê custo da B; as novidades zeram depois de abrir.
 ```
 TAREFA: 11-C Escritório: número com carimbo e IA sob controle
 ESPECIALISTA: Engenheiro de aplicativo financeiro
-ENTRA: junto da 11-B. O item 5 (cópia guardada) fica pra depois do piloto.
+ENTRA: antes da 11-B (passo 2 da ordem, parte 12). Do item 5, a faixa de
+aviso entra agora; guardar cópia no aparelho fica pra depois do piloto.
 
 FAÇA:
 1. Número com carimbo. Antes da IA, o servidor chama as funções de conta
    e grava na conferência os números, o "dados até" (data e hora) e a
    versão da função. A IA recebe só esses números. Depois o servidor
    confere: todo R$, % e data do texto existe no que foi gravado; se não,
-   descarta o texto. O cartão mostra "Conta feita em 21/11, 7h12". Entrou
+   descarta o texto. O cartão mostra "Conta feita em 24/11, 7h41". Entrou
    lançamento depois: "Entrou lançamento depois desta conta" e o botão
    "Refazer a conta" (sem IA, custo 0, fora do limite de 3 por dia).
 2. IA falhou, a conta sai. IA fora do ar, sem resposta em 60 s ou texto
@@ -167,10 +170,11 @@ FAÇA:
 4. Privacidade na casa. Equipe da casa e filhos recebem 0 linha das
    tabelas do Escritório, por regra do banco, não só da tela. Aviso no
    celular nunca traz R$ nem nome de empregado.
-5. Sem internet. A tela abre a última cópia com a faixa "Sem internet.
-   Você vê os números de hoje, 8h13." "Rodar agora", "Resolvi" e
-   "Responder" ficam apagados com "precisa de internet". Nada fica na
-   fila pra enviar depois. Sair da conta apaga a cópia.
+5. Sem internet. Agora: a tela que já estava aberta mostra a faixa "Sem
+   internet. Você vê os números de hoje, 8h13." "Rodar agora", "Resolvi"
+   e "Responder" ficam apagados com "precisa de internet". Nada fica na
+   fila pra enviar depois e nada é guardado no aparelho. Depois do
+   piloto: guardar 1 cópia no aparelho, que sair da conta apaga.
 6. 4 sinais novos na saúde técnica do dono do produto: relatórios só com
    número, por motivo; textos descartados por número que não batia; tempo
    da conferência (o do meio e o pior); repetições barradas.
@@ -206,7 +210,7 @@ Todos os valores são da família de exemplo.
 | Analista de Cartão | Próxima fatura: cabe ou faltam R$ X | Parcelas já contratadas, 6 meses | "Março junta 3 parcelas: R$ 1.400. Nada parcelado acima de R$ 200 até lá." |
 | Agenda de Vencimentos | R$ que vencem em 10 dias | 30, 60 e 90 dias | "Janeiro soma R$ 6.000. Separar R$ 3.000 em dezembro." |
 | Comprador | Preço da mesma cesta (mesmos itens e quantidades) | Mediana de 4 semanas | "5 itens subiram R$ 140 por mês. Trocar 2 marcas devolve R$ 90." |
-| Auditor de Estoque | R$ que saíram acima do normal | 4 semanas, descontadas as visitas | "3 kg de carne a mais: R$ 120. Houve visita no sábado: explicado." |
+| Auditor de Estoque | R$ que saíram acima do normal e ficaram sem explicação | 4 semanas, descontadas as visitas | "3 kg de carne a mais: R$ 120. Houve visita no sábado: explicado." |
 | Controlador de Presença | Custo da despensa por pessoa por dia | 4 semanas | "Dia com visita custa R$ 45 a mais. Prever R$ 90 por mês na feira." |
 | Folha da Casa | Quanto falta guardar pro próximo pagamento com data | Conferência anterior | "Férias de janeiro pedem R$ 2.400; há R$ 620. Guardar R$ 890 por conferência." |
 | Guardião do Colchão | Semanas de contas pagas | Anterior e o mês mais apertado dos próximos 3 | "Janeiro baixa de 9 pra 6 semanas. Nenhuma parcela nova até fevereiro." |
@@ -214,7 +218,8 @@ Todos os valores são da família de exemplo.
 ```
 TAREFA: 11-D Escritório: o dinheiro certo em cada ajudante
 ESPECIALISTA: Engenheiro de agentes de IA, com o economista revisando
-ENTRA: texto junto da 11-B; as contas entram na Tarefa 4.
+ENTRA: em 3 partes (parte 12): as contas antes da 11-C, a pendência e
+o tom depois da 11-C, o Fechamento depois da 11-B.
 
 FAÇA:
 1. Uma previsão só. Contador, Agenda, Cartão, Folha e Guardião leem a
@@ -271,7 +276,7 @@ Já tem dono em outra tarefa, não duplicar: caixa de 30, 60 e 90 dias (Tarefa 1
 ```
 TAREFA: 11-E Escritório: tela curta e cartão em 3 níveis
 ESPECIALISTA: Desenhista de experiência, com o engenheiro de telas
-ENTRA: junto da 11-B, salvo os itens marcados.
+ENTRA: depois da 11-B (passo 6 da parte 12), salvo os itens marcados.
 
 FAÇA:
 1. Primeira tela do celular. Em 390x844, mostrar o número "coisas
@@ -296,7 +301,8 @@ FAÇA:
    Entregou: check + "Entregue"; surge em 200 ms, 1 vez.
    Precisa de você: exclamação cheia + "Precisa de você"; 1 pulso de 600 ms.
    Perguntando: balão com "?" + "Perguntando"; 1 pulso de 600 ms.
-   Atrasado: relógio + "Atrasado desde 07/11"; sem movimento.
+   Aguardando: ampulheta + "Aguardando"; sem movimento.
+   Atrasado: relógio + "Atrasado desde 25/11"; sem movimento.
    Resumido: folha curta + "Resumido até 01/12"; sem movimento.
    Com "reduzir movimento" ligado, tudo fica parado.
 5. Sair da fila sem culpa. Depois de "Resolvi", barra "Desfazer" por 6 s,
@@ -311,7 +317,7 @@ FAÇA:
 8. Leitura e acesso. Alvo de toque de 44x44 px. Contraste de 4,5 pra 1 em
    todo texto (conferir a cor mais clara de texto, que pode estar
    abaixo). Leitor de tela lê o cartão como 1 botão: "Contador da Casa,
-   entregue, R$ 8.240 de R$ 12.000". A cena ganha descrição em texto.
+   entregue, R$ 920 livres até 30/11". A cena ganha descrição em texto.
 9. Painel do dono, no celular: "Por ajudante" vira lista de 2 linhas.
 
 ENTRA NA TAREFA 20 (avisos e Domingo do casal):
@@ -339,7 +345,7 @@ NÃO FAÇA:
 
 PRONTO QUANDO: no celular, a 1ª pendência aparece sem rolar; a página
 mede até 4.000 px; cada cartão fechado tem até 25 palavras; print em
-preto e branco deixa distinguir os 6 estados; tarefa completa só com
+preto e branco deixa distinguir os 7 estados; tarefa completa só com
 teclado; passou no teste dos 5 minutos.
 ```
 
@@ -347,16 +353,19 @@ teclado; passou no teste dos 5 minutos.
 
 ## 8. Ficha 11-F · Escritório em 3D
 
-**Veredito:** o Escritório 3D que já existe é uma base boa e leve. Aproveita o motor inteiro e refaz só o elenco (hoje 11 bonecos, o produto tem 8), os estados e a origem dos dados (hoje é relógio simulado, não o banco).
+**Veredito:** o Escritório 3D que já existe é uma base boa e leve. Aproveita o motor inteiro e refaz só o elenco (hoje 9 bonecos, o produto tem 8), os estados e a origem dos dados (hoje é relógio simulado, não o banco).
 
-| Estado | O que o boneco e a mesa fazem | Palavra |
+| Situação | O que o boneco e a mesa fazem | Palavra (a da base comum, igual à do cartão) |
 |---|---|---|
-| Trabalhando agora | digita, tela acesa | "trabalhando" |
-| Entregou | pilha de papel na mesa | "entregou" |
-| Precisa de você | levanta e vai até a frente com a mão erguida | "precisa de você" |
-| Perguntando | sentado, balão com "?" | "esperando um dado seu" |
-| Atrasado | cadeira vazia, relógio na mesa | "atrasado desde 7h" |
-| Relatório resumido | pilha menor com clipe | "resumido" |
+| Trabalhando agora | digita, tela acesa | "Conferindo agora" |
+| Entregou | pilha de papel na mesa | "Entregue" |
+| Precisa de você | levanta e vai até a frente com a mão erguida | "Precisa de você" |
+| Perguntando | sentado, balão com "?" | "Perguntando" |
+| Aguardando | sentado, ampulheta na mesa | "Aguardando" |
+| Atrasado | cadeira vazia, despertador na mesa | "Atrasado" |
+| Relatório resumido | 1 folha com clipe | "Resumido" |
+
+São 7 situações, as da parte 5 da base comum.
 
 ```
 TAREFA: 11-F Escritório em 3D
@@ -371,8 +380,9 @@ FASE 1 (esforço médio)
    continua sendo o pixel. A escolha fica lembrada no aparelho.
 2. 1 fonte de estado só. Cena pixel, cena 3D e cartões leem a mesma
    função de estado. Apagar o estado por relógio do 3D.
-3. Mesmo elenco. 8 bonecos em miniatura de caixinhas, câmera fixa de
-   cima, cores copiadas dos personagens pixel.
+3. Mesmo elenco. 8 bonecos em miniatura de caixinhas, câmera fixa, de
+   frente e vista de cima (o caderno trocou a diagonal do 3D de hoje;
+   decisão 8 da parte 14), cores copiadas dos personagens pixel.
 4. Estado = pose + objeto + palavra, conforme a tabela acima.
 5. Toque leva ao trabalho. Tocar no boneco ou na etiqueta: a câmera
    desliza até a mesa em 0,5 s e a página rola pro cartão dele.
@@ -418,19 +428,46 @@ Não medido: iPhone de verdade (quadros, calor, bateria), tema escuro do 3D e le
 
 ## 9. Onde cada dado fica guardado
 
-Tudo só no banco novo do produto.
+Tudo só no banco novo do produto. Esta é a lista completa do que os 5 cadernos criam: 8 tabelas novas, 19 colunas em `escritorio_turnos`, 1 em `escritorio_funcionarios` e 1 em `pessoas`. A lista de funções, com o dono de cada uma, está em `docs/escritorio/LEIA-PRIMEIRO.md`, parte 4.
 
-| Dado | Onde | Muda o banco? |
+**Colunas novas em `escritorio_turnos` (a conferência)**
+
+| Dado | Colunas | Caderno dono |
 |---|---|---|
-| Modelo, contagem e custo da conferência | `escritorio_turnos`: `modelo_id`, `tokens_entrada`, `tokens_saida`, `custo_brl` (+ `familia_id`) | 4 colunas |
-| Números da conta, "dados até" e versão da função | `escritorio_turnos` | 3 colunas |
-| Preço por modelo e dólar | `ia_precos` (global) | tabela nova |
-| Gasto, reserva e alerta do mês | `ia_gasto_mes` (família, mês) | tabela nova |
-| Dia, hora, próximo horário, "desde", ativo | `escritorio_escala` (por família) | tabela nova |
-| Modelo padrão do ajudante | `escritorio_funcionarios.modelo` | 1 coluna |
-| Última visita | `pessoas.escritorio_visto_em`, só via função | 1 coluna |
-| "Ajudou / Não ajudou" e "Agora não" | junto da pendência e do relatório, só via função | a definir na Tarefa 11 |
-| Saúde, placar e estado da cena | funções calculadas na hora | não |
+| Números da conta, "dados até" e versão da função (o carimbo) | `numeros`, `dados_ate`, `versao_conta` | 11-C |
+| Horário previsto, quem abriu e de onde veio (agenda, toque, refazer, correção) | `previsto_para`, `aberto_por`, `origem` | 11-C |
+| Correção que aponta pra conferência anterior | `corrige_turno_id` | 11-C |
+| Saiu com texto ou só com número, e por quê | `texto_situacao`, `sem_texto_motivo` | 11-C |
+| Modelo, contagem, custo e o preço usado | `modelo_id`, `tokens_entrada`, `tokens_saida`, `custo_brl`, `preco_id` | 11-B |
+| Decisão do teto e reserva de custo | `ia_decisao`, `ia_reserva_brl`, `ia_reserva_em`, `ia_reserva_devolvida_em` | 11-B |
+| Relatório resumido | `resumido` | 11-B |
+
+A tranca "nunca 2 vezes" usa a coluna `chave`, que já existe, com 2 índices únicos (11-C). A família nunca lê as colunas de custo: a permissão é por coluna (11-B).
+
+**Tabelas novas**
+
+| Dado | Tabela | Caderno dono | Quem lê |
+|---|---|---|---|
+| Pendência com dono, data, "Resolvi" e "Agora não" | `escritorio_pendencias` | 11-C | casal |
+| "Ajudou / Não ajudou", 1 linha por pessoa por relatório | `escritorio_avaliacoes` | 11-C | casal |
+| Trilha de quem fez o quê e quando | `escritorio_trilha` | 11-C | casal (só as linhas que a tela mostra) |
+| O que foi enviado à IA, com marcador no lugar do nome | `escritorio_ia_envios` | 11-C | ninguém logado |
+| Preço por modelo e dólar | `ia_precos` (global) | 11-B | dono do produto |
+| Gasto, reserva, teto e alerta do mês | `ia_gasto_mes` (família, mês) | 11-B | dono do produto |
+| Dia, hora, próximo horário, "desde", ativo | `escritorio_escala` (por família) | 11-B | casal |
+| Piso da pendência, meta de semanas, teto de parcela | `escritorio_parametros` (por família) | 11-D | casal |
+
+Se ainda não existir quem diga "esta pessoa é o dono do produto", a 11-B cria também a tabela `produto_donos` (rascunho, até a Tarefa 2 ou 14 assumir).
+
+**Colunas em outras tabelas e o que não guarda nada**
+
+| Dado | Onde | Caderno dono |
+|---|---|---|
+| Modelo padrão do ajudante | `escritorio_funcionarios.modelo` | 11-B |
+| Última visita | `pessoas.escritorio_visto_em`, só via função | 11-B |
+| Saúde, novidades, placar, sinais de confiança, situação da cena e do cartão | funções calculadas na hora, sem tabela | 11-B, 11-C, 11-E e 11-F |
+| Chave "Só o que depende de mim" e modo 3D escolhido | no aparelho, fora do banco | 11-E e 11-F |
+| Cópia da tela pra ver sem internet | no aparelho, só depois do piloto | 11-C |
 
 ---
 
@@ -449,18 +486,20 @@ Tudo só no banco novo do produto.
 
 Os números 7 e 8 são de resultado financeiro e aparecem sem R$ das famílias.
 
+Com meta: 1, 2, 3 e 5. Sem meta ainda: 4, 6, 7 e 8. Por isso a frase da linha recolhida é "3 de 4 no verde, 4 sem meta ainda".
+
 ---
 
 ## 11. Custo de IA (estimativa)
 
 Teto proposto: **R$ 2,49 por família por mês**, topo da faixa que as Diretrizes já estimaram.
 
-Premissas, todas a confirmar: 24 conferências por mês; dólar a R$ 5,45; tamanho de cada conferência ainda sem medição; preço dos modelos a confirmar na página oficial.
+Premissas, todas a confirmar: cerca de 26 conferências por mês (é o que a escala dá em novembro/2026 na família Silva); dólar a R$ 5,45; tamanho de cada conferência ainda sem medição; preço dos modelos a confirmar na página oficial.
 
 | Cenário | R$ por mês | % do teto |
 |---|---|---|
 | Tudo no modelo leve | 0,08 | 3% |
-| Insight forte só 1 vez por mês (Contador e Cartão) | 0,44 | 18% |
+| Insight forte só 1 vez por mês (Contador R$ 0,17, Cartão R$ 0,21, os outros 6 somados R$ 0,06) | 0,44 | 18% |
 | Insight forte toda semana | 1,91 a 2,29 | 77% a 92% |
 
 Regra recomendada: forte só no Fechamento do mês (Contador) e no fechamento do cartão (Analista de Cartão). Os outros 6 ficam no leve.
@@ -471,16 +510,18 @@ Regra recomendada: forte só no Fechamento do mês (Contador) e no fechamento do
 
 | Passo | Ficha | O quê | Depende de |
 |---|---|---|---|
-| 1 | 11-D | Previsão única e número principal de cada ajudante | Tarefa 4 |
-| 2 | 11-C | Número com carimbo, IA que falha, nunca 2 vezes, privacidade | Tarefas 5 e 7 |
-| 3 | 11-B | Modelo, custo, teto, saúde, novidades | passo 2 |
-| 4 | 11-E | Tela curta, cartão em 3 níveis, estados, "Agora não", "Ajudou" | passo 3 |
-| 5 | 11-B item G | Placar | Tarefa 14 |
-| 6 | 11-E itens 10 e 11 | Domingo do casal e aviso que abre na pendência | Tarefa 20 |
-| 7 | 11-F fase 1 | Modo 3D | passo 4 aprovado |
-| 8 | 11-E item 12, 11-F fases 2 e 3 | Perguntar sobre o relatório, ao vivo, lugares úteis | depois do piloto |
+| 1 | 11-D, 1ª parte | Previsão única e as 8 contas (número, comparação, achado) | Tarefas 3 e 4; Tarefas 8, 10 e 19 pros ajudantes que leem delas |
+| 2 | 11-C | Número com carimbo, IA que falha, nunca 2 vezes, privacidade, pendência, "Agora não" e "Ajudou" no banco | passo 1; Tarefas 5 e 7 |
+| 3 | 11-D, 2ª parte | Piso que vira pendência, tom e termos proibidos, teste noturno | passo 2 |
+| 4 | 11-B | Modelo, custo, teto, escala, saúde, novidades | passo 2 |
+| 5 | 11-D, 3ª parte | Fechamento do mês no 1º dia útil e aviso da tela | passo 4 |
+| 6 | 11-E | Tela curta, cartão em 3 níveis, 7 situações, função única de situação | passo 5 |
+| 7 | 11-B item G | Placar | Tarefa 14 e passo 6 |
+| 8 | 11-E itens 10 e 11 | Domingo do casal e aviso que abre na pendência | Tarefa 20 |
+| 9 | 11-F fase 1 | Modo 3D | passo 6 aprovado no iPhone do dono |
+| 10 | 11-E item 12, 11-F fases 2 e 3, cópia sem internet da 11-C | Perguntar sobre o relatório, ao vivo, lugares úteis | depois do piloto |
 
-A escala só é ligada sozinha depois do passo 3.
+A 11-D foi dividida em 3 partes porque ela e a 11-C dependem uma da outra: as contas nascem antes do carimbo, e a pendência nasce depois dele. A escala só é ligada sozinha depois do passo 4. A tabela passo a passo, com o número do passo de cada caderno, está em `docs/escritorio/LEIA-PRIMEIRO.md`, parte 3.
 
 ---
 
@@ -509,6 +550,8 @@ A escala só é ligada sozinha depois do passo 3.
 | 5 | 3D como modo opcional ou no lugar do pixel? | Modo opcional. O pixel continua padrão e plano B |
 | 6 | Gerente que encaminha pedido entra no piloto? | Não. Só se 2 famílias pedirem |
 | 7 | Ligar já as 10 conferências da nossa família no painel de hoje? | Não. Ligar cada uma só quando tiver dado real |
+| 8 | Câmera do 3D: de frente e vista de cima (como o pixel) ou na diagonal (como o 3D de hoje)? | De frente e vista de cima. Na diagonal as etiquetas com a palavra da situação não cabem no celular |
+| 9 | O 1º dia útil do Contador olha feriado? | Sim. A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)|
 
 ---
 

@@ -30,7 +30,8 @@ Leia antes: `docs/escritorio/00-base-comum.md`, a parte 6 de `docs/tarefa-11-esc
 | 5 | Cartões com dia de fechamento e de vencimento, faturas e parcelas somadas por mês | Tarefa 8 | Cartão e Guardião ficam em "Perguntando" |
 | 6 | Previsão mês a mês, rendas (com "se cair"), folha da casa e caixa de 30, 60 e 90 dias | Tarefa 19 | Agenda mostra só os 10 dias; Guardião mostra só hoje |
 | 7 | Cesta, memória de preços, consumo, presença, visitas, cozinha | Tarefa 10 | Comprador, Auditor e Presença ficam em "Perguntando" |
-| 8 | Conferência com carimbo, pendência com chave única, conferidor de texto | 11-C | Construa as contas e teste por chamada direta |
+| 8 | Conferência com carimbo, pendência com chave única, conferidor de texto | 11-C, que entra depois dos passos 1 a 8 deste caderno e antes dos passos 9 a 13 | Construa as contas (passos 1 a 8), teste por chamada direta e pare: os passos 9 a 13 esperam a 11-C |
+| 10 | Escala com o tipo `primeiro_dia_util` | 11-B | O Fechamento (passo 12) espera a 11-B |
 | 9 | Tabela da folha conferida por contador (datas, percentuais, encargos) | pergunta 4 da seção 10 | A Folha mostra só o que a família lançou e diz "falta a tabela do contador" |
 
 **Já é de outra tarefa e não se duplica:**
@@ -43,7 +44,7 @@ Leia antes: `docs/escritorio/00-base-comum.md`, a parte 6 de `docs/tarefa-11-esc
 Palavras deste caderno, traduzidas: **previsão única** (1 função do banco que devolve as linhas do dinheiro do mês e dos próximos meses); **valor do meio** (mediana: de 4 valores em ordem, a média dos 2 centrais); **gasto semanal de base** (quanto a casa gasta numa semana comum); **achado** (o fato com R$ por mês que o banco encontrou; a tela chama de "O que chamou atenção"); **piso** (valor mínimo pra virar pendência).
 
 ## 3. Passos de construção
-Siga na ordem. Nomes de função são proposta: se a Tarefa 4 ou a 11-C já usam outro nome, use o delas e avise.
+Siga na ordem, em 3 etapas: passos 1 a 8 antes da 11-C; passos 9, 10, 11 e 13 depois da 11-C; passos 12, 14 e 15 depois da 11-B (ordem completa em `LEIA-PRIMEIRO.md`, parte 3). Nomes de função são proposta: se a Tarefa 4 ou a 11-C já usam outro nome, use o delas e avise.
 
 | # | O que fazer | Onde | Pronto quando | Como testar |
 |---|---|---|---|---|
@@ -69,7 +70,7 @@ Siga na ordem. Nomes de função são proposta: se a Tarefa 4 ou a 11-C já usam
 ### 4.2 Linhas do mês corrente (família Silva, 24/11, 9h00)
 | # | Linha (`chave`) | O que é | Quem é o dono do valor | Valor |
 |---|---|---|---|---|
-| 1 | `limite_da_casa` | limite do mês: Carlos R$ 5.000 + Marina R$ 3.500 + Casa R$ 3.500 | Planejamento | R$ 12.000 |
+| 1 | `limite_da_casa` | limite do mês: Carlos R$ 4.000 + Marina R$ 3.000 + Casa R$ 5.000 | Planejamento | R$ 12.000 |
 | 2 | `gasto_ate_hoje` | lançamentos que já pesam no mês, pela regra da Tarefa 4 | Lançamentos | R$ 8.240 |
 | 3 | `sobra_aparente` | linha 1 menos linha 2 | conta | R$ 3.760 |
 | 4 | `contas_com_data` | contas com vencimento de hoje ao último dia do mês, ainda sem "paga" | Agenda de Vencimentos | R$ 1.940 |
@@ -112,7 +113,7 @@ Livre negativo não vira zero: o Contador mostra "Faltam R$ X" (ficha 5.1). A co
 **Regra do teste noturno (entra na rodada das 3h da Tarefa 5):**
 1. O banco roda, no mesmo instante, as 5 contas (`conta_contador`, `conta_vencimentos`, `conta_cartao`, `conta_folha`, `conta_colchao`) e a `previsao_unica`, sem IA e sem gravar conferência. Custo de IA: 0.
 2. `escritorio_comparar_assuntos` recebe os valores e compara, chave por chave da tabela acima. Tem de dar igual ao centavo entre os ajudantes e igual à previsão.
-3. Cada diferença vira 1 alerta "Precisa de você" no Escritório, na parte "Pra informar", com 1 linha: "Contador da Casa e Agenda de Vencimentos mostram valores diferentes pras contas com data de novembro: R$ 1.940 e R$ 1.680. Diferença: R$ 260." O mesmo alerta vai pra saúde técnica do dono do produto. O teste não corrige nada.
+3. Cada diferença vira 1 pendência na fila "Depende de você", na parte "Pra informar", com 1 linha: "Contador da Casa e Agenda de Vencimentos mostram valores diferentes pras contas com data de novembro: R$ 1.940 e R$ 1.680. Diferença: R$ 260." O mesmo alerta vai pra saúde técnica do dono do produto. O teste não corrige nada.
 4. A mesma divergência não nasce 2 vezes: chave `divergencia:<assunto>:<mês>` na tranca da 11-C. Sumiu a diferença, o alerta fecha sozinho na rodada seguinte, com "Resolvido pela conta de 25/11, 3h00".
 5. Valor diferente só porque entrou lançamento depois da conferência não é divergência. O cartão antigo mostra a linha da 11-C "Entrou lançamento depois desta conta" e o botão "Refazer a conta". Na tela, 2 cartões com valores diferentes pro mesmo assunto só podem existir se o mais antigo tiver essa linha.
 
@@ -121,7 +122,8 @@ Livre negativo não vira zero: o Contador mostra "Faltam R$ X" (ficha 5.1). A co
 - **Formato.** R$ com ponto de milhar e sem centavos no cartão ("R$ 1.940"); a conta é guardada com centavos e arredonda pro real mais próximo só no texto. Percentual inteiro. Semanas em número inteiro, sempre arredondando pra baixo. Datas em dd/mm.
 - **Palavras da comparação.** "subiu R$ X", "desceu R$ X" ou "igual" (diferença menor que R$ 1, ou 0 semana). Sempre dizer contra o quê. Seta pra cima, pra baixo ou traço: ícone, nunca só cor.
 - **Achado.** O banco escolhe no máximo 1 por conferência: o de maior R$ por mês. Todo achado tem `achado_valor_mes`. Com R$ 50,00 ou mais por mês (estimativa, calibrar no piloto), nasce 1 pendência. Abaixo disso o achado aparece no relatório, com o R$, e o relatório fica "Entregue". Sem achado: destaque "Nada fora do normal esta semana" (no Fechamento: "neste mês") e ação vazia. Nunca inventar ação.
-- **Situação.** "Perguntando" quando falta 1 dado mínimo: sem IA, custo 0, com a pergunta do catálogo. "Precisa de você" quando nasceu pendência. "Entregue" nos outros casos. Pendência "Pra decidir" pede escolha; "Pra informar" só avisa.
+- **Situação.** "Perguntando" quando falta 1 dado mínimo: sem IA, custo 0, com a pergunta do catálogo. "Precisa de você" quando nasceu pendência "Pra decidir" (base comum, parte 5: pendência de decisão). "Entregue" nos outros casos. Pendência "Pra decidir" pede 1 escolha da casa. Pendência "Pra informar" pede 1 dado ou 1 confirmação (na fila da 11-E: "um dado que o ajudante precisa"); o relatório segue "Entregue", com o botão no cartão e a linha na fila.
+- **Texto curto do cartão fechado.** Cada conta devolve também `legenda_curta` e `comparacao_curta`, de 1 linha cada, pro nível 1 do cartão da 11-E (o cartão fechado tem até 25 palavras). O molde é o da tabela 6.1 da 11-E. A legenda e a comparação completas destas fichas aparecem no cartão aberto.
 - **Texto.** Título, número, legenda, comparação e fonte saem do banco, por molde. A IA escreve só "O que chamou atenção" (destaque) e "O que fazer" (ação), até 20 palavras cada, só com números gravados. IA falhou: sai o número e a frase da 11-C.
 - **Fonte.** Toda ficha termina com a fonte e "Conta feita em dd/mm, HhMM".
 - **Exemplos.** O exemplo que usa a base comum sem mudança está marcado "base". O outro muda 1 dado, marcado "cenário".
@@ -156,7 +158,7 @@ Contas do B: 12.000 - 9.400 = 2.600; 2.600 - 2.840 = falta 240; 9.400 ÷ 12.000 
 - **Responde:** a próxima fatura cabe no mês em que vence, ou quanto falta.
 - **Número principal:** valor da próxima fatura (a de vencimento mais próximo ainda não paga). Passo a passo: (1) pegar a fatura e o mês do vencimento; (2) livre do mês do vencimento depois das faturas = limite do mês - contas com data do mês - folha a guardar do mês - todas as faturas que vencem no mês; (3) se der 0 ou mais: número "R$ <fatura>" e a palavra "Cabe"; se der negativo: número "Faltam R$ X". Família Silva: fatura do cartão azul R$ 2.150, vence em 05/12; 12.000 - 2.700 - 890 - 3.470 = R$ 4.940. Cabe. Fatura ainda aberta entra com o valor "até agora". Fatura futura entra só com as parcelas já contratadas.
 - **Comparação:** (a) contra a fatura anterior do mesmo cartão: "subiu R$ 170" (2.150 - 1.980); (b) parcelas já contratadas nos próximos 6 meses, lidas da Tarefa 8, dizendo o mês mais alto: dezembro, janeiro e fevereiro R$ 1.040; março R$ 1.400; abril e maio R$ 840; soma R$ 6.200.
-- **Precisa de você:** fatura não cabe (pendência "Pra decidir", chave `cartao:falta:<cartão>:<vencimento>`), ou achado com R$ 50 ou mais. **Perguntando:** nenhum cartão cadastrado ("Quais são seus cartões e em que dia cada um fecha e vence?"); fatura fechada sem total ("A fatura do cartão azul fechou em 25/11. Qual foi o total?"). **Entregue:** o resto.
+- **Precisa de você:** fatura não cabe (pendência "Pra decidir", chave `cartao:falta:<cartão>:<vencimento>`), ou achado com R$ 50 ou mais. **Perguntando:** nenhum cartão cadastrado ("Quais são seus cartões e quando fecham?", a frase da Tarefa 11; os campos pedem o dia de fechar e o de vencer); fatura fechada sem total ("A fatura do cartão azul fechou em 25/11. Qual foi o total?"). **Entregue:** o resto.
 - **Achado:** (a) falta pra fatura: R$ por mês = a falta; (b) mês com parcelas acima do mês anterior: R$ por mês = a diferença (março: 1.400 - 1.040 = R$ 360); (c) total digitado da fatura diferente da soma dos lançamentos: R$ = a diferença, "Pra informar". O valor "R$ 200" da ação vem do parâmetro `parcela_nova_teto` (estimativa, pergunta 6).
 - **Nunca diz:** parcelar a fatura, pagar o mínimo, pedir empréstimo, aumentar o limite do cartão, trocar de cartão ou de banco; juros, multa ou taxa (não tem a tabela); o nome de quem fez a compra em notícia ruim.
 - **Dados mínimos:** 1 cartão com dia de fechamento e de vencimento; lançamentos no cartão; limite do mês do vencimento.
@@ -184,7 +186,7 @@ Contas do B: 2.150 + 5.250 = 7.400; 12.000 - 2.700 - 890 - 7.400 - 1.320 = falta
 - **Número principal:** soma do que vence de hoje (incluído) até hoje + 9 dias, em 3 partes lidas da previsão: contas com data sem "paga", faturas e pagamentos da folha com data. Família Silva, 24/11 a 03/12: escola 25/11 R$ 980 + energia 27/11 R$ 460 + internet e celular 28/11 R$ 240 + água 30/11 R$ 260 + condomínio 02/12 R$ 760 = R$ 2.700; faturas R$ 0; folha R$ 0. Total R$ 2.700, dos quais R$ 1.940 até 30/11 (o mesmo valor do Contador). A contagem ("5 contas") vai na legenda.
 - **Comparação:** (a) contra a conferência anterior: em 18/11 a janela (18/11 a 27/11) somava R$ 1.440; "subiu R$ 1.260"; (b) os 3 totais da caixa da Tarefa 19, contados a partir de hoje: 30 dias R$ 7.970, 60 dias R$ 18.610, 90 dias R$ 23.850 (detalhe em "Dados que acrescentei").
 - **Por que nunca na véspera:** a conferência é semanal (quarta) e a janela tem 10 dias. Uma conta que não entrou na janela de uma quarta entra na da quarta seguinte com 3 dias ou mais de folga. Conta que só vem 1 vez no ano vira pendência no dia em que entra na visão de 90 dias, com o valor por mês pra separar. O ajudante não manda aviso de véspera: conta cadastrada na véspera aparece na próxima conferência com a marca "entrou depois da última conferência".
-- **Precisa de você:** conta que passou da data sem "paga" ("Pra informar", chave `vencimentos:vencida:<conta>:<data>`); achado com R$ 50 ou mais. Se o Contador está em "Faltam", a Agenda repete o valor dele e não abre 2ª pendência. **Perguntando:** nenhuma conta com data cadastrada ("Quais contas da casa têm dia certo pra vencer? Diga o nome, o dia e o valor."); conta na janela sem valor ("Qual é o valor da conta de energia que vence em 27/11?"). **Entregue:** o resto.
+- **Precisa de você:** achado com R$ 50 ou mais. **Pendência "Pra informar" (o relatório segue "Entregue"):** conta que passou da data sem "paga" (chave `vencimentos:vencida:<conta>:<data>`). Se o Contador está em "Faltam", a Agenda repete o valor dele e não abre 2ª pendência. **Perguntando:** nenhuma conta com data cadastrada ("Quais contas da casa têm dia certo pra vencer? Diga o nome, o dia e o valor."); conta na janela sem valor ("Qual é o valor da conta de energia que vence em 27/11?"). **Entregue:** o resto.
 - **Achado:** mês, dentro dos 90 dias, com contas que só vêm 1 vez no ano. R$ por mês = soma dessas contas ÷ meses inteiros até lá, contando o mês da conta. Janeiro: R$ 6.000 ÷ 2 (dezembro e janeiro) = R$ 3.000 por mês. Chave `vencimentos:mes_pesado:2027-01`.
 - **Nunca diz:** multa, juros ou "vai cortar"; "você esqueceu"; que pagou ou vai pagar (só a família paga); pra atrasar uma conta e pagar outra.
 - **Dados mínimos:** 1 conta com nome, dia e valor.
@@ -197,7 +199,7 @@ Comparação: subiu R$ 1.260 contra 18/11. Em 30 dias: R$ 7.970. Em 60: R$ 18.61
 O que chamou atenção: Janeiro soma R$ 6.000 em contas que só vêm 1 vez no ano.
 O que fazer: Separar R$ 3.000 em dezembro e R$ 3.000 em janeiro.
 Fonte: Contas com data, Cartões e parcelas, Folha da Casa. Conta feita em 24/11, 9h00.
-B) NOTÍCIA RUIM, cenário: quarta 02/12, energia sem "paga" · Precisa de você (Pra informar)
+B) NOTÍCIA RUIM, cenário: quarta 02/12, energia sem "paga" · Entregue, com pendência "Pra informar"
 Título: 1 conta passou da data
 Número: R$ 2.910
 Legenda: 2 contas de 02/12 a 11/12. Passou da data: energia, R$ 460
@@ -233,12 +235,12 @@ O que chamou atenção: 9 itens subiram R$ 310 por mês. A Casa ainda tem R$ 590
 O que fazer: Uma saída: trocar 3 marcas devolve R$ 180 por mês.
 Fonte: Notas da feira e memória de preços. Conta feita em 23/11, 20h23.
 ```
-Contas do B: 1.320 - 1.085 = 235; Casa: 3.500 - 2.910 = 590.
+Contas do B: 1.320 - 1.085 = 235; Casa: 5.000 - 4.410 = 590.
 ### 5.5 Auditor de Estoque (`auditor`)
 - **Responde:** quanto saiu da despensa acima do normal e ficou sem explicação.
 - **Número principal:** passo a passo, pros 15 itens principais: (1) consumo da semana = contagem anterior + entradas - contagem de hoje (Tarefa 4); (2) normal = valor do meio do consumo nas 4 semanas anteriores; (3) acima do normal = o que passou, em quantidade × preço da memória; (4) desconto das visitas = nº de visitas da semana (da Presença) × custo da despensa por pessoa por dia das últimas 4 semanas; (5) sem explicação = soma do passo 3 menos o passo 4, nunca menos que 0. Família Silva: 3 kg de carne a mais = R$ 120; 4 visitas no sábado × R$ 35 = R$ 140; sem explicação: R$ 0.
 - **Comparação:** contra a conferência anterior, já com as visitas descontadas: "igual" (R$ 0 e R$ 0).
-- **Precisa de você:** sem explicação por 2 conferências seguidas e R$ 50 ou mais por mês ("Pra informar"). **Perguntando:** semana sem contagem ("Faltou a contagem de segunda, 23/11. Dá pra contar hoje os 15 itens?"); 1ª vez que aparece valor sem explicação de R$ 50 ou mais ("Saíram 3 kg de carne a mais que o normal nesta semana. O que foi?", com as respostas "Teve visita", "Estragou", "Recontar na segunda", "Não sei"). **Entregue:** o resto.
+- **Pendência "Pra informar" (o relatório segue "Entregue"):** sem explicação por 2 conferências seguidas e R$ 50 ou mais por mês. **Perguntando:** semana sem contagem ("Faltou a contagem de segunda, 23/11. Dá pra contar hoje os 15 itens?"); 1ª vez que aparece valor sem explicação de R$ 50 ou mais ("Saíram 3 kg de carne a mais que o normal nesta semana. O que foi?", com as respostas "Teve visita", "Estragou", "Recontar na segunda", "Não sei"). **Entregue:** o resto.
 - **Achado:** R$ por mês = soma do "sem explicação" das últimas 4 semanas. Tudo explicado: o destaque diz o que foi e que está explicado; ação: "Nada a fazer esta semana."
 - **Nunca diz:** nome de pessoa da equipe; "sumiu", "desviou", "furto", "desperdício"; sugestão de trancar despensa, descontar ou punir. Estrago só se registra.
 - **Dados mínimos:** 2 contagens de segunda seguidas e as notas de entrada entre elas; presença e visitas da semana (sem isso, não desconta e pergunta "Teve visita nesta semana?").
@@ -262,7 +264,7 @@ Fonte: Contagem de segunda, notas da feira e presença. Conta feita em 24/11, 7h
 ```
 ### 5.6 Controlador de Presença (`presenca`)
 - **Responde:** quanto a despensa custa por pessoa por dia, contando quem estava na casa.
-- **Número principal:** consumo da semana em R$ ÷ presenças da semana. 1 presença = 1 pessoa em 1 dia (família, equipe presente e visitas). Família Silva, 16/11 a 22/11: família 3 × 7 = 21, equipe 5, visitas 4; total 30 presenças; R$ 1.140 ÷ 30 = R$ 38. A contagem de presenças vai na legenda.
+- **Número principal:** consumo da semana em R$ ÷ presenças da semana. 1 presença = 1 pessoa em 1 dia (família, equipe presente e visitas). Família Silva, 16/11 a 22/11: família 4 × 7 = 28, equipe 6 (Dona Lúcia 5 dias + Seu Jorge 1 dia), visitas 4; total 38 presenças; R$ 1.444 ÷ 38 = R$ 38. A contagem de presenças vai na legenda.
 - **Comparação:** contra a média das 4 semanas anteriores: R$ 35; "subiu R$ 3".
 - **Precisa de você:** achado com R$ 50 ou mais ("Pra decidir"). **Perguntando:** presença não marcada em 2 dias ou mais da semana ("Faltou marcar a presença de quinta e sexta. Quem estava na casa?"). **Entregue:** o resto.
 - **Achado:** (a) custo de visita: valor do meio do custo a mais nos dias com visita das últimas 12 semanas (R$ 45) × dias com visita por mês (6 dias em 12 semanas = 2 por mês) = R$ 90 por mês; (b) número acima da média de 4 semanas por 2 conferências seguidas: R$ por mês = diferença × presenças das últimas 4 semanas. Na 1ª semana de alta não há achado (b).
@@ -272,7 +274,7 @@ Fonte: Contagem de segunda, notas da feira e presença. Conta feita em 24/11, 7h
 A) NORMAL, base · segunda 23/11, 8h13 · Precisa de você (Pra decidir)
 Título: A despensa custou R$ 38 por pessoa por dia
 Número: R$ 38
-Legenda: semana de 16/11 a 22/11: R$ 1.140 pra 30 presenças
+Legenda: semana de 16/11 a 22/11: R$ 1.444 pra 38 presenças
 Comparação: subiu R$ 3 contra as últimas 4 semanas (R$ 35).
 O que chamou atenção: Dia com visita custa R$ 45 a mais. Foram 2 por mês.
 O que fazer: Prever R$ 90 por mês na feira.
@@ -280,13 +282,13 @@ Fonte: Presença, cozinha e contagem de segunda. Conta feita em 23/11, 8h13.
 B) NOTÍCIA RUIM, cenário: 2ª semana seguida a R$ 41, sem visita · Precisa de você (Pra decidir)
 Título: A despensa custou R$ 41 por pessoa por dia
 Número: R$ 41
-Legenda: semana de 16/11 a 22/11: R$ 1.066 pra 26 presenças
+Legenda: semana de 16/11 a 22/11: R$ 1.394 pra 34 presenças
 Comparação: subiu R$ 6 contra as últimas 4 semanas (R$ 35), pela 2ª semana seguida.
-O que chamou atenção: São R$ 6 a mais por pessoa por dia: R$ 720 por mês. A Casa ainda tem R$ 590.
+O que chamou atenção: São R$ 6 a mais por pessoa por dia: R$ 864 por mês. A Casa ainda tem R$ 590.
 O que fazer: Uma saída: ver com o Comprador os 5 itens que subiram R$ 140 por mês.
 Fonte: Presença, cozinha e contagem de segunda. Conta feita em 23/11, 8h13.
 ```
-Contas do B: 1.066 ÷ 26 = 41; 41 - 35 = 6; 6 × 120 presenças em 4 semanas = 720.
+Contas do B: sem visita são 28 + 6 = 34 presenças; 1.394 ÷ 34 = 41; 41 - 35 = 6; 6 × 144 presenças em 4 semanas = 864.
 ### 5.7 Folha da Casa (`folha`)
 - **Responde:** quanto falta guardar pro próximo pagamento da equipe que tem data.
 - **Número principal:** dos pagamentos com data que não são o salário do mês (13º, férias e o que a tabela do contador trouxer), pegar o de data mais próxima que ainda tem falta. Falta = valor do pagamento - o que já está guardado pra ele. Família Silva em 24/11: 13º de R$ 1.800, R$ 900 guardados, falta R$ 900 (é a linha 6 da previsão). Valor, data e percentual de cada pagamento vêm da tabela conferida por contador ou do que a família lançou. O ajudante nunca calcula encargo por conta própria.
@@ -359,24 +361,24 @@ Fonte: Reserva, Previsão do banco, Agenda de Vencimentos, Folha da Casa. Conta 
 
 ## 6. Fechamento do mês
 - **O que é.** É a conferência mensal do Contador da Casa, com o nome "Fechamento de <mês>". É o relatório forte do mês (11-B): não cria conferência a mais nem custo novo.
-- **Quando roda.** No 1º dia útil do mês, às 7h12. Dia útil = segunda a sexta que não é feriado na tabela de feriados que o valor do dia já usa (Tarefa 4). Dezembro/2026: terça, 01/12. Janeiro/2027: 01/01 é feriado e cai numa sexta; roda na segunda, 04/01. Se o dia 1 não é útil, a conferência do dia 1 não nasce: nasce a do 1º dia útil, com a chave `agenda:<data e hora>` da 11-C.
+- **Quando roda.** No 1º dia útil do mês, às 7h12. É o tipo `primeiro_dia_util` da escala da 11-B. Dia útil = segunda a sexta que não é feriado na tabela de feriados que o valor do dia já usa (Tarefa 4). Novembro/2026: a base comum diz segunda, 02/11 (ver pergunta 12: 02/11 é feriado nacional). Dezembro/2026: terça, 01/12. Janeiro/2027: 01/01 é feriado e cai numa sexta; roda na segunda, 04/01. Se o dia 1 não é útil, a conferência do dia 1 não nasce: nasce a do 1º dia útil, com a chave `agenda:<data e hora>` da 11-C.
 - **O que entra.** Só o mês fechado, do dia 1 ao último dia, com tudo que foi lançado até a hora da conta. Lançamento atrasado do mês fechado que chegar depois: vale a linha "Entrou lançamento depois desta conta" e o botão "Refazer a conta" (11-C).
 - **Os 3 números:**
   1. **O que ficou do limite:** `limite_da_casa` - tudo que pesou no mês. Negativo: "O mês passou R$ X". Comparação contra o mês anterior.
   2. **Maior mudança:** o envelope com a maior diferença em R$ contra o mês anterior, pra cima ou pra baixo, com o mínimo de R$ 50. Abaixo disso: "Nenhum envelope mudou mais de R$ 50."
   3. **Reserva:** as semanas de hoje e o mês mais apertado dos próximos 3, lidos da conta do Guardião no mesmo instante.
 - **1 achado e 1 ação.** O achado é o de maior R$ por mês entre: o que passou do limite; o mês abaixo da reserva; a maior mudança, se ela se repetiu 2 meses seguidos. Vale o piso de R$ 50.
-- **Botão "Vimos juntos".** É o único botão verde do cartão do Fechamento. 1 toque de qualquer pessoa do casal grava, pela função `escritorio_marcar_vimos_juntos(turno)`, a pessoa logada e a hora do servidor. O cartão passa a mostrar "Visto juntos por Marina em 01/12, 20h10". O toque fecha a pendência do Fechamento, não muda nenhum número, não manda aviso e tem "Desfazer" por 6 s. Papel `membro` e `equipe_casa` não veem o cartão. Sem toque em 7 dias, o Fechamento aparece 1 vez no Domingo do casal (Tarefa 20) e depois para de cobrar.
+- **Botão "Vimos juntos".** É o único botão verde do cartão do Fechamento. 1 toque de qualquer pessoa do casal grava, pela função `escritorio_marcar_vimos_juntos(turno)`, a pessoa logada e a hora do servidor. A função não altera a conferência fechada (regra da 11-C): resolve a pendência `contador:fechamento:<mês>` e grava a ação `viu_fechamento` na trilha da 11-C. O cartão passa a mostrar "Visto juntos por Marina em 01/12, 20h10". O toque fecha a pendência do Fechamento, não muda nenhum número, não manda aviso e tem "Desfazer" por 6 s. Papel `membro` e `equipe_casa` não veem o cartão. Sem toque em 7 dias, o Fechamento aparece 1 vez no Domingo do casal (Tarefa 20) e depois para de cobrar.
 - **Estouro.** Se o mês passou, vale a regra de 13/11: por padrão sai do mês seguinte. O texto diz o novo começo do mês seguinte e nunca o nome de quem passou.
 
 **Exemplo completo: Fechamento de novembro, família Silva, terça 01/12/2026, 7h12**
 
-Como novembro fechou (dados acrescentados): gasto até 24/11 R$ 8.240 + contas com data pagas R$ 1.940 + 13º guardado R$ 900 + dia a dia de 24/11 a 30/11 R$ 560 = R$ 11.640 usados. Ficou: 12.000 - 11.640 = R$ 360 (os R$ 920 livres menos os R$ 560). Outubro tinha ficado com R$ 210. Feira e despensa: R$ 3.420 em novembro contra R$ 3.130 em outubro. Marina recebeu R$ 5.100: R$ 300 acima do mês mais fraco, que vão pro guardado.
+Como novembro fechou (dados acrescentados): gasto até 24/11 R$ 8.240 + contas com data pagas R$ 1.940 + 13º guardado R$ 900 + dia a dia de 24/11 a 30/11 R$ 560 = R$ 11.640 usados. Ficou: 12.000 - 11.640 = R$ 360 (os R$ 920 livres menos os R$ 560). Outubro tinha ficado com R$ 210. Feira e despensa: R$ 4.700 em novembro contra R$ 4.410 em outubro. Marina recebeu R$ 5.100: R$ 300 acima do mês mais fraco, que vão pro guardado.
 ```
 Situação: Precisa de você (Pra decidir) · sinal: Abaixo da reserva em janeiro
 Título: Fechamento de novembro
 Número 1: R$ 360 · ficou do limite de R$ 12.000 · subiu R$ 150 contra outubro
-Número 2: R$ 290 a mais · maior mudança: feira e despensa, R$ 3.420 contra R$ 3.130 em outubro
+Número 2: R$ 290 a mais · maior mudança: feira e despensa, R$ 4.700 contra R$ 4.410 em outubro
 Número 3: 9 semanas · reserva de R$ 27.000 · mês mais apertado: janeiro, 6 semanas
 Guardado em novembro: R$ 300
 O que chamou atenção: Janeiro pede R$ 7.780 além do mês. São R$ 3.890 por mês até lá.
@@ -384,7 +386,7 @@ O que fazer: Separar R$ 3.890 em dezembro: R$ 3.000 pras contas de janeiro e R$ 
 Botão: Vimos juntos
 Fonte: Previsão do banco, Lançamentos, Agenda de Vencimentos, Folha da Casa, Guardião do Colchão. Conta feita em 01/12, 7h12.
 ```
-Contas: 8.240 + 1.940 + 900 + 560 = 11.640; 12.000 - 11.640 = 360; 360 - 210 = 150; 3.420 - 3.130 = 290; 5.100 - 4.800 = 300; 6.000 + 1.780 = 7.780; 7.780 ÷ 2 = 3.890; 3.000 + 890 = 3.890.
+Contas: 8.240 + 1.940 + 900 + 560 = 11.640; 12.000 - 11.640 = 360; 360 - 210 = 150; 4.700 - 4.410 = 290; 5.100 - 4.800 = 300; 6.000 + 1.780 = 7.780; 7.780 ÷ 2 = 3.890; 3.000 + 890 = 3.890.
 
 Versão de notícia ruim (cenário: novembro usou R$ 12.240): Número 1 vira "O mês passou R$ 240"; destaque "O mês passou R$ 240. Dezembro começa com R$ 11.760."; ação "Uma saída: tirar R$ 60 por semana do dia a dia de dezembro." (240 ÷ 4 semanas = 60).
 
@@ -460,11 +462,11 @@ Preparo comum: recriar a família Silva, relógio simulado em 24/11/2026, 9h00, 
 | T-D27 | T-D25 com compra de R$ 5.250 no azul em 20/11 | deixar rodar | fatura R$ 7.400; "Faltam R$ 310"; `precisa_de_voce`; texto sem "parcelar", "mínimo" ou "empréstimo" |
 | T-D28 | comum | ler as parcelas dos 6 meses no Cartão | 1.040, 1.040, 1.040, 1.400, 840, 840; soma 6.200; achado de março com R$ 360 por mês |
 | T-D29 | comum | rodar o Comprador | "R$ 1.180"; "subiu R$ 95"; achado R$ 140 por mês; ação com R$ 90; 1 pendência |
-| T-D30 | comum | rodar a Presença | 1.140 ÷ 30 = "R$ 38"; "subiu R$ 3"; achado 2 × 45 = R$ 90 por mês |
+| T-D30 | comum | rodar a Presença | 1.444 ÷ 38 = "R$ 38"; "subiu R$ 3"; achado 2 × 45 = R$ 90 por mês |
 | T-D31 | comum | rodar a Folha | número "R$ 900"; férias: falta 1.780; "R$ 890 por conferência"; pendência `folha:ferias:2027-01`; `folha_a_guardar` = 900 igual ao Contador |
 | T-D32 | fechar novembro como na seção 6; relógio em 01/12, 7h12 | deixar o Fechamento rodar e tocar "Vimos juntos" como Marina | 3 números: R$ 360, R$ 290 a mais, 9 semanas; achado R$ 3.890 por mês; cartão mostra "Visto juntos por Marina em 01/12"; nenhum número muda |
 | T-D33 | relógio em 01/01/2027 (feriado) | avançar até 04/01, 7h12 | nenhum Fechamento em 01/01; 1 Fechamento de dezembro em 04/01 |
-| T-D34 | cenário do Contador com gasto de R$ 9.400 | rodar o Contador | "Faltam R$ 240"; texto com "Dezembro começa com R$ 11.760"; busca por "Carlos", "Marina", "Bia", "Lúcia", "!" e "de novo" no texto dá 0 |
+| T-D34 | cenário do Contador com gasto de R$ 9.400 | rodar o Contador | "Faltam R$ 240"; texto com "Dezembro começa com R$ 11.760"; busca por "Carlos", "Marina", "Bia", "Léo", "Lúcia", "Jorge", "!" e "de novo" no texto dá 0 |
 | T-D35 | IA simulada devolve "Parcele a fatura em 3 vezes" e, na 2ª tentativa, o mesmo | rodar o Cartão no cenário T-D27 | texto descartado 2 vezes; sai só o número; motivo `texto_descartado`; a pendência nasce do mesmo jeito |
 | T-D36 | apagar a reserva cadastrada | rodar o Guardião | `sem_dados` com "Quanto a casa tem guardado hoje que nunca pode faltar na conta?"; 0 chamada de IA; custo 0 |
 
@@ -493,7 +495,7 @@ Conferência final da 11-D (critério da ficha): em todos os relatórios gerados
 |---|---|---|
 | 1 | "A fatura cabe" contra o quê? | Contra o livre do mês do vencimento, já sem contas com data, folha e as outras faturas (ficha 5.2). É a mesma conta do Contador, então os 2 nunca divergem |
 | 2 | O que fica do limite no fim do mês vai pra onde? | Vai pro guardado, numa linha separada do que entrou a mais. Até decidir, o Fechamento só mostra o valor |
-| 3 | A cesta do Comprador é termômetro de preço ou é a compra da semana? Na base, R$ 1.085 por semana dá R$ 4.340 em 4 semanas, acima do limite da Casa de R$ 3.500 | Termômetro de preço. O gasto da Casa continua vindo dos lançamentos |
+| 3 | A cesta do Comprador é termômetro de preço ou é a compra da semana? Na base, R$ 1.085 por semana dá R$ 4.340 em 4 semanas, dentro do limite da Casa de R$ 5.000 | Termômetro de preço. O gasto da Casa continua vindo dos lançamentos |
 | 4 | Quem mantém a tabela da folha conferida por contador, e em que tarefa ela nasce? | Tabela do produto, só o administrador insere linha nova com data de vigência (como a de preços da 11-B), conferida por contador contratado antes do piloto. Nasce na Tarefa 19 |
 | 5 | Meta de semanas da reserva: a família escolhe ou o app sugere? | A família escolhe no primeiro uso (Tarefa 13). Sem escolha, não há sinal âmbar por meta |
 | 6 | Valor da ação "nada parcelado acima de R$ X" | R$ 200 como padrão, em parâmetro por família, calibrar no piloto |
@@ -502,7 +504,7 @@ Conferência final da 11-D (critério da ficha): em todos os relatórios gerados
 | 9 | Parâmetros (piso, meta, teto de parcela) pedem 1 tabela nova `escritorio_parametros`. Pode? | Sim, por família, com padrão do produto. A parte 9 do resumo da Tarefa 11 não previa essa tabela |
 | 10 | O verbo "sobrar" pode aparecer na tela? A base proíbe "sobra" como nome do guardado e a ficha escreve "Sobram R$ 3.760" | Pode como verbo do mês ("Sobram", "ficou do limite"). Nunca como nome do guardado |
 | 11 | Pagamentos da folha com data (13º, férias) entram no total de 10, 30, 60 e 90 dias da Agenda? | Sim, numa linha própria com o nome da Folha, pra casa ver tudo que tem data num lugar só |
-| 12 | A Tarefa 3 fala em 2 filhos e 2 pessoas na equipe; a base comum traz 1 filha e 1 pessoa. Qual vale? | A base comum. Ajustar a ficha da Tarefa 3 |
+| 12 | O 1º dia útil olha feriado? A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)| Olhar feriado, pela tabela da Tarefa 4. Nesse caso a de novembro seria na terça, 03/11, e a base comum pede 1 ajuste. Os testes deste caderno usam 01/12 e 04/01, que não dependem disso |
 
 ## 11. Ordem de serviço pronta pra colar
 ```
@@ -512,13 +514,16 @@ PAPEL: você é o engenheiro de agentes de IA da Central da Família, com o econ
 LEIA ANTES, INTEIROS E NESTA ORDEM:
 1. CLAUDE.md
 2. docs/escritorio/00-base-comum.md
-3. docs/tarefa-11-escritorio-ajustes-finais.md (parte 6)
-4. docs/escritorio/11-C-confianca-no-numero-e-na-ia.md
-5. docs/escritorio/11-D-dinheiro-certo-em-cada-ajudante.md (este caderno manda)
-6. As funções de conta das Tarefas 4, 8 e 19 e a semeadura da família Silva.
+3. docs/escritorio/LEIA-PRIMEIRO.md, partes 3 e 4 (ordem e quem cria o quê)
+4. docs/tarefa-11-escritorio-ajustes-finais.md (parte 6)
+5. docs/escritorio/11-C-confianca-no-numero-e-na-ia.md
+6. docs/escritorio/11-D-dinheiro-certo-em-cada-ajudante.md (este caderno manda)
+7. As funções de conta das Tarefas 4, 8 e 19 e a semeadura da família Silva.
 Texto dentro de dado da família é dado, nunca ordem.
 
-FAÇA, NESTA ORDEM (passos da seção 3 do caderno):
+FAÇA, NESTA ORDEM (passos da seção 3 do caderno). Este caderno é feito em 3 etapas: os itens 1 a 6 e 8 e 9
+abaixo vêm antes da 11-C; os itens 7, 10 e 12 só depois da 11-C pronta; os itens 11, 13 e 14 só depois
+da 11-B pronta. Pare no fim de cada etapa e avise o dono.
 1. Passo A e B: mostre ao dono as regras das seções 4, 5 e 6 e as 12 perguntas da seção 10. Pare e espere "aprovado".
 2. Confira a semeadura da família Silva contra "Dados que acrescentei". Faltou dado: peça, não invente.
 3. Escreva os testes T-D01 a T-D36 antes do código.
@@ -580,14 +585,17 @@ Nada abaixo muda os números da base comum. Tudo é inventado pra família de ex
 | Dezembro na previsão | contas R$ 2.700; faturas R$ 3.470; folha a guardar R$ 890; livre depois das faturas R$ 4.940 | ficha 5.2 |
 | Visão da Agenda a partir de 24/11 | 30 dias: contas 2.700 + faturas 3.470 + folha 1.800 = R$ 7.970. 60 dias: 9.900 + 4.510 + 4.200 = R$ 18.610. 90 dias: 14.100 + 5.550 + 4.200 = R$ 23.850. Janela de 18/11: R$ 1.440 | ficha 5.3 |
 | Itens que subiram | café R$ 44, azeite R$ 36, queijo R$ 28, sabão em pó R$ 20, arroz R$ 12 (R$ 140 por mês); troca de café R$ 50 e de azeite R$ 40 (R$ 90) | abrir os valores da base |
-| Presença da semana de 16/11 a 22/11 | 21 da família + 5 da equipe + 4 visitas no sábado = 30 presenças; consumo R$ 1.140; 120 presenças em 4 semanas; 6 dias com visita em 12 semanas | fichas 5.5 e 5.6 |
-| Gasto da Casa até 24/11 | R$ 2.910 de R$ 3.500 (ainda R$ 590), só nos cenários de notícia ruim | "quanto ainda dá" nas fichas 5.4 a 5.6 |
-| Fim de novembro | dia a dia de 24/11 a 30/11 R$ 560; usado no mês R$ 11.640; ficou R$ 360; outubro ficou com R$ 210; feira e despensa R$ 3.420 contra R$ 3.130 | Fechamento de novembro |
+| Presença da semana de 16/11 a 22/11 | 28 da família (4 pessoas × 7 dias) + 6 da equipe (Dona Lúcia 5 dias, Seu Jorge 1 dia) + 4 visitas no sábado = 38 presenças; consumo R$ 1.444; 144 presenças em 4 semanas; 6 dias com visita em 12 semanas | fichas 5.5 e 5.6 |
+| Gasto da Casa até 24/11 | R$ 4.410 de R$ 5.000 (ainda R$ 590), só nos cenários de notícia ruim | "quanto ainda dá" nas fichas 5.4 a 5.6 |
+| Fim de novembro | dia a dia de 24/11 a 30/11 R$ 560; usado no mês R$ 11.640; ficou R$ 360; outubro ficou com R$ 210; feira e despensa R$ 4.700 contra R$ 4.410 | Fechamento de novembro |
 | Cenários de notícia ruim | gasto de R$ 9.400 (Contador); viagem de R$ 5.250 (Cartão); energia sem "paga" em 02/12; cesta a R$ 1.320; sábado sem visita; 2ª semana a R$ 41; 13º não guardado; novembro com R$ 12.240 | 1 exemplo ruim por ficha |
 | Nomes novos | `previsao_unica`, `gasto_semanal_base`, `conta_<ajudante>`, `escritorio_comparar_assuntos`, `escritorio_marcar_vimos_juntos`, tabela `escritorio_parametros` | proposta; usar o nome real se já existir |
 
 **O que não fechou sozinho com a base comum, e como ficou:**
-1. A base calcula o livre sem a fatura (3.760 - 1.940 - 900) e a ficha manda tirar a fatura. Ficou R$ 0 em novembro, porque nenhuma fatura vence de 24/11 a 30/11.
-2. "Janeiro, 6 semanas" não sai de (27.000 - 6.000) ÷ 3.000, que dá 7. Fecha somando os R$ 1.780 que faltam das férias (19.220 ÷ 3.000 = 6,4) e arredondando pra baixo.
-3. A cesta de R$ 1.085 por semana não cabe no limite da Casa de R$ 3.500 por mês (pergunta 3).
-4. A Tarefa 3 descreve a família Silva com 2 filhos e 2 pessoas na equipe; a base comum traz 1 e 1 (pergunta 12).
+A base comum foi corrigida depois deste caderno e os 4 pontos abaixo já fecham com ela:
+1. Livre: a base agora escreve a regra com a fatura ainda não lançada, que é R$ 0 em novembro. Bate com a seção 4.4.
+2. "Janeiro, 6 semanas": a base agora traz (27.000 - 6.000 - 1.780) ÷ 3.000 = 6,4, arredondado pra baixo. Bate com a ficha 5.8.
+3. Limites: Carlos R$ 4.000, Marina R$ 3.000, Casa R$ 5.000. Com isso 4 cestas de R$ 1.085 (R$ 4.340) cabem na Casa, e o gasto da Casa até 24/11 passou a R$ 4.410.
+4. Pessoas: 2 filhos (Bia e Léo) e 2 na equipe (Dona Lúcia e Seu Jorge). A presença da semana passou de 30 pra 38 e o consumo de R$ 1.140 pra R$ 1.444, mantendo os R$ 38 por pessoa por dia da base.
+
+Resolvido: a base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)

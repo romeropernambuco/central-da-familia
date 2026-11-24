@@ -58,7 +58,7 @@ Palavras só do painel do dono do produto: modelo, custo de IA, banco, escala.
 
 | id | Nome | Setor | Horário (fuso de Recife) |
 |---|---|---|---|
-| `contador` | Contador da Casa | Os orçamentos | 1º dia útil do mês, 7h12 (em novembro/2026: segunda, 02/11) |
+| `contador` | Contador da Casa | Os orçamentos | 1º dia útil do mês, 7h12, olhando feriado (em novembro/2026: terça, 03/11, porque 02/11 é feriado) |
 | `cartao` | Analista de Cartão | Cartões e parcelas | dia seguinte ao fechamento de cada cartão, 8h17 |
 | `vencimentos` | Agenda de Vencimentos | Contas com data | quarta, 10h19 |
 | `comprador` | Comprador | Feira | segunda, 20h23 |
@@ -150,6 +150,25 @@ Parcelas já contratadas que caem em março/2027: 3, somando R$ 1.400.
 | Os outros 6 somados, todos no leve | R$ 0,06 |
 | Conferências previstas em novembro | 26 |
 | Parte da Tarefa 12 (leitura de cupom e fatura) nos R$ 0,44 | R$ 0,00 no exemplo |
+
+---
+
+## 6.1 Retrato da família Silva em 24/11, 9h00
+
+Vale pra tela, pra cena e pros testes. É o estado que os 8 cartões mostram na data de referência.
+
+| Ajudante | Situação | Por quê |
+|---|---|---|
+| Contador da Casa | Entregue | conferiu em 03/11 |
+| Analista de Cartão | Perguntando | conferiu os 2 cartões em 11/11; depois entrou 1 cartão novo da Marina (Cartão laranja) sem dia de fechamento. Pergunta: "Quando fecha e quando vence o Cartão laranja?" |
+| Agenda de Vencimentos | Conferindo agora | Marina tocou "Rodar agora" às 8h59 |
+| Comprador | Precisa de você | "Trocar a marca do café ou manter a de sempre?" (pra decidir, Marina, até 26/11) |
+| Auditor de Estoque | Entregue | conferiu hoje, 7h41 |
+| Controlador de Presença | Entregue | conferiu em 23/11, 8h13 |
+| Folha da Casa | Entregue | conferiu em 03/11; segue aberta 1 pendência de informar: "Confirmar as férias da Dona Lúcia em janeiro" (Carlos, era até 17/11, cobrada de novo em 20/11) |
+| Guardião do Colchão | Entregue | conferiu em 20/11, 17h47 |
+
+São 3 pendências na fila "Depende de você": 1 pra decidir (Comprador) e 2 pra informar (Cartão e Folha). Gasto de R$ 8.240 aberto por dono: Casa R$ 4.410 de R$ 5.000; Carlos e Marina somam R$ 3.830 (a divisão entre os 2 fica no caderno 11-D).
 
 ---
 

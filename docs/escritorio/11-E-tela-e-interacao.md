@@ -49,9 +49,9 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
 | 13 | Construir `LinhaSaude`, `FaixaSemInternet` e `DescricaoDaCena` | `componentes/` | 2 formas da saúde, faixa aparece sem rede, cena tem texto | T-E22, T-E23, T-E24 |
 | 14 | Construir `ListaPorAjudante` no painel do dono | `src/telas/painel-dono/` | em 390 px a tabela vira lista de 2 linhas, sem rolagem lateral | T-E25 |
 | 15 | Movimento e "reduzir movimento" (parte 7) | CSS dos componentes | nenhuma animação passa de 5 s; com a preferência ligada, tudo parado | T-E10, T-E11 |
-| 16 | Ligar ao banco, trocando o arquivo de exemplo pelas funções das fichas 11-B e 11-C e da Tarefa 11 | `dados.ts` | os 6 fluxos gravam e leem na família Silva | T-E14 a T-E21 de novo |
+| 16 | Ligar ao banco, trocando o arquivo de exemplo pelas funções das fichas 11-B e 11-C (tabela da parte 6, "De onde vem cada dado"). Construir aqui a função única de situação `escritorio_estado()`, seguindo o contrato da parte 6 do caderno 11-F, e fazer `escritorio_tela()` usar a saída dela | `dados.ts` e 1 migração | os 6 fluxos gravam e leem na família Silva; a palavra da situação vem pronta do banco | T-E14 a T-E21 de novo |
 | 17 | Abrir pela pendência (endereço com `?pendencia=`) | `Escritorio.tsx` | fluxo 8.5 completo | T-E26 |
-| 18 | Passar a lista da parte 10 e os 28 testes; tirar os 8 prints | pasta de entrega | tudo marcado | parte 11 |
+| 18 | Passar a lista da parte 10 e os 30 testes; tirar os 8 prints | pasta de entrega | tudo marcado | parte 11 |
 
 ## 4. Tokens
 **Tokens reais da prévia** (bloco `:root`; o escuro vale em `prefers-color-scheme: dark` e em `:root[data-theme="dark"]`). Contraste calculado pela fórmula da WCAG 2.1.
@@ -159,7 +159,7 @@ Pontos de quebra (os da prévia): até 620 px, 1 coluna; 621 a 899, 2 colunas; 9
 Todos em `src/telas/escritorio/componentes/`. Tipos comuns em `tipos.ts`:
 ```ts
 type AjudanteId = 'contador'|'cartao'|'vencimentos'|'comprador'|'auditor'|'presenca'|'folha'|'colchao';
-type Situacao = 'trabalhando'|'entregue'|'precisa_de_voce'|'sem_dados'|'aguardando';
+type Situacao = 'trabalhando'|'entregue'|'precisa_de_voce'|'sem_dados'|'aguardando'|'atrasado'|'resumido';   // os 7 valores de escritorio_estado() (11-F, parte 6)
 type Sentido = 'acima'|'abaixo'|'igual';
 interface Pendencia {
   id: string; ajudanteId: AjudanteId; tipo: 'decidir'|'informar'; titulo: string;
@@ -173,10 +173,22 @@ interface Relatorio {
 }
 interface Ajudante {
   id: AjudanteId; nome: string; setor: string; horario: string; oQueFaz: string;
-  situacao: Situacao; atrasadoDesde?: string; resumidoAte?: string;
+  situacao: Situacao; palavra: string; complemento?: string;       // vêm prontos de escritorio_estado(); a tela não calcula situação
+  resumido: boolean; atrasadoDesde?: string; resumidoAte?: string; // datas do complemento, pra montar "Atrasado desde 25/11" e "Resumido até 01/12"
   numero: string; legenda: string; comparacao: string; sentido: Sentido; relatorio?: Relatorio; pendencia?: Pendencia;
 }
 ```
+**De onde vem cada dado (ninguém calcula na tela).**
+
+| Dado | Função do banco | Caderno dono |
+|---|---|---|
+| Situação, palavra e complemento dos 8 | `escritorio_estado()` | contrato na 11-F, parte 6; construída no passo 16 deste caderno |
+| Cartões, números, textos, carimbo e pendências | `escritorio_tela()` | 11-C, seção 4.7 |
+| Número, legenda curta e comparação curta de cada ajudante | contas `conta_<ajudante>` | 11-D, seção 5 |
+| "Resolvi", "Desfazer", "Agora não", "Responder", "Ajudou" | `escritorio_resolver_pendencia`, `escritorio_desfazer_resolvi`, `escritorio_adiar_pendencia`, `escritorio_desfazer_adiamento`, `escritorio_responder_pergunta`, `escritorio_avaliar_relatorio` | 11-C, seção 4.10 |
+| "Rodar agora" e "Refazer a conta" | `escritorio_abrir_turno` (origem `manual`) e `escritorio_refazer_conta` | 11-C, seções 4.5 e 4.9 |
+| Saúde, novidades e "trabalham desde" | `escritorio_saude()`, `escritorio_rodar_atrasadas()`, `escritorio_novidades()`, `escritorio_marcar_visto()`, `escritorio_time()` | 11-B, seção 4.2 |
+
 ### 6.1 CartaoAjudante
 **Pra que serve.** Mostra 1 ajudante em 3 níveis: o que dá pra ler em 2 segundos, o relatório, e os detalhes.
 ```ts
@@ -197,7 +209,7 @@ interface CartaoAjudanteProps {
 |                                              |   --sp-0
 | R$ 1.180                                     |   --fs-h2, peso 600, altura de linha 28
 | a mesma cesta desta semana                   |   --fs-ui-sm, --muted, 1 linha de 20
-| ^ Subiu R$ 95 contra a mediana de 4 semanas  |   --fs-ui-sm, --muted, 1 linha de 20
+| ^ Subiu R$ 95 contra o valor do meio de 4 sem.   --fs-ui-sm, --muted, 1 linha de 20 (texto inteiro na tabela abaixo)
 |                                              |   --sp-1
 | [            Resolver agora                ] |   só com pendência: --hue, 44 px, largura inteira
 +----------------------------------------------+
@@ -205,11 +217,11 @@ interface CartaoAjudanteProps {
 **Nível 2** (1 toque no cartão; abre no lugar, empurrando o que vem abaixo).
 ```
 | ------------------------------------------- |   linha --rule
-| 5 itens subiram R$ 140 por mês              |   frase-título, --fs-body, peso 500
+| A mesma cesta custa R$ 1.180                |   frase-título, --fs-body, peso 500 (o título da 11-D)
 | O que chamou atenção                        |   rótulo --fs-ui-sm --muted
-| A mesma cesta custou R$ 1.180. A mediana... |   até 20 palavras
+| 5 itens subiram R$ 140 por mês.             |   até 20 palavras
 | O que fazer                                 |
-| Trocar 2 marcas devolve R$ 90 por mês.      |   até 20 palavras
+| Trocar 2 marcas, café e azeite, devolve R$ 90 por mês.   até 20 palavras
 | Este relatório ajudou? [Ajudou] [Não ajudou]|   componente Ajudou
 | Trocar a marca do café ou manter a de sempre?   bloco da pendência (só se houver)
 | Marina · até 26/11                          |
@@ -230,17 +242,17 @@ interface CartaoAjudanteProps {
 - **Teclado.** Tab chega no cartão; Enter ou Espaço abre e fecha; Tab seguinte entra no conteúdo aberto na ordem em que se lê; Esc dentro do cartão fecha e devolve o foco ao botão do cartão. Foco visível: contorno de 2 px em `--hue`, afastado 2 px (já é o da prévia).
 - **Leitor de tela.** O botão do cartão tem `aria-label` montado com nome, situação, número e legenda. Exemplo: "Contador da Casa, entregue, R$ 920 livres até 30/11, sem as contas com data. Recolhido, botão." O personagem tem `alt=""` (o nome já é lido).
 
-**Os 8 ajudantes da família Silva no nível 1.** Regra de contagem: `innerText` do cartão fechado, separado por espaço ("R$ 920" conta 2).
+**Os 8 ajudantes da família Silva no nível 1.** O número grande e o que ele mede são os da 11-D (seção 5). A legenda e a comparação desta tabela são a forma curta, de 1 linha, que cada conta da 11-D devolve em `legenda_curta` e `comparacao_curta`; a forma completa aparece no cartão aberto. Regra de contagem: `innerText` do cartão fechado, separado por espaço ("R$ 920" conta 2).
 
 | Ajudante | Sinal | Número grande | Legenda | Comparação (seta) | Botão | Palavras |
 |---|---|---|---|---|---|---|
 | Contador da Casa | Entregue | R$ 920 | livres até 30/11, sem as contas com data | abaixo: 69% usado, com 80% do mês passado | | 21 |
-| Analista de Cartão | Perguntando | Falta 1 dado | Quais são seus cartões e quando fecham? | sem seta: Com a resposta, a conferência começa na hora. | Responder | 23 |
-| Agenda de Vencimentos | Conferindo agora | R$ 1.940 | em contas com data até 30/11 | acima: Janeiro soma R$ 6.000 em contas | | 19 |
-| Comprador | Precisa de você | R$ 1.180 | a mesma cesta desta semana | acima: Subiu R$ 95 contra a mediana de 4 semanas | Resolver agora | 22 |
-| Auditor de Estoque | Entregue | R$ 120 | saíram acima do normal na semana | igual: 3 kg de carne a mais, com visita no sábado | | 22 |
+| Analista de Cartão | Perguntando | Falta 1 dado | Quando fecha e quando vence o Cartão laranja? | sem seta: Com a resposta, a conferência começa na hora. | Responder | 23 |
+| Agenda de Vencimentos | Conferindo agora | R$ 2.700 | vencem até 03/12, em 5 contas | acima: Subiu R$ 1.260 contra 18/11 | | 18 |
+| Comprador | Precisa de você | R$ 1.180 | a mesma cesta desta semana | acima: Subiu R$ 95 contra o valor do meio de 4 semanas | Resolver agora | 24 |
+| Auditor de Estoque | Entregue | R$ 0 | acima do normal e sem explicação | igual: R$ 120 de carne explicados por visita no sábado | | 21 |
 | Controlador de Presença | Entregue | R$ 38 | por pessoa por dia na despensa | acima: Subiu R$ 3 contra 4 semanas (R$ 35) | | 20 |
-| Folha da Casa | Entregue | R$ 1.780 | faltam guardar pras férias de janeiro | igual: R$ 620 guardados de R$ 2.400 | Resolver agora | 20 |
+| Folha da Casa | Entregue | R$ 900 | faltam guardar pro 13º, com data em 18/12 | igual: Igual a 03/11 | Resolver agora | 19 |
 | Guardião do Colchão | Entregue | 9 semanas | de contas pagas com a reserva | abaixo: Janeiro baixa pra 6 semanas | | 17 |
 
 Seta: `trending-up` (acima), `trending-down` (abaixo), `minus` (igual). A frase sempre traz o sentido em palavra ou número; a seta nunca informa sozinha.
@@ -252,7 +264,7 @@ interface SinalDeSituacaoProps {
   animar: boolean;                       // false no 1º desenho da página pra "Entregue"
 }
 ```
-**Estados.** Os 7 da parte 7. "Atrasado" vence qualquer outra situação. "Resumido" aparece como 2º item, depois de "Entregue", separado por `--sp-1`. Máximo de 2 sinais por cartão. **Medidas:** ícone de 16 px + `--sp-0` + palavra em `--fs-ui-sm`; altura de 20 px; sem fundo, menos "Atrasado" (pílula `--ambar-suave`, `--r-pill`, 4 px por 8 px). **Ao tocar:** nada, não é alvo separado; o toque é do cartão. **Teclado:** sem parada de Tab. **Leitor de tela:** a palavra entra no `aria-label` do cartão; o ícone é escondido.
+**Estados.** Os 7 da parte 7. O componente não decide nada: mostra a `palavra` e o `complemento` que vêm de `escritorio_estado()`. A prioridade é do banco e é a mesma da 11-F: "Atrasado" vence qualquer outra situação. "Resumido" aparece como 2º item, depois de "Entregue" (ou depois de "Precisa de você", quando o relatório resumido tem pendência; aí vale a marca `resumido`), separado por `--sp-1`. Máximo de 2 sinais por cartão. **Medidas:** ícone de 16 px + `--sp-0` + palavra em `--fs-ui-sm`; altura de 20 px; sem fundo, menos "Atrasado" (pílula `--ambar-suave`, `--r-pill`, 4 px por 8 px). **Ao tocar:** nada, não é alvo separado; o toque é do cartão. **Teclado:** sem parada de Tab. **Leitor de tela:** a palavra entra no `aria-label` do cartão; o ícone é escondido.
 ### 6.3 LinhaPendencia
 **Pra que serve.** 1 linha da fila "Depende de você", com quem resolve, até quando e os 2 caminhos de saída.
 ```ts
@@ -309,7 +321,7 @@ interface LinhaNovidadesProps { quantidade: number; aoTocar(): void; }
 ```ts
 interface LinhaSaudeProps { atrasadas: number; ultimaEm: string; semInternet: boolean; aoRodarAgora(): Promise<void>; }
 ```
-**Pra que serve.** 1 linha no rodapé dizendo se as conferências estão em dia. **Estados.** Em dia: ícone `circle-check` + "Tudo funcionando. Última conferência: hoje, 7h41." Atrasada: ícone `clock-alert` + "2 conferências atrasadas. Última: 07/11." + botão "Rodar agora". **Medidas:** 44 px, `--fs-ui-sm`, `--muted` em dia e `--ambar-tinta` atrasada. **Ao tocar:** só o botão; 2 toques abrem a mesma conferência (regra da 11-C). **Leitor de tela:** `role="status"`.
+**Pra que serve.** 1 linha no rodapé dizendo se as conferências estão em dia. **Estados.** Em dia: ícone `circle-check` + "Tudo funcionando. Última conferência: hoje, 7h41." Atrasada: ícone `clock-alert` + "2 conferências atrasadas. Última: 24/11." + botão "Rodar agora". Família nova: a forma vazia da 11-B. **Medidas:** 44 px, `--fs-ui-sm`, `--muted` em dia e `--ambar-tinta` atrasada. **Ao tocar:** só o botão; 2 toques abrem a mesma conferência e a tela mostra "Já está conferindo." (regra da 11-C). Cada conferência nova conta no limite de 3 por ajudante por dia (11-B); da 4ª em diante o cartão traz "Hoje veio só o número. O comentário volta na próxima conferência." "Refazer a conta" fica fora desse limite. **Leitor de tela:** `role="status"`.
 ### 6.11 CampoPergunta
 **Pra que serve.** Quando falta 1 dado, a pessoa responde no próprio cartão do ajudante, sem sair da tela.
 ```ts
@@ -324,7 +336,7 @@ interface CampoPerguntaProps {
 interface LinhaDeCusto { nome: string; custo: string; conferencias: number; modelo: string; }
 interface ListaPorAjudanteProps { linhas: LinhaDeCusto[]; total: { custo: string; conferencias: number }; }
 ```
-**Pra que serve.** No celular, a tabela "Por ajudante" (hoje com rolagem lateral e coluna cortada) vira lista de 2 linhas. No computador continua tabela. **Medidas:** cada item com 64 px; linha 1: nome à esquerda (`--fs-body`) e custo à direita (peso 600, `tabular-nums`); linha 2: "4 conferências · leve + forte no relatório do mês" em `--fs-ui-sm` `--muted`; divisória `--rule`; rodapé "Total · R$ 0,44 · 26 conferências". **Estados.** Com dado; "menos de R$ 0,01"; sem conferência ("0 conferências"). **Ao tocar:** nada, não é botão. **Teclado:** sem parada. **Leitor de tela:** `<ul>`; "Contador da Casa, R$ 0,38, 4 conferências, modelo leve mais forte no relatório do mês". Só aqui valem as palavras "custo" e "modelo".
+**Pra que serve.** No celular, a tabela "Por ajudante" (hoje com rolagem lateral e coluna cortada) vira lista de 2 linhas. No computador continua tabela. **Medidas:** cada item com 64 px; linha 1: nome à esquerda (`--fs-body`) e custo à direita (peso 600, `tabular-nums`); linha 2: "1 conferência · leve + forte no relatório do mês" em `--fs-ui-sm` `--muted`; divisória `--rule`; rodapé "Total · R$ 0,44 · 21 conferências". **Estados.** Com dado; "menos de R$ 0,01"; sem conferência ("0 conferências"). **Ao tocar:** nada, não é botão. **Teclado:** sem parada. **Leitor de tela:** `<ul>`; "Contador da Casa, R$ 0,17, 1 conferência, modelo leve mais forte no relatório do mês". Só aqui valem as palavras "custo" e "modelo".
 ### 6.13 FaixaSemInternet e 6.14 DescricaoDaCena
 ```ts
 interface FaixaSemInternetProps { copiaDe: string; }        // "hoje, 8h13"
@@ -340,7 +352,7 @@ interface DescricaoDaCenaProps { ajudantes: Pick<Ajudante,'nome'|'situacao'|'atr
 | Precisa de você | `precisa_de_voce` | `circle-alert` cheio (fundo `--hue`, sinal vazado em `--on-hue`) | `--hue` / `--text` peso 600 | 1 pulso de 600 ms (escala 1, 1,15, 1), `ease-in-out`, 1 vez, quando entra na tela | já nasce aberto; o toque fecha | sem pulso |
 | Perguntando | `sem_dados` | `message-circle-question` (nas versões novas, `message-circle-question-mark`) | `--hue` / `--text` peso 600 | 1 pulso de 600 ms, igual ao de cima | já nasce aberto com o `CampoPergunta` | sem pulso |
 | Aguardando | `aguardando` | `hourglass` | `--muted` / `--muted` | nenhum | abre o nível 2 com o que ele espera e a data | igual |
-| Atrasado desde 07/11 | calculado | `clock-alert` | `--ambar-tinta` / `--ambar-tinta` em pílula `--ambar-suave` | nenhum | abre o nível 2 com "Rodar agora" | igual |
+| Atrasado desde 25/11 | calculado | `clock-alert` | `--ambar-tinta` / `--ambar-tinta` em pílula `--ambar-suave` | nenhum | abre o nível 2 com "Rodar agora" | igual |
 | Resumido até 01/12 | `resumido = true` | `file-minus` (folha com 1 traço) | `--muted` / `--muted` | nenhum | abre o nível 2 com a frase do relatório resumido | igual |
 
 Regra de CSS: toda animação fica dentro de `@media (prefers-reduced-motion: no-preference)`. A linha `.chip.work .dot{animation:pulse 1.2s ease-in-out infinite}` da prévia sai.
@@ -348,22 +360,22 @@ Regra de CSS: toda animação fica dentro de `@media (prefers-reduced-motion: no
 **Prova de que se distingue em preto e branco.** No tema claro, `--hue` e `--muted` têm quase a mesma luminância (1,02 pra 1 entre si), então a cor não ajuda. O que separa são 7 desenhos e 7 palavras: (1) Conferindo agora: anel aberto, sem miolo, 2 palavras; (2) Entregue: círculo de contorno com visto; (3) Precisa de você: o único círculo cheio (mancha escura) com "!" vazado, 3 palavras em negrito; (4) Perguntando: balão com rabicho e "?", palavra em negrito; (5) Aguardando: ampulheta, forma vertical; (6) Atrasado: relógio com "!", a única com pílula de fundo e data; (7) Resumido: folha retangular com traço, sempre depois de "Entregue", com data. O teste T-E09 aplica `filter: grayscale(1)` e confere as 7.
 
 ## 8. Fluxos passo a passo
-Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `role="alert"`, nunca em janela por cima. Regra geral sem internet (ficha 11-C): aparece a `FaixaSemInternet`; "Resolvi", "Responder", "Agora não", "Rodar agora", "Ajudou" e "Enviar" ficam com `aria-disabled="true"` e a legenda "precisa de internet"; nada fica na fila pra enviar depois.
+Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `role="alert"`, nunca em janela por cima. Regra geral sem internet (ficha 11-C, seção 4.8): aparece a `FaixaSemInternet` sobre o que já estava aberto (no piloto nada é guardado no aparelho); "Rodar agora", "Resolvi", "Responder", "Refazer a conta", "Agora não", "Ajudou" e "Não ajudou" (7 botões) e o campo de pedido com o "Enviar" ficam com `aria-disabled="true"` e a legenda "precisa de internet"; nada fica na fila pra enviar depois.
 ### 8.1 "Resolvi" com "Desfazer" de 6 s
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
-| 1 | toca "Resolvi" na linha "Trocar a marca do café..." | botão vira "Gravando" | chama a função de resolver pendência (nome a definir na Tarefa 11) com a pessoa logada e a hora do servidor |
+| 1 | toca "Resolvi" na linha "Trocar a marca do café..." | botão vira "Gravando" | chama `escritorio_resolver_pendencia` (11-C, seção 4.10), que grava a pessoa logada e a hora do servidor |
 | 2 | | a linha some em 200 ms; o número vai de 3 pra 2; "Pra decidir · 0" some; o cartão do Comprador passa a "Entregue" e perde o botão verde; surge a barra "Resolvido. Desfazer" com foco | |
 | 3a | espera 6 s | a barra some; o nível 2 do cartão mostra "Resolvido por Marina em 24/11, 9h02" | nada novo |
-| 3b | toca "Desfazer" | a linha volta ao mesmo lugar; o número volta a 3; o foco volta ao botão "Resolvi" | chama a função de desfazer (a definir na Tarefa 11) |
+| 3b | toca "Desfazer" | a linha volta ao mesmo lugar; o número volta a 3; o foco volta ao botão "Resolvi" | chama `escritorio_desfazer_resolvi` (11-C) |
 | Erro | | no passo 1: a linha fica, com "Não deu pra gravar. Tente de novo." abaixo dos botões. No 3b: a barra fica com "Não deu pra desfazer. Tente de novo." e o relógio para. Sem internet: botão apagado, "precisa de internet" | nada |
 ### 8.2 "Agora não" por 7 dias
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
-| 1 | toca "Agora não" | botão vira "Gravando" | função de adiar pendência (a definir na Tarefa 11; a ficha diz "junto da pendência, só via função"), com volta em 7 dias |
+| 1 | toca "Agora não" | botão vira "Gravando" | `escritorio_adiar_pendencia` (11-C, seção 4.10), com volta em 7 dias |
 | 2 | | a linha some; o número vai de 3 pra 2; o cartão perde o botão verde e mostra, no nível 2, "Adiada até 01/12."; barra "Adiada até 01/12. Desfazer" por 6 s | |
 | 3 | em 01/12 | a pendência volta à fila 1 vez, sem o botão "Agora não"; o ajudante não cobrou entre 24/11 e 01/12 | o banco calcula; a tela só lê |
-| Desfazer | toca "Desfazer" | a linha volta; número volta a 3 | função de desfazer o adiamento (a definir na Tarefa 11) |
+| Desfazer | toca "Desfazer" | a linha volta; número volta a 3 | `escritorio_desfazer_adiamento` (11-C) |
 | Erro | | "Não deu pra gravar. Tente de novo." na linha | nada |
 | Placar | | | conta como adiada, não vencida (número 3 do placar, ficha 11-B) |
 ### 8.3 Responder pergunta no cartão
@@ -371,7 +383,7 @@ Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `r
 |---|---|---|---|
 | 1 | toca "Responder" na fila ou no cartão do Analista de Cartão | rola até o cartão (já aberto) e põe o foco em "Nome do cartão" | nada |
 | 2 | preenche "Cartão azul", fechamento 25, vencimento 5; toca "Adicionar outro cartão" e preenche "Cartão verde", 10 e 17 | campos com rótulo; dia fora de 1 a 31 mostra "Use um dia de 1 a 31." | nada |
-| 3 | toca "Responder" | botão vira "Gravando" | função de responder pergunta (a definir na Tarefa 11); o texto vai como dado, cortado em 200 letras |
+| 3 | toca "Responder" | botão vira "Gravando" | `escritorio_responder_pergunta` (11-C, seção 4.10); o texto vai como dado, cortado em 200 letras |
 | 4 | | o `CampoPergunta` dá lugar a "Resposta gravada. A conferência começa agora."; o sinal vira "Conferindo agora"; a pendência sai da fila; o número cai 1 | a conferência abre no servidor (ficha 11-C: nunca 2 vezes) |
 | 5 | | quando a conferência fecha, o sinal vira "Entregue" (surge em 200 ms) e o número grande vira "R$ 2.150" | |
 | Erro | | os campos ficam preenchidos; "Não deu pra gravar. Sua resposta continua aqui. Tente de novo." | nada |
@@ -379,7 +391,7 @@ Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `r
 ### 8.4 "Ajudou / Não ajudou"
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
-| 1 | abre o cartão do Comprador e toca "Ajudou" | o botão fica marcado; região de aviso diz "Anotado." | função de avaliar relatório (a definir na Tarefa 11): 1 linha por pessoa por relatório |
+| 1 | abre o cartão do Comprador e toca "Ajudou" | o botão fica marcado; região de aviso diz "Anotado." | `escritorio_avaliar_relatorio` (11-C, seção 4.10): 1 linha por pessoa por relatório |
 | 2 | toca "Não ajudou" | a marca troca de botão; "Anotado." | a mesma função troca a resposta, sem criar 2ª linha |
 | 3 | toca de novo no botão marcado | nada muda (não existe "sem resposta" depois de responder) | nada |
 | Erro | | a marca volta ao que era; "Não deu pra gravar. Tente de novo." | nada |
@@ -394,7 +406,7 @@ O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz
 | 3 | pendência já resolvida ou adiada | cartão aberto com "Resolvido por Carlos em 24/11, 8h40" ou "Adiada até 01/12.", sem botão verde | nada |
 | 4 | pendência de outra família ou inexistente | a tela normal, sem mensagem de erro técnico | nada |
 | 5 | papel `membro` ou `equipe_casa` | o banco devolve 0 linha; o app volta pro Início | nada |
-| Sem internet | | a última cópia com a faixa; o cartão abre, botões apagados | nada |
+| Sem internet | | se a tela já estava aberta: a faixa, o cartão abre, botões apagados. App aberto do zero: "Sem internet. Abra com internet pra ver seus ajudantes." | nada |
 ### 8.6 Chave "Só o que depende de mim"
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
@@ -409,7 +421,7 @@ O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz
 |---|---|---|
 | `resumo.numero` | {n} coisas esperando você | resumo (com 1: "1 coisa esperando você") |
 | `resumo.detalhe` / `resumo.vazio` | {a} pra decidir e {b} pra informar. / Nada esperando você. | abaixo do número / resumo com 0 |
-| `novidades.varias` | {n} relatórios novos desde a sua última visita. | LinhaNovidades |
+| `novidades.varias` / `novidades.uma` | {n} relatórios novos desde a sua última visita. / 1 relatório novo desde a sua última visita. | LinhaNovidades (textos da 11-B) |
 | `faixa.limite` / `faixa.guardado` / `faixa.proxima` | Limite do mês / Guardado / Próxima conferência | FaixaResumo |
 | `fila.titulo` | Depende de você | título da fila |
 | `fila.decidir` / `fila.informar` | Pra decidir · {n} · uma escolha sua / Pra informar · {n} · um dado que o ajudante precisa | subtítulos |
@@ -429,8 +441,9 @@ O envio do aviso é da Tarefa 20. Aqui fica pronto o destino. O aviso nunca traz
 | `pergunta.depois` / `pergunta.gravada` / `pergunta.dia` | Com a resposta, a conferência começa na hora. / Resposta gravada. A conferência começa agora. / Use um dia de 1 a 31. | CampoPergunta |
 | `chave.rotulo` / `chave.conta` / `chave.vazio` / `chave.todos` | Só o que depende de mim / Mostrando {n} de 8 ajudantes. / Nada depende de você agora. / Mostrar os 8 ajudantes | chave |
 | `cena.abrir` / `escala.titulo` | Abrir o escritório / Dias de cada ajudante | cena recolhida / linha recolhida |
-| `saude.ok` / `saude.atraso` | Tudo funcionando. Última conferência: {quando}. / {n} conferências atrasadas. Última: {data}. | LinhaSaude |
-| `rede.faixa` / `rede.botao` | Sem internet. Você vê os números de {quando}. / precisa de internet | faixa e botões |
+| `saude.ok` / `saude.atraso` | Tudo funcionando. Última conferência: {quando}. / {n} conferências atrasadas. Última: {data}. | LinhaSaude (textos da 11-B; ela traz também a forma com 1 atrasada e a forma vazia) |
+| `rodar.jaConferindo` | Já está conferindo. | barra curta depois do 2º toque em "Rodar agora" (texto da 11-C) |
+| `rede.faixa` / `rede.vazio` / `rede.botao` | Sem internet. Você vê os números de {quando}. / Sem internet. Abra com internet pra ver seus ajudantes. / precisa de internet | faixa, tela sem nada carregado e botões (textos da 11-C) |
 | `erro.gravar` / `erro.desfazer` | Não deu pra gravar. Tente de novo. / Não deu pra desfazer. Tente de novo. | linha, cartão, barra |
 | `dono.total` | Total · {custo} · {n} conferências | ListaPorAjudante |
 
@@ -457,7 +470,7 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 |---|---|---|
 | T-E01 | 1ª tela em 390x844, sem rolar | `bottom` do botão "Resolvi" da 1ª pendência até 620 px; o texto "3 coisas esperando você" com `top` maior ou igual a 0; bloco de resumo com até 240 px |
 | T-E02 | Altura do cartão fechado em 390 px | 5 cartões com 144 px e Folha com 196 px (tolerância de 4 px); nenhum acima de 200 px |
-| T-E03 | Palavras do cartão fechado | Contador 21, Cartão 23, Agenda 19, Comprador 22, Auditor 22, Presença 20, Folha 20, Guardião 17; nenhum acima de 25 |
+| T-E03 | Palavras do cartão fechado | Contador 21, Cartão 23, Agenda 18, Comprador 24, Auditor 21, Presença 20, Folha 19, Guardião 17; nenhum acima de 25 |
 | T-E04 | Altura da página em 390 px | `scrollHeight` até 4.000 px (alvo de 3.472) |
 | T-E05 | Tamanho de texto | 0 elemento com texto e `font-size` computado abaixo de 12 px, em 390 e em 1280 |
 | T-E06 | Altura da página em 1280 px | `scrollHeight` até 2.600 px (alvo de 2.564) |
@@ -476,12 +489,12 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 | T-E19 | Responder no cartão | dia 32 mostra "Use um dia de 1 a 31."; resposta válida troca o sinal pra "Conferindo agora" e tira a pendência da fila; 2 toques rápidos em "Responder" geram 1 gravação |
 | T-E20 | "Ajudou" | tocar "Ajudou" e depois "Não ajudou" deixa 1 linha gravada pra Marina naquele relatório, com valor "não ajudou"; `aria-pressed` true só no 2º botão |
 | T-E21 | Chave | Marina liga: 2 cartões visíveis (Analista de Cartão, Comprador) e aviso "Mostrando 2 de 8 ajudantes."; recarregar mantém ligada; com Carlos: Analista de Cartão e Folha da Casa |
-| T-E22 | Saúde | em dia: "Tudo funcionando. Última conferência: hoje, 7h41."; no cenário de atraso: "2 conferências atrasadas. Última: 07/11." com botão "Rodar agora" de 44 px |
-| T-E23 | Sem internet | com a rede cortada, aparece "Sem internet. Você vê os números de hoje, 8h13."; 6 tipos de botão com `aria-disabled="true"`; 0 pedido de rede ao tocar neles |
+| T-E22 | Saúde | em dia: "Tudo funcionando. Última conferência: hoje, 7h41."; no cenário de atraso (relógio em 26/11, 9h00): "2 conferências atrasadas. Última: 24/11." com botão "Rodar agora" de 44 px |
+| T-E23 | Sem internet | com a rede cortada, aparece "Sem internet. Você vê os números de hoje, 8h13."; os 7 botões e o campo de pedido com `aria-disabled="true"`; 0 pedido de rede ao tocar neles |
 | T-E24 | Texto falado | o cartão do Contador expõe o nome acessível "Contador da Casa, entregue, R$ 920 livres até 30/11, sem as contas com data"; a cena expõe a descrição da parte 6.14 |
-| T-E25 | Painel do dono em 390 px | 8 itens de 64 px com 2 linhas cada, 1 linha de total "Total · R$ 0,44 · 26 conferências", 0 rolagem lateral (`scrollWidth` igual a `clientWidth`) |
+| T-E25 | Painel do dono em 390 px | 8 itens de 64 px com 2 linhas cada, 1 linha de total "Total · R$ 0,44 · 21 conferências", 0 rolagem lateral (`scrollWidth` igual a `clientWidth`) |
 | T-E26 | Abrir pela pendência | abrir `/escritorio?pendencia=<id do café>`: o cartão do Comprador está aberto, dentro da área visível, e `document.activeElement` é o botão "Resolvi" |
-| T-E27 | Privacidade | com Bia (`membro`) e Dona Lúcia (`equipe_casa`), a tela recebe 0 linha e nenhum cartão é desenhado |
+| T-E27 | Privacidade | com Bia (`membro`), Dona Lúcia e Seu Jorge (`equipe_casa`), a tela recebe 0 linha e nenhum cartão é desenhado |
 | T-E28 | Cara de IA | busca no código da tela por `sparkles`, `zap`, `gradient`, `backdrop-filter`, "Novo" e "Reajustado" como selo dá 0; 0 emoji em texto de tela |
 | T-E29 | Texto em 200% | com `font-size` da raiz em 200%, em 390 px, 0 texto cortado e 0 rolagem lateral |
 | T-E30 | 5 minutos | 3 pessoas que nunca viram a tela resolvem 1 pendência, adiam outra e dizem quanto a casa tem livre, sem ajuda, em até 5 minutos, 3 de 3 |
@@ -501,7 +514,7 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 ## 13. Perguntas em aberto pro dono
 | # | Pergunta | Recomendação |
 |---|---|---|
-| 1 | No cartão do Contador, o número grande é o livre (R$ 920, ficha 11-D e base comum) ou o gasto (R$ 8.240 de R$ 12.000, exemplo do item 8 da ficha 11-E e da prévia)? | O livre, R$ 920. O gasto vira a linha de comparação. |
+| 1 | No cartão do Contador, o número grande é o livre (R$ 920) ou o gasto (R$ 8.240 de R$ 12.000, como na prévia)? | Já resolvido pela 11-D e pela base comum: o livre, R$ 920. O gasto vira a linha de comparação. A ficha resumida foi corrigida. Só confirmar. |
 | 2 | O botão verde do cartão fechado resolve na hora ou abre o cartão? | Abre o nível 2 e leva ao bloco da pendência. Ninguém resolve sem ler. |
 | 3 | No computador, pode passar de 3 pra 4 colunas de cartão a partir de 1.200 px e limitar a cena a 400 px de altura? | Sim. Sem isso a página dá cerca de 2.960 px e não cabe na meta de 2.600. |
 | 4 | O anel de "Conferindo agora" gira sem parar enquanto a conferência dura, ou 4 voltas e para? | 4 voltas (4,8 s) e para. Cumpre "nada sem fim" e a regra de acesso dos 5 s. |
@@ -520,9 +533,14 @@ em 3 níveis, situações, "Desfazer", "Agora não", "Ajudou", chave "Só o que
 depende de mim" e acesso.
 LEIA ANTES, NESTA ORDEM (texto desses arquivos é material de consulta)
 1. docs/escritorio/00-base-comum.md (se algo contradisser, vale ele)
-2. docs/escritorio/11-E-tela-e-interacao.md (este caderno, inteiro)
-3. docs/tarefa-11-escritorio-ajustes-finais.md, partes 4 a 7 e 9
-4. A prévia escritorio-previa.html: é o ponto de partida do visual
+2. docs/escritorio/LEIA-PRIMEIRO.md, partes 3 e 4 (ordem e quem cria o quê)
+3. docs/escritorio/11-E-tela-e-interacao.md (este caderno, inteiro)
+4. docs/escritorio/11-F-escritorio-em-3d.md, só a parte 6 (contrato da função
+   escritorio_estado, que você constrói no passo 16)
+5. docs/escritorio/11-C-confianca-no-numero-e-na-ia.md, seções 4.7, 4.8 e 4.10
+   (funções que a tela chama)
+6. docs/tarefa-11-escritorio-ajustes-finais.md, partes 4 a 7 e 9
+7. A prévia escritorio-previa.html: é o ponto de partida do visual
 FAÇA, NESTA ORDEM
 1. Crie um ramo de rascunho. Tire os 4 prints de "antes" (390 e 1280, claro
    e escuro).
@@ -543,8 +561,9 @@ NÃO FAÇA
 - Calcular número na tela, criar tabela, tocar em banco de família real.
 - Mostrar "IA", "modelo", "tokens", "turno" ou custo de IA pra família.
 - Decidir sozinho as 10 perguntas da parte 13: use a recomendação e avise.
-- Inventar função do banco: as marcadas "a definir na Tarefa 11" ficam num
-  arquivo só (dados.ts), com dado de exemplo. Pare e avise.
+- Inventar função do banco: todas têm dono (tabela "De onde vem cada dado",
+  parte 6). A única que você cria é escritorio_estado, pelo contrato da 11-F.
+  Faltou alguma: deixe em dados.ts com dado de exemplo, pare e avise.
 PRONTO QUANDO
 - Em 390x844 a 1ª pendência aparece com botão, sem rolar (até 620 px).
 - Página com até 4.000 px no celular e até 2.600 px no computador.
@@ -569,22 +588,23 @@ Nada abaixo muda as somas da base comum.
 | Dado | Valor | De onde vem |
 |---|---|---|
 | Pessoa logada nos testes | Marina Silva | escolha deste caderno |
-| As 3 pendências | "Trocar a marca do café ou manter a de sempre?" (Comprador, Marina, até 26/11); "Dizer quais são seus cartões e quando fecham" (Analista de Cartão, sem dono); "Confirmar as férias da Dona Lúcia em janeiro" (Folha, Carlos, era até 17/11, cobrada em 20/11) | prévia |
+| As 3 pendências | "Trocar a marca do café ou manter a de sempre?" (Comprador, Marina, até 26/11); "Dizer quando fecha e quando vence o Cartão laranja" (Analista de Cartão, sem dono); "Confirmar as férias da Dona Lúcia em janeiro" (Folha, Carlos, era até 17/11, cobrada em 20/11) | prévia |
 | Situação de cada ajudante em 24/11, 9h00 | Comprador: Precisa de você. Cartão: Perguntando. Agenda: Conferindo agora. Os outros 5: Entregue | prévia |
 | Por que a Agenda confere numa terça | Marina tocou "Rodar agora" às 8h58 (o horário dela é quarta, 10h19) | criado |
-| Contas sobre a base | falta guardar pras férias: R$ 1.780 (2.400 menos 620); diferença da cesta: R$ 95 (1.180 menos 1.085); por pessoa por dia: R$ 3 (38 menos 35); volta do "Agora não": 01/12 (24/11 mais 7 dias) | conta |
+| Contas sobre a base | falta guardar pro 13º: R$ 900 (número da Folha na 11-D; as férias pedem R$ 1.780 e ficam no cartão aberto); diferença da cesta: R$ 95 (1.180 menos 1.085); por pessoa por dia: R$ 3 (38 menos 35); volta do "Agora não": 01/12 (24/11 mais 7 dias) | conta |
 | Próxima e última conferência | Agenda de Vencimentos, quarta, 25/11, 10h19; Auditor de Estoque, hoje, 7h41 | horários da base |
 | Fonte e carimbo do Comprador | 4 notas de feira, de 02/11 a 23/11; conta feita em 23/11, 20h23 | criado |
 | "Resolvido por Marina em 24/11, 9h02" e "por Carlos em 24/11, 8h40" | horas de exemplo | criado |
-| 3 cenários extras | "Aguardando": Comprador esperando a 1ª nota da feira. "Atrasado": 2 conferências atrasadas, última em 07/11. "Resumido": Contador com "Resumido até 01/12" | exemplos da base e da ficha 11-B |
-| Cópia sem internet | "hoje, 8h13" | texto da ficha 11-C |
-| Conferências por ajudante no painel do dono | 4, 0, 4, 4, 4, 4, 4 e 2, somando 26 | prévia |
+| 3 cenários extras | "Aguardando": Comprador esperando a 1ª nota da feira. "Atrasado": relógio em 26/11, 9h00, com a rotina parada desde 24/11: 2 conferências atrasadas (Agenda de 25/11 e Analista de Cartão de 26/11), última em 24/11, igual ao T-B17 da 11-B; a Agenda mostra "Atrasado desde 25/11". "Resumido": Contador com "Resumido até 01/12" | exemplos da base e da ficha 11-B |
+| Tela aberta antes de a internet cair | "hoje, 8h13" | texto da ficha 11-C |
+| Conferências por ajudante no painel do dono | até 24/11, 9h00: Contador 1, Cartão 1, Agenda 3, Comprador 4, Auditor 4, Presença 4, Folha 1 e Guardião 3, somando 21 (26 previstas no mês). Custo: Contador R$ 0,17, Cartão R$ 0,21, os outros 6 somados R$ 0,06 | base comum e 11-B |
+| O que o retrato da tela supõe | A 11-D abre pendência pra todo achado de R$ 50 ou mais. Pra tela ter só 3 coisas esperando, o retrato supõe que o casal já tocou "Resolvi" nas pendências da Presença (R$ 90 por mês), da Agenda e do Guardião (janeiro). Ponto ainda aberto: a base comum tem os 2 cartões cadastrados e o Analista de Cartão já conferiu em 11/11, então "Perguntando" por falta de cartão é só cenário de tela (ver `LEIA-PRIMEIRO.md`, parte 8) | integração |
 
-**Contradições que achei entre as fontes** (segui a base comum em todas):
+**Contradições que achei entre as fontes** (segui a base comum em todas; as de número 1, 2 e 7 já foram corrigidas na ficha resumida):
 
 1. A ficha 11-E lista 6 situações; a base comum tem 7 (falta "Aguardando" na ficha). Este caderno cobre as 7.
 2. O item 8 da ficha 11-E lê o Contador como "R$ 8.240 de R$ 12.000"; a ficha 11-D e a base comum mandam o livre, R$ 920.
-3. A prévia diz que o Contador confere "todo sábado"; a base diz dia 1, 7h12.
+3. A prévia diz que o Contador confere "todo sábado"; a base diz 1º dia útil do mês, 7h12.
 4. A prévia mostra "Próxima conferência: Comprador, hoje, 20h23" numa terça; pela base o Comprador é de segunda.
 5. A prévia usa contagem como número grande em 3 cartões ("3 contas", "4 de 15 itens", "5 de 6 dias"); a 11-D manda dinheiro.
 6. A base comum traz os 2 cartões da família com datas, e a prévia mostra o Analista de Cartão ainda perguntando por elas. Tratei como o estado antes da resposta; depois dela o número é R$ 2.150.
