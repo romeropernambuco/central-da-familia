@@ -2,7 +2,6 @@ import { esconderValores } from '../lib/olho'
 import { rascunhos } from '../app/rascunhos'
 import { Ajustes } from '../telas/ajustes/Ajustes'
 import { Cartoes } from '../telas/cartoes/Cartoes'
-import { MeuOrcamento } from '../telas/meu-orcamento/MeuOrcamento'
 import { Lancar } from '../telas/lancar/Lancar'
 import { act, createElement, Fragment, useState, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -731,34 +730,8 @@ it.each(['imoveis', 'cartoes'] as const)(
     }
   },
 )
-it('UX: Não gastei não conquista primeiro gasto; lançamento real conquista', async () => {
-  const sessao = (await apiExemplo.sessao())!,
-    familia = sessao.familias[0]
-  const resumo = await apiExemplo.resumoHoje(familia.id)
-  const env = resumo.envelopes.find(e => e.id === familia.envelopeId) || resumo.envelopes.find(e => !e.casa)!
-  const sem = { ...resumo, envelopes: [env] }
-  for (const real of [false, true]) {
-    const a = await montar(
-      createElement(MeuOrcamento),
-      {
-        lancamentos: vi
-          .fn()
-          .mockResolvedValue(real ? [{ id: 'ux-real', envelope_id: env.id, data: hojeRecife(), valor: 10 }] : []),
-        config: vi.fn(async (_f, chave, padrao) =>
-          chave === 'dias_sem_gasto' ? [hojeRecife()] : padrao,
-        ) as Api['config'],
-      },
-      false,
-      { resumo: sem },
-    )
-    try {
-      const conquista = a.container.buscar(n => n.tagName === 'LI' && n.textContent.startsWith('1º gasto anotado'))[0]
-      expect(conquista.textContent).toContain(real ? 'Conseguiu' : 'Ainda não')
-    } finally {
-      await a.fechar()
-    }
-  }
-})
+// 24/11/2026: o teste "Não gastei não conquista primeiro gasto" saiu junto com o bloco de Conquistas,
+// retirado da aba Meu orçamento a pedido do dono.
 it('UX: rascunho recupera valor protegido, oferece olho na folha e descarta', async () => {
   const sessao = (await apiExemplo.sessao())!,
     familia = sessao.familias[0]

@@ -31,13 +31,6 @@
 /* Sobra anotada: o número também é cartaz */
 .orcamento-f29 #oCofrinho .numrow .din { font-size: 48px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
 .orcamento-f29 #oCofrinho .numrow .din .cur { font-size: .36em; margin-right: .18em; }
-/* Conquistas: contagem, troféu cheio no que foi conseguido, apagado no que falta */
-.orc-conta { margin-inline-start: auto; padding: 4px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-ink); font: 700 14px/1.3 var(--font-num); white-space: nowrap; }
-.orcamento-f29 #oMais .li .tile { inline-size: 44px; block-size: 44px; border-radius: 50%; background: var(--raised); color: var(--muted); }
-.orcamento-f29 #oMais .li[data-ok="true"] .tile { background: var(--accent); color: var(--on-accent, #fff); }
-.orcamento-f29 #oMais .li[data-ok="false"] b { color: var(--muted); font-weight: 600; }
-.orcamento-f29 #oMais .li[data-ok="false"] { opacity: .85; }
-.orc-ok { inline-size: 22px; block-size: 22px; color: var(--accent); flex: none; }
 
 /* rosto da pessoa ao lado do título (foto ou inicial) e nos botões de quem é o orçamento */
 .orcamento-f29 .orc-cabeca { display: flex; align-items: center; gap: 12px; }
@@ -52,7 +45,7 @@
 .orcamento-f29 .pill-nome { display: grid; min-inline-size: 0; line-height: 1.15; overflow-wrap: anywhere; }
 .orcamento-f29 .pill-nome .pill-dono { margin: 2px 0 0; font-size: 12px; font-weight: 500; opacity: 1; color: var(--muted); }
 
-/* 2. Atalhos (Hoje, Sobra, Conquistas): viram abas discretas, para não parecerem os botões das pessoas */
+/* 2. Atalhos (Hoje, Sobra, Compras): viram abas discretas, para não parecerem os botões das pessoas */
 .orcamento-f29 .segbar .seg.compacta { gap: 4px; border-block-end: 1px solid var(--border); border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
 .orcamento-f29 .segbar .seg.compacta button { min-block-size: 44px; padding: 0 10px; border: 0; border-radius: 0; background: transparent; box-shadow: inset 0 -2px 0 transparent; color: var(--muted); font-size: 15px; font-weight: 600; }
 .orcamento-f29 .segbar .seg.compacta button:hover { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }

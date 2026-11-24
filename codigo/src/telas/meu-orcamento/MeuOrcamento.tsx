@@ -12,7 +12,7 @@ import type { DesejoTela } from '../../api/tipos'
 import { valorDigitadoValido } from '../../lib/formato'
 import { CampoPrivado } from '../../componentes/privacidade'
 import { useMemo, useState } from 'react'
-import { CalendarCheck, PiggyBank, Trophy, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
+import { CalendarCheck, PiggyBank, Plus, ShoppingBag, CircleCheck, Target, Wallet } from 'lucide-react'
 import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/contexto'
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
@@ -20,8 +20,8 @@ import { GastoDoMes } from '../../componentes/GastoDoMes'
 import { Rosto } from '../../componentes/Rosto'
 import { MesEmBolinhas } from '../../componentes/MesEmBolinhas'
 import { ComprasDoMes, OndeFoiODinheiro } from '../../componentes/ComprasDoMes'
-import { AnelConquistas, Medalha, NumeroQueSobe, PoteDaSobra } from '../../componentes/VidaDoOrcamento'
-import { conquistasDoMes, iniciaisDistintas } from './conquistas'
+import { NumeroQueSobe, PoteDaSobra } from '../../componentes/VidaDoOrcamento'
+import { iniciaisDistintas } from './iniciais'
 import { fraseEstouro, numeroEnvelope, tetoDoMes } from '../../componentes/EnvelopeCard'
 import { CobrirEstouro } from '../../componentes/CobrirEstouro'
 import { valorPrincipalEnvelope } from '../../lib/resumo/orcamento'
@@ -43,7 +43,7 @@ import {
   textoParaValor,
 } from '../../lib/formato'
 
-/** Meu orçamento: hoje, semana, fim do mês, cofrinho e conquistas. Abre no limite de quem olha (R2). */
+/** Meu orçamento: hoje, semana, fim do mês, cofrinho e compras. Abre no limite de quem olha (R2). */
 export function MeuOrcamento() {
   const { api, familia } = useSessaoAtual()
   const { recarregar, abrirLancar, toast } = useAcoes()
@@ -67,8 +67,9 @@ export function MeuOrcamento() {
     familia && esteMesAbriu ? () => api.lancamentos(familia.id, mesAntes) : null,
     [api, versao, mesAntes, esteMesAbriu],
   )
-  // 24/11: a aba do topo (Hoje, Sobra anotada, Conquistas) marca a parte da tela que está à vista
-  const secao = useSecaoVisivel(['oHoje', 'oCofrinho', 'oMais'], esteMesAbriu && !!resumo)
+  // 24/11: a aba do topo (Hoje, Sobra anotada, Compras) marca a parte da tela que está à vista.
+  // As Conquistas saíram a pedido do dono (eram fáceis demais para valer alguma coisa).
+  const secao = useSecaoVisivel(['oHoje', 'oCofrinho', 'oCompras'], esteMesAbriu && !!resumo)
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
   const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
@@ -140,21 +141,12 @@ export function MeuOrcamento() {
   const ontem = somaDias(hoje, -1)
   // R9: no lugar de "N dias em branco", 1 pergunta sobre ontem
   const perguntarOntem = meu && ontem.startsWith(mes) && !dados.anot.has(ontem)
-  const ult3 = [1, 2, 3].map(i => somaDias(hoje, -i)).filter(d => d.startsWith(mes))
-  const branco = ult3.filter(d => !dados.anot.has(d)).length
-  const dentro = dados.fechados.filter(d => dados.anot.has(d) && (dados.porDia[d] || 0) <= dados.base).length
   const ir = (id: string) =>
     document.getElementById(id)?.scrollIntoView({
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
       block: 'start',
     })
   const frase = fraseEstouro(env, n)
-  const conquistas = conquistasDoMes({
-    temGasto: Object.keys(dados.porDia).length > 0,
-    dentro,
-    sobra: dados.cof,
-    seguidos: ult3.length - branco,
-  })
   const iniciais = iniciaisDistintas(pessoais.map(e => e.nome))
 
   return (
@@ -188,9 +180,9 @@ export function MeuOrcamento() {
             <Icone nome="guardar" />
             Sobra anotada
           </button>
-          <button type="button" onClick={() => ir('oMais')} aria-current={secao === 'oMais' || undefined}>
-            <Icone nome="salvo" />
-            Conquistas
+          <button type="button" onClick={() => ir('oCompras')} aria-current={secao === 'oCompras' || undefined}>
+            <Icone desenho={ShoppingBag} aria-hidden="true" />
+            Compras
           </button>
         </div>
       </nav>
@@ -406,27 +398,6 @@ export function MeuOrcamento() {
             ateDia={Number(hoje.slice(8, 10))}
           />
           <ComprasDoMes lanc={lanc} envelopeId={env.id} envelopeNome={env.nome} mes={mes} />
-          <section className="card" id="oMais" aria-labelledby="oMaisT" style={{ scrollMarginTop: 72 }}>
-            <div className="card-h">
-              <h2 id="oMaisT">
-                <Icone desenho={Trophy} aria-hidden="true" />
-                Conquistas
-              </h2>
-              <AnelConquistas feitas={conquistas.filter(c => c.ok).length} total={conquistas.length} />
-            </div>
-            <ul className="list">
-              {conquistas.map(c => (
-                <li key={c.nome} className="li" data-ok={c.ok}>
-                  <Medalha nivel={c.nivel} ok={c.ok} />
-                  <span className="m">
-                    <b>{textoPrivado(c.nome)}</b>
-                    <small>{c.ok ? 'Conseguiu' : textoPrivado(c.falta)}</small>
-                  </span>
-                  {c.ok ? <CircleCheck className="orc-ok" aria-hidden="true" /> : <span />}
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
       </div>
       {dpc && <DaPraComprar livre={Math.max(0, env.livre)} fechar={() => setDpc(false)} />}

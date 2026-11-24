@@ -71,53 +71,6 @@ export function PoteDaSobra({ valor, alvo, oculto }: { valor: number; alvo: numb
   )
 }
 
-export type NivelMedalha = 'ouro' | 'prata' | 'bronze'
-
-/** Medalha cheia quando foi conseguida; apagada quando ainda falta. */
-export function Medalha({ nivel, ok }: { nivel: NivelMedalha; ok: boolean }) {
-  return (
-    <svg
-      className={`medalha medalha-${nivel}${ok ? '' : ' medalha-falta'}`}
-      viewBox="0 0 44 48"
-      width="44"
-      height="48"
-      aria-hidden="true"
-    >
-      <path d="M14 2h7l5 14h-7Z" className="medalha-fita-a" />
-      <path d="M30 2h-7l-5 14h7Z" className="medalha-fita-b" />
-      <circle cx="22" cy="30" r="15" className="medalha-disco" />
-      <circle cx="22" cy="30" r="10.5" className="medalha-aro" />
-      <path d="m22 23.5 2 4.2 4.6.6-3.4 3.2.9 4.6-4.1-2.3-4.1 2.3.9-4.6-3.4-3.2 4.6-.6Z" className="medalha-estrela" />
-    </svg>
-  )
-}
-
-/** Anel com quantas conquistas já foram feitas. */
-export function AnelConquistas({ feitas, total }: { feitas: number; total: number }) {
-  const r = 19
-  const volta = 2 * Math.PI * r
-  const parte = total > 0 ? feitas / total : 0
-  return (
-    <span className="anel" role="img" aria-label={`${feitas} de ${total} conquistas`}>
-      <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
-        <circle cx="24" cy="24" r={r} className="anel-fundo" />
-        <circle
-          cx="24"
-          cy="24"
-          r={r}
-          className="anel-cheio"
-          strokeDasharray={`${volta * parte} ${volta}`}
-          transform="rotate(-90 24 24)"
-        />
-      </svg>
-      <b aria-hidden="true">
-        {feitas}
-        <small>/{total}</small>
-      </b>
-    </span>
-  )
-}
-
 /** O Assistente do Orçamento, desenhado no traço do app, para dar o recado do mês. */
 export function AssistenteFala({ humor }: { humor: 'alerta' | 'contente' }) {
   return (
