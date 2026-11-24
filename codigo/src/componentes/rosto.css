@@ -1,0 +1,22 @@
+/* O rosto de cada pessoa (24/11/2026): foto redonda, ou a inicial na cor do app */
+.rosto {
+  position: relative; flex: none; display: inline-grid; place-items: center;
+  inline-size: var(--rosto, 40px); block-size: var(--rosto, 40px); border-radius: 50%;
+  background: var(--accent); color: var(--on-accent, #fff);
+  font: 700 calc(var(--rosto, 40px) * .45)/1 var(--font-num); text-transform: uppercase;
+}
+.rosto img { inline-size: 100%; block-size: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.rosto-troca { cursor: pointer; }
+.rosto-troca:focus-within { outline: 3px solid var(--accent); outline-offset: 3px; }
+.rosto-arquivo { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; overflow: hidden; }
+.rosto-camera {
+  position: absolute; inset-inline-end: -4px; inset-block-end: -4px;
+  display: grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 50%;
+  background: var(--surface, #fff); color: var(--accent-ink); border: 1.5px solid var(--border);
+}
+.rosto-camera svg { inline-size: 12px; block-size: 12px; }
+.rosto-ocupado { opacity: .55; }
+@media (prefers-reduced-motion: no-preference) { .rosto-ocupado { animation: rosto-pisca 1s ease-in-out infinite alternate; } }
+@keyframes rosto-pisca { to { opacity: .3; } }
+/* a inicial vem do estilo, nao do texto: o nome da pessoa continua sendo o primeiro texto do botao */
+.rosto-inicial::before { content: attr(data-inicial); }

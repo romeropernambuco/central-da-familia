@@ -105,6 +105,7 @@ export const ACOES_QUE_SO_LEEM = [
   'etiquetaResumo',
   'etiquetaSimular',
   'exportarMeu',
+  'fotosDaFamilia',
 ] as const satisfies readonly Acao[]
 
 /**
@@ -123,6 +124,8 @@ export const ACOES_QUE_PASSAM_DIRETO = [
   'entrarEquipe',
   'lerCupom',
   'notaSubir',
+  // foto do rosto (24/11/2026): só troca um arquivo no bucket privado `fotos`; não mexe em dinheiro nem tem desfazer
+  'fotoSubir',
   // avisos no celular: só a inscrição deste aparelho, nenhum dado da família muda
   'celularChavePublica',
   'celularLigar',

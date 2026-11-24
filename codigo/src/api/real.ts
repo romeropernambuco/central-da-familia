@@ -675,6 +675,35 @@ export const apiReal: Api = {
     if (up.error && !/exists|duplicate/i.test(up.error.message || '')) erro(up.error)
     return caminho
   },
+  async fotosDaFamilia(familia) {
+    const pasta = await sb().storage.from('fotos').list(familia, { limit: 100 })
+    if (pasta.error) erro(pasta.error)
+    const arquivos = (pasta.data ?? []).filter(a => a.name.endsWith('.jpg'))
+    if (!arquivos.length) return {}
+    const caminhos = arquivos.map(a => `${familia}/${a.name}`)
+    const urls = await sb()
+      .storage.from('fotos')
+      .createSignedUrls(caminhos, 60 * 60 * 12)
+    if (urls.error) erro(urls.error)
+    const fotos: Record<string, string> = {}
+    ;(urls.data ?? []).forEach((u, i) => {
+      // a data de troca vai no endereço: foto nova aparece na hora, sem ficar a velha guardada no celular
+      const versao = arquivos[i].updated_at ? `&v=${encodeURIComponent(arquivos[i].updated_at)}` : ''
+      if (u.signedUrl) fotos[arquivos[i].name.replace(/\.jpg$/, '')] = u.signedUrl + versao
+    })
+    return fotos
+  },
+  async fotoSubir(familia, envelope, foto) {
+    const bytes = Uint8Array.from(atob(foto), ch => ch.charCodeAt(0))
+    const up = await sb()
+      .storage.from('fotos')
+      .upload(`${familia}/${envelope}.jpg`, new Blob([bytes], { type: 'image/jpeg' }), {
+        upsert: true,
+        contentType: 'image/jpeg',
+        cacheControl: '60',
+      })
+    if (up.error) erro(up.error)
+  },
   async feiraAnexarNota(familia, feira, foto) {
     const caminho = await this.notaSubir(familia, feira, foto)
     await rpc('feira_anexar_nota', { feira, caminho })

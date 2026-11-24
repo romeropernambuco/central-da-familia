@@ -101,6 +101,8 @@ if (pessoaDoTeste === 'nova') {
 /** Convite de exemplo da equipe: o link do exemplo é #/equipe?c=<este id> e o código é 2468. */
 export { CONVITE_EXEMPLO }
 const espera = (ms = 60) => new Promise(r => setTimeout(r, ms))
+/** Fotos de rosto trocadas no exemplo: envelope → imagem. Só na memória. */
+const fotosDoExemplo: Record<string, string> = {}
 // Convites distintos preservam a identidade de cada pessoa também na demonstração.
 const convitesAssessores = new Map<string, string>([[CONVITE_EXEMPLO, 'Carla']])
 let assessorNome = 'Carla'
@@ -1772,6 +1774,15 @@ export const apiExemplo: Api = {
   async notaSubir(_f, feira) {
     await espera(80)
     return `fam-silva/${feira}.jpg`
+  },
+  // fotos de rosto no exemplo: ficam só na memória desta aba ("mexa à vontade, nada fica salvo")
+  async fotosDaFamilia() {
+    await espera(30)
+    return { ...fotosDoExemplo }
+  },
+  async fotoSubir(_f, envelope, foto) {
+    await espera(80)
+    fotosDoExemplo[envelope] = `data:image/jpeg;base64,${foto}`
   },
   async feiraAnexarNota(_f, feira) {
     await espera(80)

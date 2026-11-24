@@ -17,6 +17,7 @@ import { useAcoes, useDadosDoDia, useOlhoApp, useSessaoAtual } from '../../app/c
 import { CampoValor, Din, Sheet } from '../../componentes/base'
 import { Qm } from '../../componentes/Qm'
 import { GastoDoMes } from '../../componentes/GastoDoMes'
+import { Rosto } from '../../componentes/Rosto'
 import {
   AnelConquistas,
   Medalha,
@@ -157,6 +158,7 @@ export function MeuOrcamento() {
               aria-pressed={e.id === env.id}
               onClick={() => setEnvId(e.id)}
             >
+              <Rosto envelope={e.id} nome={e.nome} tam={26} />
               {textoPrivado(e.nome)}
               {escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}
             </button>
@@ -189,9 +191,12 @@ export function MeuOrcamento() {
             style={{ scrollMarginTop: 72 }}
             {...(meu ? {} : { 'data-do-outro': textoPrivado(dono) })}
           >
-            <h2 id="oHojeT" className="orc-titulo" data-inicial={oculto ? '•' : textoPrivado(env.nome).charAt(0)}>
-              {textoPrivado(env.nome)}, hoje
-            </h2>
+            <div className="orc-cabeca">
+              <Rosto envelope={env.id} nome={env.nome} tam={48} podeTrocar={meu || familia?.papel === 'casal'} />
+              <h2 id="oHojeT" className="orc-titulo">
+                {textoPrivado(env.nome)}, hoje
+              </h2>
+            </div>
             {!meu && (
               <p className="sub dono-linha">
                 Orçamento de{' '}

@@ -772,6 +772,10 @@ export interface Api {
   feiraRegistrar(familia: string, f: { data: string; valor?: number; loja?: string }): Promise<void>
   /** Só sobe a foto da nota pro bucket privado e devolve o caminho (a resposta da pergunta leva o caminho e o banco anota). */
   notaSubir(familia: string, feira: string, fotoBase64Jpeg: string): Promise<string>
+  /** Fotos de rosto da família (bucket privado `fotos`, caminho {familia}/{envelope}.jpg): envelope → endereço temporário. */
+  fotosDaFamilia(familia: string): Promise<Record<string, string>>
+  /** Troca a foto de rosto de um orçamento (de quem é o orçamento, ou do casal). */
+  fotoSubir(familia: string, envelope: string, fotoBase64Jpeg: string): Promise<void>
   /** Sobe a foto da nota e anota na feira (pelo cadastro). Devolve o caminho guardado. */
   feiraAnexarNota(familia: string, feira: string, fotoBase64Jpeg: string): Promise<string>
   feiraSemNota(familia: string, feira: string, motivo: string): Promise<void>
