@@ -1,6 +1,6 @@
 # Tarefa 11 · Módulo Escritório · Ajustes finais
 
-Data: 24/11/2026 · Dono: Romero · Situação: pronto pra entrar na fila
+Data: 24/11/2026 · Dono: Romero · Versão 2, revisada por produto e por engenharia
 
 **Onde entregar:** documento "Central da Família · Diretrizes do CEO", logo abaixo da ficha "TAREFA: 11 Módulo Escritório".
 Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidido.
@@ -9,10 +9,11 @@ Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidid
               ESCRITÓRIO: O QUE FALTA
                        │
    ┌──────────┬────────┼─────────┬──────────┐
-  CUSTO      SAÚDE    NOVIDADES   PLACAR    FILA DE
-  em R$ por  a escala  desde a    6 números  ESPERA
-  ajudante   rodou?    última     com meta   o que não
-  e teto               visita                entra agora
+  FAMÍLIA    DONO DO   BANCO      CUSTO     FILA DE
+  vê saúde,  PRODUTO   3 tabelas  teto e    ESPERA
+  novidades  vê custo, novas, só  conta     o que não
+  e o time   modelo e  no banco   refeita   entra agora
+             placar    novo
 ```
 
 ---
@@ -22,16 +23,16 @@ Este arquivo complementa a Tarefa 11. Não substitui nada do que já foi decidid
 | Item | Número |
 |---|---|
 | Ajudantes cadastrados | 11 (8 do produto + 3 só da nossa família) |
-| Turnos registrados | 16, todos de 07/11 |
-| Turnos entregues | 1 de 16 |
-| Parados por dado ou decisão do dono | 10 de 16 |
-| Dias sem nenhum turno novo | 17 |
-| Turnos agendados de verdade | 1 de 11 (o da usina, dia 6) |
+| Conferências registradas | 16, todas de 07/11 |
+| Conferências entregues | 1 de 16 |
+| Paradas por dado ou decisão do dono | 10 de 16 |
+| Dias sem conferência nova | 17 |
+| Ajudantes com horário ligado de verdade | 1 de 11 |
 | Banco novo do produto (Tarefa 2) | ainda não existe |
 
-Os outros 10 ajudantes aparecem na tela com "só quando o Romero mandar". Por isso nada rodou depois de 07/11.
+Os outros 10 ajudantes aparecem na tela com "só quando o dono mandar". Por isso nada rodou depois de 07/11.
 
-Os 3 que ficam só na nossa família (fora do produto, como mandam as Diretrizes): Assistente da Andreza, Tesoureiro de Receitas e Gerente da Usina.
+Os 3 que ficam só na nossa família, fora do produto: Assistente de orçamento pessoal, Tesoureiro de Receitas e Gerente da empresa.
 
 ---
 
@@ -42,7 +43,7 @@ Os 3 que ficam só na nossa família (fora do produto, como mandam as Diretrizes
 3. Cena do escritório com os personagens em pixel (visual já aprovado).
 4. Botões "Primeiros passos", "Dias de cada ajudante" e "Resumo pra segunda".
 5. Pedido escrito pra cada ajudante.
-6. Empresa separada da família (a usina tem bloco próprio).
+6. Empresa separada da família.
 
 ---
 
@@ -50,20 +51,22 @@ Os 3 que ficam só na nossa família (fora do produto, como mandam as Diretrizes
 
 Referência: escritório de IA de uma operação de anúncios, visto em 23/11. Serve de modelo de função, não de aparência.
 
-| Ideia da referência | Nós temos? | Decisão |
-|---|---|---|
-| Um ajudante por setor | Sim | Manter |
-| Situação por cor | Sim | Manter |
-| Fila "esperando você" | Sim, e mais completa | Manter |
-| Horário que roda sozinho | Só 1 de 11 | Já é o item 2 da Tarefa 11 |
-| Modelo leve ou forte por ajudante | Decidido, não aparece | **Entra (item A)** |
-| Consumo de IA por ajudante | Não | **Entra em R$ (item B)** |
-| Total do dia com os que mais gastam | Não | **Entra com teto (item C)** |
-| Linha de saúde no rodapé | Não | **Entra (item D)** |
-| Caixa de "novas" | Não | **Entra (item E)** |
-| Quadro do time com data | Não | **Entra (item F)** |
-| Gerente que recebe e distribui | Não | Fila de espera (item G) |
-| Falar por voz | Não | Não construir: o teclado do iPhone já dita |
+| Ideia da referência | Nós temos? | Decisão | Quem vê |
+|---|---|---|---|
+| Um ajudante por setor | Sim | Manter | Família |
+| Situação por cor | Sim | Manter | Família |
+| Fila "esperando você" | Sim, e mais completa | Manter | Família |
+| Horário que roda sozinho | Só 1 de 11 | Já é o item 2 da Tarefa 11 | Família |
+| Linha de saúde | Não | **Entra (item D)** | Família, em 1 frase |
+| Caixa de novidades | Não | **Entra (item E)** | Família |
+| Quadro do time com data | Não | **Entra (item F)** | Família |
+| Modelo leve ou forte por ajudante | Decidido, não aparece | **Entra (item A)** | Dono do produto |
+| Consumo de IA por ajudante | Não | **Entra em R$ (itens B e C)** | Dono do produto |
+| Placar do escritório | Não | **Entra (item G)** | Dono do produto |
+| Gerente que recebe e distribui | Não | Fila de espera | |
+| Falar por voz | Não | Não construir: o teclado do iPhone já dita | |
+
+**Mudança da revisão:** custo de IA é conta do produto. A família não resolve esse número, então ele não aparece na tela dela.
 
 O que nós temos e a referência não mostra: fonte de cada número, marca de dado de exemplo, pendência com o que destrava, empresa separada da família, acesso por pessoa e histórico de mudanças. Isso fica.
 
@@ -74,91 +77,151 @@ O que nós temos e a referência não mostra: fonte de cada número, marca de da
 ```
 TAREFA: 11-B Escritório: custo, saúde e novidades
 ESPECIALISTA: Engenheiro de agentes de IA (o mesmo da Tarefa 11)
-ENTRA DEPOIS DE: Tarefas 4 e 5 prontas. Faz parte da Tarefa 11, não é fila nova.
+ENTRA DEPOIS DE: Tarefas 5 e 7, igual à Tarefa 11. O item G entra com a
+Tarefa 14. Coluna e tabela nova nascem no projeto novo (Tarefa 2), nunca
+no projeto de hoje.
 LEIA ANTES: CLAUDE.md; ficha da Tarefa 11; Escritório da Família
 (https://claude.ai/artifact/F43Xn8RE49F4YN7PULvKnm); tabelas
 escritorio_funcionarios e escritorio_turnos; a conta do produto na parte 9
-das Diretrizes.
+das Diretrizes; limite de uso da Tarefa 12.
 
 FAÇA:
 A. Modelo por ajudante. Cada ajudante tem 1 campo "modelo": leve ou forte.
-   Leve pra turno que só lê, calcula e grava. Forte só pro relatório com
-   insight. Quem troca é o administrador, nunca a família.
-B. Custo em cada turno. Ao fechar o turno, grave dentro de "extras":
-   modelo usado, custo em R$, duração em segundos. Use o campo "extras"
-   que já existe em escritorio_turnos. Nenhuma tabela nova.
-C. Custo na tela. No cartão do ajudante: "IA no mês: R$ 0,00".
-   No topo: total do mês da família e o teto. Em 80% do teto, aviso
-   "precisa de você". Em 100%, os turnos passam pro modelo leve e os
-   relatórios com insight esperam o mês virar. Nenhum turno de conta para.
-D. Linha de saúde no rodapé, em 1 frase: banco respondeu, escala ligada,
-   último turno rodou há quanto tempo, quantos turnos atrasados.
-   Turno atrasado já vira alerta pela Tarefa 11; aqui é só o resumo.
-E. Novidades. Contador "X novas" = relatórios entregues depois da última
-   vez que a pessoa abriu o Escritório. Tocar leva pro 1º relatório novo.
-   Guarde a última visita por pessoa.
-F. Time com data. "Dias de cada ajudante" mostra "Time desde dd/mm" e
-   avisa quando entra, sai ou muda o horário de um ajudante.
-G. Placar do Escritório (6 números, tabela da parte 6). Entra no Painel
-   dos 4 números (Tarefa 14) como 1 bloco, sem tela nova.
+   Leve pra conferência que só lê, calcula e grava. Forte só pro relatório
+   com insight. Aparece só no painel do dono do produto. A família não vê
+   nem troca.
+B. Custo em cada conferência. A função de servidor soma o uso de TODAS as
+   chamadas de IA da conferência (entrada, saída, tentativas repetidas) e
+   passa ao fechamento só o modelo e a contagem. Quem calcula o R$ é o
+   banco: contagem x preço vigente x dólar da mesma linha de ia_precos.
+   Grava em colunas próprias: modelo_id, tokens_entrada, tokens_saida,
+   custo_brl. Valor gravado nunca é recalculado. Conferência sem IA:
+   custo 0 e modelo vazio. Só a chave de servidor fecha conferência.
+   ia_precos: 1 linha por modelo e data de vigência, com preço e dólar
+   fixos. O administrador só insere linha nova, nunca edita.
+C. Teto. 1 linha por família por mês em ia_gasto_mes (gasto, reservado,
+   avisou_80_em). O mês é o do INÍCIO da conferência no fuso de Recife.
+   1. Antes de chamar a IA, reserva o custo estimado travando a linha;
+      ao fechar, troca pelo custo real. Reserva sem fechamento em 30 min
+      é devolvida.
+   2. Em 80%: 1 alerta por mês pro dono do produto, não 1 por conferência.
+   3. Em 100%: conferência nova nasce no modelo leve; a que está em
+      andamento termina no modelo em que começou.
+   4. Em 150%, ou mais de 3 "Rodar agora" por ajudante por dia: nenhuma
+      chamada de IA; a conferência grava os números do banco sem texto.
+   5. Conferência de exemplo não conta. A família Silva tem conta própria
+      e fica fora do total do produto.
+   6. O teto é 1 só: soma o Escritório e as leituras da Tarefa 12.
+      Só o administrador muda o teto.
+   Tela da família: nunca mostra R$ de IA. No cartão afetado aparece só
+   "Este mês o relatório vem resumido. O completo volta em 01/12."
+   Painel do dono: "Custo de IA em novembro: R$ 0,00 de R$ 2,49", por
+   família e por ajudante. Abaixo de 1 centavo: "menos de R$ 0,01".
+D. Saúde. Na tela da família, 1 linha no rodapé, no lugar de "Atualizado
+   em", com 2 formas: "Tudo funcionando. Última conferência: hoje, 8h13."
+   ou "2 conferências atrasadas. Última: 07/11." com "Rodar agora".
+   Atrasada = horário previsto + 30 min já passou, ou conferência aberta
+   sem fim há mais de 30 min. 1 único agendamento, a cada 10 min, abre as
+   vencidas e recalcula o próximo horário no fuso de Recife. A escala sai
+   do código e vira tabela por família (escritorio_escala).
+   Banco e escala, com essas palavras, só no painel do dono do produto.
+E. Novidades. 1 linha abaixo de "coisas esperando você": "3 relatórios
+   novos desde a sua última visita." Com 0, some. Conta só relatório que
+   aquela pessoa pode ver. Tocar leva pro 1º relatório novo. Ninguém
+   altera a tabela pessoas direto: grava só a função
+   escritorio_marcar_visto(), sem parâmetro, com a pessoa logada e a hora
+   do servidor. A tela conta as novas ANTES de marcar.
+F. Time com data. 1 frase no topo de "Dias de cada ajudante": "Seus 8
+   ajudantes trabalham desde 07/11." Mudança vira 1 linha no mesmo bloco
+   por 7 dias ("Mudou em 24/11: o Comprador passou pra terça, 20h23."),
+   sem aviso no celular. Nome de pessoa vem do cadastro, nunca do código.
+G. Placar do Escritório. Na Tarefa 14, abaixo dos 4 números, 1 linha
+   recolhida, só pro dono do produto: "Escritório: 5 de 6 no verde." Abre
+   os 6 números com farol e 1 linha do que cada um mede. A segunda-feira
+   continua com 4 números. Os números 4 e 6 ficam sem meta até 4 semanas
+   de piloto. Os números 3 e 4 medem o ajudante, nunca a pessoa.
 
 NÃO FAÇA:
 - Criar ajudante novo. O produto tem 8 e continua com 8.
 - Criar tabela paralela pro mesmo assunto.
-- Mostrar consumo em "tokens" pra família. Só R$.
+- Mostrar custo de IA, "tokens", "modelo", "banco" ou "turno" pra família.
 - Mexer na cena, nos personagens, na ordem dos blocos ou nas cores.
 - Ligar a escala sozinha antes do teto de custo estar funcionando.
-- Gastar IA em turno sem dado: sem dado, o ajudante pergunta (item 3 da
-  Tarefa 11) e não chama a IA.
-- Escrever número da nossa família no código.
+- Gastar IA em conferência sem dado: sem dado, o ajudante pergunta (item 3
+  da Tarefa 11) e não chama a IA.
+- Escrever nome ou número da nossa família no código.
+- Tocar o projeto de hoje no Supabase fora das Tarefas 1 e 16.
 
-PRONTO QUANDO: na semana simulada da família Silva, toda linha de turno
-tem modelo e custo, o total do mês aparece na tela com o teto, o aviso
-de 80% dispara num teste forçado, "novas" zera depois de abrir, e os 6
-números do placar aparecem. Print aprovado no iPhone e no Windows.
+PRONTO QUANDO: na família Silva, com relógio simulado, toda conferência
+que chamou a IA tem modelo, contagem e custo (sem IA: R$ 0,00); o alerta
+de 80% dispara 1 vez com o teto baixado pra teste; em 100% a conferência
+seguinte sai no leve; 2 conferências ao mesmo tempo não furam o teto; a
+virada de mês zera; a família A não vê custo da B; as novidades zeram
+depois de abrir; os 6 números batem com a conta feita à mão. 1 rodada com
+IA de verdade pra medir; as demais com resposta fixa. Print aprovado no
+iPhone e no Windows.
 ```
 
 ---
 
 ## 5. Onde cada dado fica guardado
 
+Tudo só no banco novo do produto. A versão 1 dizia "nenhuma tabela nova"; a revisão de engenharia derrubou isso. Não há duplicação: são 3 assuntos que hoje não têm tabela.
+
 | Dado | Onde | Muda o banco? |
 |---|---|---|
-| Modelo usado, custo em R$ e duração do turno | `escritorio_turnos.extras` | Não, o campo já existe |
-| Modelo padrão do ajudante (leve ou forte) | `escritorio_funcionarios.modelo` | 1 coluna nova |
-| Última visita de cada pessoa ao Escritório | `pessoas.escritorio_visto_em` | 1 coluna nova |
-| Teto de custo da família | configuração da família | Usa a configuração que a Tarefa 2 criar |
-| Saúde e placar | calculados na hora | Não |
+| Modelo, contagem e custo da conferência | `escritorio_turnos`: `modelo_id`, `tokens_entrada`, `tokens_saida`, `custo_brl` (+ `familia_id`) | 4 colunas |
+| Preço por modelo e dólar | `ia_precos` (global, sem acesso da família) | tabela nova |
+| Gasto, reserva e alerta do mês | `ia_gasto_mes` (família, mês) | tabela nova, usada também pela Tarefa 12 |
+| Modelo padrão do ajudante | `escritorio_funcionarios.modelo` | 1 coluna |
+| Dia, hora, próximo horário, "desde", ativo | `escritorio_escala` (por família) | tabela nova |
+| Última visita | `pessoas.escritorio_visto_em`, só via função | 1 coluna |
+| Teto | configuração da família, só o administrador grava | Tarefa 2 |
+| Saúde e placar | funções calculadas na hora | não |
 
 ---
 
-## 6. Placar do Escritório
+## 6. Placar do Escritório (só pro dono do produto)
 
 | # | Número | Meta | De onde vem |
 |---|---|---|---|
-| 1 | Turnos que rodaram ÷ turnos previstos na semana | 100% | escala × turnos |
+| 1 | Conferências que rodaram ÷ previstas na semana | 100% | escala × conferências |
 | 2 | Ajudantes em "sem dados" no fim da semana | 0 | critério da Tarefa 11 |
-| 3 | Pendências vencidas sem "Resolvi" | 0 | item 6 da Tarefa 11 |
-| 4 | Dias até o dono responder uma pendência | até 2 (proposta) | data da pendência × "Resolvi" |
-| 5 | Custo de IA da família no mês | até o teto | soma do custo dos turnos |
-| 6 | Relatórios que viraram ação ÷ relatórios entregues | 50% (proposta) | "Resolvi" depois do relatório |
-
-Teto proposto: **R$ 2,49 por família por mês**. É o topo da faixa que as Diretrizes já estimaram (R$ 0,12 a R$ 2,49). Vale como estimativa até a Tarefa 11 medir o custo real.
+| 3 | Pendências vencidas sem "Resolvi" (mede o ajudante) | 0 | item 6 da Tarefa 11 |
+| 4 | Dias até uma pendência ser respondida (mede o ajudante) | sem meta até 4 semanas de piloto | data da pendência × "Resolvi" |
+| 5 | Custo de IA da família no mês | até o teto | soma de `custo_brl` |
+| 6 | Relatórios que viraram ação ÷ relatórios entregues | sem meta até 4 semanas de piloto | "Resolvi" depois do relatório |
 
 ---
 
-## 7. Regra de modelo (proposta, a confirmar com o custo medido)
+## 7. Custo de IA: a conta refeita (estimativa)
 
-| Ajudante | Turno normal | Relatório com insight |
+Teto proposto: **R$ 2,49 por família por mês**, topo da faixa que as Diretrizes já estimaram (R$ 0,12 a R$ 2,49).
+
+Premissas, todas a confirmar: 24 conferências por mês pela escala de hoje; dólar a R$ 5,45; tamanho de cada conferência estimado, ainda sem medição; preço dos modelos a confirmar na página oficial.
+
+| Cenário | R$ por mês | % do teto |
+|---|---|---|
+| Tudo no modelo leve | 0,08 | 3% |
+| Insight forte só 1 vez por mês (Contador e Cartão) | 0,44 | 18% |
+| Insight forte toda semana, modelo intermediário | 1,91 | 77% |
+| Idem, em mês de 5 semanas | 2,29 | 92% |
+| Insight forte toda semana, modelo mais caro | 3,79 | 152% |
+
+Com insight forte toda semana, o alerta de 80% dispara quase todo mês e não sobra nada pras leituras da Tarefa 12.
+
+**Regra de modelo recomendada:**
+
+| Ajudante | Conferência normal | Relatório com insight |
 |---|---|---|
 | Contador da Casa | leve | forte, 1 vez por mês |
 | Analista de Cartão | leve | forte, no fechamento |
-| Auditor de Estoque | leve | forte, 1 vez por semana |
-| Comprador | leve | forte, 1 vez por semana |
+| Auditor de Estoque | leve | leve |
+| Comprador | leve | leve |
 | Controlador de Presença | leve | leve |
 | Folha da Casa | leve | leve |
 | Agenda de Vencimentos | leve | leve |
-| Guardião do Colchão | leve | forte, 1 vez por semana |
+| Guardião do Colchão | leve | leve |
 
 A conta é sempre do banco (Tarefa 4). A IA só escreve o relatório e o insight.
 
@@ -168,10 +231,10 @@ A conta é sempre do banco (Tarefa 4). A IA só escreve o relatório e o insight
 
 | Passo | O quê | Pronto quando |
 |---|---|---|
-| 1 | Itens A e B: modelo e custo gravados em cada turno | 1 semana simulada com custo em toda linha |
-| 2 | Itens C e D: custo, teto e saúde na tela | aviso de 80% dispara no teste forçado |
-| 3 | Itens E e F: novidades e time com data | "novas" zera depois de abrir |
-| 4 | Item G: placar no Painel dos 4 números | os 6 números aparecem com a meta |
+| 1 | Itens A e B: modelo e custo gravados em cada conferência | toda conferência com IA tem modelo, contagem e custo |
+| 2 | Item C e saúde técnica: teto, reserva e alerta | 80% dispara 1 vez; 100% rebaixa; 2 ao mesmo tempo não furam |
+| 3 | Itens D, E e F: saúde, novidades e time com data na tela da família | novidades zeram depois de abrir; atraso aparece |
+| 4 | Item G: função do placar | bate com a conta à mão na família Silva. O bloco na tela entra com a Tarefa 14 |
 
 Os passos 1 e 2 vêm antes de ligar a escala sozinha. Sem teto, a escala fica desligada.
 
@@ -193,6 +256,7 @@ Os passos 1 e 2 vêm antes de ligar a escala sozinha. Sem teto, a escala fica de
 
 | # | Decisão | Recomendação |
 |---|---|---|
-| 1 | Teto de custo de IA por família | R$ 2,49 por mês, revisto quando a Tarefa 11 medir |
-| 2 | Gerente que encaminha pedido entra no piloto? | Não. Só se 2 famílias pedirem |
-| 3 | Ligar já os 10 turnos da nossa família no painel de hoje? | Não. Ligar cada um só quando tiver dado real; turno sem dado só gasta |
+| 1 | Teto de custo de IA por família | R$ 2,49 por mês, somando Escritório e Tarefa 12, revisto quando a Tarefa 11 medir |
+| 2 | Insight forte toda semana ou só no mês? | Só no mês (Contador e Cartão). Semanal fica no modelo leve. A alternativa é subir o teto |
+| 3 | Gerente que encaminha pedido entra no piloto? | Não. Só se 2 famílias pedirem |
+| 4 | Ligar já as 10 conferências da nossa família no painel de hoje? | Não. Ligar cada uma só quando tiver dado real; conferência sem dado só gasta |
