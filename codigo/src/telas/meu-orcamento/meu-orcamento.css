@@ -43,3 +43,61 @@
 .orcamento-f29 .orc-cabeca { display: flex; align-items: center; gap: 12px; }
 .orcamento-f29 .orc-cabeca h2 { margin: 0; }
 .orcamento-f29 .pills .pill { display: inline-flex; align-items: center; gap: 8px; padding-inline-start: 6px; }
+
+/* Acabamento de 24/11 (tarde) — mesma estrutura, mais clara a hierarquia */
+/* 1. De quem é o orçamento: 3 botões iguais, lado a lado, sem quebrar no celular; "só ver" embaixo do nome */
+.orcamento-f29 > .pills { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; max-inline-size: 560px; }
+.orcamento-f29 > .pills .pill { min-inline-size: 0; min-block-size: 52px; padding: 6px 12px 6px 8px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); white-space: normal; text-align: start; }
+.orcamento-f29 > .pills .pill[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 2px var(--accent); }
+.orcamento-f29 .pill-nome { display: grid; min-inline-size: 0; line-height: 1.15; overflow-wrap: anywhere; }
+.orcamento-f29 .pill-nome .pill-dono { margin: 2px 0 0; font-size: 12px; font-weight: 500; opacity: 1; color: var(--muted); }
+
+/* 2. Atalhos (Hoje, Sobra, Conquistas): viram abas discretas, para não parecerem os botões das pessoas */
+.orcamento-f29 .segbar .seg.compacta { gap: 4px; border-block-end: 1px solid var(--border); border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
+.orcamento-f29 .segbar .seg.compacta button { min-block-size: 44px; padding: 0 10px; border: 0; border-radius: 0; background: transparent; box-shadow: inset 0 -2px 0 transparent; color: var(--muted); font-size: 15px; font-weight: 600; }
+.orcamento-f29 .segbar .seg.compacta button:hover { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* 3. Pote da sobra menor: o cartão deixa de ter um buraco embaixo do título */
+.orcamento-f29 #oCofrinho .card-h { align-items: center; }
+.orcamento-f29 #oCofrinho .pote { grid-auto-flow: column; align-items: end; gap: 6px; }
+.orcamento-f29 #oCofrinho .pote svg { inline-size: 34px; block-size: 44px; }
+.orcamento-f29 #oCofrinho .numrow { margin-block: 8px 12px; }
+
+/* 4. Os dois resumos do hoje: um degrau acima do cartão (também no escuro); no celular sem o ícone, o texto cabe */
+.orcamento-f29 .orc-stat { background: var(--raised); }
+.orcamento-f29 .orc-stat-t b { font-size: 20px; }
+@media (max-width: 440px) {
+  .orcamento-f29 .orc-stat-ico { display: none; }
+}
+.orcamento-f29 .orc-mes-barra { block-size: 10px; }
+
+/* 5. Números de cartaz com o mesmo ritmo: valor e "R$" sem quebrar */
+.orcamento-f29 .din { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 6. Cartão "hoje": um número só de cartaz (o do dia). Semana e previsão um degrau abaixo, sem caixa dentro de caixa */
+.orcamento-f29 #oHoje.aba-destaque { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.orcamento-f29 #oHoje .ritmo-b { border: 0; background: var(--raised); padding: 16px; }
+.orcamento-f29 #oHoje .ritmo-b.warn { background: color-mix(in oklch, var(--warn, #b45309) 9%, var(--surface)); }
+.orcamento-f29 #oHoje .ritmo-b.ok { background: var(--accent-soft); }
+.orcamento-f29 #oHoje .ritmo-t .ritmo-num { font: 700 28px/1.1 var(--font-num); letter-spacing: -.03em; }
+.orcamento-f29 #oHoje .ritmo-b .ritmo-meter { background: var(--surface); }
+
+/* 7. Aba do topo marcada onde a pessoa está; as outras legíveis também no escuro */
+.orcamento-f29 .segbar .seg.compacta button { color: var(--ink-2); }
+.orcamento-f29 .segbar .seg.compacta button[aria-current="true"] { color: var(--accent-ink); box-shadow: inset 0 -3px 0 var(--accent); }
+
+/* 8. Sobra zerada: o zero não vira cartaz */
+.orcamento-f29 #oCofrinho .numrow.cof-zero .din { font-size: 36px; color: var(--muted); }
+
+/* 9. "Por quê?" com cara de botão (é onde mora a conta) e letra de apoio com piso de 14px */
+.orcamento-f29 details.salario-porque > summary { display: inline-flex; align-items: center; gap: 8px; min-block-size: 44px; list-style: none; font: 600 15px/1.2 var(--fonte-aba); color: var(--accent-ink); cursor: pointer; }
+.orcamento-f29 details.salario-porque > summary::-webkit-details-marker { display: none; }
+.orcamento-f29 details.salario-porque > summary::after { content: ""; inline-size: 7px; block-size: 7px; border-inline-end: 2px solid currentColor; border-block-end: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .2s ease; }
+.orcamento-f29 details.salario-porque[open] > summary::after { transform: translateY(2px) rotate(225deg); }
+.orcamento-f29 .onde-dica,
+.orcamento-f29 .bolinhas-legenda,
+.orcamento-f29 .orc-stat-t small,
+.orcamento-f29 .compras-lista small { font-size: 14px; }
+
+/* 10. Mês em bolinhas: o dia de hoje com contorno, fácil de achar */
+.orcamento-f29 .bolinha.hoje { outline: 2px solid var(--ink); outline-offset: 2px; }

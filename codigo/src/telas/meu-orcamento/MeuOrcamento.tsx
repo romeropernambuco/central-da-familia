@@ -34,7 +34,8 @@ import { RitmoMes } from '../../componentes/RitmoMes'
 import { porDiaDe } from '../../lib/resumo/porDia'
 import { useConfig } from '../../app/useConfig'
 import { donoDo, escreveNo } from '../../lib/dono'
-import { cofrinhoDoMes } from '../../lib/plano'
+import { cofrinhoDoMes, projecao } from '../../lib/plano'
+import { useSecaoVisivel } from '../../app/useSecaoVisivel'
 import {
   centavos,
   diasNoMes,
@@ -71,6 +72,8 @@ export function MeuOrcamento() {
     familia && esteMesAbriu ? () => api.lancamentos(familia.id, mesAntes) : null,
     [api, versao, mesAntes, esteMesAbriu],
   )
+  // 24/11: a aba do topo (Hoje, Sobra anotada, Conquistas) marca a parte da tela que está à vista
+  const secao = useSecaoVisivel(['oHoje', 'oCofrinho', 'oMais'], esteMesAbriu && !!resumo)
   const [semGasto, salvarSemGasto] = useConfig<string[]>('dias_sem_gasto', [])
   // FILHA ideia 1: meta no cofrinho ("Quero juntar pra: Fone R$ 150")
   const [metas, salvarMetas] = useConfig<Metas>('metas_pessoais', {})
@@ -170,24 +173,26 @@ export function MeuOrcamento() {
               aria-pressed={e.id === env.id}
               onClick={() => setEnvId(e.id)}
             >
-              <Rosto envelope={e.id} nome={e.nome} tam={26} />
-              {textoPrivado(e.nome)}
-              {escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}
+              <Rosto envelope={e.id} nome={e.nome} tam={30} />
+              <span className="pill-nome">
+                {textoPrivado(e.nome)}
+                {escreveNo(e, familia) ? '' : <small className="pill-dono">só ver</small>}
+              </span>
             </button>
           ))}
         </div>
       )}
       <nav className="segbar" aria-label="Ir para">
         <div className="seg compacta">
-          <button type="button" onClick={() => ir('oHoje')}>
+          <button type="button" onClick={() => ir('oHoje')} aria-current={secao === 'oHoje' || undefined}>
             <Icone nome="inicio" />
             Hoje
           </button>
-          <button type="button" onClick={() => ir('oCofrinho')}>
+          <button type="button" onClick={() => ir('oCofrinho')} aria-current={secao === 'oCofrinho' || undefined}>
             <Icone nome="guardar" />
             Sobra anotada
           </button>
-          <button type="button" onClick={() => ir('oMais')}>
+          <button type="button" onClick={() => ir('oMais')} aria-current={secao === 'oMais' || undefined}>
             <Icone nome="salvo" />
             Conquistas
           </button>
@@ -233,7 +238,16 @@ export function MeuOrcamento() {
             </div>
             {frase && <p className="todo warn frase-estouro">{textoPrivado(frase)}</p>}
             {meu && n.estado === 'devendo' && env.regra !== 'semanal' && <CobrirEstouro e={env} valor={n.devendo} />}
-            <GastoDoMes hoje={gastoHoje} mes={env.gasto_mes} teto={tetoDoMes(env)} oculto={oculto} />
+            <GastoDoMes
+              hoje={gastoHoje}
+              mes={env.gasto_mes}
+              teto={tetoDoMes(env)}
+              oculto={oculto}
+              emRisco={
+                Number(hoje.slice(8, 10)) >= 3 &&
+                !projecao(env.gasto_mes, env.limite_base ?? env.limite_mes, hoje, env.pontual_mes || 0).dentro
+              }
+            />
             <details className="salario-porque">
               <summary>Por quê?</summary>
               <p className="sub">
@@ -301,7 +315,7 @@ export function MeuOrcamento() {
               </h2>
               <PoteDaSobra valor={env.livre < 0 ? 0 : dados.cof} alvo={100} oculto={oculto} />
             </div>
-            <div className="numrow">
+            <div className={'numrow' + ((env.livre < 0 ? 0 : dados.cof) <= 0 ? ' cof-zero' : '')}>
               <Din v={env.livre < 0 ? 0 : dados.cof} tam="mid" />
               <Qm
                 titulo="Sobra anotada"
