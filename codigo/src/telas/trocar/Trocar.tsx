@@ -244,7 +244,7 @@ export function Trocar() {
       <div className="tela-larga">
         <div className="col">
           <TrocaResumo {...bloco} erro={erro} />
-          <TrocaBrasil {...bloco} />
+          <TrocaBrasil {...bloco} porGuardar={trocas.mexida} />
           <TrocaPagamento {...bloco} />
           <TrocaDetalhe {...bloco} />
           <TrocaContaEmMoeda {...bloco} />

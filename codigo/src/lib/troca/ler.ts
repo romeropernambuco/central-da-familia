@@ -1,5 +1,6 @@
 // Tudo o que chega de fora (configuração guardada, link colado) passa por aqui antes de virar comparação.
 // O que não tem forma certa é descartado; número fora do limite volta ao padrão.
+import { PARCELAS_MAXIMO } from './brasil'
 import {
   MOEDAS,
   type CompraFeita,
@@ -135,7 +136,7 @@ function lerBrasil(x: unknown): CompraNoBrasil | null {
   if (!o) return null
   return {
     loja: texto(o.loja, 80),
-    parcelas: Math.min(Math.max(Math.trunc(numero(o.parcelas, 1)), 1), 48),
+    parcelas: Math.min(Math.max(Math.trunc(numero(o.parcelas, 1)), 1), PARCELAS_MAXIMO),
     rendeAnoPct: Math.min(numero(o.rendeAnoPct, 0), 100),
     nota: texto(o.nota, 300),
   }
@@ -144,11 +145,13 @@ function lerBrasil(x: unknown): CompraNoBrasil | null {
 function lerCompra(x: unknown): CompraFeita | null {
   const o = objeto(x)
   const data = texto(o?.data)
-  if (!o || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null
+  const pago = numero(o?.pago, 0)
+  // compra sem valor pago ou com data impossível não é compra: um link não inventa "economia que aconteceu"
+  if (!o || !(pago > 0) || !/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(data)) return null
   return {
     onde: o.onde === 'brasil' ? 'brasil' : 'fora',
     forma: texto(o.forma, 80),
-    pago: numero(o.pago, 0),
+    pago,
     outraOpcao: numero(o.outraOpcao, 0),
     data,
   }

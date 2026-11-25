@@ -4,7 +4,15 @@ import { useSessaoAtual } from '../../app/contexto'
 import { useOculto } from '../../app/useOculto'
 import { hojeRecife } from '../../lib/formato'
 import { textoPrivado } from '../../lib/olho'
-import { compararComBrasil, compraSugerida, economiaConfirmada, type ComparacaoComBrasil } from '../../lib/troca/brasil'
+import {
+  compararComBrasil,
+  compraSugerida,
+  economiaConfirmada,
+  IR_DO_RENDIMENTO_PCT,
+  PARCELAS_MAXIMO,
+  taxaLiquida,
+  type ComparacaoComBrasil,
+} from '../../lib/troca/brasil'
 import { diaCurto, reaisComCentavos, semZeros } from '../../lib/troca/formato'
 import type { CompraFeita, CompraNoBrasil, Troca } from '../../lib/troca/tipos'
 import { Botao, Din } from '../base'
@@ -36,7 +44,9 @@ function useTaxaDoGuardado(): number | null {
 
 /** Quem ganha e por quanto, e a conta de cada caminho. */
 function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
-  const vezes = Math.trunc(t.brasil?.parcelas ?? 1)
+  const vezes = Math.trunc(t.brasil?.parcelas ?? 1) || 1
+  // o número de parcelas é combinado da família com a loja: com o olho fechado, some junto com os valores
+  const vezesTxt = textoPrivado(`${vezes}x`)
   const versao = t.versoes[t.versao]?.rotulo ?? ''
   return (
     <>
@@ -56,11 +66,11 @@ function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
         {vezes > 1 && (
           <>
             <Linha
-              nome={`Ganho de pagar em ${vezes}x sem juros com o dinheiro rendendo`}
+              nome={`Ganho de pagar em ${vezesTxt} sem juros com o dinheiro rendendo`}
               valor={'− ' + reaisComCentavos(c.ganhoDeParcelar)}
               tom="volta"
             />
-            <Linha nome={`No Brasil em ${vezes}x, em valor de hoje`} valor={reaisComCentavos(c.brasilParcelado)} />
+            <Linha nome={`No Brasil em ${vezesTxt}, em valor de hoje`} valor={reaisComCentavos(c.brasilParcelado)} />
           </>
         )}
       </ul>
@@ -76,7 +86,9 @@ function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
 function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
   const taxa = useTaxaDoGuardado()
   const versao = t.versoes[t.versao]
-  const base: CompraNoBrasil = t.brasil ?? { loja: '', parcelas: 10, rendeAnoPct: taxa ?? 0, nota: '' }
+  // sugestão já sem o imposto de renda, para não inflar o ganho de parcelar
+  const liquida = taxa != null ? taxaLiquida(taxa) : null
+  const base: CompraNoBrasil = t.brasil ?? { loja: '', parcelas: 10, rendeAnoPct: liquida ?? 0, nota: '' }
   const noBrasil = (parte: Partial<CompraNoBrasil>) => mudar({ brasil: { ...base, ...parte } })
   const mudarPreco = (v: number | null) =>
     mudar({
@@ -110,7 +122,7 @@ function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
         <CampoNumero
           rotulo="Parcelas sem juros"
           valor={base.parcelas}
-          mudar={v => noBrasil({ parcelas: v != null && v >= 1 ? Math.trunc(v) : 1 })}
+          mudar={v => noBrasil({ parcelas: v != null && v >= 1 ? Math.min(Math.trunc(v), PARCELAS_MAXIMO) : NaN })}
         />
         <CampoNumero
           rotulo="Seu dinheiro rende por ano (%)"
@@ -120,8 +132,14 @@ function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
       </div>
       <p className="sub">
         Use o rendimento que sobra depois do imposto de renda.
-        {taxa != null && ` O Guardado usa ${semZeros(taxa, 2)}% ao ano hoje, antes do imposto.`}
+        {taxa != null &&
+          ` O Guardado usa ${semZeros(taxa, 2)}% ao ano hoje; sem ${IR_DO_RENDIMENTO_PCT}% de imposto ficam ${semZeros(liquida ?? 0, 2)}% (estimativa).`}
       </p>
+      {liquida != null && base.rendeAnoPct !== liquida && (
+        <Botao variante="secundario" className="sm" onClick={() => noBrasil({ rendeAnoPct: liquida })}>
+          Usar {semZeros(liquida, 2)}% ao ano
+        </Botao>
+      )}
       {base.nota && <p className="sub">{fala(base.nota)}</p>}
     </div>
   )
@@ -137,6 +155,8 @@ function Confirmar({ t, c, mudar }: { t: Troca; c: ComparacaoComBrasil; mudar: B
       </Botao>
     )
   const pronto = Number.isFinite(compra.pago) && compra.pago > 0 && compra.forma.trim() !== ''
+  // a outra opção é sempre a de agora: se a pessoa mexeu em imposto, cartão ou preço depois de abrir, vale o novo
+  const outraOpcao = Math.round((compra.onde === 'fora' ? c.brasilParcelado : c.fora) * 100) / 100
   return (
     <div className="troca-ajustes">
       <h3>Como foi a compra</h3>
@@ -146,7 +166,7 @@ function Confirmar({ t, c, mudar }: { t: Troca; c: ComparacaoComBrasil; mudar: B
             key={onde}
             type="button"
             aria-pressed={compra.onde === onde}
-            onClick={() => setCompra(compraSugerida(t, c, onde, compra.data))}
+            onClick={() => compra.onde !== onde && setCompra(compraSugerida(t, c, onde, compra.data))}
           >
             Comprei {ONDE[onde]}
           </button>
@@ -170,11 +190,15 @@ function Confirmar({ t, c, mudar }: { t: Troca; c: ComparacaoComBrasil; mudar: B
         ajuda={
           compra.onde === 'fora'
             ? 'Fatura menos o reembolso que voltou, mais o imposto que você pagou na volta.'
-            : 'O total das parcelas.'
+            : 'As parcelas em valor de hoje: já desconta o que o dinheiro rende enquanto você paga. Só mude se o preço mudou.'
         }
       />
       <div className="row-btns">
-        <Botao variante="primario" disabled={!pronto} onClick={() => mudar({ compra })}>
+        <Botao
+          variante="primario"
+          disabled={!pronto}
+          onClick={() => mudar({ compra: { ...compra, forma: compra.forma.trim(), outraOpcao } })}
+        >
           Confirmar a compra
         </Botao>
         <Botao variante="fantasma" onClick={() => setCompra(null)}>
@@ -186,7 +210,15 @@ function Confirmar({ t, c, mudar }: { t: Troca; c: ComparacaoComBrasil; mudar: B
 }
 
 /** A economia que aconteceu, com a forma. Negativa quando a escolha saiu mais cara que a outra opção. */
-function Confirmada({ compra, desfazer }: { compra: CompraFeita; desfazer: () => void }) {
+function Confirmada({
+  compra,
+  desfazer,
+  porGuardar,
+}: {
+  compra: CompraFeita
+  desfazer: () => void
+  porGuardar: boolean
+}) {
   const economia = economiaConfirmada(compra)
   return (
     <>
@@ -201,6 +233,7 @@ function Confirmada({ compra, desfazer }: { compra: CompraFeita; desfazer: () =>
         Comprou {ONDE[compra.onde]} em {diaCurto(compra.data)}, com {textoPrivado(compra.forma)}. Custou{' '}
         {reaisComCentavos(compra.pago)}; a outra opção sairia por {reaisComCentavos(compra.outraOpcao)}.
       </p>
+      {porGuardar && <p className="sub">Toque em Guardar, lá em cima, para a confirmação ficar salva.</p>}
       <Botao variante="secundario" onClick={desfazer}>
         Desfazer a confirmação
       </Botao>
@@ -209,7 +242,7 @@ function Confirmada({ compra, desfazer }: { compra: CompraFeita; desfazer: () =>
 }
 
 /** Lá fora ou no Brasil: quanto se economiza no caminho mais barato, antes e depois de a compra acontecer. */
-export function TrocaBrasil({ t, conta, mudar }: BlocoDaTroca) {
+export function TrocaBrasil({ t, conta, mudar, porGuardar = false }: BlocoDaTroca & { porGuardar?: boolean }) {
   useOculto()
   const c = conta ? compararComBrasil(t, conta) : null
   const comPreco = t.versoes.filter(v => (v.precoBrasil ?? 0) > 0).map(v => v.rotulo)
@@ -221,7 +254,7 @@ export function TrocaBrasil({ t, conta, mudar }: BlocoDaTroca) {
           Comprar lá fora ou no Brasil
         </h2>
       </div>
-      {t.compra && <Confirmada compra={t.compra} desfazer={() => mudar({ compra: null })} />}
+      {t.compra && <Confirmada compra={t.compra} desfazer={() => mudar({ compra: null })} porGuardar={porGuardar} />}
       {!t.compra && c && <Veredito t={t} c={c} />}
       {!t.compra && !c && (
         <p className="todo quieto">

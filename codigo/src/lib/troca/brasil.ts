@@ -13,12 +13,21 @@ export const taxaDoMes = (anoPct: number) => Math.pow(1 + anoPct / 100, 1 / 12) 
  */
 export function valorDeHoje(preco: number, parcelas: number, rendeAnoPct: number): number {
   const n = Math.trunc(parcelas)
-  if (n <= 1 || !(rendeAnoPct > 0)) return preco
+  if (!(n > 1) || !(rendeAnoPct > 0)) return preco
   const mes = taxaDoMes(rendeAnoPct)
-  let soma = 0
-  for (let k = 1; k <= n; k++) soma += preco / n / Math.pow(1 + mes, k)
-  return soma
+  // soma das parcelas descontadas, em fórmula fechada (não depende de quantas parcelas são)
+  return ((preco / n) * (1 - Math.pow(1 + mes, -n))) / mes
 }
+
+/** Limite de parcelas que a tela e a leitura aceitam. */
+export const PARCELAS_MAXIMO = 48
+
+/**
+ * Imposto de renda sobre o rendimento de aplicação de 181 a 360 dias (tabela regressiva). Serve só para sugerir uma
+ * taxa já líquida a partir da taxa do Guardado; a pessoa pode trocar.
+ */
+export const IR_DO_RENDIMENTO_PCT = 20
+export const taxaLiquida = (brutaPct: number) => Math.round(brutaPct * (100 - IR_DO_RENDIMENTO_PCT)) / 100
 
 export interface ComparacaoComBrasil {
   /** O aparelho comprado lá fora: fatura menos reembolso e dinheiro de volta, mais o imposto quando ele está ligado. */
@@ -58,7 +67,7 @@ export const economiaConfirmada = (c: CompraFeita) => c.outraOpcao - c.pago
 /** A confirmação já preenchida com o caminho mais barato; a pessoa só corrige o que foi diferente. */
 export function compraSugerida(t: Troca, c: ComparacaoComBrasil, onde: 'fora' | 'brasil', hoje: string): CompraFeita {
   const cartao = t.pagamentos.find(p => p.id === t.pagamento)?.nome ?? ''
-  const vezes = Math.trunc(t.brasil?.parcelas ?? 1)
+  const vezes = Math.trunc(t.brasil?.parcelas ?? 1) || 1
   const arred = (v: number) => Math.round(v * 100) / 100
   return onde === 'fora'
     ? { onde, forma: cartao, pago: arred(c.fora), outraOpcao: arred(c.brasilParcelado), data: hoje }

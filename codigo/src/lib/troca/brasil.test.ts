@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { trocasDeExemplo } from '../../api/exemploTrocas'
-import { compararComBrasil, compraSugerida, economiaConfirmada, taxaDoMes, valorDeHoje } from './brasil'
+import { compararComBrasil, compraSugerida, economiaConfirmada, taxaDoMes, taxaLiquida, valorDeHoje } from './brasil'
 import { contaDaTroca } from './conta'
 import { lerTroca } from './ler'
 import type { Troca } from './tipos'
@@ -25,6 +25,17 @@ describe('parcelar sem juros com o dinheiro rendendo', () => {
     expect(valorDeHoje(16270, 1, 12)).toBe(16270)
     expect(valorDeHoje(16270, 0, 12)).toBe(16270)
     expect(valorDeHoje(1200, 12, 0)).toBe(1200)
+  })
+
+  it('parcelas sem número ou absurdas não zeram a conta nem travam', () => {
+    expect(valorDeHoje(16270, NaN, 12)).toBe(16270)
+    expect(valorDeHoje(16270, 10, NaN)).toBe(16270)
+    expect(valorDeHoje(16270, 1e9, 12)).toBeGreaterThan(0)
+  })
+
+  it('taxa sugerida já sai sem os 20% de imposto de renda', () => {
+    expect(taxaLiquida(13.65)).toBe(10.92)
+    expect(taxaLiquida(12)).toBe(9.6)
   })
 
   it('1 parcela daqui a 1 mês: o preço dividido por 1 mais a taxa do mês', () => {
@@ -111,5 +122,9 @@ describe('economia confirmada', () => {
     const estragada = lerTroca({ ...duo512, brasil: { parcelas: -3, rendeAnoPct: 'abc' }, compra: { data: 'ontem' } })!
     expect(estragada.brasil).toEqual({ loja: '', parcelas: 1, rendeAnoPct: 0, nota: '' })
     expect(estragada.compra).toBeNull()
+    expect(lerTroca({ ...duo512, brasil: { ...duo512.brasil, parcelas: 1e9 } })!.brasil!.parcelas).toBe(48)
+    // compra sem valor pago ou com data impossível não vira "economia que aconteceu"
+    expect(lerTroca({ ...duo512, compra: { ...compra, pago: 0 } })!.compra).toBeNull()
+    expect(lerTroca({ ...duo512, compra: { ...compra, data: '9999-99-99' } })!.compra).toBeNull()
   })
 })

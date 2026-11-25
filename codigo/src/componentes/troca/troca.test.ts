@@ -186,7 +186,7 @@ describe('lá fora ou no Brasil', () => {
       data: '2026-12-02',
     }
     for (const t of [texto(tela(duo512, true)), texto(tela({ ...duo512, compra }, true))])
-      for (const segredo of ['4.770', '16.270', '15.452', '14.800', '652', 'Loja de importados', 'Sicoob'])
+      for (const segredo of ['4.770', '16.270', '15.452', '14.800', '652', 'Loja de importados', 'Sicoob', '10x'])
         expect(t, segredo).not.toContain(segredo)
   })
 })
