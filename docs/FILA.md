@@ -29,6 +29,9 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 ## 2. Em seguida
 
+0. **Economia do Trocar lá fora no Início** (o dono disse sim em 25/11/2026): mostrar no Início a economia prevista e
+   a confirmada das comparações guardadas (chave `trocas`), sem refazer a conta: usar `lib/troca/brasil.ts`. Só o
+   casal. O Início é a referência visual aprovada: mostrar 2 ou 3 jeitos de encaixar antes de publicar.
 1. **Empresas**: o mesmo caderno do Dinheiro na rua, tipo empresa, com a retirada do mês entrando como renda (certa ou incerta).
 2. **Investimentos além da renda fixa**: ações, fundos, dólar e previdência com o saldo informado à mão; vencimentos num calendário só.
 3. **Etiqueta sem internet**: a troca de etiqueta e o valor em moeda de fora entram na fila de envio, junto com o gasto.
@@ -80,7 +83,8 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
   para qualquer aparelho, guarda várias comparações, busca o câmbio do dia no Banco Central e recebe comparação por
   link. Só o casal vê. 46 testes novos. Publicado em 25/11/2026 com o "pode" do dono (sw dc045c2648ba).
 - 25/11/2026: Trocar lá fora ganhou "Comprar lá fora ou no Brasil": parcelado sem juros com o dinheiro rendendo,
-  economia prevista e economia confirmada ("Já comprei"). No ramo de trabalho, ainda não publicado.
+  economia prevista e economia confirmada ("Já comprei"). Publicado em 25/11/2026 com o "pode" do dono
+  (sw d02948948504).
 
 - 22/11/2026: migrações f_01 a f_15 aplicadas no banco, em ordem. 758 testes do banco, 0 falhas. Dados não mudaram.
 - 22/11/2026: etiquetas de viagem; Dinheiro na rua; tipos frouxos de 343 para 195 avisos; portões rodam no Windows.
