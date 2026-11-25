@@ -30,14 +30,33 @@ const nivel = (p: PerguntaEsc, hoje: string) =>
       ? 'dinheiro em risco'
       : 'operacao'
 
-export function EscritorioInicio({ celular, hoje }: { celular: boolean; hoje: string }) {
+export function EscritorioInicio({
+  celular,
+  hoje,
+  comFalas,
+}: {
+  celular: boolean
+  hoje: string
+  /** cada funcionário mostra em balão o que tem a dizer (Início novo) */
+  comFalas?: boolean
+}) {
   const modo = useModoFuncionario()
   return modo === 'desligado' ? null : (
-    <EscritorioAutorizado celular={celular} hoje={hoje} comCena={modo === 'completo'} />
+    <EscritorioAutorizado celular={celular} hoje={hoje} comCena={modo === 'completo'} comFalas={comFalas} />
   )
 }
 
-function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; hoje: string; comCena: boolean }) {
+function EscritorioAutorizado({
+  celular,
+  hoje,
+  comCena,
+  comFalas,
+}: {
+  celular: boolean
+  hoje: string
+  comCena: boolean
+  comFalas?: boolean
+}) {
   const { api, familia, sessao } = useSessaoAtual()
   const { oculto } = useOlhoApp()
   const papel = familia!.papel
@@ -74,6 +93,16 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
   const valores: Record<string, string> = {}
   for (const t of dados.fila)
     if (t.valor && t.valor !== 'Ainda sem dado' && !valores[t.membro.id]) valores[t.membro.id] = t.valor
+  // o que cada um tem a dizer: a tarefa que espera você; senão, o que está fazendo ou o que entregou
+  const falas: Record<string, string> = {}
+  for (const t of dados.fila) falas[t.membro.id] ||= t.texto
+  if (!oculto)
+    for (const { membro, funcionario: f, atividade, entrega } of dados.postos) {
+      if (falas[membro.id] || f.semDado || f.estado === 'vai_comecar') continue
+      const dito =
+        (f.estado === 'trabalhando' ? atividade : entrega?.resumo) || (f.frase !== membro.papel ? f.frase : '')
+      if (dito?.trim()) falas[membro.id] = dito.trim()
+    }
   const [sala, setSala] = useState<SalaEquipe>()
   const [selecao, selecionar] = useState<{ id: string; pergunta?: string }>()
   const [filaAberta, abrirFila] = useState(false)
@@ -183,6 +212,7 @@ function EscritorioAutorizado({ celular, hoje, comCena }: { celular: boolean; ho
               selecionado={posto?.membro.id ?? null}
               aoTocar={id => abrirPosto(id)}
               valores={valores}
+              falas={comFalas ? falas : undefined}
               ampliavel
               reserva={
                 <VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} tarefaDaFila={selecao?.pergunta}>

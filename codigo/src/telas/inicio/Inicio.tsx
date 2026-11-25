@@ -226,7 +226,7 @@ function InicioReformulado() {
         horizontes={horizontes}
         atalhos={atalhos}
         anotar={env ? () => abrirLancar({ envelope: env.id }) : undefined}
-        escritorio={<EscritorioInicio {...{ celular, hoje }} />}
+        escritorio={<EscritorioInicio {...{ celular, hoje }} comFalas />}
         plano={
           casal && (
             <section className="j-plano" aria-labelledby="j-rumo" data-trilha="plano2029">

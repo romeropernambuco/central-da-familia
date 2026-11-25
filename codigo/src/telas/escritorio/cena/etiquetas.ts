@@ -104,6 +104,14 @@ export function criarEtiquetas(
         t.style.visibility = 'visible'
         t.style.transform = `translate(${x}px,${y}px)`
         caixas.push([x, y, ch.tw, ch.th])
+        // a ponta do balão só aparece quando ele está logo acima da cabeça do dono
+        const ponta = Math.round(p.x - x),
+          cabe = y + ch.th <= p.y + 1 && ponta > 14 && ponta < ch.tw - 14 ? ponta : 0
+        if (cabe !== ch.ponta) {
+          ch.ponta = cabe
+          if (cabe) t.style.setProperty('--ponta', cabe + 'px')
+          t.toggleAttribute('data-ponta', !!cabe)
+        }
       }
     })
     Object.keys(SALAS).forEach(k => {

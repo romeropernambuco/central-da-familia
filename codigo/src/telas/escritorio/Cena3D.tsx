@@ -72,6 +72,7 @@ export function Cena3D({
   selecionado,
   aoTocar,
   valores,
+  falas,
   reserva,
   ampliavel,
 }: {
@@ -80,6 +81,8 @@ export function Cena3D({
   aoTocar: (id: string) => void
   /** Valor da pendência de quem precisa de você: aparece no selo, no lugar do nome (já vem mascarado com o olho fechado). */
   valores?: Record<string, string>
+  /** O que cada um tem a dizer agora (a tarefa, o que está fazendo ou o que entregou): vira balão de fala. Já vem mascarado. */
+  falas?: Record<string, string>
   /** O que mostrar quando o 3D não abre neste aparelho, no lugar do aviso (telas sem lista logo abaixo, como o Início). */
   reserva?: ReactNode
   /** Mostra aproximar, afastar e tela cheia. */
@@ -212,6 +215,17 @@ export function Cena3D({
     setVista(v)
     cena.current?.irPara(v)
   }
+  // quem precisa de você fala o tempo todo; os outros avisos se revezam, 2 por vez, para a cena não ficar coberta
+  const avisos = funcionarios.filter(f => falas?.[f.id] && f.estado !== 'precisa_de_voce').map(f => f.id)
+  const [vez, setVez] = useState(0)
+  const revezam = avisos.length > 2 && modo === '3d'
+  useEffect(() => {
+    if (!revezam || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const relogio = setInterval(() => setVez(v => v + 1), 5000)
+    return () => clearInterval(relogio)
+  }, [revezam])
+  const falaAgora = (id: string) =>
+    !avisos.includes(id) || !revezam || Math.floor(avisos.indexOf(id) / 2) === vez % Math.ceil(avisos.length / 2)
   const salasUsadas = Object.keys(SALAS).filter(k => funcionarios.some(f => salaDe(f.sala) === k))
 
   return (
@@ -246,7 +260,10 @@ export function Cena3D({
                   sel = f.id === selecionado
                 // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
                 const soIcone = false
-                const selo = (precisa && valores?.[f.id]) || curto(f)
+                const valor = precisa ? valores?.[f.id] : undefined,
+                  dito = falas?.[f.id],
+                  fala = dito && (sel || falaAgora(f.id)) ? dito : undefined,
+                  selo = fala ? curto(f) : valor || curto(f)
                 return (
                   <button
                     key={f.id}
@@ -254,19 +271,31 @@ export function Cena3D({
                     ref={el => {
                       tags.current[f.id] = el
                     }}
-                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}`}
+                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}`}
                     data-func={f.id}
                     data-posto={f.id}
                     data-estado={f.estado}
-                    className={'tag' + (precisa ? ' precisa' : '') + (sel ? ' sel' : '') + (soIcone ? ' curta' : '')}
+                    className={
+                      'tag' +
+                      (precisa ? ' precisa' : '') +
+                      (sel ? ' sel' : '') +
+                      (soIcone ? ' curta' : '') +
+                      (fala ? ' fala' : dito ? ' quer-falar' : '')
+                    }
                     aria-label={textoPrivado(
-                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}. Abrir.`,
+                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} Abrir.`,
                     )}
                     aria-pressed={sel}
                     onClick={() => tocarNoFuncionario(f.id)}
                   >
                     <IcoEstado e={f.estado} />
                     <span>{selo}</span>
+                    {fala && (
+                      <span className="tag-dito">
+                        {valor && <b>{valor}</b>}
+                        {fala}
+                      </span>
+                    )}
                   </button>
                 )
               })}

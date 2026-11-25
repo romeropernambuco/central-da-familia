@@ -85,14 +85,26 @@
 .j-inicio.ini4 .cena3d-salas .pill:active:not(:disabled) { scale: .96; }
 
 /* etiqueta em cima de cada funcionário: o selo redondo diz o estado, o nome vem ao lado */
-.ini4 .cena3d-tags .tag { gap: 6px; height: 30px; padding: 0 12px 0 4px; background: var(--cartao); color: var(--texto); font: 600 13px/1 var(--fonte-texto); letter-spacing: -.01em; box-shadow: 0 0 0 1px var(--j-divisa), 0 2px 6px rgb(20 24 18 / .14); transition: scale .12s, box-shadow .12s; }
-.ini4 .cena3d-tags .tag svg { box-sizing: content-box; flex: none; inline-size: 14px; block-size: 14px; padding: 4px; border-radius: 50%; background: var(--menu); color: var(--texto-secundario); }
-.ini4 .cena3d-tags .tag:is([data-estado="entregue"], [data-estado="trabalhando"]) svg { background: color-mix(in srgb, var(--destaque) 16%, var(--cartao)); color: var(--destaque); }
-.ini4 .cena3d-tags .tag.precisa { background: var(--destaque); color: var(--sobre-destaque); box-shadow: 0 2px 8px rgb(20 24 18 / .22); }
+/* quem não tem nada a dizer: plaquinha pequena e calma, só o nome e o sinal do estado */
+.ini4 .cena3d-tags .tag { gap: 4px; height: 26px; padding: 0 10px 0 6px; background: color-mix(in srgb, var(--cartao) 90%, transparent); color: var(--texto); font: 600 13px/1 var(--fonte-texto); letter-spacing: -.01em; box-shadow: 0 0 0 1px var(--j-divisa); transition: scale .12s, box-shadow .12s; }
+.ini4 .cena3d-tags .tag svg { flex: none; inline-size: 14px; block-size: 14px; color: var(--texto-secundario); }
+.ini4 .cena3d-tags .tag:is([data-estado="entregue"], [data-estado="trabalhando"]) svg { color: var(--destaque); }
+/* quem tem algo a dizer: balão de fala com o nome em cima, o recado embaixo e a ponta virada para a pessoa */
+.ini4 .cena3d-tags .tag.fala { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 2px 8px; height: auto; max-inline-size: 208px; padding: 8px 12px 9px 8px; border-radius: 16px; background: var(--cartao); text-align: start; white-space: normal; box-shadow: 0 0 0 1px var(--j-divisa), 0 4px 12px rgb(20 24 18 / .16); }
+.ini4 .cena3d-tags .tag.fala svg { box-sizing: content-box; grid-row: 1 / span 2; padding: 5px; border-radius: 50%; background: var(--menu); }
+.ini4 .cena3d-tags .tag.fala:is([data-estado="entregue"], [data-estado="trabalhando"]) svg { background: color-mix(in srgb, var(--destaque) 16%, var(--cartao)); }
+.ini4 .cena3d-tags .tag.fala > span:not(.tag-dito) { align-self: center; color: var(--texto-secundario); font-size: 13px; }
+.ini4 .cena3d-tags .tag-dito { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; grid-column: 2; font: 500 14px/1.3 var(--fonte-texto); letter-spacing: 0; }
+.ini4 .cena3d-tags .tag-dito b { display: block; font: 700 16px/1.25 var(--fonte-numero, var(--fonte-texto)); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ini4 .cena3d-tags .tag.fala[data-ponta]::before { content: ""; position: absolute; inset-block-start: 100%; inset-inline-start: var(--ponta); inline-size: 10px; block-size: 10px; border-radius: 0 0 3px; background: inherit; box-shadow: 1px 1px 0 var(--j-divisa); translate: -50% -55%; rotate: 45deg; }
+.ini4 .cena3d-tags .tag.precisa { background: var(--destaque); color: var(--sobre-destaque); box-shadow: 0 4px 12px rgb(20 24 18 / .24); }
+.ini4 .cena3d-tags .tag.precisa[data-ponta]::before { box-shadow: none; }
 .ini4 .cena3d-tags .tag.precisa svg { background: color-mix(in srgb, var(--sobre-destaque) 20%, transparent); color: inherit; }
+.ini4 .cena3d-tags .tag.precisa > span:not(.tag-dito) { color: inherit; opacity: .85; }
 .ini4 .cena3d-tags .tag.sel { background: var(--texto); color: var(--cartao); }
-.ini4 .cena3d-tags .tag.sel svg { background: color-mix(in srgb, var(--cartao) 18%, transparent); color: inherit; }
-.ini4 .cena3d-tags .tag:hover { scale: 1.06; box-shadow: 0 0 0 1px var(--j-divisa), 0 4px 12px rgb(20 24 18 / .2); }
+.ini4 .cena3d-tags .tag.sel svg, .ini4 .cena3d-tags .tag.sel > span:not(.tag-dito) { color: inherit; }
+.ini4 .cena3d-tags .tag.sel.fala svg { background: color-mix(in srgb, var(--cartao) 18%, transparent); }
+.ini4 .cena3d-tags .tag:hover { z-index: 1; scale: 1.05; box-shadow: 0 0 0 1px var(--j-divisa), 0 6px 16px rgb(20 24 18 / .22); }
 .ini4 .cena3d-tags .tag:active { scale: .97; }
 .ini4 .cena3d-tags .tag:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
 .ini4 .cena3d-tags .placa { padding: 0 8px; background: color-mix(in srgb, var(--cartao) 80%, transparent); color: var(--texto-secundario); font: 600 12px/18px var(--fonte-texto); letter-spacing: .02em; }
@@ -100,6 +112,12 @@
   .ini4 .cena3d-tags .tag[data-estado="trabalhando"] svg { animation: ini4-pulsa 1.8s ease-in-out infinite; }
 }
 @keyframes ini4-pulsa { 50% { opacity: .55; } }
+/* tem aviso, mas não é a vez dele de falar: um pontinho verde ao lado do nome */
+.ini4 .cena3d-tags .tag.quer-falar::before { content: ""; order: 9; inline-size: 6px; block-size: 6px; margin-inline-start: 2px; border-radius: 50%; background: var(--destaque); }
+@media (prefers-reduced-motion: no-preference) {
+  .ini4 .cena3d-tags .tag.fala { animation: ini4-fala .28s cubic-bezier(.2, .8, .2, 1); }
+}
+@keyframes ini4-fala { from { opacity: 0; scale: .92; } }
 .ini4 .j-saude button { min-block-size: 44px; padding-inline: 14px; border-radius: 999px; }
 .j-inicio.ini4 .j-saude button:hover { background: color-mix(in srgb, var(--destaque) 10%, transparent); text-decoration: none; }
 /* celular: a cena fica grande e a pessoa arrasta para os lados (abre no meio do escritório) */
