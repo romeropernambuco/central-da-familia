@@ -216,7 +216,8 @@ export function App() {
         {r !== 'inicio' && r !== 'escritorio' && r !== 'orcamento' && <AgenteDaAba key={r} rota={r} />}
         <div className={r === 'inicio' ? undefined : 'aba-conteudo'}>
           <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />}>
-            {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
+            {r === 'inicio' &&
+              (Classico ? <Classico /> : <Inicio desenho={/^#\/?inicio\?v3/.test(hash) ? 'v3' : undefined} />)}
             {r === 'lancamentos' && <Lancamentos />}
             {r === 'orcamento' && <MeuOrcamento />}
             {r === 'casa' && <Casa />}

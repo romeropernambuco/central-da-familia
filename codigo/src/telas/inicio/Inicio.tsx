@@ -18,6 +18,7 @@ import { Linha2028Resumo } from '../../componentes/Linha2028'
 import { SetaDoMes } from '../../componentes/SetaDoMes'
 import '../../componentes/painel-inicio/painel.css'
 import './inicio-j.css'
+import './inicio-v3.css'
 
 export { porDiaDe } from '../../lib/resumo/porDia'
 export { SemGastosInicio } from './UltimosLancamentos'
@@ -171,13 +172,19 @@ function useCelular() {
   return celular
 }
 
-export function Inicio() {
+/** `desenho="v3"`: a nova versão do Início (25/11), no acabamento do Meu orçamento. Mesmos blocos; muda só o estilo. */
+export function Inicio({ desenho }: { desenho?: 'v3'; [outra: string]: unknown } = {}) {
   const { familia, sessao } = useSessaoAtual()
   if (!familia || familia.papel === 'equipe') return null
-  return <InicioFamilia key={JSON.stringify([sessao?.userId, familia.id, familia.membroId, familia.papel])} />
+  return (
+    <InicioFamilia
+      key={JSON.stringify([sessao?.userId, familia.id, familia.membroId, familia.papel])}
+      v3={desenho === 'v3'}
+    />
+  )
 }
 
-function InicioFamilia() {
+function InicioFamilia({ v3 }: { v3: boolean }) {
   const { resumo, repetir, hoje, api, familia } = useResumoFamilia()
   const { oculto } = useOlhoApp()
   const celular = useCelular()
@@ -188,7 +195,10 @@ function InicioFamilia() {
   return (
     <>
       <PrivacidadePropostas.Provider value={oculto}>
-        <div className="j-inicio inicio-j" data-dispositivo={celular ? 'celular' : 'desktop'}>
+        <div
+          className={'j-inicio inicio-j' + (v3 ? ' inicio-v3' : '')}
+          data-dispositivo={celular ? 'celular' : 'desktop'}
+        >
           <section className="j-cena" aria-label="Painel do escritório">
             <div className="j-resumo" aria-label="Referências do dia" role="group">
               {chips
@@ -258,7 +268,7 @@ function InicioFamilia() {
           )}
         </div>
       </PrivacidadePropostas.Provider>
-      <div className="view inicio-f29 inicio-j-detalhes">
+      <div className={'view inicio-f29 inicio-j-detalhes' + (v3 ? ' inicio-v3' : '')}>
         <ResumoApresentacao
           {...{ resumo, repetir, hoje, oculto }}
           jaMostrados={JA_NO_TOPO}
