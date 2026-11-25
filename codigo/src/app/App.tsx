@@ -135,9 +135,6 @@ export function App() {
     )
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const { lateral, inferior, mais: extras } = menuDoPapel(familia.papel, !!sessao.dono)
-  // 24/11: a versão nova do Meu orçamento abre ao lado da atual, para comparar (#/orcamento?nova)
-  // 25/11: o dono escolheu a terceira versão (sala 3D) para o Meu orçamento; as outras duas saíram do ar
-  const orcVersao: 'atual' | 'v3' = r === 'orcamento' ? 'v3' : 'atual'
   const Classico = r === 'inicio' && api.modo === 'exemplo' && sessao.dono && hashClassico(hash) ? InicioClassico : null
   const [subt, titulo] =
     r === 'inicio'
@@ -216,12 +213,12 @@ export function App() {
           </p>
         )}
         <Acolhimento key={[sessao.userId, familia.id].join(':')} />
-        {r !== 'inicio' && r !== 'escritorio' && orcVersao === 'atual' && <AgenteDaAba key={r} rota={r} />}
+        {r !== 'inicio' && r !== 'escritorio' && r !== 'orcamento' && <AgenteDaAba key={r} rota={r} />}
         <div className={r === 'inicio' ? undefined : 'aba-conteudo'}>
           <Suspense key={'tela:' + r + (Classico ? ':classico' : '')} fallback={<Carregando />}>
             {r === 'inicio' && (Classico ? <Classico /> : <Inicio />)}
             {r === 'lancamentos' && <Lancamentos />}
-            {r === 'orcamento' && <MeuOrcamento versao={orcVersao} />}
+            {r === 'orcamento' && <MeuOrcamento />}
             {r === 'casa' && <Casa />}
             {r === 'guardado' && <Guardado />}
             {r === 'cartoes' && <Cartoes />}

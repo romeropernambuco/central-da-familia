@@ -1,0 +1,248 @@
+/*
+ * Meu orçamento, 3ª versão (24/11/2026), para comparar com a antiga e com a nova.
+ * Ideia: a aba é uma equipe trabalhando. 4 agentes 3D num palco; tocar num deles faz falar
+ * (número + 1 frase), acende o cartão dele e o botão do balão leva até lá. Cada cartão leva o rosto
+ * de quem cuida dele. Só vale dentro de .orc-v3. As figuras são imagens (public/orcamento-3d).
+ */
+
+/* Comparador das 3 versões (aparece nas três) */
+.orc-versoes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-block-end: 10px; font: 600 14px/1 var(--fonte-aba); color: var(--muted); }
+.orc-versoes a { display: inline-flex; align-items: center; min-block-size: 34px; padding-inline: 14px; border-radius: 999px; color: var(--ink-2); text-decoration: none; box-shadow: inset 0 0 0 1px var(--border); }
+.orc-versoes a[aria-current] { background: var(--accent-soft); color: var(--accent-ink); box-shadow: inset 0 0 0 2px var(--accent); }
+
+.orc-v3 { --lilas: #cdbfe3; --palco: color-mix(in srgb, var(--lilas) 24%, var(--surface)); }
+
+/* ---------- Camada 1: fundo e grade ---------- */
+.orc-v3 .segbar { display: none; } /* os agentes fazem o papel dos atalhos */
+.orc-v3 .card { border-radius: 24px; box-shadow: inset 0 0 0 1px var(--border); }
+.orc-v3 > .pills .pill { border-radius: 999px; min-block-size: 50px; padding-inline: 6px 16px; }
+.orc-v3 .orc-em { display: none; }
+
+/* ---------- Camada 2: cartões e textos ---------- */
+/* cada cartão com o retrato do boneco da sala que cuida dele (renderizado do próprio boneco 3D) */
+.orc-v3 .card-h h2 { display: flex; align-items: center; gap: 12px; font-size: 20px; letter-spacing: -.02em; }
+.orc-v3 .card-h h2 > * { display: none; }
+.orc-v3 .card-h h2::before { content: ""; flex: none; inline-size: 46px; block-size: 46px; border-radius: 50%; background-color: var(--palco); background-image: var(--rosto); background-repeat: no-repeat; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lilas) 60%, var(--border)); }
+.orc-v3 #oRitmo { --rosto: url(/orcamento-3d/retrato-analista.webp); }
+.orc-v3 #oCofrinho { --rosto: url(/orcamento-3d/retrato-tesoureira.webp); }
+.orc-v3 :is(#oOnde, #oRepete, #oCompras) { --rosto: url(/orcamento-3d/retrato-comprador.webp); }
+
+/* o cartão principal: número no centro, palco logo abaixo */
+.orc-v3 #oHoje { display: flex; flex-direction: column; overflow: hidden; padding: 22px 18px 18px; }
+.orc-v3 #oHoje > * { order: 4; }
+.orc-v3 #oHoje .orc-cabeca { display: none; }
+.orc-v3 #oHoje .dono-linha { order: 0; }
+.orc-v3 #oHoje .orc-rotulo { order: 1; justify-content: center; margin-block-start: 0 !important; font-size: 16px; }
+.orc-v3 #oHoje .orc-rotulo svg { display: none; }
+.orc-v3 #oHoje .numrow { order: 2; justify-content: center; margin-block: 2px 4px; }
+.orc-v3 #oHoje .numrow .din { font-size: clamp(50px, 15vw, 72px); }
+.orc-v3 #oHoje > .row-btns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) !important; margin-block-start: 14px !important; }
+.orc-v3 #oHoje > .row-btns > * { border-radius: 999px; padding-inline: 12px; font-size: 15px; }
+.orc-v3 #oHoje > .row-btns > :last-child svg { display: none; }
+.orc-v3 #oCofrinho .numrow { align-items: center; }
+
+/* ---------- Camada 3: o palco e os agentes ---------- */
+/* no celular o palco fecha o cartão: primeiro o número e os botões, depois a equipe */
+.orc-palco { position: relative; margin: 18px -18px -18px; padding: 16px 12px 4px; background: var(--palco); }
+.orc-palco-balao { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-block-size: 68px; padding: 10px 10px 10px 16px; border-radius: 20px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.orc-palco-balao::after { content: ""; position: absolute; inset-block-end: -7px; inset-inline-start: calc((var(--agente) + .5) * 100% / var(--agentes)); inline-size: 14px; block-size: 14px; background: var(--surface); box-shadow: 1px 1px 0 var(--border); transform: translateX(-50%) rotate(45deg); transition: inset-inline-start .35s cubic-bezier(.2, .8, .2, 1); }
+.orc-palco-balao p { margin: 0; min-inline-size: 0; font: 500 15px/1.35 var(--fonte-aba); color: var(--ink); }
+.orc-palco-balao b { display: block; font-size: 14px; font-weight: 700; color: var(--accent-ink); }
+.orc-palco-ir { flex: none; display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding-inline: 14px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 14px/1.15 var(--fonte-aba); text-align: start; cursor: pointer; }
+.orc-palco-ir:hover { background: var(--accent-press); }
+.orc-palco-ir svg { flex: none; inline-size: 16px; block-size: 16px; }
+.orc-palco-chao { display: grid; grid-template-columns: repeat(var(--agentes), minmax(0, 1fr)); align-items: end; gap: 2px; margin-block-start: 16px; }
+.orc-agente { display: grid; justify-items: center; gap: 2px; min-inline-size: 0; padding: 0 0 12px; border: 0; border-radius: 16px; background: none; color: var(--ink-2); font: 600 14px/1.2 var(--fonte-aba); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.orc-agente img { display: block; inline-size: 100%; max-inline-size: 168px; block-size: auto; transform-origin: 50% 92%; filter: saturate(.8) opacity(.88); transition: scale .25s cubic-bezier(.3, 1.4, .5, 1), filter .25s ease; }
+.orc-agente:hover img { filter: none; }
+.orc-agente[aria-pressed="true"] img { scale: 1.16; filter: drop-shadow(0 10px 12px rgb(40 30 70 / .2)); }
+.orc-agente-nome { display: grid; justify-items: center; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.orc-agente-nome small { display: none; font-size: 14px; font-weight: 500; color: var(--muted); }
+.orc-agente[aria-pressed="true"] .orc-agente-nome { background: var(--surface); color: var(--accent-ink); box-shadow: inset 0 0 0 1px var(--border); }
+
+/* o recado do mês vem do analista */
+.orc-v3 .ritmo-aviso .assistente { display: none; }
+.orc-v3 .ritmo-aviso::before { content: ""; flex: none; inline-size: 48px; block-size: 48px; border-radius: 50%; background: var(--palco) url(/orcamento-3d/retrato-analista.webp) center / cover no-repeat; }
+
+/* ---------- Camada 4: movimento (só para quem não pediu menos movimento) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .orc-agente img { animation: orc-trabalha 3.4s ease-in-out infinite; }
+  .orc-agente:nth-child(2) img { animation-delay: -.9s; }
+  .orc-agente:nth-child(3) img { animation-delay: -1.8s; }
+  .orc-agente:nth-child(4) img { animation-delay: -2.6s; }
+  .orc-agente[aria-pressed="true"] img { animation: orc-fala 1.1s ease-in-out infinite; }
+  .orc-palco-balao p { animation: orc-chega .3s ease-out; }
+  .orc-v3-foco { animation: orc-foco 1.6s ease-out; }
+}
+@keyframes orc-trabalha { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+@keyframes orc-fala { 0%, 100% { rotate: -1.6deg; translate: 0 0; } 50% { rotate: 1.6deg; translate: 0 -3px; } }
+@keyframes orc-chega { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0 0; } }
+@keyframes orc-foco { 0%, 45% { box-shadow: inset 0 0 0 1px var(--border), 0 0 0 4px var(--accent); } 100% { box-shadow: inset 0 0 0 1px var(--border), 0 0 0 4px transparent; } }
+
+@media (min-width: 441px) {
+  .orc-v3 #oHoje > .row-btns > :last-child svg { display: inline-block; }
+  .orc-agente-nome small { display: block; }
+}
+
+/* ---------- Computador: número à esquerda, equipe à direita; embaixo, 3 faixas ---------- */
+@media (min-width: 1100px) {
+  .orc-v3 .orc-em { display: inline; }
+  .orc-v3 .tela-larga { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: 16px !important; align-items: start; }
+  .orc-v3 .tela-larga > .col { display: contents; }
+  .orc-v3 .tela-larga .card { margin: 0 !important; }
+  .orc-v3 #oHoje { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); column-gap: 36px; align-content: center; padding: 30px 0 30px 34px; }
+  .orc-v3 #oHoje > * { grid-column: 1; }
+  .orc-v3 #oHoje .orc-rotulo, .orc-v3 #oHoje .numrow { justify-content: flex-start; }
+  .orc-v3 #oHoje .numrow { margin-block-end: 14px; }
+  .orc-v3 #oHoje > .row-btns { grid-template-columns: repeat(2, max-content) !important; }
+  .orc-v3 #oHoje > .row-btns > * { padding-inline: 22px; }
+  .orc-palco { grid-column: 2 !important; grid-row: 1 / span 12; align-self: stretch; display: flex; flex-direction: column; justify-content: flex-end; margin: -30px 0; padding: 26px 28px 0; }
+  .orc-palco-balao { min-block-size: 76px; padding: 12px 12px 12px 22px; }
+  .orc-palco-balao p { font-size: 17px; }
+  .orc-agente { padding-block-end: 18px; }
+  .orc-agente img { max-inline-size: 200px; }
+  .orc-palco-chao { margin-block-start: 22px; }
+  /* a grade segue o conteúdo: semana e mês ao lado da sobra, meio a meio, com a mesma altura */
+  .orc-v3 .tela-larga { align-items: stretch; }
+  .orc-v3 #oRitmo, .orc-v3 #oCofrinho { grid-column: span 3; }
+  .orc-v3 :is(#oRitmo, #oCofrinho, #oOnde, #oRepete, #oCompras) { display: flex; flex-direction: column; }
+  .orc-v3 #oRitmo .ritmo { flex: 1; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 24px; }
+  .orc-v3 #oRitmo .ritmo-leg { margin-block-start: auto; }
+  .orc-v3 #oCofrinho details.salario-porque { margin-block-start: auto; }
+  .orc-v3 #oOnde .onde-dica { margin-block-start: auto; padding-block-start: 16px; }
+  .orc-v3 #oCompras .compras-todas { margin-block-start: auto; align-self: flex-start; }
+  .orc-v3 :is(#oOnde, #oRepete, #oCompras) { grid-column: span 2; }
+  .orc-v3 .tela-larga:not(:has(#oRepete)) #oCompras { grid-column: span 4; }
+  .orc-pote3d { inline-size: 84px; }
+}
+
+/* ============================================================================================
+ * Produção gráfica (24/11, revisão do diretor de arte): um sistema só, em vez de cada bloco resolvido sozinho.
+ * Números em 4 degraus (72-80 / 32 / 20 / 16). Espaços na grade de 4/8. Raios: 24 cartão, 16 dentro,
+ * 12 ícone, pílula no botão. Só linha de 1 px, nenhuma sombra. Verde só para ação e "dentro"; âmbar uma vez.
+ * ========================================================================================== */
+
+/* escala dos números */
+.orc-v3 #oHoje .numrow .din { font-size: clamp(56px, 15vw, 72px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.orc-v3 #oHoje .numrow .din .cur,
+.orc-v3 #oHoje .numrow .din .cents { font-size: .44em; font-weight: 700; letter-spacing: -.01em; }
+.orc-v3 #oHoje .numrow .din .cur { margin-right: .2em; color: var(--muted); }
+.orc-v3 #oRitmo .ritmo-t .ritmo-num { font: 700 32px/1.1 var(--font-num); letter-spacing: -.03em; }
+.orc-v3 #oRitmo .ritmo-t .ritmo-num em { font: 500 16px/1.3 var(--fonte-aba); letter-spacing: 0; }
+.orc-v3 #oCofrinho .numrow .din,
+.orc-v3 #oCofrinho .numrow.cof-zero .din { font-size: 32px; font-weight: 700; letter-spacing: -.03em; }
+.orc-v3 #oCofrinho .numrow .din .cur { font-size: 16px; }
+.orc-v3 .orc-stat-t b { font: 700 20px/1.2 var(--font-num); }
+.orc-v3 .li .v .din, .orc-v3 .onde-linha .din { font-weight: 600; }
+.orc-v3 #oHoje .orc-rotulo, .orc-v3 .ritmo-rot { font: 600 15px/1.3 var(--fonte-aba); color: var(--ink-2); }
+
+/* cartão do dia: tudo no mesmo eixo, à esquerda; resumo sem caixa e sem ícone em bolinha */
+.orc-v3 #oHoje .orc-rotulo, .orc-v3 #oHoje .numrow { justify-content: flex-start; }
+.orc-v3 .orc-stats { background: none; border-radius: 0; border-block: 1px solid var(--rule); }
+.orc-v3 .orc-stat { padding: 12px 16px 12px 0; }
+.orc-v3 .orc-stat + .orc-stat { padding-inline: 16px 0; }
+.orc-v3 .orc-stat-ico { display: none; }
+.orc-v3 .orc-stat-t small { display: flex; align-items: flex-end; min-block-size: 2.5em; }
+
+/* um botão cheio por cartão; sem sombra colorida */
+.orc-palco-ir { background: var(--surface); color: var(--accent-ink); box-shadow: inset 0 0 0 1.5px var(--border); }
+.orc-palco-ir:hover { background: var(--accent-soft); }
+.orc-v3 #oHoje > .row-btns > :first-child { box-shadow: none; }
+.orc-v3 #oHoje > .row-btns { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; margin-block-start: 16px !important; gap: 8px; }
+
+/* calendário: sem caixa, um sinal por estado, um anel no hoje */
+.orc-v3 .bolinhas { margin-block: 16px 4px; padding: 16px 0 0; border-radius: 0; background: none; border-block-start: 1px solid var(--rule); }
+.orc-v3 .bolinhas-titulo { margin-block-end: 12px; font-size: 14px; text-wrap: balance; }
+.orc-v3 .bolinhas-titulo b { font: 700 16px/1.3 var(--font-num); }
+.orc-v3 .bolinhas-grade { gap: 8px 4px; }
+.orc-v3 .bolinhas-sem { font-size: 14px; font-weight: 600; }
+.orc-v3 .bolinha { font-size: 14px; letter-spacing: -.02em; box-sizing: border-box; }
+.orc-v3 .bolinha.passou { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--warn-ink) 35%, transparent); }
+.orc-v3 .bolinha.sem { box-shadow: none; border: 1.5px dashed var(--control); }
+.orc-v3 .bolinha.hoje { box-shadow: none; outline: 2px solid var(--ink); outline-offset: 2px; }
+.orc-v3 .bolinhas-legenda { font-size: 14px; }
+.orc-v3 .bolinhas-legenda .passou::before { box-shadow: inset 0 0 0 1px var(--warn-ink); }
+.orc-v3 .bolinhas-legenda .sem::before { box-shadow: none; border: 1.5px dashed var(--muted); box-sizing: border-box; }
+
+/* âmbar uma vez só: no número; o resto do aviso em tinta neutra */
+.orc-v3 #oRitmo .ritmo-b.warn { background: color-mix(in oklch, var(--warn) 6%, var(--surface)); }
+.orc-v3 #oRitmo .ritmo-b.warn .ritmo-rot { color: var(--ink-2); }
+.orc-v3 #oRitmo .ritmo-b.warn .ritmo-aviso { color: var(--ink); font-weight: 500; }
+.orc-v3 #oRitmo .ritmo-b .ritmo-ico { inline-size: 20px; block-size: 20px; background: none; }
+
+/* verde só para ação: ícones das listas neutros */
+.orc-v3 :is(.onde-lista, .repete-lista, .compras-lista) .tile { inline-size: 40px; block-size: 40px; border-radius: 12px; background: var(--raised); color: var(--ink-2); }
+
+/* um sistema de raio e de borda */
+.orc-palco-balao { border-radius: 16px; gap: 8px; padding: 12px 12px 12px 16px; }
+.orc-palco-balao p { text-wrap: balance; }
+.orc-v3 .orc-meta-add { border: 0; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--border); background: var(--surface); }
+.orc-v3 .orc-meta-add:hover { background: var(--accent-soft); }
+
+/* espaços na grade de 4/8 */
+.orc-v3 #oHoje { padding: 24px 20px 20px; }
+.orc-palco { margin: 20px -20px -20px; padding: 16px 12px 4px; box-shadow: inset 0 1px 0 var(--border); }
+.orc-v3 .card-h { margin-block-end: 16px; }
+.orc-v3 { --palco: color-mix(in srgb, var(--lilas) 14%, var(--surface)); }
+
+/* cabeçalho: o título manda, o rosto acompanha */
+.orc-v3 .card-h h2 { gap: 8px; font-size: 20px; line-height: 1.2; }
+.orc-v3 .card-h h2::before { inline-size: 36px; block-size: 36px; }
+.orc-v3 .ritmo-aviso::before { inline-size: 40px; block-size: 40px; }
+.orc-v3 .compras-conta { font: 500 14px/1 var(--fonte-aba); color: var(--muted); }
+
+/* apoio nunca abaixo de 14 px */
+.orc-v3 .pill-nome .pill-dono,
+.orc-v3 .orc-stat-t b em,
+.orc-v3 .onde-m small, .orc-v3 .onde-comp, .orc-v3 .onde-abre-nome small,
+.orc-v3 .ritmo-leg-in, .orc-v3 .ritmo-leg > span { font-size: 14px; }
+
+/* listas irmãs com a mesma linha: divisória recuada até o texto */
+.orc-v3 .list > li + li { border-top: 0; position: relative; }
+.orc-v3 .list > li + li::before,
+.orc-v3 .onde-lista > li + li::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 52px 0; block-size: 1px; background: var(--rule); }
+.orc-v3 .onde-lista { gap: 0; }
+.orc-v3 .onde-lista > li { position: relative; padding-block: 12px; }
+.orc-v3 .repete-lista .m { display: grid; grid-template-columns: minmax(0, auto) auto; justify-content: start; align-items: center; column-gap: 8px; }
+.orc-v3 .repete-lista .m small { grid-column: 1 / -1; }
+.orc-v3 .repete-vezes { margin: 0; flex-wrap: nowrap; }
+.orc-v3 .repete-vezes i { inline-size: 6px; block-size: 6px; }
+
+/* barras com uma espessura só */
+.orc-v3 .orc-stat .orc-mes-barra,
+.orc-v3 #oRitmo .ritmo-b .ritmo-meter,
+.orc-v3 .onde-barra { block-size: 6px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.orc-v3 .ritmo-meter .risco { top: -5px; width: 2px; height: 16px; }
+
+/* gráfico: o gasto manda, a referência fica leve */
+.orc-v3 .graf-mes .g-teto { stroke: var(--control); stroke-width: 1; stroke-dasharray: 3 4; }
+.orc-v3 .graf-mes .g-cheia { stroke-width: 3; }
+.orc-v3 .graf-leitura { margin-block-start: 8px; }
+.orc-v3 .graf-leitura .graf-leg { gap: 4px 16px; }
+
+@media (min-width: 1100px) {
+  .orc-v3 #oHoje .numrow .din { font-size: 80px; }
+  .orc-v3 .orc-stat-t small { min-block-size: 0; }
+  .orc-v3 #oHoje > .row-btns { grid-template-columns: repeat(2, max-content) !important; }
+  .orc-v3 .bolinha { inline-size: 36px; block-size: 36px; }
+  .orc-v3 .tela-larga { gap: 24px !important; }
+  .orc-v3 .tela-larga .card { padding: 24px; }
+  .orc-v3 #oHoje { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 32px; padding: 32px 0 32px 32px; }
+  .orc-palco { margin: -32px 0; padding: 24px 24px 0; box-shadow: inset 1px 0 0 var(--border); }
+}
+
+/* modo escuro: o palco não vira placa cinza e os dias "dentro" não pesam como botão (os 2 gatilhos do app) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .orc-v3 { --palco: color-mix(in srgb, var(--lilas) 9%, var(--surface)); }
+  :root:not([data-theme="light"]) .orc-v3 .bolinha.dentro { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); color: var(--accent-ink); }
+  :root:not([data-theme="light"]) .orc-v3 .bolinhas-legenda .dentro::before { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+}
+:root[data-theme="dark"] .orc-v3 { --palco: color-mix(in srgb, var(--lilas) 9%, var(--surface)); }
+:root[data-theme="dark"] .orc-v3 .bolinha.dentro { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); color: var(--accent-ink); }
+:root[data-theme="dark"] .orc-v3 .bolinhas-legenda .dentro::before { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+/* com a sala 3D o palco ficou mais alto: a coluna do número fica centrada na altura do cartão */
+@media (min-width: 1100px) {
+  .orc-v3 #oHoje { grid-template-rows: 1fr repeat(10, auto) 1fr; }
+  .orc-v3 #oHoje::before { content: ""; grid-column: 1; grid-row: 1; order: 0; }
+  .orc-palco { grid-row: 1 / -1; }
+}
