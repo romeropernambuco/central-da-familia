@@ -131,6 +131,8 @@ export const ACOES_QUE_PASSAM_DIRETO = [
   'celularChavePublica',
   'celularLigar',
   'celularDesligar',
+  // câmbio público do Banco Central para a tela Trocar lá fora: não toca em dado da família
+  'cotacaoMoeda',
 ] as const satisfies readonly Acao[]
 
 const gravam: ReadonlySet<string> = new Set(ACOES_QUE_GRAVAM)

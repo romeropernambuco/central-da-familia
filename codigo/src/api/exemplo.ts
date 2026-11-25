@@ -27,6 +27,7 @@ import * as ex2 from './exemplo2'
 import { entradaDoBanco, imovelInvalido, type FuturoBanco } from '../lib/futuroReceitas'
 import { comProblemasDoAluguel } from '../lib/futuroAluguel'
 import { CONVITE_EXEMPLO } from './conviteExemplo'
+import { trocasDeExemplo } from './exemploTrocas'
 import type { CadastroNome, ConfigEx, EntradaEx } from './exemploConfig'
 import {
   aoLancarEx,
@@ -286,6 +287,7 @@ function criarDados() {
               criado_em: somaDias(hoje, -90) + 'T12:00:00-03:00',
             },
           ],
+          trocas: JSON.parse(JSON.stringify(trocasDeExemplo)),
         }
   const ajustes: { mes: string; de: string; para: string; valor: number; id: string }[] = []
   const convites: ConviteFamilia[] = vazia
@@ -1596,6 +1598,12 @@ export const apiExemplo: Api = {
     return async () => {
       db.ajustes = db.ajustes.filter(a => a.id !== id)
     }
+  },
+  async cotacaoMoeda(moeda, dia) {
+    await espera(40)
+    // câmbio fixo de exemplo (o do euro e o do dólar são do boletim de 25/11/2026); o exemplo nunca usa a rede
+    const reais = { EUR: 6.4413, USD: 5.8825, GBP: 7.6272, JPY: 0.0377, CHF: 6.92, CAD: 4.19, AUD: 3.83 }[moeda]
+    return { moeda, reais, dolares: Math.round((reais / 5.8825) * 10000) / 10000, data: dia }
   },
   async lerCupom() {
     await espera(300)

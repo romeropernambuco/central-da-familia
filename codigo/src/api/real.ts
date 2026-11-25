@@ -3,6 +3,8 @@ import { prepararAcolhimento } from '../lib/acolhimento'
 // leituras simples (lista de lançamentos, cartões, config) vão direto nas tabelas, protegidas pela tranca por família.
 import { createClient } from '@supabase/supabase-js'
 import { buscarComPrazo } from './prazo'
+import { enderecoPtax, lerPtax, montarCotacao } from '../lib/troca/cambio'
+import type { Moeda } from '../lib/troca/tipos'
 import type {
   Api,
   AvisoCasa,
@@ -1149,6 +1151,24 @@ export const apiReal: Api = {
   },
   async negocioVoltaGuardar(familia, negocio, m, aplicacao) {
     await rpc('negocio_volta_guardar', { familia, negocio, movimento: m, aplicacao })
+  },
+  // ---------- Câmbio do dia: boletim público do Banco Central, sem chave e sem dado da família ----------
+  async cotacaoMoeda(moeda, hoje) {
+    const semCambio = 'O Banco Central não respondeu o câmbio agora. Digite o valor ou tente de novo.'
+    const boletim = async (qual: Moeda) => {
+      let r: Response
+      try {
+        r = await buscarComPrazo()(enderecoPtax(qual, hoje))
+      } catch {
+        throw new ErroRede('Sem internet para buscar o câmbio. Digite o valor ou tente de novo.')
+      }
+      // resposta sem corpo ou fora do formato vale como "sem boletim": a mensagem abaixo explica
+      const lido = r.ok ? lerPtax(await r.json().catch(() => null)) : null
+      if (!lido) throw new Error(semCambio)
+      return lido
+    }
+    const daMoeda = await boletim(moeda)
+    return montarCotacao(moeda, daMoeda, moeda === 'USD' ? daMoeda : await boletim('USD'))
   },
   // ---------- Avisos no celular: o servidor (função avisos-celular) manda às 19h, sem valor e sem nome ----------
   async celularChavePublica() {

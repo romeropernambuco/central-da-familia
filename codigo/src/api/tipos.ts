@@ -1,5 +1,7 @@
 // O que o app espera do banco. Os nomes seguem CONTRATO.md (schema `produto`).
 import type { ContaEtiqueta, ContaSimulacao } from '../lib/etiquetas'
+import type { CotacaoMoeda } from '../lib/troca/cambio'
+import type { Moeda } from '../lib/troca/tipos'
 
 export type Papel = 'casal' | 'pessoa' | 'equipe'
 
@@ -634,6 +636,8 @@ export type ChaveConfig =
   | 'salario_gordura'
   /** Contas do ano (IPTU, IPVA, matrícula...): valor, mês e dia; o Contador lembra (lib/contasDoAno.ts, 22/11/2026). */
   | 'contas_ano'
+  /** Trocar lá fora: comparações de comprar um aparelho no exterior e vender o usado aqui (lib/troca, 25/11/2026). */
+  | 'trocas'
 
 export interface PessoaNome {
   tipo: 'membro' | 'convite' | 'assessor' | 'renda' | 'historico' | 'prestador'
@@ -846,6 +850,8 @@ export interface Api {
     aplicacao: string,
     nota: string,
   ): Promise<void>
+  /** Câmbio do dia no Banco Central (boletim PTAX). Não lê nem grava dado da família. `hoje` em AAAA-MM-DD. */
+  cotacaoMoeda?(moeda: Moeda, hoje: string): Promise<CotacaoMoeda>
   /* Avisos no celular (Web Push, produto.celulares). A chave pública do servidor; ligar e desligar este aparelho. */
   celularChavePublica?(): Promise<string | null>
   celularLigar?(familia: string, i: { endpoint: string; p256dh: string; auth: string }): Promise<void>
