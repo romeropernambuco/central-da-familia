@@ -1,1 +1,0 @@
-import{r,aG as o,j as t,aH as e}from"./partida-C_HlvxmF.js";const i=Object.freeze({...o});function n({nome:a,...s}){return r.createElement(i[a],s)}function c({ilustracao:a,...s}){return t.jsx(e,{...s,ilustracao:t.jsx(n,{nome:a})})}export{c as E};
