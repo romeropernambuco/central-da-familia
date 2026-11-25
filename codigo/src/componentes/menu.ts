@@ -17,6 +17,7 @@ const abas: readonly Aba[] = [
   { r: 'cartoes', nome: 'Cartões', icone: 'cartoes', grupo: 'Dia a dia' },
   { r: 'casa', nome: 'Casa', icone: 'casa', grupo: 'Dia a dia' },
   { r: 'desejos', nome: 'Desejos', icone: 'desejos', grupo: 'Dia a dia' },
+  { r: 'trocar', nome: 'Trocar lá fora', icone: 'trocar', grupo: 'Dia a dia' },
   { r: 'guardado', nome: 'Guardado', icone: 'guardado', grupo: 'Patrimônio' },
   { r: 'planejamento', nome: 'Planejamento', icone: 'planejamento', grupo: 'Patrimônio' },
   { r: 'escritorio', nome: 'Escritório', icone: 'escritorio', grupo: 'Equipe' },

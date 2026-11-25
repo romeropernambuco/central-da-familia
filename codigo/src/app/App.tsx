@@ -32,6 +32,7 @@ const Painel = lazy(() => import('../telas/painel/Painel').then(m => ({ default:
 const Privacidade = lazy(() => import('../telas/privacidade/Privacidade').then(m => ({ default: m.Privacidade })))
 const Ajustes = lazy(() => import('../telas/ajustes/Ajustes').then(m => ({ default: m.Ajustes })))
 const Desejos = lazy(() => import('../telas/desejos/Desejos').then(m => ({ default: m.Desejos })))
+const Trocar = lazy(() => import('../telas/trocar/Trocar').then(m => ({ default: m.Trocar })))
 import { dataCurta, mesLongo, hojeRecife } from '../lib/formato'
 import { rotaDoHash, rotaPermitida, type Rota } from '../lib/rotas'
 import { ehAtalho, lerAtalho } from '../lib/atalho'
@@ -48,6 +49,7 @@ const TITULO: Record<string, [string, string]> = {
   cartoes: ['faturas e "E se eu comprar?"', 'Cartões'],
   planejamento: ['limites, reserva, rendas e metas', 'Planejamento'],
   desejos: ['o que quero, quando e se cabe', 'Desejos'],
+  trocar: ['comprar fora e vender o usado aqui', 'Trocar lá fora'],
   escritorio: ['quem ajuda você a acompanhar', 'Escritório'],
   ajustes: ['quem está na família e aparência', 'Família e ajustes'],
   privacidade: ['seu papel e seus dados', 'Privacidade'],
@@ -225,6 +227,7 @@ export function App() {
             {r === 'cartoes' && <Cartoes />}
             {r === 'planejamento' && <Planejamento />}
             {r === 'desejos' && <Desejos />}
+            {r === 'trocar' && <Trocar />}
             {r === 'escritorio' && <Escritorio />}
             {r === 'ajustes' && <Ajustes />}
             {r === 'privacidade' && <Privacidade />}

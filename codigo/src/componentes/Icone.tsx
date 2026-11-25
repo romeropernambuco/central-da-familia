@@ -33,6 +33,7 @@ import {
   Bell,
 } from 'lucide-react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
+import { ArrowLeftRight } from 'lucide-react'
 import { BellRing, HeartHandshake, Sun, UserCheck, PackageSearch, UserRound, ClipboardCheck } from 'lucide-react'
 
 /** Vocabulário visual único. Importações explícitas preservam o tree shaking. */
@@ -42,6 +43,7 @@ const iconesDeInterface = {
   orcamento: Wallet,
   casa: ShoppingBasket,
   desejos: Sparkles,
+  trocar: ArrowLeftRight,
   guardado: Landmark,
   cartoes: CreditCard,
   planejamento: Target,

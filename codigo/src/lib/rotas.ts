@@ -8,6 +8,7 @@ export type Rota =
   | 'cartoes'
   | 'planejamento'
   | 'desejos'
+  | 'trocar'
   | 'escritorio'
   | 'ajustes'
   | 'privacidade'
@@ -16,7 +17,7 @@ export type Rota =
   | 'entrar'
 
 /** Telas que mostram dinheiro do casal: a pessoa da família (filha) não abre nem pelo endereço. */
-export const SO_CASAL: Rota[] = ['guardado', 'cartoes', 'planejamento', 'escritorio']
+export const SO_CASAL: Rota[] = ['guardado', 'cartoes', 'planejamento', 'escritorio', 'trocar']
 /** O menu de cada papel. */
 export const podeVerNoMenu = (r: Rota, papel: 'casal' | 'pessoa' | 'equipe' | null) =>
   papel === 'equipe' ? r === 'casa' : papel === 'casal' || !SO_CASAL.includes(r)
@@ -30,6 +31,7 @@ const ROTAS: Rota[] = [
   'cartoes',
   'planejamento',
   'desejos',
+  'trocar',
   'escritorio',
   'ajustes',
   'privacidade',

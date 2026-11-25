@@ -118,6 +118,7 @@ const telas = [
   'FolhaNegocio',
   'NovoNegocio',
   'ColarExtrato',
+  'Trocar',
 ]
 const segredo = 'NomeSentinelaPrivado'
 const dinheiro = 9876.54

@@ -99,6 +99,7 @@ const SOBRE: Record<string, string> = {
   guardado: 'Aqui você acompanha aplicações e imóveis.',
   planejamento: 'Aqui você define limites e planeja os próximos meses.',
   desejos: 'Aqui você organiza o que quer comprar.',
+  trocar: 'Aqui você compara quanto custa trocar um aparelho comprando fora do Brasil.',
   escritorio: 'Aqui você vê tarefas e cadastros dos funcionários.',
   ajustes: 'Aqui você cuida da aparência e dos convites.',
   'primeiro-uso': 'Aqui você cria sua família e define os limites mensais.',
