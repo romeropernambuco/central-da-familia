@@ -33,9 +33,7 @@ Os 2 posts parecem 2 produtos. Na prática, são **2 etapas do mesmo ciclo**:
 | 3. Aplicar | Banco de Aprendizados | "Onde eu uso isso amanhã?" |
 | 4. Revisar | Os dois | "O que ficou parado?" |
 
-**Recomendação:** 1 produto só, com 2 telas principais e o mesmo banco de dados. Uma referência do Jardim pode virar um aprendizado no Banco com 1 toque. Separados, viram 2 lugares para esquecer coisas.
-
-Nome provisório: **Jardim** (com as áreas "Referências" e "Aprendizados"). [confirmar: nome final]
+**Recomendação (atualizada):** dentro da Central da Família, Jardim e Banco viram **2 órgãos ligados**, no mesmo banco de dados e com o mesmo login. Uma referência do Jardim vira aprendizado no Banco com 1 toque. Ver o mapa do corpo inteiro em `central-corpo-humano.md`.
 
 ---
 
@@ -131,19 +129,62 @@ Aprendizados, temas, já aplicados (com %), cursos e livros em andamento, semana
 
 Ligação chave: **Aprendizado.origem → Referência** (é o que une os 2 produtos).
 
-### ⚙️ Pilha recomendada
-1. **Banco e login:** Supabase (já está entre as ferramentas conectadas e já tem skill "negocio-no-supabase").
-2. **Tela:** app web que se instala no iPhone (PWA). Não precisa de App Store.
-3. **IA:** Claude pela API, para resumir, classificar tema e sugerir ideias.
-4. **Captura no iPhone:** Atalho do iOS na folha de compartilhar, enviando o link para o sistema.
-5. **Hospedagem:** Vercel (também conectada).
+### ⚙️ Pilha (a mesma da Central, nada novo)
+1. **Banco:** Supabase, projeto `central-da-familia`, tabela única `docs`. Jardim grava em `painel = "jardim"`, Banco em `painel = "banco"`. Nenhuma tabela nova.
+2. **Coleções do Jardim:** `referencias`, `temas`, `conexoes`, `ideias`, `painel/config`, `resumo/atual`.
+3. **Coleções do Banco:** `aprendizados`, `fontes` (livro, curso, palestra em andamento), `revisoes`, `painel/config`, `resumo/atual`.
+4. **Tela:** páginas `/jardim/` e `/banco/` neste repositório (GitHub Pages), usando a mesma camada `window.NUVEM` do Parcelas. Instaláveis no iPhone pela Tela de Início.
+5. **Prints e imagens:** Supabase Storage, bucket privado `jardim-anexos`.
+6. **IA:** Claude pela API, chamada por uma Edge Function do Supabase (a chave nunca fica na página).
+7. **Ligações entre órgãos:** guardam só a referência `{painel, colecao, doc_id}`, nunca cópia. Ex.: aprendizado com `origem = jardim/referencias/123`.
+
+### 📲 Captura do Instagram: o que dá e o que não dá (pesquisado)
+| Caminho | Funciona? | Por quê |
+|---|---|---|
+| API oficial lendo post de outra pessoa | ❌ Não | A Meta desligou a API de contas pessoais em 04/12/2024 ([fonte](https://developers.facebook.com/blog/post/2024/09/04/update-on-instagram-basic-display-api)) |
+| oEmbed (incorporar o post) | ⚠️ Pouco | Desde 2026 não pede token, mas não devolve mais miniatura nem autor ([fonte](https://developers.facebook.com/blog/post/2025/04/08/oembed-updates/)). [confirmar em teste] |
+| Robô copiando a página | ❌ Não usar | Proibido pelos termos do Instagram |
+| **Atalho do iPhone + print** | ✅ Sim | Compartilhar → Atalho "Jardim" manda o link; o print vai junto e a IA lê a imagem ([fonte](https://support.apple.com/guide/shortcuts/apd7644168e1/ios)) |
+
+**Decisão:** na v1, a captura é **link + print**. A IA lê o texto do print (autor, legenda, ideia). Sem print, guarda só o link e pede o print na revisão.
 
 ### ⚠️ Pontos técnicos de atenção
-1. Instagram bloqueia leitura automática de muitos posts. Plano B: a IA lê o print enviado junto.
-2. Custo da IA: cerca de 1 chamada por item salvo. [confirmar: estimativa de custo mensal no piloto]
-3. Dados pessoais: o banco fica privado, só com o login do Romero.
+1. Custo da IA: 1 chamada por item salvo. [confirmar: estimativa mensal no piloto]
+2. Dados privados, só com o login do Romero.
+3. **Exportar tudo desde o dia 1.** O Pocket, da Mozilla, fechou em 08/07/2025 e apagou os dados de quem não exportou ([fonte](https://support.mozilla.org/en-US/kb/future-of-pocket)). Aqui os dados são seus, no seu Supabase, com botão de exportar.
 
 ---
+
+## 🔎 5b. Pesquisador: o que já existe no mercado
+
+### 🌱 Para o Jardim
+| Produto | Preço | Copiar | Evitar |
+|---|---|---|---|
+| [mymind](https://mymind.com/) | ~US$ 6/mês [confirmar] | IA classifica sozinha, zero pasta. Modo "Serendipity" devolve item esquecido | Instagram sem suporte oficial |
+| [Recall](https://recall.it/pricing) | Grátis; Plus ~US$ 7 [confirmar] | Mapa de conexões automático + perguntas sobre o que salvou | Não lê Instagram |
+| [Heptabase](https://support.heptabase.com/en/articles/12990121-pro-and-premium-plans-pricing-faq) | US$ 11,99/mês | Quadro visual de ideias (o "mapa mental") | Tudo à mão, cansa |
+| [Obsidian](https://obsidian.md/pricing) | Grátis; sync US$ 4 | Mapa de ligações | Vira "bola de pelos" ilegível |
+| [Raindrop](https://help.raindrop.io/ai-suggestions) | ~US$ 28/ano [confirmar] | Barato; IA sugere tag | IA não cria tema novo |
+| [Saner.ai](https://apps.apple.com/app/id6738684403) | Grátis; US$ 12 | Feito pra TDAH: a IA lembra por você | Limite baixo no grátis |
+
+### 📚 Para o Banco
+| Produto | Preço | Copiar | Evitar |
+|---|---|---|---|
+| [Readwise](https://docs.readwise.io/readwise/guides/mastery) | US$ 9,99/mês | Revisão curta: no máximo 5 itens, o mais esquecido primeiro; intervalo 7, 14, 28 dias | Mede lembrança, não aplicação |
+| [Blinkist](https://www.blinkist.com/magazine/posts/how-much-do-blinkists-premium-subscriptions-cost) e [Shortform](https://www.shortform.com/pricing) | US$ 99,99 e 197/ano | Resumo curto e acionável por capítulo | Vira coleção de resumos sem ação |
+| [Anki](https://apps.apple.com/app/id373493387) | Grátis; iOS US$ 24,99 | Repetição espaçada | Serve pra decorar, não pra aplicar |
+| Método PARA / Segundo Cérebro ([resumo](https://thomasjfrank.com/productivity/books/the-para-method-by-tiago-forte-summary-and-book-notes/)) | Livro | Organizar por "onde vou usar isso" | Virar só arrumação de pasta |
+| Zettelkasten ([fonte](https://zettelkasten.de/posts/concepts-sohnke-ahrens-explained/)) | Grátis | 1 ideia por nota, nas suas palavras | Disciplina diária pesada |
+
+### 🕳️ O buraco que ninguém ocupa
+Ninguém mede **aplicação**. Todos medem quanto você guardou ou lembrou. O diferencial da Central é a pergunta "usou?" com a prova de onde usou. Esse é o coração do Banco.
+
+### ✨ 5 ideias que entram por causa da pesquisa
+1. **"Por que salvei" na hora:** depois de compartilhar, 1 campo opcional de 1 frase (pode ditar pelo teclado do iPhone). Se pular, a IA sugere. Nenhum concorrente pede a intenção na captura.
+2. **Print vira item completo:** a IA lê o print e extrai @autor, tema e ideia. Contorna o bloqueio da Meta.
+3. **1 coisa por dia, não caixa infinita:** 1 aviso por dia com 1 item salvo e 3 botões: **Aplicar hoje**, **Adiar**, **Soltar**. Soltar é saudável, não é fracasso.
+4. **Prova de aplicação:** aprendizado aplicado ganha data e 1 linha (ou foto) de onde usou. A revisão de domingo mostra só "aprendido e não aplicado".
+5. **Mapa podado:** o mapa mostra só os 5 a 7 temas mais ativos do mês e destaca a ligação nova ("este post conecta com o livro X").
 
 ## 📏 6. Como saber se funcionou (30 dias)
 
