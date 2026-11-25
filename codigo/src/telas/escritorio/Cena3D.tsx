@@ -196,6 +196,11 @@ export function Cena3D({
   useEffect(() => {
     cena.current?.atualizar(paraCena(funcionarios))
   })
+  // onde a cena é mais larga que a tela (celular), ela abre no meio do escritório, não no canto vazio
+  useEffect(() => {
+    const quadro = caixa.current?.parentElement
+    if (modo === '3d' && quadro) quadro.scrollLeft = (quadro.scrollWidth - quadro.clientWidth) / 2
+  }, [modo])
   useEffect(() => {
     cena.current?.selecionar(selecionado)
     if (selecionado && celular()) {

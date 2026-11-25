@@ -72,6 +72,19 @@
 .ini4 .j-fila :is(.j-remetente, .j-retorno, .j-acoes button), .ini4 .j-decisoes .j-nivel { font-size: 14px; }
 .ini4 .cena3d-salas .pill { border: 0; box-shadow: inset 0 0 0 1px var(--j-divisa); background: var(--cartao); }
 .ini4 .cena3d-salas .pill[aria-pressed="true"] { box-shadow: none; background: var(--destaque); }
+/* celular: a cena fica grande e a pessoa arrasta para os lados (abre no meio do escritório) */
+@media (max-width: 899px) {
+  .ini4 .cena3d-bloco:not(:fullscreen) .cena3d-quadro > .cena3d { inline-size: max(100%, 920px); aspect-ratio: 16 / 10.5; }
+  .ini4 .j-palco .cena3d-bloco { padding-inline: 0; }
+  .ini4 .cena3d-quadro { border-radius: 0; }
+  .ini4 .cena3d-salas, .ini4 .j-palco .iso-legenda { padding-inline: 12px; }
+}
+/* computador: o Início novo usa a largura toda da janela, para o Escritório caber grande */
+@media (min-width: 900px) {
+  main:has(.ini4) { max-width: 1784px; }
+  :root .j-inicio.inicio-j.ini4 { max-inline-size: none; }
+  .ini4 .j-palco .cena3d { aspect-ratio: 16 / 9.6; max-block-size: 90vh; }
+}
 
 /* ---------- rumo a 2029 ---------- */
 .j-inicio.ini4 .j-plano { padding: 20px 16px; border: 0; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--j-divisa); }
