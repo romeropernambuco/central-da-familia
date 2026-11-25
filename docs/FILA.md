@@ -69,8 +69,16 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
   uso diz "Próximos passos", sem "para 2029"). Nenhum foi apagado nem pulado.
 
 - 22/11/2026: os 2 testes de protótipo que falham no GitHub (item 4 de "Qualidade do código").
+- 25/11/2026 (Trocar lá fora): o Duo de verdade entra no app por link, depois de publicar. Buscar sozinho o preço da
+  loja e do usado pede servidor (a parte de câmbio já é automática). A aba entrou nas 2 listas de telas dos testes
+  (`f54.test.ts` e `privacidade-global.test.ts`), sem afrouxar nada: confirmar. Relatório em
+  `docs/RELATORIO-TROCAR-LA-FORA.md`.
 
 ## Feito
+
+- 25/11/2026: aba "Trocar lá fora" (pedido do dono na conversa): o painel do iPhone Duo virou tela da Central, serve
+  para qualquer aparelho, guarda várias comparações, busca o câmbio do dia no Banco Central e recebe comparação por
+  link. Só o casal vê. 46 testes novos. No ramo de trabalho, ainda não publicado.
 
 - 22/11/2026: migrações f_01 a f_15 aplicadas no banco, em ordem. 758 testes do banco, 0 falhas. Dados não mudaram.
 - 22/11/2026: etiquetas de viagem; Dinheiro na rua; tipos frouxos de 343 para 195 avisos; portões rodam no Windows.
