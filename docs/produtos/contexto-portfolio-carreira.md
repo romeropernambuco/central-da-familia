@@ -4,7 +4,7 @@ Fase: descoberta (nenhuma linha de código ainda).
 Visão de 4 especialistas: Gerente de Produto (o quê e por quê), Designer de Produto (como a pessoa usa), Arquiteto de Software (como se constrói) e Pesquisador de mercado (o que já existe lá fora).
 Origem: post do Instagram com um "dashboard de portfólio de carreira" pensado para funcionário que tem avaliação com gestor.
 
-> 🫀 **Onde mora:** dentro da **Central da Família**, o sistema que já existe (páginas HTML neste repositório + Supabase). O Romero pensa a Central como um **corpo humano montado parte por parte**. Partes: Parcelas da Família (dinheiro, já no ar), Escritório da Família (funcionários e turnos da casa), Jardim Digital, Banco de Aprendizados, **Portfólio de carreira** e Foco e tempo (pomodoro com as tarefas do dia e para onde foi o tempo). O Portfólio é a parte que guarda **o que ele fez**. [confirmar: qual órgão do corpo o Portfólio representa]
+> 🫀 **Onde mora:** dentro da **Central da Família**, o sistema que já existe (páginas HTML neste repositório + Supabase). O Romero pensa a Central como um **corpo humano montado parte por parte**. Partes: Parcelas da Família (dinheiro, já no ar), Escritório da Família (funcionários e turnos da casa), Jardim Digital, Banco de Aprendizados, **Portfólio de carreira** e Foco e tempo (pomodoro com as tarefas do dia e para onde foi o tempo). O Portfólio é a parte que guarda **o que ele fez**. Na Central, o Portfólio são as **Mãos**.
 
 > ⚠️ **Premissa a confirmar (a maior deste documento):** o Romero não é CLT e não tem "avaliação de meio de ano". Por isso, o produto troca a avaliação por **2 usos reais**: (1) guardar o **legado do mandato** de deputado estadual (2023 a 2026) com números e provas; (2) gerar **credibilidade para a próxima fase** (sócios, investidores, clientes, convites para palestra, LinkedIn). O contador "42 dias até a avaliação" vira "X dias até o próximo compromisso importante". [confirmar com o Romero]
 
@@ -259,6 +259,13 @@ Observação: as páginas oficiais de alguns produtos não puderam ser abertas n
 
 ---
 
+### 💵 Do kit ao caixa: quando a porta aberta vira dinheiro
+1. **Porta aberta não é renda.** O número "portas abertas" mede credibilidade e nunca aparece no Caixa.
+2. **Cada porta tem 4 estados:** conversa, proposta enviada, contrato assinado, 1º pagamento recebido. Só "contrato assinado com valor e data" entra no plano base, e só na data do pagamento.
+3. **O dinheiro entra pela empresa, não pela família.** A família recebe só a retirada combinada, que entra no Parcelas depois de paga.
+4. **Campanha fica fora.** Palestra política, apoio ou doação não passam pelo kit nem pelo Caixa da família.
+5. **O Portfólio guarda só o endereço** do contrato e do pagamento. O valor mora num lugar só.
+
 ## ✂️ 11. Fora da versão 1
 
 1. **Vitrine pública ou site pessoal.** Na v1, o que sai é copiado ou baixado.
@@ -277,12 +284,12 @@ Observação: as páginas oficiais de alguns produtos não puderam ser abertas n
 |---|---|---|
 | Entregas registradas | 30 ou mais, sendo 15 ou mais do mandato [confirmar] | Contagem no banco |
 | Entregas com número | 70% ou mais | Situação do número |
-| Tempo de captura no iPhone | Mediana de 10 segundos ou menos | Tempo entre abrir e salvar |
+| Tempo de captura no iPhone | Mediana de 10 segundos ou menos, nenhuma acima de 20 s | 10 capturas cronometradas por gravação de tela nas semanas 1 e 4, do toque em Compartilhar até "salvo" |
 | Provas de terceiros guardadas | 10 ou mais (feedbacks + imprensa) | Contagem no banco |
 | Kits usados em compromisso real | 1 ou mais | Pergunta na revisão: "usou?" |
 | Posts no LinkedIn saídos do app | 2 ou mais | Posts com link publicado |
-| Revisão mensal feita | 1 de 1 | Revisão marcada como feita |
-| Dias com pelo menos 1 captura | [confirmar: meta] | Contagem de dias |
+| Bloco do Portfólio na revisão do último domingo | 1 de 1, com pelo menos 3 perguntas de número respondidas ou marcadas "não tem número" | Bloco fechado em `portfolio / painel` |
+| Dias com pelo menos 1 captura | 12 de 30 ou mais (cerca de 3 por semana) | Dias distintos com 1 entrega ou prova criada |
 
 ---
 

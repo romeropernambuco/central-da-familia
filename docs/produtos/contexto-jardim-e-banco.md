@@ -77,13 +77,13 @@ Refs salvas, temas, conexões entre temas, ideias geradas, pra revisitar.
 
 ### 🔁 Jornada principal
 1. Toca em "+ novo aprendizado".
-2. Preenche 3 campos: **fonte** (livro, curso, palestra, artigo, conversa), **ideia** (1 frase) e **como aplicar** (1 ação concreta).
+2. Escreve ou dita **1 frase** (a ideia), pela porta única de captura da Central. Fonte e "como aplicar" são opcionais: a IA sugere os dois a partir da frase, e o "como aplicar" é perguntado só no domingo, 1 aprendizado por vez.
 3. A IA sugere o tema (liderança, negociação, finanças etc.).
 4. Quando aplica, marca "aplicado" e escreve em 1 linha onde.
 5. No domingo, a revisão mostra: aprendidos na semana, aplicados, parados, e o **tema da semana** (ex.: "Negociação: revise 'ancoragem' antes da reunião de quinta").
 
 ### 📊 Números do topo (do print)
-Aprendizados, temas, já aplicados (com %), cursos e livros em andamento, semanas seguidas de revisão.
+Aprendizados, temas, já aplicados (com %), cursos e livros em andamento, revisões nas últimas 4 semanas (ex.: 3 de 4).
 
 ### ✂️ Fora da versão 1
 1. Fichamento completo de livro.
@@ -149,7 +149,7 @@ Ligação chave: **Aprendizado.origem → Referência** (é o que une os 2 produ
 **Decisão:** na v1, a captura é **link + print**. A IA lê o texto do print (autor, legenda, ideia). Sem print, guarda só o link e pede o print na revisão.
 
 ### ⚠️ Pontos técnicos de atenção
-1. Custo da IA: 1 chamada por item salvo. [confirmar: estimativa mensal no piloto]
+1. Custo da IA: 1 chamada por item salvo. Com Claude Haiku 5.5, um item com print custa cerca de R$ 0,0025: 10 itens por dia dão **cerca de R$ 0,75 por mês** (estimativa, [preço](https://platform.claude.com/docs/en/about-claude/pricing)). O que segura o Jardim não é o custo, é a fase: ele espera o caixa ajustado.
 2. Dados privados, só com o login do Romero.
 3. **Exportar tudo desde o dia 1.** O Pocket, da Mozilla, fechou em 08/07/2025 e apagou os dados de quem não exportou ([fonte](https://support.mozilla.org/en-US/kb/future-of-pocket)). Aqui os dados são seus, no seu Supabase, com botão de exportar.
 
@@ -188,18 +188,20 @@ Ninguém mede **aplicação**. Todos medem quanto você guardou ou lembrou. O di
 
 ## 📏 6. Como saber se funcionou (30 dias)
 
-| Indicador | Meta do piloto |
-|---|---|
-| Itens guardados | [confirmar: meta] |
-| Aprendizados aplicados | 30% ou mais |
-| Revisões de domingo feitas | 4 de 4 |
-| Ideias que viraram ação | 5 ou mais |
+| Piloto | Indicador | Meta em 30 dias | Como medir |
+|---|---|---|---|
+| Aprendizados | Registrados | 12 ou mais (cerca de 3 por semana) | Contagem em `banco / aprendizados` no período |
+| Aprendizados | Aplicados | 30% ou mais dos registrados no período, com "onde apliquei" preenchido | `aplicado = sim` com "onde" preenchido, dividido pelo total |
+| Aprendizados | Revisões de domingo | 4 de 4, cada uma fechada com 1 ação escolhida | `banco / revisoes` |
+| Jardim | Referências guardadas | 50 ou mais, com 3 ou mais em pelo menos 3 das 4 semanas | Contagem em `jardim / referencias` por semana |
+| Jardim | Tempo de captura | Mediana de 10 s ou menos em 10 capturas cronometradas nas semanas 1 e 4 | Gravação de tela, do toque em Compartilhar até "salvo" |
+| Jardim | Ideias que viraram ação | 5 ou mais com tarefa ligada em `foco / tarefas` | Campo `origem` da tarefa |
 
 ---
 
 ## 🗺️ 7. Ordem de construção (fases com trava)
 
-1. **Piloto (Banco primeiro):** registrar e revisar. Mais simples, sem depender do Instagram. Trava: 4 domingos seguidos de revisão.
+1. **Aprendizados (fase 5 da Central, depois do caixa ajustado, ver `central-corpo-humano.md`):** registrar e revisar, entrando como 1 bloco a mais na revisão de domingo que o Foco já abriu. Trava: 4 revisões em 5 domingos (não precisa ser seguido).
 2. **Jardim:** captura por link e print, com a IA classificando. Trava: 50 referências guardadas.
 3. **Mapa e conexões:** mapa mental, ideias automáticas, lembrete de 60 dias.
 
@@ -208,5 +210,5 @@ Ninguém mede **aplicação**. Todos medem quanto você guardou ou lembrou. O di
 ## 🚫 8. O que ainda falta decidir (Romero)
 
 1. Os temas iniciais. Sugestão: finanças da família, negociação, liderança, IA no trabalho, conteúdo, negócio novo.
-2. Uso só seu ou com Andreza também.
+2. Uso só seu ou com Andreza também. Recomendação: Jardim e Aprendizados são pessoais. Andreza não vê por padrão. Quando um aprendizado servir à casa, Romero marca "levar pro domingo do casal" e só esse item aparece na parte do casal.
 3. Nome final do produto.

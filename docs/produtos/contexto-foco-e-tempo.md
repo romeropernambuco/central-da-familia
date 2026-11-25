@@ -60,7 +60,7 @@ Data da pesquisa: 25/11/2026.
 | 9h18 | Windows | Surge a ideia "curso de finanças pra ex-servidores". | 1 tecla, 1 frase, volta pro ciclo. A IA arquiva depois. |
 | 10h30 | Carro, iPhone | Sai pra resolver coisa no banco. | Pausa automática não existe; ele toca em "saí" e o dia se ajusta. |
 | 14h00 | Casa, iPhone no sofá | Energia baixa depois do almoço. | Sugere ciclo curto de 10 min numa tarefa fácil ("ligar pro credor"). |
-| 16h00 | Windows | Hiperfoco num texto do negócio novo. | Modo fluxo: não interrompe, só avisa de leve a cada 25 min pra água. |
+| 16h00 | Windows | Hiperfoco num texto do negócio novo. | Modo fluxo: não interrompe e não conta pausa. Avisa 15 min e 5 min antes do próximo bloco fixo (horário das crianças). No aviso de 5 min, pede 1 linha de "onde parei e qual o próximo passo", que volta no topo quando ele reabrir a tarefa. |
 | 18h00 | Casa | Crianças chegam, rotina da noite. | Fecha o dia com 3 perguntas e 1 frase de "o que deu certo". |
 | Domingo 20h | Sofá, iPhone ou Windows | Revisão da semana (junto com o Banco de Aprendizados). | Mostra pra onde foi o tempo por área e o fator de estimativa. |
 
@@ -76,7 +76,7 @@ Data da pesquisa: 25/11/2026.
 1. Abre "Hoje". Se não há plano, aparece um botão só: **"Planejar o dia (2 min)"**.
 2. A tela já traz candidatos: tarefas que sobraram de ontem, pedidos vindos do Parcelas ("ligar pro credor do cartão X, vence sexta") e os blocos fixos da agenda Google.
 3. Romero escolhe **no máximo 3 tarefas principais**. Pode adicionar mais em "se sobrar tempo", que não conta como meta.
-4. Ele estima cada uma em ciclos (bolinhas) ou minutos. A IA mostra ao lado: "você costuma levar 1,6x o que estima em tarefas de ligação. Sugiro 2 ciclos." Ele aceita ou ignora com 1 toque.
+4. Estimar é opcional. Se ele pular, a tarefa entra com 1 ciclo de 25 min. Quando ele estima, a IA sugere ao lado, só a partir da 2ª semana de dados: "ligações costumam levar 2 ciclos pra você". O multiplicador ("1,6x") nunca aparece na hora de planejar, só na revisão de domingo.
 5. A tela compara plano x horas livres do dia ("3h planejadas, você tem 4h livres entre compromissos"). Se passar, avisa antes, não depois.
 6. Confirma. O dia vira a lista do centro da tela.
 
@@ -168,10 +168,10 @@ A tarefa "ligar pro credor" mora no `foco`. A dívida continua morando no `parce
 | 🏠 **Escritório da Família** | Nenhuma na v1 | Turnos da casa | Tem tabelas próprias (`escritorio_funcionarios`, `escritorio_turnos`). Na v2, o turno de quem cuida das crianças pode virar bloco indisponível no dia do Romero. | v2 |
 | 📅 **Agenda Google** | Google → Foco (só leitura) | Compromissos do dia | Ler o calendário pelo endereço privado iCal (sem login Google dentro do app). Os compromissos aparecem como blocos fixos e reduzem as "horas livres" do planejamento. Escrever na agenda (criar bloco de foco) fica pra v2. | v1 só leitura |
 
-**Recomendação do Gerente de Produto:** na v1, as ligações com o **Parcelas** (entrada de tarefa) e com o **Jardim e o Banco** (saída de anotação) são as que mais ajudam o TDAH, porque tiram coisas da cabeça. O Portfólio pode esperar a revisão de domingo.
+**Recomendação (fase de contenção):** na v1 só entra a ligação que vale dinheiro: **Parcelas para Foco**. Todo vencimento da semana vira tarefa com prazo. Conta paga com atraso custa multa de 2% mais juros, e no cartão o rotativo é o juro mais caro do mercado ([Banco Central](https://www.bcb.gov.br/estatisticas/txjuros)) [confirmar taxa do mês]. A anotação que iria para o Jardim e os Aprendizados fica guardada no próprio Foco até esses órgãos existirem (fase 5). Tarefa de empresa ou de campanha usa área própria e nunca aponta para o Parcelas.
 
 ### 👨‍👩‍👧‍👦 A família entra?
-1. **Recomendação: Andreza e a rotina das crianças ficam fora da v1.** O Foco resolve uma dor individual (a atenção do Romero). Pôr a família agora mistura 2 produtos e adia o piloto.
+1. **Recomendação: o Foco continua pessoal na v1, mas já respeita a casa.** Andreza não usa o Foco. Três coisas da família entram já na v1: os horários das crianças como blocos que o Foco nunca ocupa; o fechamento do dia acontece antes da hora em que as crianças chegam; e toda tarefa vinda do Parcelas carrega o bolso (`familia`, `empresa` ou `campanha`), sem misturar.
 2. **O que entra da família na v1, de forma indireta:** os compromissos fixos (escola, médico, jantar) já estão na agenda Google e aparecem como blocos indisponíveis. Isso basta pra o plano do dia não ignorar a casa.
 3. **Na v2, avaliar:** "rotina das crianças" com timers visuais (o Tiimo faz isso bem) e um "modo casal" em que Andreza vê só os blocos de foco do Romero pra saber quando ele está disponível. Isso só depois de 30 dias de uso próprio.
 
@@ -214,7 +214,7 @@ Visão do Engenheiro de IA. Modelo: Claude pela API, sempre chamado por uma fun�
 2. **A conta é do código, a frase é da IA.** Fator de estimativa, melhor horário e minutos são calculados no banco. A IA só escreve a frase a partir dos números. Assim ela não inventa dado.
 3. **Nada de diagnóstico.** A IA não fala de remédio, dose ou tratamento. Pode citar estratégia ("começar com 10 min"), nunca orientação médica.
 4. **Sugestão, nunca decisão.** Toda sugestão tem "aceitar" e "ignorar". Sem insistir.
-5. **Custo:** cerca de 10 a 20 chamadas curtas por dia. [confirmar: estimativa de custo mensal no piloto com o modelo escolhido]
+5. **Custo (estimativa, 25/11/2026):** com Claude Haiku 5.5, 20 chamadas curtas por dia dão cerca de **R$ 0,82 por mês** ([preço](https://platform.claude.com/docs/en/about-claude/pricing), câmbio PTAX de 24/11/2026 mais IOF). Sonnet custaria cerca de 20 vezes mais. Usar Haiku; Sonnet só se a sugestão falhar no piloto. [confirmar preço na página oficial]
 6. **Claude fora do app também:** como o Romero já trabalha no Claude e a Central está no Supabase, dá pra montar o dia conversando ("Claude, monta meu dia com as pendências do Parcelas") e o Claude gravar as tarefas em `foco / tarefas` pela conexão com o Supabase. Isso é bônus, não depende de tela nova. [confirmar: se o Romero quer planejar pela conversa ou pela tela]
 
 ---
