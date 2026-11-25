@@ -136,14 +136,8 @@ export function App() {
   const r: Rota = rotaPermitida(rota, familia.papel, sessao.dono)
   const { lateral, inferior, mais: extras } = menuDoPapel(familia.papel, !!sessao.dono)
   // 24/11: a versão nova do Meu orçamento abre ao lado da atual, para comparar (#/orcamento?nova)
-  const orcVersao: 'atual' | 'nova' | 'v3' =
-    r !== 'orcamento'
-      ? 'atual'
-      : /\?(?:.*&)?v3(?:&|$)/.test(hash)
-        ? 'v3'
-        : /\?(?:.*&)?nova(?:&|$)/.test(hash)
-          ? 'nova'
-          : 'atual'
+  // 25/11: o dono escolheu a terceira versão (sala 3D) para o Meu orçamento; as outras duas saíram do ar
+  const orcVersao: 'atual' | 'v3' = r === 'orcamento' ? 'v3' : 'atual'
   const Classico = r === 'inicio' && api.modo === 'exemplo' && sessao.dono && hashClassico(hash) ? InicioClassico : null
   const [subt, titulo] =
     r === 'inicio'

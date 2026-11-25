@@ -50,7 +50,7 @@ import {
 } from '../../lib/formato'
 
 /** Meu orçamento: hoje, semana, fim do mês, cofrinho e compras. Abre no limite de quem olha (R2). */
-export function MeuOrcamento({ versao: desenho = 'atual' }: { versao?: 'atual' | 'nova' | 'v3' } = {}) {
+export function MeuOrcamento({ versao: desenho = 'v3' }: { versao?: 'atual' | 'nova' | 'v3' } = {}) {
   const nova = desenho === 'nova',
     v3 = desenho === 'v3'
   const { api, familia } = useSessaoAtual()
@@ -186,18 +186,6 @@ export function MeuOrcamento({ versao: desenho = 'atual' }: { versao?: 'atual' |
 
   return (
     <div className={'view orcamento-f29' + (nova ? ' orc-nova' : v3 ? ' orc-v3' : '')} data-secao="orcamento">
-      <nav className="orc-versoes" aria-label="Versões desta aba, para comparar">
-        <span>Comparar:</span>
-        <a href="#/orcamento" aria-current={desenho === 'atual' || undefined}>
-          Antiga
-        </a>
-        <a href="#/orcamento?nova" aria-current={nova || undefined}>
-          Nova
-        </a>
-        <a href="#/orcamento?v3" aria-current={v3 || undefined}>
-          Terceira
-        </a>
-      </nav>
       {pessoais.length > 1 && (
         <div className="pills" role="group" aria-label="De quem é o orçamento">
           {pessoais.map((e, i) => (
