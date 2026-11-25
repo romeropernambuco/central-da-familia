@@ -7,16 +7,68 @@ import { SALAS } from './planta'
  * põe cada uma acima da cabeça do seu boneco, sem deixar uma cobrir a outra: quem precisa de você tem a vez, depois
  * o selecionado. O nome da sala cede lugar quando bate numa etiqueta.
  */
-export function criarEtiquetas(T: any, cam: any, el: HTMLElement, o: Pick<OpcoesCena, 'etiqueta' | 'placa'>) {
+type Caixa = number[]
+/** Bate numa das caixas (x, y, largura, altura) com folga de 3 px, ou no teto da cena. */
+function bateEm(x: number, y: number, tw: number, th: number, caixas: Caixa[]) {
+  if (y < 2) return true
+  return caixas.some(c => x < c[0] + c[2] + 3 && x + tw + 3 > c[0] && y < c[1] + c[3] + 3 && y + th + 3 > c[1])
+}
+
+/** O primeiro lugar perto do ideal (x0, y0) onde a etiqueta não bate em nada; sem lugar livre, devolve o último. */
+function acharLugar(ch: any, x0: number, y0: number, W: number, caixas: Caixa[]) {
+  const { tw, th } = ch
+  const tent = [
+    [0, 0],
+    [0, -th - 4],
+    [tw * 0.55, -th * 0.5],
+    [-tw * 0.55, -th * 0.5],
+    [tw * 0.7, -th - 4],
+    [-tw * 0.7, -th - 4],
+    [0, -2 * th - 8],
+    [tw, 0],
+    [-tw, 0],
+    [0, th + 40],
+  ]
+  let x = x0,
+    y = y0,
+    bate = true
+  for (let k = 0; k < tent.length && bate; k++) {
+    x = Math.max(4, Math.min(W - tw - 4, Math.round(x0 + tent[k][0])))
+    y = Math.round(y0 + tent[k][1])
+    bate = bateEm(x, y, tw, th, caixas)
+  }
+  return { x, y, bate }
+}
+
+export function criarEtiquetas(
+  T: any,
+  cam: any,
+  el: HTMLElement,
+  o: Pick<OpcoesCena, 'etiqueta' | 'placa'> & {
+    /** a etiqueta de um funcionário também evita cobrir o corpo dos outros (a sala do Meu orçamento) */
+    corpos?: boolean
+  },
+) {
   const v3 = new T.Vector3()
   function naTela(x: number, y: number, z: number) {
     v3.set(x, y, z).project(cam)
     return { x: (v3.x * 0.5 + 0.5) * el.clientWidth, y: (-v3.y * 0.5 + 0.5) * el.clientHeight }
   }
+  /** Onde o corpo de cada um aparece na tela: da cabeça aos pés, com a largura dos ombros. */
+  function corposNaTela(chars: any[]) {
+    return chars.map(ch => {
+      const { x, z } = ch.b.r.position,
+        topo = naTela(x, ch.b.hips.position.y + 1.12, z),
+        pe = naTela(x, 0, z),
+        meia = Math.abs(naTela(x + 0.3, 0, z).x - pe.x)
+      return { id: ch.id, caixa: [topo.x - meia, topo.y, 2 * meia, pe.y - topo.y] }
+    })
+  }
   return function atualizaTags(chars: any[], selecionado: string | null, camNome: string) {
     const W = el.clientWidth,
       H = el.clientHeight,
-      caixas: number[][] = []
+      caixas: number[][] = [],
+      corpos = o.corpos ? corposNaTela(chars) : []
     const ordem = chars.slice().sort((a, b) => {
       const pa = a.st === 'precisa' ? 0 : a.id === selecionado ? 1 : 2,
         pb = b.st === 'precisa' ? 0 : b.id === selecionado ? 1 : 2
@@ -41,31 +93,11 @@ export function criarEtiquetas(T: any, cam: any, el: HTMLElement, o: Pick<Opcoes
         p.x < -10 ||
         p.x > W + 10 ||
         (camNome !== 'tudo' && ch.sala !== camNome && ch.id !== selecionado)
-      let x = x0,
-        y = y0,
-        bate = false
-      const tent = [
-        [0, 0],
-        [0, -ch.th - 4],
-        [ch.tw * 0.55, -ch.th * 0.5],
-        [-ch.tw * 0.55, -ch.th * 0.5],
-        [ch.tw * 0.7, -ch.th - 4],
-        [-ch.tw * 0.7, -ch.th - 4],
-        [0, -2 * ch.th - 8],
-        [ch.tw, 0],
-        [-ch.tw, 0],
-        [0, ch.th + 40],
-      ]
-      for (let k = 0; k < tent.length; k++) {
-        x = Math.max(4, Math.min(W - ch.tw - 4, Math.round(x0 + tent[k][0])))
-        y = Math.round(y0 + tent[k][1])
-        bate = y < 2
-        for (let i = 0; i < caixas.length && !bate; i++) {
-          const c = caixas[i]
-          if (x < c[0] + c[2] + 3 && x + ch.tw + 3 > c[0] && y < c[1] + c[3] + 3 && y + ch.th + 3 > c[1]) bate = true
-        }
-        if (!bate) break
-      }
+      // primeiro tenta um lugar que não cobre nem outra etiqueta nem o corpo de outra pessoa; sem lugar assim, só evita etiquetas
+      const alheios = corpos.filter(c => c.id !== ch.id).map(c => c.caixa)
+      let lugar = acharLugar(ch, x0, y0, W, [...caixas, ...alheios])
+      if (lugar.bate && alheios.length) lugar = acharLugar(ch, x0, y0, W, caixas)
+      const { x, y, bate } = lugar
       if (fora || bate) {
         t.style.visibility = 'hidden'
       } else {

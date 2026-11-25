@@ -7,6 +7,7 @@ import { criarEtiquetas } from '../../escritorio/cena/etiquetas'
 import { aplicarLuzDaHora, criarLuzes } from '../../escritorio/cena/luz'
 import { criarPecas } from '../../escritorio/cena/pecas'
 import { ligarToque } from '../../escritorio/cena/toque'
+import { desviar } from './desvio'
 import { avancarRotina } from './rotina'
 import { montarSala, SALA } from './sala'
 
@@ -223,7 +224,11 @@ export function montarCenaOrcamento(
     })
     const { cam, enquadrar } = criarCamera(T, el)
     const { anel, pintar } = criarAnel(T, scene, guardar, el)
-    const posicionarEtiquetas = criarEtiquetas(T, cam, el, { etiqueta: o.etiqueta, placa: () => null })
+    const posicionarEtiquetas = criarEtiquetas(T, cam, el, {
+      etiqueta: o.etiqueta,
+      placa: () => null,
+      corpos: true,
+    })
 
     let ativo = o.ativo
     const marcarAtivo = () =>
@@ -255,6 +260,7 @@ export function montarCenaOrcamento(
       tempo += dt
       tamanho()
       for (const ch of chars) avancarRotina(ch, tempo, dt, reduz)
+      if (!reduz) desviar(chars, dt)
       animarObjetos(tempo, reduz)
       const quem = chars.find(ch => ch.id === ativo)
       anel.visible = !!quem
