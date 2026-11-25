@@ -18,8 +18,13 @@ Detalhes: codigo/docs/ORIENTACOES-PARA-PROGRAMADORES.md (leia a parte do assunto
 - ../banco/: mudanças do banco. Só rascunho; nunca aplicar.
 - Dados de exemplo: api/exemplo.ts. Referência visual aprovada: a tela Início.
 
+## Livre, sem perguntar
+- Salvar no ramo de trabalho, enviar esse ramo para o GitHub e gerar link de prévia.
+- Ler, pesquisar, rodar a verificação e testar fora do banco real.
+
 ## Nunca sem o meu "pode"
-1. Enviar para o GitHub, publicar ou implantar.
+1. Publicar na versão que a família usa (o ramo fase-final) ou enviar para qualquer ramo que não seja o de trabalho.
+   Meu "sim" a uma versão que você me mostrou vale como "pode" para publicar aquela versão, e só isso.
 2. Rodar qualquer coisa no banco real.
 3. Remover, resumir, esconder ou encurtar o que a pessoa vê e faz hoje.
    O Escritório mostra os 19 funcionários à vista, nunca reduzido.
@@ -44,7 +49,7 @@ Para pedir: "Preciso de permissão para X, porque Y. O risco é Z."
 - A fila está em docs/FILA.md. Pegue o primeiro item livre, de cima para baixo.
 - Item da fila já é plano aprovado: não precisa mandar plano antes. Item "(espera o dono)" não anda.
 - A regra "Nunca sem o meu pode" continua valendo inteira. Bateu nela: anote em "Perguntas para o dono" e siga com o próximo item livre.
-- Termine cada item com a verificação passando, um commit local e o item movido para "Feito".
+- Termine cada item com a verificação passando, um commit enviado ao ramo de trabalho e o item movido para "Feito".
 - O banco ainda não tem dados da família (22/11/2026). Mesmo assim, nada roda nele sem o meu "pode".
 
 ## Pronto =
