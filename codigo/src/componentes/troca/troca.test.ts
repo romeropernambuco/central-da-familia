@@ -6,6 +6,7 @@ import { esconderValores } from '../../lib/olho'
 import { contaDaTroca, erroDaTroca } from '../../lib/troca/conta'
 import type { Troca } from '../../lib/troca/tipos'
 import { TrocaAjustes } from './TrocaAjustes'
+import { TrocaBrasil } from './TrocaBrasil'
 import { TrocaContaEmMoeda, TrocaDetalhe } from './TrocaDetalhe'
 import { TrocaNaLoja, TrocaRegras, TrocaVenda } from './TrocaGuia'
 import { TrocaPagamento } from './TrocaPagamento'
@@ -15,7 +16,10 @@ const olho = vi.hoisted(() => ({ fechado: false }))
 vi.mock('../../app/useOculto', () => ({ useOculto: () => olho.fechado }))
 vi.mock('../../app/contexto', () => ({
   useOlhoApp: () => ({ oculto: olho.fechado }),
-  useSessaoAtual: () => ({ api: { cotacaoMoeda: async () => null } }),
+  useSessaoAtual: () => ({
+    api: { cotacaoMoeda: async () => null, guardadoHoje: async () => null },
+    familia: { id: 'f' },
+  }),
 }))
 
 const duo = trocasDeExemplo[0]
@@ -32,6 +36,7 @@ function tela(t: Troca, fechado = false) {
   const bloco = { t, conta: contaDaTroca(t), mudar: () => {} }
   const pecas = [
     createElement(TrocaResumo, { ...bloco, erro: erroDaTroca(t) }),
+    createElement(TrocaBrasil, bloco),
     createElement(TrocaPagamento, bloco),
     createElement(TrocaDetalhe, bloco),
     createElement(TrocaContaEmMoeda, bloco),
@@ -125,6 +130,64 @@ describe('a tela mostra a mesma conta do painel original', () => {
     const html = tela(trocasDeExemplo[1])
     expect(html).toContain('https://www.olx.com.br/brasil?q=Drone%20antigo')
     expect(texto(html)).toContain('DJI Mavic 4 Pro após o reembolso')
+  })
+})
+
+describe('lá fora ou no Brasil', () => {
+  const duo512 = { ...duo, versao: 1 }
+
+  it('com imposto, a tela diz que no Brasil em 10x sai mais barato e mostra a conta dos dois lados', () => {
+    const t = texto(tela(duo512))
+    expect(t).toContain('Economia prevista comprando no Brasil')
+    expect(t).toContain('R$ 4.770 ,33')
+    expect(t).toContain('depois do reembolso e com o imposto do Brasil R$ 20.222,48')
+    expect(t).toContain('No Brasil, à vista (Loja de importados no Recife) R$ 16.270,00')
+    expect(t).toContain('Ganho de pagar em 10x sem juros com o dinheiro rendendo − R$ 817,84')
+    expect(t).toContain('No Brasil em 10x, em valor de hoje R$ 15.452,16')
+    expect(t).toContain('Já comprei: confirmar a economia')
+  })
+
+  it('sem imposto, a economia prevista passa para o lado de fora', () => {
+    const t = texto(tela({ ...duo512, comImposto: false }))
+    expect(t).toContain('Economia prevista comprando lá fora')
+    expect(t).toContain('R$ 624 ,83')
+  })
+
+  it('versão sem preço no Brasil avisa quais já têm', () => {
+    const t = texto(tela(duo))
+    expect(t).toContain('Esta versão ainda não tem preço no Brasil. Já tem: 512 GB.')
+    expect(t).not.toContain('Economia prevista')
+  })
+
+  it('compra confirmada: a economia deixa de ser prevista e a tela diz onde, quando, como e quanto', () => {
+    const compra = {
+      onde: 'fora' as const,
+      forma: 'Sicoob Black',
+      pago: 14800,
+      outraOpcao: 15452.16,
+      data: '2026-12-02',
+    }
+    const t = texto(tela({ ...duo512, compra }))
+    expect(t).toContain('confirmada Economia que aconteceu')
+    expect(t).toContain('R$ 652 ,16')
+    expect(t).toContain(
+      'Comprou lá fora em 02/12, com Sicoob Black. Custou R$ 14.800,00; a outra opção sairia por R$ 15.452,16.',
+    )
+    expect(t).toContain('Desfazer a confirmação')
+    expect(t).not.toContain('Economia prevista')
+  })
+
+  it('olho fechado esconde os valores, a loja e a forma de pagar da compra', () => {
+    const compra = {
+      onde: 'fora' as const,
+      forma: 'Sicoob Black',
+      pago: 14800,
+      outraOpcao: 15452.16,
+      data: '2026-12-02',
+    }
+    for (const t of [texto(tela(duo512, true)), texto(tela({ ...duo512, compra }, true))])
+      for (const segredo of ['4.770', '16.270', '15.452', '14.800', '652', 'Loja de importados', 'Sicoob'])
+        expect(t, segredo).not.toContain(segredo)
   })
 })
 

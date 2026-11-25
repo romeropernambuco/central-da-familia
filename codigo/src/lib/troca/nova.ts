@@ -166,6 +166,8 @@ export function trocaNova(r: RespostasDaNova): Troca {
     frase: null,
     regras: [REGRA_DA_COTA, ...(base?.regras.filter(x => x.titulo !== REGRA_DA_COTA.titulo) ?? [])].slice(0, 16),
     fontes: pais.fonte ? [{ rotulo: `Tax free: ${pais.nome}`, link: pais.fonte }] : [],
+    brasil: null,
+    compra: null,
   }
 }
 

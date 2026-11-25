@@ -13,6 +13,32 @@ export interface VersaoTroca {
   preco: number
   /** Quanto do preço volta no reembolso do turista (tax free), em %. Zero quando o país não devolve. */
   reembolsoPct: number
+  /** Preço desta mesma versão numa loja do Brasil, em reais. Sem ele, não há comparação com a compra aqui. */
+  precoBrasil?: number
+}
+
+/** A outra opção: comprar o mesmo aparelho no Brasil, parcelado sem juros, com o dinheiro rendendo enquanto isso. */
+export interface CompraNoBrasil {
+  loja: string
+  /** Parcelas sem juros. 1 é à vista. */
+  parcelas: number
+  /** Quanto o dinheiro da família rende por ano, em %. Zero: parcelar não dá ganho nenhum. */
+  rendeAnoPct: number
+  /** Texto livre: quando e como o preço foi informado, cores, prazo. */
+  nota: string
+}
+
+/** A compra que aconteceu de verdade: a economia deixa de ser prevista e passa a ser confirmada. */
+export interface CompraFeita {
+  onde: 'fora' | 'brasil'
+  /** Como pagou ("Sicoob Black", "10x sem juros"). */
+  forma: string
+  /** Quanto o aparelho custou no fim, em reais. */
+  pago: number
+  /** Quanto a outra opção custaria, no dia da confirmação. */
+  outraOpcao: number
+  /** AAAA-MM-DD. */
+  data: string
 }
 
 /** Uma forma de pagar a compra lá fora. */
@@ -132,4 +158,8 @@ export interface Troca {
   frase: { rotulo: string; idioma: string; texto: string } | null
   regras: RegraTroca[]
   fontes: LinkTroca[]
+  /** A compra no Brasil para comparar. Vazio (null): ainda sem essa comparação. */
+  brasil: CompraNoBrasil | null
+  /** Preenchido quando a compra aconteceu. */
+  compra: CompraFeita | null
 }

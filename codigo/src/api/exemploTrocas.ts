@@ -205,7 +205,7 @@ const celular: Troca = {
   usado: '17 Pro Max',
   versoes: [
     { rotulo: '256 GB', preco: 2339, reembolsoPct: 14.5 },
-    { rotulo: '512 GB', preco: 2589, reembolsoPct: 14.5 },
+    { rotulo: '512 GB', preco: 2589, reembolsoPct: 14.5, precoBrasil: 16270 },
     { rotulo: '1 TB', preco: 3089, reembolsoPct: 14.9 },
     { rotulo: '2 TB', preco: 3839, reembolsoPct: 14.9 },
   ],
@@ -260,6 +260,13 @@ const celular: Troca = {
     { texto: 'Valide o DIVA no último aeroporto da União Europeia. Em Madrid, nos terminais DIVA.' },
   ],
   regras: regrasDosCartoes,
+  brasil: {
+    loja: 'Loja de importados no Recife',
+    parcelas: 10,
+    rendeAnoPct: 12,
+    nota: 'Preço do 512 GB informado pela loja em 25/11, nas cores Night Sky e Star White. Rendimento de exemplo.',
+  },
+  compra: null,
   fontes: [
     { rotulo: 'Preços Apple Espanha', link: 'https://www.apple.com/es/shop/buy-iphone/iphone-duo' },
     {
@@ -324,6 +331,8 @@ const drone: Troca = {
     },
     ...regrasDosCartoes,
   ],
+  brasil: null,
+  compra: null,
   fontes: [
     { rotulo: 'Preços DJI Espanha', link: 'https://store.dji.com/es/product/dji-mavic-4-pro' },
     ...fontesDaEspanha,

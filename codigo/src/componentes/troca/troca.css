@@ -382,3 +382,13 @@
     max-width: 116px;
   }
 }
+
+.troca-brasil .numrow {
+  margin-bottom: var(--space-3);
+}
+.troca-brasil .lbl .chip {
+  margin-right: 2px;
+}
+.troca-brasil > .btn {
+  margin-top: var(--space-4);
+}

@@ -2,6 +2,8 @@
 // O que não tem forma certa é descartado; número fora do limite volta ao padrão.
 import {
   MOEDAS,
+  type CompraFeita,
+  type CompraNoBrasil,
   type LinkTroca,
   type Moeda,
   type PagamentoTroca,
@@ -44,7 +46,15 @@ function lerVersao(x: unknown): VersaoTroca[] {
   const preco = numero(o?.preco, 0)
   const rotulo = texto(o?.rotulo, 40)
   if (!rotulo || !(preco > 0)) return []
-  return [{ rotulo, preco, reembolsoPct: Math.min(numero(o?.reembolsoPct, 0), 100) }]
+  const precoBrasil = numero(o?.precoBrasil, 0)
+  return [
+    {
+      rotulo,
+      preco,
+      reembolsoPct: Math.min(numero(o?.reembolsoPct, 0), 100),
+      ...(precoBrasil > 0 ? { precoBrasil } : {}),
+    },
+  ]
 }
 
 function lerPagamento(x: unknown): PagamentoTroca[] {
@@ -120,6 +130,30 @@ function lerFrase(x: unknown): Troca['frase'] {
     : null
 }
 
+function lerBrasil(x: unknown): CompraNoBrasil | null {
+  const o = objeto(x)
+  if (!o) return null
+  return {
+    loja: texto(o.loja, 80),
+    parcelas: Math.min(Math.max(Math.trunc(numero(o.parcelas, 1)), 1), 48),
+    rendeAnoPct: Math.min(numero(o.rendeAnoPct, 0), 100),
+    nota: texto(o.nota, 300),
+  }
+}
+
+function lerCompra(x: unknown): CompraFeita | null {
+  const o = objeto(x)
+  const data = texto(o?.data)
+  if (!o || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null
+  return {
+    onde: o.onde === 'brasil' ? 'brasil' : 'fora',
+    forma: texto(o.forma, 80),
+    pago: numero(o.pago, 0),
+    outraOpcao: numero(o.outraOpcao, 0),
+    data,
+  }
+}
+
 /** Câmbios, cota e imposto: tudo com padrão seguro, para a conta nunca dividir por zero. */
 function lerCambios(o: Cru) {
   const cambio = numero(o.cambio, 1, 0.0001)
@@ -182,6 +216,8 @@ export function lerTroca(x: unknown): Troca | null {
     frase: lerFrase(o.frase),
     regras: lista(o.regras).flatMap(lerRegra).slice(0, 16),
     fontes: lista(o.fontes).flatMap(lerLink).slice(0, 24),
+    brasil: lerBrasil(o.brasil),
+    compra: lerCompra(o.compra),
   }
 }
 

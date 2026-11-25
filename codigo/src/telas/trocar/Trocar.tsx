@@ -8,6 +8,7 @@ import { Carregando } from '../../componentes/Carregando'
 import { Icone } from '../../componentes/Icone'
 import { NovaTroca } from '../../componentes/troca/NovaTroca'
 import { TrocaAjustes } from '../../componentes/troca/TrocaAjustes'
+import { TrocaBrasil } from '../../componentes/troca/TrocaBrasil'
 import { TrocaContaEmMoeda, TrocaDetalhe } from '../../componentes/troca/TrocaDetalhe'
 import { TrocaNaLoja, TrocaRegras, TrocaVenda } from '../../componentes/troca/TrocaGuia'
 import { TrocaPagamento } from '../../componentes/troca/TrocaPagamento'
@@ -243,6 +244,7 @@ export function Trocar() {
       <div className="tela-larga">
         <div className="col">
           <TrocaResumo {...bloco} erro={erro} />
+          <TrocaBrasil {...bloco} />
           <TrocaPagamento {...bloco} />
           <TrocaDetalhe {...bloco} />
           <TrocaContaEmMoeda {...bloco} />
