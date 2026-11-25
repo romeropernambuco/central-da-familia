@@ -90,3 +90,48 @@
     - O Duo de verdade entra no app pelo link, depois de publicar. Pode publicar?
     - Com o olho fechado, as regras dos cartões e as fontes somem inteiras (contam quais cartões a família tem).
     - Busca automática do preço da loja e do usado: precisa de servidor. Ver a conversa de 25/11/2026.
+
+---
+
+# Segunda entrega: lá fora ou no Brasil (25/11/2026, noite)
+
+1. **Pedido.** Incluir o preço da loja do Recife (iPhone Duo 512 GB a R$ 16.270,00, em 10x sem juros) como mais um
+   comparativo; mostrar a economia prevista na aba; quando a compra acontecer, confirmar e dizer a forma.
+
+2. **Referência usada como "antes".** A aba publicada em 25/11/2026 (commit 9c42272).
+
+3. **O que mudou.**
+   - Bloco novo "Comprar lá fora ou no Brasil", logo abaixo do número grande.
+   - No Brasil, o parcelado sem juros é trazido para o valor de hoje pela taxa que o dinheiro rende.
+   - A tela mostra a economia prevista no caminho mais barato, seja ele qual for.
+   - "Já comprei" registra onde, como pagou e quanto custou. A economia vira confirmada.
+
+4. **Arquivos.** Novos: `lib/troca/brasil.ts`, `lib/troca/brasil.test.ts`, `componentes/troca/TrocaBrasil.tsx`.
+   Alterados: `lib/troca/tipos.ts`, `ler.ts`, `nova.ts`, `api/exemploTrocas.ts`, `telas/trocar/Trocar.tsx`,
+   `componentes/troca/troca.css` e `troca.test.ts`.
+
+5. **Inventário.** Nada saiu. Entrou 1 bloco.
+
+6. **Verificação.** `npm run verificar`:
+   ```
+   ✖ 194 problems (0 errors, 194 warnings)
+   All matched files use Prettier code style!
+    Test Files  147 passed (147)
+         Tests  2023 passed | 3 todo (2026)
+   ```
+
+7. **Testes novos (17).** Valor de hoje das parcelas; com imposto ganha o Brasil; sem imposto ganha lá fora; à vista;
+   a venda do usado não muda a comparação; versão sem preço; confirmação preenchida; economia negativa; dado
+   estragado; e a tela com olho aberto e fechado.
+
+8. **Vi funcionando** (modo exemplo, 390 e 1280): 512 GB com e sem imposto, mudar o rendimento, "Já comprei",
+   confirmar, guardar, sair da aba e voltar, desfazer.
+
+9. **Resultado da conta no exemplo (512 GB, Sicoob, dinheiro rendendo 12% ao ano).**
+   - Lá fora com o imposto do Brasil: R$ 20.222,48. No Brasil em 10x, em valor de hoje: R$ 15.452,16.
+     O Brasil sai R$ 4.770,33 mais barato.
+   - Lá fora sem o imposto: R$ 14.827,33. Lá fora sai R$ 624,83 mais barato.
+
+10. **Não verifiquei.** iPhone de verdade. A taxa do Guardado no app real (no exemplo veio 13,65% ao ano).
+
+11. **Decisões do dono.** Qual rendimento usar (o que sobra depois do imposto de renda). Publicar esta segunda parte.

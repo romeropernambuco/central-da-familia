@@ -78,7 +78,9 @@ O plano completo, com o porquê de cada item, está em `docs/ANALISE-DO-TIME.md`
 
 - 25/11/2026: aba "Trocar lá fora" (pedido do dono na conversa): o painel do iPhone Duo virou tela da Central, serve
   para qualquer aparelho, guarda várias comparações, busca o câmbio do dia no Banco Central e recebe comparação por
-  link. Só o casal vê. 46 testes novos. No ramo de trabalho, ainda não publicado.
+  link. Só o casal vê. 46 testes novos. Publicado em 25/11/2026 com o "pode" do dono (sw dc045c2648ba).
+- 25/11/2026: Trocar lá fora ganhou "Comprar lá fora ou no Brasil": parcelado sem juros com o dinheiro rendendo,
+  economia prevista e economia confirmada ("Já comprei"). No ramo de trabalho, ainda não publicado.
 
 - 22/11/2026: migrações f_01 a f_15 aplicadas no banco, em ordem. 758 testes do banco, 0 falhas. Dados não mudaram.
 - 22/11/2026: etiquetas de viagem; Dinheiro na rua; tipos frouxos de 343 para 195 avisos; portões rodam no Windows.
