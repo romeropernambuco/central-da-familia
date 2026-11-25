@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { enderecoDestino, type DestinoResumo } from '../../app/destinos'
-import { useOlhoApp, useSessaoAtual } from '../../app/contexto'
+import { useAcoes, useOlhoApp, useSessaoAtual } from '../../app/contexto'
+import { InicioNovo } from '../../componentes/InicioNovo'
+import { montarInicioNovo } from '../../componentes/inicioNovoDados'
+import { saudacao } from '../../lib/formato'
+import { textoPrivado } from '../../lib/olho'
 import { useResumoFamilia } from '../../app/useResumoFamilia'
 import { Icone, type NomeIcone } from '../../componentes/Icone'
 import { SemAplicacoes, SemCartoes, SemGastos, SemImoveis } from '../../componentes/ilustracoes/figuras'
@@ -18,7 +22,6 @@ import { Linha2028Resumo } from '../../componentes/Linha2028'
 import { SetaDoMes } from '../../componentes/SetaDoMes'
 import '../../componentes/painel-inicio/painel.css'
 import './inicio-j.css'
-import './inicio-v3.css'
 
 export { porDiaDe } from '../../lib/resumo/porDia'
 export { SemGastosInicio } from './UltimosLancamentos'
@@ -172,19 +175,96 @@ function useCelular() {
   return celular
 }
 
-/** `desenho="v3"`: a nova versão do Início (25/11), no acabamento do Meu orçamento. Mesmos blocos; muda só o estilo. */
+/** `desenho="v3"`: o Início reformulado (25/11), para comparar com o de sempre antes de trocar. */
 export function Inicio({ desenho }: { desenho?: 'v3'; [outra: string]: unknown } = {}) {
   const { familia, sessao } = useSessaoAtual()
   if (!familia || familia.papel === 'equipe') return null
+  const Tela = desenho === 'v3' ? InicioReformulado : InicioFamilia
+  return <Tela key={JSON.stringify([sessao?.userId, familia.id, familia.membroId, familia.papel])} />
+}
+
+/** O Início reformulado: mesmos números e o mesmo Escritório, em outra arrumação (ver componentes/InicioNovo). */
+function InicioReformulado() {
+  const { resumo, repetir, hoje, api, familia } = useResumoFamilia()
+  const { oculto } = useOlhoApp()
+  const { abrirLancar } = useAcoes()
+  const celular = useCelular()
+  const [saldo, setSaldo] = useState(false)
+  const { chips, cartoes, cobertura, destinoPlano } = referencias(resumo, oculto)
+  const casal = familia?.papel === 'casal'
+  const orc = resumo.podeGastarHoje
+  const env = orc.estado === 'restrito' ? null : orc.valor?.envelope
+  const ler =
+    (lista: readonly { chave: keyof ResumoFamilia; campo: Parameters<typeof Quantia>[0]['campo'] }[]) =>
+    (chave: string, tamanho?: 'principal' | 'secundario') => {
+      const item = lista.find(x => x.chave === chave)
+      return item ? <Leitura estado={resumo[item.chave].estado} campo={item.campo} tamanho={tamanho} /> : null
+    }
+  const teto = env ? (env.limite_base ?? env.limite_mes) : 0
+  const { horizontes, atalhos } = montarInicioNovo({
+    chips,
+    lerChip: ler(chips),
+    lerRotina: ler(cartoes),
+    visivel: chave => resumo[chave as keyof ResumoFamilia].estado !== 'restrito',
+    casal,
+    sobreHoje: env ? <SobreHoje e={env} placar={casal ? orc.valor?.placar : null} /> : null,
+    mes:
+      env && teto > 0 && !oculto
+        ? {
+            gasto: <Quantia campo={medida(orc, env.gasto_mes, 'reais')} />,
+            teto: <Quantia campo={medida(orc, teto, 'reais')} />,
+            fracao: env.gasto_mes / teto,
+          }
+        : null,
+    destinoImoveis: { rota: 'guardado', secao: 'imoveis' },
+  })
   return (
-    <InicioFamilia
-      key={JSON.stringify([sessao?.userId, familia.id, familia.membroId, familia.papel])}
-      v3={desenho === 'v3'}
-    />
+    <PrivacidadePropostas.Provider value={oculto}>
+      <InicioNovo
+        celular={celular}
+        saudacao={familia?.membroNome ? `${saudacao()}, ${textoPrivado(familia.membroNome)}.` : undefined}
+        horizontes={horizontes}
+        atalhos={atalhos}
+        anotar={env ? () => abrirLancar({ envelope: env.id }) : undefined}
+        escritorio={<EscritorioInicio {...{ celular, hoje }} />}
+        plano={
+          casal && (
+            <section className="j-plano" aria-labelledby="j-rumo" data-trilha="plano2029">
+              <div className="j-plano-topo">
+                <span className="j-plano-icone">
+                  <Icone nome="plano2029" />
+                </span>
+                <h2 id="j-rumo">Rumo a 2029</h2>
+              </div>
+              <Trilha
+                plano={cobertura}
+                celular={celular}
+                consultarMargem={() =>
+                  document.querySelector<HTMLButtonElement>('[data-referencia="plano2029"]')?.click()
+                }
+              />
+              <Linha2028Resumo />
+              <a className="lnk" href={enderecoDestino(destinoPlano)}>
+                Abrir Plano 2029 <Icone nome="abrir" size={16} />
+              </a>
+            </section>
+          )
+        }
+        lancamentos={<UltimosLancamentos />}
+        resumo={
+          <ResumoApresentacao
+            {...{ resumo, repetir, hoje, oculto }}
+            jaMostrados={JA_NO_TOPO}
+            informarSaldo={casal && api.salvarSaldoConta ? () => setSaldo(true) : undefined}
+          />
+        }
+      />
+      {saldo && <InformarSaldo fechar={() => setSaldo(false)} />}
+    </PrivacidadePropostas.Provider>
   )
 }
 
-function InicioFamilia({ v3 }: { v3: boolean }) {
+function InicioFamilia() {
   const { resumo, repetir, hoje, api, familia } = useResumoFamilia()
   const { oculto } = useOlhoApp()
   const celular = useCelular()
@@ -195,10 +275,7 @@ function InicioFamilia({ v3 }: { v3: boolean }) {
   return (
     <>
       <PrivacidadePropostas.Provider value={oculto}>
-        <div
-          className={'j-inicio inicio-j' + (v3 ? ' inicio-v3' : '')}
-          data-dispositivo={celular ? 'celular' : 'desktop'}
-        >
+        <div className="j-inicio inicio-j" data-dispositivo={celular ? 'celular' : 'desktop'}>
           <section className="j-cena" aria-label="Painel do escritório">
             <div className="j-resumo" aria-label="Referências do dia" role="group">
               {chips
@@ -268,7 +345,7 @@ function InicioFamilia({ v3 }: { v3: boolean }) {
           )}
         </div>
       </PrivacidadePropostas.Provider>
-      <div className={'view inicio-f29 inicio-j-detalhes' + (v3 ? ' inicio-v3' : '')}>
+      <div className="view inicio-f29 inicio-j-detalhes">
         <ResumoApresentacao
           {...{ resumo, repetir, hoje, oculto }}
           jaMostrados={JA_NO_TOPO}

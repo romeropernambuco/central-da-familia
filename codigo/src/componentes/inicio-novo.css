@@ -1,0 +1,134 @@
+/*
+ * Início reformulado (25/11/2026). Só vale dentro de .ini4 e .ini4-detalhes.
+ * Um número grande que troca (Hoje / Este mês / 2029), a família em 3 atalhos, o Escritório inteiro no palco.
+ * Sistema igual ao do Meu orçamento: raio 24 no cartão e 16 dentro, só linha de 1 px, nenhuma sombra,
+ * verde só para ação, âmbar só para aviso de dinheiro, apoio nunca abaixo de 14 px, toque de 44 px.
+ */
+:root .j-inicio.inicio-j.ini4 {
+  --lilas: #cdbfe3;
+  --j-cena: color-mix(in srgb, var(--lilas) 14%, var(--cartao));
+  --raio-grande: 24px;
+  --sombra: none;
+  display: grid;
+  gap: 16px;
+}
+
+/* ---------- o dia ---------- */
+.ini4 .ini4-dia { display: grid; grid-template-columns: minmax(0, 1fr); overflow: hidden; border: 1px solid var(--j-divisa); border-radius: 24px; background: var(--cartao); }
+.ini4 .ini4-foco { display: flex; flex-direction: column; min-inline-size: 0; padding: 24px 20px 20px; }
+.ini4 .ini4-ola { margin: 0 0 16px; font: 700 20px/1.2 var(--fonte-titulo); letter-spacing: -.02em; color: var(--texto); }
+.ini4 .ini4-abas { display: inline-flex; align-self: flex-start; gap: 2px; padding: 3px; border-radius: 999px; background: var(--menu); }
+.ini4 .ini4-abas button { min-block-size: 44px; padding: 0 18px; border: 0; border-radius: 999px; color: var(--texto-secundario); font: 600 15px/1 var(--fonte-texto); }
+.j-inicio.ini4 .ini4-abas button:hover { text-decoration: none; color: var(--texto); }
+.ini4 .ini4-abas button[aria-selected="true"] { background: var(--cartao); color: var(--texto); box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.ini4 .ini4-painel { display: grid; justify-items: start; gap: 4px; margin-block-start: 24px; min-inline-size: 0; }
+.ini4 .ini4-rotulo { font: 600 15px/1.3 var(--fonte-texto); color: var(--texto-secundario); }
+.ini4 .ini4-numero { max-inline-size: 100%; }
+.ini4 .ini4-numero .numero-financeiro { font-size: clamp(52px, 15vw, 72px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.ini4 .ini4-numero :is(.j-moeda, .numero-simbolo) { margin-inline-end: .2em; font-size: .44em; font-weight: 700; letter-spacing: -.01em; color: var(--texto-secundario); }
+.ini4 .ini4-numero .j-sem-dado { font-size: 20px; line-height: 72px; }
+.ini4 .ini4-barra { inline-size: min(100%, 360px); block-size: 6px; margin-block-start: 12px; border-radius: 999px; background: color-mix(in srgb, var(--texto) 8%, transparent); overflow: hidden; }
+.ini4 .ini4-barra i { display: block; block-size: 100%; border-radius: inherit; background: var(--destaque); }
+.ini4 .ini4-barra[data-passou] i { background: var(--warn, #9a5b00); }
+.ini4 .ini4-apoio { display: grid; gap: 8px; margin-block-start: 12px; max-inline-size: 56ch; color: var(--texto-secundario); font: 400 15px/1.5 var(--fonte-texto); }
+.ini4 .ini4-apoio p { margin: 0; }
+/* o recado do dia mora dentro do painel: sem caixa própria, e a saudação já está no topo */
+.ini4 .ini4-apoio .j-sobre-hoje { padding: 0; gap: 4px; font: inherit; color: inherit; }
+.ini4 .ini4-apoio .j-saudacao { display: none; }
+.ini4 .ini4-apoio .seta-mes { margin: 0; padding: 14px 16px; border: 0; border-radius: 16px; font-size: 15px; }
+.ini4 .ini4-apoio .seta-mes .sub, .ini4 .ini4-apoio .sub { font-size: 14px; }
+.ini4 .ini4-apoio .numero-financeiro { font: 700 15px/1.3 var(--fonte-texto); letter-spacing: 0; color: var(--texto); }
+.ini4 .ini4-apoio .numero-financeiro .j-moeda { font-size: 1em; }
+.ini4 .ini4-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-block-start: auto; padding-block-start: 20px; }
+.ini4 .ini4-botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--destaque); color: var(--sobre-destaque); font: 700 15px/1 var(--fonte-texto); }
+.j-inicio.ini4 .ini4-botao:hover { text-decoration: none; filter: brightness(1.08); }
+.ini4 .ini4-link { color: var(--destaque); font: 600 15px/1 var(--fonte-texto); }
+
+/* ---------- a família agora: 3 atalhos ---------- */
+.ini4 .ini4-atalhos { display: grid; align-content: start; gap: 0; padding: 20px 20px 8px; background: var(--j-cena); box-shadow: inset 0 1px 0 var(--j-divisa); }
+.ini4 .ini4-atalhos h2 { margin-block-end: 4px; font: 700 14px/1.3 var(--fonte-texto); letter-spacing: 0; color: var(--texto-secundario); }
+.ini4 .ini4-atalho { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 16px; align-items: center; gap: 12px; min-block-size: 68px; padding-block: 10px; border-radius: 0; color: var(--texto); }
+.ini4 .ini4-atalho + .ini4-atalho { border-block-start: 1px solid var(--j-divisa); }
+.j-inicio.ini4 .ini4-atalho:hover { text-decoration: none; }
+.ini4 .ini4-atalho:hover .ini4-atalho-t b { text-decoration: underline; text-underline-offset: 3px; }
+.ini4 .ini4-atalho > svg { color: var(--texto-secundario); transition: translate .2s ease; }
+.ini4 .ini4-atalho:hover > svg { translate: 3px 0; color: var(--destaque); }
+.ini4 .ini4-atalho-ico { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 12px; background: var(--cartao); color: var(--texto-secundario); box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.ini4 .ini4-atalho-t { display: grid; gap: 2px; min-inline-size: 0; }
+.ini4 .ini4-atalho-t b { font: 600 15px/1.3 var(--fonte-texto); }
+.ini4 .ini4-atalho-t small { color: var(--texto-secundario); font-size: 14px; line-height: 1.3; }
+.ini4 .ini4-atalho-t small .numero-financeiro { font: 600 14px/1.3 var(--fonte-texto); letter-spacing: 0; }
+.ini4 .ini4-atalho-t small .j-moeda { font-size: 1em; }
+.ini4 .ini4-atalho-n .numero-financeiro { font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
+.ini4 .ini4-atalho-n .j-sem-dado { font-size: 14px; }
+
+/* ---------- o Escritório no palco ---------- */
+.ini4 .ini4-escritorio { overflow: hidden; border: 0; border-radius: 24px; background: var(--j-cena); box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.ini4 .j-palco-topo { padding: 20px 20px 4px; }
+.ini4 .j-palco-topo h2, .ini4 .j-plano h2 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.ini4 .j-palco-topo p, .ini4 .iso-legenda { font-size: 14px; }
+.ini4 .j-folha { border-radius: 0; }
+.ini4 .j-fila-titulo { font-size: 17px; }
+.ini4 .j-fila :is(.j-remetente, .j-retorno, .j-acoes button), .ini4 .j-decisoes .j-nivel { font-size: 14px; }
+.ini4 .cena3d-salas .pill { border: 0; box-shadow: inset 0 0 0 1px var(--j-divisa); background: var(--cartao); }
+.ini4 .cena3d-salas .pill[aria-pressed="true"] { box-shadow: none; background: var(--destaque); }
+
+/* ---------- rumo a 2029 ---------- */
+.j-inicio.ini4 .j-plano { padding: 20px 16px; border: 0; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.ini4 .j-plano-icone { inline-size: 40px; block-size: 40px; border-radius: 12px; color: var(--texto-secundario); }
+.ini4 .j-plano .linha-2028-resumo { border: 0; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.ini4 .j-plano > .lnk { display: flex; inline-size: fit-content; }
+.ini4 .j-horizonte figcaption span:not(.numero-financeiro, .numero-simbolo), .ini4 .j-anos { font-size: 14px; }
+.ini4 .j-trilha path { stroke-width: 10px; }
+
+/* ---------- lançamentos e o resto da família ---------- */
+.inicio-j-detalhes.ini4-detalhes { display: grid; gap: 24px; margin-top: 16px; }
+.ini4-detalhes .card { margin: 0; border: 0; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--border); }
+.ini4-detalhes .card-h h2 { font-size: 20px; letter-spacing: -.02em; }
+.ini4-detalhes .resumo-familia, .ini4-detalhes .resumo-grade { gap: 8px; }
+.ini4-detalhes .resumo-item { border: 0; border-radius: 24px; box-shadow: inset 0 0 0 1px var(--border); }
+.ini4-detalhes .resumo-link { padding: 16px; gap: 12px; }
+.ini4-detalhes .resumo-icone { flex-basis: 40px; inline-size: 40px; block-size: 40px; border-radius: 12px; background: var(--raised); color: var(--ink-2); }
+.ini4-detalhes .resumo-numero { font-size: 24px; font-weight: 700; }
+.ini4-detalhes .resumo-complemento .resumo-numero { font-size: 20px; }
+.ini4-detalhes :is(.resumo-frase, .resumo-meta, .resumo-conferencia, .resumo-casa) { font-size: 14px; line-height: 1.4; }
+.ini4-detalhes .resumo-expandir { background: none; padding-inline: 20px; }
+.ini4-detalhes :is(.resumo-informar, .resumo-repetir, .resumo-fila) { inline-size: calc(100% - 32px); margin: 0 16px 16px; border-radius: 999px; }
+.ini4-detalhes .resumo-envelopes .env-destaque { border-inline-start: 0; box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+/* ---------- movimento (só para quem não pediu menos movimento) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .ini4 .ini4-painel { animation: ini4-chega .32s cubic-bezier(.2, .8, .2, 1); }
+  .ini4 .ini4-barra i { animation: ini4-enche .7s cubic-bezier(.2, .8, .2, 1); transform-origin: left; }
+}
+@keyframes ini4-chega { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+@keyframes ini4-enche { from { scale: 0 1; } to { scale: 1 1; } }
+
+/* ---------- computador ---------- */
+@media (min-width: 900px) {
+  :root .j-inicio.inicio-j.ini4 { gap: 24px; }
+  .ini4 .ini4-foco { padding: 32px; }
+  .ini4 .ini4-ola { font-size: 24px; }
+  .ini4 .ini4-numero .numero-financeiro { font-size: 80px; }
+  .ini4 .ini4-atalhos { padding: 24px 32px 12px; }
+  .ini4 .ini4-atalho-n .numero-financeiro { font-size: 24px; }
+  .j-inicio.ini4 .j-plano { padding: 24px; }
+  .ini4-detalhes .resumo-familia, .ini4-detalhes .resumo-grade { gap: 24px; }
+  .ini4-detalhes .resumo-link { padding: 20px; gap: 16px; }
+  .ini4-detalhes :is(.resumo-informar, .resumo-repetir, .resumo-fila) { inline-size: auto; margin-inline: 76px 20px; }
+}
+
+/* tela larga: o dia à esquerda, a família à direita */
+@media (min-width: 1180px) {
+  .ini4 .ini4-dia { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .ini4 .ini4-foco { min-block-size: 400px; }
+  .ini4 .ini4-atalhos { align-content: center; padding: 32px; box-shadow: inset 1px 0 0 var(--j-divisa); }
+  .ini4 .ini4-atalhos h2 { margin-block-end: 8px; }
+  .ini4 .ini4-atalho { min-block-size: 80px; }
+}
+
+/* modo escuro: o palco não vira placa cinza */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .j-inicio.inicio-j.ini4 { --j-cena: color-mix(in srgb, var(--lilas) 9%, var(--cartao)); }
+}
+:root[data-theme="dark"] .j-inicio.inicio-j.ini4 { --j-cena: color-mix(in srgb, var(--lilas) 9%, var(--cartao)); }
