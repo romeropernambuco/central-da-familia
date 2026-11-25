@@ -275,17 +275,19 @@ export function Cena3D({
       </div>
       {modo === '3d' && (
         <div className="pills cena3d-salas" role="group" aria-label="Aproximar de uma sala">
-          <button type="button" className="pill" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}>
-            <Icone desenho={Maximize2} />
-            Ver tudo
-          </button>
-          {salasUsadas.map(k => (
-            <button key={k} type="button" className="pill" aria-pressed={vista === k} onClick={() => ir(k)}>
-              {SALAS[k]}
+          <div className="cena3d-vistas">
+            <button type="button" className="pill" aria-pressed={vista === 'tudo'} onClick={() => ir('tudo')}>
+              <Icone desenho={Maximize2} />
+              Ver tudo
             </button>
-          ))}
+            {salasUsadas.map(k => (
+              <button key={k} type="button" className="pill" aria-pressed={vista === k} onClick={() => ir(k)}>
+                {SALAS[k]}
+              </button>
+            ))}
+          </div>
           {ampliavel && (
-            <>
+            <div className="cena3d-ferramentas">
               <button
                 type="button"
                 className="pill"
@@ -308,7 +310,7 @@ export function Cena3D({
                 <Icone desenho={Expand} />
                 {cheia ? 'Reduzir' : 'Ampliar'}
               </button>
-            </>
+            </div>
           )}
         </div>
       )}

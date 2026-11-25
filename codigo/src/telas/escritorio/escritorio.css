@@ -42,6 +42,8 @@
 .cena3d-tags .tag.sel{background:var(--ink);color:var(--surface)}
 .cena3d-salas{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .cena3d-salas::-webkit-scrollbar{display:none}
+/* dois grupos (salas e ferramentas): por padrão não mudam a fileira; o Início novo dá forma a cada um */
+.cena3d-vistas,.cena3d-ferramentas{display:contents}
 .cena3d-salas .pill{flex:none;height:36px;font-size:14px;padding:0 12px}
 .esc-sala+.esc-sala{margin-top:10px}
 .esc-sala h3{font-size:13px;line-height:18px;font-weight:700;color:var(--muted);padding-top:6px}

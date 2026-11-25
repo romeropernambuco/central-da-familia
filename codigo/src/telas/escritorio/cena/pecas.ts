@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // As peças de montar da cena: tudo é caixa. Caixas de cor fixa são fundidas numa malha só, para o aparelho
 // desenhar o escritório inteiro em poucas chamadas.
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 
 export type Guardar = <V extends { dispose(): void }>(v: V) => V
 
@@ -28,23 +29,41 @@ export function criarPecas(T: any, scene: any, guardar: Guardar) {
     pai.add(m)
     return m
   }
-  /* junta muitas caixas numa peça só (1 desenho por peça em vez de 1 por caixa) */
+  /* caixa de cantos arredondados (corpo dos funcionários): uma base por raio, criada só quando alguém pede */
+  const SUAVES: Record<string, { p: ArrayLike<number>; n: ArrayLike<number> }> = {}
+  function suave(raio: number, seg: number) {
+    const chave = raio + ':' + seg
+    if (!SUAVES[chave]) {
+      const g = new RoundedBoxGeometry(1, 1, 1, seg, raio)
+      SUAVES[chave] = { p: g.attributes.position.array.slice(), n: g.attributes.normal.array.slice() }
+      g.dispose()
+    }
+    return SUAVES[chave]
+  }
+  /* junta muitas caixas numa peça só (1 desenho por peça em vez de 1 por caixa); caixa com raio (b[7]) sai arredondada */
   function mesclar(lista: number[][]) {
-    const n = lista.length,
-      pos = new Float32Array(n * 108),
-      nor = new Float32Array(n * 108),
-      col = new Float32Array(n * 108)
-    for (let i = 0; i < n; i++) {
-      const b = lista[i]
+    const bases = lista.map(b => (b[7] ? suave(b[7], b[8] || 1) : { p: BP, n: BN })),
+      total = bases.reduce((s, b) => s + b.p.length, 0),
+      pos = new Float32Array(total),
+      nor = new Float32Array(total),
+      col = new Float32Array(total)
+    let k = 0
+    for (let i = 0; i < lista.length; i++) {
+      const b = lista[i],
+        { p, n } = bases[i]
       corTmp.setHex(b[3])
-      for (let v = 0; v < 36; v++) {
-        const k = i * 108 + v * 3
-        pos[k] = BP[v * 3] * b[0] + b[4]
-        pos[k + 1] = BP[v * 3 + 1] * b[1] + b[5]
-        pos[k + 2] = BP[v * 3 + 2] * b[2] + b[6]
-        nor[k] = BN[v * 3]
-        nor[k + 1] = BN[v * 3 + 1]
-        nor[k + 2] = BN[v * 3 + 2]
+      for (let v = 0; v < p.length; v += 3, k += 3) {
+        pos[k] = p[v] * b[0] + b[4]
+        pos[k + 1] = p[v + 1] * b[1] + b[5]
+        pos[k + 2] = p[v + 2] * b[2] + b[6]
+        // a caixa é esticada: a normal acompanha (dividida pelo tamanho) e volta a medir 1
+        const nx = n[v] / b[0],
+          ny = n[v + 1] / b[1],
+          nz = n[v + 2] / b[2],
+          m = Math.hypot(nx, ny, nz) || 1
+        nor[k] = nx / m
+        nor[k + 1] = ny / m
+        nor[k + 2] = nz / m
         col[k] = corTmp.r
         col[k + 1] = corTmp.g
         col[k + 2] = corTmp.b

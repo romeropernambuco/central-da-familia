@@ -70,8 +70,38 @@
 .ini4 .j-folha { border-radius: 0; }
 .ini4 .j-fila-titulo { font-size: 17px; }
 .ini4 .j-fila :is(.j-remetente, .j-retorno, .j-acoes button), .ini4 .j-decisoes .j-nivel { font-size: 14px; }
-.ini4 .cena3d-salas .pill { border: 0; box-shadow: inset 0 0 0 1px var(--j-divisa); background: var(--cartao); }
-.ini4 .cena3d-salas .pill[aria-pressed="true"] { box-shadow: none; background: var(--destaque); }
+/* salas: um controle só, igual às abas do topo; ferramentas (afastar, aproximar, ampliar) à direita */
+.j-inicio.ini4 .cena3d-salas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; min-inline-size: 0; padding: 12px 0 8px; overflow: visible; }
+.ini4 .cena3d-vistas { display: flex; flex: 0 1 auto; gap: 2px; min-inline-size: 0; max-inline-size: 100%; padding: 3px; border-radius: 999px; background: var(--menu); overflow-x: auto; scrollbar-width: none; }
+.ini4 .cena3d-vistas::-webkit-scrollbar { display: none; }
+.ini4 .cena3d-ferramentas { display: flex; flex: none; gap: 6px; margin-inline-start: auto; }
+.j-inicio.ini4 .cena3d-salas .pill { flex: none; min-block-size: 44px; border: 0; box-shadow: none; background: transparent; color: var(--texto-secundario); font: 600 14px/1 var(--fonte-texto); transition: background-color .15s, color .15s, scale .12s; }
+.j-inicio.ini4 .cena3d-vistas .pill { padding: 0 16px; }
+.j-inicio.ini4 .cena3d-vistas .pill:hover { color: var(--texto); text-decoration: none; }
+.j-inicio.ini4 .cena3d-vistas .pill[aria-pressed="true"] { background: var(--cartao); color: var(--texto); box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.j-inicio.ini4 .cena3d-ferramentas .pill { justify-content: center; min-inline-size: 44px; padding: 0 12px; background: var(--cartao); color: var(--texto); box-shadow: inset 0 0 0 1px var(--j-divisa); }
+.j-inicio.ini4 .cena3d-ferramentas .pill:hover:not(:disabled) { background: var(--menu); text-decoration: none; }
+.j-inicio.ini4 .cena3d-ferramentas .pill:last-child { padding: 0 16px; }
+.j-inicio.ini4 .cena3d-salas .pill:active:not(:disabled) { scale: .96; }
+
+/* etiqueta em cima de cada funcionário: o selo redondo diz o estado, o nome vem ao lado */
+.ini4 .cena3d-tags .tag { gap: 6px; height: 30px; padding: 0 12px 0 4px; background: var(--cartao); color: var(--texto); font: 600 13px/1 var(--fonte-texto); letter-spacing: -.01em; box-shadow: 0 0 0 1px var(--j-divisa), 0 2px 6px rgb(20 24 18 / .14); transition: scale .12s, box-shadow .12s; }
+.ini4 .cena3d-tags .tag svg { box-sizing: content-box; flex: none; inline-size: 14px; block-size: 14px; padding: 4px; border-radius: 50%; background: var(--menu); color: var(--texto-secundario); }
+.ini4 .cena3d-tags .tag:is([data-estado="entregue"], [data-estado="trabalhando"]) svg { background: color-mix(in srgb, var(--destaque) 16%, var(--cartao)); color: var(--destaque); }
+.ini4 .cena3d-tags .tag.precisa { background: var(--destaque); color: var(--sobre-destaque); box-shadow: 0 2px 8px rgb(20 24 18 / .22); }
+.ini4 .cena3d-tags .tag.precisa svg { background: color-mix(in srgb, var(--sobre-destaque) 20%, transparent); color: inherit; }
+.ini4 .cena3d-tags .tag.sel { background: var(--texto); color: var(--cartao); }
+.ini4 .cena3d-tags .tag.sel svg { background: color-mix(in srgb, var(--cartao) 18%, transparent); color: inherit; }
+.ini4 .cena3d-tags .tag:hover { scale: 1.06; box-shadow: 0 0 0 1px var(--j-divisa), 0 4px 12px rgb(20 24 18 / .2); }
+.ini4 .cena3d-tags .tag:active { scale: .97; }
+.ini4 .cena3d-tags .tag:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+.ini4 .cena3d-tags .placa { padding: 0 8px; background: color-mix(in srgb, var(--cartao) 80%, transparent); color: var(--texto-secundario); font: 600 12px/18px var(--fonte-texto); letter-spacing: .02em; }
+@media (prefers-reduced-motion: no-preference) {
+  .ini4 .cena3d-tags .tag[data-estado="trabalhando"] svg { animation: ini4-pulsa 1.8s ease-in-out infinite; }
+}
+@keyframes ini4-pulsa { 50% { opacity: .55; } }
+.ini4 .j-saude button { min-block-size: 44px; padding-inline: 14px; border-radius: 999px; }
+.j-inicio.ini4 .j-saude button:hover { background: color-mix(in srgb, var(--destaque) 10%, transparent); text-decoration: none; }
 /* celular: a cena fica grande e a pessoa arrasta para os lados (abre no meio do escritório) */
 @media (max-width: 899px) {
   .ini4 .cena3d-bloco:not(:fullscreen) .cena3d-quadro > .cena3d { inline-size: max(100%, 920px); aspect-ratio: 16 / 10.5; }
