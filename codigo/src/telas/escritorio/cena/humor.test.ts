@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { expressar, humorDe } from './humor'
 
-const HUMORES = ['calmo', 'focado', 'feliz', 'preocupado', 'aflito'] as const
+const HUMORES = ['calmo', 'focado', 'feliz', 'preocupado', 'aflito', 'dormindo'] as const
 const funcionario = (st: string, extra: object = {}) => ({
   st,
   fase: 0,
@@ -50,6 +50,23 @@ describe('semblante dos funcionários', () => {
     expect(ch.b.olhos.scale.y).toBeLessThan(0.5)
     expressar(ch, instante, true)
     expect(ch.b.olhos.scale.y).toBe(1)
+  })
+
+  it('fora do horário dorme de olhos fechados, com o "Zzz" à vista; na reunião sorri', () => {
+    const zzz = { visible: false, position: { y: 0 } }
+    const ch = funcionario('trabalhando', { dormindo: true })
+    Object.assign(ch.b, { zzz })
+    expect(humorDe(ch)).toBe('dormindo')
+    expressar(ch, 0, false)
+    expect(aVista(ch)).toEqual(['dormindo'])
+    expect(ch.b.olhos.visible).toBe(false)
+    expect(zzz.visible).toBe(true)
+    Object.assign(ch, { dormindo: false, reuniao: 3 })
+    expressar(ch, 0, false)
+    expect(aVista(ch)).toEqual(['feliz'])
+    expect(zzz.visible).toBe(false)
+    // quem precisa de você não sorri na reunião: continua esperando a resposta
+    expect(humorDe(funcionario('precisa', { reuniao: 3 }))).toBe('preocupado')
   })
 
   it('o boneco do mini, que não tem rostos, fica como está', () => {

@@ -184,6 +184,7 @@ export function montarPostos(lugar: Lugar, o: OpcoesCena) {
       sala,
       st: e.estado,
       humor: e.humor,
+      dorme: e.dorme,
       b,
       pilha,
       tela: telaMat,

@@ -158,11 +158,13 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
 
     /* sol, céu e lâmpadas pela hora */
     let escuro = o.escuro
+    let horaFixa: number | null = null
+    const horaDaCena = () => horaFixa ?? o.hora()
     const luzDaHora = (h: number) => aplicarLuzDaHora(h, escuro, { sol, hemi, lampadas, vidro })
     function setTema(d: boolean) {
       escuro = d
       baseMat.color.setHex(d ? 0x2a2520 : 0xe2dacc)
-      luzDaHora(o.hora())
+      luzDaHora(horaDaCena())
     }
     setTema(escuro)
 
@@ -280,7 +282,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
       segLuz -= dt
       if (segLuz <= 0) {
         segLuz = 30
-        luzDaHora(o.hora())
+        luzDaHora(horaDaCena())
       }
       animar(dt)
       vista.avancar(agora, reduz)
@@ -367,6 +369,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
             return
           }
           ch.humor = n.humor
+          ch.dorme = n.dorme
           if (ch.st === n.estado) return
           ch.retornaTrabalho = false
           retornos.cancelar(n.id)
@@ -384,6 +387,19 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
         chars.forEach(c => {
           c.tk = ''
         })
+      },
+      hora(h) {
+        horaFixa = h
+        luzDaHora(horaDaCena())
+        solicitar()
+      },
+      reuniao() {
+        // com movimento reduzido ninguém anda: a equipe só acorda
+        if (o.mini || reduz) return
+        chars.forEach((ch, i) => {
+          ch.reuniao = 5 + (i % 3) * 0.4
+        })
+        solicitar()
       },
       irPara(v) {
         vista.irPara(v)

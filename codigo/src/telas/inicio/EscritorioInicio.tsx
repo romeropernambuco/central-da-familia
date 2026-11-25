@@ -21,6 +21,8 @@ import '../escritorio/escritorioIsometrico.css'
 // @ts-expect-error a cena é a mesma da aba Escritório
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from '../escritorio/Cena3D.tsx'
 import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
+import { falasDoEscritorio } from '../escritorio/falasDoEscritorio'
+import { HORA_DA_NOITE, horaRecife, noiteForcada } from '../../lib/escritorio/turno'
 import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import type { PerguntaEsc } from '../../api/tipos'
 
@@ -94,16 +96,8 @@ function EscritorioAutorizado({
   const valores: Record<string, string> = {}
   for (const t of dados.fila)
     if (t.valor && t.valor !== 'Ainda sem dado' && !valores[t.membro.id]) valores[t.membro.id] = t.valor
-  // o que cada um tem a dizer: a tarefa que espera você; senão, o que está fazendo ou o que entregou
-  const falas: Record<string, string> = {}
-  for (const t of dados.fila) falas[t.membro.id] ||= t.texto
-  if (!oculto)
-    for (const { membro, funcionario: f, atividade, entrega } of dados.postos) {
-      if (falas[membro.id] || f.semDado || f.estado === 'vai_comecar') continue
-      const dito =
-        (f.estado === 'trabalhando' ? atividade : entrega?.resumo) || (f.frase !== membro.papel ? f.frase : '')
-      if (dito?.trim()) falas[membro.id] = dito.trim()
-    }
+  // o que cada um tem a dizer, em ordem: o balão mostra uma fala por vez (tarefa e prazo, o que fez, a hora do dia)
+  const falas = falasDoEscritorio(dados, { hoje, hora: noiteForcada() ? HORA_DA_NOITE : horaRecife() }, oculto)
   // quem tem conta vencida fica aflito; com o olho fechado o rosto não entrega o motivo
   const humores: Record<string, 'aflito'> = {}
   if (!oculto)
@@ -243,6 +237,7 @@ function EscritorioAutorizado({
               falas={comFalas ? falas : undefined}
               humores={humores}
               aoResponder={comFalas ? id => abrirResposta(id) : undefined}
+              expediente={comFalas}
               ampliavel
               reserva={
                 <VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} tarefaDaFila={selecao?.pergunta}>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { montarSemblante } from './humor'
+import { montarSemblante, montarZzz } from './humor'
 import type { Pecas } from './pecas'
 
 /** Quadril acima do chão: de pé e sentado. */
@@ -78,6 +78,7 @@ export function criarBoneco(T: any, pecas: Pecas, mini: boolean) {
       cx(0.12, 0.025, 0.02, 0x9a5a4c, 0, 0.12, 0.205, head)
     } else {
       Object.assign(p, montarSemblante(T, pecas, c, head))
+      p.zzz = montarZzz(pecas, r)
       /* cabeça um pouco maior que o corpo pede: é o que deixa a emoção legível de longe */
       head.scale.setScalar(CABECA)
       p.topo = 1.12 + 0.56 * (CABECA - 1)

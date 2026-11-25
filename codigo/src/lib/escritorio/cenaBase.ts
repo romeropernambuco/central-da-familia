@@ -3,13 +3,15 @@ export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
 /** Estados de interação, independentes dos estados persistidos do escritório. */
 export type EstadoAgente = 'trabalhando' | 'chamando' | 'resolvido' | 'parado'
 /** O semblante de cada um no escritório inteiro. */
-export type Humor = 'calmo' | 'focado' | 'feliz' | 'preocupado' | 'aflito'
+export type Humor = 'calmo' | 'focado' | 'feliz' | 'preocupado' | 'aflito' | 'dormindo'
 export interface FuncCena {
   id: string
   sala?: string
   estado: EstadoCena
   /** emoção que o aviso dele pede; sem ela, vale a do estado (trabalhando = concentrado, entregue = feliz…) */
   humor?: Humor
+  /** fora do horário de trabalho: dorme debruçado na mesa até ser chamado */
+  dorme?: boolean
 }
 export interface OpcoesCena {
   mini?: boolean
@@ -35,6 +37,10 @@ export interface Cena {
   atualizar(f: FuncCena[]): void
   selecionar(id: string | null): void
   irPara(vista: string): void
+  /** Todo mundo levanta, vem para a frente da sala, acena e volta a trabalhar. */
+  reuniao?(): void
+  /** Põe a luz da cena numa hora escolhida (para mostrar o dia passando); null volta ao relógio. */
+  hora?(h: number | null): void
   /** Multiplica o zoom (1 = planta inteira, até 3) e devolve o zoom que ficou. */
   aproximar?(fator: number): number
   tema(escuro: boolean): void

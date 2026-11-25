@@ -6,6 +6,7 @@ import type { EstadoAgente, EstadoCena } from '../../../lib/escritorio/cenaBase'
 import { ESCALA_FUNCIONARIO_MINI } from '../escritorioMini'
 import { HIP_PE, HIP_SENTADO } from './boneco'
 import { estadoLegado, luzTela } from './estados'
+import { contarReuniao, decidirRumo, dormir } from './expediente'
 import { expressar } from './humor'
 
 /** Como a cena está rodando agora: com ou sem movimento, em qual degrau do modo leve e a quantos quadros por segundo. */
@@ -184,21 +185,17 @@ export function moverNaCena(ch: any, t: number, dt: number, reduz: boolean) {
     a = ch.anim && !reduz ? 1 : 0,
     ph = t + ch.fase
   ch.pilha.visible = st === 'entregue' || st === 'precisa'
-  if (ch.telaSt !== st) {
-    ch.telaSt = st
-    ch.tela.emissiveIntensity = luzTela(st)
+  contarReuniao(ch, dt)
+  decidirRumo(ch, st)
+  // fora do horário: quem não foi chamado dorme na mesa, com a tela apagada
+  ch.dormindo = !!ch.dorme && st !== 'precisa' && !ch.path && ch.loc === 'sentado'
+  const tela = ch.dormindo ? 'apagada' : st
+  if (ch.telaSt !== tela) {
+    ch.telaSt = tela
+    ch.tela.emissiveIntensity = ch.dormindo ? 0 : luzTela(st)
   }
-  /* decide pra onde ir: quem precisa de você levanta e vai pra frente da sala; resolveu, volta pra mesa */
-  if (!ch.path) {
-    if (st === 'precisa' && ch.loc === 'sentado') {
-      ch.path = [ch.G1, ch.G2, ch.F]
-      ch.dest = 'frente'
-    } else if (st !== 'precisa' && ch.loc === 'frente') {
-      ch.path = [ch.G2, ch.G1, ch.S]
-      ch.dest = 'sentado'
-    }
-  }
-  const alvo = ch.path ? andar(ch, dt, ph) : ch.loc === 'frente' ? acenar(ch, dt, a, ph) : sentar(ch, st, dt, a, ph)
+  const naMesa = () => (ch.dormindo ? dormir(ch, dt, a, ph) : sentar(ch, ch.embalo > 0 ? 'trabalhando' : st, dt, a, ph))
+  const alvo = ch.path ? andar(ch, dt, ph) : ch.loc === 'frente' ? acenar(ch, dt, a, ph) : naMesa()
   pose(ch, alvo, ch.pose.hy === undefined ? 1 : dt)
   expressar(ch, t, reduz)
 }

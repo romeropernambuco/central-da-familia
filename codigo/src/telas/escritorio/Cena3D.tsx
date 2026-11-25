@@ -3,10 +3,9 @@ import { textoPrivado } from '../../lib/olho'
 import './escritorio.css'
 import { Icone } from '../../componentes/Icone'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Check, Clock, Expand, Hand, Info, Keyboard, Maximize2, Minus, Plus } from 'lucide-react'
+import { Check, Clock, Expand, Hand, Info, Keyboard, Maximize2, Minus, Moon, Plus } from 'lucide-react'
 import type { EstadoFuncionario, FuncionarioEsc } from '../../api/tipos'
 import { chaveSimples } from '../../api/normaliza2'
-import { FUSO } from '../../lib/formato'
 import {
   SALAS_NOME as SALAS,
   temWebGL,
@@ -17,6 +16,9 @@ import {
   type Humor,
 } from '../../lib/escritorio/cenaBase'
 import { nomeCurto } from '../../lib/escritorio/equipe'
+import { HORA_DA_NOITE, horaRecife } from '../../lib/escritorio/turno'
+import { FaixaDoTurno } from '../../componentes/escritorio/FaixaDoTurno'
+import { useTurno } from './useTurno'
 
 const ESTADO: Record<EstadoFuncionario, EstadoCena> = {
   vai_comecar: 'fila',
@@ -48,15 +50,6 @@ export const salaDe = (s: string) => {
 }
 // C2: o nome curto da etiqueta vem da lista única da equipe
 const curto = (f: FuncionarioEsc) => nomeCurto(f.id, f.nome)
-const horaRecife = () => {
-  const p = new Intl.DateTimeFormat('en-GB', {
-    timeZone: FUSO,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(new Date())
-  return (Number(p[0].value) % 24) + Number(p[2].value) / 60
-}
 const escuroAgora = () => {
   const t = document.documentElement.dataset.theme
   return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
@@ -76,6 +69,7 @@ export function Cena3D({
   falas,
   humores,
   aoResponder,
+  expediente,
   reserva,
   ampliavel,
 }: {
@@ -84,12 +78,14 @@ export function Cena3D({
   aoTocar: (id: string) => void
   /** Valor da pendência de quem precisa de você: aparece no selo, no lugar do nome (já vem mascarado com o olho fechado). */
   valores?: Record<string, string>
-  /** O que cada um tem a dizer agora (a tarefa, o que está fazendo ou o que entregou): vira balão de fala. Já vem mascarado. */
-  falas?: Record<string, string>
+  /** O que cada um tem a dizer, em ordem: o balão mostra uma fala por vez e passa para a próxima. Já vem mascarado. */
+  falas?: Record<string, string[]>
   /** A emoção que o aviso de cada um pede (aflito, preocupado, feliz); quem não está aqui fica com a do estado. */
   humores?: Record<string, Humor>
   /** Com isto, tocar em quem precisa de você abre direto a resposta da tarefa, em vez da ficha. */
   aoResponder?: (id: string) => void
+  /** O escritório segue o relógio: depois das 20h a equipe dorme e dá para chamar todo mundo para uma reunião. */
+  expediente?: boolean
   /** O que mostrar quando o 3D não abre neste aparelho, no lugar do aviso (telas sem lista logo abaixo, como o Início). */
   reserva?: ReactNode
   /** Mostra aproximar, afastar e tela cheia. */
@@ -134,8 +130,23 @@ export function Cena3D({
   const [vista, setVista] = useState('tudo')
   const humor = useRef(humores)
   humor.current = humores
+  const { turno, forcada, acordados, setAcordados, dormem, ensaio, verODia, voltar } = useTurno(!!expediente)
+  // quem precisa de você fica acordado esperando; o resto da equipe dorme
+  const dorme = (f: FuncionarioEsc) => dormem && f.estado !== 'precisa_de_voce'
+  const sono = useRef({ dormem, forcada })
+  sono.current = { dormem, forcada }
   const paraCena = (fs: FuncionarioEsc[]): FuncCena[] =>
-    fs.map(f => ({ id: f.id, sala: salaDe(f.sala), estado: ESTADO[f.estado], humor: humor.current?.[f.id] }))
+    fs.map(f => ({
+      id: f.id,
+      sala: salaDe(f.sala),
+      estado: ESTADO[f.estado],
+      humor: humor.current?.[f.id],
+      dorme: sono.current.dormem && f.estado !== 'precisa_de_voce',
+    }))
+  const reuniao = () => {
+    setAcordados(true)
+    cena.current?.reuniao?.()
+  }
   // a cena é montada 1 vez por equipe (mesmos ids); mudança de estado entra por `atualizar`, sem remontar
   const ids = funcionarios.map(f => f.id + '@' + salaDe(f.sala)).join(',')
   const atuais = useRef(funcionarios)
@@ -167,7 +178,7 @@ export function Cena3D({
             aoTocar: id => tocar.current(id),
             escuro: escuroAgora(),
             celular,
-            hora: horaRecife,
+            hora: () => (sono.current.forcada ? HORA_DA_NOITE : horaRecife()),
             parado: reduz,
             aoContexto: estado => {
               if (vivo) setModo(estado === 'falhou' ? 'lista' : estado === 'perdido' ? 'abrindo' : '3d')
@@ -207,6 +218,10 @@ export function Cena3D({
   useEffect(() => {
     cena.current?.atualizar(paraCena(funcionarios))
   })
+  // o dia passando: a luz da cena acompanha a hora da amostra; sem amostra, volta ao relógio
+  useEffect(() => {
+    cena.current?.hora?.(ensaio)
+  }, [ensaio, modo])
   // onde a cena é mais larga que a tela (celular), ela abre no meio do escritório, não no canto vazio
   useEffect(() => {
     const quadro = caixa.current?.parentElement
@@ -224,16 +239,26 @@ export function Cena3D({
     cena.current?.irPara(v)
   }
   // quem precisa de você fala o tempo todo; os outros avisos se revezam, 2 por vez, para a cena não ficar coberta
-  const avisos = funcionarios.filter(f => falas?.[f.id] && f.estado !== 'precisa_de_voce').map(f => f.id)
+  const roteiro = (f: FuncionarioEsc) => (dorme(f) ? undefined : falas?.[f.id])
+  const avisos = funcionarios.filter(f => roteiro(f)?.length && f.estado !== 'precisa_de_voce').map(f => f.id)
   const [vez, setVez] = useState(0)
   const revezam = avisos.length > 2 && modo === '3d'
+  const grupos = Math.ceil(avisos.length / 2) || 1
+  const giram = modo === '3d' && (revezam || funcionarios.some(f => (roteiro(f)?.length || 0) > 1))
   useEffect(() => {
-    if (!revezam || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!giram || matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const relogio = setInterval(() => setVez(v => v + 1), 5000)
     return () => clearInterval(relogio)
-  }, [revezam])
+  }, [giram])
   const falaAgora = (id: string) =>
-    !avisos.includes(id) || !revezam || Math.floor(avisos.indexOf(id) / 2) === vez % Math.ceil(avisos.length / 2)
+    !avisos.includes(id) || !revezam || Math.floor(avisos.indexOf(id) / 2) === vez % grupos
+  // a fala muda a cada volta: quem reveza troca quando o balão reabre; quem fica sempre aberto troca a cada 10 s
+  const ditoDe = (f: FuncionarioEsc) => {
+    const lista = roteiro(f)
+    if (!lista?.length) return undefined
+    const volta = revezam && avisos.includes(f.id) ? Math.floor(vez / grupos) : Math.floor(vez / 2)
+    return lista[volta % lista.length]
+  }
   const salasUsadas = Object.keys(SALAS).filter(k => funcionarios.some(f => salaDe(f.sala) === k))
 
   return (
@@ -244,6 +269,19 @@ export function Cena3D({
           <Icone desenho={Info} aria-hidden="true" />
           <span>A cena 3D não abriu neste aparelho. Tudo funciona pela lista do Escritório, logo abaixo.</span>
         </p>
+      )}
+      {expediente && modo === '3d' && (
+        <FaixaDoTurno
+          turno={turno}
+          dormem={dormem}
+          acordados={acordados}
+          alguemAcordado={funcionarios.some(f => f.estado === 'precisa_de_voce')}
+          chamar={reuniao}
+          deixarDormir={() => setAcordados(false)}
+          ensaio={ensaio}
+          verODia={verODia}
+          voltar={voltar}
+        />
       )}
       {/* No celular a cena fica mais larga que a tela e a pessoa arrasta para o lado: assim os 19 cabem com nome. */}
       <div className="cena3d-quadro">
@@ -268,8 +306,9 @@ export function Cena3D({
                   sel = f.id === selecionado
                 // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
                 const soIcone = false
+                const dormindo = dorme(f)
                 const valor = precisa ? valores?.[f.id] : undefined,
-                  dito = falas?.[f.id],
+                  dito = ditoDe(f),
                   fala = dito && (sel || falaAgora(f.id)) ? dito : undefined,
                   selo = fala ? curto(f) : valor || curto(f)
                 return (
@@ -279,7 +318,7 @@ export function Cena3D({
                     ref={el => {
                       tags.current[f.id] = el
                     }}
-                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}|${responde(f)}`}
+                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}|${responde(f)}|${dormindo}`}
                     data-func={f.id}
                     data-posto={f.id}
                     data-estado={f.estado}
@@ -288,16 +327,17 @@ export function Cena3D({
                       (precisa ? ' precisa' : '') +
                       (sel ? ' sel' : '') +
                       (soIcone ? ' curta' : '') +
+                      (dormindo ? ' dorme' : '') +
                       (fala ? ' fala' : dito ? ' quer-falar' : '')
                     }
                     aria-label={textoPrivado(
-                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} ${responde(f) ? 'Responder' : 'Abrir'}.`,
+                      `${f.nome}: ${dormindo ? 'dormindo' : f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} ${responde(f) ? 'Responder' : 'Abrir'}.`,
                     )}
                     aria-haspopup={responde(f) ? 'dialog' : undefined}
                     aria-pressed={sel}
                     onClick={() => tocarNoFuncionario(f.id)}
                   >
-                    <IcoEstado e={f.estado} />
+                    {dormindo ? <Icone desenho={Moon} /> : <IcoEstado e={f.estado} />}
                     <span>{selo}</span>
                     {fala && (
                       <span className="tag-dito">

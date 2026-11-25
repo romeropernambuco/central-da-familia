@@ -8,7 +8,8 @@ import type { Pecas } from './pecas'
 type Traco = [number, number, number | string, number, number, number?, number?]
 
 const BRANCO = 0xfbf8f1,
-  SUOR = 0x8fc4dd
+  SUOR = 0x8fc4dd,
+  ZZZ_Y = 1.14
 /** os dois lados do rosto de uma vez: o que vale para x vale espelhado para -x */
 const par = (t: Traco): Traco[] => [t, [t[0], t[1], t[2], -t[3], t[4], t[5], t[6]]]
 
@@ -42,6 +43,12 @@ const ROSTOS: Record<Humor, Traco[]> = {
     ...par([0.032, 0.028, 'boca', 0.056, 0.108]),
     [0.05, 0.085, SUOR, 0.215, 0.33, 0.5, 0.17],
   ],
+  /* fora do horário: olhos fechados em risco, sobrancelha solta e a boca aberta de quem ressona */
+  dormindo: [
+    ...par([0.11, 0.028, 'pelo', 0.1, 0.33]),
+    ...par([0.1, 0.024, 'olho', 0.1, 0.245]),
+    [0.055, 0.055, 'dentro', 0, 0.115, 0.5],
+  ],
   /* dinheiro em risco: sobrancelha bem inclinada, boca aberta e duas gotas */
   aflito: [
     ...par([0.06, 0.03, 'pelo', 0.066, 0.392]),
@@ -53,7 +60,14 @@ const ROSTOS: Record<Humor, Traco[]> = {
 }
 
 /** Quanto os olhos abrem em cada emoção (1 = normal, 0 = somem: o rosto feliz desenha os dele em arco). */
-const ABERTURA: Record<Humor, number> = { calmo: 1, focado: 0.66, feliz: 0, preocupado: 1.2, aflito: 1.32 }
+const ABERTURA: Record<Humor, number> = {
+  calmo: 1,
+  focado: 0.66,
+  feliz: 0,
+  preocupado: 1.2,
+  aflito: 1.32,
+  dormindo: 0,
+}
 const DO_ESTADO: Record<EstadoCena, Humor> = {
   fila: 'calmo',
   trabalhando: 'focado',
@@ -96,9 +110,35 @@ export function montarSemblante(T: any, { cx, fecha, grupo }: Pecas, c: any, hea
   return { olhos, rostos }
 }
 
-/** A emoção de agora: comemorando ou voltando para a mesa com a tarefa resolvida, feliz; senão, a do aviso ou a do estado. */
+/** O "Zzz" que sobe de quem dorme: três letras de caixinhas, viradas para quem olha. */
+export function montarZzz({ cx, fecha, grupo }: Pecas, r: any) {
+  const g = grupo(r, 0.15, ZZZ_Y, 0.6)
+  g.rotation.y = Math.PI / 4
+  g.scale.setScalar(1.5)
+  const z = (s: number, x: number, y: number) =>
+    [
+      [s, x, y + s * 0.38],
+      [s * 0.42, x + s * 0.16, y + s * 0.13],
+      [s * 0.42, x - s * 0.16, y - s * 0.13],
+      [s, x, y - s * 0.38],
+    ].forEach(([w, px, py]) => cx(w, s * 0.24, 0.03, BRANCO, px, py, 0, g))
+  z(0.11, 0, 0)
+  z(0.15, 0.15, 0.2)
+  z(0.2, 0.34, 0.46)
+  fecha(g)
+  g.children.forEach((m: any) => (m.castShadow = false))
+  g.visible = false
+  return g
+}
+
+/**
+ * A emoção de agora: dormindo; feliz enquanto comemora, na reunião ou voltando para a mesa com a tarefa resolvida;
+ * senão, a do aviso ou a do estado.
+ */
 export function humorDe(ch: any): Humor {
-  if (ch.festa > 0 || (ch.path && ch.st !== 'precisa')) return 'feliz'
+  if (ch.dormindo) return 'dormindo'
+  if (ch.st !== 'precisa' && (ch.path || ch.reuniao > 0)) return 'feliz'
+  if (ch.festa > 0) return 'feliz'
   return ch.humor || DO_ESTADO[ch.st as EstadoCena]
 }
 
@@ -115,4 +155,7 @@ export function expressar(ch: any, t: number, parado: boolean) {
   }
   const pisca = !parado && ch.anim && Math.pow(Math.max(0, Math.sin((t + ch.fase) * 1.07)), 48) > 0.8
   b.olhos.scale.y = pisca ? 0.1 : ABERTURA[h] || 1
+  if (!b.zzz) return
+  b.zzz.visible = h === 'dormindo'
+  if (b.zzz.visible && !parado) b.zzz.position.y = ZZZ_Y + Math.sin((t + ch.fase) * 1.6) * 0.05
 }

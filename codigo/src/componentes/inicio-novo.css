@@ -121,6 +121,20 @@
   .ini4 .cena3d-tags .tag.fala { animation: ini4-fala .28s cubic-bezier(.2, .8, .2, 1); }
 }
 @keyframes ini4-fala { from { opacity: 0; scale: .92; } }
+/* faixa do turno: a parte do dia e o chamado para a reunião, em cima da cena */
+.ini4 .cena3d-turno { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-block-end: 8px; }
+.ini4 .cena3d-turno p { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--texto-secundario); font: 500 14px/20px var(--fonte-texto); }
+.ini4 .cena3d-turno p svg { flex: none; color: var(--destaque); }
+.ini4 .cena3d-turno p b { color: var(--texto); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ini4 .cena3d-turno-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.ini4 .cena3d-turno .pill { display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--cartao); color: var(--texto); font: 600 14px/1 var(--fonte-texto); box-shadow: inset 0 0 0 1px var(--j-divisa); cursor: pointer; }
+.ini4 .cena3d-turno .pill:last-child { background: color-mix(in srgb, var(--destaque) 14%, var(--cartao)); }
+.ini4 .cena3d-turno .pill:hover { box-shadow: inset 0 0 0 1px var(--destaque); }
+.ini4 .cena3d-turno .pill:active { scale: .97; }
+.ini4 .cena3d-turno .pill svg { inline-size: 16px; block-size: 16px; }
+/* quem dorme: a plaquinha fica mais apagada, com a lua no lugar do sinal */
+.ini4 .cena3d-tags .tag.dorme { opacity: .8; }
+@media (max-width: 899px) { .ini4 .cena3d-turno { padding-inline: 12px; } }
 /* folha de resposta: abre ao tocar no balão de quem precisa de você; só a tarefa e os botões */
 .ini4 .scrim:has(+ .sheet .j-resposta) { opacity: .5; }
 .ini4 .sheet:has(.j-resposta) { max-height: 72dvh; }
