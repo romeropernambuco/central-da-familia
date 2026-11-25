@@ -92,15 +92,27 @@ export interface RespostasDaNova {
   preco: number
   venda: number
   cotacao: CotacaoMoeda
-  /** Formas de pagar de uma comparação anterior: os cartões da família não precisam ser digitados de novo. */
-  pagamentos?: PagamentoTroca[]
+  /** A última comparação guardada: os cartões, as milhas e as regras da família não precisam ser digitados de novo. */
+  base?: Troca
 }
 
 const arredonda = (v: number, passo: number) => Math.round(v / passo) * passo
 
+/**
+ * Os cartões da comparação anterior valem em qualquer moeda. A conta em moeda de lá e o câmbio de referência só valem
+ * na mesma moeda: em outra, entram os padrões (uma conta em euro não paga compra em dólar).
+ */
+function pagamentosDaBase(base: Troca | undefined, moeda: Moeda): PagamentoTroca[] {
+  if (!base?.pagamentos.length) return pagamentosPadrao()
+  if (base.moeda === moeda) return base.pagamentos
+  const cartoes = base.pagamentos.filter(p => p.tipo === 'cartao')
+  const padrao = pagamentosPadrao().filter(p => p.tipo !== 'cartao' && !cartoes.some(c => c.id === p.id))
+  return cartoes.length ? [...cartoes, ...padrao] : pagamentosPadrao()
+}
+
 export function trocaNova(r: RespostasDaNova): Troca {
-  const pagamentos = r.pagamentos?.length ? r.pagamentos : pagamentosPadrao()
-  const { pais, cotacao } = r
+  const { pais, cotacao, base } = r
+  const pagamentos = pagamentosDaBase(base, pais.moeda)
   const temReembolso = pais.reembolsoPct > 0
   return {
     id: r.id,
@@ -128,12 +140,14 @@ export function trocaNova(r: RespostasDaNova): Troca {
     comImposto: true,
     pagamentos,
     pagamento: pagamentos[0].id,
-    bonusPct: 0,
-    milheiro: 0,
-    programa: '',
+    bonusPct: base?.bonusPct ?? 0,
+    milheiro: base?.milheiro ?? 0,
+    programa: base?.programa ?? '',
     contaCambio: Math.round(cotacao.reais * (1 + CONTA_GLOBAL_TOTAL_PCT / 100) * 10000) / 10000,
     contaComprar: Math.ceil(r.preco / 50) * 50,
     textos: {
+      ...(base?.textos.milhas ? { milhas: base.textos.milhas } : {}),
+      ...(base?.textos.pagamentos ? { pagamentos: base.textos.pagamentos } : {}),
       venda: 'Preço pedido em anúncio não é preço de venda fechada. Conte com um pouco menos.',
       ...(temReembolso
         ? {
@@ -150,7 +164,7 @@ export function trocaNova(r: RespostasDaNova): Troca {
         ]
       : [],
     frase: null,
-    regras: [REGRA_DA_COTA],
+    regras: [REGRA_DA_COTA, ...(base?.regras.filter(x => x.titulo !== REGRA_DA_COTA.titulo) ?? [])].slice(0, 16),
     fontes: pais.fonte ? [{ rotulo: `Tax free: ${pais.nome}`, link: pais.fonte }] : [],
   }
 }

@@ -145,8 +145,12 @@ export function lerTroca(x: unknown): Troca | null {
   const id = texto(o.id, 60)
   const nome = texto(o.nome, 100)
   const versoes = lista(o.versoes).flatMap(lerVersao).slice(0, 8)
-  const pagamentos = lista(o.pagamentos).flatMap(lerPagamento).slice(0, 12)
-  if (!id || !nome || !versoes.length || !pagamentos.length) return null
+  const pagamentos = lista(o.pagamentos)
+    .flatMap(lerPagamento)
+    .filter((p, i, todos) => todos.findIndex(x => x.id === p.id) === i)
+    .slice(0, 12)
+  // id igual a nome interno do JavaScript ("constructor", "__proto__") confundiria a lista de rascunhos
+  if (!id || id in Object.prototype || !nome || !versoes.length || !pagamentos.length) return null
   const venda = numero(o.venda, 0)
   const vendaMin = numero(o.vendaMin, 0)
   const escolhido = texto(o.pagamento, 40)

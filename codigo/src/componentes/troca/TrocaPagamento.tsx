@@ -65,7 +65,7 @@ export function TrocaPagamento({ t, conta, mudar }: BlocoDaTroca) {
             >
               <span className="troca-opcao-nome">
                 <b>{textoPrivado(p.nome)}</b>
-                <small>{notaDe(p)}</small>
+                <small>{fala(notaDe(p))}</small>
                 {p.id === melhor && <span className="chip ok">Menos dinheiro</span>}
               </span>
               <span className="troca-opcao-valor">
@@ -116,7 +116,7 @@ function AjustesDePagamento({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
           rotulo={`Câmbio do ${textoPrivado(contaEmMoeda.nome)}, com tudo (R$ por ${moeda})`}
           valor={t.contaCambio}
           mudar={v => mudar({ contaCambio: v ?? NaN })}
-          ajuda={t.textos.conta && textoPrivado(t.textos.conta)}
+          ajuda={t.textos.conta && fala(t.textos.conta)}
         />
       )}
       {incertos.map(p => (
@@ -125,7 +125,7 @@ function AjustesDePagamento({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
           rotulo={`Spread do ${textoPrivado(p.nome)} no crédito (%)`}
           valor={p.spreadPct}
           mudar={v => mudarSpread(p.id, v ?? NaN)}
-          ajuda={p.spreadIncerto}
+          ajuda={p.spreadIncerto && fala(p.spreadIncerto)}
         />
       ))}
       {t.textos.pagamentos && <p className="sub">{fala(t.textos.pagamentos)}</p>}

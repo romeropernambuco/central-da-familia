@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { useSessaoAtual } from '../../app/contexto'
 import { useOculto } from '../../app/useOculto'
@@ -8,21 +8,14 @@ import { diaCurto, emMoeda, nomeDaMoeda, semZeros, simboloDaMoeda } from '../../
 import type { Troca } from '../../lib/troca/tipos'
 import { Botao } from '../base'
 import { Icone } from '../Icone'
-import { CampoNumero, fala, type BlocoDaTroca } from './partes'
+import { CampoNumero, fala, useVivo, type BlocoDaTroca } from './partes'
 
 /** Busca o câmbio de hoje no Banco Central e devolve o que muda na comparação. A conta em moeda de lá não muda. */
 function useCambioDeHoje(t: Troca, mudar: BlocoDaTroca['mudar']) {
   const { api } = useSessaoAtual()
   const [buscando, setBuscando] = useState(false)
   const [falha, setFalha] = useState('')
-  const vivo = useRef(true)
-  useEffect(() => {
-    // liga de novo a cada montagem: no modo de conferência do React o efeito roda, desmonta e roda outra vez
-    vivo.current = true
-    return () => {
-      vivo.current = false
-    }
-  }, [])
+  const vivo = useVivo()
   const buscar = async () => {
     if (!api.cotacaoMoeda) return
     setBuscando(true)
@@ -83,13 +76,14 @@ export function TrocaAjustes({ t, conta, mudar, restaurar }: BlocoDaTroca & { re
           rotulo={`Câmbio de referência, sem taxas (R$ por ${moeda})`}
           valor={t.cambio}
           mudar={v => mudar({ cambio: v ?? NaN, cambioData: '' })}
-          ajuda={t.textos.cambio ?? 'A conta soma o spread e o IOF do cartão escolhido.'}
+          ajuda={t.textos.cambio ? fala(t.textos.cambio) : 'A conta soma o spread e o IOF do cartão escolhido.'}
         />
         <CampoNumero
           rotulo={`Reembolso (${simbolo})`}
           valor={t.reembolso}
           mudar={v => mudar({ reembolso: v })}
           opcional
+          milhar
           seVazio={semZeros(tabela, 2)}
           ajuda={`Vazio usa a tabela (${emMoeda(tabela, t.moeda)}). 0 simula sem reembolso. Teto: ${emMoeda(tetoDoReembolso(preco, t.ivaPct), t.moeda)}, o imposto embutido.`}
         />
@@ -106,14 +100,15 @@ export function TrocaAjustes({ t, conta, mudar, restaurar }: BlocoDaTroca & { re
           mudar={v => mudar({ dolarPontos: v ?? NaN })}
         />
         {t.textos.aduana && <p className="sub">{fala(t.textos.aduana)}</p>}
-        <CampoNumero rotulo="Cota disponível (US$)" valor={t.cota} mudar={v => mudar({ cota: v ?? NaN })} />
+        <CampoNumero rotulo="Cota disponível (US$)" valor={t.cota} mudar={v => mudar({ cota: v ?? NaN })} milhar />
         <CampoNumero
           rotulo={`Valor do aparelho para a alfândega (${simbolo})`}
           valor={t.valorAduana}
           mudar={v => mudar({ valorAduana: v })}
           opcional
+          milhar
           seVazio={semZeros(preco, 2)}
-          ajuda={t.textos.valorAduana ?? 'Vazio usa o preço cheio da nota.'}
+          ajuda={t.textos.valorAduana ? fala(t.textos.valorAduana) : 'Vazio usa o preço cheio da nota.'}
         />
         <div className="troca-dupla">
           <CampoNumero

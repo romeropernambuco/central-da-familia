@@ -28,16 +28,16 @@ export const reaisComCentavos = (v: number) => textoPrivado(`R$${NBSP}${casas(v,
 /** Reais sem centavos, para comparar formas de pagar. */
 export const reaisRedondos = (v: number) => reais(Math.round(v))
 /** "3,5" ou "120": sem zero sobrando. */
-export const semZeros = (n: number, maximo = 4) =>
+export const semZeros = (n: number, maximo = 6) =>
   new Intl.NumberFormat('pt-BR', { maximumFractionDigits: maximo, useGrouping: false }).format(n)
 
 /**
- * Texto de campo vira número. Vírgula é sempre a casa decimal ("6,4349"). Ponto sozinho seguido de 3 algarismos é
- * milhar ("1.000"); qualquer outro ponto é casa decimal ("6.43"). Vazio ou texto que não é número devolve null.
+ * Texto de campo vira número. Vírgula é sempre a casa decimal ("6,4349"). Em câmbio e taxa, ponto também é casa decimal
+ * ("6.434" é 6,434). Só campo de quantia (`aceitaMilhar`) lê "1.000" como mil. Vazio ou texto que não é número: null.
  */
-export function lerDecimal(txt: string): number | null {
+export function lerDecimal(txt: string, aceitaMilhar = false): number | null {
   const t = txt.trim()
-  const milhar = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t)
+  const milhar = t.includes(',') || (aceitaMilhar && /^\d{1,3}(\.\d{3})+$/.test(t))
   const limpo = milhar ? t.replace(/\./g, '').replace(',', '.') : t
   if (!/^\d+(\.\d*)?$/.test(limpo)) return null
   const n = Number(limpo)

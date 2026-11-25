@@ -88,7 +88,7 @@ export function erroDaTroca(t: Troca): string {
     numeros.every(Number.isFinite) &&
     positivos.every(n => n > 0) &&
     naoNegativos.every(n => n >= 0) &&
-    (t.reembolso ?? 0) <= tetoDoReembolso(v.preco, t.ivaPct)
+    (t.reembolso ?? c2((v.preco * v.reembolsoPct) / 100)) <= tetoDoReembolso(v.preco, t.ivaPct)
   return certo
     ? ''
     : 'Confira os valores. O reembolso tem que caber no imposto da compra e os câmbios têm que ser positivos.'

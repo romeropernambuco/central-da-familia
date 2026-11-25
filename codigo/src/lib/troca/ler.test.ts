@@ -43,6 +43,17 @@ describe('o que vem de fora é conferido antes de virar comparação', () => {
     expect(t.fontes).toEqual([duo.fontes[0]])
   })
 
+  it('id com nome interno do JavaScript é recusado (quebraria a lista de rascunhos)', () => {
+    for (const id of ['constructor', 'toString', '__proto__', 'hasOwnProperty'])
+      expect(lerTroca({ ...duo, id })).toBeNull()
+  })
+
+  it('forma de pagar repetida: fica a primeira', () => {
+    const t = lerTroca({ ...duo, pagamentos: [...duo.pagamentos, { ...duo.pagamentos[0], nome: 'Cópia' }] })!
+    expect(t.pagamentos.map(p => p.id)).toEqual(duo.pagamentos.map(p => p.id))
+    expect(t.pagamentos[0].nome).toBe('Sicoob Black')
+  })
+
   it('id repetido na lista: fica a primeira', () => {
     expect(lerTrocas([duo, { ...duo, nome: 'Cópia' }]).map(t => t.nome)).toEqual(['iPhone Duo'])
   })
@@ -83,9 +94,15 @@ describe('câmbio do Banco Central', () => {
     expect(montarCotacao('EUR', { reais: 6.4413, data: '2026-11-25' }, { reais: 5.8825 })).toEqual({
       moeda: 'EUR',
       reais: 6.4413,
-      dolares: 1.095,
+      dolares: 1.094994,
       data: '2026-11-25',
     })
+  })
+
+  it('iene: 6 casas, para o câmbio pequeno não perder precisão', () => {
+    const iene = montarCotacao('JPY', { reais: 0.037712, data: '2026-11-25' }, { reais: 5.8825 })
+    expect(iene.reais).toBe(0.037712)
+    expect(iene.dolares).toBe(0.006411)
   })
 
   it('sem boletim (fim de semana sem dado) ou resposta estranha devolve nada', () => {
@@ -109,12 +126,16 @@ describe('comparação nova', () => {
       preco: 2099,
       venda: 4000,
       cotacao,
-      pagamentos: duo.pagamentos,
+      base: duo,
     })
     expect(lerTroca(t)).toEqual(t)
     expect(t.cambio).toBe(6.4413)
     expect(t.cambioData).toBe('2026-11-25')
     expect(t.pagamentos).toBe(duo.pagamentos)
+    // o cenário inteiro vem junto: milhas com bônus e preço, e as regras dos cartões depois da regra da alfândega
+    expect([t.bonusPct, t.milheiro, t.programa]).toEqual([120, 14.13, 'Azul'])
+    expect(t.textos.milhas).toBe(duo.textos.milhas)
+    expect(t.regras.map(x => x.titulo)).toEqual(['Alfândega na volta', ...duo.regras.map(x => x.titulo)])
     expect([t.vendaMin, t.vendaMax]).toEqual([3200, 4800])
     const r = contaDaTroca(t)!
     expect(r.reembolso).toBe(304.36)
@@ -131,6 +152,24 @@ describe('comparação nova', () => {
     expect(r.imposto).toBe(0)
   })
 
+  it('compra em outra moeda leva os cartões, mas não a conta em euro nem o euro de referência', () => {
+    const eua = PAISES.find(p => p.id === 'us')!
+    const dolar = { moeda: 'USD' as const, reais: 5.8825, dolares: 1, data: '2026-11-25' }
+    const t = trocaNova({
+      id: 'n3',
+      nome: 'Câmera',
+      usado: '',
+      pais: eua,
+      preco: 1500,
+      venda: 0,
+      cotacao: dolar,
+      base: duo,
+    })
+    expect(t.pagamentos.map(p => p.id)).toEqual(['sicoob', 'uvp', 'uvc', 'epic', 'nu', 'conta', 'ref'])
+    expect(t.pagamentos.find(p => p.tipo === 'conta')!.nome).toBe('Conta em moeda de lá')
+    expect(contaDaTroca(t)).not.toBeNull()
+  })
+
   it('buscas do usado prontas; sem nome do usado, nenhuma', () => {
     expect(buscasDoUsado('iPhone 17 Pro Max').map(b => b.link)).toEqual([
       'https://www.olx.com.br/brasil?q=iPhone%2017%20Pro%20Max',
@@ -143,10 +182,16 @@ describe('comparação nova', () => {
 describe('número digitado no campo', () => {
   it('vírgula é decimal, ponto de milhar some', () => {
     expect(lerDecimal('6,4349')).toBe(6.4349)
-    expect(lerDecimal('1.000')).toBe(1000)
     expect(lerDecimal('1.234,5')).toBe(1234.5)
     expect(lerDecimal('6.43')).toBe(6.43)
     expect(lerDecimal('120')).toBe(120)
+  })
+  it('em câmbio e taxa, ponto é casa decimal; só campo de quantia lê "1.000" como mil', () => {
+    expect(lerDecimal('6.434')).toBe(6.434)
+    expect(lerDecimal('5.882')).toBe(5.882)
+    expect(lerDecimal('1.000', true)).toBe(1000)
+    expect(lerDecimal('12.500', true)).toBe(12500)
+    expect(lerDecimal('6.43', true)).toBe(6.43)
   })
   it('vazio, letra e sinal de menos não viram número', () => {
     expect(lerDecimal('')).toBeNull()

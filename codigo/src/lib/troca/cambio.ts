@@ -51,6 +51,7 @@ export function montarCotacao(
   daMoeda: { reais: number; data: string },
   doDolar: { reais: number },
 ): CotacaoMoeda {
-  const casas4 = (n: number) => Math.round(n * 10000) / 10000
-  return { moeda, reais: casas4(daMoeda.reais), dolares: casas4(daMoeda.reais / doDolar.reais), data: daMoeda.data }
+  // 6 casas: o iene vale centésimos de real, e com 4 casas o erro chegava a 1%
+  const casas = (n: number) => Math.round(n * 1e6) / 1e6
+  return { moeda, reais: casas(daMoeda.reais), dolares: casas(daMoeda.reais / doDolar.reais), data: daMoeda.data }
 }

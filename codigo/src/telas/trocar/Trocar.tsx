@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, Link2, Plus, Trash2 } from 'lucide-react'
 import { useAcoes, useSessaoAtual } from '../../app/contexto'
 import { useConfig } from '../../app/useConfig'
@@ -23,6 +23,9 @@ import type { Troca } from '../../lib/troca/tipos'
 /** Comparação que chegou no endereço (#/trocar?c=...). Lida uma vez, ao abrir a tela. */
 const doEndereco = () => (typeof location === 'undefined' ? null : trocaDoLink(location.hash))
 
+/** Rascunhos sobrevivem a trocar de aba (a tela desmonta). Só na memória: somem ao recarregar. Um por família. */
+const memoria = new Map<string, { rascunhos: Record<string, Troca>; aberta: string | null }>()
+
 /**
  * As comparações guardadas, a que está aberta e os rascunhos. Mexer num campo não grava: fica num rascunho daquela
  * comparação até a pessoa guardar ou desfazer, então trocar de comparação não perde o que foi digitado.
@@ -31,9 +34,21 @@ function useTrocas() {
   const { toast } = useAcoes()
   const [cru, salvar, falha, lido] = useConfig<unknown[]>('trocas', [])
   const guardadas = useMemo(() => lerTrocas(cru), [cru])
+  const chave = useSessaoAtual().familia?.id ?? ''
   const [recebida] = useState(doEndereco)
-  const [rascunhos, setRascunhos] = useState<Record<string, Troca>>(() => (recebida ? { [recebida.id]: recebida } : {}))
-  const [aberta, setAberta] = useState<string | null>(recebida?.id ?? null)
+  const [rascunhos, setRascunhos] = useState<Record<string, Troca>>(() => ({
+    ...memoria.get(chave)?.rascunhos,
+    ...(recebida ? { [recebida.id]: recebida } : {}),
+  }))
+  const [aberta, setAberta] = useState<string | null>(recebida?.id ?? memoria.get(chave)?.aberta ?? null)
+  useEffect(() => {
+    memoria.set(chave, { rascunhos, aberta })
+  }, [chave, rascunhos, aberta])
+  useEffect(() => {
+    // tira a comparação do endereço: recarregar ou voltar não reabre um rascunho velho por cima do que foi guardado
+    if (recebida && typeof history !== 'undefined')
+      history.replaceState(null, '', location.pathname + location.search + '#/trocar')
+  }, [recebida])
   const novas = Object.values(rascunhos).filter(r => !guardadas.some(g => g.id === r.id))
   const todas = [...guardadas, ...novas]
   const guardada = guardadas.find(g => g.id === aberta) ?? (aberta && rascunhos[aberta] ? undefined : guardadas[0])
@@ -51,7 +66,12 @@ function useTrocas() {
     nova: !!atual && !guardadas.some(g => g.id === atual.id),
     doLink: !!atual && recebida?.id === atual.id && !guardadas.some(g => g.id === atual.id),
     abrir: setAberta,
-    mudar: (parte: Partial<Troca>) => atual && setRascunhos(r => ({ ...r, [atual.id]: { ...atual, ...parte } })),
+    mudar: (parte: Partial<Troca>) => {
+      if (!atual) return
+      const { id } = atual
+      // parte do rascunho mais novo: uma resposta atrasada (câmbio) não apaga o que a pessoa mexeu enquanto esperava
+      setRascunhos(r => ({ ...r, [id]: { ...(Object.hasOwn(r, id) ? r[id] : atual), ...parte } }))
+    },
     criar: (t: Troca) => {
       setRascunhos(r => ({ ...r, [t.id]: t }))
       setAberta(t.id)
@@ -192,7 +212,7 @@ export function Trocar() {
   const t = trocas.atual
   const folhaNova = nova && (
     <NovaTroca
-      pagamentos={trocas.guardadas.at(-1)?.pagamentos}
+      base={trocas.guardadas.at(-1)}
       fechar={() => setNova(false)}
       criar={criada => {
         trocas.criar(criada)

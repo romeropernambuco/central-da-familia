@@ -71,6 +71,7 @@ export function TrocaContaEmMoeda({ t, conta, mudar }: BlocoDaTroca) {
           rotulo={`Quanto comprar de ${moeda} na conta`}
           valor={t.contaComprar}
           mudar={v => mudar({ contaComprar: v ?? NaN })}
+          milhar
         />
         <div className="campo">
           <span>Reais para a remessa</span>

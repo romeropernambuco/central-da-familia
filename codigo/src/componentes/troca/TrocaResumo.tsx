@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useOculto } from '../../app/useOculto'
 import { reais, textoParaValor, valorDigitadoValido, valorParaTexto } from '../../lib/formato'
 import { textoPrivado } from '../../lib/olho'
@@ -28,6 +29,15 @@ function Retorno({ custo, programa }: { custo: CustoPagamento; programa: string 
 /** A régua da venda do usado: campo de valor, barra de arrastar e as marcas. Com o olho fechado, a barra some. */
 function VendaDoUsado({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
   const oculto = useOculto()
+  const escrito = (v: number) => (Number.isFinite(v) ? valorParaTexto(v) : '')
+  const lido = (s: string) => (s === '' ? 0 : valorDigitadoValido(s) ? textoParaValor(s) : NaN)
+  const [txt, setTxt] = useState(escrito(t.venda))
+  const [vista, setVista] = useState(t.venda)
+  if (!Object.is(vista, t.venda)) {
+    setVista(t.venda)
+    // mudou por fora (régua, desfazer, outra comparação): o campo acompanha; se foi a própria digitação, fica como está
+    if (!Object.is(lido(txt), t.venda)) setTxt(escrito(t.venda))
+  }
   const naRegua = Math.min(Math.max(t.venda || 0, t.vendaMin), t.vendaMax)
   return (
     <div className="troca-controle">
@@ -38,8 +48,11 @@ function VendaDoUsado({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
         <CampoValor
           id="trocaVenda"
           rotulo="Venda do usado em reais"
-          valor={Number.isFinite(t.venda) ? valorParaTexto(t.venda) : ''}
-          mudar={txt => mudar({ venda: valorDigitadoValido(txt) ? textoParaValor(txt) : txt === '' ? 0 : t.venda })}
+          valor={txt}
+          mudar={novo => {
+            setTxt(novo)
+            mudar({ venda: lido(novo) })
+          }}
         />
       </div>
       {!oculto && t.vendaMax > t.vendaMin && (
@@ -72,7 +85,7 @@ function Versoes({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
   return (
     <div className="troca-controle">
       <p className="lbl" id="trocaVersoes">
-        {t.textos.versoes || 'Versão'}
+        {fala(t.textos.versoes || 'Versão')}
       </p>
       <div className="seg" role="group" aria-labelledby="trocaVersoes">
         {t.versoes.map((v, i) => (

@@ -137,6 +137,12 @@ describe('quando a conta não fecha', () => {
     expect(contaDaTroca(com({ reembolso: 600 }))).toBeNull()
   })
 
+  it('reembolso da tabela maior que o imposto embutido também é barrado', () => {
+    const exagerado = com({ ivaPct: 0, versoes: [{ rotulo: 'Única', preco: 1000, reembolsoPct: 100 }], versao: 0 })
+    expect(contaDaTroca(exagerado)).toBeNull()
+    expect(contaDaTroca(com({ ivaPct: 14 }))).toBeNull()
+  })
+
   it('câmbio zero ou número quebrado não vira conta', () => {
     expect(contaDaTroca(com({ cambio: 0 }))).toBeNull()
     expect(contaDaTroca(com({ dolarFiscal: 0 }))).toBeNull()

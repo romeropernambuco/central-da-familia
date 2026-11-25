@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { lerDecimal, semZeros } from '../../lib/troca/formato'
-import { mascararTexto, valoresOcultos } from '../../lib/olho'
+import { textoPrivado } from '../../lib/olho'
 import type { ContaDaTroca } from '../../lib/troca/conta'
 import type { LinkTroca, Troca } from '../../lib/troca/tipos'
 import { CampoDecimal } from '../privacidade'
@@ -12,8 +12,21 @@ export interface BlocoDaTroca {
   mudar: (parte: Partial<Troca>) => void
 }
 
-/** Texto de apoio que cita valores ("contar com R$ 8.000"): com o olho fechado, os valores somem. */
-export const fala = (txt: string) => (valoresOcultos() ? mascararTexto(txt) : txt)
+/** Texto de apoio escrito para esta comparação: pode citar valor, cartão ou aparelho. Com o olho fechado, some inteiro. */
+export const fala = (txt: string) => textoPrivado(txt)
+
+/** A peça ainda está na tela? Resposta de rede que chega depois de fechar não mexe em nada. */
+export function useVivo() {
+  const vivo = useRef(true)
+  useEffect(() => {
+    // liga de novo a cada montagem: no modo de conferência do React o efeito roda, desmonta e roda outra vez
+    vivo.current = true
+    return () => {
+      vivo.current = false
+    }
+  }, [])
+  return vivo
+}
 
 const escrito = (v: number | null) => (v == null || !Number.isFinite(v) ? '' : semZeros(v))
 
@@ -28,6 +41,7 @@ export function CampoNumero({
   ajuda,
   opcional = false,
   seVazio,
+  milhar = false,
 }: {
   rotulo: string
   valor: number | null
@@ -36,13 +50,15 @@ export function CampoNumero({
   opcional?: boolean
   /** O que aparece no campo opcional vazio (o valor que a conta usa nesse caso). */
   seVazio?: string
+  /** Campo de quantia (cota, preço): "1.000" é mil. Em câmbio e taxa, ponto é casa decimal. */
+  milhar?: boolean
 }) {
   const [txt, setTxt] = useState(escrito(valor))
   const [visto, setVisto] = useState(valor)
   if (!Object.is(visto, valor)) {
     setVisto(valor)
     // mudou por fora (restaurar, câmbio buscado): o campo acompanha; se foi a própria digitação, fica como está
-    const digitado = txt.trim() === '' ? null : lerDecimal(txt)
+    const digitado = txt.trim() === '' ? null : lerDecimal(txt, milhar)
     if (!Object.is(digitado ?? (opcional ? null : NaN), valor)) setTxt(escrito(valor))
   }
   return (
@@ -57,7 +73,7 @@ export function CampoNumero({
           const novo = e.target.value
           setTxt(novo)
           if (novo.trim() === '') mudar(opcional ? null : NaN)
-          else mudar(lerDecimal(novo) ?? NaN)
+          else mudar(lerDecimal(novo, milhar) ?? NaN)
         }}
       />
       {ajuda && <small>{ajuda}</small>}

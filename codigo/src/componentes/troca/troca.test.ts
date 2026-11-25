@@ -134,8 +134,11 @@ describe('olho fechado', () => {
     const t = texto(html)
     for (const segredo of ['16.615', '9.611', '7.003', '8.000', '20.573', '460,26', '3.089', '16.391', '21.998'])
       expect(t, segredo).not.toContain(segredo)
-    for (const nome of ['Pagando com Sicoob', 'Venda do 17 Pro Max', 'iPhone Duo após'])
+    // nome de cartão, de aparelho e valor em euro não escapam por texto de apoio, regra ou endereço de busca
+    for (const nome of ['Sicoob', 'Nubank', 'PicPay', 'Epic', 'C6', 'Ultravioleta', '17 Pro Max', 'Duo', '2.600'])
       expect(t, nome).not.toContain(nome)
+    expect(html).not.toContain('olx.com.br')
+    expect(html).not.toContain('<a ')
     expect(html).not.toMatch(/value="[^"]*\d[^"]*"/)
     expect(html).not.toContain('type="range"')
     expect(html).not.toContain('troca-barra')

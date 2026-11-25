@@ -1603,7 +1603,7 @@ export const apiExemplo: Api = {
     await espera(40)
     // câmbio fixo de exemplo (o do euro e o do dólar são do boletim de 25/11/2026); o exemplo nunca usa a rede
     const reais = { EUR: 6.4413, USD: 5.8825, GBP: 7.6272, JPY: 0.0377, CHF: 6.92, CAD: 4.19, AUD: 3.83 }[moeda]
-    return { moeda, reais, dolares: Math.round((reais / 5.8825) * 10000) / 10000, data: dia }
+    return { moeda, reais, dolares: Math.round((reais / 5.8825) * 1e6) / 1e6, data: dia }
   },
   async lerCupom() {
     await espera(300)

@@ -1,25 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useSessaoAtual } from '../../app/contexto'
 import { hojeRecife, textoParaValor, valorDigitadoValido } from '../../lib/formato'
 import { novoUuid } from '../../lib/seguro'
 import type { CotacaoMoeda } from '../../lib/troca/cambio'
 import { nomeDaMoeda, simboloDaMoeda } from '../../lib/troca/formato'
 import { PAISES, trocaNova } from '../../lib/troca/nova'
-import type { PagamentoTroca, Troca } from '../../lib/troca/tipos'
+import type { Troca } from '../../lib/troca/tipos'
 import { Botao, CampoValor, Sheet } from '../base'
 import { CampoPrivado } from '../privacidade'
-import { CampoNumero } from './partes'
+import { CampoNumero, useVivo } from './partes'
 
 /**
  * Comparação nova em 5 respostas. O câmbio vem do Banco Central na hora; se a busca falhar, a folha pede o câmbio
- * à mão e segue. As formas de pagar vêm da última comparação guardada, para ninguém digitar os cartões de novo.
+ * à mão e segue. Os cartões, as milhas e as regras vêm da última comparação guardada, para ninguém digitar de novo.
  */
 export function NovaTroca({
-  pagamentos,
+  base,
   criar,
   fechar,
 }: {
-  pagamentos?: PagamentoTroca[]
+  /** A última comparação guardada: a nova herda dela os cartões, as milhas e as regras. */
+  base?: Troca
   criar: (t: Troca) => void
   fechar: () => void
 }) {
@@ -33,14 +34,7 @@ export function NovaTroca({
   const [semCambio, setSemCambio] = useState('')
   const [reais, setReais] = useState<number | null>(null)
   const [dolares, setDolares] = useState<number | null>(null)
-  const vivo = useRef(true)
-  useEffect(() => {
-    // liga de novo a cada montagem: no modo de conferência do React o efeito roda, desmonta e roda outra vez
-    vivo.current = true
-    return () => {
-      vivo.current = false
-    }
-  }, [])
+  const vivo = useVivo()
   const pais = PAISES.find(p => p.id === paisId) ?? PAISES[0]
   const numero = (n: number | null): n is number => n != null && Number.isFinite(n) && n > 0
   const vendaCerta = venda === '' || valorDigitadoValido(venda)
@@ -55,7 +49,7 @@ export function NovaTroca({
         preco: preco as number,
         venda: textoParaValor(venda),
         cotacao,
-        pagamentos,
+        base,
       }),
     )
   const continuar = async () => {
@@ -107,7 +101,13 @@ export function NovaTroca({
               : 'Este país não devolve imposto a turista na saída.'}
           </small>
         </label>
-        <CampoNumero rotulo={`Preço na loja (${simboloDaMoeda(pais.moeda)})`} valor={preco} mudar={setPreco} opcional />
+        <CampoNumero
+          rotulo={`Preço na loja (${simboloDaMoeda(pais.moeda)})`}
+          valor={preco}
+          mudar={setPreco}
+          opcional
+          milhar
+        />
         <div className="campo">
           <span>Por quanto espera vender o usado</span>
           <CampoValor rotulo="Venda esperada do usado em reais" valor={venda} mudar={setVenda} />
