@@ -101,6 +101,9 @@
 .ini4 .cena3d-tags .tag.precisa[data-ponta]::before { box-shadow: none; }
 .ini4 .cena3d-tags .tag.precisa svg { background: color-mix(in srgb, var(--sobre-destaque) 20%, transparent); color: inherit; }
 .ini4 .cena3d-tags .tag.precisa > span:not(.tag-dito) { color: inherit; opacity: .85; }
+/* quem precisa de você: o balão avisa que dá para responder ali mesmo */
+.ini4 .cena3d-tags .tag.fala > span.tag-acao { display: flex; grid-column: 1 / -1; align-items: center; justify-content: flex-end; gap: 2px; margin-block-start: 4px; padding-block-start: 7px; border-block-start: 1px solid color-mix(in srgb, currentColor 24%, transparent); color: inherit; font: 700 14px/1 var(--fonte-texto); opacity: 1; }
+.ini4 .cena3d-tags .tag.fala > span.tag-acao svg { grid-row: auto; padding: 0; background: none; }
 .ini4 .cena3d-tags .tag.sel { background: var(--texto); color: var(--cartao); }
 .ini4 .cena3d-tags .tag.sel svg, .ini4 .cena3d-tags .tag.sel > span:not(.tag-dito) { color: inherit; }
 .ini4 .cena3d-tags .tag.sel.fala svg { background: color-mix(in srgb, var(--cartao) 18%, transparent); }
@@ -118,6 +121,23 @@
   .ini4 .cena3d-tags .tag.fala { animation: ini4-fala .28s cubic-bezier(.2, .8, .2, 1); }
 }
 @keyframes ini4-fala { from { opacity: 0; scale: .92; } }
+/* folha de resposta: abre ao tocar no balão de quem precisa de você; só a tarefa e os botões */
+.ini4 .scrim:has(+ .sheet .j-resposta) { opacity: .5; }
+.ini4 .sheet:has(.j-resposta) { max-height: 72dvh; }
+.ini4 .j-resposta { display: grid; gap: 12px; }
+.ini4 .j-resposta-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: var(--texto-secundario); font: 600 14px/20px var(--fonte-texto); }
+.ini4 .j-resposta-valor { color: var(--texto); font: 700 28px/1.15 var(--fonte-numero, var(--fonte-texto)); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ini4 .j-resposta .perg-ops { display: grid; }
+.ini4 .j-resposta .perg-ops .btn, .ini4 .j-resposta-seguir .btn { min-block-size: 48px; }
+.ini4 .j-resposta details.perg-c summary { inline-size: fit-content; padding: 13px 12px 13px 0; color: var(--texto-secundario); font: 600 14px/18px var(--fonte-texto); cursor: pointer; }
+.ini4 .j-resposta-pronto { display: flex; align-items: center; gap: 8px; margin: 8px 0; color: var(--texto); font: 600 18px/25px var(--fonte-texto); }
+.ini4 .j-resposta-pronto svg { color: var(--destaque); }
+.ini4 .j-resposta-seguir { display: grid; gap: 8px; }
+.ini4 .j-resposta-ficha { display: inline-flex; align-items: center; justify-self: start; gap: 4px; min-block-size: 44px; padding: 0; border: 0; background: none; color: var(--texto-secundario); font: 600 14px/1 var(--fonte-texto); cursor: pointer; }
+.ini4 .j-resposta-ficha:hover { color: var(--texto); }
+@media (min-width: 900px) {
+  .ini4 .sheet:has(.j-resposta) { inset: auto 24px 24px auto; width: 420px; max-height: min(640px, calc(100dvh - 48px)); transform: none; border-radius: 24px; animation: lado var(--t-base) var(--ease); }
+}
 .ini4 .j-saude button { min-block-size: 44px; padding-inline: 14px; border-radius: 999px; }
 .j-inicio.ini4 .j-saude button:hover { background: color-mix(in srgb, var(--destaque) 10%, transparent); text-decoration: none; }
 /* celular: a cena fica grande e a pessoa arrasta para os lados (abre no meio do escritório) */

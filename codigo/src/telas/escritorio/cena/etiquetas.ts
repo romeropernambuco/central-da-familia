@@ -47,6 +47,8 @@ export function criarEtiquetas(
   o: Pick<OpcoesCena, 'etiqueta' | 'placa'> & {
     /** a etiqueta de um funcionário também evita cobrir o corpo dos outros (a sala do Meu orçamento) */
     corpos?: boolean
+    /** só o rosto dos outros é evitado: no escritório inteiro é nele que se lê a emoção de cada um */
+    rostos?: boolean
   },
 ) {
   const v3 = new T.Vector3()
@@ -54,21 +56,26 @@ export function criarEtiquetas(
     v3.set(x, y, z).project(cam)
     return { x: (v3.x * 0.5 + 0.5) * el.clientWidth, y: (-v3.y * 0.5 + 0.5) * el.clientHeight }
   }
-  /** Onde o corpo de cada um aparece na tela: da cabeça aos pés, com a largura dos ombros. */
-  function corposNaTela(chars: any[]) {
+  /** Onde o corpo de cada um aparece na tela: da cabeça aos pés (ou só até o pescoço), com a largura dos ombros. */
+  function corposNaTela(chars: any[], soRosto: boolean) {
     return chars.map(ch => {
       const { x, z } = ch.b.r.position,
-        topo = naTela(x, ch.b.hips.position.y + 1.12, z),
-        pe = naTela(x, 0, z),
-        meia = Math.abs(naTela(x + 0.3, 0, z).x - pe.x)
+        quadril = ch.b.hips.position.y,
+        topo = naTela(x, quadril + (ch.b.topo || 1.12), z),
+        pe = naTela(x, soRosto ? quadril + 0.5 : 0, z),
+        meia = Math.abs(naTela(x + 0.3, 0, z).x - naTela(x, 0, z).x)
       return { id: ch.id, caixa: [topo.x - meia, topo.y, 2 * meia, pe.y - topo.y] }
     })
   }
+  let quadros = 0
   return function atualizaTags(chars: any[], selecionado: string | null, camNome: string) {
+    // o tamanho de cada etiqueta fica guardado, mas é conferido de novo de tempos em tempos: a fonte ou o estilo
+    // podem chegar depois da primeira medida, e o balão ficaria em cima do rosto
+    const conferir = quadros++ % 40 === 0
     const W = el.clientWidth,
       H = el.clientHeight,
       caixas: number[][] = [],
-      corpos = o.corpos ? corposNaTela(chars) : []
+      corpos = o.corpos || o.rostos ? corposNaTela(chars, !o.corpos) : []
     const ordem = chars.slice().sort((a, b) => {
       const pa = a.st === 'precisa' ? 0 : a.id === selecionado ? 1 : 2,
         pb = b.st === 'precisa' ? 0 : b.id === selecionado ? 1 : 2
@@ -78,12 +85,12 @@ export function criarEtiquetas(
       const t: any = o.etiqueta(ch.id)
       if (!t) return
       const chave = t.dataset.k || ''
-      if (ch.tk !== chave || !ch.tw) {
+      if (ch.tk !== chave || !ch.tw || conferir) {
         ch.tk = chave
         ch.tw = t.offsetWidth
         ch.th = t.offsetHeight
       }
-      const hy = ch.b.hips.position.y + 1.12,
+      const hy = ch.b.hips.position.y + (ch.b.topo || 1.12),
         p = naTela(ch.b.r.position.x, hy, ch.b.r.position.z)
       const x0 = Math.round(p.x - ch.tw / 2),
         y0 = Math.round(p.y - ch.th - 4)
@@ -94,7 +101,9 @@ export function criarEtiquetas(
         p.x > W + 10 ||
         (camNome !== 'tudo' && ch.sala !== camNome && ch.id !== selecionado)
       // primeiro tenta um lugar que não cobre nem outra etiqueta nem o corpo de outra pessoa; sem lugar assim, só evita etiquetas
-      const alheios = corpos.filter(c => c.id !== ch.id).map(c => c.caixa)
+      // (no escritório inteiro o balão de quem precisa de você fica sempre em cima do dono: só os outros desviam dos rostos)
+      const desvia = o.corpos || ch.st !== 'precisa'
+      const alheios = desvia ? corpos.filter(c => c.id !== ch.id).map(c => c.caixa) : []
       let lugar = acharLugar(ch, x0, y0, W, [...caixas, ...alheios])
       if (lugar.bate && alheios.length) lugar = acharLugar(ch, x0, y0, W, caixas)
       const { x, y, bate } = lugar

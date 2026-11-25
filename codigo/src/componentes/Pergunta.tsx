@@ -149,6 +149,7 @@ export function PerguntaCard({
   aoResponder,
   aoExibir,
   compacto,
+  contextoRecolhido,
   primeiraResposta,
 }: {
   p: PerguntaEsc
@@ -158,6 +159,8 @@ export function PerguntaCard({
   abrirCadastro?: () => void
   semQuem?: boolean
   compacto?: boolean
+  /** o contexto fica atrás de "Por quê?" (os rótulos dos botões continuam inteiros) */
+  contextoRecolhido?: boolean
   corrige?: boolean
   aoResponder?: () => void
   aoExibir?: () => void
@@ -366,7 +369,13 @@ export function PerguntaCard({
         </p>
       )}
       <p className="perg-t">{fala(p.pergunta)}</p>
-      {p.contexto && !compacto && <p className="perg-c">{fala(p.contexto)}</p>}
+      {p.contexto && !compacto && !contextoRecolhido && <p className="perg-c">{fala(p.contexto)}</p>}
+      {p.contexto && contextoRecolhido && (
+        <details className="perg-c">
+          <summary>Por quê?</summary>
+          {fala(p.contexto)}
+        </details>
+      )}
       <div className="perg-ops" role="group" aria-label="Respostas">
         {p.opcoes.map((o, i) => {
           const rotulo = rotuloDeOpcao(o.rotulo, i, privados, oculto)

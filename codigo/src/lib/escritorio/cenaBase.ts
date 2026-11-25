@@ -2,10 +2,14 @@
 export type EstadoCena = 'fila' | 'trabalhando' | 'entregue' | 'precisa'
 /** Estados de interação, independentes dos estados persistidos do escritório. */
 export type EstadoAgente = 'trabalhando' | 'chamando' | 'resolvido' | 'parado'
+/** O semblante de cada um no escritório inteiro. */
+export type Humor = 'calmo' | 'focado' | 'feliz' | 'preocupado' | 'aflito'
 export interface FuncCena {
   id: string
   sala?: string
   estado: EstadoCena
+  /** emoção que o aviso dele pede; sem ela, vale a do estado (trabalhando = concentrado, entregue = feliz…) */
+  humor?: Humor
 }
 export interface OpcoesCena {
   mini?: boolean

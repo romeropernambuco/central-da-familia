@@ -6,6 +6,7 @@ import type { EstadoAgente, EstadoCena } from '../../../lib/escritorio/cenaBase'
 import { ESCALA_FUNCIONARIO_MINI } from '../escritorioMini'
 import { HIP_PE, HIP_SENTADO } from './boneco'
 import { estadoLegado, luzTela } from './estados'
+import { expressar } from './humor'
 
 /** Como a cena está rodando agora: com ou sem movimento, em qual degrau do modo leve e a quantos quadros por segundo. */
 export interface Ritmo {
@@ -98,13 +99,15 @@ export function acenar(ch: any, dt: number, a: number, ph: number) {
   const b = ch.b
   const da2 = Math.PI / 4 - b.r.rotation.y
   b.r.rotation.y += da2 * Math.min(1, dt * 8)
+  /* dinheiro em risco: chama com os dois braços e olha para os lados, inquieto */
+  const aflito = ch.humor === 'aflito'
   return {
-    hy: HIP_PE + a * Math.abs(Math.sin(ph * 3)) * 0.015,
+    hy: HIP_PE + a * Math.abs(Math.sin(ph * (aflito ? 5 : 3))) * 0.015,
     hx: 0,
     cx: -0.08,
-    cy: 0,
+    cy: aflito ? a * Math.sin(ph * 2.3) * 0.2 : 0,
     lx: 0,
-    lz: 0,
+    lz: aflito ? -2.55 - a * Math.sin(ph * 7) * 0.2 : 0,
     le: -0.15,
     rx: 0,
     rz: 2.55,
@@ -197,6 +200,7 @@ export function moverNaCena(ch: any, t: number, dt: number, reduz: boolean) {
   }
   const alvo = ch.path ? andar(ch, dt, ph) : ch.loc === 'frente' ? acenar(ch, dt, a, ph) : sentar(ch, st, dt, a, ph)
   pose(ch, alvo, ch.pose.hy === undefined ? 1 : dt)
+  expressar(ch, t, reduz)
 }
 
 export function mudarMini(ch: any, estado: EstadoAgente) {

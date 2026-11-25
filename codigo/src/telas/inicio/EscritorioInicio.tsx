@@ -12,6 +12,7 @@ import { Sheet } from '../../componentes/base'
 import { diasEntre, hojeRecife } from '../../lib/formato'
 import { totalPendencias } from '../../lib/resumo/pendencias'
 import { EscritorioDesenho } from '../../componentes/escritorio/EscritorioDesenho'
+import { FolhaResposta } from '../../componentes/escritorio/FolhaResposta'
 import { destinoDoPosto, resumoDaEquipe } from '../../componentes/escritorio/modeloPosto'
 import { VisorEscritorio } from '../../componentes/escritorio/VisorEscritorio'
 import { prioridades } from '../../componentes/painel-inicio/modelo'
@@ -103,8 +104,12 @@ function EscritorioAutorizado({
         (f.estado === 'trabalhando' ? atividade : entrega?.resumo) || (f.frase !== membro.papel ? f.frase : '')
       if (dito?.trim()) falas[membro.id] = dito.trim()
     }
+  // quem tem conta vencida fica aflito; com o olho fechado o rosto não entrega o motivo
+  const humores: Record<string, 'aflito'> = {}
+  if (!oculto)
+    for (const t of dados.fila) if (nivel(t.pergunta, hoje) === 'dinheiro em risco') humores[t.membro.id] = 'aflito'
   const [sala, setSala] = useState<SalaEquipe>()
-  const [selecao, selecionar] = useState<{ id: string; pergunta?: string }>()
+  const [selecao, selecionar] = useState<{ id: string; pergunta?: string; resposta?: boolean }>()
   const [filaAberta, abrirFila] = useState(false)
   const folha = useRef<HTMLElement>(null)
   const [pagina, setPagina] = useState(0)
@@ -123,7 +128,30 @@ function EscritorioAutorizado({
   const verHistorico = casal && posto && (posto.membro.id !== 'analista' || dono)
   const fechar = () => selecionar(undefined)
   const abrirPosto = (id: string, pergunta?: string) => selecionar({ id, pergunta })
-  const ficha = posto && (
+  // Início novo: quem tem tarefa abre direto a resposta; quem não tem (e o Início de sempre) abre a ficha
+  const abrirResposta = (id: string, pergunta?: string) =>
+    selecionar({ id, pergunta, resposta: !!comFalas && fila.some(t => t.membro.id === id) })
+  const fecharResposta = () => {
+    fechar()
+    // o botão que abriu pode ter sumido junto com a tarefa: o foco fica na lista "Precisa de você"
+    setTimeout(() => {
+      if (document.activeElement === document.body) folha.current?.focus({ preventScroll: true })
+    })
+  }
+  const resposta = posto && selecao?.resposta && (
+    <FolhaResposta
+      key={'resposta:' + posto.membro.id}
+      nome={posto.membro.nome}
+      tarefas={fila.filter(t => t.membro.id === posto.membro.id).map(t => t.pergunta)}
+      inicial={selecao.pergunta}
+      emRisco={p => nivel(p, hoje) === 'dinheiro em risco'}
+      oculto={oculto}
+      responder={responder}
+      fechar={fecharResposta}
+      verFicha={() => selecionar({ id: posto.membro.id })}
+    />
+  )
+  const ficha = posto && !selecao?.resposta && (
     <Sheet key={posto.membro.id} titulo={posto.membro.nome} rotulo={`Ficha: ${posto.membro.nome}`} lado fechar={fechar}>
       <div className="inicio-posto" data-ficha={posto.membro.id}>
         <FichaDadosPosto
@@ -213,6 +241,8 @@ function EscritorioAutorizado({
               aoTocar={id => abrirPosto(id)}
               valores={valores}
               falas={comFalas ? falas : undefined}
+              humores={humores}
+              aoResponder={comFalas ? id => abrirResposta(id) : undefined}
               ampliavel
               reserva={
                 <VisorEscritorio sala={sala} aoMudarSala={setSala} celular={celular} tarefaDaFila={selecao?.pergunta}>
@@ -238,6 +268,7 @@ function EscritorioAutorizado({
               ))}
             </ul>
             {ficha}
+            {resposta}
           </>
         ) : (
           <>
@@ -251,6 +282,7 @@ function EscritorioAutorizado({
               ))}
             </ul>
             {ficha}
+            {resposta}
           </>
         )}
       </div>
@@ -308,7 +340,7 @@ function EscritorioAutorizado({
                     <p className="j-pergunta">{t.texto}</p>
                     <strong>{t.valor}</strong>
                     <div className="j-acoes">
-                      <button type="button" onClick={() => abrirPosto(t.membro.id, t.pergunta.id)}>
+                      <button type="button" onClick={() => abrirResposta(t.membro.id, t.pergunta.id)}>
                         Abrir tarefa <Icone nome="abrir" size={16} />
                       </button>
                     </div>

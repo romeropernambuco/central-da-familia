@@ -150,7 +150,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
     ro?.observe(el)
 
     /* etiquetas em HTML presas à cabeça de cada boneco e nome da sala no piso */
-    const posicionarEtiquetas = criarEtiquetas(T, cam, el, o)
+    const posicionarEtiquetas = criarEtiquetas(T, cam, el, { ...o, rostos: !o.mini })
     let selecionado: string | null = null
 
     /* toque num boneco */
@@ -366,6 +366,7 @@ export function montarCena(T: any, el: HTMLElement, o: OpcoesCena): Cena {
             }
             return
           }
+          ch.humor = n.humor
           if (ch.st === n.estado) return
           ch.retornaTrabalho = false
           retornos.cancelar(n.id)

@@ -14,6 +14,7 @@ import {
   type Cena,
   type EstadoCena,
   type FuncCena,
+  type Humor,
 } from '../../lib/escritorio/cenaBase'
 import { nomeCurto } from '../../lib/escritorio/equipe'
 
@@ -73,6 +74,8 @@ export function Cena3D({
   aoTocar,
   valores,
   falas,
+  humores,
+  aoResponder,
   reserva,
   ampliavel,
 }: {
@@ -83,6 +86,10 @@ export function Cena3D({
   valores?: Record<string, string>
   /** O que cada um tem a dizer agora (a tarefa, o que está fazendo ou o que entregou): vira balão de fala. Já vem mascarado. */
   falas?: Record<string, string>
+  /** A emoção que o aviso de cada um pede (aflito, preocupado, feliz); quem não está aqui fica com a do estado. */
+  humores?: Record<string, Humor>
+  /** Com isto, tocar em quem precisa de você abre direto a resposta da tarefa, em vez da ficha. */
+  aoResponder?: (id: string) => void
   /** O que mostrar quando o 3D não abre neste aparelho, no lugar do aviso (telas sem lista logo abaixo, como o Início). */
   reserva?: ReactNode
   /** Mostra aproximar, afastar e tela cheia. */
@@ -109,22 +116,26 @@ export function Cena3D({
         /* sem tela cheia neste navegador */
       })
   }
-  // a ficha do funcionário abre fora da cena: em tela cheia ela ficaria escondida atrás, então a cena volta ao normal antes
+  const responde = (f?: FuncionarioEsc) => !!aoResponder && f?.estado === 'precisa_de_voce'
+  // a ficha e a resposta abrem fora da cena: em tela cheia ficariam escondidas atrás, então a cena volta ao normal antes
   const tocarNoFuncionario = (id: string) => {
     sairDaTelaCheia()
-    aoTocar(id)
+    if (responde(atuais.current.find(f => f.id === id))) aoResponder!(id)
+    else aoTocar(id)
   }
   const caixa = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
   const tags = useRef<Record<string, HTMLElement | null>>({})
   const placas = useRef<Record<string, HTMLElement | null>>({})
-  const tocar = useRef(aoTocar)
-  tocar.current = aoTocar
+  const tocar = useRef(tocarNoFuncionario)
+  tocar.current = tocarNoFuncionario
   const [modo, setModo] = useState<'abrindo' | '3d' | 'lista'>('abrindo')
   const [leve, setLeve] = useState<{ fps: number; degrau: number } | null>(null)
   const [vista, setVista] = useState('tudo')
+  const humor = useRef(humores)
+  humor.current = humores
   const paraCena = (fs: FuncionarioEsc[]): FuncCena[] =>
-    fs.map(f => ({ id: f.id, sala: salaDe(f.sala), estado: ESTADO[f.estado] }))
+    fs.map(f => ({ id: f.id, sala: salaDe(f.sala), estado: ESTADO[f.estado], humor: humor.current?.[f.id] }))
   // a cena é montada 1 vez por equipe (mesmos ids); mudança de estado entra por `atualizar`, sem remontar
   const ids = funcionarios.map(f => f.id + '@' + salaDe(f.sala)).join(',')
   const atuais = useRef(funcionarios)
@@ -153,10 +164,7 @@ export function Cena3D({
             funcionarios: paraCena(atuais.current),
             etiqueta: id => tags.current[id] || null,
             placa: s => placas.current[s] || null,
-            aoTocar: id => {
-              sairDaTelaCheia()
-              tocar.current(id)
-            },
+            aoTocar: id => tocar.current(id),
             escuro: escuroAgora(),
             celular,
             hora: horaRecife,
@@ -271,7 +279,7 @@ export function Cena3D({
                     ref={el => {
                       tags.current[f.id] = el
                     }}
-                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}`}
+                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}|${responde(f)}`}
                     data-func={f.id}
                     data-posto={f.id}
                     data-estado={f.estado}
@@ -283,8 +291,9 @@ export function Cena3D({
                       (fala ? ' fala' : dito ? ' quer-falar' : '')
                     }
                     aria-label={textoPrivado(
-                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} Abrir.`,
+                      `${f.nome}: ${f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} ${responde(f) ? 'Responder' : 'Abrir'}.`,
                     )}
+                    aria-haspopup={responde(f) ? 'dialog' : undefined}
                     aria-pressed={sel}
                     onClick={() => tocarNoFuncionario(f.id)}
                   >
@@ -294,6 +303,11 @@ export function Cena3D({
                       <span className="tag-dito">
                         {valor && <b>{valor}</b>}
                         {fala}
+                      </span>
+                    )}
+                    {fala && responde(f) && (
+                      <span className="tag-acao">
+                        Responder <Icone nome="abrir" size={14} />
                       </span>
                     )}
                   </button>

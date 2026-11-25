@@ -183,6 +183,7 @@ export function montarPostos(lugar: Lugar, o: OpcoesCena) {
       id: e.id,
       sala,
       st: e.estado,
+      humor: e.humor,
       b,
       pilha,
       tela: telaMat,

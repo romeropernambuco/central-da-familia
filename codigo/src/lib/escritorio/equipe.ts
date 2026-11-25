@@ -25,6 +25,8 @@ export interface Roupa {
   cabelo: number
   estilo: 'curto' | 'longo' | 'coque'
   oculos?: boolean
+  /** Só no escritório inteiro: o mini das outras abas tem teto de peso e fica com o cabelo simples. */
+  inteiro?: Pick<Roupa, 'estilo' | 'oculos'>
 }
 export interface MembroEquipe {
   id: string
@@ -313,7 +315,14 @@ export const EQUIPE: MembroEquipe[] = [
       'Mostro os números disponíveis na minha ficha.',
       'Abro a minha aba quando você pedir.',
     ],
-    roupa: { camisa: 5405588, calca: 0x34343c, pele: 0xd9a27e, cabelo: 0x3a2a1e, estilo: 'curto' },
+    roupa: {
+      camisa: 5405588,
+      calca: 0x34343c,
+      pele: 0x8a5a3c,
+      cabelo: 0x17110d,
+      estilo: 'curto',
+      inteiro: { estilo: 'curto', oculos: true },
+    },
   },
   {
     id: 'sonhadora',
@@ -332,7 +341,14 @@ export const EQUIPE: MembroEquipe[] = [
       'Mostro os números disponíveis na minha ficha.',
       'Abro a minha aba quando você pedir.',
     ],
-    roupa: { camisa: 10906504, calca: 0x34343c, pele: 0xd9a27e, cabelo: 0x3a2a1e, estilo: 'curto' },
+    roupa: {
+      camisa: 10906504,
+      calca: 0x34343c,
+      pele: 0xf2c9ac,
+      cabelo: 0xa8552e,
+      estilo: 'curto',
+      inteiro: { estilo: 'longo' },
+    },
   },
   {
     id: 'analista',
@@ -351,7 +367,14 @@ export const EQUIPE: MembroEquipe[] = [
       'Mostro os números disponíveis na minha ficha.',
       'Abro a minha aba quando você pedir.',
     ],
-    roupa: { camisa: 6583456, calca: 0x34343c, pele: 0xd9a27e, cabelo: 0x3a2a1e, estilo: 'curto' },
+    roupa: {
+      camisa: 6583456,
+      calca: 0x34343c,
+      pele: 0xc9966e,
+      cabelo: 0x1d1612,
+      estilo: 'curto',
+      inteiro: { estilo: 'coque', oculos: true },
+    },
   },
   {
     id: 'zelador',
@@ -370,7 +393,7 @@ export const EQUIPE: MembroEquipe[] = [
       'Mostro os números disponíveis na minha ficha.',
       'Abro a minha aba quando você pedir.',
     ],
-    roupa: { camisa: 9075029, calca: 0x34343c, pele: 0xd9a27e, cabelo: 0x3a2a1e, estilo: 'curto' },
+    roupa: { camisa: 9075029, calca: 0x34343c, pele: 0xe2b592, cabelo: 0xb9b6b0, estilo: 'curto' },
   },
   {
     id: 'protetora',
@@ -389,7 +412,14 @@ export const EQUIPE: MembroEquipe[] = [
       'Mostro os números disponíveis na minha ficha.',
       'Abro a minha aba quando você pedir.',
     ],
-    roupa: { camisa: 4816256, calca: 0x34343c, pele: 0xd9a27e, cabelo: 0x3a2a1e, estilo: 'curto' },
+    roupa: {
+      camisa: 4816256,
+      calca: 0x34343c,
+      pele: 0x6f4a33,
+      cabelo: 0x120d0a,
+      estilo: 'curto',
+      inteiro: { estilo: 'coque' },
+    },
   },
   {
     ...PERFIL_IMOVEIS,

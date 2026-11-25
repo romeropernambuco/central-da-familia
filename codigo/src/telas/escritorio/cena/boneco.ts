@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { montarSemblante } from './humor'
 import type { Pecas } from './pecas'
 
 /** Quadril acima do chão: de pé e sentado. */
 export const HIP_PE = 0.555,
   HIP_SENTADO = 0.325
+/** Quanto a cabeça cresce no escritório inteiro (o mini das outras abas fica como era). */
+const CABECA = 1.2
 
 /**
  * Boneco low poly feito por código: tronco, cabeça, braços e pernas articulados.
  * No mini os olhos e o cabelo são grupos próprios, para piscar e balançar sem deformar a cabeça.
  */
-/** O que só o escritório inteiro ganha: orelhas, sorriso, cinto e o que cada um leva no peito (crachá, gravata ou botões). */
+/** O que só o escritório inteiro ganha: orelhas, cinto e o que cada um leva no peito (crachá, gravata ou botões). */
 type Caixa = (w: number, h: number, d: number, c: any, x: number, y: number, z: number, pai: any) => void
 function detalhar(T: any, cx: Caixa, c: any, hips: any, head: any) {
   const tom = (cor: number, f: number) => new T.Color(cor).multiplyScalar(f).getHex()
   ;[-0.235, 0.235].forEach(x => cx(0.05, 0.11, 0.1, tom(c.pele, 0.94), x, 0.24, 0, head))
-  ;[-0.07, 0.07].forEach(x => cx(0.025, 0.025, 0.02, 0x9a5a4c, x, 0.137, 0.205, head))
   cx(0.47, 0.06, 0.27, 0x2a2623, 0, 0.03, 0, hips)
   cx(0.05, 0.04, 0.02, 0xc9b27a, 0, 0.03, 0.14, hips)
   ;[-0.07, 0.07].forEach(x => cx(0.09, 0.06, 0.05, 0xf4efe6, x, 0.475, 0.115, hips))
@@ -29,7 +31,8 @@ function detalhar(T: any, cx: Caixa, c: any, hips: any, head: any) {
   } else [0.38, 0.28, 0.18].forEach(y => cx(0.03, 0.03, 0.02, tom(c.camisa, 1.35), 0, y, 0.134, hips))
 }
 
-export function criarBoneco(T: any, { cx: caixa, fecha, grupo }: Pecas, mini: boolean) {
+export function criarBoneco(T: any, pecas: Pecas, mini: boolean) {
+  const { cx: caixa, fecha, grupo } = pecas
   const o = { mini }
   /* no escritório inteiro o corpo tem cantos arredondados; no mini continua em caixas, como já era */
   const cx = (
@@ -48,7 +51,9 @@ export function criarBoneco(T: any, { cx: caixa, fecha, grupo }: Pecas, mini: bo
     const feita = pai.userData.lista?.at(-1)
     if (raio && !mini && feita) feita.push(raio, seg)
   }
-  return function boneco(c: any) {
+  return function boneco(roupa: any) {
+    /* cabelo e óculos que só o escritório inteiro mostra (o mini tem teto de peso) */
+    const c = mini || !roupa.inteiro ? roupa : { ...roupa, ...roupa.inteiro }
     const r = new T.Group(),
       hips = grupo(r)
     const p: any = { r, hips }
@@ -58,18 +63,26 @@ export function criarBoneco(T: any, { cx: caixa, fecha, grupo }: Pecas, mini: bo
     p.head = head
     cx(0.14, 0.08, 0.14, c.pele, 0, 0.03, 0, head)
     cx(0.44, 0.4, 0.4, c.pele, 0, 0.26, 0, head, 0.3, 2)
-    /* olhos articulados só no mini: piscar não achata a cabeça ou os óculos */
-    const olhos = o.mini ? grupo(head, 0, 0.25, 0) : head
-    p.olhos = olhos
-    ;[-0.1, 0.1].forEach(x => {
-      cx(0.08, 0.06, 0.02, 0xf7f3ec, x, o.mini ? 0 : 0.25, 0.204, olhos)
-      cx(0.04, 0.05, 0.02, 0x2a211b, x, o.mini ? -0.002 : 0.248, 0.212, olhos)
-    })
-    if (o.mini) fecha(olhos)
-    cx(0.1, 0.025, 0.02, c.cabelo, -0.1, 0.335, 0.205, head)
-    cx(0.1, 0.025, 0.02, c.cabelo, 0.1, 0.335, 0.205, head)
+    /* no mini os olhos são um grupo (piscar não achata a cabeça ou os óculos) e o rosto é fixo;
+       no escritório inteiro o rosto muda com a emoção: ver cena/humor.ts */
+    if (o.mini) {
+      const olhos = grupo(head, 0, 0.25, 0)
+      p.olhos = olhos
+      ;[-0.1, 0.1].forEach(x => {
+        cx(0.08, 0.06, 0.02, 0xf7f3ec, x, 0, 0.204, olhos)
+        cx(0.04, 0.05, 0.02, 0x2a211b, x, -0.002, 0.212, olhos)
+      })
+      fecha(olhos)
+      cx(0.1, 0.025, 0.02, c.cabelo, -0.1, 0.335, 0.205, head)
+      cx(0.1, 0.025, 0.02, c.cabelo, 0.1, 0.335, 0.205, head)
+      cx(0.12, 0.025, 0.02, 0x9a5a4c, 0, 0.12, 0.205, head)
+    } else {
+      Object.assign(p, montarSemblante(T, pecas, c, head))
+      /* cabeça um pouco maior que o corpo pede: é o que deixa a emoção legível de longe */
+      head.scale.setScalar(CABECA)
+      p.topo = 1.12 + 0.56 * (CABECA - 1)
+    }
     cx(0.06, 0.07, 0.05, c.pele, 0, 0.2, 0.22, head)
-    cx(0.12, 0.025, 0.02, 0x9a5a4c, 0, 0.12, 0.205, head)
     const cabelo = o.mini ? grupo(head, 0, 0.4, -0.08) : head
     p.cabelo = cabelo
     cx(0.48, 0.13, 0.44, c.cabelo, 0, o.mini ? 0.09 : 0.49, o.mini ? 0.08 : 0, cabelo, 0.3, 2)
