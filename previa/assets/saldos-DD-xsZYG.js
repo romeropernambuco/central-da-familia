@@ -1,0 +1,1 @@
+function d(o){if(!Array.isArray(o)||o.some(r=>!r.id||!r.nome||!Number.isFinite(r.valor)||!/^\d{4}-\d{2}-\d{2}$/.test(r.conferidoEm)))throw new Error("Saldo incompleto");return{valor:Math.round(o.reduce((r,e)=>r+e.valor,0)*100)/100,conferidoEm:o.length?o.map(r=>r.conferidoEm).sort()[0]:null}}export{d as saldoDasContas};

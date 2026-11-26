@@ -1,0 +1,1 @@
+function s(a){var i;if(!Array.isArray(a)||a.some(o=>!o.id||!o.situacao))throw new Error("Desejos incompletos");return{pensando:a.filter(o=>o.situacao==="pensando").length,combinados:a.filter(o=>o.situacao==="combinado").length,primeiro:(i=a.find(o=>o.situacao==="pensando"||o.situacao==="combinado"))==null?void 0:i.id}}export{s as t};
