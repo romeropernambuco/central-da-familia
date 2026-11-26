@@ -55,79 +55,97 @@ export function TrocaAjustes({ t, conta, mudar, restaurar }: BlocoDaTroca & { re
           Ajustes de câmbio e imposto
         </h2>
       </div>
-      <div className="troca-campos">
-        {cambio.existe && (
-          <div className="troca-cambio">
-            <Botao variante="secundario" carregando={cambio.buscando} onClick={cambio.buscar}>
-              <Icone desenho={RefreshCw} aria-hidden="true" />
-              Buscar o câmbio de hoje
-            </Botao>
-            <span className="sub">
-              {t.cambioData ? `Câmbio de ${diaCurto(t.cambioData)}` : 'Câmbio digitado à mão'} · fonte: Banco Central
-            </span>
-            {cambio.falha && (
-              <p className="erro" role="alert">
-                {cambio.falha}
-              </p>
-            )}
-          </div>
-        )}
-        <CampoNumero
-          rotulo={`Câmbio de referência, sem taxas (R$ por ${moeda})`}
-          valor={t.cambio}
-          mudar={v => mudar({ cambio: v ?? NaN, cambioData: '' })}
-          ajuda={t.textos.cambio ? fala(t.textos.cambio) : 'A conta soma o spread e o IOF do cartão escolhido.'}
-        />
-        <CampoNumero
-          rotulo={`Reembolso (${simbolo})`}
-          valor={t.reembolso}
-          mudar={v => mudar({ reembolso: v })}
-          opcional
-          milhar
-          seVazio={semZeros(tabela, 2)}
-          ajuda={`Vazio usa a tabela (${emMoeda(tabela, t.moeda)}). 0 simula sem reembolso. Teto: ${emMoeda(tetoDoReembolso(preco, t.ivaPct), t.moeda)}, o imposto embutido.`}
-        />
-        <CampoNumero
-          rotulo={`Reais por ${moeda} devolvido`}
-          valor={t.cambioReembolso}
-          mudar={v => mudar({ cambioReembolso: v })}
-          opcional
-          seVazio="Igual ao de referência"
-        />
-        <CampoNumero
-          rotulo={`Dólares por ${moeda} (para os pontos)`}
-          valor={t.dolarPontos}
-          mudar={v => mudar({ dolarPontos: v ?? NaN })}
-        />
-        {t.textos.aduana && <p className="sub">{fala(t.textos.aduana)}</p>}
-        <CampoNumero rotulo="Cota disponível (US$)" valor={t.cota} mudar={v => mudar({ cota: v ?? NaN })} milhar />
-        <CampoNumero
-          rotulo={`Valor do aparelho para a alfândega (${simbolo})`}
-          valor={t.valorAduana}
-          mudar={v => mudar({ valorAduana: v })}
-          opcional
-          milhar
-          seVazio={semZeros(preco, 2)}
-          ajuda={t.textos.valorAduana ? fala(t.textos.valorAduana) : 'Vazio usa o preço cheio da nota.'}
-        />
-        <div className="troca-dupla">
+      {cambio.existe && (
+        <div className="troca-cambio">
+          <Botao variante="secundario" carregando={cambio.buscando} onClick={cambio.buscar}>
+            <Icone desenho={RefreshCw} aria-hidden="true" />
+            Buscar o câmbio de hoje
+          </Botao>
+          <span className="sub">
+            {t.cambioData ? `Câmbio de ${diaCurto(t.cambioData)}` : 'Câmbio digitado à mão'} · fonte: Banco Central
+          </span>
+          {cambio.falha && (
+            <p className="erro" role="alert">
+              {cambio.falha}
+            </p>
+          )}
+        </div>
+      )}
+      <div>
+        <div className="troca-grupo">
+          <h3>Câmbio e reembolso</h3>
           <CampoNumero
+            linha
+            rotulo={`Câmbio de referência, sem taxas (R$ por ${moeda})`}
+            valor={t.cambio}
+            mudar={v => mudar({ cambio: v ?? NaN, cambioData: '' })}
+            ajuda={t.textos.cambio ? fala(t.textos.cambio) : 'A conta soma o spread e o IOF do cartão escolhido.'}
+          />
+          <CampoNumero
+            linha
+            rotulo={`Reembolso (${simbolo})`}
+            valor={t.reembolso}
+            mudar={v => mudar({ reembolso: v })}
+            opcional
+            milhar
+            seVazio={semZeros(tabela, 2)}
+            ajuda={`Vazio usa a tabela (${emMoeda(tabela, t.moeda)}). 0 simula sem reembolso. Teto: ${emMoeda(tetoDoReembolso(preco, t.ivaPct), t.moeda)}, o imposto embutido.`}
+          />
+          <CampoNumero
+            linha
+            rotulo={`Reais por ${moeda} devolvido`}
+            valor={t.cambioReembolso}
+            mudar={v => mudar({ cambioReembolso: v })}
+            opcional
+            seVazio="Igual"
+            ajuda="Vazio usa o câmbio de referência."
+          />
+          <CampoNumero
+            linha
+            rotulo={`Dólares por ${moeda} (para os pontos)`}
+            valor={t.dolarPontos}
+            mudar={v => mudar({ dolarPontos: v ?? NaN })}
+          />
+        </div>
+        <div className="troca-grupo">
+          <h3>Alfândega na volta</h3>
+          {t.textos.aduana && <p className="sub">{fala(t.textos.aduana)}</p>}
+          <CampoNumero
+            linha
+            rotulo="Cota disponível (US$)"
+            valor={t.cota}
+            mudar={v => mudar({ cota: v ?? NaN })}
+            milhar
+          />
+          <CampoNumero
+            linha
+            rotulo={`Valor do aparelho para a alfândega (${simbolo})`}
+            valor={t.valorAduana}
+            mudar={v => mudar({ valorAduana: v })}
+            opcional
+            milhar
+            seVazio={semZeros(preco, 2)}
+            ajuda={t.textos.valorAduana ? fala(t.textos.valorAduana) : 'Vazio usa o preço cheio da nota.'}
+          />
+          <CampoNumero
+            linha
             rotulo={`US$ por ${moeda}`}
             valor={t.dolarFiscal}
             mudar={v => mudar({ dolarFiscal: v ?? NaN })}
           />
           <CampoNumero
+            linha
             rotulo={`R$ por ${moeda} fiscal`}
             valor={t.cambioFiscal}
             mudar={v => mudar({ cambioFiscal: v ?? NaN })}
           />
         </div>
-        {restaurar && (
-          <Botao variante="secundario" onClick={restaurar}>
-            Restaurar o que estava guardado
-          </Botao>
-        )}
       </div>
+      {restaurar && (
+        <Botao variante="secundario" onClick={restaurar}>
+          Restaurar o que estava guardado
+        </Botao>
+      )}
     </section>
   )
 }

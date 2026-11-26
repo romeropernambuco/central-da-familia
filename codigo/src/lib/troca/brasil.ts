@@ -79,3 +79,40 @@ export function compraSugerida(t: Troca, c: ComparacaoComBrasil, onde: 'fora' | 
         data: hoje,
       }
 }
+
+/** Um jeito de fazer a troca, com o que ele custa depois de vender o usado. */
+export interface Caminho {
+  id: 'brasil' | 'foraComImposto' | 'foraSemImposto'
+  /** Quanto custa a troca por este caminho: o aparelho novo menos a venda do usado. */
+  custo: number
+  /** É o caminho que a chave do imposto está mostrando no número grande. */
+  escolhido: boolean
+  /** É o mais barato entre o caminho escolhido lá fora e o Brasil. */
+  melhor: boolean
+  /** Tamanho da barra, de 0 a 100, na mesma escala para todos. */
+  barra: number
+}
+
+/**
+ * Os caminhos lado a lado, na mesma medida do número grande (custo da troca). Lá fora aparece com e sem o imposto do
+ * Brasil; o Brasil entra quando a versão tem preço aqui. O "melhor" compara o Brasil com o lado de fora que está ligado.
+ */
+export function caminhosDaTroca(t: Troca, conta: ContaDaTroca): Caminho[] {
+  const c = compararComBrasil(t, conta)
+  const comImposto = conta.aparelho + conta.imposto - t.venda
+  const semImposto = conta.aparelho - t.venda
+  const foraEscolhido = t.comImposto ? 'foraComImposto' : 'foraSemImposto'
+  const melhor = c?.melhor === 'brasil' ? 'brasil' : c ? foraEscolhido : null
+  const lista: { id: Caminho['id']; custo: number }[] = [
+    ...(c ? [{ id: 'brasil' as const, custo: c.brasilParcelado - t.venda }] : []),
+    { id: 'foraSemImposto', custo: semImposto },
+    { id: 'foraComImposto', custo: comImposto },
+  ]
+  const maior = Math.max(...lista.map(x => x.custo), 1)
+  return lista.map(x => ({
+    ...x,
+    escolhido: x.id === foraEscolhido,
+    melhor: x.id === melhor,
+    barra: Math.max(0, (x.custo / maior) * 100),
+  }))
+}

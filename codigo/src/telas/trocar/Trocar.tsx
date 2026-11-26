@@ -12,7 +12,7 @@ import { TrocaBrasil } from '../../componentes/troca/TrocaBrasil'
 import { TrocaContaEmMoeda, TrocaDetalhe } from '../../componentes/troca/TrocaDetalhe'
 import { TrocaNaLoja, TrocaRegras, TrocaVenda } from '../../componentes/troca/TrocaGuia'
 import { TrocaPagamento } from '../../componentes/troca/TrocaPagamento'
-import { TrocaResumo } from '../../componentes/troca/TrocaResumo'
+import { TrocaResumo, type DesenhoDoTopo } from '../../componentes/troca/TrocaResumo'
 import '../../componentes/troca/troca.css'
 import { copiarProtegido, textoPrivado } from '../../lib/olho'
 import { contaDaTroca, erroDaTroca } from '../../lib/troca/conta'
@@ -23,6 +23,12 @@ import type { Troca } from '../../lib/troca/tipos'
 
 /** Comparação que chegou no endereço (#/trocar?c=...). Lida uma vez, ao abrir a tela. */
 const doEndereco = () => (typeof location === 'undefined' ? null : trocaDoLink(location.hash))
+
+/** Versão do topo pedida no endereço (#/trocar?v=b). Sem pedido, vale a A. */
+function desenhoDoEndereco(): DesenhoDoTopo {
+  const v = typeof location === 'undefined' ? null : new URLSearchParams(location.hash.split('?')[1] ?? '').get('v')
+  return v === 'b' || v === 'c' ? v : 'a'
+}
 
 /** Rascunhos sobrevivem a trocar de aba (a tela desmonta). Só na memória: somem ao recarregar. Um por família. */
 const memoria = new Map<string, { rascunhos: Record<string, Troca>; aberta: string | null }>()
@@ -195,8 +201,9 @@ function Rodape({ t, tirar }: { t: Troca; tirar: () => void }) {
 
 /** Trocar lá fora: quanto custa comprar um aparelho novo no exterior vendendo o usado aqui. Só o casal vê. */
 export function Trocar() {
-  const { familia } = useSessaoAtual()
+  const { api, familia } = useSessaoAtual()
   const { recarregar } = useAcoes()
+  const [desenho, setDesenho] = useState(desenhoDoEndereco)
   const trocas = useTrocas()
   const [nova, setNova] = useState(false)
   if (familia?.papel !== 'casal') return null
@@ -240,10 +247,22 @@ export function Trocar() {
   const bloco = { t, conta: contaDaTroca(t), mudar: trocas.mudar }
   return (
     <div className="view troca">
+      {api.modo === 'exemplo' && (
+        <div className="troca-versoes-desenho">
+          Compare as 3 versões do topo:
+          <div className="seg" role="group" aria-label="Versão do topo">
+            {(['a', 'b', 'c'] as const).map(v => (
+              <button key={v} type="button" aria-pressed={desenho === v} onClick={() => setDesenho(v)}>
+                {v.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <Topo trocas={trocas} t={t} erro={erro} nova={() => setNova(true)} />
       <div className="tela-larga">
         <div className="col">
-          <TrocaResumo {...bloco} erro={erro} />
+          <TrocaResumo {...bloco} erro={erro} desenho={desenho} />
           <TrocaBrasil {...bloco} porGuardar={trocas.mexida} />
           <TrocaPagamento {...bloco} />
           <TrocaDetalhe {...bloco} />

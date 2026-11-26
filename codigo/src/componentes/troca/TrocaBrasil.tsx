@@ -42,7 +42,7 @@ function useTaxaDoGuardado(): number | null {
   return taxa
 }
 
-/** Quem ganha e por quanto, e a conta de cada caminho. */
+/** A conta de cada lado, linha por linha. Quem ganha e por quanto já está no topo da tela. */
 function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
   const vezes = Math.trunc(t.brasil?.parcelas ?? 1) || 1
   // o número de parcelas é combinado da família com a loja: com o olho fechado, some junto com os valores
@@ -50,10 +50,6 @@ function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
   const versao = t.versoes[t.versao]?.rotulo ?? ''
   return (
     <>
-      <p className="lbl">Economia prevista comprando {ONDE[c.melhor]}</p>
-      <div className="numrow">
-        <Din v={c.economia} tam="mid" />
-      </div>
       <ul className="exp troca-linhas">
         <Linha
           nome={`Lá fora, ${versao}, depois do reembolso${t.comImposto ? ' e com o imposto do Brasil' : ', sem o imposto do Brasil'}`}
@@ -75,8 +71,8 @@ function Veredito({ t, c }: { t: Troca; c: ComparacaoComBrasil }) {
         )}
       </ul>
       <p className="sub">
-        O usado é vendido nos dois casos, então não entra nesta comparação. A chave "Incluir o imposto do Brasil", lá em
-        cima, muda o lado de fora.
+        Aqui é o preço do aparelho, antes de vender o usado. O usado é vendido nos dois casos, então não muda quem
+        ganha.
       </p>
     </>
   )
@@ -102,6 +98,7 @@ function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
   return (
     <div className="troca-ajustes">
       <CampoNumero
+        linha
         key={t.versao}
         rotulo={`Preço no Brasil do ${versao?.rotulo ?? 'aparelho'} (R$)`}
         valor={versao?.precoBrasil ?? null}
@@ -109,7 +106,7 @@ function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
         opcional
         milhar
       />
-      <label className="campo">
+      <label className="troca-linha texto">
         <span>Loja no Brasil</span>
         <CampoPrivado
           className="inp"
@@ -118,18 +115,18 @@ function CamposDoBrasil({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
           onChange={e => noBrasil({ loja: e.target.value })}
         />
       </label>
-      <div className="troca-dupla">
-        <CampoNumero
-          rotulo="Parcelas sem juros"
-          valor={base.parcelas}
-          mudar={v => noBrasil({ parcelas: v != null && v >= 1 ? Math.min(Math.trunc(v), PARCELAS_MAXIMO) : NaN })}
-        />
-        <CampoNumero
-          rotulo="Seu dinheiro rende por ano (%)"
-          valor={base.rendeAnoPct}
-          mudar={v => noBrasil({ rendeAnoPct: v ?? 0 })}
-        />
-      </div>
+      <CampoNumero
+        linha
+        rotulo="Parcelas sem juros"
+        valor={base.parcelas}
+        mudar={v => noBrasil({ parcelas: v != null && v >= 1 ? Math.min(Math.trunc(v), PARCELAS_MAXIMO) : NaN })}
+      />
+      <CampoNumero
+        linha
+        rotulo="Seu dinheiro rende por ano (%)"
+        valor={base.rendeAnoPct}
+        mudar={v => noBrasil({ rendeAnoPct: v ?? 0 })}
+      />
       <p className="sub">
         Use o rendimento que sobra depois do imposto de renda.
         {taxa != null &&

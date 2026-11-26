@@ -42,6 +42,7 @@ export function CampoNumero({
   opcional = false,
   seVazio,
   milhar = false,
+  linha = false,
 }: {
   rotulo: string
   valor: number | null
@@ -52,6 +53,8 @@ export function CampoNumero({
   seVazio?: string
   /** Campo de quantia (cota, preço): "1.000" é mil. Em câmbio e taxa, ponto é casa decimal. */
   milhar?: boolean
+  /** Linha de ajuste: rótulo à esquerda e valor à direita, para listas de vários campos. */
+  linha?: boolean
 }) {
   const [txt, setTxt] = useState(escrito(valor))
   const [visto, setVisto] = useState(valor)
@@ -62,7 +65,7 @@ export function CampoNumero({
     if (!Object.is(digitado ?? (opcional ? null : NaN), valor)) setTxt(escrito(valor))
   }
   return (
-    <label className="campo">
+    <label className={linha ? 'troca-linha' : 'campo'}>
       <span>{rotulo}</span>
       <CampoDecimal
         className="inp"

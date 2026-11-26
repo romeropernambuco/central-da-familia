@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { trocasDeExemplo } from '../../api/exemploTrocas'
-import { compararComBrasil, compraSugerida, economiaConfirmada, taxaDoMes, taxaLiquida, valorDeHoje } from './brasil'
+import {
+  caminhosDaTroca,
+  compararComBrasil,
+  compraSugerida,
+  economiaConfirmada,
+  taxaDoMes,
+  taxaLiquida,
+  valorDeHoje,
+} from './brasil'
 import { contaDaTroca } from './conta'
 import { lerTroca } from './ler'
 import type { Troca } from './tipos'
@@ -126,5 +134,36 @@ describe('economia confirmada', () => {
     // compra sem valor pago ou com data impossível não vira "economia que aconteceu"
     expect(lerTroca({ ...duo512, compra: { ...compra, pago: 0 } })!.compra).toBeNull()
     expect(lerTroca({ ...duo512, compra: { ...compra, data: '9999-99-99' } })!.compra).toBeNull()
+  })
+})
+
+describe('os caminhos lado a lado', () => {
+  const custos = (t: Troca) => Object.fromEntries(caminhosDaTroca(t, contaDaTroca(t)!).map(x => [x.id, c2(x.custo)]))
+
+  it('cada caminho na medida do número grande: o aparelho menos a venda do usado', () => {
+    expect(custos(duo512)).toEqual({ brasil: 7452.16, foraSemImposto: 6827.33, foraComImposto: 12222.48 })
+    expect(c2(contaDaTroca(duo512)!.custo)).toBe(12222.48)
+  })
+
+  it('com o imposto ligado, o melhor é o Brasil; desligado, é lá fora sem imposto', () => {
+    const com = caminhosDaTroca(duo512, contaDaTroca(duo512)!)
+    expect(com.find(x => x.melhor)!.id).toBe('brasil')
+    expect(com.find(x => x.escolhido)!.id).toBe('foraComImposto')
+    const sem = { ...duo512, comImposto: false }
+    const lista = caminhosDaTroca(sem, contaDaTroca(sem)!)
+    expect(lista.find(x => x.melhor)!.id).toBe('foraSemImposto')
+    expect(lista.find(x => x.escolhido)!.id).toBe('foraSemImposto')
+  })
+
+  it('a barra do caminho mais caro enche a escala e as outras são proporcionais', () => {
+    const lista = caminhosDaTroca(duo512, contaDaTroca(duo512)!)
+    expect(lista.find(x => x.id === 'foraComImposto')!.barra).toBe(100)
+    expect(lista.find(x => x.id === 'brasil')!.barra).toBeCloseTo((7452.16 / 12222.48) * 100, 1)
+  })
+
+  it('versão sem preço no Brasil mostra só os 2 lados de fora, sem eleger melhor', () => {
+    const lista = caminhosDaTroca(trocasDeExemplo[0], contaDaTroca(trocasDeExemplo[0])!)
+    expect(lista.map(x => x.id)).toEqual(['foraSemImposto', 'foraComImposto'])
+    expect(lista.some(x => x.melhor)).toBe(false)
   })
 })

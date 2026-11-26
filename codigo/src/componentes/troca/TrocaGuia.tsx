@@ -80,7 +80,7 @@ export function TrocaNaLoja({ t }: { t: Troca }) {
         ))}
       </ol>
       {t.frase && (
-        <div className="troca-frase">
+        <div className="troca-dizer">
           <span className="lbl">{t.frase.rotulo}</span>
           <p lang={t.frase.idioma || undefined}>{t.frase.texto}</p>
         </div>
@@ -105,7 +105,8 @@ export function TrocaRegras({ t }: { t: Troca }) {
       <ul className="troca-regras">
         {t.regras.map(r => (
           <li key={r.titulo}>
-            <b>{fala(r.titulo)}:</b> {fala(r.texto)}
+            <b>{fala(r.titulo)}:</b>
+            {fala(r.texto)}
             {!oculto && r.fontes.length > 0 && (
               <>
                 {' '}
@@ -116,7 +117,7 @@ export function TrocaRegras({ t }: { t: Troca }) {
         ))}
       </ul>
       {!oculto && t.fontes.length > 0 && (
-        <p className="sub">
+        <p className="troca-fontes">
           <Fontes fontes={t.fontes} />
         </p>
       )}

@@ -41,8 +41,11 @@ const notaDe = (p: PagamentoTroca) =>
 
 /** As formas de pagar, cada uma com o que custa de verdade. Tocar escolhe. */
 export function TrocaPagamento({ t, conta, mudar }: BlocoDaTroca) {
-  useOculto()
+  const oculto = useOculto()
   const melhor = conta?.ordem[0]?.id
+  const menor = conta?.ordem[0]?.liquido ?? 0
+  const maior = conta?.ordem.at(-1)?.liquido ?? 0
+  const aMais = (liquido: number) => (maior > menor ? Math.max(0, ((liquido - menor) / (maior - menor)) * 100) : 0)
   return (
     <section className="card" aria-labelledby="trocaPagar">
       <div className="card-h">
@@ -50,7 +53,7 @@ export function TrocaPagamento({ t, conta, mudar }: BlocoDaTroca) {
           <Icone desenho={CreditCard} aria-hidden="true" />
           Com qual cartão pagar
         </h2>
-        <span className="sub">Toque para escolher</span>
+        <span className="sub">Toque para escolher. A barra mostra quanto cada um custa a mais.</span>
       </div>
       <div className="troca-opcoes" role="group" aria-labelledby="trocaPagar">
         {t.pagamentos.map(p => {
@@ -63,15 +66,24 @@ export function TrocaPagamento({ t, conta, mudar }: BlocoDaTroca) {
               aria-pressed={p.id === t.pagamento}
               onClick={() => mudar({ pagamento: p.id })}
             >
+              <span className="troca-bolinha" aria-hidden="true" />
               <span className="troca-opcao-nome">
-                <b>{textoPrivado(p.nome)}</b>
+                <b>
+                  {textoPrivado(p.nome)}
+                  {p.id === melhor && <span className="chip ok">Menos dinheiro</span>}
+                </b>
                 <small>{fala(notaDe(p))}</small>
-                {p.id === melhor && <span className="chip ok">Menos dinheiro</span>}
               </span>
               <span className="troca-opcao-valor">
                 <b>{c ? reaisRedondos(c.liquido) : '…'}</b>
                 <small>{c ? retornoCurto(p, c, t.programa) : ''}</small>
               </span>
+              {/* a barra mostra quanto esta forma custa a mais que a mais barata; a mais barata fica vazia */}
+              {c && !oculto && p.tipo !== 'referencia' && (
+                <span className="troca-amais" aria-hidden="true">
+                  <i style={{ width: aMais(c.liquido) + '%' }} />
+                </span>
+              )}
             </button>
           )
         })}
@@ -96,23 +108,24 @@ function AjustesDePagamento({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
       <h3>Milhas e taxas que você pode ajustar</h3>
       {temPontos && (
         <>
-          <div className="troca-dupla">
-            <CampoNumero
-              rotulo={`Bônus na ${t.programa || 'transferência'} (%)`}
-              valor={t.bonusPct}
-              mudar={v => mudar({ bonusPct: v ?? NaN })}
-            />
-            <CampoNumero
-              rotulo={`Preço de mil pontos ${t.programa} (R$)`}
-              valor={t.milheiro}
-              mudar={v => mudar({ milheiro: v ?? NaN })}
-            />
-          </div>
-          {t.textos.milhas && <p className="sub">{fala(t.textos.milhas)}</p>}
+          <CampoNumero
+            linha
+            rotulo={`Bônus na ${t.programa || 'transferência'} (%)`}
+            valor={t.bonusPct}
+            mudar={v => mudar({ bonusPct: v ?? NaN })}
+          />
+          <CampoNumero
+            linha
+            rotulo={`Preço de mil pontos ${t.programa} (R$)`}
+            valor={t.milheiro}
+            mudar={v => mudar({ milheiro: v ?? NaN })}
+            ajuda={t.textos.milhas && fala(t.textos.milhas)}
+          />
         </>
       )}
       {contaEmMoeda && (
         <CampoNumero
+          linha
           rotulo={`Câmbio do ${textoPrivado(contaEmMoeda.nome)}, com tudo (R$ por ${moeda})`}
           valor={t.contaCambio}
           mudar={v => mudar({ contaCambio: v ?? NaN })}
@@ -121,6 +134,7 @@ function AjustesDePagamento({ t, mudar }: Pick<BlocoDaTroca, 't' | 'mudar'>) {
       )}
       {incertos.map(p => (
         <CampoNumero
+          linha
           key={p.id}
           rotulo={`Spread do ${textoPrivado(p.nome)} no crédito (%)`}
           valor={p.spreadPct}
