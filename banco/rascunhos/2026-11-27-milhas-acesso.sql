@@ -1,4 +1,4 @@
--- RASCUNHO. Ainda não rodou no banco real. Só roda com o "pode" do Romero.
+-- APLICADO no banco real em 27/11/2026, com o "pode" do Romero (migração milhas_acesso_andreza).
 -- O que muda: Andreza passa a ver e mexer no painel "milhas" (o preço do milheiro da família).
 -- O que não muda: Romero continua com tudo; Jobson continua só na feira; sem login, nada.
 -- Nenhuma tabela nova: os dados ficam em docs, com painel = 'milhas'.
