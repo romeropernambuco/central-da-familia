@@ -21,11 +21,11 @@ Não liga a escala sozinha antes de o teto estar testado. Não toca o projeto de
 | Tranca "1 conferência por família, ajudante e horário previsto" (`chave`, `previsto_para`, `origem`), a regra "IA falhou, a conta sai" e a função `escritorio_fechar_interrompidas()` | 11-C, que entra antes deste caderno | pare e avise. Não crie essas colunas aqui: a dona é a 11-C |
 | Forma de saber quem é o dono do produto (`eh_dono_produto()`) | Tarefa 2 ou 14 | crie o rascunho da parte 4 e avise |
 | Tabela de cartões com dia de fechamento (`cartoes.dia_fechamento`) | Tarefa 8 | o Analista de Cartão fica em "Perguntando" |
-| `escritorio_pendencias` (dono, data, "Resolvi", "Agora não") e `escritorio_avaliacoes` ("Ajudou") | 11-C, seções 4.5 e 4.11 | o item G espera |
+| `escritorio_pendencias` (dono, data, "Resolvi", "Agora não") e `escritorio_avaliacoes` ("Ajudou") | 11-C, seções 4.5 e 4.10 | o item G espera |
 
 **O que já existe hoje (só referência, no projeto antigo):** `escritorio_funcionarios(id text, nome, setor, turno, cor, ordem, ativo, criado_em)`; `escritorio_turnos(id, funcionario, inicio, fim, status, titulo, numero, detalhe, pendencia, fonte, exemplo, chave, tentativas, extras)`; funções `escritorio_abrir_turno(id, texto)` e `escritorio_fechar_turno(id, jsonb)`. A escala hoje está escrita no código.
 
-**O que ler:** CLAUDE.md; a base comum; a parte 4 (ficha 11-B) e as partes 9, 10, 11 e 12 de `docs/tarefa-11-escritorio-ajustes-finais.md`; nas Diretrizes, as partes 5, 6 e 9 e as fichas das Tarefas 2, 4, 5, 11, 12 e 14.
+**O que ler:** README.md (manual do repositório); a base comum; a parte 4 (ficha 11-B) e as partes 9, 10, 11 e 12 de `docs/tarefa-11-escritorio-ajustes-finais.md`; nas Diretrizes, as partes 5, 6 e 9 e as fichas das Tarefas 2, 4, 5, 11, 12 e 14.
 
 **Palavras deste caderno:** token = pedaço de texto que o fornecedor de IA conta pra cobrar; RLS = regra do banco que decide quem lê cada linha; pg_cron = agendador que roda dentro do banco; função de servidor = código que roda no Supabase, fora do celular.
 
@@ -185,7 +185,7 @@ As 3 funções de conta (`ia_mes_ref`, `ia_preco_vigente`, `ia_custo_brl`) estã
 | `escritorio_proximo_horario(p_escala_id bigint, p_depois timestamptz)` | banco | linha da escala | `timestamptz` ou vazio | nenhum |
 | `escritorio_ligar_escala(p_familia uuid, p_ligar boolean)` | dono do produto | família | quantas linhas mudou | `sem_preco_vigente`, `nao_e_dono` |
 | `escritorio_rotina()` | pg_cron | nada | `jsonb {devolvidas, fechadas, abertas}` | nunca derruba: erro de 1 família é anotado e segue |
-| `escritorio_rodar_atrasadas()` | app, papel casal | nada | lista de conferências abertas | `sem_permissao` |
+| `escritorio_rodar_atrasadas()` | app, papel casal | nada | lista de conferências abertas | `sem acesso` |
 | `escritorio_saude()` | app, papel casal | nada | `jsonb {forma, atrasadas, ultima_previsto, proxima_em}` | nenhum |
 | `escritorio_novidades()` | app | nada | `int` | nenhum |
 | `escritorio_marcar_visto()` | app | nada (sem parâmetro) | hora gravada | `sem_pessoa` |
@@ -248,7 +248,7 @@ begin
     select * into g from ia_gasto_mes
      where familia_id = t.familia_id and mes = v_mes for update;                -- trava 2: a conta do mês
     v_uso := g.gasto + g.reservado;
-    select modelo into v_nivel from escritorio_funcionarios where id = t.funcionario;
+    select modelo into strict v_nivel from escritorio_funcionarios where id = t.funcionario and familia_id = t.familia_id;   -- a tabela tem familia_id (parte 2)
     if v_uso >= 1.5 * g.teto_brl then
       v_dec := 'sem_ia_teto'; v_res := true;
     else
@@ -270,7 +270,7 @@ begin
     update ia_gasto_mes set reservado = reservado + v_est, atualizado_em = now()
      where familia_id = t.familia_id and mes = v_mes;
     update escritorio_turnos set ia_decisao = v_dec, modelo_id = pr.modelo_id, preco_id = pr.id,
-           ia_reserva_brl = v_est, ia_reserva_em = now(), resumido = v_res where id = p_turno_id;
+           ia_reserva_brl = v_est, ia_reserva_em = escritorio_agora(), resumido = v_res where id = p_turno_id;
     return jsonb_build_object('decisao', v_dec, 'nivel', v_nivel, 'modelo_id', pr.modelo_id, 'reserva_brl', v_est, 'resumido', v_res);
   end if;
   update escritorio_turnos set ia_decisao = v_dec, resumido = v_res where id = p_turno_id;
@@ -289,7 +289,7 @@ revoke execute on function public.ia_reservar(uuid, int, int) from public, anon,
 3. Com contagem: o `modelo_id` recebido tem que ser o da reserva (senão `modelo_diferente_da_reserva`); `custo_brl = ia_custo_brl(preco_id, tokens_entrada, tokens_saida)`, usando o `preco_id` guardado na reserva.
 4. Contagem maior que 0 em conferência sem reserva: erro `ia_sem_reserva` (defeito do servidor, o teste tem que pegar).
 5. Na conta do mês: `gasto = gasto + custo_brl` e `reservado = reservado - ia_reserva_brl`; na conferência, `ia_reserva_brl = 0`.
-6. Se `avisou_80_em` está vazio e `gasto >= 0.8 * teto_brl`: grava `avisou_80_em = now()`. Nunca regrava no mesmo mês.
+6. Se `avisou_80_em` está vazio e `gasto >= 0.8 * teto_brl`: grava `avisou_80_em = escritorio_agora()`. Nunca regrava no mesmo mês.
 7. Conferência fechada não é editada. `custo_brl` gravado nunca é recalculado, mesmo com preço novo.
 
 **Devolução de reserva vencida (`ia_devolver_reservas_vencidas`).** Pra cada conferência com `ia_reserva_brl > 0`, `fim` vazio e `ia_reserva_em < agora - 30 minutos`: trava a conferência, trava a conta do mês, faz `reservado = reservado - ia_reserva_brl`, zera `ia_reserva_brl` e grava `ia_reserva_devolvida_em`. Na mesma rodada a rotina chama `escritorio_fechar_interrompidas()` (11-C, seção 4.1): a conferência fecha como `entregue`, só com o número, motivo `interrompida`, custo 0. Assim o número sai e a tranca de "1 conferência aberta por ajudante" não prende a próxima.
@@ -302,7 +302,7 @@ revoke execute on function public.ia_reservar(uuid, int, int) from public, anon,
 
 **`escritorio_placar(p_semana)`.** Semana de segunda a domingo, fuso de Recife. Devolve `numero`, `nome`, `valor`, `meta`, `situacao` (`verde`, `fora`, `sem_meta`, `medindo`), já na ordem: `fora` primeiro. Números 1, 2, 3 e 5 têm meta; 4 e 6 são `sem_meta`; 7 e 8 são `medindo` e saem sem R$. A frase da linha recolhida conta "no verde" só entre os 4 com meta e conta como "sem meta ainda" os 4 que não têm meta (4, 6, 7 e 8). Família de exemplo fica fora do total. Definição de cada número: parte 10 de `docs/tarefa-11-escritorio-ajustes-finais.md`.
 
-**Relógio simulado.** Toda função usa `escritorio_agora()` no lugar de `now()`. Ela devolve `now()`, salvo quando quem chama é o servidor de teste e a configuração `app.agora_teste` está preenchida. Usuário do app nunca altera o relógio.
+**Relógio simulado.** Toda função usa `escritorio_agora()` no lugar de `now()`. A função nasce na 11-D, passo 3 (o 1º caderno cujos testes precisam dela); a regra fica aqui. Ela devolve `now()`, salvo quando quem chama é o servidor de teste e a configuração `app.agora_teste` está preenchida. Usuário do app nunca altera o relógio.
 
 ### 4.3 Regra do mês no fuso de Recife
 
@@ -322,7 +322,7 @@ Uso = (`gasto` + `reservado`) ÷ `teto_brl`, lido com a linha travada, antes de 
 | 150% ou mais | `sem_ia_teto` | nenhum | sim | números do banco sem texto + frase "resumido" | família sem IA até virar o mês |
 | Mais de 3 "Rodar agora" do mesmo ajudante no mesmo dia | `sem_ia_rodar_agora` (da 4ª em diante) | nenhum | não | números do banco + "Hoje veio só o número..." | contagem de repetições |
 
-Ajustes finos, já decididos: (1) pedido forte que não cabe (uso + estimativa forte passa de 100%) desce pra leve mesmo abaixo de 100%; é isso que segura 2 conferências ao mesmo tempo. (2) Pedido leve cuja estimativa faria o uso passar de 150% vira `sem_ia_teto`. (3) A conferência em andamento termina no modelo em que começou. (4) "Refazer a conta" (11-C) não chama IA e não entra na contagem de 3. (5) Conferência de exemplo: `sem_ia_exemplo`, não reserva, não soma. (6) Sem dado: o servidor nem chama `ia_reservar`; fecha com `sem_ia_sem_dado`, custo 0.
+Ajustes finos, já decididos: (1) pedido forte que não cabe (uso + estimativa forte passa de 100%) desce pra leve mesmo abaixo de 100%; é isso que segura 2 conferências ao mesmo tempo. (2) Pedido leve cuja estimativa faria o uso passar de 150% vira `sem_ia_teto`. (3) A conferência em andamento termina no modelo em que começou. (4) "Refazer a conta" (11-C) não chama IA e não entra na contagem de 3. (5) Conferência de exemplo: `sem_ia_exemplo`, não reserva, não soma. (6) Sem dado: a conferência fecha no próprio banco, dentro de `escritorio_abrir_turno` (11-C, 4.1, passo 3), que grava `ia_decisao = 'sem_ia_sem_dado'` e custo 0; o servidor nem chama `ia_reservar`.
 
 ### 4.5 Agendamento
 
@@ -335,7 +335,7 @@ O pg_cron conta em horário universal; como roda a cada 10 minutos, o fuso não 
 **O que `escritorio_rotina()` faz, nesta ordem:**
 1. Chama `ia_devolver_reservas_vencidas()` e depois `escritorio_fechar_interrompidas()` (11-C): conferência aberta há mais de 30 minutos fecha como `entregue`, só com o número.
 2. Confere se existe preço vigente pros níveis leve e forte. Sem isso, não abre nada e anota o motivo.
-3. Pra cada linha de `escritorio_escala` com `ativo` e `proximo_em <= agora`: abre 1 conferência com `previsto_para = proximo_em` e `origem = 'agenda'` (a tranca da 11-C impede a 2ª); grava `proximo_em = escritorio_proximo_horario(id, agora)`. Se várias datas ficaram pra trás, abre só a mais recente.
+3. Pra cada linha de `escritorio_escala` com `ativo` e `proximo_em <= agora`: abre 1 conferência com `previsto_para` = o último horário previsto que já passou (começa em `proximo_em` e avança pela regra abaixo enquanto for menor ou igual a agora) e `origem = 'agenda'` (a tranca da 11-C impede a 2ª); grava `proximo_em = escritorio_proximo_horario(id, agora)`. Se várias datas ficaram pra trás, abre só a mais recente.
 4. Pra cada conferência aberta, chama a função de servidor `escritorio-conferir` com o número dela, pelo pg_net. O endereço e a chave ficam no cofre do Supabase, nunca no código.
 5. Linha com `proximo_em` vazio (falta dado): tenta calcular de novo.
 
@@ -346,7 +346,7 @@ O pg_cron conta em horário universal; como roda a cada 10 minutos, o fuso não 
 | `dia_do_mes` | dia `dia_mes` deste mês na `hora`; se já passou, o do mês seguinte. Mês mais curto: usa o último dia do mês |
 | `primeiro_dia_util` | 1º dia do mês, de segunda a sexta, que não é feriado na tabela de feriados da Tarefa 4, na `hora`; se já passou, o do mês seguinte (regra da 11-D, seção 6) |
 | `dia_da_semana` | próxima data cujo dia da semana é `dia_semana`, na `hora`; se é hoje e a hora já passou, soma 7 dias |
-| `apos_fechamento_cartao` | pra cada cartão ativo da família: fechamento = menor entre `dia_fechamento` e o último dia do mês; candidato = dia seguinte na `hora`. Vale o menor candidato futuro entre todos os cartões. Sem cartão: vazio, e o ajudante fica em "Perguntando" |
+| `apos_fechamento_cartao` | pra cada cartão ativo da família: fechamento = menor entre `dia_fechamento` e o último dia do mês; candidato = dia seguinte na `hora`, calculado pro mês corrente e pro mês seguinte (o de 25/11 já passado vira 26/12). Vale o menor candidato maior que o instante de referência entre todos os cartões. Sem cartão: vazio, e o ajudante fica em "Perguntando" |
 
 Escala dos 8 ajudantes e o próximo horário da família Silva na data de referência (terça, 24/11/2026, 9h00):
 
@@ -442,7 +442,7 @@ Todos na família Silva, com relógio simulado em terça, 24/11/2026, 9h00, salv
 | T-B20 | relógio em 26/11, 8h20 | rodar a rotina; depois criar cartão de teste que fecha dia 31 e calcular o próximo horário a partir de 12/04/2027 | abre o Analista de Cartão de 26/11, 8h17 e `proximo_em` = 11/12/2026, 8h17; pro cartão do dia 31, o candidato de abril é 01/05/2027, 8h17 |
 | T-B21 | escala com `desde` = 07/09/2026; em 20/11 a Marina muda o Comprador (dado de teste) | abrir "Dias de cada ajudante" em 24/11 e em 28/11 | 24/11: "Seus 8 ajudantes trabalham desde 07/09." e a linha "Comprador agora confere toda segunda, 20h23. Mudou em 20/11, por Marina."; 28/11: só a frase. Nenhum aviso no celular |
 | T-B22 | estado inicial; logado como dono do produto | abrir o custo de IA de novembro | "Custo de IA em novembro: R$ 0,44 de R$ 2,49"; "No ritmo atual fecha em R$ 0,55."; Contador R$ 0,17; Analista de Cartão R$ 0,21; Comprador, Presença e Auditor R$ 0,01 cada; Agenda, Guardião e Folha "menos de R$ 0,01"; lista de modelos com Contador e Analista de Cartão em forte e 6 em leve |
-| T-B23 | semana de 16/11 a 22/11; dados do fim deste caderno | abrir o placar como dono; depois como Carlos | "Escritório: 3 de 4 no verde, 4 sem meta ainda." (no verde: 1, 2 e 5; fora: 3; sem meta: 4, 6, 7 e 8); aberto, o número 3 (1 pendência vencida) é o 1º da lista; números 7 e 8 sem R$; Carlos recebe `nao_e_dono` |
+| T-B23 | semana de 16/11 a 22/11; dados do fim deste caderno | abrir o placar como dono; depois como Carlos | frase na forma "Escritório: {n} de 4 no verde, 4 sem meta ainda.", com {n} igual à contagem feita à mão nas tabelas entre os números 1, 2, 3 e 5 (com os valores do fim deste caderno, alguns ilustrativos, dá "3 de 4": no verde 1, 2 e 5; fora: 3; sem meta: 4, 6, 7 e 8); aberto, o número 3 (1 pendência vencida) é o 1º da lista; números 7 e 8 sem R$; Carlos recebe `nao_e_dono` |
 | T-B24 | banco de teste recriado só com o preço `teste-leve` (sem o forte) | chamar `escritorio_ligar_escala(Silva, true)` | erro `sem_preco_vigente`; as 8 linhas continuam com `ativo = false`; a rotina não abre nada |
 | T-B25 | apagar os 2 cartões da família Silva (cópia de teste) | rodar a conferência do Analista de Cartão | status `sem_dados` ("Perguntando"), `ia_reservar` não é chamada, `custo_brl = 0`, `gasto = 0.440000`, `proximo_em` vazio e o ajudante não conta como atrasado |
 | T-B26 | estado inicial | leitura de cupom da Tarefa 12 reserva `0.109000` por `ia_reservar_valor` e fecha em `0.084475` | mesma linha de `ia_gasto_mes`: `gasto = 0.524475`; o teto é 1 só |
@@ -473,7 +473,7 @@ Todos na família Silva, com relógio simulado em terça, 24/11/2026, 9h00, salv
 | 3 | Quais são os 2 modelos e os preços reais de `ia_precos`? | O dono confirma na página oficial no dia de ligar e insere 2 linhas com o endereço em `fonte`. Dólar 5,45 até revisar |
 | 4 | O alerta de 80% chega por onde? | Só no painel do dono, no piloto |
 | 5 | Onde fica o custo de IA enquanto o painel da Tarefa 14 não existe? | Entregar as funções agora e 1 página simples só do dono; a Tarefa 14 absorve depois |
-| 6 | O 1º dia útil do Contador olha feriado? A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)| Olhar feriado, pela tabela da Tarefa 4, como manda a 11-D. Nesse caso a de novembro seria na terça, 03/11, e a base comum pede 1 ajuste. Nenhum teste deste caderno depende dessa data |
+| 6 | O 1º dia útil do Contador olha feriado? A base comum já foi corrigida: em novembro/2026 o Contador roda na terça, 03/11, porque 02/11 é feriado (Finados)| Olhar feriado, pela tabela da Tarefa 4, como manda a 11-D. Em novembro ela rodou na terça, 03/11, como a base comum já diz. Nenhum teste deste caderno depende dessa data |
 | 7 | Na frase do placar, os números 7 e 8 contam como "sem meta"? | Sim. A frase é "3 de 4 no verde, 4 sem meta ainda" (4, 6, 7 e 8). Na lista aberta, 7 e 8 aparecem como "medindo" |
 | 8 | A família pode mudar dia e hora dos ajudantes no piloto? | Não. Só o dono muda, a pedido |
 | 9 | Na 4ª "Rodar agora" do dia, qual frase a família lê? | A da 11-C: "Hoje veio só o número. O comentário volta na próxima conferência." |
@@ -486,7 +486,7 @@ PAPEL
 Você é engenheiro sênior de banco de dados (Postgres e Supabase) e de agentes de IA do app Central da
 Família. Vai construir a ficha 11-B do Escritório: custo de IA, teto, saúde, novidades, time e placar.
 LEIA ANTES, NESTA ORDEM, INTEIROS
-1. CLAUDE.md e docs/escritorio/00-base-comum.md
+1. README.md (manual do repositório) e docs/escritorio/00-base-comum.md
 2. docs/escritorio/LEIA-PRIMEIRO.md, partes 3 e 4 (ordem e quem cria o quê)
 3. docs/escritorio/11-B-custo-saude-novidades.md (este caderno manda no detalhe)
 4. docs/escritorio/11-C-confianca-no-numero-e-na-ia.md, seções 4.1 e 4.5 (o que já existe quando você começa)
@@ -548,11 +548,11 @@ Todos de exemplo, da família Silva ou de teste. A soma do custo fecha com a bas
 | Dado | Valor |
 |---|---|
 | `desde` da escala dos 8 ajudantes | 07/09/2026 (dado da base comum) |
-| Conferências de novembro até 24/11, 9h00 | 21, todas entregues: Contador 1 (03/11), Folha 1 (03/11), Analista de Cartão 1 (11/11), Comprador 4, Presença 4, Auditor 4, Agenda 3, Guardião 3. Faltam 5 até 30/11 (Agenda 25/11, Analista de Cartão 26/11, Guardião 27/11, Comprador e Presença 30/11): 26 previstas no mês, como na base comum |
+| Conferências de novembro até 24/11, 9h00 | 21, todas fechadas com relatório (algumas com pendência, como o Comprador de 23/11; ver base comum, parte 6.1): Contador 1 (03/11), Folha 1 (03/11), Analista de Cartão 1 (11/11), Comprador 4, Presença 4, Auditor 4, Agenda 3, Guardião 3. Faltam 5 até 30/11 (Agenda 25/11, Analista de Cartão 26/11, Guardião 27/11, Comprador e Presença 30/11): 26 previstas no mês, como na base comum |
 | Custo gravado por conferência | Contador R$ 0,170000 (1 conferência); Analista de Cartão R$ 0,210000 (1 conferência); Folha R$ 0,006000 (1 conferência); cada uma das outras 18, R$ 0,003000. Os outros 6 somam 0,006 + 18 x 0,003 = R$ 0,06 |
 | Custo por ajudante em novembro | Contador R$ 0,17; Analista de Cartão R$ 0,21; Comprador, Presença e Auditor R$ 0,012 cada; Agenda e Guardião R$ 0,009 cada; Folha R$ 0,006. Soma R$ 0,44 |
 | Projeção de novembro | R$ 0,55 (0,44 ÷ 24 x 30) |
 | Última visita da Marina ao Escritório | 21/11/2026, 9h00 |
 | Mudança de escala de teste | em 20/11/2026 a Marina regrava o horário do Comprador (continua segunda, 20h23) |
-| Placar da semana de 16/11 a 22/11 | número 1: 5 de 5 (100%); número 2: 0; número 3: 1 pendência vencida (Folha da Casa, "Confirmar as férias da Dona Lúcia em janeiro", era até 17/11, sem "Resolvi"; é a mesma da 11-E); número 4: 2 dias; número 5: R$ 0,44 de R$ 2,49; número 6: 3 de 5 |
+| Placar da semana de 16/11 a 22/11 | número 1: 5 de 5 (100%); número 2: 0 (valor ilustrativo, sem dado de exemplo que o gere); número 3: 1 pendência vencida (Folha da Casa, "Confirmar as férias da Dona Lúcia em janeiro", era até 17/11, sem "Resolvi"; é a mesma da 11-E); número 4: 2 dias (valor ilustrativo, sem dado de exemplo que o gere); número 5: R$ 0,44 de R$ 2,49; número 6: 3 de 5 (valor ilustrativo, sem dado de exemplo que o gere) |
 | Só de teste | preços fictícios `teste-leve` e `teste-forte` (parte 6); família B, 2ª família de teste da Tarefa 2, sem nome de pessoa, com `gasto` de R$ 0,10 em novembro; cartão que fecha dia 31, só no T-B20 |

@@ -1,7 +1,7 @@
 # Escritório · Leia primeiro
 
 ```
-                    ESCRITÓRIO DA FAMÍLIA · 5 cadernos · 91 passos · 146 testes
+                    ESCRITÓRIO DA FAMÍLIA · 5 cadernos · 91 passos · 147 testes
 
   +-----------+   +-----------+   +-----------+   +-----------+   +-----------+
   |   11-D    |   |   11-C    |   |   11-B    |   |   11-E    |   |   11-F    |
@@ -43,11 +43,11 @@
 |---|---|---|---|---|
 | `00-base-comum.md` | Palavras, nomes, 7 situações e números da família Silva | 0 | 0 | todos, antes de tudo |
 | `11-D-dinheiro-certo-em-cada-ajudante.md` | A conta de cada ajudante, o livre de R$ 920, o tom, o Fechamento do mês | 15 | 36 | agente de banco e IA; economista; contador |
-| `11-C-confianca-no-numero-e-na-ia.md` | Número com carimbo, IA que falha, nunca 2 vezes, privacidade, pendência | 14 | 26 | agente de banco e segurança; advogado |
+| `11-C-confianca-no-numero-e-na-ia.md` | Número com carimbo, IA que falha, nunca 2 vezes, privacidade, pendência | 14 | 27 | agente de banco e segurança; advogado |
 | `11-B-custo-saude-novidades.md` | Custo e teto de IA, escala, saúde, novidades, placar | 15 | 26 | agente de banco e IA; dono (painel) |
 | `11-E-tela-e-interacao.md` | Tela curta, cartão em 3 níveis, 7 situações, 6 fluxos | 18 | 30 | agente de telas; dono (prints) |
 | `11-F-escritorio-em-3d.md` | **ADIADO pelo dono em 24/11.** Modo 3D em 3 fases. Agora vale só a parte 6 (contrato de `escritorio_estado`) | 29, nenhum agora | 28, nenhum agora | agente de telas, só a parte 6 |
-| **Soma** | | **91** | **146** | |
+| **Soma** | | **91** | **147** | |
 
 ## 3. Ordem de construção (tabela passo a passo, com o que cada passo precisa de pronto antes, citando caderno e nº do passo, e as Tarefas das Diretrizes de que depende)
 
@@ -93,7 +93,7 @@ Regra: 1 dono por objeto. Quem não é dono não cria, só usa. O tipo de `escri
 | `ia_precos`, `ia_gasto_mes` | 11-B | Tarefa 12 (mesmo teto) |
 | `escritorio_escala` (tipos `dia_do_mes`, `primeiro_dia_util`, `dia_da_semana`, `apos_fechamento_cartao`) | 11-B | 11-D (Fechamento), 11-E, 11-F |
 | `escritorio_funcionarios.modelo`, `pessoas.escritorio_visto_em`, `produto_donos` (rascunho) | 11-B | painel do dono |
-| `escritorio_parametros` (piso, meta de semanas, teto de parcela) e a tabela de termos proibidos | 11-D | 11-C (conferidor) |
+| `escritorio_parametros` (piso, meta de semanas, teto de parcela) e a tabela `escritorio_termos_proibidos` | 11-D | 11-C (conferidor) |
 
 **Funções do banco e do servidor**
 
@@ -107,8 +107,9 @@ Regra: 1 dono por objeto. Quem não é dono não cria, só usa. O tipo de `escri
 | `escritorio_abrir_pendencia`, `escritorio_resolver_pendencia`, `escritorio_desfazer_resolvi`, `escritorio_adiar_pendencia`, `escritorio_desfazer_adiamento`, `escritorio_responder_pergunta`, `escritorio_avaliar_relatorio` | 11-C | 11-D, 11-E |
 | `escritorio_conta_mudou`, `escritorio_refazer_conta`, `aviso_seguro`, `escritorio_sinais_confianca`, `escritorio_tela` | 11-C | 11-E; Tarefa 20; painel do dono |
 | `ia_mes_ref`, `ia_preco_vigente`, `ia_custo_brl`, `ia_teto_para`, `ia_definir_teto`, `ia_reservar`, `ia_reservar_valor`, `ia_devolver_reservas_vencidas` | 11-B | 11-C (passo 5 do caminho), Tarefa 12 |
-| `escritorio_fechar_turno` (estendida com custo) | 11-B | 11-C fecha por ela |
-| `escritorio_proximo_horario`, `escritorio_ligar_escala`, `escritorio_rotina`, `escritorio_agora`, agendamento `escritorio-rotina-10min` | 11-B | 11-C e 11-D (testes com relógio) |
+| `escritorio_fechar_turno`: a 11-C acrescenta antes (etapa 2) a recusa de linha fechada e os campos `texto_situacao`, `sem_texto_motivo` e `tentativas`; a 11-B estende depois com custo (etapa 4), partindo da versão da 11-C e sem apagar nada dela | 11-C (texto e tranca), 11-B (custo) | 11-C fecha por ela |
+| `escritorio_proximo_horario`, `escritorio_ligar_escala`, `escritorio_rotina`, agendamento `escritorio-rotina-10min` | 11-B | 11-C e 11-D |
+| `escritorio_agora` (relógio simulado; regra na 11-B, parte 4.2) | 11-D, passo 3 (é o 1º caderno que precisa dele) | 11-C, 11-B |
 | `escritorio_saude`, `escritorio_rodar_atrasadas`, `escritorio_novidades`, `escritorio_marcar_visto`, `escritorio_time` | 11-B | 11-E |
 | `ia_painel_custo`, `ia_painel_custo_ajudantes`, `escritorio_placar`, `eh_dono_produto` (rascunho) | 11-B | Tarefa 14 |
 | `escritorio_estado` (situação dos 8, 7 valores, palavra pronta) | contrato: 11-F, parte 6. Construção: 11-E, passo 16 | 11-C (`escritorio_tela`), cena pixel, cena 3D, cartões |
@@ -120,6 +121,7 @@ Regra: 1 dono por objeto. Quem não é dono não cria, só usa. O tipo de `escri
 |---|---|---|
 | `LinhaSaude`, `LinhaNovidades` | 11-E (a 11-B cria a 1ª versão no mesmo arquivo) | 11-B |
 | `CartaoAjudante`, `SinalDeSituacao`, `FaixaSemInternet` | 11-E | 11-C (textos e regra), 11-B (frase do resumido) |
+| Aviso legal (rodapé e "Ver detalhes") | 11-E (monta no passo 11) | 11-D (texto da seção 7.4, em 1 lugar do código; o passo 14 da 11-D confere) |
 | Cena 3D e etiquetas | 11-F | 11-E (sinal do cartão) |
 
 ## 5. Como colocar os agentes pra trabalhar (passo a passo literal pro dono: qual ordem de serviço colar primeiro, o que esperar de volta, o que conferir antes de liberar o próximo; 1 agente por caderno; quem revisa quem, já que ninguém revisa o próprio trabalho)
@@ -140,10 +142,10 @@ Passo a passo:
 2. Confira que as Tarefas 2, 3 e 4 estão prontas. Se não estão, pare aqui.
 3. Abra o agente A. Cole a ordem de serviço da seção 11 do caderno 11-D. Diga: "faça só a 1ª etapa, itens 1 a 6, 8 e 9".
 4. Espere de volta: as regras em português simples e as 12 perguntas. Responda e escreva "aprovado".
-5. Espere de volta: lista dos testes T-D01 a T-D05, T-D11, T-D14 a T-D17, T-D22, T-D28 a T-D31 passando. Confira você mesmo 3 números: livre R$ 920, 9 semanas, R$ 2.700 em 10 dias.
-6. Abra o agente B. Cole a ordem de serviço da seção 9 do caderno 11-C. Diga: "faça os itens 1 a 11; o 12 e o 13 esperam".
+5. Espere de volta: lista dos testes T-D01 a T-D04, T-D11, T-D14 a T-D17, T-D22, T-D28 e T-D30 passando (T-D05, T-D29 e T-D31 conferem pendência ou "Entrou lançamento depois", que são da 11-C, e ficam pra depois da 2ª etapa, no passo 8 abaixo). Confira você mesmo 3 números: livre R$ 920, 9 semanas, R$ 2.700 em 10 dias.
+6. Abra o agente B. Cole a ordem de serviço da seção 9 do caderno 11-C. Diga: "faça os itens 1 a 11; o 12, o 13 e o 14 esperam".
 7. Antes de aprovar o agente B, peça ao agente C (ainda sem tarefa) pra ler o que o B fez e listar o que falta pra ele. Confira: IA desligada, o número sai (T-C02); 2 toques, 1 conferência (T-C11); a cozinheira e a filha leem 0 linha (T-C16, T-C17).
-8. Volte ao agente A: "faça a 2ª etapa, itens 7, 10 e 12". Confira: achado de R$ 32 não vira pendência; divergência provocada vira 1 alerta (T-D06).
+8. Volte ao agente A: "faça a 2ª etapa, itens 7, 10 e 12". Confira: achado de R$ 32 não vira pendência; divergência provocada vira 1 alerta (T-D06); T-D05, T-D29 e T-D31 passando.
 9. Abra o agente C. Cole a ordem de serviço da seção 9 do caderno 11-B. Confira antes de liberar: 2 conferências ao mesmo tempo não furam o teto (T-B09); a família não vê custo (T-B13). Só então ele agenda a rotina.
 10. Volte ao agente A: "faça a 3ª etapa, itens 11, 13 e 14". Confira o Fechamento de novembro: R$ 360, R$ 290 a mais, 9 semanas.
 11. O agente D pode ter começado antes, com o arquivo de exemplo (passos 1 a 15 da 11-E). Cole a ordem de serviço da seção 14 do caderno 11-E. Agora libere os passos 16 a 18. Confira no seu iPhone: a 1ª pendência aparece sem rolar; "Resolvi" e "Desfazer"; "Agora não".
@@ -159,7 +161,7 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 |---|---|---|---|
 | 1 | Aprovar as regras de dinheiro da 11-D (seções 4, 5 e 6), em especial: "a fatura cabe" contra o livre do mês do vencimento | Aprovar. É a mesma conta do Contador, então os 2 nunca divergem | 11-D passo 1 |
 | 2 | O 1º dia útil do Contador olha feriado? | Sim. Já está assim na base comum: em novembro/2026 ele roda na terça, 03/11, porque 02/11 é feriado. Só confirmar | 11-D passo 12; 11-B passo 7 |
-| 3 | O retrato da família Silva em 24/11 é o da parte 6.1 da base comum (3 coisas esperando: 1 pra decidir e 2 pra informar)? | Sim. A semeadura dos testes segue esse retrato. Falta só confirmar se pendência de informar aberta deixa a Folha "Entregue" ou muda a situação | 11-D passo 2; 11-E passo 3 |
+| 3 | O retrato da família Silva em 24/11 é o da parte 6.1 da base comum (3 coisas esperando: 1 pra decidir e 2 pra informar)? Pelas regras da 11-D (piso de R$ 50 e sinal vermelho), Presença, Agenda, Guardião, Folha e Analista de Cartão teriam pendência "Pra decidir" aberta. Pode a semeadura gravá-las como já resolvidas? | Sim. A semeadura grava como já resolvidas (com "Resolvi" e data anterior a 24/11) as pendências que as regras da 11-D abririam na Presença, na Agenda, no Guardião, na Folha (a de decidir quanto guardar pras férias, chave `folha:guardar:ferias:2027-01`) e no Cartão (março), e `escritorio_estado()` lê as pendências abertas. A chave `folha:ferias:2027-01` tem 1 tipo só: "Pra informar" (confirmar as férias), como na base. Pendência de informar aberta deixa a Folha "Entregue" (11-D, seção 5; 11-E, pergunta 9) | 11-D passo 2; 11-E passo 3 |
 | 4 | Um do casal lê o relatório com o gasto do outro? | Sim, sabendo de quem é cada coisa (regra de 13/11) | 11-C passo 5 |
 | 5 | A pendência ganha tabela própria, e "Agora não", "Ajudou" e "Responder" ficam no banco pela 11-C? | Sim. Não tinham dono em nenhum caderno; sem isso não há tranca nem placar | 11-C passos 2 e 9 |
 | 6 | Teto de IA de R$ 2,49 por família por mês, somando Escritório e Tarefa 12; forte só pro Contador e pro Analista de Cartão | Sim nos 2 | 11-B passos 3 e 4 |
@@ -213,7 +215,7 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 
 **Divergências que sobraram depois da conferência (não estão resolvidas):**
 
-1. Resolvido na base comum (parte 6.1): o Analista de Cartão está "Perguntando" porque entrou 1 cartão novo sem dia de fechamento. Sobra 1 ponto: a Folha aparece "Entregue" com 1 pendência de informar aberta; o agente da 11-C confirma se pendência aberta muda a situação do cartão.
+1. Resolvido na base comum (parte 6.1): o Analista de Cartão está "Perguntando" porque entrou 1 cartão novo sem dia de fechamento. Também resolvido: pendência de informar aberta deixa o cartão "Entregue" (11-D, seção 5).
 2. Texto do cartão fechado: a 11-D escreve legenda e comparação longas; a 11-E precisa de 1 linha. Ficou a regra (a conta devolve `legenda_curta` e `comparacao_curta`), mas a 11-D só traz o texto curto dos 8 exemplos pela tabela 6.1 da 11-E.
 3. Tipo de `escritorio_turnos.id`: ficou `uuid` nos 2 cadernos, a confirmar com o que a Tarefa 11 criar.
 4. `escritorio_estado` nasce no passo 16 da 11-E, mas o contrato está na 11-F. O agente da 11-E precisa ler a parte 6 da 11-F.
@@ -223,4 +225,4 @@ O que todo agente devolve no fim: lista "teste, passou ou falhou"; prints no iPh
 
 1. Resolvido: a base agora põe o Contador de novembro em 03/11, porque 02/11 é feriado.
 2. Resolvido: a base ganhou a parte 6.1, com a situação e as pendências de cada ajudante em 24/11.
-3. A base não abre o gasto de R$ 8.240 por pessoa e Casa, nem as presenças da semana. A 11-D criou: Casa R$ 4.410 de R$ 5.000; 38 presenças; consumo de R$ 1.444.
+3. A base abre só a Casa (R$ 4.410) no gasto de R$ 8.240; não divide Carlos e Marina (R$ 3.830 juntos) nem traz as presenças da semana. A 11-D criou: Casa R$ 4.410 de R$ 5.000; 38 presenças; consumo de R$ 1.444.

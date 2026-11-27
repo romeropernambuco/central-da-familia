@@ -279,7 +279,7 @@ O par mais parecido é "Entregue" e "Resumido" (mesma pose): separa pela altura 
 
 **Regras.**
 1. Cena pixel, cena 3D e cartões recebem o mesmo objeto, lido 1 vez por tela. Nenhum dos 3 calcula situação.
-2. `situacao` já vem resolvida, 1 por ajudante, nesta prioridade: `atrasado`, `precisa_de_voce`, `sem_dados`, `trabalhando`, `aguardando`, `resumido`, `entregue`. "Atrasado" vem primeiro porque a 11-E, dona do sinal do cartão, manda que ele vença qualquer outra (pergunta 5 da parte 13). "Atrasado" e "Resumido" são calculados no banco, como manda a base comum.
+2. `situacao` já vem resolvida, 1 por ajudante, nesta prioridade: `atrasado`, `precisa_de_voce`, `sem_dados`, `trabalhando`, `aguardando`, `resumido`, `entregue`. "Atrasado" vem primeiro porque a 11-E, dona do sinal do cartão, manda que ele vença qualquer outra (parte 6.2 da 11-E; a alternativa segue aberta na pergunta 3 da parte 7 do LEIA-PRIMEIRO). "Atrasado" e "Resumido" são calculados no banco, como manda a base comum.
 3. O JSON da cena não leva nenhum valor em R$ e nenhum texto de relatório.
 4. Datas com fuso de Recife (`-03:00`). `palavra` e `complemento` já vêm prontos pra tela.
 
@@ -290,9 +290,9 @@ O par mais parecido é "Entregue" e "Resumido" (mesma pose): separa pela altura 
   "versao": 1, "gerado_em": "2026-11-24T09:00:00-03:00", "fuso": "America/Recife",
   "resumo": { "precisam": 1, "perguntando": 1, "conferindo": 1, "entregaram": 5, "atrasados": 0 },
   "ajudantes": [
-    {"id":"contador","ordem":1,"nome":"Contador da Casa","apelido":"Contador","setor":"Os orçamentos","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-02T07:14:00-03:00","proxima":"2026-12-01T07:12:00-03:00","pendencias":0,"cartao":"m_contador"},
+    {"id":"contador","ordem":1,"nome":"Contador da Casa","apelido":"Contador","setor":"Os orçamentos","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-03T07:14:00-03:00","proxima":"2026-12-01T07:12:00-03:00","pendencias":0,"cartao":"m_contador"},
     {"id":"cartao","ordem":2,"nome":"Analista de Cartão","apelido":"Cartão","setor":"Cartões e parcelas","ativo":true,"situacao":"sem_dados","palavra":"Perguntando","complemento":null,"icone":"message-circle-question","status":"sem_dados","resumido":false,"atrasado":false,"desde":"2026-11-11T08:17:00-03:00","proxima":"2026-11-26T08:17:00-03:00","pendencias":1,"cartao":"m_cartao"},
-    {"id":"vencimentos","ordem":3,"nome":"Agenda de Vencimentos","apelido":"Agenda","setor":"Contas com data","ativo":true,"situacao":"trabalhando","palavra":"Conferindo agora","complemento":null,"icone":"loader-circle","status":"trabalhando","resumido":false,"atrasado":false,"desde":"2026-11-24T08:58:00-03:00","proxima":"2026-11-25T10:19:00-03:00","pendencias":0,"cartao":"m_vencimentos"},
+    {"id":"vencimentos","ordem":3,"nome":"Agenda de Vencimentos","apelido":"Agenda","setor":"Contas com data","ativo":true,"situacao":"trabalhando","palavra":"Conferindo agora","complemento":null,"icone":"loader-circle","status":"trabalhando","resumido":false,"atrasado":false,"desde":"2026-11-24T08:59:00-03:00","proxima":"2026-11-25T10:19:00-03:00","pendencias":0,"cartao":"m_vencimentos"},
     {"id":"comprador","ordem":4,"nome":"Comprador","apelido":"Comprador","setor":"Feira","ativo":true,"situacao":"precisa_de_voce","palavra":"Precisa de você","complemento":null,"icone":"circle-alert","status":"precisa_de_voce","resumido":false,"atrasado":false,"desde":"2026-11-23T20:25:00-03:00","proxima":"2026-11-30T20:23:00-03:00","pendencias":1,"cartao":"m_comprador"},
     {"id":"auditor","ordem":5,"nome":"Auditor de Estoque","apelido":"Auditor","setor":"Despensa e cozinha","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-24T07:43:00-03:00","proxima":"2026-12-01T07:41:00-03:00","pendencias":0,"cartao":"m_auditor"},
     {"id":"presenca","ordem":6,"nome":"Controlador de Presença","apelido":"Presença","setor":"Equipe da casa","ativo":true,"situacao":"entregue","palavra":"Entregue","complemento":null,"icone":"circle-check","status":"entregue","resumido":false,"atrasado":false,"desde":"2026-11-23T08:14:00-03:00","proxima":"2026-11-30T08:13:00-03:00","pendencias":0,"cartao":"m_presenca"},
@@ -425,7 +425,7 @@ Dados: função calculada `escritorio_linha_do_dia(p_dia date)`, mesma tranca da
  "eventos":[
   {"hora":"2026-11-24T07:41:00-03:00","id":"auditor","situacao":"trabalhando","palavra":"Conferindo agora"},
   {"hora":"2026-11-24T07:43:00-03:00","id":"auditor","situacao":"entregue","palavra":"Entregue"},
-  {"hora":"2026-11-24T08:58:00-03:00","id":"vencimentos","situacao":"trabalhando","palavra":"Conferindo agora"}]}
+  {"hora":"2026-11-24T08:59:00-03:00","id":"vencimentos","situacao":"trabalhando","palavra":"Conferindo agora"}]}
 ```
 
 A situação de um ajudante na hora T é a do último evento dele até T; sem evento, a de `inicio`. O app não refaz conta nenhuma: só escolhe o evento.
@@ -599,7 +599,7 @@ novo; lista dos arquivos tocados; 1 linha no histórico de mudanças.
 
 Nada aqui muda soma em dinheiro: este caderno não usa nenhum valor em R$.
 1. **Situação de cada ajudante da família Silva em 24/11, 9h00.** Agora está na parte 6.1 da base comum. É o mesmo retrato da 11-E (ver lá "O que o retrato da tela supõe"). Copiei da prévia aprovada: Contador, Auditor, Presença, Folha e Guardião em "Entregue"; Cartão em "Perguntando"; Agenda em "Conferindo agora"; Comprador em "Precisa de você".
-2. **Horas de `desde`.** Criadas a partir do horário da escala mais 1 ou 2 minutos (ex.: Auditor entregou às 7h43, 2 minutos depois das 7h41). A Agenda está conferindo desde 8h58, por "Rodar agora", já que o horário dela é quarta.
+2. **Horas de `desde`.** Criadas a partir do horário da escala mais 1 ou 2 minutos (ex.: Auditor entregou às 7h43, 2 minutos depois das 7h41). A Agenda está conferindo desde 8h59, por "Rodar agora", já que o horário dela é quarta.
 3. **2º conjunto de teste, "todas as situações".** Criado pra exercitar as 7 de uma vez: Presença atrasada desde 23/11, Folha resumida até 01/12, Comprador aguardando a 1ª nota da feira, Auditor precisando de você.
 4. **Da prévia aprovada, sem inventar:** apelidos das etiquetas, `id` dos cartões (`m_` + id), cores, cortes de cabelo e objetos de mesa (tabela `P` e rótulos dos retratos da cena pixel).
 5. **Campos novos no JSON** que a base comum não lista: `apelido`, `ordem`, `palavra`, `complemento`, `icone`, `desde`, `proxima`, `cartao`, `resumo`, `versao`, `gerado_em`. E a função `escritorio_linha_do_dia`, com 3 eventos de exemplo de 24/11.

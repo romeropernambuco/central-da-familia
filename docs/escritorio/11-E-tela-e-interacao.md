@@ -24,7 +24,7 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
 **O que não é.** Não é layout novo, não é o modo 3D (ficha 11-F), não cria conta nem regra de dinheiro (ficha 11-D), não cria tabela (o banco é das fichas 11-B, 11-C e da Tarefa 11). Os itens 10 e 11 da ficha entram na Tarefa 20 e o item 12 fica pra depois do piloto. Aqui só fica pronto o lado da tela do item 11 (fluxo 8.5).
 
 ## 2. Antes de começar
-1. Confirme que os passos 1 a 3 da ordem de construção (fichas 11-D, 11-C e 11-B) estão prontos. Sem eles, use dados fixos da família Silva num arquivo de exemplo e não ligue nada ao banco.
+1. Os passos 1 a 15 não dependem do banco (etapa 8 do `LEIA-PRIMEIRO.md`, parte 3). Pros passos 16 a 18, confirme que as etapas 2 a 6 estão prontas. Sem eles, use dados fixos da família Silva num arquivo de exemplo e não ligue nada ao banco.
 2. O repositório hoje tem só `index.html`, `parcelas/` e `docs/`. A pasta do app em React nasce na Tarefa 6. Este caderno assume `src/telas/escritorio/`. Se a Tarefa 6 escolheu outro caminho, use o caminho real e mantenha os nomes dos arquivos.
 3. Abra a prévia (`escritorio-previa.html`, sem `doctype`; embrulhe em `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>...</body></html>`) e tire print em 390 e 1280, tema claro e escuro. São os prints de "antes".
 4. Copie os tokens (variáveis de estilo com nome) do bloco `:root` da prévia. A parte 4 traz a tabela.
@@ -47,7 +47,7 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
 | 11 | Montar a página na ordem da parte 5, com a cena recolhida no celular e "Dias de cada ajudante" recolhido | `Escritorio.tsx` | alturas da parte 5 respeitadas | T-E01, T-E04, T-E06 |
 | 12 | Construir `ChaveSoOQueDependeDeMim` | `componentes/` | fluxo 8.6 completo e a escolha volta ao reabrir | T-E21 |
 | 13 | Construir `LinhaSaude`, `FaixaSemInternet` e `DescricaoDaCena` | `componentes/` | 2 formas da saúde, faixa aparece sem rede, cena tem texto | T-E22, T-E23, T-E24 |
-| 14 | Construir `ListaPorAjudante` no painel do dono | `src/telas/painel-dono/` | em 390 px a tabela vira lista de 2 linhas, sem rolagem lateral | T-E25 |
+| 14 | Construir `ListaPorAjudante` no painel do dono | `src/telas/dono/` (a mesma pasta do `CustoIA.tsx` da 11-B) | em 390 px a tabela vira lista de 2 linhas, sem rolagem lateral | T-E25 |
 | 15 | Movimento e "reduzir movimento" (parte 7) | CSS dos componentes | nenhuma animação passa de 5 s; com a preferência ligada, tudo parado | T-E10, T-E11 |
 | 16 | Ligar ao banco, trocando o arquivo de exemplo pelas funções das fichas 11-B e 11-C (tabela da parte 6, "De onde vem cada dado"). Construir aqui a função única de situação `escritorio_estado()`, seguindo o contrato da parte 6 do caderno 11-F, e fazer `escritorio_tela()` usar a saída dela | `dados.ts` e 1 migração | os 6 fluxos gravam e leem na família Silva; a palavra da situação vem pronta do banco | T-E14 a T-E21 de novo |
 | 17 | Abrir pela pendência (endereço com `?pendencia=`) | `Escritorio.tsx` | fluxo 8.5 completo | T-E26 |
@@ -116,7 +116,7 @@ Leia antes `docs/escritorio/00-base-comum.md`. Se este caderno contradisser a ba
      | 3 grupos, 8 cartões                  |  até 2.080 px
 3220 | > Dias de cada ajudante (recolhido)  |   56 px
      | LinhaSaude (44 px) + aviso (72 px)   |
-3470 +--------------------------------------+
+3472 +--------------------------------------+
 ```
 
 | Bloco (ordem fixa) | Altura alvo no celular | Altura alvo no computador | Nasce |
@@ -231,7 +231,7 @@ interface CartaoAjudanteProps {
 **Nível 3** ("Ver detalhes"; abre no lugar, dentro do nível 2).
 ```
 | O que faz por você: compara o preço de cada nota da feira.
-| Fonte: 4 notas de feira, de 02/11 a 23/11.
+| Fonte: 4 notas de feira, de 03/11 a 23/11.
 | Conta feita em 23/11, 20h23.  Horário: segunda, 20h23.
 | [ > Rodar agora ]                           |   botão neutro (--raised), ícone play
 | Pedir algo a este ajudante  [campo, 200 letras] [Enviar]
@@ -247,7 +247,7 @@ interface CartaoAjudanteProps {
 | Ajudante | Sinal | Número grande | Legenda | Comparação (seta) | Botão | Palavras |
 |---|---|---|---|---|---|---|
 | Contador da Casa | Entregue | R$ 920 | livres até 30/11, sem as contas com data | abaixo: 69% usado, com 80% do mês passado | | 21 |
-| Analista de Cartão | Perguntando | Falta 1 dado | Quando fecha e quando vence o Cartão laranja? | sem seta: Com a resposta, a conferência começa na hora. | Responder | 23 |
+| Analista de Cartão | Perguntando | Falta 1 dado | Quando fecha e quando vence o Cartão laranja? | sem seta: Com a resposta, a conferência começa na hora. | Responder | 24 |
 | Agenda de Vencimentos | Conferindo agora | R$ 2.700 | vencem até 03/12, em 5 contas | acima: Subiu R$ 1.260 contra 18/11 | | 18 |
 | Comprador | Precisa de você | R$ 1.180 | a mesma cesta desta semana | acima: Subiu R$ 95 contra o valor do meio de 4 semanas | Resolver agora | 24 |
 | Auditor de Estoque | Entregue | R$ 0 | acima do normal e sem explicação | igual: R$ 120 de carne explicados por visita no sábado | | 21 |
@@ -319,7 +319,7 @@ interface LinhaNovidadesProps { quantidade: number; aoTocar(): void; }
 **Pra que serve.** Conta os relatórios novos desde a última visita daquela pessoa. **Estados.** Com 1 ("1 relatório novo desde a sua última visita."); com 2 ou mais; com 0 o componente não desenha nada. **Medidas:** 44 px de altura, ponto de 8 px em `--hue`, texto `--text` sublinhado em `--fs-ui-sm`. **Ao tocar:** rola até o 1º cartão com relatório novo e põe o foco nele. **Teclado:** 1 parada. **Leitor de tela:** "3 relatórios novos desde a sua última visita. Ir pro primeiro, link." A tela conta primeiro e só depois chama `escritorio_marcar_visto()`.
 ### 6.10 LinhaSaude
 ```ts
-interface LinhaSaudeProps { atrasadas: number; ultimaEm: string; semInternet: boolean; aoRodarAgora(): Promise<void>; }
+interface LinhaSaudeProps { forma: 'ok'|'atrasada'|'vazio'; atrasadas: number; ultimaEm: string; proximaEm?: string; semInternet: boolean; aoRodarAgora(): Promise<void>; }   // os 4 campos de escritorio_saude() (11-B)
 ```
 **Pra que serve.** 1 linha no rodapé dizendo se as conferências estão em dia. **Estados.** Em dia: ícone `circle-check` + "Tudo funcionando. Última conferência: hoje, 7h41." Atrasada: ícone `clock-alert` + "2 conferências atrasadas. Última: 24/11." + botão "Rodar agora". Família nova: a forma vazia da 11-B. **Medidas:** 44 px, `--fs-ui-sm`, `--muted` em dia e `--ambar-tinta` atrasada. **Ao tocar:** só o botão; 2 toques abrem a mesma conferência e a tela mostra "Já está conferindo." (regra da 11-C). Cada conferência nova conta no limite de 3 por ajudante por dia (11-B); da 4ª em diante o cartão traz "Hoje veio só o número. O comentário volta na próxima conferência." "Refazer a conta" fica fora desse limite. **Leitor de tela:** `role="status"`.
 ### 6.11 CampoPergunta
@@ -381,8 +381,8 @@ Regra geral de erro: mensagem na linha ou no cartão onde a pessoa tocou, com `r
 ### 8.3 Responder pergunta no cartão
 | Passo | A pessoa | A tela mostra | Grava |
 |---|---|---|---|
-| 1 | toca "Responder" na fila ou no cartão do Analista de Cartão | rola até o cartão (já aberto) e põe o foco em "Nome do cartão" | nada |
-| 2 | preenche "Cartão azul", fechamento 25, vencimento 5; toca "Adicionar outro cartão" e preenche "Cartão verde", 10 e 17 | campos com rótulo; dia fora de 1 a 31 mostra "Use um dia de 1 a 31." | nada |
+| 1 | toca "Responder" na fila ou no cartão do Analista de Cartão | rola até o cartão (já aberto) e põe o foco em "Fecha no dia" do Cartão laranja | nada |
+| 2 | preenche o Cartão laranja: fechamento 15, vencimento 22 (dado de teste, em "Dados que acrescentei") | campos com rótulo; dia fora de 1 a 31 mostra "Use um dia de 1 a 31." | nada |
 | 3 | toca "Responder" | botão vira "Gravando" | `escritorio_responder_pergunta` (11-C, seção 4.10); o texto vai como dado, cortado em 200 letras |
 | 4 | | o `CampoPergunta` dá lugar a "Resposta gravada. A conferência começa agora."; o sinal vira "Conferindo agora"; a pendência sai da fila; o número cai 1 | a conferência abre no servidor (ficha 11-C: nunca 2 vezes) |
 | 5 | | quando a conferência fecha, o sinal vira "Entregue" (surge em 200 ms) e o número grande vira "R$ 2.150" | |
@@ -470,7 +470,7 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 |---|---|---|
 | T-E01 | 1ª tela em 390x844, sem rolar | `bottom` do botão "Resolvi" da 1ª pendência até 620 px; o texto "3 coisas esperando você" com `top` maior ou igual a 0; bloco de resumo com até 240 px |
 | T-E02 | Altura do cartão fechado em 390 px | 5 cartões com 144 px e Folha com 196 px (tolerância de 4 px); nenhum acima de 200 px |
-| T-E03 | Palavras do cartão fechado | Contador 21, Cartão 23, Agenda 18, Comprador 24, Auditor 21, Presença 20, Folha 19, Guardião 17; nenhum acima de 25 |
+| T-E03 | Palavras do cartão fechado | Contador 21, Cartão 24, Agenda 18, Comprador 24, Auditor 21, Presença 20, Folha 19, Guardião 17; nenhum acima de 25 |
 | T-E04 | Altura da página em 390 px | `scrollHeight` até 4.000 px (alvo de 3.472) |
 | T-E05 | Tamanho de texto | 0 elemento com texto e `font-size` computado abaixo de 12 px, em 390 e em 1280 |
 | T-E06 | Altura da página em 1280 px | `scrollHeight` até 2.600 px (alvo de 2.564) |
@@ -516,7 +516,7 @@ Todos na família Silva, relógio simulado em 24/11/2026, 9h00, Marina logada, s
 |---|---|---|
 | 1 | No cartão do Contador, o número grande é o livre (R$ 920) ou o gasto (R$ 8.240 de R$ 12.000, como na prévia)? | Já resolvido pela 11-D e pela base comum: o livre, R$ 920. O gasto vira a linha de comparação. A ficha resumida foi corrigida. Só confirmar. |
 | 2 | O botão verde do cartão fechado resolve na hora ou abre o cartão? | Abre o nível 2 e leva ao bloco da pendência. Ninguém resolve sem ler. |
-| 3 | No computador, pode passar de 3 pra 4 colunas de cartão a partir de 1.200 px e limitar a cena a 400 px de altura? | Sim. Sem isso a página dá cerca de 2.960 px e não cabe na meta de 2.600. |
+| 3 | No computador, pode passar de 3 pra 4 colunas de cartão a partir de 1.200 px e limitar a cena a 400 px de altura? | Sim. Sem isso a página dá cerca de 2.960 px (valor ilustrativo, sem dado de exemplo que o gere) e não cabe na meta de 2.600. |
 | 4 | O anel de "Conferindo agora" gira sem parar enquanto a conferência dura, ou 4 voltas e para? | 4 voltas (4,8 s) e para. Cumpre "nada sem fim" e a regra de acesso dos 5 s. |
 | 5 | A chave lembra a escolha no aparelho ou na conta? | No aparelho, por pessoa. Não cria coluna no banco. |
 | 6 | "Só o que depende de mim" mostra pendência de quem? | Do dono logado e as sem dono. Se preferir a leitura literal da ficha (qualquer pendência), é trocar 1 condição. |
@@ -552,6 +552,7 @@ FAÇA, NESTA ORDEM
 6. Faça os 6 fluxos da parte 8, com erro e sem internet.
 7. Use só a família Silva, com o relógio em 24/11/2026, 9h00, fuso de Recife.
 8. Rode os 30 testes da parte 11 e marque a lista da parte 10.
+9. Pare 2 vezes: no fim do plano (espere "aprovado") e antes de publicar (espere "pode publicar").
 NÃO FAÇA
 - Mudar a ordem dos blocos, a cena, os personagens ou criar ajudante.
 - Mais de 1 botão verde por cartão. Degradê, vidro, emoji como ícone, faixa
@@ -590,15 +591,16 @@ Nada abaixo muda as somas da base comum.
 | Pessoa logada nos testes | Marina Silva | escolha deste caderno |
 | As 3 pendências | "Trocar a marca do café ou manter a de sempre?" (Comprador, Marina, até 26/11); "Dizer quando fecha e quando vence o Cartão laranja" (Analista de Cartão, sem dono); "Confirmar as férias da Dona Lúcia em janeiro" (Folha, Carlos, era até 17/11, cobrada em 20/11) | prévia |
 | Situação de cada ajudante em 24/11, 9h00 | Comprador: Precisa de você. Cartão: Perguntando. Agenda: Conferindo agora. Os outros 5: Entregue | prévia |
-| Por que a Agenda confere numa terça | Marina tocou "Rodar agora" às 8h58 (o horário dela é quarta, 10h19) | criado |
+| Por que a Agenda confere numa terça | Marina tocou "Rodar agora" às 8h59 (o horário dela é quarta, 10h19) | criado |
 | Contas sobre a base | falta guardar pro 13º: R$ 900 (número da Folha na 11-D; as férias pedem R$ 1.780 e ficam no cartão aberto); diferença da cesta: R$ 95 (1.180 menos 1.085); por pessoa por dia: R$ 3 (38 menos 35); volta do "Agora não": 01/12 (24/11 mais 7 dias) | conta |
 | Próxima e última conferência | Agenda de Vencimentos, quarta, 25/11, 10h19; Auditor de Estoque, hoje, 7h41 | horários da base |
-| Fonte e carimbo do Comprador | 4 notas de feira, de 02/11 a 23/11; conta feita em 23/11, 20h23 | criado |
+| Fonte e carimbo do Comprador | 4 notas de feira, de 03/11 a 23/11; conta feita em 23/11, 20h23 | criado |
 | "Resolvido por Marina em 24/11, 9h02" e "por Carlos em 24/11, 8h40" | horas de exemplo | criado |
 | 3 cenários extras | "Aguardando": Comprador esperando a 1ª nota da feira. "Atrasado": relógio em 26/11, 9h00, com a rotina parada desde 24/11: 2 conferências atrasadas (Agenda de 25/11 e Analista de Cartão de 26/11), última em 24/11, igual ao T-B17 da 11-B; a Agenda mostra "Atrasado desde 25/11". "Resumido": Contador com "Resumido até 01/12" | exemplos da base e da ficha 11-B |
 | Tela aberta antes de a internet cair | "hoje, 8h13" | texto da ficha 11-C |
 | Conferências por ajudante no painel do dono | até 24/11, 9h00: Contador 1, Cartão 1, Agenda 3, Comprador 4, Auditor 4, Presença 4, Folha 1 e Guardião 3, somando 21 (26 previstas no mês). Custo: Contador R$ 0,17, Cartão R$ 0,21, os outros 6 somados R$ 0,06 | base comum e 11-B |
-| O que o retrato da tela supõe | A 11-D abre pendência pra todo achado de R$ 50 ou mais. Pra tela ter só 3 coisas esperando, o retrato supõe que o casal já tocou "Resolvi" nas pendências da Presença (R$ 90 por mês), da Agenda e do Guardião (janeiro). Ponto ainda aberto: a base comum tem os 2 cartões cadastrados e o Analista de Cartão já conferiu em 11/11, então "Perguntando" por falta de cartão é só cenário de tela (ver `LEIA-PRIMEIRO.md`, parte 8) | integração |
+| O que o retrato da tela supõe | A 11-D abre pendência pra todo achado de R$ 50 ou mais. Pra tela ter só 3 coisas esperando: A semeadura grava como já resolvidas (com "Resolvi" e data anterior a 24/11, 9h00) as pendências "Pra decidir" que as regras da 11-D abririam com estes números: Controlador de Presença (R$ 90 por mês, conferência de 23/11), Agenda de Vencimentos (contas de janeiro, R$ 3.000 por mês), Guardião do Colchão (janeiro abaixo da reserva, conferência de 20/11), Folha da Casa (quanto guardar pras férias, R$ 890 por mês, chave `folha:guardar:ferias:2027-01`, conferência de 03/11) e Analista de Cartão (parcelas de março, R$ 360 por mês, conferência de 11/11). `escritorio_estado()` tira a situação das pendências abertas, não só do `status` gravado: por isso esses ajudantes aparecem como no retrato da base comum, parte 6.1. Teste que roda a conta de novo pode abri-las outra vez. O Analista de Cartão está "Perguntando" pelo Cartão laranja, que entrou sem dia de fechamento (base comum, parte 6.1) | integração |
+| Dias do Cartão laranja (só no fluxo 8.3) | fecha dia 15, vence dia 22 | dado de teste |
 
 **Contradições que achei entre as fontes** (segui a base comum em todas; as de número 1, 2 e 7 já foram corrigidas na ficha resumida):
 
@@ -607,5 +609,5 @@ Nada abaixo muda as somas da base comum.
 3. A prévia diz que o Contador confere "todo sábado"; a base diz 1º dia útil do mês, 7h12.
 4. A prévia mostra "Próxima conferência: Comprador, hoje, 20h23" numa terça; pela base o Comprador é de segunda.
 5. A prévia usa contagem como número grande em 3 cartões ("3 contas", "4 de 15 itens", "5 de 6 dias"); a 11-D manda dinheiro.
-6. A base comum traz os 2 cartões da família com datas, e a prévia mostra o Analista de Cartão ainda perguntando por elas. Tratei como o estado antes da resposta; depois dela o número é R$ 2.150.
+6. A prévia mostra o Analista de Cartão perguntando pelos 2 cartões; a base comum resolveu com o Cartão laranja, cadastrado sem dia de fechamento. Depois da resposta o número é R$ 2.150 (fatura do azul).
 7. "Última conferência: hoje, 8h13" (exemplo das fichas) não bate com os horários numa terça; o certo no dia de referência é 7h41.

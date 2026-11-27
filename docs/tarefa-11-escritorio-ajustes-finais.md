@@ -72,7 +72,7 @@ ESPECIALISTA: Engenheiro de agentes de IA (o mesmo da Tarefa 11)
 ENTRA DEPOIS DE: Tarefas 5 e 7, igual à Tarefa 11. O item G entra com a
 Tarefa 14. Coluna e tabela nova nascem no projeto novo (Tarefa 2), nunca
 no projeto de hoje.
-LEIA ANTES: CLAUDE.md; ficha da Tarefa 11; Escritório da Família
+LEIA ANTES: README.md (manual do repositório); ficha da Tarefa 11; Escritório da Família
 (https://claude.ai/artifact/F43Xn8RE49F4YN7PULvKnm); tabelas
 escritorio_funcionarios e escritorio_turnos; a conta do produto na parte 9
 das Diretrizes; limite de uso da Tarefa 12.
@@ -103,7 +103,7 @@ C. Teto. 1 linha por família por mês em ia_gasto_mes (gasto, reservado,
    6. O teto é 1 só: soma o Escritório e as leituras da Tarefa 12.
    Tela da família: nunca mostra R$ de IA. No cartão afetado só aparece
    "Este mês o relatório vem resumido. O completo volta em 01/12."
-   Painel do dono: "Custo de IA em novembro: R$ 0,00 de R$ 2,49", por
+   Painel do dono: "Custo de IA em novembro: R$ 0,44 de R$ 2,49", por
    família e por ajudante, com 1 frase de projeção ("no ritmo atual fecha
    em R$ X"). Abaixo de 1 centavo: "menos de R$ 0,01".
 D. Saúde. Na tela da família, 1 linha no rodapé com 2 formas: "Tudo
@@ -237,8 +237,8 @@ FAÇA:
    mês mais fraco dos últimos 6 e renda incerta entra como "se cair".
 4. Tom. Notícia ruim em 3 partes: o número da casa, quanto ainda dá, 1
    saída. O sujeito é a casa, nunca a pessoa. Sem "de novo", sem
-   exclamação. Exemplo: "O mês passou R$ 217. Dezembro começa com
-   R$ 5.783.", e nunca "Marina estourou R$ 217."
+   exclamação. Exemplo: "O mês passou R$ 240. Dezembro começa com
+   R$ 11.760.", e nunca "Marina estourou R$ 240."
 5. Piso de valor. Todo insight traz R$ por mês. Só vira pendência acima
    de R$ 50 por mês (estimativa, calibrar no piloto). Sem achado: "Nada
    fora do normal esta semana", sem ação inventada. O Auditor desconta as
@@ -430,7 +430,7 @@ Não medido: iPhone de verdade (quadros, calor, bateria), tema escuro do 3D e le
 
 ## 9. Onde cada dado fica guardado
 
-Tudo só no banco novo do produto. Esta é a lista completa do que os 5 cadernos criam: 8 tabelas novas, 19 colunas em `escritorio_turnos`, 1 em `escritorio_funcionarios` e 1 em `pessoas`. A lista de funções, com o dono de cada uma, está em `docs/escritorio/LEIA-PRIMEIRO.md`, parte 4.
+Tudo só no banco novo do produto. Esta é a lista completa do que os 5 cadernos criam: 9 tabelas novas, 19 colunas em `escritorio_turnos`, 1 em `escritorio_funcionarios` e 1 em `pessoas`. A lista de funções, com o dono de cada uma, está em `docs/escritorio/LEIA-PRIMEIRO.md`, parte 4.
 
 **Colunas novas em `escritorio_turnos` (a conferência)**
 
@@ -458,6 +458,7 @@ A tranca "nunca 2 vezes" usa a coluna `chave`, que já existe, com 2 índices ú
 | Gasto, reserva, teto e alerta do mês | `ia_gasto_mes` (família, mês) | 11-B | dono do produto |
 | Dia, hora, próximo horário, "desde", ativo | `escritorio_escala` (por família) | 11-B | casal |
 | Piso da pendência, meta de semanas, teto de parcela | `escritorio_parametros` (por família) | 11-D | casal |
+| Termos que o ajudante nunca escreve (conferidor de texto) | `escritorio_termos_proibidos` (nome proposto) | 11-D | ninguém logado; só a função de servidor |
 
 Se ainda não existir quem diga "esta pessoa é o dono do produto", a 11-B cria também a tabela `produto_donos` (rascunho, até a Tarefa 2 ou 14 assumir).
 
@@ -502,7 +503,7 @@ Premissas, todas a confirmar: cerca de 26 conferências por mês (é o que a esc
 |---|---|---|
 | Tudo no modelo leve | 0,08 | 3% |
 | Insight forte só 1 vez por mês (Contador R$ 0,17, Cartão R$ 0,21, os outros 6 somados R$ 0,06) | 0,44 | 18% |
-| Insight forte toda semana | 1,91 a 2,29 | 77% a 92% |
+| Insight forte toda semana | 1,91 a 2,29 (valor ilustrativo, sem dado de exemplo que o gere) | 77% a 92% |
 
 Regra recomendada: forte só no Fechamento do mês (Contador) e no fechamento do cartão (Analista de Cartão). Os outros 6 ficam no leve.
 

@@ -33,6 +33,8 @@ Fonte de verdade acima de tudo: o documento "Central da Família · Diretrizes d
 | Hospedagem no piloto | GitHub Pages |
 | Teste | Sempre na família de exemplo. Nunca escrever no banco real de uma família |
 
+Manual do repositório: README.md na raiz. Se um dia existir CLAUDE.md, ele vale junto.
+
 O projeto de hoje no Supabase só é tocado nas Tarefas 1 e 16. Tudo o que estes cadernos criam nasce no projeto novo.
 
 ---
@@ -165,10 +167,12 @@ Vale pra tela, pra cena e pros testes. É o estado que os 8 cartões mostram na 
 | Comprador | Precisa de você | "Trocar a marca do café ou manter a de sempre?" (pra decidir, Marina, até 26/11) |
 | Auditor de Estoque | Entregue | conferiu hoje, 7h41 |
 | Controlador de Presença | Entregue | conferiu em 23/11, 8h13 |
-| Folha da Casa | Entregue | conferiu em 03/11; segue aberta 1 pendência de informar: "Confirmar as férias da Dona Lúcia em janeiro" (Carlos, era até 17/11, cobrada de novo em 20/11) |
+| Folha da Casa | Entregue | conferiu em 03/11; segue aberta 1 pendência de informar: "Confirmar as férias da Dona Lúcia em janeiro" (chave `folha:ferias:2027-01`, Carlos, era até 17/11, cobrada de novo em 20/11) |
 | Guardião do Colchão | Entregue | conferiu em 20/11, 17h47 |
 
-São 3 pendências na fila "Depende de você": 1 pra decidir (Comprador) e 2 pra informar (Cartão e Folha). Gasto de R$ 8.240 aberto por dono: Casa R$ 4.410 de R$ 5.000; Carlos e Marina somam R$ 3.830 (a divisão entre os 2 fica no caderno 11-D).
+São 3 pendências abertas na fila "Depende de você": 1 pra decidir (Comprador) e 2 pra informar (Cartão e Folha). A semeadura grava como já resolvidas (com "Resolvi" e data anterior a 24/11, 9h00) as pendências "Pra decidir" que as regras da 11-D abririam com estes números: Controlador de Presença (R$ 90 por mês, conferência de 23/11), Agenda de Vencimentos (contas de janeiro, R$ 3.000 por mês), Guardião do Colchão (janeiro abaixo da reserva, conferência de 20/11), Folha da Casa (quanto guardar pras férias, R$ 890 por mês, chave `folha:guardar:ferias:2027-01`, conferência de 03/11) e Analista de Cartão (parcelas de março, R$ 360 por mês, conferência de 11/11). `escritorio_estado()` tira a situação das pendências abertas, não só do `status` gravado: por isso esses ajudantes aparecem como no retrato da base comum, parte 6.1. Teste que roda a conta de novo pode abri-las outra vez.
+
+Gasto de R$ 8.240 aberto por dono: Casa R$ 4.410 de R$ 5.000; Carlos e Marina somam R$ 3.830 (a divisão entre os 2 não está em nenhum caderno; nenhum teste depende dela).
 
 ---
 
