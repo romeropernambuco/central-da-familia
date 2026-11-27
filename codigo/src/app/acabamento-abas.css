@@ -1,0 +1,25 @@
+/* Acabamento comum das abas (27/11). Nada sai da tela: muda o arranjo, não o conteúdo. */
+/* O título só ganha a moldura de foco para quem navega pelo teclado */
+#titulo-tela:focus:not(:focus-visible){outline:none}
+/* O funcionário da aba numa faixa só: a cena à esquerda, nome, fala e botões à direita */
+@media(min-width:700px){
+#main .card.agente-aba:has(>.agente-identidade.com-cena){display:grid;grid-template-columns:minmax(160px,220px) minmax(0,1fr);gap:8px 20px;padding:16px;align-items:start}
+#main .agente-aba>.agente-identidade.com-cena{display:contents}
+#main .agente-aba>.agente-identidade.com-cena>.cena3d.mini-agente{grid-column:1;grid-row:1/span 3;position:relative;height:auto;min-height:124px;align-self:stretch}
+#main .agente-aba>.agente-identidade.com-cena>.cena3d.mini-agente canvas{position:absolute;inset:0}
+#main .agente-aba:has(>.agente-identidade.com-cena)>*{grid-column:1/-1}
+#main .agente-aba>.agente-identidade.com-cena>header,
+#main .agente-aba:has(>.agente-identidade.com-cena)>:is(.agente-conversa,.agente-acoes,.agente-pergunta-resumo){grid-column:2}
+#main .agente-aba:has(>.agente-identidade.com-cena) .perg{padding:12px 16px}
+#main .agente-aba:has(>.agente-identidade.com-cena) :is(.perg-t,.perg>p:first-child){font-size:18px}
+#main .agente-aba:has(>.agente-identidade.com-cena) .agente-aba-divulgacao{width:auto;border-top:0;border-radius:var(--r-md);padding:8px;min-height:44px;color:var(--muted);font-size:14px}
+#main .agente-aba:has(>.agente-identidade.com-cena) .agente-aba-divulgacao>.ico:last-child{margin-left:4px}
+}
+/* "Editar nome" não cola mais no nome */
+.central-app .nome-pessoa.lnk{margin-inline-start:8px;font-size:14px;font-weight:500}
+/* Guardado: o nome que já está escrito na linha não se repete solto embaixo dela (continua lido pelo leitor de tela) */
+.central-app :is(.f30-guardado,.imoveis) li>button.li+span:not(:has(+.nome-pessoa)){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Guardado: o patrimônio total numa linha só, sem quebrar o número no meio */
+.central-app .imoveis .imo-total{grid-template-columns:1fr 1fr;margin-top:12px}
+.central-app .imoveis .imo-total>.tot{grid-column:1/-1}
+.central-app .imoveis .imo-total .din{white-space:nowrap;overflow-wrap:normal}

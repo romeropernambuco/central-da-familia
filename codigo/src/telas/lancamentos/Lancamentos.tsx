@@ -370,6 +370,17 @@ function TotaisDoMes({
                   {textoPrivado(rotuloDono(e, familia) ? `${cap(rotuloDono(e, familia))} · ` : '')}de{' '}
                   <Din v={e.limite_mes} />
                 </small>
+                {e.limite_mes > 0 && (
+                  <span className={'lt-barra' + (e.gasto_mes > e.limite_mes ? ' passou' : '')}>
+                    <i aria-hidden="true">
+                      <i style={{ width: Math.min(100, Math.round((e.gasto_mes / e.limite_mes) * 100)) + '%' }} />
+                    </i>
+                    <small>
+                      {e.gasto_mes > e.limite_mes ? 'Passou ' : 'Ainda dá '}
+                      <Din v={centavos(Math.abs(e.limite_mes - e.gasto_mes))} />
+                    </small>
+                  </span>
+                )}
               </span>
               <span className="v">
                 <Din v={e.gasto_mes} />
@@ -485,7 +496,10 @@ export function FaixaDoMes({ totais }: { totais: ReturnType<typeof totaisDoMes> 
             [totais.saldo < 0 ? 'Saiu a mais do que entrou' : 'Sobrou até hoje', Math.abs(totais.saldo)],
           ] as const
         ).map(([nome, valor], i) => (
-          <div key={nome} className={i === 2 ? 'indicador-principal aba-destaque' : undefined}>
+          <div
+            key={nome}
+            className={i === 2 ? 'indicador-principal aba-destaque' + (totais.saldo < 0 ? ' em-falta' : '') : undefined}
+          >
             <p>
               <Icone nome={i === 0 ? 'entrada' : i === 1 ? 'gasto' : 'orcamento'} />
               {nome}

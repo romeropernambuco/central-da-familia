@@ -28,3 +28,17 @@
 .mes-como[open] summary:after{content:'−'}
 .mes-como summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .mes-como p{padding-block:12px;line-height:1.65;max-width:68ch}
+/* Acabamento (27/11): os 3 números do mês lado a lado no computador; âmbar só quando saiu mais do que entrou */
+@media(min-width:900px){.lancamentos-f29 .mes-indicadores{grid-template-columns:repeat(3,minmax(0,1fr))}.lancamentos-f29 .mes-indicadores .indicador-principal{grid-column:auto}}
+.central-app .mes-indicadores .indicador-principal.em-falta{background:var(--warn-soft);border-color:var(--warn)}
+.central-app .mes-indicadores .indicador-principal.em-falta p{color:var(--warn-ink)}
+/* O dia vira uma faixa: dá para achar a data na lista comprida sem ler linha por linha */
+.lancamentos-f29 .dayh{margin-top:12px;padding:8px 12px;border-radius:8px;background:var(--sunken)}
+.lancamentos-f29 .card>div:first-of-type>.dayh{margin-top:0}
+/* Cada limite com a barra do que já gastou e a frase do que sobra */
+.lt-barra{display:grid;gap:4px;margin-top:6px;min-width:0}
+.lt-barra>i{display:block;height:6px;border-radius:3px;background:var(--sunken);overflow:hidden}
+.lt-barra>i>i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.lt-barra small{font-size:14px;line-height:20px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lt-barra.passou>i>i{background:var(--warn)}
+.lt-barra.passou small{color:var(--warn-ink);font-weight:600}

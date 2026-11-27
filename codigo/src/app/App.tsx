@@ -1,6 +1,7 @@
 import { textoPrivado } from '../lib/olho'
 import './navegacao.css'
 import './abas.css'
+import './acabamento-abas.css'
 import '@fontsource-variable/inter'
 import { Icone } from '../componentes/Icone'
 import { useDestino, focarDestino } from './destinos'
