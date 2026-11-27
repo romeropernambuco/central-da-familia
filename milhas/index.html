@@ -1,0 +1,288 @@
+<!doctype html><html lang="pt-BR" data-painel="milhas"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>Milhas ou Dinheiro</title><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: a tabela de bolso é a tela. Em cima, as milhas da oferta viram reais; ao lado, o veredito contra o preço em dinheiro. Mesmos tokens do painel Parcelas. */
+:root{
+  --ground:#F4F4F1; --surface:#FFFFFF; --raised:#EEEDE9; --border:#E3E2DE; --rule:#EFEEEA;
+  --text:#121212; --muted:#6B6A66; --faint:#9C9B97;
+  --primary:#141414; --on-primary:#FFFFFF;
+  --hue:#0E7A5A; --hue-ink:#064E3A;
+  --warn:#8A5A06; --neg:#B42318;
+  --shadow:0 1px 2px rgba(18,18,18,.04);
+  --r-card:12px; --r-ctl:8px; --r-pill:6px;
+  --font:"Geist", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#0C0C0B; --surface:#131312; --raised:#1A1918; --border:#262624; --rule:#1E1E1C;
+  --text:#F5F5F3; --muted:#9A9A96; --faint:#6E6D69;
+  --primary:#F5F5F3; --on-primary:#0C0C0B;
+  --hue:#34D399; --hue-ink:#A7F3D0;
+  --warn:#FBBF24; --neg:#F97066;
+  --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0C0C0B; --surface:#131312; --raised:#1A1918; --border:#262624; --rule:#1E1E1C;
+  --text:#F5F5F3; --muted:#9A9A96; --faint:#6E6D69;
+  --primary:#F5F5F3; --on-primary:#0C0C0B;
+  --hue:#34D399; --hue-ink:#A7F3D0;
+  --warn:#FBBF24; --neg:#F97066;
+  --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--ground);color:var(--text)}
+body{font-family:var(--font);font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 72px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:16px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--hue);outline-offset:2px}
+h1,h2,p{margin:0}
+h1,h2{font-weight:500;text-wrap:balance}
+a{color:inherit}
+.ico{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nw{white-space:nowrap}
+
+.top{display:flex;align-items:center;gap:12px}
+.mark{width:32px;height:32px;border-radius:8px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;flex:none}
+.top h1{font-size:18px;line-height:1.2}
+.sub{color:var(--muted);font-size:13px}
+.top .volta{margin-left:auto;font-size:13px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:grid;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px;min-width:0;box-shadow:var(--shadow)}
+.card h2{font-size:16px}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;margin-bottom:14px}
+
+.f{display:grid;gap:4px;min-width:0;align-content:start}
+.f label,.lbl{font-size:13px;color:var(--muted)}
+.f input{height:44px;width:100%;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--surface);padding:0 12px;font-size:16px;font-weight:500}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+
+/* a tabela de bolso */
+.entrada{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:6px}
+.entrada .f input{height:52px;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.tw{overflow-x:auto;margin:0 -20px;padding:0 20px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:0 0 0 12px;height:46px;text-align:right;font-weight:400;border-top:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+thead th{height:34px;border-top:0;font-size:12px;color:var(--muted);vertical-align:bottom;padding-bottom:8px}
+tbody td{color:var(--muted)}
+tbody td:first-child{color:var(--text)}
+td.at,th.at{color:var(--text);font-weight:600}
+tr.oferta td{height:auto;padding-top:14px;padding-bottom:14px;border-top:0;vertical-align:baseline}
+tr.oferta td:first-child{font-weight:500}
+tr.oferta td:first-child small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+tr.oferta td.at{font-size:34px;line-height:1;font-weight:700;letter-spacing:-.03em}
+tr.oferta td.at small{font-size:.5em;font-weight:500;letter-spacing:0;margin-right:3px}
+tr.oferta+tr td{border-top:1px solid var(--border)}
+.nota{font-size:12px;color:var(--muted);margin-top:12px}
+
+/* veredito */
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--r-pill);font-size:13px;white-space:nowrap;
+  color:var(--c);background:color-mix(in oklch,var(--c) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--c) 25%,transparent)}
+.pill.ok{--c:var(--hue);font-weight:500}
+.pill.warn{--c:var(--warn);font-weight:500}
+.pill.neg{--c:var(--neg);font-weight:600}
+.campos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.step{display:flex;align-items:center;height:44px;border:1px solid var(--border);border-radius:var(--r-ctl);overflow:hidden}
+.step button{width:40px;height:100%;border:0;background:var(--raised);font-size:18px}
+.step output{flex:1;text-align:center;font-size:16px;font-weight:500}
+.res{margin-top:16px;padding-top:16px;border-top:1px solid var(--rule);display:grid;gap:10px}
+.res .v{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.res .v b{font-size:27px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.res .v b small{font-size:.55em;font-weight:500;margin-right:3px}
+.res .v span{color:var(--muted);font-size:13px}
+.res p b{font-weight:500}
+.linha{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--rule)}
+.linha .k{color:var(--muted);min-width:0}
+.linha .x{font-weight:500;white-space:nowrap}
+
+/* nosso milheiro */
+.mils{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ajuda{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;margin-top:16px;padding-top:16px;border-top:1px solid var(--rule)}
+.ajuda .t{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.ajuda .t b{font-weight:500;color:var(--text)}
+.btn{grid-column:1/-1;height:44px;padding:0 14px;border-radius:var(--r-ctl);border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);font-weight:500}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:420px){
+  .campos{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .campos .pes{grid-column:1/-1}
+  th,td{padding-left:8px}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="mark"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.800 6.200c-.5-.1-.9.1-1.100.5l-.3.5c-.2.5-.1 1 .3 1.300L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.500 5.300c.3.4.8.5 1.300.3l.5-.2c.4-.3.6-.7.5-1.200z"/></svg></div>
+    <div>
+      <h1>Milhas ou dinheiro</h1>
+      <p class="sub">Central da Família</p>
+    </div>
+    <a class="volta" href="../parcelas/">Parcelas</a>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <section class="card" aria-labelledby="hTab">
+        <div class="head"><h2 id="hTab">Quanto valem as milhas em reais</h2><span class="sub">valores de exemplo, troque pelos da oferta</span></div>
+        <div class="entrada">
+          <div class="f"><label for="inMilhas">Milhas que a passagem pede, por pessoa</label><input id="inMilhas" inputmode="numeric" autocomplete="off"></div>
+          <div class="f"><span class="lbl" id="lProg">Programa</span><div class="seg" id="progs" role="group" aria-labelledby="lProg"></div></div>
+        </div>
+        <div class="tw"><table id="tab"></table></div>
+        <p class="nota" id="notaTab"></p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card" aria-labelledby="hVer">
+        <div class="head"><h2 id="hVer">Vale a pena?</h2><span id="pill"></span></div>
+        <div class="campos">
+          <div class="f"><label for="inCash">Em dinheiro (R$)</label><input id="inCash" inputmode="decimal" autocomplete="off"></div>
+          <div class="f"><label for="inTaxa">Taxas nas milhas (R$)</label><input id="inTaxa" inputmode="decimal" autocomplete="off"></div>
+          <div class="f pes"><span class="lbl" id="lPax">Pessoas</span>
+            <div class="step" role="group" aria-labelledby="lPax"><button type="button" id="paxMenos" aria-label="Menos 1 pessoa">−</button><output id="paxV">5</output><button type="button" id="paxMais" aria-label="Mais 1 pessoa">+</button></div>
+          </div>
+        </div>
+        <div class="res" id="res"></div>
+      </section>
+
+      <section class="card" aria-labelledby="hMil" id="milheiro">
+        <div class="head"><h2 id="hMil">Nosso milheiro</h2><span class="sub">preço de 1.000 milhas, em R$</span></div>
+        <div class="mils" id="mils"></div>
+        <div class="ajuda">
+          <p class="t"><b>Não sabe o milheiro?</b> Diga quanto pagou e quantas milhas entraram, já com o bônus. O valor vai para o programa marcado.</p>
+          <div class="f"><label for="ajPago">Paguei (R$)</label><input id="ajPago" inputmode="decimal" autocomplete="off" placeholder="900"></div>
+          <div class="f"><label for="ajMilhas">Recebi (milhas)</label><input id="ajMilhas" inputmode="numeric" autocomplete="off" placeholder="50.000"></div>
+          <button class="btn" type="button" id="ajUsar" disabled>Usar este valor</button>
+        </div>
+        <p class="nota">Valores de partida: os valores-alvo de <a href="https://www.melhoresdestinos.com.br/milhas/valor-milheiro-azul-latam-smiles-2026" target="_blank" rel="noopener">Melhores Destinos, julho de 2026</a>. Troque pelo que a família paga.</p>
+        <p class="nota" id="nuvem">Salvo neste aparelho.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+var PROGS=[{id:"smiles",n:"Smiles",c:"Smiles",ref:16},{id:"latam",n:"LATAM Pass",c:"LATAM",ref:26},{id:"azul",n:"Azul Fidelidade",c:"Azul",ref:13},{id:"outro",n:"Outro",c:"Outro",ref:20}];
+var S={prog:"latam",mil:{},cash:560,milhas:20000,taxa:45,pax:5};
+PROGS.forEach(function(p){S.mil[p.id]=p.ref});
+try{var g=JSON.parse(localStorage.getItem("milhas-v1")||"null");if(g&&g.mil){Object.keys(g.mil).forEach(function(k){if(g.mil[k]>0&&k in S.mil)S.mil[k]=g.mil[k]});if(g.prog&&g.prog in S.mil)S.prog=g.prog;if(g.pax)S.pax=g.pax}}catch(e){}
+function guardar(){try{localStorage.setItem("milhas-v1",JSON.stringify({mil:S.mil,prog:S.prog,pax:S.pax}))}catch(e){}}
+
+var $=function(id){return document.getElementById(id)};
+function num(t){t=String(t||"").trim().replace(/[^\d.,]/g,"");if(!t)return 0;
+  if(t.indexOf(",")>=0)t=t.replace(/\./g,"").replace(",",".");
+  else if(/\.\d{3}(\.|$)/.test(t))t=t.replace(/\./g,"");
+  var n=parseFloat(t);return isFinite(n)?n:0}
+function inteiro(t){var n=parseInt(String(t||"").replace(/\D/g,""),10);return isFinite(n)?n:0}
+function n0(v){return Math.round(v).toLocaleString("pt-BR")}
+function rs(v){return '<span class="nw">R$ '+n0(v)+'</span>'}
+function rs2(v){return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function br(v){return String(v).replace(".",",")}
+var IC={ok:'<path d="M20 6 9 17l-5-5"/>',warn:'<path d="M5 9h14M5 15h14"/>',neg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'};
+
+/* A conta: milhas viram reais pelo preço do milheiro, somam as taxas e comparam com o preço em dinheiro. */
+function conta(s){
+  var m=s.mil[s.prog]||0;
+  var emMilhas=s.milhas/1000*m, real=emMilhas+s.taxa, dif=s.cash-real;
+  var pct=s.cash>0?dif/s.cash:0;
+  var est=!(s.cash>0&&s.milhas>0&&m>0)?"vazio":pct>=0.10?"ok":pct>-0.10?"warn":"neg";
+  return {m:m,emMilhas:emMilhas,real:real,dif:dif,pct:pct,est:est,
+    empata:m>0?Math.max(0,(s.cash-s.taxa)/m*1000):0,
+    bom:m>0?Math.max(0,(s.cash*0.9-s.taxa)/m*1000):0};
+}
+window.__conta=conta;
+var TIT={ok:"Vale em milhas",warn:"Dá no mesmo",neg:"Pague em dinheiro"};
+
+function tabela(){
+  var cols=PROGS.filter(function(p){return p.id!=="outro"||S.prog==="outro"});
+  var base=[5000,10000,20000,30000,50000,100000].filter(function(q){return q!==S.milhas});
+  var cel=function(q,grande){return cols.map(function(p){var v=q/1000*S.mil[p.id],at=p.id===S.prog;
+    return '<td'+(at?' class="at"':'')+'>'+(grande&&at?'<small>R$</small>'+n0(v):(grande?'R$ ':'')+n0(v))+'</td>'}).join("")};
+  var h='<thead><tr><th scope="col">Milhas</th>'+cols.map(function(p){return '<th scope="col"'+(p.id===S.prog?' class="at"':'')+'>'+p.c+'</th>'}).join("")+'</tr></thead><tbody>';
+  if(S.milhas>0)h+='<tr class="oferta"><td>'+n0(S.milhas)+'<small>esta oferta</small></td>'+cel(S.milhas,true)+'</tr>';
+  h+=base.map(function(q){return '<tr><td>'+n0(q)+'</td>'+cel(q,false)+'</tr>'}).join("")+'</tbody>';
+  $("tab").innerHTML=h;
+  var p=PROGS.filter(function(x){return x.id===S.prog})[0];
+  $("notaTab").innerHTML="Valores em reais. Em destaque, "+p.n+" a "+rs2(S.mil[S.prog]||0)+' o milheiro. <a href="#milheiro">Trocar o milheiro</a>';
+}
+function veredito(){
+  var c=conta(S);
+  if(c.est==="vazio"){$("pill").innerHTML="";$("res").innerHTML='<p class="sub">Coloque as milhas da oferta e o preço em dinheiro da mesma passagem.</p>';return}
+  $("pill").innerHTML='<span class="pill '+c.est+'"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+IC[c.est]+'</svg>'+TIT[c.est]+'</span>';
+  var f=c.est==="ok"?"Você economiza <b>"+rs(c.dif)+"</b> por pessoa, "+Math.round(c.pct*100)+"% a menos que em dinheiro."
+    :c.est==="warn"?"Não é promoção. São <b>"+rs(Math.abs(c.dif))+"</b> "+(c.dif<0?"a mais":"a menos")+" que em dinheiro, diferença menor que 10%."
+    :"Sai <b>"+rs(-c.dif)+"</b> mais caro que em dinheiro. Guarde as milhas para outra viagem.";
+  var h='<div class="v"><span>Em milhas, já com as taxas, por pessoa</span><b><small>R$</small>'+n0(c.real)+'</b></div><p>'+f+'</p>'+
+    '<div><div class="linha"><span class="k">As milhas empatam com o dinheiro em</span><span class="x">'+n0(c.empata)+' milhas</span></div>'+
+    '<div class="linha"><span class="k">Promoção de verdade é abaixo de</span><span class="x">'+n0(c.bom)+' milhas</span></div>';
+  if(S.pax>1)h+='<div class="linha"><span class="k">'+S.pax+' pessoas em dinheiro</span><span class="x">'+rs(S.cash*S.pax)+'</span></div>'+
+    '<div class="linha"><span class="k">'+S.pax+' pessoas em milhas: '+n0(S.milhas*S.pax)+' milhas mais '+rs(S.taxa*S.pax)+' de taxas</span><span class="x">'+rs(c.real*S.pax)+'</span></div>';
+  $("res").innerHTML=h+'</div>';
+}
+function pintar(){
+  tabela();veredito();$("paxV").textContent=S.pax;
+  Array.prototype.forEach.call($("progs").children,function(b){b.setAttribute("aria-pressed",b.dataset.p===S.prog?"true":"false")});
+}
+
+$("progs").innerHTML=PROGS.map(function(p){return '<button type="button" data-p="'+p.id+'">'+p.n+'</button>'}).join("");
+$("progs").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;S.prog=b.dataset.p;guardar();pintar()});
+$("mils").innerHTML=PROGS.map(function(p){return '<div class="f"><label for="mil-'+p.id+'">'+p.n+'</label><input id="mil-'+p.id+'" data-p="'+p.id+'" inputmode="decimal" autocomplete="off"></div>'}).join("");
+PROGS.forEach(function(p){$("mil-"+p.id).value=br(S.mil[p.id])});
+var M=window.__milhas={S:S,aoMudar:null,aplicar:function(mil){PROGS.forEach(function(p){var v=Number(mil&&mil[p.id]);if(v>0){S.mil[p.id]=v;$("mil-"+p.id).value=br(v)}});guardar();pintar()}};
+function mudouMil(){guardar();pintar();if(M.aoMudar)M.aoMudar()}
+$("mils").addEventListener("input",function(e){var p=e.target.dataset.p;if(!p)return;S.mil[p]=num(e.target.value);mudouMil()});
+$("inMilhas").value=n0(S.milhas);$("inCash").value=br(S.cash);$("inTaxa").value=br(S.taxa);
+$("inMilhas").addEventListener("input",function(){S.milhas=inteiro(this.value);pintar()});
+$("inMilhas").addEventListener("blur",function(){if(S.milhas)this.value=n0(S.milhas)});
+$("inCash").addEventListener("input",function(){S.cash=num(this.value);pintar()});
+$("inTaxa").addEventListener("input",function(){S.taxa=num(this.value);pintar()});
+$("paxMenos").onclick=function(){S.pax=Math.max(1,S.pax-1);guardar();pintar()};
+$("paxMais").onclick=function(){S.pax=Math.min(12,S.pax+1);guardar();pintar()};
+
+var achado=0;
+function ajuda(){var p=num($("ajPago").value),q=inteiro($("ajMilhas").value);achado=p>0&&q>0?Math.round(p/q*1000*100)/100:0;
+  var nome=PROGS.filter(function(x){return x.id===S.prog})[0].c;
+  $("ajUsar").disabled=!achado;$("ajUsar").textContent=achado?"Usar "+rs2(achado)+" em "+nome:"Usar este valor"}
+$("ajPago").addEventListener("input",ajuda);$("ajMilhas").addEventListener("input",ajuda);
+$("progs").addEventListener("click",ajuda);
+$("ajUsar").onclick=function(){if(!achado)return;S.mil[S.prog]=achado;$("mil-"+S.prog).value=br(achado);mudouMil()};
+pintar();
+})();
+</script>
+<script>
+/* Milheiro igual em todos os celulares: quem já entrou na Central (mesmo login do Parcelas) lê e grava em docs, painel "milhas".
+   Sem login a calculadora funciona do mesmo jeito e guarda só no aparelho. Aqui não mora dado da família além do preço do milheiro. */
+(function(){
+"use strict";
+var M=window.__milhas,el=document.getElementById("nuvem");
+var SO_AQUI='Salvo só neste aparelho. <a href="../parcelas/">Entre na Central</a> para ficar igual em todos os celulares.';
+if(!window.supabase){el.innerHTML=SO_AQUI;return}
+var sb;
+try{sb=window.supabase.createClient("https://kcwaxvvivdckebjmjbkb.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjd2F4dnZpdmRja2Viam1qYmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwMTkxMTAsImV4cCI6MjEwOTU5NTExMH0.XchFINT2qoPNDYaabdgVsZZqTHjMZ5BlGZ_vqW09FVg",{auth:{persistSession:true,autoRefreshToken:true,storageKey:"central-familia-acesso"}})}catch(e){el.innerHTML=SO_AQUI;return}
+var t=null;
+function gravar(){clearTimeout(t);t=setTimeout(function(){
+  sb.from("docs").upsert({painel:"milhas",colecao:"config",doc_id:"milheiros",dados:{mil:M.S.mil,atualizado:new Date().toISOString()}},{onConflict:"painel,colecao,doc_id"})
+    .then(function(r){el.textContent=r.error?"Não salvou na conta da família. Ficou salvo neste aparelho.":"Salvo na conta da família."},
+          function(){el.textContent="Sem internet agora. Ficou salvo neste aparelho."})},800)}
+sb.auth.getSession().then(function(r){
+  if(!(r.data&&r.data.session)){el.innerHTML=SO_AQUI;return}
+  return sb.from("docs").select("dados").eq("painel","milhas").eq("colecao","config").eq("doc_id","milheiros").maybeSingle().then(function(q){
+    if(q.error){el.textContent="Não deu para ler a conta da família agora. Usando o que está neste aparelho.";return}
+    M.aoMudar=gravar;
+    if(q.data&&q.data.dados&&q.data.dados.mil){M.aplicar(q.data.dados.mil);el.textContent="Salvo na conta da família."}
+    else gravar();
+  })
+}).catch(function(){el.innerHTML=SO_AQUI});
+})();
+</script>
+</body></html>

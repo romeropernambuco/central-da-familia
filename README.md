@@ -8,6 +8,7 @@ Leia este arquivo inteiro antes de mexer em qualquer coisa aqui.
 | O quê | Onde |
 |---|---|
 | Parcelas da Família (oficial desde 07/11/2026) | https://romeropernambuco.github.io/central-da-familia/parcelas/ |
+| Milhas ou Dinheiro (desde 27/11/2026) | https://romeropernambuco.github.io/central-da-familia/milhas/ |
 | Banco de dados | Supabase, projeto `central-da-familia` (id `kcwaxvvivdckebjmjbkb`, São Paulo, plano grátis) |
 | Painel antigo do Parcelas (só exemplos, virou arquivo) | https://claude.ai/artifact/86sps3B7z2KJcKcAN33i4G |
 
@@ -33,6 +34,7 @@ Tudo grava numa tabela só, `docs`, com 3 chaves: `painel`, `colecao`, `doc_id`,
 | Painel | Coleções |
 |---|---|
 | parcelas | compras, cartoes, espera, faturas, painel (doc `config`), resumo (doc `atual`) |
+| milhas | config (doc `milheiros`: preço de 1.000 milhas por programa) |
 | andreza | ainda não migrado |
 | feira | ainda não migrado |
 | caixa | vazio até existir 1 Caixa oficial |
@@ -46,7 +48,7 @@ Pastas pra olhar no Supabase (mesmos dados, mesmos acessos): `parcelas_dados`, `
 | Pessoa | Mexe em | Vê |
 |---|---|---|
 | Romero | tudo | tudo |
-| Andreza | andreza | andreza e feira |
+| Andreza | andreza e milhas | andreza, milhas e feira |
 | Jobson | feira | feira |
 | Sem login | nada | nada |
 
@@ -58,6 +60,10 @@ Pastas pra olhar no Supabase (mesmos dados, mesmos acessos): `parcelas_dados`, `
 
 O Parcelas é o mesmo arquivo do painel antigo. Só a camada de salvar e carregar foi trocada (`window.NUVEM` no topo do script), então as contas, telas e regras são idênticas. Regras de cálculo: ver a memória `orcamento-pessoal-casal`.
 
+## Milhas ou Dinheiro
+
+Calculadora que traduz milhas em reais e diz se a passagem vale em milhas ou em dinheiro. Abre sem login, porque não guarda dado da família além do preço do milheiro. Quem já entrou na Central pelo Parcelas tem o milheiro igual em todos os celulares (`milhas / config / milheiros`); sem login, fica salvo só no aparelho. Mudanças de banco ficam em `banco/rascunhos/`, sempre com o arquivo de desfazer.
+
 ## Antes de publicar uma mudança
 
 1. Testar numa cópia local com banco simulado (nunca no banco real).
@@ -65,6 +71,8 @@ O Parcelas é o mesmo arquivo do painel antigo. Só a camada de salvar e carrega
 3. Commit com mensagem clara do que mudou.
 
 ## Pendências
+
+- Andreza ainda não tem conta na Central: sem ela, o milheiro dela fica salvo só no celular dela. Criar com `criar_acesso` quando tiver o e-mail.
 
 - Migrar Orçamento da Andreza e Feira da Casa (precisa do e-mail da Andreza e do Jobson).
 - Rotinas "atualiza a Central" e "fecha o mês" ainda leem o painel antigo do Parcelas; trocar pra ler `parcelas / resumo / atual` no Supabase.
