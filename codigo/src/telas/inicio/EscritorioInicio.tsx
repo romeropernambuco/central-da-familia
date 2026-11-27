@@ -22,6 +22,7 @@ import '../escritorio/escritorioIsometrico.css'
 import { Cena3D, IcoEstado, ROTULO_ESTADO } from '../escritorio/Cena3D.tsx'
 import { dadosIsometricos, type PostoIsometrico } from '../escritorio/dadosIsometricos'
 import { falasDoEscritorio } from '../escritorio/falasDoEscritorio'
+import { useNovidades } from './useNovidades'
 import { HORA_DA_NOITE, horaRecife, noiteForcada } from '../../lib/escritorio/turno'
 import type { SalaEquipe } from '../../lib/escritorio/equipe'
 import type { PerguntaEsc } from '../../api/tipos'
@@ -102,6 +103,8 @@ function EscritorioAutorizado({
   const humores: Record<string, 'aflito'> = {}
   if (!oculto)
     for (const t of dados.fila) if (nivel(t.pergunta, hoje) === 'dinheiro em risco') humores[t.membro.id] = 'aflito'
+  // o que chegou desde a última visita neste aparelho ganha a marca "Novo" (só no Início novo)
+  const novidades = useNovidades(dados, familia!.id, !!comFalas && !!e && estado === 'ok')
   const [sala, setSala] = useState<SalaEquipe>()
   const [selecao, selecionar] = useState<{ id: string; pergunta?: string; resposta?: boolean }>()
   const [filaAberta, abrirFila] = useState(false)
@@ -121,10 +124,15 @@ function EscritorioAutorizado({
   const destino = posto && destinoDoPosto(posto.membro.id, papel, dono)
   const verHistorico = casal && posto && (posto.membro.id !== 'analista' || dono)
   const fechar = () => selecionar(undefined)
-  const abrirPosto = (id: string, pergunta?: string) => selecionar({ id, pergunta })
+  const abrirPosto = (id: string, pergunta?: string) => {
+    novidades.ver(id)
+    selecionar({ id, pergunta })
+  }
   // Início novo: quem tem tarefa abre direto a resposta; quem não tem (e o Início de sempre) abre a ficha
-  const abrirResposta = (id: string, pergunta?: string) =>
+  const abrirResposta = (id: string, pergunta?: string) => {
+    novidades.ver(id)
     selecionar({ id, pergunta, resposta: !!comFalas && fila.some(t => t.membro.id === id) })
+  }
   const fecharResposta = () => {
     fechar()
     // o botão que abriu pode ter sumido junto com a tarefa: o foco fica na lista "Precisa de você"
@@ -236,6 +244,7 @@ function EscritorioAutorizado({
               valores={valores}
               falas={comFalas ? falas : undefined}
               humores={humores}
+              novos={novidades.novos}
               aoResponder={comFalas ? id => abrirResposta(id) : undefined}
               expediente={comFalas}
               ampliavel
@@ -328,6 +337,7 @@ function EscritorioAutorizado({
                     >
                       <FuncIco id={t.membro.id} size={32} />
                       <strong>{t.membro.nome}</strong>
+                      {novidades.tarefaNova(t.pergunta.id) && <em className="tag-novo">Novo</em>}
                     </button>
                     <span className="j-nivel" data-risco={(!oculto && prioridade.ordem === 0) || undefined}>
                       {oculto ? 'Tarefa' : prioridade.texto}

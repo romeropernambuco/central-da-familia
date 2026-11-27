@@ -55,6 +55,19 @@ const escuroAgora = () => {
   return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
 }
 const celular = () => window.innerWidth < 900
+/** O que o leitor de tela diz da etiqueta: nome, estado, se tem novidade, a fala e o que o toque faz. */
+function rotuloDaEtiqueta(
+  f: FuncionarioEsc,
+  dormindo: boolean,
+  novo: boolean,
+  dito: string | undefined,
+  responde: boolean,
+) {
+  const estado = dormindo ? 'dormindo' : f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]
+  return textoPrivado(
+    `${f.nome}: ${estado}.${novo ? ' Novidade.' : ''}${dito ? ` ${dito}.` : ''} ${responde ? 'Responder' : 'Abrir'}.`,
+  )
+}
 
 /**
  * A cena 3D dentro do app. O Three.js só é buscado aqui (import dinâmico): as outras telas não carregam nada de 3D.
@@ -68,6 +81,7 @@ export function Cena3D({
   valores,
   falas,
   humores,
+  novos,
   aoResponder,
   expediente,
   reserva,
@@ -82,6 +96,8 @@ export function Cena3D({
   falas?: Record<string, string[]>
   /** A emoção que o aviso de cada um pede (aflito, preocupado, feliz); quem não está aqui fica com a do estado. */
   humores?: Record<string, Humor>
+  /** Quem tem novidade desde a última visita: ganha a marca "Novo" ao lado do nome. */
+  novos?: Record<string, boolean>
   /** Com isto, tocar em quem precisa de você abre direto a resposta da tarefa, em vez da ficha. */
   aoResponder?: (id: string) => void
   /** O escritório segue o relógio: depois das 20h a equipe dorme e dá para chamar todo mundo para uma reunião. */
@@ -306,7 +322,8 @@ export function Cena3D({
                   sel = f.id === selecionado
                 // B1 (pacote 4): nome em cada etiqueta, também no "Ver tudo" (a regra de colisão esconde a que bate)
                 const soIcone = false
-                const dormindo = dorme(f)
+                const dormindo = dorme(f),
+                  novo = !!novos?.[f.id]
                 const valor = precisa ? valores?.[f.id] : undefined,
                   dito = ditoDe(f),
                   fala = dito && (sel || falaAgora(f.id)) ? dito : undefined,
@@ -318,7 +335,7 @@ export function Cena3D({
                     ref={el => {
                       tags.current[f.id] = el
                     }}
-                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}|${responde(f)}|${dormindo}`}
+                    data-k={`${f.estado}|${sel}|${soIcone}|${selo}|${valor}|${fala}|${responde(f)}|${dormindo}|${novo}`}
                     data-func={f.id}
                     data-posto={f.id}
                     data-estado={f.estado}
@@ -330,15 +347,16 @@ export function Cena3D({
                       (dormindo ? ' dorme' : '') +
                       (fala ? ' fala' : dito ? ' quer-falar' : '')
                     }
-                    aria-label={textoPrivado(
-                      `${f.nome}: ${dormindo ? 'dormindo' : f.semDado ? 'ainda sem dado' : ROTULO_ESTADO[f.estado]}.${dito ? ` ${dito}.` : ''} ${responde(f) ? 'Responder' : 'Abrir'}.`,
-                    )}
+                    aria-label={rotuloDaEtiqueta(f, dormindo, novo, dito, responde(f))}
                     aria-haspopup={responde(f) ? 'dialog' : undefined}
                     aria-pressed={sel}
                     onClick={() => tocarNoFuncionario(f.id)}
                   >
                     {dormindo ? <Icone desenho={Moon} /> : <IcoEstado e={f.estado} />}
-                    <span>{selo}</span>
+                    <span>
+                      {selo}
+                      {novo && <em className="tag-novo">Novo</em>}
+                    </span>
                     {fala && (
                       <span className="tag-dito">
                         {valor && <b>{valor}</b>}

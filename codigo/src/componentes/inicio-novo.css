@@ -134,6 +134,10 @@
 .ini4 .cena3d-turno .pill svg { inline-size: 16px; block-size: 16px; }
 /* quem dorme: a plaquinha fica mais apagada, com a lua no lugar do sinal */
 .ini4 .cena3d-tags .tag.dorme { opacity: .8; }
+/* chegou desde a última visita neste aparelho: marca "Novo" ao lado do nome, até a pessoa abrir */
+.ini4 .tag-novo { display: inline-block; margin-inline-start: 6px; padding: 3px 7px; border-radius: 999px; background: var(--destaque); color: var(--sobre-destaque); font: 700 12px/1 var(--fonte-texto); font-style: normal; letter-spacing: .01em; vertical-align: 1px; }
+.ini4 .cena3d-tags .tag:is(.precisa, .sel) .tag-novo { background: var(--sobre-destaque); color: var(--destaque); }
+.ini4 .cena3d-tags .tag.sel .tag-novo { background: var(--cartao); }
 @media (max-width: 899px) { .ini4 .cena3d-turno { padding-inline: 12px; } }
 /* folha de resposta: abre ao tocar no balão de quem precisa de você; só a tarefa e os botões */
 .ini4 .scrim:has(+ .sheet .j-resposta) { opacity: .5; }
